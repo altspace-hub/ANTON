@@ -352,8 +352,10 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       let suggestions: string[] = [];
       try {
         const { sendRequest } = await import('../services/unified-llm-client.js');
+        const { getRoutedUtilityModel } = await import('../services/utility-model.js');
         const sugResult = await sendRequest({
-          model: 'claude-haiku-4-5-20251001' as import('../../src/lib/types.js').ModelId,
+          // Configured utility model, provider-routed (review 3.8).
+          model: await getRoutedUtilityModel(db) as import('../../src/lib/types.js').ModelId,
           thinking: 'quick' as import('../../src/lib/types.js').ThinkingLevel,
           system: 'Given a conversation, suggest 3 short follow-up questions the user might ask next. Return ONLY a JSON array of strings, e.g. ["question 1", "question 2", "question 3"]. Each under 50 chars.',
           messages: [

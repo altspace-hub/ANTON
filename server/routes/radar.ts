@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import * as cron from 'node-cron';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 
 type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
@@ -154,7 +155,7 @@ Return ONLY valid JSON (no markdown, no extra text):
 }`;
 
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         system: 'You are a regulatory relevance scorer. Return ONLY valid JSON.',
         messages: [{ role: 'user', content: prompt }],
         maxTokens: 1024,

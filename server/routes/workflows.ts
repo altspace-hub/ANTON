@@ -9,6 +9,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../src/lib/workflow-definitions.js';
 import { createConnectionManager } from '../services/connection-manager.js';
 import { resolveExplicitDbDriver } from '../services/workflow-step-registry.js';
@@ -1240,7 +1241,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
     try {
       const allMessages = [...messages, { role: 'user' as const, content: userMessage.trim() }];
       const result = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         maxTokens: 512,
         system: WORKFLOW_GUIDE_SYSTEM_PROMPT,
         messages: allMessages,

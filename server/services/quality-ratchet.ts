@@ -1,5 +1,8 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import crypto from 'crypto';
+import { callChat } from './provider-router.js';
+import { getRoutedUtilityModel } from './utility-model.js';
+import { recordParseOutcome } from './parse-telemetry.js';
 
 // Quality dimensions scored 0-10
 interface QualityScore {
@@ -51,7 +54,10 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     moduleId: string;
     areaId?: string;
     sessionId?: string;
-    anthropicClient?: any;
+    /** @deprecated No longer used — scoring routes through provider-router
+     *  with the configured utility model (review 3.1). Kept so existing
+     *  call-sites compile unchanged. */
+    anthropicClient?: unknown;
   }): Promise<{ score: QualityScore; id: string; regressionWarning?: string; strengths: string[]; weaknesses: string[]; improvementSuggestion: string }> {
 
     const hash = crypto.createHash('sha256').update(params.content.slice(0, 5000)).digest('hex').slice(0, 16);
@@ -62,38 +68,57 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     let weaknesses: string[] = [];
     let improvementSuggestion = '';
 
-    // Use Claude Haiku if client provided
-    if (params.anthropicClient) {
+    // LLM scoring via the provider mapping (review 3.1): the configured
+    // utility model on whatever provider is set up — an Ollama/Mistral
+    // install scores with its own small model instead of silently
+    // dropping to the crude heuristic. Heuristic remains the fallback on
+    // any failure (call error or unparseable JSON).
+    const model = await getRoutedUtilityModel(db);
+    let llmText: string | null = null;
+    try {
+      const chat = await callChat({
+        model,
+        system: 'You are a quality assessor. Respond only with valid JSON.',
+        messages: [{
+          role: 'user',
+          content: `${SCORING_PROMPT}\n\n---OUTPUT TO SCORE---\n${params.content.slice(0, 3000)}\n---END OUTPUT---`,
+        }],
+        maxTokens: 500,
+        jsonMode: true,
+        db,
+      });
+      llmText = chat.text;
+    } catch (e) {
+      // Transport/key failure — heuristic fallback (logged, not counted
+      // as a parse failure: parse-rate telemetry measures model output
+      // quality, not missing keys).
+      console.warn(`[quality-ratchet] LLM scoring call failed on ${model}, using heuristic fallback:`, e instanceof Error ? e.message : e);
+    }
+
+    if (llmText !== null) {
       try {
-        const response = await params.anthropicClient.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 500,
-          messages: [{
-            role: 'user',
-            content: `${SCORING_PROMPT}\n\n---OUTPUT TO SCORE---\n${params.content.slice(0, 3000)}\n---END OUTPUT---`,
-          }],
-        });
-        const rawText = response.content[0]?.type === 'text' ? response.content[0].text : '';
-        // Strip markdown code fences (Haiku sometimes wraps JSON in ```json ... ```)
-        const text = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+        // Strip markdown code fences (small models often wrap JSON in ```json ... ```)
+        const text = llmText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
         const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          scores = {
-            overall: parsed.overall ?? 7,
-            completeness: parsed.completeness ?? 7,
-            accuracy: parsed.accuracy ?? 7,
-            structure: parsed.structure ?? 7,
-            actionability: parsed.actionability ?? 7,
-            citations: parsed.citations ?? 7,
-          };
-          strengths = parsed.strengths ?? [];
-          weaknesses = parsed.weaknesses ?? [];
-          improvementSuggestion = parsed.improvement_suggestion ?? '';
-        }
+        if (!jsonMatch) throw new Error(`no JSON object in scoring output (${llmText.slice(0, 120)})`);
+        const parsed = JSON.parse(jsonMatch[0]);
+        scores = {
+          overall: parsed.overall ?? 7,
+          completeness: parsed.completeness ?? 7,
+          accuracy: parsed.accuracy ?? 7,
+          structure: parsed.structure ?? 7,
+          actionability: parsed.actionability ?? 7,
+          citations: parsed.citations ?? 7,
+        };
+        strengths = parsed.strengths ?? [];
+        weaknesses = parsed.weaknesses ?? [];
+        improvementSuggestion = parsed.improvement_suggestion ?? '';
+        void recordParseOutcome(db, 'quality-ratchet', model, true);
       } catch (e) {
-        // Fall through to heuristic scoring — log so we can detect persistent parse failures
-        console.warn('[quality-ratchet] Haiku scoring failed, using heuristic fallback:', e instanceof Error ? e.message : e);
+        // Unparseable scoring JSON — heuristic fallback, counted per
+        // model so persistent breakage is measurable (the Markets lesson).
+        console.warn(`[quality-ratchet] scoring JSON unparseable on ${model}, using heuristic fallback:`, e instanceof Error ? e.message : e);
+        void recordParseOutcome(db, 'quality-ratchet', model, false, e instanceof Error ? e.message : String(e));
         scores = heuristicScore(params.content);
       }
     } else {

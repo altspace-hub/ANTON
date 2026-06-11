@@ -370,12 +370,16 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
 
     try {
       const { callChat } = await import('./provider-router.js');
+      const { getRoutedUtilityModel } = await import('./utility-model.js');
       const result = await callChat({
-        model: 'claude-haiku-4-5-20251001',
+        // Provider-routed utility model (review 3.8) — previously a raw
+        // Claude id that failed on non-Anthropic installs.
+        model: await getRoutedUtilityModel(db),
         system: 'You are a temporal consequence analyst. Evaluate actions against goals, values, and strategies. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
         maxTokens: 2048,
         thinkingLevel: 'quick',
+        db,
       });
 
       const cleaned = result.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');

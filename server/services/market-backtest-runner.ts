@@ -1,6 +1,7 @@
 // Market Backtest Runner — historical simulation with full intelligence pipeline:
 // atoms, theses, predictions, validation, signal weight calibration, NAV tracking.
 import type AnthropicSDK from '@anthropic-ai/sdk';
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 
@@ -132,7 +133,9 @@ export async function createMarketBacktestRunner(db: DatabaseAdapter) {
         const Anthropic = (await import('@anthropic-ai/sdk')).default;
         const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
         const response = await client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          // Anthropic-bound (web_search tool) — Claude utility override
+          // honoured, non-Claude utility models fall back to Haiku.
+          model: await getAnthropicUtilityModel(db),
           max_tokens: 2048,
           system: 'You are an investment analyst. Search for what happened in markets on the given date, then generate investment theses with testable predictions. Output only valid JSON.',
           messages: [{ role: 'user', content: `Today is ${simDate}. Search for stock market news and events from this date.
@@ -164,8 +167,9 @@ Return ONLY the JSON array.` }],
       const prompt = `Based on these market signals from the last week, generate 2-3 investment theses with testable predictions.\n\nSIGNALS:\n${atomContext.slice(0, 3000)}\n\nReturn JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]\nReturn ONLY the JSON array.`;
       try {
         const { callChat } = await import('./provider-router.js');
+        const { getRoutedUtilityModel } = await import('./utility-model.js');
         const result = await callChat({
-          model: 'claude-haiku-4-5-20251001',
+          model: await getRoutedUtilityModel(db),
           system: 'You are an investment analyst generating testable predictions from market signals. Output only valid JSON.',
           messages: [{ role: 'user', content: prompt }], maxTokens: 2048,
         });

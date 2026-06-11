@@ -44,6 +44,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
 import { buildSchoolPrompt, inferMathsModule, inferSubjectModule, type SchoolPromptConfig } from '../services/school-prompt-builder.js';
 import { safeError } from '../lib/error-response.js';
@@ -2073,7 +2074,7 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
 
     try {
       const result = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         system: 'You are a helpful assistant that generates current real-world events connected to school subjects. Return ONLY valid JSON.',
         messages: [{
           role: 'user',

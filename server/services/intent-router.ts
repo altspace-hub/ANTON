@@ -93,13 +93,16 @@ export function createIntentRouter(db: DatabaseAdapter) {
   ): Promise<IntentResolution> {
     try {
       const { sendRequest } = await import('./unified-llm-client.js');
+      const { getRoutedUtilityModelSync } = await import('./utility-model.js');
 
       const intentDescriptions = intents.map(i =>
         `- ${i.name}: ${i.description || 'No description'}. Areas: ${i.allowed_areas.join(', ') || 'any'}. Modules: ${i.allowed_modules.join(', ') || 'any'}.`
       ).join('\n');
 
       const result = await sendRequest({
-        model: 'claude-haiku-4-5-20251001' as import('../../src/lib/types.js').ModelId,
+        // Configured utility model, provider-routed (review 3.8) —
+        // classification works on non-Anthropic installs too.
+        model: getRoutedUtilityModelSync() as import('../../src/lib/types.js').ModelId,
         thinking: 'quick' as import('../../src/lib/types.js').ThinkingLevel,
         system: `You are an intent classifier. Given a user query and a list of available intent categories, output JSON: { "intentName": "<best match name>", "areaId": "<area or null>", "moduleId": "<module or null>", "confidence": <0.0-1.0>, "reasoning": "<brief>" }. If nothing matches well, set confidence below 0.3.`,
         messages: [

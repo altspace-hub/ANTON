@@ -17,7 +17,9 @@
 // falls back to the generic exports (md/docx/xlsx/pdf/pptx).
 
 import crypto from 'crypto';
-import { callChat, mapModelToProvider } from './provider-router.js';
+import { callChat } from './provider-router.js';
+import { getRoutedUtilityModel } from './utility-model.js';
+import { recordParseOutcome } from './parse-telemetry.js';
 import {
   loadContentTypeSchema,
   type ContentType,
@@ -27,11 +29,12 @@ import {
 } from '../schemas/content-types/index.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
-// Wrapped in mapModelToProvider() at call time (plan 2.14) — installs
-// without an Anthropic key extract on the active provider's small model
-// (Mistral / Ollama / compat) instead of failing every extraction, which
-// previously deadened all payload-dependent Transform Panel renderers.
-const EXTRACTION_MODEL = 'claude-haiku-4-5-20251001';
+// Extraction model = the configured utility model (Settings →
+// 'utility_model', default Haiku), provider-routed at call time (plan
+// 2.14 + review 3.8) — installs without an Anthropic key extract on the
+// active provider's small model (Mistral / Ollama / compat) instead of
+// failing every extraction, which previously deadened all
+// payload-dependent Transform Panel renderers.
 const SCHEMA_VERSION = '1.0';
 const EXTRACTION_TIMEOUT_MS = 45_000;
 /** Hard cap on the serialised output_structured row. Haiku @ 8k tokens sits
@@ -103,9 +106,10 @@ export function createStructuredExtractor(db: DatabaseAdapter) {
     const systemPrompt = buildSystemPrompt(input.contentType, schema);
     const userPrompt = buildUserPrompt(input.markdown, input.contentType);
 
-    // Route to the active provider's small-model equivalent when no
-    // Anthropic key is configured (Haiku otherwise — unchanged).
-    const extractionModel = mapModelToProvider(EXTRACTION_MODEL);
+    // The configured utility model, routed to the active provider's
+    // small-model equivalent when no Anthropic key is configured
+    // (Haiku otherwise — unchanged).
+    const extractionModel = await getRoutedUtilityModel(db);
     const isClaude = extractionModel.startsWith('claude-');
 
     // Non-Claude small models occasionally wrap the JSON in prose or drop
@@ -179,12 +183,16 @@ export function createStructuredExtractor(db: DatabaseAdapter) {
         model: input.generationModel ?? 'unknown',
         body: parsed,
       };
+      // Parse-success telemetry per model (review 3.1/3.8 — effectiveness
+      // on small models must be measurable). Fire-and-forget.
+      void recordParseOutcome(db, 'structured-extractor', extractionModel, true);
       return {
         status: 'extracted', payload, hash, cached: false,
         tokens_used: totalTokens,
       };
     }
 
+    void recordParseOutcome(db, 'structured-extractor', extractionModel, false, lastError);
     return { status: 'failed', payload: null, hash, cached: false, error: lastError };
   }
 

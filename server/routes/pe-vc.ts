@@ -13,6 +13,7 @@
  * POST /api/pe-vc/templates/extract    — POST { text, memoType } → Claude learns section structure
  */
 
+import { getAnthropicUtilityModel } from '../services/utility-model.js';
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -161,7 +162,7 @@ Return a JSON object with this structure (use null for fields not found):
 
       const client = getClient();
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 1024,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
@@ -359,7 +360,7 @@ Return a JSON object with this structure:
 
       const client = getClient();
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 2048,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],

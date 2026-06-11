@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
 
+import { getRoutedUtilityModelSync } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
 
 const COMMAND_PARSING_PROMPT = `You are a command parser for the openEXPERT platform.
@@ -64,7 +65,7 @@ export interface ExecutionResult {
 export async function parseCommand(userInput: string, anthropic: Anthropic): Promise<ParsedCommand> {
   try {
     const result = await callChat({
-      model: mapModelToProvider('claude-haiku-4-5-20251001'),
+      model: getRoutedUtilityModelSync(),
       maxTokens: 400,
       system: COMMAND_PARSING_PROMPT,
       messages: [{

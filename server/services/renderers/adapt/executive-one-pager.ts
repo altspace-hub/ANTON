@@ -8,14 +8,15 @@
 // Works on any content type — prose input, no structured schema required.
 
 import type { RenderFn, RenderResult } from '../../renderer-registry.types.js';
-import { callChat, mapModelToProvider } from '../../provider-router.js';
+import { getRoutedUtilityModelSync } from '../../utility-model.js';
+import { callChat } from '../../provider-router.js';
 import { generatePdf } from '../../export-pdf.js';
 import { saveArtifact, buildFilename } from '../lib/artifact-storage.js';
 import { wrapUntrustedContent, INJECTION_GUARD_SUFFIX } from '../lib/prompt-injection-guard.js';
 
-// Haiku 4.5 — distillation task, no chain-of-thought needed; right-sized
-// for the constraint (≤450 words, fixed structure).
-const MODEL = 'claude-haiku-4-5-20251001';
+// Model: the configured utility model (Settings → 'utility_model', default
+// Haiku), provider-routed per render call (review 3.8) — distillation task,
+// no chain-of-thought needed.
 const MAX_TOKENS = 3_000;
 const TIMEOUT_MS = 60_000;
 
@@ -40,9 +41,12 @@ export const render: RenderFn = async (payload, context): Promise<RenderResult> 
   const markdown = context.markdown ?? '';
   if (!markdown.trim()) throw new Error('No markdown content available for executive one-pager');
 
+  // Sync accessor — renderers carry no db handle; the cache is primed at boot.
+  const MODEL = getRoutedUtilityModelSync();
+
   const userPrompt = `Original output title: ${context.session.title}\n\n${wrapUntrustedContent(markdown)}${INJECTION_GUARD_SUFFIX}`;
   const chat = await Promise.race([
-    callChat({ model: mapModelToProvider(MODEL), system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.2 }),
+    callChat({ model: MODEL, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: userPrompt }], maxTokens: MAX_TOKENS, temperature: 0.2 }),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`one-pager timed out after ${TIMEOUT_MS}ms`)), TIMEOUT_MS)),
   ]);
 

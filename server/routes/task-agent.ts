@@ -23,6 +23,7 @@ import { tmpdir } from 'os';
 import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
@@ -745,7 +746,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     async function scoreOutput(output: string, taskTitle: string, stepName: string): Promise<GateResult | null> {
       return scoreWithGate(async (prompt) => {
         const response = await callChat({
-          model: mapModelToProvider('claude-haiku-4-5-20251001'),
+          model: await getRoutedUtilityModel(db),
           system: '',
           messages: [{ role: 'user', content: prompt }],
           maxTokens: 500,

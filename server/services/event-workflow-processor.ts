@@ -305,8 +305,11 @@ async function executeHeadlessStep(
           : `Analyze:\n${JSON.stringify(context, null, 2).slice(0, 4000)}`;
 
         const { callChat } = await import('./provider-router.js');
+        const { getRoutedUtilityModel } = await import('./utility-model.js');
         const result = await callChat({
-          model: (cfg['model'] as string) || 'claude-haiku-4-5-20251001',
+          // Per-step model when configured; otherwise the provider-routed
+          // utility model (review 3.8) so headless steps run anywhere.
+          model: (cfg['model'] as string) || await getRoutedUtilityModel(db),
           system: systemPrompt,
           messages: [{ role: 'user', content: userMessage }],
           maxTokens: (cfg['maxTokens'] as number) || 2048,

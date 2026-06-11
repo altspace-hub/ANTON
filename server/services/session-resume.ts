@@ -6,6 +6,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 
@@ -207,7 +208,7 @@ Respond as JSON: {"summary":"...","key_decisions":[],"open_questions":[],"next_s
 Conversation:
 ${messageText}`;
 
-        const response = await claudeClient.complete(prompt, 'claude-haiku-4-5-20251001');
+        const response = await claudeClient.complete(prompt, await getAnthropicUtilityModel(db));
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);

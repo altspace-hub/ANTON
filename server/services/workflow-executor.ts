@@ -605,9 +605,11 @@ async function executeHeadlessStep(
         ? resolveTemplate(cfg.userMessage as string, context)
         : `Analyze the following context and provide insights:\n\n${JSON.stringify(context, null, 2).slice(0, 8000)}`;
 
-      // Use cost-efficient model for headless LLM calls
+      // Use cost-efficient model for headless LLM calls: per-step model when
+      // configured, otherwise the provider-routed utility model (review 3.8).
       const { callChat } = await import('./provider-router.js');
-      const modelId = (cfg.model as string) || 'claude-haiku-4-5-20251001';
+      const { getRoutedUtilityModel } = await import('./utility-model.js');
+      const modelId = (cfg.model as string) || await getRoutedUtilityModel(db);
       const result = await callChat({
         model: modelId,
         system: systemPrompt,

@@ -268,11 +268,16 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
         ...recentAtoms.map(a => `- ${a.content.slice(0, 200)}`),
       ].join('\n');
 
+      // Configured utility model, provider-routed (review 3.8) —
+      // streamToHandler dispatches by model id across providers.
+      const { getRoutedUtilityModel } = await import('./utility-model.js');
+      const verifierModel = await getRoutedUtilityModel(db);
+
       const result = await new Promise<{ text: string }>((resolve, reject) => {
         let text = '';
         streamToHandler(
           {
-            model: 'claude-haiku-4-5-20251001' as import('../../src/lib/types.js').ModelId,
+            model: verifierModel as import('../../src/lib/types.js').ModelId,
             thinking: 'quick' as import('../../src/lib/types.js').ThinkingLevel,
             system: 'You verify market predictions. Given a prediction and recent market data, determine if the prediction was correct. Respond ONLY with JSON: { "wasCorrect": true/false, "actualOutcome": "brief description", "explanation": "1-2 sentences", "verificationConfidence": 0.0-1.0 }',
             messages: [{ role: 'user', content: context }],

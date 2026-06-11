@@ -1,3 +1,4 @@
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { getClient } from './claude-client.js';
 
@@ -188,7 +189,7 @@ export async function createOutputStore(db: DatabaseAdapter) {
         const truncated = dataStr.length > 4000 ? dataStr.slice(0, 4000) + '...(truncated)' : dataStr;
 
         const message = await client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
+          model: await getAnthropicUtilityModel(db),
           max_tokens: 120,
           system: 'You summarise workflow step outputs in one concise sentence (max 20 words). Return only the sentence — no preamble.',
           messages: [

@@ -1,3 +1,4 @@
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { PgNotifyService } from './pg-notify-service.js';
 import Anthropic from '@anthropic-ai/sdk';
@@ -333,7 +334,7 @@ Return a JSON array of atoms with these fields:
 Return ONLY the JSON array, no other text.`;
 
       const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 8192,
         system: EXTRACTION_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
@@ -374,7 +375,7 @@ Return ONLY the JSON array, no other text.`;
           tags: raw.tags,
           rawDataId,
           extractionMethod: 'ai',
-          extractionModel: 'claude-haiku-4-5-20251001',
+          extractionModel: await getAnthropicUtilityModel(db),
           importanceScore: raw.importance_score,
         });
         createdIds.push(id);
@@ -418,7 +419,7 @@ Return ONLY the JSON array.`;
 
     try {
       const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 8192,
         system: 'You are an expert financial analyst extracting fundamental insights into structured market atoms. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
@@ -453,7 +454,7 @@ Return ONLY the JSON array.`;
           decayRate: raw.decay_rate ?? 0.02,
           tags: raw.tags || ['fundamental'],
           extractionMethod: 'ai',
-          extractionModel: 'claude-haiku-4-5-20251001',
+          extractionModel: await getAnthropicUtilityModel(db),
           importanceScore: raw.importance_score,
         });
         createdIds.push(id);

@@ -1,3 +1,4 @@
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { PgNotifyService } from './pg-notify-service.js';
 import Anthropic from '@anthropic-ai/sdk';
@@ -182,7 +183,7 @@ export async function createMarketThesisService(db: DatabaseAdapter, client?: An
 
     try {
       const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 2048,
         system: `You are a financial analysis quality assessor. Score investment theses on a 0-1 scale.
 Consider: clarity of thesis, quality of evidence, falsifiability of predictions, risk awareness, time horizon appropriateness.

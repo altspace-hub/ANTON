@@ -3,6 +3,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
 export async function createTravelRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
@@ -281,7 +282,7 @@ Format as a day-by-day plan with morning/afternoon/evening slots. Include practi
       };
 
       const result = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         maxTokens: 800,
         system: '',
         messages: [{

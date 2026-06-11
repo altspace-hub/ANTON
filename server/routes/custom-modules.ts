@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { randomUUID } from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
 
@@ -230,7 +231,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         { role: 'user' as const, content: userMessage.trim() },
       ];
       const result = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         maxTokens: 512,
         system: GUIDE_SYSTEM_PROMPT,
         messages: allMessages,
@@ -308,7 +309,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         fullSystem += `\n\n## REFERENCE OUTPUT EXAMPLE\nMatch the structure, depth, and formatting of this example:\n<reference>\n${referenceOutput.trim()}\n</reference>`;
       }
 
-      const resolvedModel = mapModelToProvider('claude-haiku-4-5-20251001');
+      const resolvedModel = await getRoutedUtilityModel(db);
       const result = await callChat({
         model: resolvedModel,
         maxTokens: 2048,

@@ -2,6 +2,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import type Anthropic from '@anthropic-ai/sdk';
 import Parser from 'rss-parser';
+import { getRoutedUtilityModel, getAnthropicUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
 import { SUBCATEGORY_KEYWORDS, CATEGORY_SCORE_PROMPTS, type RadarCategory } from './radar-constants.js';
 
@@ -188,7 +189,9 @@ export async function createRadarFetcher(db: DatabaseAdapter, anthropic: Anthrop
 
     try {
       const message = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        // Anthropic-bound (web_search tool): honours a Claude utility
+        // override, falls back to Haiku for non-Claude utility models.
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 4096,
         tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
         messages: [
@@ -321,7 +324,7 @@ Return ONLY valid JSON (no markdown):
 {"relevance_score": <0-1>, "urgency_score": <0-1>, "ai_summary": "<2 sentence summary>", "impact_areas": ["<area1>", "<area2>"]}`;
 
         const chatResult = await callChat({
-          model: mapModelToProvider('claude-haiku-4-5-20251001'),
+          model: await getRoutedUtilityModel(db),
           maxTokens: 512,
           system: 'Score the following radar item. Return only valid JSON, no markdown.',
           messages: [{ role: 'user', content: prompt }],

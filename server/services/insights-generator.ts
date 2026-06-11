@@ -8,6 +8,7 @@
  * - Recommendations (what to do next)
  */
 
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -108,7 +109,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
 
     try {
       const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001', // Fast and cost-effective
+        model: await getAnthropicUtilityModel(db), // Fast and cost-effective
         max_tokens: 2048,
         messages: [
           {

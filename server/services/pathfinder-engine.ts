@@ -22,6 +22,7 @@ import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
+import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, streamChat, mapModelToProvider, type ChatResult } from './provider-router.js';
 import { getProviderFromModelId } from './model-adapter.js';
 import { getThinkingConfig } from '../config/model-capabilities.js';
@@ -1492,7 +1493,7 @@ export async function generateSuggestions(
 
   try {
     const result: ChatResult = await callChat({
-      model: mapModelToProvider('claude-haiku-4-5-20251001'),
+      model: await getRoutedUtilityModel(db),
       system: 'You are a proactive research assistant. Based on the user\'s recent activity, suggest 3-5 search queries they might find valuable. Return JSON array: [{"query": "...", "context": "brief reason"}]. Only return the JSON, nothing else.',
       messages: [{ role: 'user', content: contextText }],
       maxTokens: 1024,

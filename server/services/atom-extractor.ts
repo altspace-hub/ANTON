@@ -1,5 +1,8 @@
 import type { DatabaseAdapter } from '../db/database.js';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
+import { callChat } from './provider-router.js';
+import { getRoutedUtilityModel } from './utility-model.js';
+import { recordParseOutcome } from './parse-telemetry.js';
 import { embedAndStore } from './hybrid-search.js';
 
 // ── Taxonomy ────────────────────────────────────────────────────────────────
@@ -73,9 +76,73 @@ interface WorkflowOutputRow {
   step_name: string;
 }
 
+// ── Tolerant JSON-array parsing ─────────────────────────────────────────────
+//
+// Small/local models are far less reliable at the "return ONLY a JSON
+// array" contract than Haiku: they wrap output in markdown fences, emit
+// prose around the JSON, wrap the array in an envelope object (native
+// json_object modes force an object root), or truncate mid-array. This
+// parser recovers all of those shapes. Returns null only when nothing
+// usable could be salvaged — callers log that via parse-telemetry.
+
+export function parseJsonArrayTolerant<T>(text: string): T[] | null {
+  const cleaned = text.trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/, '')
+    .trim();
+
+  const coerce = (v: unknown): T[] | null => {
+    if (Array.isArray(v)) return v as T[];
+    // Envelope object (e.g. {"atoms": [...]}) — json_object modes force
+    // an object root; unwrap the first array-valued property.
+    if (v && typeof v === 'object') {
+      for (const value of Object.values(v as Record<string, unknown>)) {
+        if (Array.isArray(value)) return value as T[];
+      }
+    }
+    return null;
+  };
+
+  try {
+    const direct = coerce(JSON.parse(cleaned));
+    if (direct !== null) return direct;
+  } catch { /* fall through to repair */ }
+
+  // Prose around the JSON — try the substring between the first '[' and
+  // the last ']'.
+  const open = cleaned.indexOf('[');
+  const close = cleaned.lastIndexOf(']');
+  if (open >= 0 && close > open) {
+    try {
+      const sliced = coerce(JSON.parse(cleaned.slice(open, close + 1)));
+      if (sliced !== null) return sliced;
+    } catch { /* fall through */ }
+  }
+
+  // Truncated mid-JSON — salvage complete objects by cutting at the last
+  // complete array element (closing brace) and re-closing the array.
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (open >= 0 && lastBrace > open) {
+    try {
+      const repaired = coerce(JSON.parse(cleaned.slice(open, lastBrace + 1) + ']'));
+      if (repaired !== null) return repaired;
+    } catch { /* could not salvage */ }
+  }
+
+  return null;
+}
+
 // ── Factory ─────────────────────────────────────────────────────────────────
 
-export async function createAtomExtractor(db: DatabaseAdapter, client: Anthropic) {
+/**
+ * Atom extraction + relationship detection now route through the
+ * provider mapping (review 3.1) — Ollama/Mistral-only installs learn
+ * too. The `_client` parameter is kept for call-site compatibility but
+ * is no longer used; all LLM calls go through provider-router.callChat
+ * with the configured utility model (Settings → 'utility_model',
+ * default Haiku — unchanged behaviour on Anthropic installs).
+ */
+export async function createAtomExtractor(db: DatabaseAdapter, _client?: Anthropic) {
   // ── SQL templates (prepared statements replaced by adapter calls) ───────
 
   const INSERT_ATOM_SQL = `
@@ -126,10 +193,12 @@ Rules:
 
     let rawAtoms: RawAtom[] = [];
 
+    // Provider-routed (review 3.1): the configured utility model on
+    // whatever provider is set up — not a hardcoded Anthropic call.
+    const model = await getRoutedUtilityModel(db);
     try {
-      const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
+      const chat = await callChat({
+        model,
         system: systemPrompt,
         messages: [
           {
@@ -137,37 +206,19 @@ Rules:
             content: `Workflow: ${output.workflow_name}\nStep: ${output.step_name} (type: ${output.step_type})\n\nOutput data:\n${truncated}`,
           },
         ],
+        maxTokens: 2048,
+        jsonMode: true,
+        db,
       });
 
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
-
-      // Parse JSON — strip any accidental markdown fencing
-      const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-      try {
-        rawAtoms = JSON.parse(cleaned) as RawAtom[];
-      } catch {
-        // Response may be truncated mid-JSON — salvage complete objects by finding the
-        // last complete array element (closing brace before the truncation point).
-        const lastBrace = cleaned.lastIndexOf('}');
-        if (lastBrace > 0) {
-          const repaired = cleaned.slice(0, lastBrace + 1) + ']';
-          try {
-            // Find the opening bracket and try to parse from there
-            const openBracket = repaired.indexOf('[');
-            if (openBracket >= 0) {
-              rawAtoms = JSON.parse(repaired.slice(openBracket)) as RawAtom[];
-            }
-          } catch {
-            // Could not salvage — skip atom extraction for this output
-          }
-        }
-      }
-      if (!Array.isArray(rawAtoms)) rawAtoms = [];
+      const parsed = parseJsonArrayTolerant<RawAtom>(chat.text);
+      // Log parse success/failure per model so effectiveness on small
+      // models is measurable (fire-and-forget — never breaks the run).
+      void recordParseOutcome(db, 'atom-extractor', model, parsed !== null,
+        parsed === null ? `unparseable atom array (${chat.text.slice(0, 120)})` : undefined);
+      rawAtoms = parsed ?? [];
     } catch (err) {
-      console.error('[atom-extractor] Claude call failed for output', outputId, err);
+      console.error('[atom-extractor] LLM call failed for output', outputId, `(model ${model})`, err);
       return;
     }
 
@@ -306,26 +357,22 @@ Rules:
 - Return ONLY a valid JSON array — no markdown, no explanation
 - If no meaningful relationships exist, return []`;
 
+    // Provider-routed (review 3.1) — same utility model as extraction.
+    const model = await getRoutedUtilityModel(db);
     try {
-      const message = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+      const chat = await callChat({
+        model,
+        system: 'You analyze relationships between knowledge atoms. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
+        maxTokens: 1024,
+        jsonMode: true,
+        db,
       });
 
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
-
-      const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-      let rels: Array<{ from: string; to: string; type: string; strength: number }> = [];
-      try {
-        rels = JSON.parse(cleaned);
-      } catch {
-        return; // unparseable — skip
-      }
-      if (!Array.isArray(rels)) return;
+      const rels = parseJsonArrayTolerant<{ from: string; to: string; type: string; strength: number }>(chat.text);
+      void recordParseOutcome(db, 'relationship-detector', model, rels !== null,
+        rels === null ? `unparseable relationship array (${chat.text.slice(0, 120)})` : undefined);
+      if (rels === null) return; // unparseable — skip (logged above)
 
       const validTypes = new Set(['supports', 'contradicts', 'extends', 'requires', 'caused_by', 'related_to']);
       const INSERT_REL_SQL = `INSERT INTO atom_relationships (from_atom_id, to_atom_id, relationship_type, strength)
@@ -356,7 +403,7 @@ Rules:
         await db.run(INSERT_REL_SQL, item.fromId, item.toId, item.type, item.strength);
       }
     } catch (err) {
-      console.warn('[atom-extractor] relationship Claude call failed:', err instanceof Error ? err.message : err);
+      console.warn(`[atom-extractor] relationship LLM call failed (model ${model}):`, err instanceof Error ? err.message : err);
     }
   }
 

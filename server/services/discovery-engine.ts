@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
+import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -1302,7 +1303,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         maxTokens: 1024,
         system: 'Summarize the following discovery conversation phase. Extract key findings as bullet points. Be concise but comprehensive. Return JSON: {"summary":"...","keyFindings":["..."]}',
         messages: [{ role: 'user', content: `Phase: ${phase}\nTier: ${state.tier}\n\nConversation:\n${conversationText}` }],
@@ -1428,7 +1429,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         maxTokens: 1024,
         system: 'You are an analytical assistant. Return only valid JSON, no markdown.',
         messages: [{ role: 'user', content: getInsightPrompt(session.state) }],

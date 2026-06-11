@@ -46,11 +46,11 @@ export async function analyzeForActions(
 ): Promise<SmartAction[]> {
   try {
     const { sendRequest } = await import('./unified-llm-client.js');
-    const { mapModelToProvider } = await import('./provider-router.js');
+    const { getRoutedUtilityModelSync } = await import('./utility-model.js');
     const result = await sendRequest({
-      // Map the Haiku default to the configured provider's small model so
-      // the Smart Action Bar also works on non-Claude installs.
-      model: mapModelToProvider('claude-haiku-4-5-20251001') as import('../../src/lib/types.js').ModelId,
+      // The configured utility model, routed to the active provider's small
+      // model so the Smart Action Bar also works on non-Claude installs.
+      model: getRoutedUtilityModelSync() as import('../../src/lib/types.js').ModelId,
       thinking: 'quick' as import('../../src/lib/types.js').ThinkingLevel,
       system: ACTION_EXTRACTION_PROMPT,
       messages: [{

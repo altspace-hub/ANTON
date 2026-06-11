@@ -15,6 +15,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -405,7 +406,7 @@ Return ONLY valid JSON, no explanation.`;
       // Call Claude for extraction
       try {
         const result = await callChat({
-          model: mapModelToProvider('claude-haiku-4-5-20251001'),
+          model: await getRoutedUtilityModel(db),
           system: 'You are a document extraction assistant. Return only valid JSON.',
           messages: [{ role: 'user', content: extractionPrompt }],
           maxTokens: 4096,
@@ -1060,7 +1061,7 @@ Return a JSON object with this exact structure:
 Return ONLY valid JSON, no markdown fences, no explanation.`;
 
       const gapResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         system: 'You are a senior FCP consulting reviewer. Return only valid JSON.',
         messages: [{ role: 'user', content: gapPrompt }],
         maxTokens: 3000,
@@ -1172,7 +1173,7 @@ Return ONLY valid JSON, no markdown fences, no explanation.`;
       }
 
       const teamResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         system: 'You are a document extraction assistant. Return only valid JSON.',
         messages: [{
           role: 'user',
@@ -1228,7 +1229,7 @@ Return ONLY valid JSON.`,
       if (!engagement) return res.status(404).json({ error: 'Not found' });
 
       const benchmarkResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         system: 'You are a financial crime compliance analyst conducting peer benchmarking research. Return only valid JSON.',
         messages: [{
           role: 'user',
@@ -1381,7 +1382,7 @@ Return ONLY valid JSON.`,
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      const qgModel = mapModelToProvider('claude-haiku-4-5-20251001');
+      const qgModel = await getRoutedUtilityModel(db);
 
       const results: Record<string, unknown> = {};
 

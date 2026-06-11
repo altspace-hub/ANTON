@@ -3,6 +3,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 
 export async function createNewsRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
@@ -310,7 +311,7 @@ Write a 3-4 paragraph neutral explainer that:
       }
 
       const result = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: await getRoutedUtilityModel(db),
         maxTokens: 512,
         system: '',
         messages: [{

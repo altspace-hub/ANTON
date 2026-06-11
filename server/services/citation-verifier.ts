@@ -1,3 +1,4 @@
+import { getAnthropicUtilityModelSync } from './utility-model.js';
 import { getClient } from './claude-client.js';
 
 // ── Types ───────────────────────────────────────────────────
@@ -118,7 +119,7 @@ Example format:
 ]`;
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: getAnthropicUtilityModelSync(),
     max_tokens: 4096,
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }],

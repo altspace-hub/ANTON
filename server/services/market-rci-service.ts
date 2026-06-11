@@ -1,3 +1,4 @@
+import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { MarketComputationService } from './market-computation-service.js';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -80,7 +81,7 @@ Respond with JSON only: { "template": "template_name", "params": { ... }, "reaso
       : `Question: ${question}`;
 
     const response = await anthropicClient.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: await getAnthropicUtilityModel(db),
       max_tokens: 1024,
       system: systemPrompt + '\n\nAvailable templates:\n' + buildTemplateList(),
       messages: [{ role: 'user', content: userContent }],

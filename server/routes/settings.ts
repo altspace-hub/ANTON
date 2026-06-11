@@ -8,6 +8,14 @@ import {
   setPersistedDefaultModel,
 } from '../services/default-model-store.js';
 import { getCustomModelConfigs } from '../services/model-adapter.js';
+import {
+  DEFAULT_UTILITY_MODEL,
+  initUtilityModelStore,
+  getUtilityModelSync,
+  setUtilityModel,
+  isValidUtilityModelId,
+} from '../services/utility-model.js';
+import { getParseStats } from '../services/parse-telemetry.js';
 
 // Model-id prefixes accepted as a server-side default. Anything else must
 // match a configured custom-model slot (checked against the DB below).
@@ -40,9 +48,10 @@ const ALLOWED_KEYS = PERSISTABLE_ENV_KEYS;
 export async function createSettingsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
-  // Prime the server-side default-model cache at boot so the sync
-  // resolvers in provider-router never miss on first call.
+  // Prime the server-side default-model + utility-model caches at boot so
+  // the sync resolvers never miss on first call.
   initDefaultModelStore(db);
+  initUtilityModelStore(db);
 
   // GET /api/settings/default-model — the server-side default model and
   // where it comes from (Settings persistence vs .env vs unset).
@@ -88,6 +97,59 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
     await setPersistedDefaultModel(db, model);
     console.log(`[settings] Set server-side default model: ${model}`);
     res.json({ ok: true, model });
+  });
+
+  // GET /api/settings/utility-model — the model used for background utility
+  // calls (extraction, scoring, naming, classification). Review 3.8.
+  router.get('/settings/utility-model', async (_req, res) => {
+    const persisted = getUtilityModelSync();
+    res.json({
+      model: persisted,
+      isDefault: persisted === DEFAULT_UTILITY_MODEL,
+      default: DEFAULT_UTILITY_MODEL,
+    });
+  });
+
+  // POST /api/settings/utility-model — persist the utility-model choice
+  // (app_settings 'utility_model'; plain value, not a secret). Consumed by
+  // the ~38 utility call-sites via server/services/utility-model.ts. Empty/
+  // null clears the row (default Haiku applies again). Validated against
+  // the model registry; dynamic ollama:/compat:/azure: ids and configured
+  // custom-slot models are accepted.
+  router.post('/settings/utility-model', async (req, res) => {
+    const { model } = req.body as { model?: string | null };
+
+    if (model === null || model === undefined || model === '') {
+      await setUtilityModel(db, null);
+      console.log('[settings] Cleared utility model (default applies)');
+      res.json({ ok: true, model: DEFAULT_UTILITY_MODEL, isDefault: true });
+      return;
+    }
+
+    if (typeof model !== 'string' || model.length > 200) {
+      res.status(400).json({ error: 'model must be a string of at most 200 characters' });
+      return;
+    }
+
+    if (!isValidUtilityModelId(model)) {
+      // Allow custom-slot model ids (arbitrary ids with a configured provider)
+      const customModels = await getCustomModelConfigs(db);
+      if (!customModels.some((m) => m.modelId === model)) {
+        res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure: id, or a configured custom model` });
+        return;
+      }
+    }
+
+    await setUtilityModel(db, model);
+    console.log(`[settings] Set utility model: ${model}`);
+    res.json({ ok: true, model, isDefault: model === DEFAULT_UTILITY_MODEL });
+  });
+
+  // GET /api/settings/parse-stats — JSON-parse success/failure counters per
+  // (service, model) for the learning-layer utility calls (review 3.1 —
+  // effectiveness must be measurable). Feeds the cost-effective health view.
+  router.get('/settings/parse-stats', async (_req, res) => {
+    res.json({ stats: await getParseStats(db) });
   });
 
   // POST /api/settings/set-env — set a provider API key. Applies immediately

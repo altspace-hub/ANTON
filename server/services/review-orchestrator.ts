@@ -17,6 +17,7 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
+import { getRoutedUtilityModelSync } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -161,7 +162,7 @@ Output JSON:
   if (anthropic) {
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: getRoutedUtilityModelSync(),
         maxTokens: 2048,
         system: systemPrompt,
         messages: [
@@ -265,7 +266,7 @@ Output JSON with findings and score.`;
   if (anthropic) {
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: getRoutedUtilityModelSync(),
         maxTokens: 2048,
         system: systemPrompt,
         messages: [
@@ -348,7 +349,7 @@ Output JSON with findings and score.`;
   if (anthropic) {
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: getRoutedUtilityModelSync(),
         maxTokens: 2048,
         system: systemPrompt,
         messages: [
@@ -413,7 +414,7 @@ Output JSON with findings and score.`;
   if (anthropic) {
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: getRoutedUtilityModelSync(),
         maxTokens: 2048,
         system: systemPrompt,
         messages: [
@@ -478,7 +479,7 @@ Output JSON with findings (focus on CRITICAL and HIGH severity issues).`;
   if (anthropic) {
     try {
       const chatResult = await callChat({
-        model: mapModelToProvider('claude-haiku-4-5-20251001'),
+        model: getRoutedUtilityModelSync(),
         maxTokens: 2048,
         system: systemPrompt,
         messages: [

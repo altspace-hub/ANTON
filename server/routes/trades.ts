@@ -17,6 +17,7 @@
  * POST /api/trades/templates/:id/set-default — mark template as default for its document type
  */
 
+import { getAnthropicUtilityModel } from '../services/utility-model.js';
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -169,7 +170,7 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
 
       const client = getClient();
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 1024,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
@@ -367,7 +368,7 @@ Return a JSON object with this structure:
 
       const client = getClient();
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 2048,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
