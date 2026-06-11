@@ -18,6 +18,7 @@ import { createClaudeRoutes } from './routes/claude.js';
 import { createRerunRoutes } from './routes/rerun.js';
 import filesRouter from './routes/files.js';
 import { createSessionRoutes } from './routes/sessions.js';
+import { createWorkTimelineRoutes } from './routes/work-timeline.js';
 import { createFolderRoutes } from './routes/folders.js';
 import { createExportRouter } from './routes/export.js';
 import { createTemplatesRouter } from './routes/templates.js';
@@ -541,6 +542,8 @@ app.use('/api', claudeRouter);
 app.use('/api', createRerunRoutes(db, claudeRouter));
 app.use('/api', filesRouter);
 app.use('/api', await createSessionRoutes(db));
+// Unified work timeline (4.3) — sessions ∪ engagements ∪ workflow runs/executions ∪ discovery
+app.use('/api', createWorkTimelineRoutes(db));
 app.use('/api', await createFolderRoutes(db));
 app.use('/api', await createExportRouter(db));
 app.use('/api', await createTemplatesRouter(db));
@@ -625,6 +628,12 @@ app.use('/api', createMissionRoutes(db));
 // Output Transformation System — renderer registry + transform endpoints
 const { createRendererRoutes } = await import('./routes/renderers.js');
 app.use('/api', createRendererRoutes(db));
+// AI Council — dissent-ledger extraction over persisted council sessions (Wave 4.2)
+const { createCouncilRoutes } = await import('./routes/council.js');
+app.use('/api', createCouncilRoutes(db));
+// Save-chat-as-module v2 — conversation → distilled module prompt (Wave 4.8)
+const { createDistillRoutes } = await import('./routes/distill.js');
+app.use('/api', createDistillRoutes(db));
 // Seed the renderer registry on startup (idempotent — inserts new entries,
 // updates existing, never overrides admin-set status)
 {

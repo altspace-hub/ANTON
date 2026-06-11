@@ -67,7 +67,13 @@ interface OutputToolbarProps {
   sourceManifest?: string[];
   /** Wave 2.3: when the displayed output is itself a rerun, the original message id */
   rerunOf?: string | null;
+  /** Wave 4.8: the full conversation — enables "distill, don't snapshot" in the
+   *  Save panel (a purpose-built prompt synthesized from the chat's know-how). */
+  conversation?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
+
+/** Wave 4.8: a distilled worked example pending user confirmation (privacy). */
+interface DistilledExample { user: string; assistant: string }
 
 // ── Chip config ──────────────────────────────────────────────
 
@@ -98,7 +104,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
-    configSnapshot, sourceManifest, rerunOf,
+    configSnapshot, sourceManifest, rerunOf, conversation,
   } = props;
 
   // Derive trail display values — prefer per-message configSnapshot over live store state
@@ -129,6 +135,14 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const [saveModuleName, setSaveModuleName] = useState('');
   const [savingModule, setSavingModule] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+
+  // Wave 4.8 "distill, don't snapshot" state
+  const [distillStatus, setDistillStatus] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
+  const [distilledPrompt, setDistilledPrompt] = useState('');
+  const [distilledDescription, setDistilledDescription] = useState('');
+  const [distillError, setDistillError] = useState<string | null>(null);
+  const [workedExample, setWorkedExample] = useState<DistilledExample | null>(null);
+  const [includeExample, setIncludeExample] = useState(false);
 
   // Trust certificate download state
   const [certLoading, setCertLoading] = useState(false);
@@ -190,6 +204,13 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   useEffect(() => {
     setTrustScore(null);
     setTrustLoading(false);
+    // Wave 4.8: a distillation belongs to one conversation — drop it on session switch
+    setDistillStatus('idle');
+    setDistilledPrompt('');
+    setDistilledDescription('');
+    setDistillError(null);
+    setWorkedExample(null);
+    setIncludeExample(false);
   }, [sessionId]);
 
   // Fetch quality score when trust panel opens — with retry (scoring is async, may not be ready yet)
@@ -351,19 +372,75 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     }
   };
 
+  // ── Distill from conversation (Wave 4.8) ───────────────────
+
+  const canDistill = !!conversation && conversation.filter((m) => m.content.trim().length > 0).length >= 2;
+
+  const handleDistill = async () => {
+    if (!canDistill || distillStatus === 'running') return;
+    setDistillStatus('running');
+    setDistillError(null);
+    try {
+      const res = await fetchWithAuth('/api/distill/module-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: (conversation ?? []).filter((m) => m.content.trim().length > 0)
+            // server validates ≤200k chars per message; the distiller's own
+            // budget truncates further with explicit markers
+            .map((m) => ({ role: m.role, content: m.content.slice(0, 200_000) })),
+        }),
+      });
+      const data = await res.json() as {
+        status?: string; systemPrompt?: string; suggestedName?: string;
+        suggestedDescription?: string; workedExample?: DistilledExample | null; error?: string;
+      };
+      if (res.ok && data.status === 'distilled' && data.systemPrompt) {
+        setDistilledPrompt(data.systemPrompt);
+        setDistilledDescription(data.suggestedDescription ?? '');
+        setWorkedExample(data.workedExample ?? null);
+        setIncludeExample(false); // privacy: the user confirms inclusion explicitly
+        if (!saveModuleName.trim() && data.suggestedName) setSaveModuleName(data.suggestedName);
+        setDistillStatus('done');
+      } else {
+        setDistillStatus('failed');
+        setDistillError(data.error ?? `Distillation failed (HTTP ${res.status})`);
+      }
+    } catch (err) {
+      setDistillStatus('failed');
+      setDistillError(err instanceof Error ? err.message : 'Distillation failed');
+    }
+  };
+
+  /** The system prompt that will actually be saved: the (edited) distilled
+   *  prompt when distillation succeeded, otherwise the current session prompt. */
+  const buildPromptToSave = (): string => {
+    if (distillStatus === 'done' && distilledPrompt.trim().length > 0) {
+      let p = distilledPrompt.trim();
+      if (includeExample && workedExample) {
+        p += `\n\n## Worked example\n\nThe following exchange illustrates the expected quality and format.\n\n**Example input:**\n\n${workedExample.user}\n\n**Example output:**\n\n${workedExample.assistant}`;
+      }
+      return p;
+    }
+    return systemPrompt;
+  };
+
   // ── Save as module ─────────────────────────────────────────
 
   const handleSaveAsModule = async () => {
     if (!saveModuleName.trim()) return;
     setSavingModule(true);
     try {
+      const usingDistilled = distillStatus === 'done' && distilledPrompt.trim().length > 0;
       await createCustomModule({
         name: saveModuleName.trim(),
         short_name: saveModuleName.trim().slice(0, 20),
-        description: `Saved from ${moduleLabel || moduleId} module`,
+        description: usingDistilled && distilledDescription
+          ? distilledDescription
+          : `Saved from ${moduleLabel || moduleId} module`,
         icon: moduleIcon || 'Puzzle',
         area: 'custom',
-        system_prompt: systemPrompt,
+        system_prompt: buildPromptToSave(),
         config: {
           outputFormats: selectedOutputFormats,
           personas: selectedPersonas,
@@ -638,6 +715,80 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               <p className="mb-3 text-xs text-adv-gray">
                 Save the current configuration (system prompt, output formats, personas, skills, and settings) as a reusable custom module.
               </p>
+
+              {/* Wave 4.8: distill, don't snapshot */}
+              {canDistill && (
+                <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
+                      <span className="text-xs font-medium text-adv-off-white">Distill a purpose-built prompt from this conversation</span>
+                    </div>
+                    <button
+                      onClick={handleDistill}
+                      disabled={distillStatus === 'running'}
+                      className="flex items-center gap-1.5 rounded-lg bg-adv-teal/10 border border-adv-teal/30 px-2.5 py-1 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
+                    >
+                      {distillStatus === 'running'
+                        ? <Loader2 className="h-3 w-3 animate-spin" />
+                        : <Sparkles className="h-3 w-3" />}
+                      {distillStatus === 'running' ? 'Distilling…' : distillStatus === 'done' ? 'Distill again' : 'Distill'}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-adv-gray">
+                    Instead of snapshotting the generic configuration, a background pass reads the conversation and synthesizes
+                    a module prompt from what it actually did — the task pattern, the instructions and constraints that emerged,
+                    the expertise exercised. You review and edit it before anything is saved.
+                  </p>
+
+                  {distillStatus === 'failed' && (
+                    <p className="mt-2 text-[11px] text-adv-red">
+                      Distillation failed{distillError ? ` — ${distillError}` : ''}. Saving now keeps the current session prompt instead.
+                    </p>
+                  )}
+
+                  {distillStatus === 'done' && (
+                    <div className="mt-2 space-y-2">
+                      <label className="block text-[11px] font-medium text-adv-off-white">
+                        Distilled system prompt — edit before saving (you own the final text)
+                      </label>
+                      <textarea
+                        value={distilledPrompt}
+                        onChange={(e) => setDistilledPrompt(e.target.value)}
+                        rows={10}
+                        className="w-full resize-y rounded-lg border border-border bg-adv-dark p-2.5 font-mono text-[11px] leading-relaxed text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                      />
+                      {distilledDescription && (
+                        <p className="text-[11px] text-adv-gray">Suggested description: {distilledDescription}</p>
+                      )}
+                      {workedExample && (
+                        <div className="rounded-md border border-border bg-adv-dark p-2.5">
+                          <label className="flex cursor-pointer items-start gap-2 text-[11px] text-adv-off-white">
+                            <input
+                              type="checkbox"
+                              checked={includeExample}
+                              onChange={(e) => setIncludeExample(e.target.checked)}
+                              className="mt-0.5 h-3.5 w-3.5 accent-[#2DD4A8]"
+                            />
+                            <span>
+                              Include the best exchange as a worked example in the module prompt.
+                              <span className="block text-adv-gray">
+                                Off by default — the example quotes this conversation verbatim, so confirm it contains nothing confidential.
+                              </span>
+                            </span>
+                          </label>
+                          {includeExample && (
+                            <div className="mt-2 max-h-40 overflow-auto rounded bg-adv-dark-2 p-2 text-[10px] leading-relaxed text-adv-gray whitespace-pre-wrap">
+                              {`Example input:\n${workedExample.user}\n\nExample output:\n${workedExample.assistant}`}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <input
                   type="text"

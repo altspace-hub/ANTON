@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users2, Plus, X, Play, Square, Copy, Check, Download, ChevronDown } from 'lucide-react';
+import { Users2, Plus, X, Play, Square, Copy, Check, Download, ChevronDown, Paperclip, File as FileIcon, Loader2, Scale } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { streamMessage, createSession, fetchSession } from '@/lib/api';
+import { streamMessage, createSession, fetchSession, uploadFile, fetchWithAuth } from '@/lib/api';
+import { useExport } from '@/hooks/useExport';
+import TransformPanel from '@/components/shared/TransformPanel';
 import type { ClaudeRunConfig, ModelId, StreamEvent } from '@/lib/types';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -35,10 +37,103 @@ interface VoteTally {
   notUnanimous: boolean;
 }
 
+// ── Dissent ledger (Wave 4.2) ─────────────────────────────────
+// Distinct from the vote table: votes record positions on the FINAL
+// recommendation; the ledger records WHERE views diverged DURING the
+// deliberation. Extracted post-synthesis by the utility model (server-side).
+
+type DissentSeverity = 'low' | 'medium' | 'high';
+
+interface DissentLedger {
+  agreements: { point: string; members: string[] }[];
+  dissents: { member: string; position: string; severity: DissentSeverity; round: number | null }[];
+  openQuestions: string[];
+}
+
+interface LedgerState {
+  status: 'idle' | 'extracting' | 'done' | 'failed';
+  ledger: DissentLedger | null;
+  error?: string;
+}
+
+// ── Document input (Wave 4.2) ─────────────────────────────────
+// Attached documents enter every member's context, budgeted with an
+// honest truncation note when the cap is hit.
+
+interface CouncilAttachment {
+  id: string;
+  name: string;
+  text: string;
+  chars: number;
+  status: 'uploading' | 'done' | 'error';
+}
+
+/** Total character budget for attached-document text per member message. */
+const ATTACH_BUDGET_CHARS = 48_000;
+
+/**
+ * Build the document context block for member prompts. Budget is allocated
+ * in attachment order; truncation is explicitly marked — never silent.
+ */
+function buildAttachmentBlock(attachments: CouncilAttachment[]): { block: string; truncatedNames: string[] } {
+  const docs = attachments.filter((a) => a.status === 'done' && a.text.length > 0);
+  if (docs.length === 0) return { block: '', truncatedNames: [] };
+  let remaining = ATTACH_BUDGET_CHARS;
+  const truncatedNames: string[] = [];
+  const parts: string[] = [];
+  for (const doc of docs) {
+    if (remaining <= 200) {
+      truncatedNames.push(doc.name);
+      parts.push(`[Document "${doc.name}" omitted — the ${ATTACH_BUDGET_CHARS.toLocaleString()}-character document budget was already used by earlier attachments.]`);
+      continue;
+    }
+    if (doc.text.length <= remaining) {
+      parts.push(`[Document: ${doc.name}]\n${doc.text}`);
+      remaining -= doc.text.length;
+    } else {
+      truncatedNames.push(doc.name);
+      parts.push(`[Document: ${doc.name} — TRUNCATED: first ${remaining.toLocaleString()} of ${doc.text.length.toLocaleString()} characters shown]\n${doc.text.slice(0, remaining)}`);
+      remaining = 0;
+    }
+  }
+  return {
+    block: `--- ATTACHED DOCUMENTS ---\n${parts.join('\n\n')}\n--- END ATTACHED DOCUMENTS ---`,
+    truncatedNames,
+  };
+}
+
+/** Markdown rendering of the dissent ledger — used in export + persisted record. */
+function dissentLedgerMd(ledger: DissentLedger): string {
+  const lines: string[] = ['## Dissent Ledger', '', '_Where views diverged during deliberation (distinct from the final vote)._', ''];
+  if (ledger.agreements.length > 0) {
+    lines.push('### Agreements', '');
+    for (const a of ledger.agreements) {
+      lines.push(`- ${a.point}${a.members.length > 0 ? ` _(${a.members.join(', ')})_` : ''}`);
+    }
+    lines.push('');
+  }
+  if (ledger.dissents.length > 0) {
+    lines.push('### Dissents', '', '| Member | Severity | Round | Position |', '|---|---|---|---|');
+    for (const d of ledger.dissents) {
+      lines.push(`| ${d.member.replace(/\|/g, '/')} | ${d.severity.toUpperCase()} | ${d.round ?? '—'} | ${d.position.replace(/\|/g, '/')} |`);
+    }
+    lines.push('');
+  } else {
+    lines.push('### Dissents', '', '_No dissents were recorded — members aligned throughout the deliberation._', '');
+  }
+  if (ledger.openQuestions.length > 0) {
+    lines.push('### Open Questions', '');
+    for (const q of ledger.openQuestions) lines.push(`- ${q}`);
+    lines.push('');
+  }
+  return lines.join('\n').trimEnd();
+}
+
 /** Persisted council session loaded read-only via ?session=<id> */
 interface ArchivedCouncil {
   title: string;
   messages: { role: string; content: string }[];
+  dissentLedger: { ledger: DissentLedger; extractedAt: string; model: string | null } | null;
 }
 
 interface CouncilSetup {
@@ -388,6 +483,117 @@ function MemberCard({ member, onUpdate, onRemove, disabled }: MemberCardProps) {
   );
 }
 
+// ── Dissent Ledger Panel (Wave 4.2) ───────────────────────────
+// Distinct from the vote table: votes are positions on the final
+// recommendation; the ledger captures WHERE views diverged during
+// deliberation — the record a professional needs when defending the
+// decision later.
+
+const SEVERITY_STYLES: Record<DissentSeverity, string> = {
+  low: 'bg-adv-gray-med/20 text-adv-gray',
+  medium: 'bg-adv-gold/15 text-adv-gold',
+  high: 'bg-adv-red/15 text-adv-red',
+};
+
+function DissentLedgerPanel({ state }: { state: LedgerState }) {
+  if (state.status === 'idle') return null;
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-adv-gray">
+          <Scale className="h-3.5 w-3.5" />
+          Dissent Ledger
+        </span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      {state.status === 'extracting' && (
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-adv-card px-4 py-3 text-xs text-adv-gray">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-teal" />
+          Extracting where views diverged during deliberation…
+        </div>
+      )}
+
+      {state.status === 'failed' && (
+        <div className="rounded-xl border border-border bg-adv-card px-4 py-3">
+          <p className="text-xs font-medium text-adv-off-white">Dissent ledger unavailable</p>
+          <p className="mt-0.5 text-xs text-adv-gray">
+            The background extraction failed{state.error ? ` (${state.error})` : ''}. The deliberation transcript and vote table above remain the complete record.
+          </p>
+        </div>
+      )}
+
+      {state.status === 'done' && state.ledger && (
+        <div className="space-y-3 rounded-xl border border-border bg-adv-card p-4">
+          <p className="text-xs text-adv-gray">
+            Where views diverged during deliberation — distinct from the final vote, which records positions on the final recommendation.
+          </p>
+
+          {/* Agreements */}
+          {state.ledger.agreements.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-adv-green">Agreements</p>
+              <div className="space-y-1.5">
+                {state.ledger.agreements.map((a, i) => (
+                  <div key={i} className="rounded-md bg-adv-dark px-3 py-2">
+                    <p className="text-xs text-adv-off-white">{a.point}</p>
+                    {a.members.length > 0 && (
+                      <p className="mt-0.5 text-[11px] text-adv-gray">{a.members.join(' · ')}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Dissents */}
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-adv-gold">Dissents</p>
+            {state.ledger.dissents.length === 0 ? (
+              <p className="text-xs text-adv-gray">No dissents were recorded — members aligned throughout the deliberation.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {state.ledger.dissents.map((d, i) => (
+                  <div key={i} className="flex items-start gap-3 rounded-md bg-adv-dark px-3 py-2">
+                    <span className={`mt-0.5 inline-flex w-16 shrink-0 items-center justify-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${SEVERITY_STYLES[d.severity]}`}>
+                      {d.severity}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-adv-off-white">
+                        {d.member}
+                        {d.round !== null && <span className="ml-2 font-normal text-adv-gray">Round {d.round}</span>}
+                      </p>
+                      <p className="text-xs text-adv-gray">{d.position}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Open questions */}
+          {state.ledger.openQuestions.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-adv-blue">Open Questions</p>
+              <ul className="space-y-1">
+                {state.ledger.openQuestions.map((q, i) => (
+                  <li key={i} className="text-xs text-adv-gray">· {q}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="text-[10px] text-adv-gray/70">
+            Extracted by the utility model from the full deliberation. Included in the saved session and exports.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────
 
 export default function AICouncilPage() {
@@ -401,6 +607,14 @@ export default function AICouncilPage() {
   const [chairStreaming, setChairStreaming] = useState(false);
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<{ abort: () => void } | null>(null);
+  const { doExport, isExporting } = useExport();
+
+  // Wave 4.2: attached documents (deliberation over a contract/report)
+  const [attachments, setAttachments] = useState<CouncilAttachment[]>([]);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+
+  // Wave 4.2: dissent ledger (post-synthesis background extraction)
+  const [ledgerState, setLedgerState] = useState<LedgerState>({ status: 'idle', ledger: null });
 
   // Final-vote round (consensus = majority / unanimity)
   const [votes, setVotes] = useState<CouncilVote[]>([]);
@@ -428,14 +642,23 @@ export default function AICouncilPage() {
     (async () => {
       try {
         const session = await fetchSession(archivedSessionId) as
-          | (ArchivedCouncil & { messages?: { role: string; content: string }[] })
+          | { title: string; config?: unknown; messages?: { role: string; content: string }[] }
           | null;
         if (cancelled) return;
         if (!session) {
           setArchiveError('Council session not found.');
           return;
         }
-        setArchived({ title: session.title, messages: session.messages ?? [] });
+        // The dissent ledger is persisted in the session config by
+        // POST /api/council/:id/dissent-ledger (Wave 4.2).
+        let dissentLedger: ArchivedCouncil['dissentLedger'] = null;
+        try {
+          const cfg = (typeof session.config === 'string' ? JSON.parse(session.config) : session.config) as
+            | { dissentLedger?: ArchivedCouncil['dissentLedger'] }
+            | null;
+          if (cfg?.dissentLedger?.ledger) dissentLedger = cfg.dissentLedger;
+        } catch { /* config unreadable — ledger simply absent */ }
+        setArchived({ title: session.title, messages: session.messages ?? [], dissentLedger });
       } catch {
         if (!cancelled) setArchiveError('Failed to load council session.');
       }
@@ -490,6 +713,7 @@ export default function AICouncilPage() {
     setVotes([]);
     setVoteTally(null);
     setIsVoting(false);
+    setLedgerState({ status: 'idle', ledger: null });
     runConsensusRef.current = setup.consensus;
     sessionIdRef.current = null;
 
@@ -499,6 +723,11 @@ export default function AICouncilPage() {
 
     const ks = setup.webSearch ? WEB_SEARCH_KS : EMPTY_KS;
     let allRoundsContext = '';
+
+    // Wave 4.2: attached documents enter each member's context (budgeted).
+    const { block: attachBlock, truncatedNames } = buildAttachmentBlock(attachments);
+    const docNames = attachments.filter((a) => a.status === 'done' && a.text.length > 0).map((a) => a.name);
+    const topicWithDocs = attachBlock ? `${setup.topic}\n\n${attachBlock}` : setup.topic;
 
     // Persist this council run as a session so it appears in My Work and
     // survives navigation. The chair exchange (full deliberation record →
@@ -516,6 +745,10 @@ export default function AICouncilPage() {
           outputFormat: setup.outputFormat,
           chainMode: setup.chainMode,
           webSearch: setup.webSearch,
+          attachments: docNames.map((name) => {
+            const a = attachments.find((x) => x.name === name);
+            return { name, chars: a?.chars ?? 0, truncated: truncatedNames.includes(name) };
+          }),
         },
       }) as { id?: string };
       sessionIdRef.current = created?.id ?? null;
@@ -539,8 +772,8 @@ export default function AICouncilPage() {
             : '';
 
           const userMsg = allRoundsContext
-            ? `${setup.topic}\n\n--- PREVIOUS ROUNDS ---\n${allRoundsContext}${priorInRound}`
-            : `${setup.topic}${priorInRound}`;
+            ? `${topicWithDocs}\n\n--- PREVIOUS ROUNDS ---\n${allRoundsContext}${priorInRound}`
+            : `${topicWithDocs}${priorInRound}`;
 
           const rolePrompt = ROLE_PROMPT_MAP[member.role] ?? member.role;
           const sysPrompt = `You are ${member.role} in an AI Council deliberation. Round ${round} of ${setup.rounds}.
@@ -665,9 +898,15 @@ Reproduce the Final Vote table from the deliberation record in your synthesis an
 Be decisive, structured, and clear. Your synthesis is the final deliverable.${voteChairInstructions}`;
 
         // The chair's user message doubles as the persisted deliberation record
-        // (member responses with name/model headers + vote table).
+        // (member responses with name/model headers + vote table). Attached
+        // documents are recorded by NAME only — their full text already shaped
+        // every member response and would bloat the persisted record.
+        const docsNote = docNames.length > 0
+          ? `_Documents attached to this deliberation: ${docNames.join(', ')}${truncatedNames.length > 0 ? ` (truncated to the ${ATTACH_BUDGET_CHARS.toLocaleString()}-character budget: ${truncatedNames.join(', ')})` : ''}_`
+          : '';
         const deliberationRecord = [
           `# AI Council: ${setup.topic}`,
+          docsNote,
           allRoundsContext,
           voteMd,
         ].filter(Boolean).join('\n\n');
@@ -699,7 +938,14 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
 
         setChairStreaming(false);
         setActiveMemberId(null);
-        if (!aborted) setPhase('done');
+        if (!aborted) {
+          setPhase('done');
+          // Wave 4.2: background dissent-ledger extraction over the full
+          // deliberation (server reads the persisted record; utility model).
+          if (sessionIdRef.current && allRoundsContext) {
+            void runDissentExtraction(sessionIdRef.current, setup.topic);
+          }
+        }
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') console.error(err);
@@ -707,6 +953,52 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
       setIsVoting(false);
       setActiveMemberId(null);
     }
+  };
+
+  // ── Dissent ledger extraction (Wave 4.2) ───────────────────────
+  // Honest by design: extraction failure shows "ledger unavailable" —
+  // never a fabricated ledger.
+  const runDissentExtraction = async (sessionId: string, topic: string) => {
+    setLedgerState({ status: 'extracting', ledger: null });
+    try {
+      const res = await fetchWithAuth(`/api/council/${encodeURIComponent(sessionId)}/dissent-ledger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+      const data = await res.json() as { status?: string; ledger?: DissentLedger | null; error?: string };
+      if (res.ok && data.status === 'extracted' && data.ledger) {
+        setLedgerState({ status: 'done', ledger: data.ledger });
+      } else {
+        setLedgerState({ status: 'failed', ledger: null, error: data.error });
+      }
+    } catch (err) {
+      setLedgerState({ status: 'failed', ledger: null, error: err instanceof Error ? err.message : 'extraction failed' });
+    }
+  };
+
+  // ── Document attachments (Wave 4.2) ────────────────────────────
+  const handleAttach = async (file: File) => {
+    const tempId = crypto.randomUUID();
+    setAttachments((prev) => [...prev, { id: tempId, name: file.name, text: '', chars: 0, status: 'uploading' }]);
+    try {
+      const result = await uploadFile(file) as { id: string; isImage?: boolean; text?: string };
+      if (result.isImage || !result.text || result.text.trim().length === 0) {
+        // Honest: no extractable text → the council cannot deliberate over it.
+        setAttachments((prev) => prev.map((a) => (a.id === tempId ? { ...a, status: 'error' as const } : a)));
+        return;
+      }
+      const text = result.text.trim();
+      setAttachments((prev) => prev.map((a) =>
+        a.id === tempId ? { ...a, id: result.id, text, chars: text.length, status: 'done' as const } : a
+      ));
+    } catch {
+      setAttachments((prev) => prev.map((a) => (a.id === tempId ? { ...a, status: 'error' as const } : a)));
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
   const handleStop = () => {
@@ -729,6 +1021,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
     setVotes([]);
     setVoteTally(null);
     setIsVoting(false);
+    setLedgerState({ status: 'idle', ledger: null });
     sessionIdRef.current = null;
     if (archivedSessionId) setSearchParams({}, { replace: true });
   };
@@ -739,6 +1032,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
     ...roundHistory,
     votes.length > 0 && voteTally ? voteSectionMd(votes, voteTally, runConsensusRef.current) : '',
     chairOutput ? `\n## Chair Synthesis\n\n${chairOutput}` : '',
+    ledgerState.status === 'done' && ledgerState.ledger ? dissentLedgerMd(ledgerState.ledger) : '',
   ].filter(Boolean).join('\n\n');
 
   const handleCopy = () => {
@@ -757,6 +1051,17 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
     URL.revokeObjectURL(url);
   };
 
+  // Wave 4.2: docx export through the existing export pipeline
+  // (same POST /api/export path ModulePage uses via useExport).
+  const handleDocxExport = (content: string, title: string) => {
+    void doExport('docx', content, {
+      filename: 'ai-council',
+      title,
+      moduleId: COUNCIL_MODULE_ID,
+      sessionId: (archivedSessionId || sessionIdRef.current) ?? undefined,
+    });
+  };
+
   // ── Render: Setup Phase ────────────────────────────────────────
 
   const renderSetup = () => (
@@ -773,6 +1078,63 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
           rows={4}
           className="w-full resize-y rounded-xl border border-border bg-adv-card px-4 py-3 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
         />
+
+        {/* Document input (Wave 4.2) — members deliberate over attached files */}
+        <input
+          ref={attachInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.doc,.txt,.md,.xlsx,.csv,.html"
+          className="hidden"
+          onChange={(e) => {
+            Array.from(e.target.files || []).forEach((f) => void handleAttach(f));
+            e.target.value = '';
+          }}
+        />
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => attachInputRef.current?.click()}
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-adv-gray transition-colors hover:border-adv-teal/50 hover:text-adv-teal"
+          >
+            <Paperclip className="h-3 w-3" />
+            Attach documents
+          </button>
+          {attachments.map((a) => (
+            <span
+              key={a.id}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs ${
+                a.status === 'uploading'
+                  ? 'bg-adv-teal/10 text-adv-teal animate-pulse'
+                  : a.status === 'error'
+                  ? 'bg-adv-red/10 text-adv-red'
+                  : 'bg-adv-card text-adv-off-white border border-border'
+              }`}
+              title={a.status === 'error' ? 'No text could be extracted from this file — it will not reach the council.' : `${a.chars.toLocaleString()} characters extracted`}
+            >
+              <FileIcon className="h-3 w-3 shrink-0" />
+              <span className="max-w-[160px] truncate">{a.name}</span>
+              {a.status === 'uploading' && <Loader2 className="h-3 w-3 animate-spin" />}
+              {a.status === 'error' && <span>(no text)</span>}
+              {a.status === 'done' && <span className="text-adv-gray">{Math.round(a.chars / 1000)}k</span>}
+              <button
+                onClick={() => removeAttachment(a.id)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-white/10 transition-colors"
+                title="Remove document"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+        {attachments.some((a) => a.status === 'done') && (
+          <p className="mt-1.5 text-xs text-adv-gray">
+            Extracted text enters every member&apos;s context (up to {ATTACH_BUDGET_CHARS.toLocaleString()} characters total
+            {attachments.filter((x) => x.status === 'done').reduce((s, x) => s + x.chars, 0) > ATTACH_BUDGET_CHARS
+              ? ' — your documents exceed this budget and will be truncated, with the truncation marked in the deliberation'
+              : ''}
+            ).
+          </p>
+        )}
       </div>
 
       {/* Presets */}
@@ -1142,6 +1504,9 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
         </div>
       )}
 
+      {/* Dissent ledger (Wave 4.2) — rendered after the chair synthesis */}
+      {phase === 'done' && <DissentLedgerPanel state={ledgerState} />}
+
       {/* Actions when done */}
       {phase === 'done' && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-adv-card p-4">
@@ -1167,6 +1532,14 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
               .md
             </button>
             <button
+              onClick={() => handleDocxExport(fullTranscript, `AI Council: ${setup.topic.slice(0, 120)}`)}
+              disabled={isExporting}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:bg-adv-dark hover:text-adv-off-white transition-colors disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+              .docx
+            </button>
+            <button
               onClick={handleReset}
               className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
             >
@@ -1175,18 +1548,28 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
           </div>
         </div>
       )}
+
+      {/* Transform Panel (Wave 4.7) — transform the synthesis once the
+          structured extraction of the persisted session is ready */}
+      {phase === 'done' && sessionIdRef.current && chairOutput && (
+        <TransformPanel sessionId={sessionIdRef.current} />
+      )}
     </div>
   );
 
   // ── Render: Archived council (read-only, loaded via ?session=) ──
 
   const renderArchived = () => {
+    const archiveMd = archived
+      ? [
+          ...archived.messages.map((m) => (m.role === 'assistant' ? `## Chair Synthesis\n\n${m.content}` : m.content)),
+          archived.dissentLedger?.ledger ? dissentLedgerMd(archived.dissentLedger.ledger) : '',
+        ].filter(Boolean).join('\n\n')
+      : '';
+
     const handleArchiveDownload = () => {
       if (!archived) return;
-      const md = archived.messages
-        .map((m) => (m.role === 'assistant' ? `## Chair Synthesis\n\n${m.content}` : m.content))
-        .join('\n\n');
-      const blob = new Blob([md], { type: 'text/markdown' });
+      const blob = new Blob([archiveMd], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1221,6 +1604,14 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
                   .md
                 </button>
                 <button
+                  onClick={() => handleDocxExport(archiveMd, archived.title)}
+                  disabled={isExporting}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:bg-adv-dark hover:text-adv-off-white transition-colors disabled:opacity-50"
+                >
+                  {isExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                  .docx
+                </button>
+                <button
                   onClick={handleReset}
                   className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
                 >
@@ -1245,6 +1636,16 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.${vo
                 </div>
               </div>
             ))}
+
+            {/* Persisted dissent ledger (Wave 4.2) */}
+            {archived.dissentLedger?.ledger && (
+              <DissentLedgerPanel state={{ status: 'done', ledger: archived.dissentLedger.ledger }} />
+            )}
+
+            {/* Transform Panel (Wave 4.7) — transform the archived synthesis */}
+            {archived.messages.some((m) => m.role === 'assistant') && (
+              <TransformPanel sessionId={archivedSessionId} />
+            )}
           </>
         )}
       </div>

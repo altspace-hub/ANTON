@@ -14,6 +14,7 @@ import StatusIndicator from '@/components/shared/StatusIndicator';
 import FileUploader from '@/components/shared/FileUploader';
 import ExportBar from '@/components/shared/ExportBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
+import TransformPanel from '@/components/shared/TransformPanel';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
 import InjectedAtomsPanel from '@/components/shared/InjectedAtomsPanel';
@@ -623,7 +624,15 @@ export default function PromptPage() {
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
             sourceManifest={lastSourcesUsed}
+            conversation={messages.map((m) => ({ role: m.role, content: m.content }))}
           />
+      )}
+
+      {/* Transform Panel (Wave 4.7) — renderer registry on Open Chat outputs.
+          Server-side filtering decides what applies; the panel itself shows an
+          honest note while the structured extraction is still pending. */}
+      {sessionId && !isStreaming && outputContent && (
+        <TransformPanel sessionId={sessionId} />
       )}
 
       {/* Copy last response + Export */}
