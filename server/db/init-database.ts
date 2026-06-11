@@ -1,10 +1,10 @@
 // ── Unified Database Initialization ──────────────────────────────────────────
 // ANTON runs on PostgreSQL ONLY. DATABASE_URL is REQUIRED.
 //
-// The legacy SQLite boot path (init.ts + adapters/sqlite-*) is intentionally
-// left in the tree for now but is UNREACHABLE from the real server boot: this
-// function throws if DATABASE_URL is absent rather than falling back to SQLite.
-// Full removal of the SQLite code is a recommended separate cleanup pass.
+// The legacy SQLite boot path (init.ts + adapters/sqlite-adapter.ts) has been
+// removed from the tree. This function throws if DATABASE_URL is absent —
+// there is no fallback. (SQLite remains available only as an EXTERNAL data
+// connector via server/services/db-drivers/sqlite-driver.ts.)
 
 import type { DatabaseAdapter } from './database.js';
 import { logger } from '../lib/logger.js';

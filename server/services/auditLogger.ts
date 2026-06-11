@@ -12,7 +12,7 @@ const log = childLogger('audit-logger');
  * - AI model usage (audit_log table)
  * - Security events (security_events table)
  * - Login attempts (login_attempts table)
- * - General audit trail (audit_log table in schema_enhanced.sql)
+ * - General audit trail (audit_log table)
  */
 
 export interface AuditEntry {
@@ -162,11 +162,11 @@ export async function logLoginAttempt(db: DatabaseAdapter, attempt: LoginAttempt
 
 /**
  * Log general audit event (session creation, deletion, exports, etc.)
- * Note: This uses the audit_log table from schema_enhanced.sql, not the AI usage table
+ * Note: This uses the general audit_log table, not the AI usage table
  */
 export async function logAuditEvent(db: DatabaseAdapter, event: GeneralAuditEvent): Promise<void> {
   try {
-    // Check if the enhanced audit_log table exists (from schema_enhanced.sql)
+    // Check if the audit_log table exists
     const tableExists = await db.get("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'audit_log'");
 
     if (!tableExists) {

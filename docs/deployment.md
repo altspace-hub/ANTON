@@ -256,7 +256,7 @@ All variables are set in `.env` (development) or passed as environment variables
 |---|---|---|
 | `UPLOAD_DIR` | `./uploads` | Directory for user-uploaded files. Must be writable by the server process. |
 | `OUTPUT_DIR` | `./outputs` | Directory for generated export files (.docx, .xlsx, .pdf, .pptx). |
-| `DB_PATH` | `./data/workbench.sqlite` | Path to the SQLite database file. |
+| `DATABASE_URL` | — (required) | PostgreSQL connection string, e.g. `postgresql://anton:anton@localhost:5432/anton`. |
 | `MAX_FILE_SIZE_MB` | `50` | Maximum size for a single uploaded file in megabytes. |
 
 ### AI Defaults

@@ -30,7 +30,10 @@ function getEncryptionKey(): Buffer {
     return Buffer.from(envKey, 'hex');
   }
 
-  // Priority 2: per-installation key file (next to the SQLite DB)
+  // Priority 2: per-installation key file (./data/.vault-key by default).
+  // The legacy DB_PATH env var is still honoured ONLY to locate an existing
+  // .vault-key from older installs — changing this would orphan stored
+  // credentials. ANTON's own database is PostgreSQL; DB_PATH is otherwise dead.
   const dbPath = process.env.DB_PATH ?? './data/workbench.sqlite';
   const keyFilePath = path.join(path.dirname(path.resolve(dbPath)), '.vault-key');
 

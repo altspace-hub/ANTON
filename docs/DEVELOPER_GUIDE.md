@@ -118,8 +118,8 @@ All commands run from the repository root.
 | `pnpm run typecheck` | Run `tsc --noEmit` — must pass with zero errors before every PR |
 | `pnpm run test` | Run Vitest unit tests |
 | `pnpm run test:watch` | Vitest in watch mode |
-| `pnpm run db:init` | Create SQLite schema from `server/db/schema.sql` |
-| `pnpm run db:migrate` | Apply pending migration files from `server/db/migrations/` |
+| `pnpm run db:init` | Initialize the PostgreSQL schema (`server/db/schema.postgresql.sql`; requires `DATABASE_URL`) |
+| `pnpm run db:migrate:pg` | Apply pending migration files (`server/db/migrations-pg/` + PG-compatible generic ones) |
 | `pnpm run audit` | Check for moderate+ CVEs in dependencies |
 | `pnpm run audit:full` | Full audit: CVEs + licenses + outdated packages |
 
@@ -365,7 +365,7 @@ No ticket numbers in the subject line — put them in the body or footer.
 - **Something does not start:** Check that `.env` contains a valid `ANTHROPIC_API_KEY` and that
   `pnpm run db:init` has been run at least once.
 - **TypeScript errors after a pull:** Run `pnpm install` — a dependency may have changed.
-- **Database schema errors:** Run `pnpm run db:migrate` to apply any pending migrations.
+- **Database schema errors:** Run `pnpm run db:migrate:pg` to apply any pending migrations.
 - **Questions about a module's system prompt:** The authoritative file is
   `server/areas/<area>/modules/<module>/system-prompt.md` — read it before asking.
 - **Anything else:** Open a GitHub Discussion. Issues are for confirmed bugs with reproduction steps.

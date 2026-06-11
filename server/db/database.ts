@@ -1,10 +1,13 @@
 // ── Database Abstraction Layer ────────────────────────────────────────────────
-// Provides a unified async interface over SQLite (better-sqlite3) and PostgreSQL (pg).
-// SQLite remains the default. PostgreSQL activates when DATABASE_URL is set.
+// Minimal async database interface. ANTON's own database is PostgreSQL ONLY
+// (adapters/postgresql-adapter.ts); the legacy SQLite adapter was removed.
+// The 'sqlite' dialect literal is retained because dialect-helpers.ts and
+// test mocks still exercise it (and external SQLite files remain queryable
+// via the separate db-drivers connector path).
 
 export type Dialect = 'sqlite' | 'postgresql';
 
-/** Mirrors better-sqlite3's RunResult */
+/** Mirrors better-sqlite3's RunResult shape (changes + lastInsertRowid) */
 export interface RunResult {
   changes: number;
   lastInsertRowid: number | bigint;

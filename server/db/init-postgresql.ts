@@ -788,8 +788,9 @@ export async function initPostgresDatabase(connectionString: string): Promise<Da
         'INSERT INTO users (id, username, password_hash, role, display_name) VALUES ($1, $2, $3, $4, $5)',
         adminId, 'admin', hash, 'admin', 'Administrator'
       );
-      const DB_PATH = process.env.DB_PATH || './data/workbench.sqlite';
-      const credentialsPath = path.resolve(path.dirname(DB_PATH), 'initial-credentials.txt');
+      const dataDir = path.resolve('./data');
+      fs.mkdirSync(dataDir, { recursive: true });
+      const credentialsPath = path.join(dataDir, 'initial-credentials.txt');
       const credentialsContent = [
         'openEXPERT \u2014 Initial Admin Credentials',
         '=======================================',

@@ -114,7 +114,7 @@ pnpm run build && pnpm run start
 │   ├── routes/               70+ API route files (factory pattern)
 │   ├── services/             80+ service files (single-responsibility)
 │   ├── connections/          MCP, OIDC, data connectors
-│   ├── db/                   schema.sql, init.ts, migrations/ (043+)
+│   ├── db/                   schema.postgresql.sql, init-postgresql.ts, migrations-pg/
 │   ├── middleware/           auth.ts, rate-limit.ts, csrf.ts
 │   ├── lib/                  error-response.ts, schemas.ts, telemetry.ts
 │   └── prompts/              system prompt .md files per module (30+)
@@ -147,8 +147,8 @@ pnpm run build && pnpm run start
 | `src/lib/constants.ts` | All 150+ module definitions — IDs, labels, defaults, area groupings |
 | `src/lib/types.ts` | All shared TypeScript types |
 | `src/lib/output-format-definitions.ts` | 40+ output format configs with prompt instructions |
-| `server/db/schema.sql` | Full database schema — source of truth for all tables |
-| `server/db/init.ts` | Database initialization + migration runner |
+| `server/db/schema.postgresql.sql` | Full database schema — source of truth for all tables |
+| `server/db/init-postgresql.ts` | Database initialization + migration runner |
 | `server/index.ts` | Express entry — all routes mounted, middleware, SSE streaming |
 | `server/services/claude-client.ts` | Claude API wrapper — streaming, thinking, web search |
 | `server/services/prompt-builder.ts` | Assembles final prompts from all knowledge layers |

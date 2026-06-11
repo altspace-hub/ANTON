@@ -22,7 +22,7 @@ PAGES_NOW=$(find src/pages -name "*.tsx" 2>/dev/null | wc -l | tr -d ' ')
 MIGRATIONS_NOW=$(ls server/db/migrations-pg/*.sql 2>/dev/null | wc -l | tr -d ' ')
 MODULES_NOW=$(grep -c "id: '" src/lib/constants.ts 2>/dev/null || echo 0)
 BUNDLE_TYPES_NOW=$(grep -cE "^\s*\| '" server/services/anton-bundler.ts 2>/dev/null || echo 0)
-TABLES_NOW=$(grep -h "CREATE TABLE" server/db/migrations-pg/*.sql server/db/schema.sql 2>/dev/null | sed -E "s/CREATE TABLE( IF NOT EXISTS)?[[:space:]]+([a-z_0-9]+).*/\2/i" | sort -u | wc -l | tr -d ' ')
+TABLES_NOW=$(grep -h "CREATE TABLE" server/db/migrations-pg/*.sql server/db/schema.postgresql.sql 2>/dev/null | sed -E "s/CREATE TABLE( IF NOT EXISTS)?[[:space:]]+([a-z_0-9]+).*/\2/i" | sort -u | wc -l | tr -d ' ')
 
 cat <<EOF
 # Drift Report

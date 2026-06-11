@@ -173,7 +173,7 @@ Copy `.env.example` to `.env` and configure:
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | **Yes** | — | Your Anthropic API key (`sk-ant-...`) |
 | `PORT` | No | `3001` | Server port |
-| `DB_PATH` | No | `./data/workbench.sqlite` | SQLite database location |
+| `DATABASE_URL` | **Yes** | — | PostgreSQL connection string (`postgresql://anton:anton@localhost:5432/anton`) |
 | `UPLOAD_DIR` | No | `./uploads` | File upload storage |
 | `OUTPUT_DIR` | No | `./outputs` | Generated export storage |
 | `MAX_FILE_SIZE_MB` | No | `50` | Maximum upload size |

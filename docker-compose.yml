@@ -8,7 +8,6 @@ services:
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - PORT=3001
-      - DB_PATH=/app/data/workbench.sqlite
       - UPLOAD_DIR=/app/uploads
       - OUTPUT_DIR=/app/outputs
       - MAX_FILE_SIZE_MB=50

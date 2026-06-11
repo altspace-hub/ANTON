@@ -111,12 +111,11 @@ Pages cover: modules, dashboard, analytics, coding area, data insights, RAG, kno
 
 | Aspect | Detail |
 |---|---|
-| Engine | SQLite via `better-sqlite3` (synchronous, no connection pool needed) |
-| Mode | WAL (Write-Ahead Logging) for concurrent reads |
-| Foreign keys | Enabled at connection time (`PRAGMA foreign_keys = ON`) |
-| Schema | `server/db/schema.sql` — applied once by `initDatabase()` on startup |
-| Migrations | `server/db/migrations/` — three numbered SQL files applied in order at startup |
-| Seeding | `server/db/init.ts` calls schema + migrations; `init_enhanced.ts` adds extended seed data |
+| Engine | PostgreSQL 16+ via `pg` connection pool (`DATABASE_URL` required — SQLite for ANTON's own DB was removed; SQLite remains only as an external-data connector) |
+| Adapter | `server/db/adapters/postgresql-adapter.ts` behind the async `DatabaseAdapter` interface (`server/db/database.ts`) |
+| Schema | `server/db/schema.postgresql.sql` — applied by `initPostgresDatabase()` on startup |
+| Migrations | `server/db/migrations-pg/` (PG-specific) + PG-compatible generic files from `server/db/migrations/`, run by `run-migrations-pg.ts` at startup |
+| Seeding | `server/db/init-postgresql.ts` applies schema + migrations + seed data |
 
 ### 2.4 Services Layer
 
@@ -395,7 +394,7 @@ Copy `.env.example` to `.env` and populate the values before starting the server
 
 | Variable | Required | Default | What it controls |
 |---|---|---|---|
-| `DB_PATH` | No | `./data/workbench.sqlite` | Path to the SQLite database file |
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string (e.g. `postgresql://anton:anton@localhost:5432/anton`) |
 | `UPLOAD_DIR` | No | `./uploads` | Directory where user-uploaded files are saved |
 | `OUTPUT_DIR` | No | `./outputs` | Directory where generated export files (.docx, .xlsx, .pdf, .pptx) are saved |
 | `WORKSPACES_DIR` | No | `./workspaces` | Root directory for project workspaces; each project gets a subdirectory |
