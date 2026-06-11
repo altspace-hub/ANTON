@@ -114,10 +114,10 @@
     "@noble/hashes": "^1.7.1",
     "@noble/post-quantum": "^0.6.1",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.71.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.213.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.75.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.217.0",
     "@opentelemetry/resources": "^2.6.0",
-    "@opentelemetry/sdk-node": "^0.213.0",
+    "@opentelemetry/sdk-node": "^0.217.0",
     "@opentelemetry/sdk-trace-node": "^2.6.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
     "@scure/bip39": "2.2.0",
@@ -145,7 +145,7 @@
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
-    "express-rate-limit": "^8.2.1",
+    "express-rate-limit": "^8.5.2",
     "file-type": "^19.6.0",
     "fs-extra": "^11.2.0",
     "helmet": "^8.1.0",
@@ -252,7 +252,17 @@
       "esbuild"
     ],
     "overrides": {
-      "rollup": "4.57.1"
+      "rollup": "4.57.1",
+      "protobufjs": ">=7.5.5",
+      "hono": ">=4.12.4",
+      "@hono/node-server": ">=1.19.10",
+      "socket.io-parser": ">=4.2.6",
+      "@xmldom/xmldom": ">=0.8.13",
+      "fast-uri": ">=3.1.1",
+      "tmp": ">=0.2.6",
+      "@grpc/grpc-js": ">=1.14.4",
+      "express@4>path-to-regexp": "0.1.13",
+      "router>path-to-regexp": ">=8.4.0"
     }
   }
 }
