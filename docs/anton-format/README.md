@@ -12,7 +12,7 @@
 my-bundle.anton (ZIP)
 ├── manifest.json                # required
 │   ├── format_version           # e.g. "1.0"
-│   ├── bundle_type              # one of the 45 union types
+│   ├── bundle_type              # one of the 46 union types
 │   ├── name
 │   ├── description
 │   ├── author { name, contactHash?, signing_key? }
@@ -43,7 +43,7 @@ The contact-hash format is `ANTON-XXXX-XXXX-XXXX-XXXX` over hex (`server/service
 
 ---
 
-## The 45 bundle types
+## The 46 bundle types
 
 Per-type detail pages live in `types/`. The summary table groups them by family.
 
@@ -141,6 +141,12 @@ Per-type detail pages live in `types/`. The summary table groups them by family.
 | `starter-pack` | [starter-pack.md](types/starter-pack.md) |
 | `career-profile` | [career-profile.md](types/career-profile.md) |
 | `video-playlist` | [video-playlist.md](types/video-playlist.md) |
+
+### Beehive (1)
+
+| Type | Detail |
+|---|---|
+| `hive-collaborative-output` | [hive-collaborative-output.md](types/hive-collaborative-output.md) |
 
 ---
 

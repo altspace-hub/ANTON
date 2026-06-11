@@ -16,7 +16,14 @@
 
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
+import { existsSync, readdirSync, readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import type { DatabaseAdapter } from '../db/database.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+/** Built-in module definitions live on disk under server/areas/<area>/modules/<id>/ */
+const AREAS_DIR = join(__dirname, '..', 'areas');
 
 
 // ── Types ──────────────────────────────────────────────────────
@@ -81,7 +88,11 @@ export type AntonBundleType =
   //       CV: aspirations, career path, growth map, assessments, rendered CV.
   | 'career-profile'
   // #45 — curated list of videos; shareable + importable across ANTONs.
-  | 'video-playlist';
+  | 'video-playlist'
+  // BEEHIVE (server/services/beehive/beehive-bundle.ts)
+  // — concluded multi-party deliberation. Export-only in v1 (no importer);
+  //   produced for sharing/archival of the synthesis + reasoning trail.
+  | 'hive-collaborative-output';
 
 /** Registry entry — describes a bundle type without needing full handler objects */
 interface BundleTypeEntry {
@@ -142,6 +153,11 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'starter-pack':                  { label: 'Starter Pack',                 description: 'Visitor Home configuration: bookmark bar + 15-category grid + featured portals. Ships per region / pillar-mode / deployment',          contentsKey: 'starter_packs',            primaryContentDir: 'starter-packs' },
   'career-profile':                { label: 'Career Profile',               description: 'Portable CV + aspiration data. Candidate-owned, AAP-signed, importable across ANTON instances',                                          contentsKey: 'career_profiles',          primaryContentDir: 'career-profiles' },
   'video-playlist':                { label: 'Video Playlist',               description: 'Curated collection of videos with metadata; shareable and importable',                                                                   contentsKey: 'video_playlists',          primaryContentDir: 'video-playlists' },
+  // ── BEEHIVE ─────────────────────────────────────────────────────────────
+  // Export-only (no importer in v1). The beehive bundler writes its payload
+  // files (hive.json, participants.json, rounds.json, …) directly under
+  // contents/ — hence the empty primaryContentDir.
+  'hive-collaborative-output':     { label: 'Hive Collaborative Output',    description: 'Concluded BEEHIVE deliberation: final synthesis, full reasoning trail, rounds, dissents, approvals, and convergence path',                contentsKey: 'hive_collaborative_outputs', primaryContentDir: '' },
 };
 
 interface ModuleExportData {
@@ -154,9 +170,11 @@ interface ModuleExportData {
   guidedInputs?: any[];
   defaultConfig?: any;
   author?: string;
+  organization?: string;
   version?: string;
   tags?: string[];
   category?: string;
+  license?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -231,6 +249,7 @@ function buildSpecManifest(params: {
   author?: string;
   organization?: string;
   tags?: string[];
+  license?: string;
   contentsCount?: Record<string, number>;
   createdAt?: string;
   updatedAt?: string;
@@ -257,7 +276,7 @@ function buildSpecManifest(params: {
         email: '',
         url: '',
       },
-      license: 'Proprietary',
+      license: params.license || 'Proprietary',
       created_at: params.createdAt || now,
       updated_at: params.updatedAt || now,
       tags: params.tags || [],
@@ -316,6 +335,91 @@ export async function bundleModuleToAnton(
     updatedAt: module.updated_at as string,
   };
 
+  return buildModuleAntonArchive(exportData);
+}
+
+/**
+ * Export a BUILT-IN module (defined on disk under server/areas/<area>/modules/<id>/
+ * as module.json + system-prompt.md) as a hybrid-dialect .anton bundle.
+ *
+ * Uses the exact same archive builder as custom modules (bundleModuleToAnton),
+ * so the output passes anton-validator and round-trips through
+ * POST /api/exchange/import. Replaces the legacy flat-dialect antonExport.ts
+ * path that the importer always rejected (bug B5).
+ */
+export async function bundleBuiltinModuleToAnton(
+  moduleId: string,
+  metadata: {
+    authorName?: string;
+    authorOrg?: string;
+    description?: string;
+    tags?: string[];
+    license?: string;
+    version?: string;
+  } = {}
+): Promise<Buffer> {
+  // Find which area contains this module by scanning area directories
+  let moduleDir: string | null = null;
+  let areaId: string | null = null;
+
+  const areas = readdirSync(AREAS_DIR, { withFileTypes: true });
+  for (const entry of areas) {
+    if (!entry.isDirectory()) continue;
+    const candidate = join(AREAS_DIR, entry.name, 'modules', moduleId);
+    if (existsSync(candidate)) {
+      moduleDir = candidate;
+      areaId = entry.name;
+      break;
+    }
+  }
+
+  if (!moduleDir) throw new Error(`Module not found: ${moduleId}`);
+
+  let moduleConfig: Record<string, unknown> = {};
+  const configPath = join(moduleDir, 'module.json');
+  if (existsSync(configPath)) {
+    moduleConfig = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+  }
+
+  let systemPrompt = '';
+  const promptPath = join(moduleDir, 'system-prompt.md');
+  if (existsSync(promptPath)) {
+    systemPrompt = readFileSync(promptPath, 'utf-8');
+  }
+
+  const now = new Date().toISOString();
+  const exportData: ModuleExportData = {
+    id: moduleId,
+    name: (moduleConfig.label as string) || moduleId,
+    description: metadata.description || (moduleConfig.description as string) || '',
+    icon: typeof moduleConfig.icon === 'string' ? moduleConfig.icon : '📦',
+    color: '#2DD4A8',
+    systemPrompt,
+    guidedInputs: Array.isArray(moduleConfig.guidedInputs) ? (moduleConfig.guidedInputs as unknown[]) : [],
+    // The full module.json IS the default config — mirrors the custom path
+    // where the config blob goes into default-config.json wholesale.
+    defaultConfig: moduleConfig,
+    author: metadata.authorName || 'openEXPERT Team',
+    organization: metadata.authorOrg || 'ANTON',
+    version: metadata.version || '1.0.0',
+    tags: metadata.tags && metadata.tags.length > 0
+      ? metadata.tags
+      : (Array.isArray(moduleConfig.tags) ? (moduleConfig.tags as string[]) : []),
+    category: areaId || 'custom',
+    license: metadata.license || 'CC-BY-4.0',
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return buildModuleAntonArchive(exportData);
+}
+
+/**
+ * Shared hybrid-dialect archive builder for module bundles (custom + built-in).
+ * Produces: manifest.json (spec + legacy fields), system-prompt.md,
+ * guided-inputs.json, default-config.json, CHANGELOG.md — with sha256 checksum.
+ */
+function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
   // Create ZIP archive
   const zip = new AdmZip();
 
@@ -331,19 +435,7 @@ export async function bundleModuleToAnton(
   const defaultConfigContent = JSON.stringify(exportData.defaultConfig || {}, null, 2);
   zip.addFile('default-config.json', Buffer.from(defaultConfigContent, 'utf-8'));
 
-  // 4. Create manifest.json
-  const manifestContent = JSON.stringify(
-    {
-      checksum: '', // Will be calculated after all files added
-      systemPromptFile: 'system-prompt.md',
-      guidedInputsFile: 'guided-inputs.json',
-      defaultConfigFile: 'default-config.json',
-    },
-    null,
-    2
-  );
-
-  // Calculate checksum of all content
+  // 4. Calculate checksum of all content
   const contentHash = crypto.createHash('sha256');
   contentHash.update(systemPromptContent);
   contentHash.update(guidedInputsContent);
@@ -358,7 +450,9 @@ export async function bundleModuleToAnton(
     description: exportData.description,
     version: exportData.version,
     author: exportData.author,
+    organization: exportData.organization,
     tags: exportData.tags,
+    license: exportData.license,
     contentsCount: { modules: 1 },
     createdAt: exportData.createdAt,
     updatedAt: exportData.updatedAt,
@@ -374,7 +468,7 @@ export async function bundleModuleToAnton(
       author: exportData.author || 'Unknown',
       created: exportData.createdAt || new Date().toISOString(),
       updated: exportData.updatedAt || new Date().toISOString(),
-      license: 'Proprietary',
+      license: exportData.license || 'Proprietary',
       tags: exportData.tags || [],
       category: exportData.category || 'custom',
       description: exportData.description || '',

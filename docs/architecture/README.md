@@ -66,7 +66,7 @@ Every diagram in this folder is Mermaid-in-markdown, sits next to the code it de
 |---|---|---|---|
 | `30-aap-protocol` | ANTON Agent Protocol (AAP) | 🟢 (contact-hash format ✅; transport 🟢) | 2026-04-26 |
 | `31-companion-app-gateway` | Companion App Gateway | ✅ | 2026-04-26 |
-| `32-anton-bundle-format` | `.anton` Bundle Format | ✅ (45 bundle types) | 2026-04-26 |
+| `32-anton-bundle-format` | `.anton` Bundle Format | ✅ (46 bundle types) | 2026-06-11 |
 | `33-portals-pathfinder` | Portals & Pathfinder | ✅ (Pathfinder anton-portal mode 🟢) | 2026-04-26 |
 
 ### Group 5 — Future-State Overlays (✅ delivered, in `future/`)

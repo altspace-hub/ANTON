@@ -296,7 +296,16 @@ function buildAssessmentSystemPrompt(context: {
   segments: string;
   maturity: number;
   concerns: string;
-}): string {
+}, hasEvidence: boolean): string {
+  const groundingRules = hasEvidence
+    ? `Grounding rules for "currentState":
+- Describe THIS entity's ACTUAL current state, grounded in the evidence documents and interview notes provided with this assessment. Reference the specific document or interview you are drawing on.
+- If the provided evidence does not cover an article, that article's "currentState" MUST begin with exactly: "No evidence provided — based on stated maturity level:" and may then describe what an entity at the stated maturity level (${context.maturity}/5) would typically have in place (or lack).
+- Never present an assumed or archetype state as if it had been observed at this entity.`
+    : `Grounding rules for "currentState":
+- No evidence documents were provided for this assessment, so every article's "currentState" MUST begin with exactly: "No evidence provided — based on stated maturity level:" followed by what an entity at the stated maturity level (${context.maturity}/5) would typically have in place (or lack).
+- Never present an assumed or archetype state as if it had been observed at this entity.`;
+
   return `You are a senior AML/CFT compliance specialist conducting a structured gap assessment.
 
 Entity: ${context.entityType}
@@ -306,6 +315,8 @@ Current AML maturity (self-rated): ${context.maturity}/5
 Known concerns: ${context.concerns || 'None specified'}
 
 Your task is to assess the entity's compliance with the articles listed below. For each article, provide a structured JSON assessment.
+
+${groundingRules}
 
 Scoring legend:
 - "green": Article requirements are substantially met. Controls are documented, tested, and effective.
@@ -322,10 +333,14 @@ Priority legend:
 Respond ONLY with a valid JSON array. No preamble, no explanation outside the JSON.`;
 }
 
-function buildBatchUserMessage(articles: FrameworkArticle[], framework: Framework): string {
+function buildBatchUserMessage(articles: FrameworkArticle[], framework: Framework, hasEvidence: boolean): string {
   const articleList = articles.map(a =>
     `{"id":"${a.id}","title":"${a.title}","requirement":"${a.requirement.replace(/"/g, "'")}"}`
   ).join(',\n');
+
+  const currentStateInstruction = hasEvidence
+    ? "2-3 sentence description of THIS entity's actual current state, grounded in the evidence documents and interview notes provided (name the document/interview). If no provided evidence covers this article, begin with exactly 'No evidence provided — based on stated maturity level:' and then describe what an entity at the stated maturity level would typically have in place (or lack)"
+    : "2-3 sentence description beginning with exactly 'No evidence provided — based on stated maturity level:' followed by what an entity at the stated maturity level would typically have in place (or lack) for this article";
 
   return `Assess the following ${framework.shortName} articles for the entity described.
 
@@ -338,7 +353,7 @@ Return a JSON array with one object per article:
     "articleId": "Art.XX",
     "articleTitle": "Article title",
     "requirement": "Brief restatement of the core requirement",
-    "currentState": "2-3 sentence description of what a typical entity at this maturity level would have in place (or lack)",
+    "currentState": "${currentStateInstruction}",
     "score": "red|amber|yellow|green",
     "numericScore": 0-100,
     "priority": "critical|high|medium|low",
@@ -380,9 +395,10 @@ export async function runAssessmentBatch(
     ? contextConfig.documents.slice(0, 120_000)  // Cap at ~120k chars to stay within context
     : '';
 
-  const baseSystem = buildAssessmentSystemPrompt(context);
-  const evidenceSection = evidenceText
-    ? `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe following evidence was provided by the assessor. Use this to produce SPECIFIC, evidence-based findings rather than generic assessments. Quote or reference specific documents/interviews where applicable.\n\n${evidenceText}`
+  const hasEvidence = evidenceText.length > 0;
+  const baseSystem = buildAssessmentSystemPrompt(context, hasEvidence);
+  const evidenceSection = hasEvidence
+    ? `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe following evidence was provided by the assessor. Use this to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Quote or reference specific documents/interviews where applicable. Where the evidence does not cover an article, say so explicitly per the grounding rules above.\n\n${evidenceText}`
     : '';
   const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
 
@@ -392,7 +408,7 @@ export async function runAssessmentBatch(
   const result = await callChat({
     model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
     system: systemPrompt,
-    messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework) }],
+    messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework, hasEvidence) }],
     maxTokens: mc.maxTokensBatch,
     thinkingLevel: mc.thinkingLevel,
     db,
@@ -436,6 +452,7 @@ Total findings: ${totalFindings} | Red: ${redCount} | Critical: ${criticalCount}
 QUALITY REQUIREMENTS:
 - Each capability should be a genuine organisational function (e.g. "Transaction Monitoring Effectiveness" not "Articles 12-15")
 - Maturity scores must be evidence-based — cite specific article findings that justify the score
+- Where the underlying article findings are marked "No evidence provided — based on stated maturity level", carry that caveat through: do not present assumed states as observed facts about this entity
 - Key gaps should be specific and actionable, not generic platitudes
 - Quick wins must be genuinely achievable in <3 months with minimal investment
 - Cross-regulatory impact should flag where the same organisational weakness creates risk under multiple frameworks
@@ -518,6 +535,8 @@ export async function generateBoardSummary(
     thinkingLevel: mcBoard.thinkingLevel,
     db,
     system: `You are a senior compliance advisor with deep experience presenting to boards of Nordic and European financial institutions. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
+
+Truthfulness rule: where the underlying findings are marked "No evidence provided — based on stated maturity level", make clear to the board that those points reflect the stated maturity level rather than reviewed evidence — never present them as observed facts about this institution.
 
 Structure:
 ## Compliance Gap Assessment — Board Summary

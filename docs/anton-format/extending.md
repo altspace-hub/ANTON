@@ -7,7 +7,7 @@
 
 ## When to add a new bundle type
 
-Add a new type when you need to **transport a coherent unit of work between ANTON instances** and none of the existing 45 types fits. Don't add a type for:
+Add a new type when you need to **transport a coherent unit of work between ANTON instances** and none of the existing 46 types fits. Don't add a type for:
 
 - Anything that's a single document (use `evidence-pack` with attachments).
 - Anything pillar-internal that never leaves the instance (use the pillar's tables).
@@ -73,7 +73,7 @@ Drop an example at `data/examples/my-new-bundle-type.example.anton` (or in a mor
 
 Update `/docs/architecture/32-anton-bundle-format.md`:
 
-- Bump the count in the title (currently "45 bundle types"). 
+- Bump the count in the title (currently "46 bundle types"). 
 - Add the new type to the family table.
 - Refresh the *Source-of-truth references* section.
 
@@ -131,4 +131,4 @@ Conflicts with existing data are resolved by <strategy>.
 
 ---
 
-*This guide complements `docs/anton-format/README.md` (the canonical 45-type index) and `/docs/architecture/32-anton-bundle-format.md` (the lifecycle diagram).*
+*This guide complements `docs/anton-format/README.md` (the canonical 46-type index) and `/docs/architecture/32-anton-bundle-format.md` (the lifecycle diagram).*

@@ -12,11 +12,13 @@
 //   contents/convergence.json    — how positions shifted across rounds
 //   README.md                    — human-friendly overview
 //
-// The bundle type `hive-collaborative-output` is BEEHIVE-specific; it isn't
-// in the global BUNDLE_TYPE_REGISTRY (no importer needed in v1 — these
-// bundles are produced for sharing/archival, not re-import).
+// The bundle type `hive-collaborative-output` is registered in the global
+// `AntonBundleType` union + BUNDLE_TYPE_REGISTRY (anton-bundler.ts). It is
+// export-only in v1 — no importer; these bundles are produced for
+// sharing/archival, not re-import.
 
 import AdmZip from 'adm-zip';
+import type { AntonBundleType } from '../anton-bundler.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createBeehiveState } from './beehive-state.js';
 import { createBeehiveDeliberation } from './beehive-deliberation.js';
@@ -130,7 +132,7 @@ function buildManifest(
   const joined = participants.filter(p => p.invitation_status === 'joined');
   return {
     format_version: '1.0.0',
-    bundle_type: 'hive-collaborative-output',
+    bundle_type: 'hive-collaborative-output' satisfies AntonBundleType,
     package: {
       id: `com.openexpert.hive-collaborative-output.${hive.id}`,
       name: hive.name,

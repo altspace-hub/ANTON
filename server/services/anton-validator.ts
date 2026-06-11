@@ -236,6 +236,44 @@ async function validateSchema(zip: AdmZip): Promise<{
     const manifestContent = manifestEntry.getData().toString('utf-8');
     manifest = JSON.parse(manifestContent);
 
+    // ── Legacy flat dialect (pre-v0.7.5 built-in module exports) ──────────
+    // Old built-in exports (antonExport.ts, since removed) wrote a flat
+    // manifest: { formatVersion: '1.0', type, id, name, … } with config.json
+    // instead of guided-inputs.json/default-config.json and no checksum.
+    // Accept these by mapping flat → hybrid so old user exports still import.
+    const isLegacyFlat =
+      manifest.formatVersion === '1.0' && !manifest.format_version && !manifest.meta;
+    if (isLegacyFlat) {
+      if (manifest.type !== 'module') {
+        errors.push({
+          step: 2,
+          severity: 'critical',
+          message: 'This bundle was exported by an older ANTON version and cannot be imported here',
+          details: `Legacy flat-dialect bundle of type "${manifest.type ?? 'unknown'}" — re-export it from the current ANTON version.`,
+        });
+        return { errors, warnings, manifest };
+      }
+      if (!manifest.id || !manifest.name) {
+        errors.push({
+          step: 2,
+          severity: 'critical',
+          message: 'Missing required metadata fields',
+          details: 'Legacy manifest must declare id and name',
+        });
+        return { errors, warnings, manifest };
+      }
+      warnings.push({
+        step: 2,
+        severity: 'low',
+        message: 'Legacy .anton dialect detected (exported by an older ANTON version)',
+        details: 'Imported via compatibility mapping. This dialect carries no integrity checksum — re-export the module from the current ANTON version to include one.',
+      });
+      manifest = upgradeLegacyFlatManifest(manifest);
+      // Mapped manifest is well-formed by construction; skip the hybrid
+      // checks below (there is no checksum to verify in this dialect).
+      return { errors, warnings, manifest };
+    }
+
     // Validate required fields
     if (!manifest.version || manifest.version !== '1.0.0') {
       errors.push({
@@ -300,6 +338,46 @@ async function validateSchema(zip: AdmZip): Promise<{
   }
 
   return { errors, warnings, manifest };
+}
+
+/**
+ * Map a legacy flat-dialect manifest (formatVersion '1.0', flat fields,
+ * author as { name, org }) onto the hybrid shape the importer reads
+ * (version '1.0.0' + meta.* + dependencies.*). The original flat fields are
+ * preserved alongside for transparency.
+ */
+function upgradeLegacyFlatManifest(flat: any): any {
+  const flatAuthor =
+    typeof flat.author === 'object' && flat.author !== null
+      ? (flat.author as Record<string, unknown>)
+      : {};
+  const now = new Date().toISOString();
+  return {
+    ...flat,
+    version: '1.0.0',
+    meta: {
+      id: String(flat.id),
+      name: String(flat.name),
+      version: typeof flat.version === 'string' ? flat.version : '1.0.0',
+      author: typeof flatAuthor.name === 'string' && flatAuthor.name ? flatAuthor.name : 'Unknown',
+      created: typeof flat.created === 'string' ? flat.created : now,
+      updated: typeof flat.updated === 'string' ? flat.updated : now,
+      license: typeof flat.license === 'string' ? flat.license : 'Proprietary',
+      tags: Array.isArray(flat.tags) ? flat.tags : [],
+      category: typeof flat.area === 'string' && flat.area ? flat.area : 'imported',
+      description: typeof flat.description === 'string' ? flat.description : '',
+    },
+    dependencies: {
+      requiredSkills: Array.isArray(flat.dependencies?.skills) ? flat.dependencies.skills : [],
+      requiredPersonas: [],
+      minAntonVersion: '1.0.0',
+    },
+    content: {
+      systemPromptFile: 'system-prompt.md',
+      guidedInputsFile: 'guided-inputs.json',
+      defaultConfigFile: 'default-config.json',
+    },
+  };
 }
 
 // ── STEP 3: Content Sanitization ───────────────────────────────
@@ -370,6 +448,23 @@ async function sanitizeContent(zip: AdmZip): Promise<{
         severity: 'high',
         message: 'Invalid JSON in default-config.json',
       });
+    }
+  } else {
+    // Legacy flat dialect stores the module config in config.json —
+    // map it to default-config.json so the importer persists it.
+    const legacyConfigEntry = zip.getEntry('config.json');
+    if (legacyConfigEntry) {
+      try {
+        const content = legacyConfigEntry.getData().toString('utf-8');
+        JSON.parse(content); // Validate JSON
+        files.set('default-config.json', content);
+      } catch {
+        errors.push({
+          step: 3,
+          severity: 'high',
+          message: 'Invalid JSON in config.json (legacy bundle)',
+        });
+      }
     }
   }
 

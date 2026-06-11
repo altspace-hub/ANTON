@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import multer from 'multer';
 import type { DatabaseAdapter } from '../db/database.js';
-import { exportModuleToAnton } from '../services/antonExport.js';
 import { safeError } from '../lib/error-response.js';
 import {
   bundleModuleToAnton,
+  bundleBuiltinModuleToAnton,
   bundleComplianceRuleset,
   bundleReviewPanel,
   bundleQualityBaseline,
@@ -47,7 +47,9 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
         // Export custom module from database (works in both solo and authenticated mode)
         buffer = await bundleModuleToAnton(db, moduleId);
       } else {
-        // Export built-in module from file system
+        // Export built-in module from file system — uses the same hybrid-dialect
+        // bundler as custom modules so the result round-trips through
+        // POST /api/exchange/import (B5 fix; replaced legacy flat antonExport.ts).
         const {
           authorName = 'openEXPERT Team',
           authorOrg = 'ANTON',
@@ -55,7 +57,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
           tags = [],
           license = 'CC-BY-4.0',
         } = req.body;
-        buffer = await exportModuleToAnton(moduleId, { authorName, authorOrg, description, tags, license });
+        buffer = await bundleBuiltinModuleToAnton(moduleId, { authorName, authorOrg, description, tags, license });
       }
 
       res.setHeader('Content-Type', 'application/octet-stream');

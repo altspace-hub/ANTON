@@ -4,7 +4,7 @@
 **Subsystem status legend:** ✅ Built · 🟢 Partial · 📋 Spec-only · ❌ Future
 **Maintainer note:** Regenerate when a new bundle type is added to the union in `anton-bundler.ts`, when the manifest schema changes, or when the signing flow changes. **Per-type contributor docs live in `/docs/anton-format/`** (D.3 closure) — that's the canonical contributor-facing reference; this diagram is the structural view.
 
-`.anton` is ANTON's universal package format — a ZIP with `manifest.json` + content directories per type. It's how pillars share work, how the marketplace lists items, and how AAP transports payloads. **45 bundle types** are confirmed in the code's `BundleType` union (whitepaper says 17 — code has expanded substantially).
+`.anton` is ANTON's universal package format — a ZIP with `manifest.json` + content directories per type. It's how pillars share work, how the marketplace lists items, and how AAP transports payloads. **46 bundle types** are confirmed in the code's `AntonBundleType` union (whitepaper says 17 — code has expanded substantially).
 
 ## Diagram — lifecycle
 
@@ -54,7 +54,7 @@ flowchart LR
 my-bundle.anton (ZIP)
 ├── manifest.json                # required
 │   ├── format_version           # e.g. "1.0"
-│   ├── bundle_type              # one of the 45 union types
+│   ├── bundle_type              # one of the 46 union types
 │   ├── name
 │   ├── description
 │   ├── author { name, contactHash?, signing_key? }
@@ -78,7 +78,7 @@ my-bundle.anton (ZIP)
     └── attachments/             # evidence pack
 ```
 
-## The 45 bundle types (verbatim from `BundleType` union)
+## The 46 bundle types (verbatim from `BundleType` union)
 
 | # | Type | Family |
 |---|---|---|
@@ -127,6 +127,7 @@ my-bundle.anton (ZIP)
 | 43 | `starter-pack` | Onboarding |
 | 44 | `career-profile` | Talent |
 | 45 | `video-playlist` | Visitor / video layer |
+| 46 | `hive-collaborative-output` | Beehive (export-only) |
 
 ## Transport-vs-bundle matrix
 
@@ -147,6 +148,7 @@ my-bundle.anton (ZIP)
 | `coding-blueprint / instruction-builder-project / script-*-template / coding-review-profile` | Local / Marketplace | Coding tier outputs |
 | `radar-config` | Marketplace / Local | Horizon Radar configs |
 | `output-chain / review-panel / project-template / starter-pack` | Local / Marketplace | reusable templates |
+| `hive-collaborative-output` | Local / AAP | concluded BEEHIVE deliberations (export-only, no importer) |
 | `humanitarian-deployment-kit / diagnostic-case-bundle / patch-bundle / lifecycle-advisory-bundle` | Marketplace / AAP | Hardware Build sub-bundles |
 
 ## Signing flow
@@ -160,8 +162,8 @@ Verification reverses the flow: open envelope → recompute canonical body → v
 
 ## Source-of-truth references
 
-- `server/services/anton-bundler.ts:25–84` — `BundleType` union (45 types).
-- `server/services/anton-bundler.ts:94–145` — bundle-type registry with labels + content dirs.
+- `server/services/anton-bundler.ts` — `AntonBundleType` union (46 types).
+- `server/services/anton-bundler.ts` — `BUNDLE_TYPE_REGISTRY` with labels + content dirs.
 - `server/services/anton-importer.ts` — unzip + apply.
 - `server/services/anton-validator.ts` — schema + signature verification.
 - `server/services/bundle-sharing-service.ts` — share lifecycle.
