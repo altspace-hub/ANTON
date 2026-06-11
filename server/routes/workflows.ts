@@ -11,6 +11,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../src/lib/workflow-definitions.js';
 import { createConnectionManager } from '../services/connection-manager.js';
+import { resolveExplicitDbDriver } from '../services/workflow-step-registry.js';
 import pkg from 'pg';
 import { safeError } from '../lib/error-response.js';
 const { Client: PgClient } = pkg;
@@ -52,7 +53,8 @@ export interface WorkflowExecution {
 }
 
 // ── In-memory execution store ────────────────────────────────────
-// In a production system this would be persisted to SQLite.
+// Live executions are held in memory; durable run history is recorded in the
+// PostgreSQL workflow_runs table (see workflow-executor.ts recordRun/updateRun).
 const executions = new Map<string, WorkflowExecution>();
 
 // ── Template resolver ────────────────────────────────────────────
@@ -326,7 +328,8 @@ async function executeStep(
       if (conn.type !== 'database') throw new Error(`Connection ${step.config.connectionId} is not a database connection`);
 
       const cfg = conn.config as Record<string, unknown>;
-      const driver = (cfg.driver as string) || 'sqlite';
+      // Driver must be explicit on the connection — never silently default (bug 0.8).
+      const driver = resolveExplicitDbDriver(cfg);
       const query = step.config.queryTemplate
         ? resolveTemplate(step.config.queryTemplate, ctx)
         : '';
@@ -934,8 +937,8 @@ function humanizeOutput(output: Record<string, unknown>, stepType: string): stri
       const r = output[key] as { success?: boolean; destination?: string };
       return r?.success ? `Data exported to ${r.destination || 'destination'} successfully.` : JSON.stringify(output).slice(0, 300);
     }
-    case 'notification': return `Notification sent: ${(output.resolvedMessage as string) || ''}`;
-    case 'email_send': return `Email to "${(output.to as string) || ''}", subject "${(output.subject as string) || ''}"`;
+    case 'notification': return `Notification NOT sent (step is coming soon — no webhook wired). Message would be: ${(output.resolvedMessage as string) || ''}`;
+    case 'email_send': return `Email NOT sent (step is coming soon — no provider wired). Would go to "${(output.to as string) || ''}", subject "${(output.subject as string) || ''}"`;
     default: {
       const json = JSON.stringify(output, null, 2);
       return json.length > 800 ? json.slice(0, 800) + '\n…(truncated)' : json;
@@ -945,7 +948,7 @@ function humanizeOutput(output: Record<string, unknown>, stepType: string): stri
 
 // ── AI Workflow Guide System Prompts ────────────────────────────
 
-const WORKFLOW_GUIDE_SYSTEM_PROMPT = `You are a friendly AI workflow designer helping FCP compliance consultants automate their repetitive multi-step tasks.
+const WORKFLOW_GUIDE_SYSTEM_PROMPT = `You are a friendly AI workflow designer helping professionals across 55+ domains — legal, finance, compliance, healthcare, engineering, education, HR, marketing, research, creative work, and more — automate their repetitive multi-step tasks. Adapt your language and examples to the user's own domain; never assume they work in any particular field.
 
 Your job is to understand:
 1. What manual task or process they want to automate
@@ -958,11 +961,11 @@ Rules:
 - Ask ONE or TWO clear questions per reply. Never more.
 - Be warm, concise. Maximum 3-4 sentences or a short bulleted list.
 - After 2-4 exchanges you will have enough context to design the workflow.
-- Focus on what's achievable: "input → Claude analysis → export" is the most reliable core; api_call, notification, database_query can extend it.
+- Focus on what's achievable: "input → Claude analysis → export" is the most reliable core; api_call and database_query can extend it. (Email and webhook-notification steps are not yet available — do not promise them.)
 - When you have enough information, end your response with: "I have a clear picture of your workflow — click **Generate Workflow** when you're ready!"
 - Never write the workflow JSON yourself in this chat — that happens via the Generate step.`;
 
-const WORKFLOW_GENERATE_SYSTEM_PROMPT = `You are an expert workflow designer for FCP compliance professionals. Based on the conversation, generate a complete workflow configuration.
+const WORKFLOW_GENERATE_SYSTEM_PROMPT = `You are an expert workflow designer for professionals in any domain (legal, finance, compliance, healthcare, engineering, education, HR, marketing, research, creative, and more). Based on the conversation, generate a complete workflow configuration tailored to the user's domain.
 
 Return ONLY valid JSON with NO markdown fences, NO explanation — just raw JSON:
 
@@ -999,9 +1002,6 @@ export step:
 api_call step (call external system):
 { "id": "step_4", "label": "...", "description": "...", "type": "api_call", "config": { "connectionId": "REPLACE_WITH_CONNECTION_ID", "method": "POST", "endpointPath": "/api/endpoint", "body": "{\\"data\\": \\"{{step_2.output}}\\"}", "outputVariable": "api_result" } }
 
-notification step (Slack/Teams):
-{ "id": "step_5", "label": "Notify Team", "description": "...", "type": "notification", "config": { "messageTemplate": "Workflow complete: {{step_2.output}}", "webhookUrl": "REPLACE_WITH_WEBHOOK_URL" } }
-
 wait step:
 { "id": "step_6", "label": "Wait", "description": "...", "type": "wait", "config": { "waitSeconds": 60 } }
 
@@ -1013,7 +1013,8 @@ DESIGN PRINCIPLES:
 - Use template variables like {{field_id}} to pass data between steps
 - Give steps clear, action-oriented labels
 - Most workflows should have 3-6 steps
-- Add api_call or notification only if the user explicitly wants to connect to an external system`;
+- Add api_call only if the user explicitly wants to connect to an external system
+- NEVER generate "notification" or "email_send" steps — they are not yet implemented and would silently do nothing at runtime`;
 
 export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anthropic): Promise<Router> {
   const router = Router();

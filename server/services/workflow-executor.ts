@@ -24,6 +24,7 @@ import {
   HEADLESS_STEP_IDS as HEADLESS_STEP_TYPES,
   INTERACTIVE_STEP_IDS as INTERACTIVE_STEP_TYPES,
   isRegisteredStepType,
+  resolveExplicitDbDriver,
 } from './workflow-step-registry.js';
 
 interface ExecutionResult {
@@ -397,7 +398,8 @@ async function executeHeadlessStep(
       if (!conn) throw new Error(`Connection not found: ${step.config.connectionId}`);
 
       const cfg = conn.config as Record<string, unknown>;
-      const driver = (cfg.driver as string) || 'sqlite';
+      // Driver must be explicit on the connection — never silently default (bug 0.8).
+      const driver = resolveExplicitDbDriver(cfg);
       const query = step.config.queryTemplate
         ? resolveTemplate(step.config.queryTemplate, context)
         : '';
@@ -470,14 +472,14 @@ async function executeHeadlessStep(
         ? resolveTemplate(step.config.messageTemplate, context)
         : '';
       console.log(`[workflow-executor] Notification: ${message}`);
-      return { output: { resolvedMessage: message, sent: false, _note: 'Webhook not yet implemented' } };
+      return { output: { resolvedMessage: message, sent: false, _stub: true, _note: 'Webhook not yet implemented' } };
     }
 
     case 'email_send': {
       const to = step.config?.toTemplate ? resolveTemplate(step.config.toTemplate, context) : '';
       const subject = step.config?.subjectTemplate ? resolveTemplate(step.config.subjectTemplate, context) : '';
       console.log(`[workflow-executor] Email stub: to="${to}" subject="${subject}"`);
-      return { output: { to, subject, sent: false, _note: 'Email not yet implemented' } };
+      return { output: { to, subject, sent: false, _stub: true, _note: 'Email not yet implemented' } };
     }
 
     case 'messaging_notification': {

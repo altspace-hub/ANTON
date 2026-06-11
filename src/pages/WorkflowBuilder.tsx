@@ -28,6 +28,9 @@ interface StepTypeOption {
   description: string;
   category: string;
   connectionRequired?: string;
+  /** Mirrors status:'stub' in server/services/workflow-step-registry.ts —
+   * the executor accepts the step but performs no real side-effect yet. */
+  comingSoon?: boolean;
 }
 
 const STEP_TYPE_OPTIONS: StepTypeOption[] = [
@@ -41,8 +44,8 @@ const STEP_TYPE_OPTIONS: StepTypeOption[] = [
   { type: 'file_read', label: 'Read File', icon: FolderOpen, description: 'Read files from filesystem', category: 'External', connectionRequired: 'Filesystem' },
   { type: 'file_write', label: 'Write File', icon: FolderInput, description: 'Write output to filesystem', category: 'External', connectionRequired: 'Filesystem' },
   { type: 'script', label: 'Run Script', icon: Terminal, description: 'Run an approved script', category: 'External', connectionRequired: 'Script Library' },
-  { type: 'email_send', label: 'Send Email', icon: Mail, description: 'Send email notification', category: 'External' },
-  { type: 'notification', label: 'Notification', icon: Bell, description: 'Send Slack/Teams webhook', category: 'External' },
+  { type: 'email_send', label: 'Send Email', icon: Mail, description: 'Email delivery is not implemented yet — this step would do nothing at runtime', category: 'External', comingSoon: true },
+  { type: 'notification', label: 'Notification', icon: Bell, description: 'Webhook notification is not implemented yet — this step would do nothing at runtime', category: 'External', comingSoon: true },
   // ── Flow control ──────────────────────────────────────────────
   { type: 'decision_gate', label: 'Decision Gate', icon: GitBranch, description: 'Conditional branching', category: 'Flow' },
   { type: 'transform', label: 'Transform', icon: Shuffle, description: 'Map/transform data between steps', category: 'Flow' },
@@ -463,6 +466,12 @@ export default function WorkflowBuilder() {
                         {stepTypeDef.connectionRequired}
                       </span>
                     )}
+                    {/* Coming-soon badge — stub step types do nothing at runtime */}
+                    {stepTypeDef?.comingSoon && (
+                      <span className="rounded border border-adv-gold/40 bg-adv-gold/10 px-1.5 py-0.5 text-xs font-medium text-adv-gold">
+                        Coming soon — does nothing yet
+                      </span>
+                    )}
                     {/* Area badge — shown when a module is linked to this step */}
                     {step.config.areaId && (
                       <span className="rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal border border-adv-teal/20">
@@ -540,7 +549,9 @@ export default function WorkflowBuilder() {
                       {STEP_TYPE_CATEGORIES.map((cat) => (
                         <optgroup key={cat} label={`── ${cat} ──`}>
                           {STEP_TYPE_OPTIONS.filter((t) => t.category === cat).map((t) => (
-                            <option key={t.type} value={t.type}>{t.label}{t.connectionRequired ? ` (needs ${t.connectionRequired})` : ''}</option>
+                            <option key={t.type} value={t.type} disabled={t.comingSoon && t.type !== step.type}>
+                              {t.label}{t.comingSoon ? ' (coming soon)' : ''}{t.connectionRequired ? ` (needs ${t.connectionRequired})` : ''}
+                            </option>
                           ))}
                         </optgroup>
                       ))}
@@ -840,10 +851,15 @@ export default function WorkflowBuilder() {
                   )}
 
                   {step.type === 'email_send' && (
-                    <EmailSendStep
-                      step={step}
-                      onUpdate={(updates) => updateStepConfig(step.id, updates)}
-                    />
+                    <>
+                      <div className="rounded-lg border border-adv-gold/40 bg-adv-gold/10 px-3 py-2 text-xs text-adv-gold">
+                        Email sending is not implemented yet. At runtime this step logs and reports sent: false — no email goes out.
+                      </div>
+                      <EmailSendStep
+                        step={step}
+                        onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                      />
+                    </>
                   )}
 
                   {step.type === 'decision_gate' && (
@@ -892,11 +908,16 @@ export default function WorkflowBuilder() {
                   )}
 
                   {step.type === 'notification' && (
-                    <NotificationStep
-                      step={step}
-                      onUpdate={(updates) => updateStepConfig(step.id, updates)}
-                      connections={connections}
-                    />
+                    <>
+                      <div className="rounded-lg border border-adv-gold/40 bg-adv-gold/10 px-3 py-2 text-xs text-adv-gold">
+                        Webhook notifications are not implemented yet. At runtime this step logs and reports sent: false — nothing is delivered.
+                      </div>
+                      <NotificationStep
+                        step={step}
+                        onUpdate={(updates) => updateStepConfig(step.id, updates)}
+                        connections={connections}
+                      />
+                    </>
                   )}
 
                   {step.type === 'checkpoint' && (
@@ -969,18 +990,26 @@ export default function WorkflowBuilder() {
                 <div key={cat}>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">{cat}</p>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-                    {STEP_TYPE_OPTIONS.filter((t) => t.category === cat).map(({ type, label, icon: Icon, description, connectionRequired }) => (
+                    {STEP_TYPE_OPTIONS.filter((t) => t.category === cat).map(({ type, label, icon: Icon, description, connectionRequired, comingSoon }) => (
                       <button
                         key={type}
                         onClick={() => addStep(type)}
-                        className="flex flex-col items-start gap-1 rounded-lg border border-border bg-adv-dark p-2.5 text-left hover:border-adv-teal/30 hover:bg-adv-teal-soft transition-colors group"
+                        disabled={comingSoon}
+                        className={`flex flex-col items-start gap-1 rounded-lg border border-border bg-adv-dark p-2.5 text-left transition-colors group ${
+                          comingSoon
+                            ? 'cursor-not-allowed opacity-50'
+                            : 'hover:border-adv-teal/30 hover:bg-adv-teal-soft'
+                        }`}
                         title={description}
                       >
                         <div className="flex items-center gap-1.5">
-                          <Icon className="h-3.5 w-3.5 text-adv-teal" />
+                          <Icon className={`h-3.5 w-3.5 ${comingSoon ? 'text-adv-gray' : 'text-adv-teal'}`} />
                           <span className="text-[11px] font-medium text-adv-off-white group-hover:text-adv-white">{label}</span>
                         </div>
-                        {connectionRequired && (
+                        {comingSoon && (
+                          <span className="rounded border border-adv-gold/40 bg-adv-gold/10 px-1 py-0.5 text-xs font-medium text-adv-gold">Coming soon</span>
+                        )}
+                        {connectionRequired && !comingSoon && (
                           <span className="text-xs text-adv-blue">needs {connectionRequired}</span>
                         )}
                         <span className="text-xs text-adv-gray leading-tight">{description}</span>

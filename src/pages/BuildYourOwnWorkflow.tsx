@@ -28,7 +28,7 @@ interface ChatMessage {
 // ── Constants ────────────────────────────────────────────────
 
 const INITIAL_GREETING =
-  "Hi! I'm here to help you build a workflow. Tell me: what's a repetitive task or multi-step process you'd like to automate? For example: reading regulatory updates, analysing documents, sending notifications, or running compliance checks.";
+  "Hi! I'm here to help you build a workflow. Tell me: what's a repetitive task or multi-step process you'd like to automate? For example: analysing documents, summarising weekly reports, reviewing contracts, screening candidates, preparing lesson plans, or monitoring industry updates.";
 
 const WIZARD_PHASES: { id: Phase; label: string; icon: typeof MessageSquare }[] = [
   { id: 'guide', label: 'Guide', icon: MessageSquare },

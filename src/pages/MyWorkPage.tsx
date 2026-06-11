@@ -368,6 +368,8 @@ export default function MyWorkPage() {
                 to={
                   session.module_id === 'open-chat'
                     ? `/prompt?session=${session.id}`
+                    : session.module_id === 'ai-council'
+                    ? `/council?session=${session.id}`
                     : `/module/${session.module_id}?session=${session.id}`
                 }
                 className={`group relative flex items-start gap-4 rounded-xl border border-border border-l-2 ${accentClass} bg-adv-card p-4 transition-all hover:border-adv-teal/30 hover:shadow-lg`}

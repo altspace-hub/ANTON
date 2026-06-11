@@ -14,6 +14,14 @@
 
 export type StepKind = 'headless' | 'interactive' | 'gate';
 
+/**
+ * 'available' (default) = fully implemented end-to-end.
+ * 'stub' = the executor accepts the step but performs NO real side-effect
+ * (logs + returns sent:false). Builders MUST surface stub steps as
+ * "coming soon" / disabled so users cannot silently rely on them.
+ */
+export type StepStatus = 'available' | 'stub';
+
 export interface StepRegistryEntry {
   /** Stable ID used in workflow definitions (`step.type`). */
   id: string;
@@ -23,6 +31,8 @@ export interface StepRegistryEntry {
   description: string;
   /** Headless = runs without UI, Interactive = needs frontend, Gate = pauses for external action. */
   kind: StepKind;
+  /** Implementation status — omit for 'available'. See StepStatus. */
+  status?: StepStatus;
   /** Default per-step timeout in ms. Subject to override via step.config.timeoutMs. */
   defaultTimeoutMs: number;
   /** Default retry count on transient failure. 0 = no retry. */
@@ -145,18 +155,22 @@ export const STEP_REGISTRY: ReadonlyArray<StepRegistryEntry> = [
   {
     id: 'notification',
     label: 'In-app notification',
-    description: 'Send an in-app notification to the user / org.',
+    description: 'COMING SOON — webhook notification. Executor stub logs and returns sent:false.',
     kind: 'headless',
+    status: 'stub',
     defaultTimeoutMs: 10_000,
-    defaultRetries: 1,
+    defaultRetries: 0,
+    notes: 'Stub — no webhook is actually sent (workflow-executor.ts / routes/workflows.ts). Use messaging_notification (Slack/Teams via connection) for a real notification today.',
   },
   {
     id: 'email_send',
     label: 'Email',
-    description: 'Send an email via the configured provider.',
+    description: 'COMING SOON — email delivery. Executor stub logs and returns sent:false.',
     kind: 'headless',
+    status: 'stub',
     defaultTimeoutMs: 30_000,
-    defaultRetries: 2,
+    defaultRetries: 0,
+    notes: 'Stub — no email provider is wired yet (workflow-executor.ts / routes/workflows.ts).',
   },
   {
     id: 'messaging_notification',
@@ -254,6 +268,42 @@ export function isGateStep(id: string): boolean {
 /** Returns true iff the step type is registered. Useful as a guard before dispatch. */
 export function isRegisteredStepType(id: string): boolean {
   return REGISTRY_BY_ID.has(id);
+}
+
+/** Returns true iff the step type is registered but only stub-implemented (no real side-effect). */
+export function isStubStep(id: string): boolean {
+  return REGISTRY_BY_ID.get(id)?.status === 'stub';
+}
+
+// ── database_query driver resolution ──────────────────────────────────────
+// The silent `?? 'sqlite'` default was a honesty bug (0.8): an external
+// connection with no driver configured would be quietly treated as a local
+// SQLite file. sqlite remains a legitimate EXPLICIT read-only connector, but
+// the driver must always be stated on the connection config.
+
+export const DB_QUERY_DRIVERS = ['postgresql', 'mysql', 'mssql', 'sqlite'] as const;
+export type DbQueryDriver = (typeof DB_QUERY_DRIVERS)[number];
+
+/**
+ * Resolve the driver for a database_query step from the connection config.
+ * Throws a clear configuration error when the driver is unset or unsupported —
+ * never assumes a default.
+ */
+export function resolveExplicitDbDriver(cfg: Record<string, unknown> | null | undefined): DbQueryDriver {
+  const raw = cfg?.driver;
+  if (raw === undefined || raw === null || String(raw).trim() === '') {
+    throw new Error(
+      'database_query step requires an explicit driver on the database connection: postgresql | mysql | mssql | sqlite. ' +
+      'No driver is configured — edit the connection and set one (nothing is assumed by default).'
+    );
+  }
+  const driver = String(raw).trim().toLowerCase();
+  if (!(DB_QUERY_DRIVERS as readonly string[]).includes(driver)) {
+    throw new Error(
+      `Unsupported database_query driver: "${driver}". Valid drivers: postgresql | mysql | mssql | sqlite.`
+    );
+  }
+  return driver as DbQueryDriver;
 }
 
 /** Convenience accessors used by workflow-executor.ts during the C.4 refactor. */

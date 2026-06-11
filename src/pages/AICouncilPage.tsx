@@ -1,9 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Users2, Plus, X, Play, Square, Copy, Check, Download, ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { streamMessage } from '@/lib/api';
-import type { ModelId, StreamEvent } from '@/lib/types';
+import { streamMessage, createSession, fetchSession } from '@/lib/api';
+import type { ClaudeRunConfig, ModelId, StreamEvent } from '@/lib/types';
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -16,6 +17,29 @@ interface CouncilMember {
 type Phase = 'setup' | 'running' | 'done';
 type OutputFormat = 'summary' | 'action-plan' | 'debate-transcript' | 'decision-memo' | 'consolidated-review';
 type ConsensusMode = 'chair' | 'majority' | 'unanimity';
+type VotePosition = 'agree' | 'disagree' | 'abstain';
+
+interface CouncilVote {
+  memberId: string;
+  role: string;
+  model: string;
+  position: VotePosition;
+  reason: string;
+}
+
+interface VoteTally {
+  agree: number;
+  disagree: number;
+  abstain: number;
+  outcome: string;
+  notUnanimous: boolean;
+}
+
+/** Persisted council session loaded read-only via ?session=<id> */
+interface ArchivedCouncil {
+  title: string;
+  messages: { role: string; content: string }[];
+}
 
 interface CouncilSetup {
   topic: string;
@@ -47,6 +71,70 @@ const ROLE_PRESETS = [
 const ROLE_PROMPT_MAP: Record<string, string> = Object.fromEntries(
   ROLE_PRESETS.map((r) => [r.id, r.prompt])
 );
+
+/** module_id under which council runs are persisted as sessions (shows up in My Work). */
+const COUNCIL_MODULE_ID = 'ai-council';
+
+function roleLabel(role: string): string {
+  return ROLE_PRESETS.find((r) => r.id === role)?.label ?? role;
+}
+
+// ── Final-vote helpers (deterministic — the tally is computed in code) ─────
+
+/** Extract a strict-JSON vote from a model response. Unparseable → abstain. */
+function parseVote(text: string): { position: VotePosition; reason: string } {
+  const match = text.match(/\{[\s\S]*?\}/);
+  if (match) {
+    try {
+      const obj = JSON.parse(match[0]) as Record<string, unknown>;
+      const pos = String(obj.position ?? '').trim().toLowerCase();
+      if (pos === 'agree' || pos === 'disagree' || pos === 'abstain') {
+        const reason = String(obj.oneLineReason ?? obj.reason ?? '').slice(0, 300);
+        return { position: pos, reason };
+      }
+    } catch {
+      // fall through to abstain
+    }
+  }
+  return { position: 'abstain', reason: 'Vote could not be parsed — counted as abstain.' };
+}
+
+function tallyVotes(votes: CouncilVote[], mode: ConsensusMode): VoteTally {
+  const agree = votes.filter((v) => v.position === 'agree').length;
+  const disagree = votes.filter((v) => v.position === 'disagree').length;
+  const abstain = votes.filter((v) => v.position === 'abstain').length;
+  const notUnanimous = mode === 'unanimity' && disagree > 0;
+
+  let outcome: string;
+  if (mode === 'unanimity') {
+    if (disagree > 0) outcome = 'NOT UNANIMOUS — consensus requirement not met';
+    else if (agree > 0 && abstain === 0) outcome = 'UNANIMOUS AGREEMENT';
+    else if (agree > 0) outcome = `Unanimous among voting members (${abstain} abstained)`;
+    else outcome = 'No position — all members abstained';
+  } else {
+    if (agree > disagree) outcome = 'MAJORITY AGREE';
+    else if (disagree > agree) outcome = 'MAJORITY DISAGREE';
+    else outcome = 'NO MAJORITY — tied vote';
+  }
+  return { agree, disagree, abstain, outcome, notUnanimous };
+}
+
+/** Markdown vote section — used in the chair input, the export, and the persisted session. */
+function voteSectionMd(votes: CouncilVote[], tally: VoteTally, mode: ConsensusMode): string {
+  const lines = [
+    `## Final Vote — ${mode === 'majority' ? 'Majority rule' : 'Unanimity rule'}`,
+    '',
+    '| Member | Model | Vote | Reason |',
+    '|---|---|---|---|',
+    ...votes.map((v) => `| ${roleLabel(v.role)} | ${MODEL_LABELS[v.model] ?? v.model} | **${v.position.toUpperCase()}** | ${v.reason.replace(/\|/g, '/')} |`),
+    '',
+    `**Tally (deterministic):** ${tally.agree} agree · ${tally.disagree} disagree · ${tally.abstain} abstain → **${tally.outcome}**`,
+  ];
+  if (tally.notUnanimous) {
+    lines.push('', '> ⚠️ **NOT UNANIMOUS** — the unanimity consensus rule was selected but at least one member disagreed.');
+  }
+  return lines.join('\n');
+}
 
 const OUTPUT_FORMAT_LABELS: Record<OutputFormat, string> = {
   summary: 'Summary',
@@ -314,6 +402,47 @@ export default function AICouncilPage() {
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<{ abort: () => void } | null>(null);
 
+  // Final-vote round (consensus = majority / unanimity)
+  const [votes, setVotes] = useState<CouncilVote[]>([]);
+  const [voteTally, setVoteTally] = useState<VoteTally | null>(null);
+  const [isVoting, setIsVoting] = useState(false);
+  // Consensus mode of the run being displayed (frozen at run start)
+  const runConsensusRef = useRef<ConsensusMode>('chair');
+
+  // Persisted session for the current run (module_id = 'ai-council')
+  const sessionIdRef = useRef<string | null>(null);
+
+  // Read-only view of a past council loaded from My Work (?session=<id>)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const archivedSessionId = searchParams.get('session');
+  const [archived, setArchived] = useState<ArchivedCouncil | null>(null);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!archivedSessionId) {
+      setArchived(null);
+      setArchiveError(null);
+      return;
+    }
+    (async () => {
+      try {
+        const session = await fetchSession(archivedSessionId) as
+          | (ArchivedCouncil & { messages?: { role: string; content: string }[] })
+          | null;
+        if (cancelled) return;
+        if (!session) {
+          setArchiveError('Council session not found.');
+          return;
+        }
+        setArchived({ title: session.title, messages: session.messages ?? [] });
+      } catch {
+        if (!cancelled) setArchiveError('Failed to load council session.');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [archivedSessionId]);
+
   const isRunning = phase === 'running';
 
   // ── Helpers ──────────────────────────────────────────────────
@@ -358,6 +487,11 @@ export default function AICouncilPage() {
     setChairOutput('');
     setChairStreaming(false);
     setCurrentRound(0);
+    setVotes([]);
+    setVoteTally(null);
+    setIsVoting(false);
+    runConsensusRef.current = setup.consensus;
+    sessionIdRef.current = null;
 
     let aborted = false;
     const abortController = { abort: () => { aborted = true; } };
@@ -365,6 +499,30 @@ export default function AICouncilPage() {
 
     const ks = setup.webSearch ? WEB_SEARCH_KS : EMPTY_KS;
     let allRoundsContext = '';
+
+    // Persist this council run as a session so it appears in My Work and
+    // survives navigation. The chair exchange (full deliberation record →
+    // synthesis) is stored via the standard /claude/message persistence path.
+    try {
+      const created = await createSession({
+        moduleId: COUNCIL_MODULE_ID,
+        title: `Council: ${setup.topic.trim().slice(0, 80)}`,
+        config: {
+          topic: setup.topic,
+          members: setup.members.map((m) => ({ role: m.role, model: m.model })),
+          chairModel: setup.chairModel,
+          rounds: setup.rounds,
+          consensus: setup.consensus,
+          outputFormat: setup.outputFormat,
+          chainMode: setup.chainMode,
+          webSearch: setup.webSearch,
+        },
+      }) as { id?: string };
+      sessionIdRef.current = created?.id ?? null;
+    } catch {
+      // Persistence is best-effort — the council still runs without it.
+      sessionIdRef.current = null;
+    }
 
     try {
       for (let round = 1; round <= setup.rounds; round++) {
@@ -419,14 +577,76 @@ Be specific, analytical, and stay in your assigned role. Respond in 3-6 paragrap
           }
 
           if (!aborted) {
-            roundOutputs.push(`[${member.role} — ${MODEL_LABELS[member.model] ?? member.model}]\n${text}`);
+            roundOutputs.push(`### ${roleLabel(member.role)} — ${MODEL_LABELS[member.model] ?? member.model}\n\n${text}`);
           }
         }
 
         if (!aborted) {
-          const roundBlock = `=== Round ${round} of ${setup.rounds} ===\n${roundOutputs.join('\n\n')}`;
+          const roundBlock = `## Round ${round} of ${setup.rounds}\n\n${roundOutputs.join('\n\n')}`;
           allRoundsContext += (allRoundsContext ? '\n\n' : '') + roundBlock;
           setRoundHistory((prev) => [...prev, roundBlock]);
+        }
+      }
+
+      // ── Final vote round (consensus = majority / unanimity) ───────
+      // Each member casts a structured JSON vote; the tally is computed in
+      // code (deterministic) — the LLMs only supply positions and reasons.
+      let voteMd = '';
+      let finalTally: VoteTally | null = null;
+      if (!aborted && setup.consensus !== 'chair') {
+        setIsVoting(true);
+        const collected: CouncilVote[] = [];
+
+        for (const member of setup.members) {
+          if (aborted) break;
+          setActiveMemberId(member.id);
+
+          const voteSys = `You are ${roleLabel(member.role)} in an AI Council. The deliberation is complete. Cast your formal FINAL VOTE under the "${setup.consensus}" consensus rule.
+
+"agree" = based on the full deliberation, you endorse the proposal / dominant recommendation that emerged.
+"disagree" = you oppose it.
+"abstain" = you cannot take a position.
+
+Respond with ONLY strict JSON — no markdown fences, no extra text:
+{"position": "agree" | "disagree" | "abstain", "oneLineReason": "one short sentence"}`;
+
+          let voteText = '';
+          const voteStream = streamMessage(
+            {
+              model: member.model,
+              thinking: 'quick',
+              creativity: 'strict',
+              systemPrompt: voteSys,
+              userMessage: `TOPIC: ${setup.topic}\n\n${allRoundsContext}\n\nCast your vote now.`,
+              history: [],
+              outputFormats: [],
+              knowledgeSources: EMPTY_KS,
+            } satisfies ClaudeRunConfig
+          );
+          for await (const ev of voteStream as AsyncGenerator<StreamEvent>) {
+            if (aborted) break;
+            if (ev.type === 'text_delta') voteText += ev.content;
+            if (ev.type === 'stream_end' || ev.type === 'error') break;
+          }
+          if (aborted) break;
+
+          const parsed = parseVote(voteText);
+          const vote: CouncilVote = {
+            memberId: member.id,
+            role: member.role,
+            model: String(member.model),
+            position: parsed.position,
+            reason: parsed.reason,
+          };
+          collected.push(vote);
+          setVotes([...collected]);
+        }
+
+        setIsVoting(false);
+        if (!aborted && collected.length > 0) {
+          finalTally = tallyVotes(collected, setup.consensus);
+          setVoteTally(finalTally);
+          voteMd = voteSectionMd(collected, finalTally, setup.consensus);
         }
       }
 
@@ -435,9 +655,22 @@ Be specific, analytical, and stay in your assigned role. Respond in 3-6 paragrap
         setActiveMemberId('chair');
         setChairStreaming(true);
 
+        const voteChairInstructions = finalTally
+          ? `\n\nA formal final vote was held under the "${setup.consensus}" consensus rule. The deterministic tally below is authoritative — do NOT recount or alter it: ${finalTally.agree} agree · ${finalTally.disagree} disagree · ${finalTally.abstain} abstain → ${finalTally.outcome}.
+Reproduce the Final Vote table from the deliberation record in your synthesis and reflect the voted outcome in your recommendation.${finalTally.notUnanimous ? '\nIMPORTANT: The council was NOT UNANIMOUS under the unanimity rule. State this prominently at the very top of your synthesis.' : ''}`
+          : '';
+
         const chairSys = `You are the Chair of this AI Council. Your role is to synthesise the deliberation and produce: ${OUTPUT_FORMAT_PROMPTS[setup.outputFormat]}
 
-Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
+Be decisive, structured, and clear. Your synthesis is the final deliverable.${voteChairInstructions}`;
+
+        // The chair's user message doubles as the persisted deliberation record
+        // (member responses with name/model headers + vote table).
+        const deliberationRecord = [
+          `# AI Council: ${setup.topic}`,
+          allRoundsContext,
+          voteMd,
+        ].filter(Boolean).join('\n\n');
 
         let chairText = '';
         const chairStream = streamMessage(
@@ -446,11 +679,13 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
             thinking: 'think_hard',
             creativity: 'balanced',
             systemPrompt: chairSys,
-            userMessage: `TOPIC: ${setup.topic}\n\n${allRoundsContext}`,
+            userMessage: deliberationRecord,
             history: [],
             outputFormats: [],
             knowledgeSources: EMPTY_KS,
-          }
+            moduleId: COUNCIL_MODULE_ID,
+            sessionId: sessionIdRef.current ?? undefined,
+          } satisfies ClaudeRunConfig
         );
 
         for await (const ev of chairStream as AsyncGenerator<StreamEvent>) {
@@ -469,6 +704,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
     } catch (err) {
       if ((err as Error).name !== 'AbortError') console.error(err);
       setChairStreaming(false);
+      setIsVoting(false);
       setActiveMemberId(null);
     }
   };
@@ -476,6 +712,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
   const handleStop = () => {
     abortRef.current?.abort();
     setChairStreaming(false);
+    setIsVoting(false);
     setActiveMemberId(null);
     if (phase === 'running') setPhase('done');
   };
@@ -489,12 +726,18 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
     setChairOutput('');
     setChairStreaming(false);
     setActiveMemberId(null);
+    setVotes([]);
+    setVoteTally(null);
+    setIsVoting(false);
+    sessionIdRef.current = null;
+    if (archivedSessionId) setSearchParams({}, { replace: true });
   };
 
   const fullTranscript = [
     `# AI Council: ${setup.topic}`,
     '',
     ...roundHistory,
+    votes.length > 0 && voteTally ? voteSectionMd(votes, voteTally, runConsensusRef.current) : '',
     chairOutput ? `\n## Chair Synthesis\n\n${chairOutput}` : '',
   ].filter(Boolean).join('\n\n');
 
@@ -747,6 +990,8 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
             <span className="text-sm font-medium text-adv-teal">
               {activeMemberId === 'chair'
                 ? 'Chair synthesising…'
+                : isVoting
+                ? `Final vote in progress… (${votes.length}/${setup.members.length} votes cast)`
                 : currentRound > 0
                 ? `Round ${currentRound} of ${setup.rounds}`
                 : 'Starting…'}
@@ -815,6 +1060,69 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
         </div>
       ))}
 
+      {/* Final vote (consensus = majority / unanimity) */}
+      {(votes.length > 0 || isVoting) && (
+        <div>
+          <div className="mb-3 flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-adv-gray">
+              Final Vote — {runConsensusRef.current === 'unanimity' ? 'Unanimity rule' : 'Majority rule'}
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {voteTally?.notUnanimous && (
+            <div className="mb-3 rounded-xl border border-adv-red/50 bg-adv-red/10 px-4 py-3">
+              <span className="text-sm font-bold text-adv-red">⚠ NOT UNANIMOUS</span>
+              <p className="mt-0.5 text-xs text-adv-off-white">
+                The unanimity consensus rule was selected, but {voteTally.disagree} member{voteTally.disagree > 1 ? 's' : ''} disagreed.
+              </p>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-border bg-adv-card p-4">
+            <div className="space-y-2">
+              {votes.map((v) => (
+                <div key={v.memberId} className="flex items-start gap-3">
+                  <span className={`mt-0.5 inline-flex w-20 shrink-0 items-center justify-center rounded px-1.5 py-0.5 text-xs font-bold uppercase ${
+                    v.position === 'agree'
+                      ? 'bg-adv-green/15 text-adv-green'
+                      : v.position === 'disagree'
+                      ? 'bg-adv-red/15 text-adv-red'
+                      : 'bg-adv-gray-med/20 text-adv-gray'
+                  }`}>
+                    {v.position}
+                  </span>
+                  <div className="min-w-0">
+                    <span className="text-xs font-semibold text-adv-off-white">{roleLabel(v.role)}</span>
+                    <span className="ml-2 text-xs text-adv-gray">{MODEL_LABELS[v.model] ?? v.model}</span>
+                    {v.reason && <p className="text-xs text-adv-gray">{v.reason}</p>}
+                  </div>
+                </div>
+              ))}
+              {isVoting && (
+                <div className="flex items-center gap-2 text-xs text-adv-gray">
+                  <span className="animate-pulse">…</span>
+                  <span>Collecting votes</span>
+                </div>
+              )}
+            </div>
+
+            {voteTally && (
+              <div className="mt-3 border-t border-border pt-3 text-xs text-adv-off-white">
+                <span className="font-semibold">Tally:</span>{' '}
+                {voteTally.agree} agree · {voteTally.disagree} disagree · {voteTally.abstain} abstain
+                {' — '}
+                <span className={`font-bold ${voteTally.notUnanimous ? 'text-adv-red' : 'text-adv-teal'}`}>
+                  {voteTally.outcome}
+                </span>
+                <span className="ml-2 text-adv-gray">(tallied deterministically in code)</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Chair synthesis */}
       {(chairOutput || chairStreaming) && (
         <div>
@@ -837,7 +1145,12 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
       {/* Actions when done */}
       {phase === 'done' && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-adv-card p-4">
-          <span className="text-sm font-medium text-adv-off-white">Council complete</span>
+          <div>
+            <span className="text-sm font-medium text-adv-off-white">Council complete</span>
+            {sessionIdRef.current && chairOutput && (
+              <p className="text-xs text-adv-gray">Saved to My Work</p>
+            )}
+          </div>
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={handleCopy}
@@ -864,6 +1177,79 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
       )}
     </div>
   );
+
+  // ── Render: Archived council (read-only, loaded via ?session=) ──
+
+  const renderArchived = () => {
+    const handleArchiveDownload = () => {
+      if (!archived) return;
+      const md = archived.messages
+        .map((m) => (m.role === 'assistant' ? `## Chair Synthesis\n\n${m.content}` : m.content))
+        .join('\n\n');
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ai-council.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    return (
+      <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
+        {archiveError ? (
+          <div className="rounded-xl border border-adv-red/40 bg-adv-red/10 px-4 py-3 text-sm text-adv-red">
+            {archiveError}
+          </div>
+        ) : !archived ? (
+          <div className="flex items-center gap-2 text-sm text-adv-gray">
+            <span className="animate-pulse">…</span> Loading saved council
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-adv-card p-4">
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-medium text-adv-off-white">{archived.title}</span>
+                <p className="text-xs text-adv-gray">Saved council session (read-only)</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleArchiveDownload}
+                  className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-gray hover:bg-adv-dark hover:text-adv-off-white transition-colors"
+                >
+                  <Download className="h-3 w-3" />
+                  .md
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                >
+                  New Council
+                </button>
+              </div>
+            </div>
+
+            {archived.messages.length === 0 && (
+              <div className="rounded-xl border border-border bg-adv-card px-4 py-3 text-xs text-adv-gray">
+                No transcript was saved for this run — the council was stopped before the chair synthesis.
+              </div>
+            )}
+
+            {archived.messages.map((m, i) => (
+              <div key={i} className={`rounded-xl border p-5 ${m.role === 'assistant' ? 'border-adv-teal/20' : 'border-border'} bg-adv-card`}>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-adv-gray">
+                  {m.role === 'assistant' ? 'Chair Synthesis' : 'Deliberation Record'}
+                </div>
+                <div className="prose prose-invert prose-sm max-w-none text-adv-off-white">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    );
+  };
 
   // ── Root render ────────────────────────────────────────────────
 
@@ -899,7 +1285,7 @@ Be decisive, structured, and clear. Your synthesis is the final deliverable.`;
 
       {/* Content */}
       <div className="flex min-h-0 flex-1 overflow-y-auto">
-        {phase === 'setup' ? renderSetup() : renderDeliberation()}
+        {archivedSessionId ? renderArchived() : phase === 'setup' ? renderSetup() : renderDeliberation()}
       </div>
     </div>
   );
