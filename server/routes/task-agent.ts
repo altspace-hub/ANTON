@@ -24,6 +24,8 @@ import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
+import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __routeDir = dirname(__filename);
@@ -697,22 +699,21 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       contextParts.push(`## ATTACHED DOCUMENTS\nThe following documents have been provided for this task:\n\n${docTexts}`);
     }
 
-    // Inject active knowledge packs
-    if (activePackIds.length > 0) {
-      try {
-        const packs = await db.all(
-          `SELECT display_name, regulatory_area, regulation_ids, entity_count, description
-           FROM knowledge_packs WHERE id IN (${activePackIds.map(() => '?').join(',')}) AND status='active'`
-        , ...activePackIds) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number; description: string | null }>;
-        if (packs.length > 0) {
-          const packLines = packs.map((p) => {
-            const regs = parseJson<string[]>(p.regulation_ids, []).join(', ');
-            return `- **${p.display_name}** (${p.regulatory_area ?? 'General'}, ${p.entity_count} entities${regs ? `, covers: ${regs}` : ''})${p.description ? `\n  ${p.description}` : ''}`;
-          });
-          contextParts.push(`## ACTIVE REGULATORY KNOWLEDGE PACKS\nThe following knowledge packs are active for this task. Use them to ground article references, entity names, and regulatory details:\n\n${packLines.join('\n\n')}`);
-        }
-      } catch { /* knowledge_packs table may not exist — ignore */ }
-    }
+    // Inject REAL grounding text (item 1.3): relevant framework articles + pack
+    // entity text matched against the task description/step, budgeted ~3k tokens.
+    // When nothing relevant matches, the layer is dropped entirely — no fake
+    // "knowledge packs are active" claims.
+    try {
+      const grounding = await retrieveGroundingText({
+        query: `${task.title}\n${task.description}\n${step.name} ${step.description ?? ''}`,
+        packIds: activePackIds,
+        db,
+        tokenBudget: 3000,
+      });
+      if (grounding) {
+        contextParts.push(grounding.text);
+      }
+    } catch { /* non-fatal — proceed without grounding injection */ }
 
     contextParts.push(`## WHAT TO PRODUCE\nYou are executing **Step ${step.step}: ${step.name}**\n${step.description ?? ''}\n\nProduce the complete deliverable now. This is real work for a client — apply your full expertise.`);
 
@@ -735,48 +736,32 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       { effort: 'max', label: 'investigate' },
     ];
 
-    /** Score the output using Haiku (fast, cheap). Returns 0–10 or null on error. */
-    async function scoreOutput(output: string, taskTitle: string, stepName: string): Promise<number | null> {
-      try {
-        const scorePrompt = `You are a quality assessor for FCP compliance deliverables.
-Score this deliverable on a scale of 0–10 where:
-- 9–10: Exceptional — board/client ready, comprehensive, fully cited, no gaps
-- 8–9: Good — solid, accurate, actionable, minor improvements only
-- 6–7: Adequate — covers basics but missing depth, structure, or key requirements
-- 4–5: Weak — significant gaps, vague conclusions, not client-ready
-- 0–3: Poor — incomplete, off-topic, factually unreliable, or harmful
-
-Be strict. For FCP/AML/sanctions compliance work, an 8 means the output is defensible and actionable. A 7 means you would want revisions before sending to a client.
-
-Task: ${taskTitle}
-Step: ${stepName}
-
-Output (first 2000 chars):
-${output.slice(0, 2000)}
-
-Respond with ONLY a number (e.g. "7.5"). No explanation.`;
-
+    /**
+     * Quality gate (item 1.8): scores the FULL output (stratified head/middle/
+     * tail sampling for long deliverables) on a 4-dimension rubric returned as
+     * strict JSON, including a critique fed back into retries. Returns null on
+     * any failure — the gate never blocks delivery.
+     */
+    async function scoreOutput(output: string, taskTitle: string, stepName: string): Promise<GateResult | null> {
+      return scoreWithGate(async (prompt) => {
         const response = await callChat({
           model: mapModelToProvider('claude-haiku-4-5-20251001'),
           system: '',
-          messages: [{ role: 'user', content: scorePrompt }],
-          maxTokens: 10,
+          messages: [{ role: 'user', content: prompt }],
+          maxTokens: 500,
+          jsonMode: true,
         });
-        const raw = response.text.trim();
-        const score = parseFloat(raw);
-        return isNaN(score) ? null : Math.min(10, Math.max(0, score));
-      } catch {
-        return null;
-      }
+        return response.text;
+      }, output, taskTitle, stepName);
     }
 
     /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
     let lastThinkingContent = '';
-    async function runExecution(effort?: string): Promise<{ output: string; thinking: string }> {
+    async function runExecution(effort?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
       const result = await streamChat({
         model: mapModelToProvider('claude-opus-4-8'),
         system: fullSystemPrompt,
-        messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.` }],
+        messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}` }],
         maxTokens: 16000,
         thinkingLevel: effort ?? 'high',
       }, res);
@@ -786,6 +771,7 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
 
     try {
       let fullOutput = '';
+      let gate: GateResult | null = null;
       let qualityScore: number | null = null;
       let retryCount = 0;
       let thinkingLabel = 'standard';
@@ -793,10 +779,14 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
       // Attempt 1 — standard execution (no extended thinking)
       const firstResult = await runExecution();
       fullOutput = firstResult.output;
-      qualityScore = await scoreOutput(fullOutput, task.title, step.name);
+      gate = await scoreOutput(fullOutput, task.title, step.name);
+      qualityScore = gate?.overall ?? null;
 
-      // Auto-retry loop when quality is below retry threshold
+      // Auto-retry loop when quality is below retry threshold.
+      // Each retry raises thinking effort AND feeds the reviewer critique back
+      // into the regeneration prompt (previously only effort was raised).
       while (
+        gate !== null &&
         qualityScore !== null &&
         qualityScore < RETRY_THRESHOLD &&
         retryCount < MAX_RETRIES
@@ -809,13 +799,16 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
           type: 'quality_retry',
           attempt: retryCount,
           score: qualityScore,
-          reason: `Quality score ${qualityScore.toFixed(1)} < ${RETRY_THRESHOLD} threshold. Retrying with deeper reasoning (${thinkingLabel}).`,
+          dimensions: gate.dimensions,
+          critique: gate.critique,
+          reason: `Quality score ${qualityScore.toFixed(1)} < ${RETRY_THRESHOLD} threshold. Retrying with deeper reasoning (${thinkingLabel}) and reviewer critique.`,
         })}\n\n`);
 
         // Clear previous output from stream (client replaces on retry event)
-        const retryResult = await runExecution(retryConfig.effort);
+        const retryResult = await runExecution(retryConfig.effort, buildRetryGuidance(gate));
         fullOutput = retryResult.output;
-        qualityScore = await scoreOutput(fullOutput, task.title, step.name);
+        gate = await scoreOutput(fullOutput, task.title, step.name);
+        qualityScore = gate?.overall ?? null;
       }
 
       // Warn if final quality is below delivery threshold but above retry threshold
@@ -824,15 +817,19 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
           type: 'quality_warning',
           score: qualityScore,
           threshold: DELIVERY_THRESHOLD,
+          critique: gate?.critique,
           message: `Output quality score ${qualityScore.toFixed(1)} is below the ${DELIVERY_THRESHOLD} delivery threshold. Human review recommended before use.`,
         })}\n\n`);
       }
 
-      // Save result + advance step
+      // Save result + advance step. The critique + rubric dimensions are stored
+      // alongside the score inside the execution_results JSON (no schema change
+      // needed — the column is a JSON document).
       const existingResults = parseJson<Array<{
         step: number; name: string; step_name?: string; output: string; at: string;
         quality_score?: number | null; retry_count?: number; thinking_level?: string;
         thinking?: string; description?: string;
+        quality_critique?: string; quality_dimensions?: Record<string, number>;
       }>>(task.execution_results ?? '[]', []);
 
       existingResults.push({
@@ -845,6 +842,8 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
         thinking_level: thinkingLabel,
         thinking: lastThinkingContent || undefined,
         description: step.description || undefined,
+        quality_critique: gate?.critique || undefined,
+        quality_dimensions: gate ? { ...gate.dimensions } : undefined,
       });
 
       const nextStepIdx = currentStepIdx + 1;
@@ -903,6 +902,8 @@ Respond with ONLY a number (e.g. "7.5"). No explanation.`;
         hasMoreSteps,
         nextStep,
         qualityScore,
+        qualityCritique: gate?.critique ?? null,
+        qualityDimensions: gate?.dimensions ?? null,
         retryCount,
         thinkingLevel: thinkingLabel,
       })}\n\n`);

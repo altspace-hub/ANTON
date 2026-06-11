@@ -14,9 +14,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import type Anthropic from '@anthropic-ai/sdk';
 import AnthropicSDK from '@anthropic-ai/sdk';
-import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
 import { buildOrgContextLayer } from '../services/prompt-builder.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
+import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { createCitationLedger, VERIFICATION_DISCLAIMER, type CitationInput } from '../services/citation-ledger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -97,6 +98,34 @@ function loadBasePrompt(): string {
 export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Promise<Router> {
   const router = Router();
   const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY }) : null);
+  // Ground-truth citation ledger (item 1.4) — shared LRU across requests
+  const citationLedger = createCitationLedger();
+
+  // ── Verify citations against ground truth (local frameworks → EUR-Lex) ──────
+  // Called by the client AFTER a stream completes — never blocks streaming.
+  router.post('/legal-research/verify-citations', async (req: Request, res: Response) => {
+    try {
+      const { citations } = req.body as { citations?: Array<{ ref?: unknown; type?: unknown }> };
+      if (!Array.isArray(citations) || citations.length === 0) {
+        return res.status(400).json({ error: 'citations array required' });
+      }
+      const inputs: CitationInput[] = citations
+        .slice(0, 50) // cap per request
+        .filter((c) => typeof c?.ref === 'string' && (c.ref as string).trim().length > 0)
+        .map((c) => ({
+          ref: (c.ref as string).slice(0, 300),
+          type: typeof c.type === 'string' ? c.type : undefined,
+        }));
+      if (inputs.length === 0) {
+        return res.status(400).json({ error: 'citations array must contain { ref: string } items' });
+      }
+      const results = await citationLedger.verifyCitations(inputs);
+      res.json({ results, disclaimer: VERIFICATION_DISCLAIMER });
+    } catch (err) {
+      console.error('[legal-research] verify-citations error:', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
 
   // ── List all sessions ───────────────────────────────────────────────────────
   router.get('/legal-research', async (req: Request, res: Response) => {
@@ -222,27 +251,24 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
         ? `\n\n## YOUR ROLE\nYou are acting as a ${roleInfo.label}. Primary focus: ${roleInfo.focus}.`
         : '';
 
-      // Inject active knowledge packs for this session
+      // Inject REAL grounding text (item 1.3): relevant framework articles + pack
+      // entity text matched against the user's question, budgeted ~3k tokens.
+      // When nothing relevant matches, the layer is dropped entirely — no fake
+      // "knowledge packs are loaded" claims.
       let knowledgePackSection = '';
       try {
-        const activePackNames: string[] = JSON.parse(session.active_knowledge_packs || '[]');
-        if (activePackNames.length > 0) {
-          const kpService = await createKnowledgePackService(db);
-          const allActiveSummary = await kpService.getActivePacksSummary();
-          if (allActiveSummary) {
-            // Filter to only packs named in the session's active list
-            const placeholders = activePackNames.map(() => '?').join(',');
-            const packRows = await db.all(`SELECT display_name, regulatory_area, regulation_ids, entity_count FROM knowledge_packs WHERE display_name IN (${placeholders}) AND status='active'`, ...activePackNames) as Array<{ display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
-            if (packRows.length > 0) {
-              const lines = packRows.map(r => {
-                const regs = ((): string => { try { return (JSON.parse(r.regulation_ids) as string[]).join(', '); } catch { return ''; } })();
-                return `- ${r.display_name} (${r.regulatory_area ?? 'General'}, ${r.entity_count} entities${regs ? `, covers: ${regs}` : ''})`;
-              });
-              knowledgePackSection = `\n\n## ACTIVE KNOWLEDGE PACKS\nThe following regulatory knowledge packs are loaded for this session. Use them to ground and verify citations:\n${lines.join('\n')}`;
-            }
-          }
+        const activePackIds: string[] = JSON.parse(session.active_knowledge_packs || '[]');
+        const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content ?? '';
+        const grounding = await retrieveGroundingText({
+          query: lastUserMsg,
+          packIds: activePackIds,
+          db,
+          tokenBudget: 3000,
+        });
+        if (grounding) {
+          knowledgePackSection = `\n\n${grounding.text}`;
         }
-      } catch { /* non-fatal — proceed without pack injection */ }
+      } catch { /* non-fatal — proceed without grounding injection */ }
 
       // Inject org-wide context (entity type, jurisdiction, risk appetite, priorities)
       const orgContextLayer = await buildOrgContextLayer(db, uid);

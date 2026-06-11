@@ -12,6 +12,7 @@ import {
   Scale, BookOpen, FlaskConical, GitCompare, Search, FileText,
   SearchCheck, Globe, Zap, Plus, X, Pin, Download, Trash2,
   ChevronDown, RefreshCw, Copy, CheckSquare, Languages,
+  CheckCircle2, HelpCircle, XCircle, ExternalLink,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 
@@ -45,11 +46,21 @@ interface PinnedFinding {
   pinnedAt: string;
 }
 
+type CitationVerificationStatus = 'verified_local' | 'verified_remote' | 'unresolved' | 'not_found';
+
 interface Citation {
   id: string;
   ref: string;
   text: string;
   type: 'regulation' | 'directive' | 'guideline' | 'case-law' | 'other';
+  /** Server-side ground-truth verification (item 1.4). Absent = not yet verified. */
+  verification?: {
+    status: CitationVerificationStatus;
+    source?: string;
+    title?: string;
+    url?: string;
+    detail?: string;
+  };
 }
 
 interface LegalSession {
@@ -237,6 +248,15 @@ export default function CounselsDesk() {
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
 
+  // Verify any persisted-but-unverified citations once per opened session
+  const verifiedSessionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeSession?.id || verifiedSessionRef.current === activeSession.id) return;
+    verifiedSessionRef.current = activeSession.id;
+    if (citations.some(c => !c.verification)) void verifyCitationStatuses(citations);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?.id, citations]);
+
   // Pre-fill input from ?prefill= deep-link (e.g. from Gap Assessment "Research" button)
   useEffect(() => {
     const prefill = searchParams.get('prefill');
@@ -325,6 +345,36 @@ export default function CounselsDesk() {
       });
     } catch { /* ignore */ }
   }, [activeSession]);
+
+  // ── Verify citations against ground truth (item 1.4) ──────────────────────
+  // Runs AFTER a stream completes — verification never blocks streaming.
+  const verifyCitationStatuses = useCallback(async (all: Citation[]) => {
+    if (!activeSession) return;
+    const pending = all.filter(c => !c.verification);
+    if (pending.length === 0) return;
+    try {
+      const r = await fetchWithAuth('/api/legal-research/verify-citations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ citations: pending.map(c => ({ ref: c.ref, type: c.type })) }),
+      });
+      if (!r.ok) return;
+      const { results } = await r.json() as {
+        results: Array<{ citation: string; status: CitationVerificationStatus; source?: string; title?: string; url?: string; detail?: string }>;
+      };
+      const byRef = new Map(results.map(v => [v.citation, v]));
+      setCitations(prev => {
+        const updated = prev.map(c => {
+          if (c.verification) return c;
+          const v = byRef.get(c.ref);
+          if (!v) return c;
+          return { ...c, verification: { status: v.status, source: v.source, title: v.title, url: v.url, detail: v.detail } };
+        });
+        persist({ citations: updated });
+        return updated;
+      });
+    } catch { /* verification is best-effort */ }
+  }, [activeSession, persist]);
 
   // ── Send message ───────────────────────────────────────────────────────────
   const sendMessage = async () => {
@@ -422,7 +472,7 @@ export default function CounselsDesk() {
         }
       }
 
-      // Auto-capture citations
+      // Auto-capture citations, then verify them against ground truth (post-stream)
       const newCits = extractCitations(assistantContent);
       if (newCits.length > 0) {
         setCitations(prev => {
@@ -430,6 +480,7 @@ export default function CounselsDesk() {
           const toAdd = newCits.filter(c => !existing.has(c.ref));
           const updated = [...prev, ...toAdd];
           persist({ citations: updated });
+          if (toAdd.length > 0) void verifyCitationStatuses(updated);
           return updated;
         });
       }
@@ -531,10 +582,20 @@ export default function CounselsDesk() {
     }
   };
 
-  // ── Export bibliography ────────────────────────────────────────────────────
+  // ── Export bibliography (includes verification statuses) ───────────────────
   const exportBibliography = () => {
-    const text = citations.map((c, i) => `[${i + 1}] ${c.ref}`).join('\n');
-    const blob = new Blob([text], { type: 'text/plain' });
+    const statusLabel = (c: Citation): string => {
+      switch (c.verification?.status) {
+        case 'verified_local': return `VERIFIED (local framework data${c.verification.title ? `: ${c.verification.title}` : ''})`;
+        case 'verified_remote': return `VERIFIED (EUR-Lex${c.verification.url ? `: ${c.verification.url}` : ''})`;
+        case 'not_found': return 'NOT FOUND — could not be located; verify before relying on it';
+        case 'unresolved': return 'UNVERIFIED — could not be checked';
+        default: return 'UNVERIFIED — not yet checked';
+      }
+    };
+    const lines = citations.map((c, i) => `[${i + 1}] ${c.ref} — ${statusLabel(c)}`);
+    lines.push('', 'Note: verification checks existence of the cited instrument/article, not that it supports the stated proposition.');
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'bibliography.txt';
@@ -994,23 +1055,53 @@ export default function CounselsDesk() {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
               {citations.length === 0 && (
-                <p className="px-2 py-4 text-center text-xs text-adv-gray">Legal citations are auto-captured from Claude's responses.</p>
+                <p className="px-2 py-4 text-center text-xs text-adv-gray">Legal citations are auto-captured from Claude's responses and verified against local frameworks and EUR-Lex.</p>
               )}
-              {citations.map((c, i) => (
-                <div key={c.id} className="group flex items-start gap-1.5">
-                  <span className="mt-0.5 text-xs text-adv-gray font-mono w-5 shrink-0">[{i + 1}]</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-adv-off-white leading-snug break-words">{c.ref}</p>
-                    <span className={`text-xs font-medium ${c.type === 'regulation' ? 'text-adv-teal' : c.type === 'case-law' ? 'text-adv-gold' : c.type === 'guideline' ? 'text-adv-blue' : 'text-adv-gray'}`}>
-                      {c.type}
-                    </span>
+              {citations.map((c, i) => {
+                const v = c.verification;
+                const isVerified = v?.status === 'verified_local' || v?.status === 'verified_remote';
+                return (
+                  <div key={c.id} className="group flex items-start gap-1.5">
+                    <span className="mt-0.5 text-xs text-adv-gray font-mono w-5 shrink-0">[{i + 1}]</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-1">
+                        {isVerified && <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-adv-green" />}
+                        {v?.status === 'unresolved' && <HelpCircle className="mt-0.5 h-3 w-3 shrink-0 text-adv-gray" />}
+                        {v?.status === 'not_found' && <XCircle className="mt-0.5 h-3 w-3 shrink-0 text-adv-red" />}
+                        <p className="text-[11px] text-adv-off-white leading-snug break-words">{c.ref}</p>
+                      </div>
+                      {isVerified && (
+                        <p className="text-[10px] text-adv-green leading-snug break-words">
+                          Verified{v?.title ? ` — ${v.title}` : ''}{v?.source ? ` (${v.source})` : ''}
+                          {v?.url && (
+                            <a href={v.url} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center text-adv-teal hover:underline" title="Open on EUR-Lex">
+                              <ExternalLink className="h-2.5 w-2.5" />
+                            </a>
+                          )}
+                        </p>
+                      )}
+                      {v?.status === 'unresolved' && (
+                        <p className="text-[10px] text-adv-gray leading-snug">Could not verify</p>
+                      )}
+                      {v?.status === 'not_found' && (
+                        <p className="text-[10px] text-adv-red leading-snug">This citation could not be located — verify before relying on it.</p>
+                      )}
+                      <span className={`text-xs font-medium ${c.type === 'regulation' ? 'text-adv-teal' : c.type === 'case-law' ? 'text-adv-gold' : c.type === 'guideline' ? 'text-adv-blue' : 'text-adv-gray'}`}>
+                        {c.type}
+                      </span>
+                    </div>
+                    <button onClick={() => removeCitation(c.id)} className="hidden group-hover:block shrink-0 text-adv-gray hover:text-adv-red transition-colors mt-0.5">
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
-                  <button onClick={() => removeCitation(c.id)} className="hidden group-hover:block shrink-0 text-adv-gray hover:text-adv-red transition-colors mt-0.5">
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            {citations.length > 0 && (
+              <p className="shrink-0 border-t border-border/50 px-3 py-1.5 text-[10px] leading-snug text-adv-gray/70">
+                Verification checks existence of the cited instrument/article, not that it supports the stated proposition.
+              </p>
+            )}
           </div>
 
           {/* Knowledge Packs */}
