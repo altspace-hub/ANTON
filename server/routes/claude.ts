@@ -40,9 +40,10 @@ import { enqueueAudit } from '../services/audit-queue.js';
 import { buildCompactionConfig, buildContextManagementParam } from '../services/compaction-manager.js';
 import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
-import { assignAtomArm, isAtomAbEnabled } from '../services/atom-ab.js';
+import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { computeRunCostUsd } from '../services/run-cost.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -120,6 +121,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         atomInjectionEnabled,
         atomCollectionEnabled,
         compactionEnabled,
+        rerunOf,
       } = req.body;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
@@ -243,7 +245,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const storedBlocksMap = new Map<string, object[]>();
       if (sessionId) {
         try {
-          const stored = await db.get(`SELECT content, content_blocks FROM messages
+          const stored = await db.all(`SELECT content, content_blocks FROM messages
              WHERE session_id = ? AND role = 'assistant' AND content_blocks IS NOT NULL`
           , sessionId) as Array<{ content: string; content_blocks: string }>;
           for (const row of stored) {
@@ -591,14 +593,27 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // run_artifacts.layer_summary so quality_scores can finally be compared
       // per arm (Intelligence Dashboard card) instead of assuming the layer
       // helps. Kill switch: app_settings 'atom_ab_experiment' (default on).
+      // F2: reruns (body.rerunOf, set only by the rerun dispatcher) are never
+      // experiment subjects — an arm from the rerun's fresh message id would
+      // straddle arms within the session (excluded from the stats) or
+      // double-count another model's quality into one arm. Atom injection
+      // itself still applies to reruns exactly like the original run.
       const atomInjectionOn = atomInjectionEnabled !== false;
       let atomArm: 'injected' | 'holdout' | null = null;
-      if (atomInjectionOn && sessionId && userMessageId && await isAtomAbEnabled(db)) {
+      if (
+        userMessageId && // type narrowing — the predicate also checks it
+        isExperimentSubject({ isRerun: !!rerunOf, atomInjectionOn, sessionId, userMessageId }) &&
+        await isAtomAbEnabled(db)
+      ) {
         atomArm = assignAtomArm(userMessageId);
       }
       const atomLayerPrompt = atomInjectionOn && atomArm !== 'holdout'
         ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null)
         : '';
+      // Finding #9: drop an 'injected' arm whose atom layer came back empty so the
+      // A/B experiment is not biased toward "atoms don't help" by runs that never
+      // actually injected anything. resolveFinalArm leaves 'holdout'/null as-is.
+      atomArm = resolveFinalArm(atomArm, atomLayerPrompt);
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
         (req as any).user?.id || 'default',
         areaId || 'finance'
@@ -667,9 +682,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         `context tokens: ~${resolved.tokenEstimate}`
       );
 
-      // Compute cost rates for this model
-      const costIn = modelConfig?.costPer1MInput || 15;
-      const costOut = modelConfig?.costPer1MOutput || 75;
+      // Compute cost rates for this model.
+      // Known models (in MODEL_REGISTRY) → their real per-1M pricing.
+      // Unknown providers must NOT be billed phantom Opus rates ($15/$75) into the
+      // ENFORCED global cap (SUM(messages.cost)) + analytics:
+      //   - ollama: local models are free → cost 0
+      //   - azure:/compat:/other unknowns → cost NULL (honest "we don't know"),
+      //     mirroring engagement-session-bridge.ts. NULL is excluded by SUM() so
+      //     it neither trips the cap nor pollutes totalCost.
+      const hasKnownPricing = !!modelConfig;
+      const costIn = modelConfig?.costPer1MInput ?? 0;
+      const costOut = modelConfig?.costPer1MOutput ?? 0;
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
@@ -708,14 +731,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // written, so the cap could never trip and analytics totalCost was always 0.)
             const cacheReadTokens = data.cacheReadTokens || 0;
             const cacheCreationTokens = data.cacheCreationTokens || 0;
-            // Cache read is ~10% of input rate; cache write is ~125% of input rate
-            const billableInputTokens = (data.inputTokens || 0) - cacheReadTokens - cacheCreationTokens;
-            const estimatedCostUsd = (
-              Math.max(0, billableInputTokens) * costIn +
-              cacheReadTokens * (costIn * 0.10) +
-              cacheCreationTokens * (costIn * 1.25) +
-              (data.outputTokens || 0) * costOut
-            ) / 1_000_000;
+            // Known pricing → real cache-adjusted cost. Ollama (free, no modelConfig)
+            // → 0. Other unknown providers (azure/compat) → NULL so they never feed
+            // the enforced cap or analytics with phantom Opus dollars (Finding #1).
+            const estimatedCostUsd: number | null = computeRunCostUsd({
+              hasKnownPricing,
+              isOllama: isOllamaModel,
+              costPer1MInput: costIn,
+              costPer1MOutput: costOut,
+              inputTokens: data.inputTokens || 0,
+              outputTokens: data.outputTokens || 0,
+              cacheReadTokens,
+              cacheCreationTokens,
+            });
             // Item 1.6: the assistant message id is captured so the run artifact
             // (composed prompt + pinned source manifest) can FK to this exact row.
             const assistantMessageId = crypto.randomUUID();
@@ -817,7 +845,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               outputTokenCount: data.outputTokens || 0,
               cachedTokens: cacheReadTokens,
               cacheCreationTokens,
-              estimatedCostUsd,
+              // NULL cost (unknown-pricing provider) → undefined in the audit (honest).
+              estimatedCostUsd: estimatedCostUsd ?? undefined,
               seed: seed !== undefined ? seed : undefined,
               userId: req.user?.id,
               ragChunks: ragChunks.length > 0 ? JSON.stringify(ragChunks.map(c => ({ citation: c.citation, relevance: c.relevanceScore }))) : undefined,
@@ -878,24 +907,40 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 await db.run('INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?,?,?,?,?)', 'session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text);
               } catch { /* non-fatal */ }
             }
-            // Apprentice progression
-            if (moduleId) {
+            // Apprentice progression.
+            // Finding #6: a rerun is not new practice — rerun.ts re-executes an
+            // existing run with a different model in the same session. Counting it
+            // would inflate sessions_completed and could trigger an unearned
+            // promotion. Skip the whole block for reruns (the quality fold below
+            // is part of it, so a rerun also never folds a second model's score).
+            if (moduleId && !rerunOf) {
               try {
                 const uid = req.user?.id || 'default';
                 type ApprenticeRow = { id: string; stage: string; sessions_completed: number; quality_avg: number | null; quality_n: number | null };
-                const p = await db.get('SELECT * FROM apprentice_profiles WHERE user_id=? AND module_id=?', uid, moduleId) as ApprenticeRow | undefined;
-                if (!p) {
-                  await db.run('INSERT INTO apprentice_profiles (user_id,module_id,area_id,sessions_completed,last_session) VALUES (?,?,?,1,?) ON CONFLICT DO NOTHING', uid, moduleId, areaId || null, new Date().toISOString());
-                } else {
-                  const newCount = p.sessions_completed + 1;
-                  await db.run('UPDATE apprentice_profiles SET sessions_completed=?,last_session=? WHERE id=?', newCount, new Date().toISOString(), p.id);
-                  const s = p.stage;
+                // Finding #6: atomic upsert + increment. The previous JS
+                // read-modify-write (newCount = sessions_completed + 1) lost updates
+                // under concurrency, and two simultaneous first-runs both hit
+                // INSERT ... ON CONFLICT DO NOTHING, dropping a session. A single
+                // upsert that increments in SQL and RETURNs the post-increment row
+                // is race-free; promotion checks then read the authoritative count.
+                const row = await db.get(
+                  `INSERT INTO apprentice_profiles (user_id, module_id, area_id, sessions_completed, last_session)
+                   VALUES (?, ?, ?, 1, ?)
+                   ON CONFLICT (user_id, module_id) DO UPDATE SET
+                     sessions_completed = apprentice_profiles.sessions_completed + 1,
+                     last_session = excluded.last_session
+                   RETURNING id, stage, sessions_completed, quality_avg, quality_n`,
+                  uid, moduleId, areaId || null, new Date().toISOString(),
+                ) as ApprenticeRow | undefined;
+                if (row) {
+                  const newCount = row.sessions_completed;
+                  const s = row.stage;
                   if (s === 'observer' && newCount >= 3)
-                    await db.run("UPDATE apprentice_profiles SET stage='guided',promoted_to_guided=? WHERE id=?", new Date().toISOString(), p.id);
-                  else if (s === 'guided' && newCount >= 8 && (p.quality_avg ?? 0) >= 7.0)
-                    await db.run("UPDATE apprentice_profiles SET stage='supervised',promoted_to_supervised=? WHERE id=?", new Date().toISOString(), p.id);
-                  else if (s === 'supervised' && newCount >= 20 && (p.quality_avg ?? 0) >= 8.0)
-                    await db.run("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?", new Date().toISOString(), p.id);
+                    await db.run("UPDATE apprentice_profiles SET stage='guided',promoted_to_guided=? WHERE id=?", new Date().toISOString(), row.id);
+                  else if (s === 'guided' && newCount >= 8 && (row.quality_avg ?? 0) >= 7.0)
+                    await db.run("UPDATE apprentice_profiles SET stage='supervised',promoted_to_supervised=? WHERE id=?", new Date().toISOString(), row.id);
+                  else if (s === 'supervised' && newCount >= 20 && (row.quality_avg ?? 0) >= 8.0)
+                    await db.run("UPDATE apprentice_profiles SET stage='autonomous',promoted_to_autonomous=? WHERE id=?", new Date().toISOString(), row.id);
                 }
                 // B2: when the quality score for this run resolves, fold it into the
                 // running average. quality_n counts only the runs that actually got
@@ -1104,25 +1149,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         );
         recordSuccess();
 
-        // Save IRE output to session (was previously skipped — IRE work didn't appear in My Work)
+        // Save IRE output to session (was previously skipped — IRE work didn't appear in My Work).
+        // onComplete itself quality-scores the synthesis (qualityScorePromise, since W0A),
+        // so the previously-separate scoreOutput call here was a DUPLICATE — it produced
+        // a second quality_scores row, a double updateBaselineWithWeight, and double utility
+        // spend on the SAME synthesis text. Finding #5: scored exactly once via onComplete.
         if (onComplete && ireSummary.synthesisText) {
-          onComplete({
+          await onComplete({
             text: ireSummary.synthesisText,
             thinking: '',
             inputTokens: ireSummary.totalInputTokens || 0,
             outputTokens: ireSummary.totalOutputTokens || 0,
           });
-        }
-
-        // Quality auto-scoring for IRE outputs (fire-and-forget)
-        if (ireSummary.synthesisText && ireSummary.synthesisText.length > 200) {
-          ratchet.scoreOutput({
-            content: ireSummary.synthesisText,
-            moduleId: moduleId || 'open-chat',
-            areaId,
-            sessionId,
-            anthropicClient: anthropic || getClient(),
-          }).catch(() => {});
         }
         return;
       }

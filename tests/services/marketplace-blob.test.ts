@@ -142,3 +142,41 @@ describe('marketplace blob storage (Wave 4.9)', () => {
     expect(result.found).toBe(false);
   });
 });
+
+// ── F4: bundle_hash form — store normalized, emit bare hex ───────────────────
+
+describe('bundle_hash normalization (F4)', () => {
+  it('stores bundle_hash as bare lowercase hex even when declared with a sha256: prefix', async () => {
+    const { db, listings } = makeFakeDb();
+    const svc = await createMarketplaceService(db);
+    const id = await svc.publishBundle(publishParams({ bundleHash: `sha256:${BUNDLE_SHA.toUpperCase()}` }));
+
+    const stored = listings.get(id)!;
+    expect(stored.bundle_hash).toBe(BUNDLE_SHA);              // exact bare hex
+    expect(stored.bundle_hash).toMatch(/^[0-9a-f]{64}$/);     // no prefix, lowercase
+  });
+
+  it('emits bare hex from getListingBundle for legacy rows stored WITH a prefix', async () => {
+    const { db, listings } = makeFakeDb();
+    const svc = await createMarketplaceService(db);
+    // Simulate a pre-normalization row (published before F4).
+    listings.set('mpl_legacy', {
+      id: 'mpl_legacy',
+      bundle_type: 'module',
+      title: 'Legacy Listing',
+      version: '1.0.0',
+      bundle_hash: `sha256:${BUNDLE_SHA}`,
+      bundle_size_bytes: BUNDLE.length,
+      bundle_data: BUNDLE,
+      is_published: 1,
+    });
+
+    const result = await svc.getListingBundle('mpl_legacy');
+    expect(result.found).toBe(true);
+    if (!result.found) throw new Error('unreachable');
+    // The download header echoes listing.bundle_hash verbatim — so the
+    // service must normalize at read for old rows too.
+    expect(result.listing.bundle_hash).toBe(BUNDLE_SHA);
+    expect(result.listing.bundle_hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+});

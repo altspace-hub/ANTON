@@ -13,7 +13,7 @@
  *   • buildApplicationRecord — what gets persisted for the approve gate
  */
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, mkdir, readFile, writeFile, rm, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, rm, readdir, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -26,6 +26,7 @@ import {
   buildTestEnv,
   compactChunks,
   getAllowedBases,
+  isWriteWithinWorkspaceReal,
   parseFileBlocks,
   parseTestSummary,
   resolveTargetPath,
@@ -518,6 +519,48 @@ describe('applyFilesToWorkspace', () => {
       })).rejects.toThrow(/refusing to write/);
     } finally {
       await rm(ws, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses to write through a pre-existing symlink that escapes the workspace', async () => {
+    const parent = await mkdtemp(path.join(os.tmpdir(), 'anton-symesc-'));
+    const ws = path.join(parent, 'ws');
+    const outside = path.join(parent, 'outside');
+    await mkdir(ws, { recursive: true });
+    await mkdir(outside, { recursive: true });
+    let linked = false;
+    try {
+      // A lexically-inside dir ('escape') that physically points OUTSIDE the
+      // workspace. On Windows use a junction (no admin needed for dirs).
+      try {
+        await symlink(outside, path.join(ws, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
+        linked = true;
+      } catch {
+        // Environment can't create symlinks/junctions — skip the assertion.
+        return;
+      }
+
+      // 'escape/evil.ts' passes lexical validation (no ..) but realpath resolves
+      // into `outside` → must be refused.
+      await expect(applyFilesToWorkspace({
+        workspaceAbs: ws,
+        applicationId: 'app-sym',
+        files: [{ path: 'escape/evil.ts', content: 'pwned\n' }],
+      })).rejects.toThrow(/symlink|outside the workspace/i);
+
+      // The unit-level guard agrees.
+      const target = resolveTargetPath(ws, 'escape/evil.ts');
+      expect(target).not.toBeNull();
+      expect(await isWriteWithinWorkspaceReal(ws, target!)).toBe(false);
+
+      // A genuinely-inside path is still allowed.
+      const ok = resolveTargetPath(ws, 'src/fine.ts');
+      expect(await isWriteWithinWorkspaceReal(ws, ok!)).toBe(true);
+
+      // Nothing was written into the escaped dir.
+      expect(linked && (await readdir(outside)).length).toBe(0);
+    } finally {
+      await rm(parent, { recursive: true, force: true });
     }
   });
 });

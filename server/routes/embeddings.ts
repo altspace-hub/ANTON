@@ -340,7 +340,12 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
   router.get('/feedback/:sessionId', async (req, res) => {
     try {
       const { sessionId } = req.params;
-      const rows = await db.get(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant,
+      // Finding #3: db.get returns a single row (or undefined), but this endpoint
+      // returns a LIST of injected atoms. db.get cast to an array meant injectedAtoms
+      // was one object and total was undefined; with no rows, db.get → undefined and
+      // `rows.length` threw → 500. db.all returns the array the UI (OutputToolbar /
+      // InjectedAtomsPanel) iterates, and [] for an empty session (no 500).
+      const rows = await db.all(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant,
                 ka.content, ka.atom_type, ka.category, ka.confidence
          FROM retrieval_feedback rf
          LEFT JOIN knowledge_atoms ka ON ka.id = rf.atom_id

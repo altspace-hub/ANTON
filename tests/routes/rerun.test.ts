@@ -207,6 +207,32 @@ describeOrSkip('POST /api/rerun (Rerun with… — Wave 2.3)', () => {
     expect(String(json.error)).toMatch(/snapshot/i);
   });
 
+  it("400s for a bridged engagement session (module_id 'engagement') — can't rerun in isolation", async () => {
+    const engSessionId = randomUUID();
+    const engAssistantId = randomUUID();
+    try {
+      // A bridged session carries the engagement bridge's minimal config_snapshot
+      // (so it would pass the snapshot check), but module_id 'engagement' makes it
+      // non-rerunnable — the guard must fire BEFORE any dispatch.
+      await db.run(
+        `INSERT INTO sessions (id, module_id, title, config, created_at, updated_at) VALUES (?, 'engagement', ?, ?, NOW(), NOW())`,
+        engSessionId, 'Bridged iteration', JSON.stringify({ model: 'claude-opus-4-8', thinking: 'think_hard', engagementId: 'e1' }));
+      await db.run(
+        `INSERT INTO messages (id, session_id, role, content, created_at) VALUES (?, ?, 'user', 'Iteration input', NOW())`,
+        randomUUID(), engSessionId);
+      await db.run(
+        `INSERT INTO messages (id, session_id, role, content, model_id, config_snapshot, created_at)
+         VALUES (?, ?, 'assistant', 'Bridged output', 'claude-opus-4-8', ?, NOW())`,
+        engAssistantId, engSessionId, JSON.stringify({ model: 'claude-opus-4-8', thinking: 'think_hard', engagementId: 'e1' }));
+
+      const { status, json } = await postRerun({ sessionId: engSessionId, messageId: engAssistantId, newModelId: 'claude-sonnet-4-6' });
+      expect(status).toBe(400);
+      expect(String(json.error)).toMatch(/engagement workspace/i);
+    } finally {
+      await db.run('DELETE FROM sessions WHERE id = ?', engSessionId);
+    }
+  });
+
   it('reruns through the pipeline: rehydrated config, rerun_of flag, drift report', async () => {
     captured.length = 0;
     const { status, json } = await postRerun({ sessionId, messageId: originalAssistantId, newModelId: 'mistral-large-latest', areaId: 'fcp' });
@@ -230,15 +256,27 @@ describeOrSkip('POST /api/rerun (Rerun with… — Wave 2.3)', () => {
     expect(body.writingTone).toBe('professional');
     expect(body.multiAgentEnabled).toBe(false);          // forced off for reruns
     expect(body.atomCollectionEnabled).toBe(false);      // no double-teaching
+    // F2: the rerun marker threads to the claude route, where it skips A/B
+    // arm assignment (reruns are not experiment subjects).
+    expect(body.rerunOf).toBe(originalAssistantId);
+    // The original snapshot carried no atomInjectionEnabled → the rerun leaves
+    // it at default-on (key absent), exactly like the original run.
+    expect('atomInjectionEnabled' in body).toBe(false);
     expect(body.moduleInputs).toEqual({ scope: 'EU-wide' }); // recovered from session config
     // The output-format prompt instruction is rebuilt server-side
     expect(String(body.outputInstruction)).toMatch(/EXECUTIVE SUMMARY/);
     // History: the legacy assistant message precedes the user turn
     expect(Array.isArray(body.history)).toBe(true);
     expect((body.history as Array<{ content: string }>).some(h => h.content === 'LEGACY OUTPUT')).toBe(true);
-    // The rehydrated body must satisfy the REAL /api/claude/message schema
+    // The rehydrated body must satisfy the REAL /api/claude/message schema —
+    // AND zod parsing must KEEP rerunOf (zod strips unknown keys, so if the
+    // field were missing from the schema, claude.ts would never see it and
+    // reruns would silently rejoin the A/B experiment).
     const { ClaudeMessageSchema } = await import('../../server/lib/schemas.js');
-    expect(ClaudeMessageSchema.safeParse(body).success).toBe(true);
+    const parsed = ClaudeMessageSchema.safeParse(body);
+    expect(parsed.success).toBe(true);
+    expect(parsed.success ? (parsed.data as Record<string, unknown>).rerunOf : undefined)
+      .toBe(originalAssistantId);
 
     // ── New-message flagging
     const rerun = json.rerun as Record<string, unknown>;
@@ -322,6 +360,32 @@ describe('computeSourceDrift (pure)', () => {
 });
 
 describe('rehydrateClaudeBody (pure)', () => {
+  it('marks reruns with rerunOf and preserves the original atom-injection setting (F2)', async () => {
+    const { rehydrateClaudeBody } = await import('../../server/routes/rerun.js');
+
+    // Snapshot captured injection OFF → the rerun keeps it OFF.
+    const off = rehydrateClaudeBody({
+      snapshot: { model: 'claude-opus-4-8', atomInjectionEnabled: false },
+      newModelId: 'claude-sonnet-4-6',
+      sessionId: 's1', moduleId: null, areaId: null,
+      userMessage: 'hi', history: [],
+      rerunOf: 'msg-original-1',
+    });
+    expect(off.rerunOf).toBe('msg-original-1');
+    expect(off.atomInjectionEnabled).toBe(false);
+    expect(off.atomCollectionEnabled).toBe(false);
+
+    // No snapshot value → default-on (key absent), like the original run got.
+    const def = rehydrateClaudeBody({
+      snapshot: { model: 'claude-opus-4-8' },
+      newModelId: 'claude-sonnet-4-6',
+      sessionId: 's1', moduleId: null, areaId: null,
+      userMessage: 'hi', history: [],
+    });
+    expect('rerunOf' in def).toBe(false);
+    expect('atomInjectionEnabled' in def).toBe(false);
+  });
+
   it('drops invalid structureReference and undefined keys', async () => {
     const { rehydrateClaudeBody } = await import('../../server/routes/rerun.js');
     const body = rehydrateClaudeBody({

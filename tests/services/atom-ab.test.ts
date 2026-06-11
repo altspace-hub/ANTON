@@ -17,7 +17,7 @@ import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { assignAtomArm, MIN_SCORED_PER_ARM, ATOM_AB_SETTING_KEY } from '../../server/services/atom-ab.js';
+import { assignAtomArm, isExperimentSubject, resolveFinalArm, MIN_SCORED_PER_ARM, ATOM_AB_SETTING_KEY } from '../../server/services/atom-ab.js';
 
 function resolveDatabaseUrl(): string | undefined {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -57,6 +57,60 @@ describe('assignAtomArm (deterministic A/B unit)', () => {
   it('returns only the two valid arms', () => {
     const arms = new Set([assignAtomArm('a'), assignAtomArm('b'), assignAtomArm('c'), assignAtomArm(randomUUID())]);
     for (const arm of arms) expect(['injected', 'holdout']).toContain(arm);
+  });
+});
+
+// ── Pure: experiment-subject gate (F2 — reruns never get an atom_arm) ───────
+
+describe('isExperimentSubject (F2 rerun exclusion)', () => {
+  const base = {
+    isRerun: false,
+    atomInjectionOn: true,
+    sessionId: 'sess-1',
+    userMessageId: 'msg-1',
+  };
+
+  it('a rerun produces NO atom_arm tag — the gate refuses arm assignment', () => {
+    // claude.ts only calls assignAtomArm (and only then tags audit_log.atom_arm
+    // + the run_artifacts layer summary) when this returns true. A rerun
+    // (body.rerunOf set by rehydrateClaudeBody) must never be a subject:
+    // its fresh message id would straddle arms within the session (the whole
+    // session then gets EXCLUDED from getAtomAbStats) or double-count another
+    // model's quality into the original arm.
+    expect(isExperimentSubject({ ...base, isRerun: true })).toBe(false);
+  });
+
+  it('a normal persisted run with injection on IS a subject', () => {
+    expect(isExperimentSubject(base)).toBe(true);
+  });
+
+  it('injection off, missing session, or missing message id → not a subject', () => {
+    expect(isExperimentSubject({ ...base, atomInjectionOn: false })).toBe(false);
+    expect(isExperimentSubject({ ...base, sessionId: undefined })).toBe(false);
+    expect(isExperimentSubject({ ...base, sessionId: '' })).toBe(false);
+    expect(isExperimentSubject({ ...base, userMessageId: null })).toBe(false);
+  });
+});
+
+// ── Pure: empty-layer arm correction (#9) ───────────────────────────────────
+
+describe('resolveFinalArm (#9 — empty injected layer drops the arm)', () => {
+  it("an 'injected' arm over an EMPTY atom layer is dropped to null (excluded from the experiment)", () => {
+    expect(resolveFinalArm('injected', '')).toBeNull();
+  });
+
+  it("an 'injected' arm with a NON-empty layer keeps the arm", () => {
+    expect(resolveFinalArm('injected', '## Prior knowledge\n- atom')).toBe('injected');
+  });
+
+  it("'holdout' is never touched — it deliberately skips the layer", () => {
+    expect(resolveFinalArm('holdout', '')).toBe('holdout');
+    expect(resolveFinalArm('holdout', 'irrelevant')).toBe('holdout');
+  });
+
+  it('null stays null', () => {
+    expect(resolveFinalArm(null, '')).toBeNull();
+    expect(resolveFinalArm(null, 'x')).toBeNull();
   });
 });
 

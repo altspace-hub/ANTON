@@ -319,8 +319,14 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     distribution: Record<number, number>;
     recentComments: { rating: number; comment: string; created_at: string }[];
   }> {
+    // Finding #7: migration 226 added a 1-click verdict lane (good/needs_work) whose
+    // rows carry rating = NULL. These STAR-rating stats must exclude verdict-only rows,
+    // otherwise they inflate `count`, dilute avgRating (NULL counted in the denominator),
+    // and add a spurious "null" key to the distribution. Verdict good/needs-work counts
+    // live in the separate `verdict` column and are aggregated independently, so
+    // filtering NULL ratings here does not hide or break the verdict feature.
     const rows = await db.all(
-      `SELECT rating, comment, created_at FROM output_feedback WHERE module_id = ? ORDER BY created_at DESC LIMIT 100`,
+      `SELECT rating, comment, created_at FROM output_feedback WHERE module_id = ? AND rating IS NOT NULL ORDER BY created_at DESC LIMIT 100`,
       moduleId
     ) as Array<{ rating: number; comment: string | null; created_at: string }>;
 

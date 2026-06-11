@@ -243,4 +243,52 @@ describeOrSkip('PATCH /api/gap-assessments/:id/findings/:findingId (assessor ove
     const { status } = await patchFinding(assessmentId, findingId, { reason: 'no payload' });
     expect(status).toBe(400);
   });
+
+  // ── #8: facts override must label the rubric-recomputed score ──────────────
+  it('#8: facts override of a LEGACY finding sets rubric_version (no longer mislabeled pre-rubric)', async () => {
+    const r = await db.run(
+      `INSERT INTO gap_findings (assessment_id, framework, article_id, score, numeric_score, priority)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      assessmentId, framework, 'Art.4', 'amber', 30, 'high'
+    );
+    const fid = Number(r.lastInsertRowid);
+
+    const { status, json } = await patchFinding(assessmentId, fid, {
+      criteria: { documented: 'yes', implemented: 'yes', tested: 'yes', evidenced: 'yes', ownerAssigned: 'yes' },
+      reason: 'On-site walkthrough evidenced the full control set',
+    });
+    expect(status).toBe(200);
+    const finding = json.finding as Record<string, unknown>;
+    expect(finding.numericScore).toBe(100); // rubric-computed from override criteria
+    expect(finding.overrideKind).toBe('facts');
+    expect(finding.rubricVersion).toBe(1);  // was NULL → mislabeled "pre-rubric" before #8
+    // Pre-override legacy values still preserved for revert
+    expect(finding.computedNumericScore).toBe(30);
+  });
+
+  it('#8: reverting that legacy finding restores LLM-decided values AND the pre-rubric label', async () => {
+    const row = await db.get<{ id: number }>(
+      'SELECT id FROM gap_findings WHERE assessment_id = ? AND article_id = ?', assessmentId, 'Art.4');
+    const { status, json } = await patchFinding(assessmentId, row!.id, { revert: true });
+    expect(status).toBe(200);
+    const finding = json.finding as Record<string, unknown>;
+    expect(finding.numericScore).toBe(30);
+    expect(finding.overrideKind).toBeNull();
+    // Effective values are LLM-decided again → rubric_version honestly NULL
+    expect(finding.rubricVersion).toBeNull();
+  });
+
+  it('#8: facts override + revert on a RUBRIC finding keeps rubric_version intact', async () => {
+    const o = await patchFinding(assessmentId, findingId, {
+      criteria: { documented: 'no', implemented: 'no', tested: 'no', evidenced: 'no', ownerAssigned: 'no' },
+      reason: 'stress-testing rubric_version provenance',
+    });
+    expect(o.status).toBe(200);
+    expect((o.json.finding as Record<string, unknown>).rubricVersion).toBe(1);
+    const rev = await patchFinding(assessmentId, findingId, { revert: true });
+    expect(rev.status).toBe(200);
+    // Original criteria exist → the restored computed values are rubric-computed
+    expect((rev.json.finding as Record<string, unknown>).rubricVersion).toBe(1);
+    expect((rev.json.finding as Record<string, unknown>).numericScore).toBe(55);
+  });
 });

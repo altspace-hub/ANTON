@@ -182,5 +182,68 @@ describe('coerceFacts / mapOpinionRow', () => {
     expect(mapped.facts).toEqual(FACTS_STRONG);
     expect(mapped.computedNumericScore).toBe(100);
     expect(mapped.evidenceRefs).toEqual([{ docId: 'doc-1', quote: 'q' }]);
+    expect(mapped.warnings).toEqual([]); // valid facts add no normalize warnings
+  });
+});
+
+// ── #6: coerceFacts must not fabricate all-unknown facts from any object ─────
+describe('coerceFacts — zero recognized criterion keys (#6)', () => {
+  it('returns null for objects with no recognized criterion key', () => {
+    expect(coerceFacts({})).toBeNull();
+    expect(coerceFacts({ foo: 1, bar: 'yes' })).toBeNull();
+    expect(coerceFacts('{"some":"json","but":"not facts"}')).toBeNull();
+  });
+
+  it('returns null when every key is present but invalid', () => {
+    expect(coerceFacts({ documented: 'maybe', implemented: 'kinda', tested: 'dunno', evidenced: 'sorta', ownerAssigned: 'who' })).toBeNull();
+  });
+
+  it('surfaces the normalize warnings via the sink instead of discarding them', () => {
+    const sink: string[] = [];
+    expect(coerceFacts({ foo: 1 }, sink)).toBeNull();
+    expect(sink).toContain('facts_unrecognized');
+    expect(sink.some(w => w.startsWith('missing_criterion:'))).toBe(true);
+  });
+
+  it('partially-recognized facts still coerce, with warnings surfaced', () => {
+    const sink: string[] = [];
+    const facts = coerceFacts({ documented: 'yes' }, sink);
+    expect(facts).not.toBeNull();
+    expect(facts!.documented).toBe('yes');
+    expect(facts!.implemented).toBe('unknown'); // conservative fill
+    expect(sink).toContain('missing_criterion:implemented');
+    expect(sink).not.toContain('facts_unrecognized');
+  });
+
+  it('a garbage facts row maps to null facts → band-fallback comparison, warnings surfaced', () => {
+    const row: OpinionRow = {
+      id: 2,
+      assessment_id: 'a1',
+      framework: 'amlr-2024',
+      article_id: 'Art.10',
+      article_title: 'Outsourcing',
+      model_id: 'mistral-large-latest',
+      facts: '{"not":"facts"}',
+      computed_score: 'red',
+      computed_numeric_score: 10,
+      computed_priority: 'critical',
+      rubric_version: null,
+      rationale: 'garbage facts row',
+      current_state: null,
+      evidence_refs: '[]',
+      warnings: '["stored_warning"]',
+      created_at: '2026-06-11T00:00:00Z',
+    };
+    const mapped = mapOpinionRow(row);
+    expect(mapped.facts).toBeNull();
+    expect(mapped.warnings).toContain('stored_warning');
+    expect(mapped.warnings).toContain('facts_unrecognized');
+
+    // Null facts send the comparison down the honest band-fallback path
+    // instead of fabricating an all-unknown rubric comparison.
+    const legacyPrimary = primary('Art.10', null, { score: 'red', numericScore: 10, priority: 'critical' });
+    const summary = computeOpinionAgreement([legacyPrimary], [mapped as OpinionLite], 'mistral-large-latest');
+    expect(summary.articles[0].legacyComparison).toBe(true);
+    expect(summary.articles[0].agree).toBe(true); // red vs red on band
   });
 });

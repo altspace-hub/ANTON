@@ -28,17 +28,19 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       const sessionRow = await db.get('SELECT COUNT(*) AS total FROM sessions WHERE user_id = ?', userId) as { total: number };
       const msgRow = await db.get('SELECT COUNT(*) AS total FROM messages m JOIN sessions s ON s.id = m.session_id WHERE s.user_id = ?', userId) as { total: number };
       const tokenCostRow = await db.get(
-        'SELECT COALESCE(SUM(m.token_count), 0) AS totalTokens, COALESCE(SUM(m.cost), 0) AS totalCost FROM messages m JOIN sessions s ON s.id = m.session_id WHERE s.user_id = ?'
+        'SELECT COALESCE(SUM(m.token_count), 0) AS "totalTokens", COALESCE(SUM(m.cost), 0) AS "totalCost" FROM messages m JOIN sessions s ON s.id = m.session_id WHERE s.user_id = ?'
       , userId) as { totalTokens: number; totalCost: number };
       const moduleRow = await db.get('SELECT COUNT(DISTINCT module_id) AS unique_modules FROM sessions WHERE user_id = ?', userId) as {
         unique_modules: number;
       };
 
-      const totalSessions = sessionRow.total;
-      const totalMessages = msgRow.total;
-      const totalTokens = tokenCostRow.totalTokens;
-      const totalCost = tokenCostRow.totalCost;
-      const uniqueModules = moduleRow.unique_modules;
+      // PG returns COUNT/SUM as strings (bigint/numeric) — coerce so the JSON
+      // contract is numeric (the client formats these with toFixed etc).
+      const totalSessions = Number(sessionRow.total);
+      const totalMessages = Number(msgRow.total);
+      const totalTokens = Number(tokenCostRow.totalTokens);
+      const totalCost = Number(tokenCostRow.totalCost);
+      const uniqueModules = Number(moduleRow.unique_modules);
       const avgCostPerSession = totalSessions > 0 ? totalCost / totalSessions : 0;
 
       res.json({ totalSessions, totalMessages, totalTokens, totalCost, uniqueModules, avgCostPerSession });
@@ -66,7 +68,7 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       , cutoffStr, userId) as Array<{ date: string; count: number }>;
 
       const lookup: Record<string, number> = {};
-      for (const row of rows) lookup[row.date] = row.count;
+      for (const row of rows) lookup[row.date] = Number(row.count);
 
       const dateRange = buildDateRange(days);
       const result = dateRange.map((date) => ({ date, count: lookup[date] ?? 0 }));
@@ -84,7 +86,7 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       const limit = Math.min(Math.max(parseInt(String(req.query.limit || '10'), 10) || 10, 1), 50);
 
       const rows = await db.all(
-        `SELECT s.module_id AS moduleId,
+        `SELECT s.module_id AS "moduleId",
                 COUNT(DISTINCT s.id) AS count,
                 COALESCE(SUM(m.cost), 0) AS cost
          FROM sessions s
@@ -93,10 +95,12 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
          GROUP BY s.module_id
          ORDER BY count DESC
          LIMIT ?`
-      , userId, limit) as Array<{ moduleId: string; count: number; cost: number }>;
+      , userId, limit) as Array<{ moduleId: string | null; count: number; cost: number }>;
 
-      // Humanise the module ID into a label
-      function toLabel(id: string): string {
+      // Humanise the module ID into a label. Guards null/empty (a session may have
+      // no module_id) so the row renders as "Unknown" rather than throwing a 500.
+      function toLabel(id: string | null | undefined): string {
+        if (!id) return 'Unknown';
         return id
           .replace(/-/g, ' ')
           .replace(/_/g, ' ')
@@ -106,8 +110,9 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       const result = rows.map((r) => ({
         moduleId: r.moduleId,
         label: toLabel(r.moduleId),
-        count: r.count,
-        cost: r.cost,
+        // PG COUNT/SUM come back as strings — coerce to numbers for the JSON contract.
+        count: Number(r.count),
+        cost: Number(r.cost),
       }));
 
       res.json(result);
@@ -138,7 +143,7 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
       , cutoffStr, userId) as Array<{ date: string; cost: number; tokens: number }>;
 
       const lookup: Record<string, { cost: number; tokens: number }> = {};
-      for (const row of rows) lookup[row.date] = { cost: row.cost, tokens: row.tokens };
+      for (const row of rows) lookup[row.date] = { cost: Number(row.cost), tokens: Number(row.tokens) };
 
       const dateRange = buildDateRange(days);
       const result = dateRange.map((date) => ({

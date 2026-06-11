@@ -144,6 +144,27 @@ describeOrSkip('Wave 3.3 feedback valves', () => {
     expect((await post('/api/embeddings/feedback/bulk', { sessionId, wasRelevant: 'yes' })).status).toBe(400);
   });
 
+  // ── Finding #3: GET /feedback/:sessionId returns an ARRAY (was db.get → 500) ──
+
+  it('GET /feedback/:sessionId returns injectedAtoms as an ARRAY the UI can iterate', async () => {
+    const r = await fetch(`${base}/api/embeddings/feedback/${sessionId}`);
+    expect(r.status).toBe(200);
+    const json = (await r.json()) as { sessionId: string; injectedAtoms: unknown; total: number };
+    // Pre-#3 this was db.get → a single object (or 500). The UI iterates the array.
+    expect(Array.isArray(json.injectedAtoms)).toBe(true);
+    expect((json.injectedAtoms as unknown[]).length).toBe(atomIds.length);
+    expect(json.total).toBe(atomIds.length);
+  });
+
+  it('GET /feedback/:sessionId on an EMPTY session returns [] (no 500 from rows.length on undefined)', async () => {
+    const emptySession = randomUUID();
+    const r = await fetch(`${base}/api/embeddings/feedback/${emptySession}`);
+    expect(r.status).toBe(200);
+    const json = (await r.json()) as { injectedAtoms: unknown[]; total: number };
+    expect(json.injectedAtoms).toEqual([]);
+    expect(json.total).toBe(0);
+  });
+
   // ── Output verdict ─────────────────────────────────────────────────────────
 
   it("verdict 'good' resolves the session's LATEST assistant message and writes verdict (rating stays NULL)", async () => {

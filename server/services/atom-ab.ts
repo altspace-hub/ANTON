@@ -42,6 +42,41 @@ export function assignAtomArm(messageId: string): AtomArm {
   return digest.readUInt32BE(0) % 5 === 0 ? 'holdout' : 'injected';
 }
 
+/**
+ * Whether a run is an A/B experiment SUBJECT (F2). Reruns are not:
+ * rerun.ts re-executes an original run with a different model in the SAME
+ * session, so an arm assigned from the rerun's fresh message id would either
+ * straddle arms within the session (getAtomAbStats excludes mixed-arm
+ * sessions entirely) or double-count the other model's quality into one arm.
+ * Reruns still receive the atom layer exactly like the original run — they
+ * are simply never tagged with an arm (no audit_log.atom_arm, no
+ * run_artifacts layer-summary tag).
+ */
+export function isExperimentSubject(input: {
+  /** Truthy when the request is an internal rerun dispatch (body.rerunOf). */
+  isRerun: boolean;
+  /** Atom injection on for this run (atomInjectionEnabled !== false). */
+  atomInjectionOn: boolean;
+  sessionId: unknown;
+  userMessageId: unknown;
+}): boolean {
+  return !input.isRerun && input.atomInjectionOn && !!input.sessionId && !!input.userMessageId;
+}
+
+/**
+ * Finding #9: the 'injected' arm is assigned BEFORE buildAtomLayer runs, so a run
+ * with zero relevant atoms (fresh install, niche module) would otherwise be tagged
+ * 'injected' over an EMPTY atom layer — biasing the experiment toward "atoms don't
+ * help" (an injected arm that never injected anything). This resolves the FINAL arm
+ * once the layer is known: an 'injected' arm whose layer came back empty is dropped
+ * to null (excluded from getAtomAbStats). 'holdout' is untouched (it deliberately
+ * skips the layer); null stays null.
+ */
+export function resolveFinalArm(arm: AtomArm | null, atomLayerPrompt: string): AtomArm | null {
+  if (arm === 'injected' && atomLayerPrompt === '') return null;
+  return arm;
+}
+
 const OFF_VALUES = new Set(['off', 'false', '0', 'disabled', 'no']);
 
 /**
