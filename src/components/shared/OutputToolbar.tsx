@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown } from 'lucide-react';
+import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, ThumbsDown, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
 import FeedbackWidget from '@/components/shared/FeedbackWidget';
@@ -957,6 +957,16 @@ export default function OutputToolbar(props: OutputToolbarProps) {
         </div>
       )}
 
+      {/* ── Feedback valves (Wave 3.3) ── zero-friction rating where the eye is */}
+      {!isStreaming && outputContent && sessionId && (
+        <FeedbackValves
+          sessionId={sessionId}
+          moduleId={moduleId}
+          areaId={areaId}
+          outputContent={outputContent}
+        />
+      )}
+
       {/* ── Rerun comparison modal (Wave 2.3) ── */}
       {showComparison && rerunData && (
         <RerunComparison data={rerunData} onClose={() => setShowComparison(false)} />
@@ -971,6 +981,170 @@ export default function OutputToolbar(props: OutputToolbarProps) {
       {!isStreaming && outputContent && moduleId && moduleId !== 'open-chat' && (
         <SuggestedNextSteps moduleId={moduleId} />
       )}
+    </div>
+  );
+}
+
+// ── Feedback Valves (Wave 3.3) ───────────────────────────────────────────────
+// The two learning-loop feedback valves, surfaced in the standard output footer
+// instead of buried panels: (1) one-tap relevance rating for ALL atoms injected
+// into this run (writes retrieval_feedback.was_relevant via the bulk endpoint;
+// the InjectedAtomsPanel stays for per-atom rating) and (2) a 1-click
+// "Good output / Needs work" verdict (writes output_feedback.verdict).
+// Zero friction: no modal, optimistic UI, current state shown.
+
+function FeedbackValves({
+  sessionId,
+  moduleId,
+  areaId,
+  outputContent,
+}: {
+  sessionId: string;
+  moduleId?: string;
+  areaId?: string;
+  outputContent: string;
+}) {
+  const [atomCount, setAtomCount] = useState(0);
+  // null = unrated; true/false = the last bulk rating (or pre-existing unanimous rating)
+  const [atomsHelpful, setAtomsHelpful] = useState<boolean | null>(null);
+  const [atomBusy, setAtomBusy] = useState(false);
+  const [verdict, setVerdict] = useState<'good' | 'needs_work' | null>(null);
+  const [verdictBusy, setVerdictBusy] = useState(false);
+
+  // Load current state whenever a new output lands in this session.
+  useEffect(() => {
+    let cancelled = false;
+    setAtomCount(0);
+    setAtomsHelpful(null);
+    setVerdict(null);
+
+    fetchWithAuth(`/api/embeddings/feedback/${sessionId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { injectedAtoms?: Array<{ was_relevant: number | null }> } | null) => {
+        if (cancelled || !data?.injectedAtoms) return;
+        const atoms = data.injectedAtoms;
+        setAtomCount(atoms.length);
+        if (atoms.length > 0 && atoms.every((a) => a.was_relevant !== null)) {
+          // Unanimously rated → reflect it; mixed per-atom ratings → leave neutral.
+          if (atoms.every((a) => a.was_relevant === 1)) setAtomsHelpful(true);
+          else if (atoms.every((a) => a.was_relevant === 0)) setAtomsHelpful(false);
+        }
+      })
+      .catch(() => {});
+
+    fetchWithAuth(`/api/quality/output-verdict/${sessionId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { verdict?: 'good' | 'needs_work' | null } | null) => {
+        if (!cancelled && data?.verdict) setVerdict(data.verdict);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+    // Re-check when a new output finishes (outputContent identity changes).
+  }, [sessionId, outputContent]);
+
+  const rateAtoms = async (helpful: boolean) => {
+    if (atomBusy) return;
+    setAtomBusy(true);
+    setAtomsHelpful(helpful); // optimistic
+    try {
+      await fetchWithAuth('/api/embeddings/feedback/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, wasRelevant: helpful }),
+      });
+    } catch { /* optimistic state stands; non-critical */ }
+    finally { setAtomBusy(false); }
+  };
+
+  const rateOutput = async (v: 'good' | 'needs_work') => {
+    if (verdictBusy) return;
+    setVerdictBusy(true);
+    setVerdict(v); // optimistic
+    try {
+      await fetchWithAuth('/api/quality/output-verdict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, moduleId, areaId, verdict: v }),
+      });
+    } catch { /* optimistic state stands; non-critical */ }
+    finally { setVerdictBusy(false); }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-border bg-adv-card px-4 py-2">
+      {/* Atom relevance valve — only when atoms were actually injected */}
+      {atomCount > 0 && (
+        <div className="flex items-center gap-2">
+          <Atom className="h-3.5 w-3.5 shrink-0 text-adv-teal" />
+          <span className="text-xs text-adv-gray">
+            Prior knowledge used ({atomCount}) — helpful?
+          </span>
+          <button
+            onClick={() => rateAtoms(true)}
+            disabled={atomBusy}
+            className={`rounded p-1 transition-colors ${
+              atomsHelpful === true
+                ? 'bg-adv-green/20 text-adv-green'
+                : 'text-adv-gray hover:bg-adv-green/10 hover:text-adv-green'
+            }`}
+            title="All injected knowledge was helpful"
+            aria-label="Rate injected knowledge as helpful"
+          >
+            <ThumbsUp className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => rateAtoms(false)}
+            disabled={atomBusy}
+            className={`rounded p-1 transition-colors ${
+              atomsHelpful === false
+                ? 'bg-adv-red/20 text-adv-red'
+                : 'text-adv-gray hover:bg-adv-red/10 hover:text-adv-red'
+            }`}
+            title="The injected knowledge was not helpful"
+            aria-label="Rate injected knowledge as not helpful"
+          >
+            <ThumbsDown className="h-3.5 w-3.5" />
+          </button>
+          {atomsHelpful !== null && (
+            <span className="flex items-center gap-1 text-[11px] text-adv-green">
+              <Check className="h-3 w-3" /> rated
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Output verdict valve */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-adv-gray">Rate this output:</span>
+        <button
+          onClick={() => rateOutput('good')}
+          disabled={verdictBusy}
+          className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-medium transition-colors ${
+            verdict === 'good'
+              ? 'border-adv-green/50 bg-adv-green/15 text-adv-green'
+              : 'border-border text-adv-gray hover:border-adv-green/40 hover:text-adv-green'
+          }`}
+        >
+          {verdict === 'good' ? <Check className="h-3 w-3" /> : <ThumbsUp className="h-3 w-3" />}
+          Good output
+        </button>
+        <button
+          onClick={() => rateOutput('needs_work')}
+          disabled={verdictBusy}
+          className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-medium transition-colors ${
+            verdict === 'needs_work'
+              ? 'border-adv-gold/50 bg-adv-gold/15 text-adv-gold'
+              : 'border-border text-adv-gray hover:border-adv-gold/40 hover:text-adv-gold'
+          }`}
+        >
+          {verdict === 'needs_work' ? <Check className="h-3 w-3" /> : <ThumbsDown className="h-3 w-3" />}
+          Needs work
+        </button>
+        {verdict !== null && (
+          <span className="text-[11px] text-adv-gray">rated ✓</span>
+        )}
+      </div>
     </div>
   );
 }

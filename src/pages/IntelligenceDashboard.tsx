@@ -9,6 +9,7 @@ import {
   Calendar,
   Loader2,
   Archive,
+  FlaskConical,
 } from 'lucide-react';
 import { PatternCard } from '../features/intelligence/PatternCard';
 import { EntityHeatMapCell } from '../features/intelligence/EntityHeatMapCell';
@@ -24,6 +25,20 @@ import {
 } from '../features/intelligence/types';
 import { useNavigate } from 'react-router-dom';
 
+// Wave 3.4 — atom-layer A/B experiment stats (GET /api/intelligence/atom-ab)
+interface AtomAbArmStats {
+  runs: number;
+  scored: number;
+  meanQuality: number | null;
+}
+interface AtomAbStats {
+  enabled: boolean;
+  minPerArm: number;
+  sufficient: boolean;
+  arms: { injected: AtomAbArmStats; holdout: AtomAbArmStats };
+  delta: number | null;
+}
+
 export default function IntelligenceDashboard() {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'timeline' | 'heatmap' | 'temporal' | 'memory' | 'insights'>('insights');
@@ -32,6 +47,8 @@ export default function IntelligenceDashboard() {
   const [patterns, setPatterns] = useState<DetectedPattern[]>([]);
   const [timelineEntries, setTimelineEntries] = useState<TimelineEntry[]>([]);
   const [entities, setEntities] = useState<EntityNode[]>([]);
+  const [atomAb, setAtomAb] = useState<AtomAbStats | null>(null);
+  const [atomAbToggling, setAtomAbToggling] = useState(false);
 
   // Temporal data
   const [atomsPerDay, setAtomsPerDay] = useState<TemporalDataPoint[]>([]);
@@ -93,6 +110,17 @@ export default function IntelligenceDashboard() {
       console.error('Failed to load entities:', err);
     }
 
+    // Load atom-layer A/B stats independently (Wave 3.4)
+    try {
+      const abRes = await fetch('/api/intelligence/atom-ab');
+      if (abRes.ok) {
+        const abData = await abRes.json();
+        if (abData && abData.arms) setAtomAb(abData as AtomAbStats);
+      }
+    } catch (err) {
+      console.error('Failed to load atom A/B stats:', err);
+    }
+
     // Load temporal data independently
     try {
       const [atomsRes, patternsRes2, activityRes, qualityRes] = await Promise.all([
@@ -115,6 +143,23 @@ export default function IntelligenceDashboard() {
     }
 
     setLoading(false);
+  }
+
+  async function handleToggleAtomAb() {
+    if (!atomAb || atomAbToggling) return;
+    setAtomAbToggling(true);
+    try {
+      const res = await fetch('/api/intelligence/atom-ab/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !atomAb.enabled }),
+      });
+      if (res.ok) setAtomAb({ ...atomAb, enabled: !atomAb.enabled });
+    } catch (error) {
+      console.error('Failed to toggle atom A/B experiment:', error);
+    } finally {
+      setAtomAbToggling(false);
+    }
   }
 
   async function handleResolvePattern(pattern: DetectedPattern) {
@@ -214,6 +259,69 @@ export default function IntelligenceDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Atom layer effectiveness (Wave 3.4 A/B experiment) */}
+          {atomAb && (
+            <div className="bg-card border border-border rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="w-4 h-4 text-adv-teal" />
+                  <span className="text-sm font-medium text-adv-off-white">Atom layer effectiveness</span>
+                  <span className="text-xs text-adv-gray">
+                    — does injecting prior knowledge actually improve quality? Measured, not assumed.
+                  </span>
+                </div>
+                <button
+                  onClick={handleToggleAtomAb}
+                  disabled={atomAbToggling}
+                  className={`px-3 py-1 text-xs rounded transition-colors ${
+                    atomAb.enabled
+                      ? 'bg-adv-teal text-white hover:opacity-90'
+                      : 'bg-secondary text-adv-gray hover:text-adv-off-white'
+                  }`}
+                  title="When on, ~20% of runs deterministically skip atom injection so the two arms can be compared"
+                >
+                  Experiment {atomAb.enabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {([
+                  { key: 'injected' as const, label: 'With atoms (injected)' },
+                  { key: 'holdout' as const, label: 'Without atoms (holdout)' },
+                ]).map(({ key, label }) => {
+                  const arm = atomAb.arms[key];
+                  return (
+                    <div key={key} className="bg-secondary border border-border rounded-lg p-3">
+                      <div className="text-xs text-adv-gray mb-1">{label}</div>
+                      <div className="text-xl font-bold text-adv-off-white">
+                        {arm.meanQuality !== null ? `${arm.meanQuality.toFixed(2)} / 10` : '—'}
+                      </div>
+                      <div className="text-xs text-adv-gray mt-1">
+                        {arm.scored} scored · {arm.runs} run{arm.runs !== 1 ? 's' : ''} tagged
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {atomAb.sufficient && atomAb.delta !== null ? (
+                <div className="mt-3 text-sm text-adv-off-white">
+                  Δ (injected − holdout):{' '}
+                  <span className={atomAb.delta > 0 ? 'text-adv-teal font-semibold' : atomAb.delta < 0 ? 'text-red-400 font-semibold' : 'font-semibold'}>
+                    {atomAb.delta > 0 ? '+' : ''}{atomAb.delta.toFixed(2)} quality points
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-3 flex items-center gap-2 text-xs text-adv-gray">
+                  <AlertTriangle className="w-3.5 h-3.5 text-adv-gold shrink-0" />
+                  Insufficient data — needs ≥{atomAb.minPerArm} scored runs per arm
+                  (currently {atomAb.arms.injected.scored} injected / {atomAb.arms.holdout.scored} holdout).
+                  No verdict is published below that threshold.
+                </div>
+              )}
+            </div>
+          )}
 
           {/* View Tabs */}
           <div className="flex gap-2">

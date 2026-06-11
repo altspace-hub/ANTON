@@ -85,6 +85,13 @@ export async function hybridSearch(
   // ── BM25 keyword search on knowledge_atoms (SQL LIKE fallback) ───────────
   const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);
 
+  // ── Keyword search on session outputs (messages table) ───────────────────
+  // Wave 3.2: searches assistant messages DIRECTLY so past work is findable
+  // even when its embedding failed (no key / Ollama down) or predates the
+  // session_output write path. Vector hits on embedded outputs share the
+  // same `session_output:<message_id>` key and fuse via RRF below.
+  const keywordSessionOutputs = await searchSessionOutputsKeyword(db, query, topK * 2, contentTypes);
+
   // ── Build ranked lists ───────────────────────────────────────────────────
 
   // Vector results ranked by similarity (already sorted)
@@ -121,6 +128,28 @@ export async function hybridSearch(
       content_text: r.content,
       similarity: 0,
       metadata: { category: r.category, atom_type: r.atom_type, tags: r.tags },
+    },
+    source: 'bm25' as const,
+  }));
+
+  // Keyword session-output results ranked
+  const sessionOutputRanked = keywordSessionOutputs.map((r, i) => ({
+    key: `session_output:${r.id}`,
+    rank: i + 1,
+    result: {
+      id: r.id,
+      content_type: 'session_output' as const,
+      content_id: r.id,
+      content_text: r.content,
+      similarity: 0,
+      metadata: {
+        session_id: r.session_id,
+        title: r.title,
+        module_id: r.module_id,
+        area_id: r.area_id,
+        created_at: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+        keyword_hits: r.hits,
+      },
     },
     source: 'bm25' as const,
   }));
@@ -162,6 +191,19 @@ export async function hybridSearch(
 
   // Process keyword atom results
   for (const { key, rank, result } of keywordRanked) {
+    const rrf = 1 / (RRF_K + rank);
+    const existing = rrfScores.get(key);
+    if (existing) {
+      existing.score += rrf;
+      existing.bm25_rank = rank;
+      existing.source = 'both';
+    } else {
+      rrfScores.set(key, { score: rrf, bm25_rank: rank, result, source: 'bm25' });
+    }
+  }
+
+  // Process keyword session-output results
+  for (const { key, rank, result } of sessionOutputRanked) {
     const rrf = 1 / (RRF_K + rank);
     const existing = rrfScores.get(key);
     if (existing) {
@@ -333,6 +375,77 @@ async function searchKnowledgeAtomsKeyword(
     } catch {
       return [];
     }
+  }
+}
+
+// Stopwords excluded from the session-output keyword match — a paraphrase
+// shares CONTENT words with its target, not function words.
+const SESSION_OUTPUT_STOPWORDS = new Set([
+  'the', 'and', 'for', 'are', 'was', 'were', 'with', 'that', 'this', 'these', 'those',
+  'what', 'when', 'where', 'which', 'who', 'how', 'why', 'did', 'does', 'have', 'has',
+  'had', 'about', 'our', 'your', 'their', 'from', 'into', 'than', 'then', 'them',
+  'they', 'will', 'would', 'should', 'could', 'can', 'all', 'any', 'not', 'but',
+  'you', 'his', 'her', 'its', 'out', 'per', 'via', 'over', 'under', 'between',
+  'conclude', 'concluded', 'conclusion', 'march', 'said', 'tell', 'show', 'find',
+]);
+
+interface SessionOutputKeywordRow {
+  id: string;
+  content: string;
+  session_id: string | null;
+  title: string | null;
+  module_id: string | null;
+  area_id: string | null;
+  created_at: unknown;
+  hits: number;
+}
+
+/**
+ * Wave 3.2 keyword fallback for 'session_output': rank assistant messages by
+ * how many distinct query content-words they contain (ties broken by
+ * recency). Searches the messages table directly — independent of whether
+ * the output was ever embedded — so "search past work" degrades to keyword
+ * instead of degrading to nothing on installs without an embedding provider.
+ */
+async function searchSessionOutputsKeyword(
+  db: DatabaseAdapter,
+  query: string,
+  limit: number,
+  contentTypes?: string[],
+): Promise<SessionOutputKeywordRow[]> {
+  if (contentTypes && !contentTypes.includes('session_output')) return [];
+
+  const words = [...new Set(
+    query
+      .toLowerCase()
+      .split(/[^a-z0-9åäöüéèê]+/i)
+      .filter((w) => w.length >= 3 && !SESSION_OUTPUT_STOPWORDS.has(w)),
+  )].slice(0, 6);
+  if (words.length === 0) return [];
+
+  try {
+    const hitExpr = words.map(() => `(CASE WHEN LOWER(m.content) LIKE ? THEN 1 ELSE 0 END)`).join(' + ');
+    const whereExpr = words.map(() => `LOWER(m.content) LIKE ?`).join(' OR ');
+    const patterns = words.map((w) => `%${w}%`);
+    // sessions has no area_id column — area lives in the embedding metadata
+    // (vector path) only; the keyword path reports it as NULL.
+    const rows = await db.all(
+      `SELECT m.id,
+              SUBSTRING(m.content FROM 1 FOR 4000) AS content,
+              m.session_id, m.created_at,
+              s.title, s.module_id, NULL AS area_id,
+              (${hitExpr}) AS hits
+       FROM messages m
+       LEFT JOIN sessions s ON s.id = m.session_id
+       WHERE m.role = 'assistant' AND LENGTH(m.content) >= 200 AND (${whereExpr})
+       ORDER BY hits DESC, m.created_at DESC
+       LIMIT ?`,
+      ...patterns, ...patterns, limit,
+    ) as SessionOutputKeywordRow[];
+    return rows.map((r) => ({ ...r, hits: Number(r.hits) }));
+  } catch (err) {
+    console.warn('[hybrid-search] session_output keyword search unavailable:', err instanceof Error ? err.message : err);
+    return [];
   }
 }
 

@@ -38,6 +38,7 @@ export interface AuditEntry {
   userId?: string;
   ragChunks?: string; // JSON array of {citation, relevance}
   systemPromptVersionId?: string; // GOV-02: versioned prompt ID from system_prompts table
+  atomArm?: 'injected' | 'holdout'; // Wave 3.4: atom-layer A/B arm (migration 226)
 }
 
 export interface SecurityEvent {
@@ -82,8 +83,8 @@ export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): P
       transparency_level, knowledge_sources_used,
       input_token_count, output_token_count, cached_tokens, cache_creation_tokens,
       estimated_cost_usd, response_status, seed, user_id, rag_chunks,
-      system_prompt_version_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id,
+      system_prompt_version_id, atom_arm
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id,
       entry.sessionId || null,
       entry.moduleId || null,
       entry.areaId || null,
@@ -105,7 +106,8 @@ export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): P
       entry.seed !== undefined ? entry.seed : null,
       entry.userId || null,
       entry.ragChunks || null,
-      entry.systemPromptVersionId || null);
+      entry.systemPromptVersionId || null,
+      entry.atomArm || null);
     log.info({ model: entry.model, sessionId: entry.sessionId, cachedTokens: entry.cachedTokens }, 'AI usage logged');
   } catch (e) {
     log.error({ err: e }, 'Failed to write audit entry');

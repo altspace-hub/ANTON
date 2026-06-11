@@ -40,6 +40,9 @@ import { enqueueAudit } from '../services/audit-queue.js';
 import { buildCompactionConfig, buildContextManagementParam } from '../services/compaction-manager.js';
 import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
+import { assignAtomArm, isAtomAbEnabled } from '../services/atom-ab.js';
+import { embedSessionOutput } from '../services/session-output-embedder.js';
+import { getAnthropicUtilityModel } from '../services/utility-model.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -212,14 +215,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       }
 
-      // Save user message to DB before streaming starts
+      // Save user message to DB before streaming starts.
+      // The id is hoisted because it doubles as the deterministic unit for the
+      // atom-layer A/B arm assignment (Wave 3.4) further down.
+      const userMessageId = sessionId && userMessage ? crypto.randomUUID() : null;
       if (sessionId && userMessage) {
         try {
           await db.run(
             `INSERT INTO messages (id, session_id, role, content, created_at)
              VALUES (?, ?, 'user', ?, ?)
              ON CONFLICT DO NOTHING`
-          , crypto.randomUUID(), sessionId, userMessage, new Date().toISOString());
+          , userMessageId, sessionId, userMessage, new Date().toISOString());
 
           // Update session timestamp
           await db.run(`UPDATE sessions SET updated_at = ? WHERE id = ?`, new Date().toISOString(), sessionId);
@@ -578,7 +584,21 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
       const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
-      const atomLayerPrompt = atomInjectionEnabled !== false ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null) : '';
+      // Wave 3.4 — atom-layer A/B experiment: when injection is on and the run
+      // will be persisted, ~20% of runs are deterministically assigned to a
+      // 'holdout' arm (hash of the user-message id — no Math.random) where the
+      // atom layer is SKIPPED. The arm is tagged in audit_log.atom_arm and in
+      // run_artifacts.layer_summary so quality_scores can finally be compared
+      // per arm (Intelligence Dashboard card) instead of assuming the layer
+      // helps. Kill switch: app_settings 'atom_ab_experiment' (default on).
+      const atomInjectionOn = atomInjectionEnabled !== false;
+      let atomArm: 'injected' | 'holdout' | null = null;
+      if (atomInjectionOn && sessionId && userMessageId && await isAtomAbEnabled(db)) {
+        atomArm = assignAtomArm(userMessageId);
+      }
+      const atomLayerPrompt = atomInjectionOn && atomArm !== 'holdout'
+        ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null)
+        : '';
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
         (req as any).user?.id || 'default',
         areaId || 'finance'
@@ -740,6 +760,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 'business_context': businessContext ?? '',
                 'layer6_knowledge_system_additions': resolved.systemPromptAdditions,
                 'layer6_reference_documents': resolved.contextDocuments,
+                // Wave 3.4: the A/B arm rides in the layer summary (entry name
+                // carries the arm — entries store name/chars/sha only).
+                ...(atomArm ? { [`atom_ab_arm_${atomArm}`]: atomArm } : {}),
               });
               const sourceManifest = resolved.sourceDetails && resolved.sourceDetails.length > 0
                 ? resolved.sourceDetails
@@ -751,6 +774,23 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 layerSummary,
                 sourceManifest,
               });
+              // Wave 3.2: embed this output as 'session_output' so "what did we
+              // conclude about X in March?" becomes answerable (Search past work
+              // on My Work + hybridSearch). Fire-and-forget; gated by the SAME
+              // atomCollectionEnabled toggle that gates atom extraction below.
+              // Reruns are skipped through that same gate — rerun.ts pins
+              // atomCollectionEnabled=false on its dispatched body, and embedding
+              // a rerun would store a near-duplicate of the original conclusion
+              // under a fresh id, crowding retrieval top-K with copies.
+              if (atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
+                void embedSessionOutput(db, {
+                  messageId: assistantMessageId,
+                  sessionId: String(sessionId),
+                  content: data.text,
+                  moduleId: moduleId ?? null,
+                  areaId: areaId ?? null,
+                });
+              }
             }
             // GOV-02: look up current system_prompt version for this module
             let systemPromptVersionId: string | undefined;
@@ -782,6 +822,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               userId: req.user?.id,
               ragChunks: ragChunks.length > 0 ? JSON.stringify(ragChunks.map(c => ({ citation: c.citation, relevance: c.relevanceScore }))) : undefined,
               systemPromptVersionId,
+              atomArm: atomArm ?? undefined,
             });
             // Update per-user monthly usage (team mode only)
             if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
@@ -1842,7 +1883,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         .join('\n');
 
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        // Wave 3.8: raw-Anthropic site — honours a Claude utility override,
+        // falls back to the default Haiku for non-Anthropic utility models.
+        model: await getAnthropicUtilityModel(db),
         max_tokens: 512,
         system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
         messages: [{

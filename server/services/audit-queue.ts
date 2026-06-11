@@ -49,14 +49,14 @@ async function flush(): Promise<void> {
         transparency_level, knowledge_sources_used, input_token_count,
         output_token_count, cached_tokens, cache_creation_tokens,
         estimated_cost_usd, response_status, seed, user_id,
-        rag_chunks, system_prompt_version_id
+        rag_chunks, system_prompt_version_id, atom_arm
       ) VALUES (
         ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?,
-        ?, ?
+        ?, ?, ?
       )
     `, randomUUID(),
           e.sessionId ?? null,
@@ -80,7 +80,8 @@ async function flush(): Promise<void> {
           e.seed ?? null,
           e.userId ?? null,
           e.ragChunks ?? null,
-          e.systemPromptVersionId ?? null);
+          e.systemPromptVersionId ?? null,
+          e.atomArm ?? null);
       } catch (rowErr) {
         // Non-fatal — skip bad row
         log.warn({ err: rowErr }, 'Failed to insert audit entry (skipped)');

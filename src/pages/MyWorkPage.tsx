@@ -16,8 +16,31 @@ import {
   ChevronDown, StickyNote, MessageSquare,
 } from 'lucide-react';
 import { MODULES, MODELS } from '@/lib/constants';
-import { fetchSessions, deleteSession, updateSessionTitle, updateSessionNote, fetchProjects, assignSessionToProject } from '@/lib/api';
+import { fetchSessions, deleteSession, updateSessionTitle, updateSessionNote, fetchProjects, assignSessionToProject, fetchWithAuth } from '@/lib/api';
 import type { Session } from '@/lib/types';
+
+// Wave 3.2 "Search past work" — a hybrid-search hit inside a past output
+interface PastWorkHit {
+  content_id: string;
+  snippet: string;
+  source: 'bm25' | 'vector' | 'both';
+  metadata: {
+    session_id?: string | null;
+    title?: string | null;
+    module_id?: string | null;
+    created_at?: string | null;
+  };
+}
+
+function sessionLink(moduleId: string | null | undefined, sessionId: string, messageId?: string): string {
+  const base =
+    moduleId === 'open-chat' || !moduleId
+      ? `/prompt?session=${sessionId}`
+      : moduleId === 'ai-council'
+      ? `/council?session=${sessionId}`
+      : `/module/${moduleId}?session=${sessionId}`;
+  return messageId ? `${base}#msg-${messageId}` : base;
+}
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   SearchCheck, FileText, Shield, Radar, GraduationCap, Database, BarChart3,
@@ -143,6 +166,30 @@ export default function MyWorkPage() {
     }, 300);
     return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
   }, [search]);
+
+  // Wave 3.2 "Search past work" — hybrid search (vector + keyword fallback)
+  // INSIDE past outputs, not just titles/notes. Results link into the session.
+  const [pastWorkHits, setPastWorkHits] = useState<PastWorkHit[]>([]);
+  const [pastWorkLoading, setPastWorkLoading] = useState(false);
+
+  useEffect(() => {
+    const q = debouncedSearch.trim();
+    if (q.length < 3) { setPastWorkHits([]); return; }
+    let cancelled = false;
+    setPastWorkLoading(true);
+    fetchWithAuth('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, contentTypes: ['session_output'], topK: 8 }),
+    })
+      .then((r) => (r.ok ? r.json() : { results: [] }))
+      .then((data: { results?: PastWorkHit[] }) => {
+        if (!cancelled) setPastWorkHits(Array.isArray(data.results) ? data.results : []);
+      })
+      .catch(() => { if (!cancelled) setPastWorkHits([]); })
+      .finally(() => { if (!cancelled) setPastWorkLoading(false); });
+    return () => { cancelled = true; };
+  }, [debouncedSearch]);
 
   const loadSessions = useCallback(async (reset = false) => {
     setLoading(true);
@@ -334,6 +381,55 @@ export default function MyWorkPage() {
           <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-adv-gray" />
         </div>
       </div>
+
+      {/* Matches inside past outputs (Wave 3.2 — "what did we conclude about X in March?") */}
+      {debouncedSearch.trim().length >= 3 && (pastWorkLoading || pastWorkHits.length > 0) && (
+        <div className="mb-6 rounded-xl border border-adv-teal/20 bg-adv-card p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <FileSearch className="h-4 w-4 text-adv-teal" />
+            <span className="text-xs font-semibold text-adv-off-white">Matches inside past outputs</span>
+            {pastWorkLoading ? (
+              <span className="text-[11px] text-adv-gray">searching…</span>
+            ) : (
+              <span className="rounded-full bg-adv-teal/15 px-2 py-0.5 text-[10px] font-medium text-adv-teal">
+                {pastWorkHits.length}
+              </span>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            {pastWorkHits.map((hit) => {
+              const sid = hit.metadata.session_id;
+              if (!sid) return null;
+              const mod = MODULES.find((m) => m.id === hit.metadata.module_id);
+              return (
+                <Link
+                  key={hit.content_id}
+                  to={sessionLink(hit.metadata.module_id, sid, hit.content_id)}
+                  className="block rounded-lg border border-border bg-adv-dark px-3 py-2 transition-colors hover:border-adv-teal/40"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-medium text-adv-off-white">
+                      {hit.metadata.title || mod?.shortLabel || hit.metadata.module_id || 'Untitled session'}
+                    </span>
+                    <span className="shrink-0 text-[10px] text-adv-gray">
+                      {mod?.shortLabel || hit.metadata.module_id || ''}
+                      {hit.metadata.created_at
+                        ? ` · ${formatRelativeTime(hit.metadata.created_at)}`
+                        : ''}
+                    </span>
+                  </div>
+                  {hit.snippet && (
+                    <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-adv-gray">{hit.snippet}</p>
+                  )}
+                </Link>
+              );
+            })}
+            {!pastWorkLoading && pastWorkHits.length === 0 && (
+              <p className="text-[11px] text-adv-gray">No matches inside past outputs.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Session list */}
       {sorted.length === 0 && !loading ? (

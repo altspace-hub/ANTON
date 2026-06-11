@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
+import { getAtomAbStats, setAtomAbEnabled } from '../services/atom-ab.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
@@ -35,6 +36,34 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       res.json(stats);
     } catch (error: unknown) {
       console.error('[intelligence/summary]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // GET /api/intelligence/atom-ab — Wave 3.4: atom-layer A/B effectiveness.
+  // Mean quality score per arm (injected vs holdout) + run counts + an honest
+  // insufficient-data state below 30 scored runs per arm.
+  router.get('/intelligence/atom-ab', async (_req, res) => {
+    try {
+      res.json(await getAtomAbStats(db));
+    } catch (error: unknown) {
+      console.error('[intelligence/atom-ab]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // POST /api/intelligence/atom-ab/toggle — experiment kill switch
+  // (app_settings 'atom_ab_experiment'; default ON when atom injection is on).
+  router.post('/intelligence/atom-ab/toggle', async (req, res) => {
+    try {
+      const { enabled } = req.body as { enabled?: boolean };
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: 'enabled (boolean) is required' });
+      }
+      await setAtomAbEnabled(db, enabled);
+      res.json({ ok: true, enabled });
+    } catch (error: unknown) {
+      console.error('[intelligence/atom-ab/toggle]', error);
       res.status(500).json({ error: errMsg(error) });
     }
   });

@@ -387,6 +387,35 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── POST /feedback/bulk — One-tap rating for ALL injected atoms ─────────
+  // Wave 3.3: the OutputToolbar footer's "Prior knowledge used (N) — helpful?"
+  // valve. One 👍/👎 rates every atom injected into the session in a single
+  // tap (retrieval_feedback rows are session-scoped — they carry no message
+  // linkage — so "for that message" resolves to the session's injected set).
+  // The InjectedAtomsPanel stays for per-atom rating and can overwrite this.
+
+  router.post('/feedback/bulk', async (req, res) => {
+    try {
+      const { sessionId, wasRelevant } = req.body as {
+        sessionId?: string;
+        wasRelevant?: boolean;
+      };
+
+      if (!sessionId || typeof wasRelevant !== 'boolean') {
+        return res.status(400).json({ error: 'sessionId and wasRelevant (boolean) are required' });
+      }
+
+      const result = await db.run(
+        'UPDATE retrieval_feedback SET was_relevant = ? WHERE session_id = ?',
+        wasRelevant ? 1 : 0, sessionId
+      );
+
+      res.json({ success: true, updated: result.changes ?? 0 });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── POST /similar — Find similar content ────────────────────────────────
 
   router.post('/similar', async (req, res) => {
