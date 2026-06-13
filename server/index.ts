@@ -649,6 +649,9 @@ app.use('/api', createRendererRoutes(db));
 // AI Council — dissent-ledger extraction over persisted council sessions (Wave 4.2)
 const { createCouncilRoutes } = await import('./routes/council.js');
 app.use('/api', createCouncilRoutes(db));
+// ANTON Studio — core-team 7-expert panel + code-computed enforced gate (Studio P2)
+const { createCoreTeamRoutes } = await import('./routes/core-team.js');
+app.use('/api', createCoreTeamRoutes(db));
 // Save-chat-as-module v2 — conversation → distilled module prompt (Wave 4.8)
 const { createDistillRoutes } = await import('./routes/distill.js');
 app.use('/api', createDistillRoutes(db));

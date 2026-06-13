@@ -1658,7 +1658,9 @@ CREATE TABLE IF NOT EXISTS coding_reviews (
   coding_release_id TEXT,
   coding_task_id TEXT,
   reviewer_persona_id TEXT NOT NULL,
-  review_type TEXT NOT NULL CHECK(review_type IN ('architecture','security','compliance','product','technical','goal_alignment','operational')),
+  review_type TEXT NOT NULL CHECK(review_type IN ('architecture','security','compliance','product','technical','goal_alignment','operational','project_management','design','ux','devsecops','business','engineering')),
+  -- ANTON Studio core-team panel (migration 236): which gate this expert row belongs to.
+  gate TEXT CHECK(gate IN ('start','build','testing','finish')),
   verdict TEXT CHECK(verdict IN ('endorse','flag','dissent')),
   findings TEXT,
   recommendations TEXT,
@@ -1671,6 +1673,24 @@ CREATE TABLE IF NOT EXISTS coding_reviews (
   workflow_execution_id TEXT,
   tokens_consumed TEXT DEFAULT '{"input":0,"output":0,"cost_usd":0}',
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ANTON Studio core-team panel (migration 236): the PANEL-LEVEL record.
+-- panel_verdict + blocking are CODE-COMPUTED (worst-of rollup / mandatory-role
+-- dissent) — the LLM never sets them. UNIQUE(project,gate) = the live gate state.
+CREATE TABLE IF NOT EXISTS coding_panel_decisions (
+  id TEXT PRIMARY KEY,
+  coding_project_id TEXT NOT NULL REFERENCES coding_projects(id) ON DELETE CASCADE,
+  gate TEXT NOT NULL CHECK(gate IN ('start','build','testing','finish')),
+  panel_verdict TEXT NOT NULL CHECK(panel_verdict IN ('endorse','flag','dissent')),
+  blocking BOOLEAN NOT NULL DEFAULT FALSE,
+  mode TEXT NOT NULL DEFAULT 'fast' CHECK(mode IN ('fast','balanced','thorough')),
+  verdict_json JSONB NOT NULL,
+  model TEXT,
+  chair_model TEXT,
+  extracted_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (coding_project_id, gate)
 );
 
 CREATE TABLE IF NOT EXISTS coding_test_runs (
