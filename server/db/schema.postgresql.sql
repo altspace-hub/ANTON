@@ -1810,6 +1810,28 @@ CREATE TABLE IF NOT EXISTS coding_studio_runs (
 CREATE INDEX IF NOT EXISTS idx_coding_studio_runs_status
   ON coding_studio_runs (status);
 
+-- Phase 6 (migration 241): the live LOCAL PREVIEW server registry. One row per
+-- project tracks a managed dev-server process the preview service spawned (opt-in
+-- behind CODING_STUDIO_PREVIEW). status 'unknown' = a row says running but the
+-- in-memory child handle was lost (server restart) — surfaced honestly. The
+-- service ONLY ever SIGTERMs child handles it spawned itself (never taskkill).
+-- (P6 Git reuses the existing git_* columns; P6 container reuses environment_mode
+--  CHECK(...'docker') — neither needs a new table.)
+CREATE TABLE IF NOT EXISTS coding_preview_servers (
+  coding_project_id TEXT PRIMARY KEY
+    REFERENCES coding_projects(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'stopped'
+    CHECK (status IN ('starting','running','stopped','crashed','unknown')),
+  port INTEGER,
+  pid INTEGER,
+  command TEXT,
+  preview_url TEXT,
+  last_log TEXT,
+  started_at TIMESTAMPTZ,
+  stopped_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS code_review_sessions (
   id TEXT PRIMARY KEY,
   session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,

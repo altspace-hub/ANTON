@@ -676,6 +676,12 @@ export interface TestRunResult {
   spawnError?: string;
   /** Honest operator hint for known platform gotchas (npm .cmd shims on Windows). */
   hint?: string;
+  /**
+   * The REAL execution mode used. 'docker' = the command ran inside a `docker
+   * run` container with host isolation; 'local' = the existing unsandboxed
+   * execFile path (NOT isolated). Present only when containerMode was supplied.
+   */
+  executionMode?: 'docker' | 'local';
 }
 
 function tail(s: string): string {
@@ -701,20 +707,64 @@ export async function runProjectTests(params: {
    * always stripped regardless. Omit/null for commands that need no DB.
    */
   projectDatabaseUrl?: string | null;
+  /**
+   * ANTON Studio Phase 6 — container isolation. When 'docker', the configured
+   * argv is wrapped into a `docker run … <image> <argv>` invocation (workspace
+   * bind-mounted at /work, network off by default) so hostile build/test code
+   * runs in a throwaway container, NOT on the host. Omit / null / 'local' →
+   * EXACT current behaviour (unsandboxed execFile — zero regression).
+   *
+   * The CALLER is responsible for the docker-or-local DECISION (via
+   * coding-container.resolveExecution, which honestly reports the real mode).
+   * This param just selects the spawn shape; the result echoes executionMode.
+   */
+  containerMode?: 'docker' | 'local' | null;
+  /** Image override for docker mode (else derived from `language`). */
+  containerImage?: string;
+  /** Language hint used to pick a default docker image when no override given. */
+  language?: string;
+  /** Container network for docker mode. Default 'none' (max isolation). */
+  containerNetwork?: 'none' | 'bridge';
 }): Promise<TestRunResult> {
   const execFileImpl = params.execFileImpl ?? nodeExecFile;
   const timeoutMs = Math.min(params.timeoutMs ?? TEST_RUN_LIMITS.timeout_ms, TEST_RUN_LIMITS.timeout_ms);
   const started = Date.now();
 
+  // ── Phase 6: container wrap (opt-in; default path is untouched) ────────────
+  // When containerMode==='docker' we spawn `docker` (argv[0]) from the host
+  // cwd=workspaceAbs; the INNER command runs in /work inside the container. The
+  // host process env carries NO secrets to the docker CLIENT (buildCommandEnv
+  // strips them); the scoped DSN reaches the CONTAINER via -e only (added by
+  // buildDockerRunArgv), never logged. Dynamic import avoids a circular import.
+  const useDocker = params.containerMode === 'docker';
+  let spawnArgv = params.argv;
+  if (useDocker) {
+    const { buildDockerRunArgv } = await import('./coding-container.js');
+    // buildDockerRunArgv returns the args AFTER the `docker` binary
+    // (['run','--rm',…]); the binary itself is the spawn target (argv[0]).
+    spawnArgv = ['docker', ...buildDockerRunArgv({
+      workspaceAbs: params.cwd,
+      innerArgv: params.argv,
+      image: params.containerImage,
+      language: params.language,
+      projectDatabaseUrl: params.projectDatabaseUrl ?? null,
+      networkMode: params.containerNetwork ?? 'none',
+    })];
+  }
+  const executionMode: 'docker' | 'local' | undefined =
+    params.containerMode == null ? undefined : useDocker ? 'docker' : 'local';
+
   return new Promise<TestRunResult>((resolve) => {
     execFileImpl(
-      params.argv[0],
-      params.argv.slice(1),
+      spawnArgv[0],
+      spawnArgv.slice(1),
       {
         cwd: params.cwd,
         timeout: timeoutMs,
         maxBuffer: TEST_RUN_LIMITS.max_output_bytes,
-        env: buildCommandEnv(params.projectDatabaseUrl ?? null),
+        // The docker CLIENT inherits the same allowlisted, secret-stripped env;
+        // the scoped DSN is handed to the CONTAINER via -e, not to the client.
+        env: buildCommandEnv(useDocker ? null : (params.projectDatabaseUrl ?? null)),
         windowsHide: true,
       },
       (err: ExecFileException | null, stdout: string | Buffer, stderr: string | Buffer) => {
@@ -722,7 +772,7 @@ export async function runProjectTests(params: {
         const stdoutTail = tail(String(stdout ?? ''));
         const stderrTail = tail(String(stderr ?? ''));
         if (!err) {
-          resolve({ ran: true, exitCode: 0, durationMs, timedOut: false, stdoutTail, stderrTail, outputTruncated: false });
+          resolve({ ran: true, exitCode: 0, durationMs, timedOut: false, stdoutTail, stderrTail, outputTruncated: false, executionMode });
           return;
         }
         const timedOut = !!err.killed && durationMs >= timeoutMs - 250;
@@ -731,14 +781,20 @@ export async function runProjectTests(params: {
             ran: true, exitCode: null, durationMs, timedOut: false,
             stdoutTail, stderrTail, outputTruncated: true,
             spawnError: `output exceeded the ${TEST_RUN_LIMITS.max_output_bytes}-byte capture cap — run was terminated`,
+            executionMode,
           });
           return;
         }
         const spawnFailed = typeof err.code === 'string';
         let hint: string | undefined;
-        if (spawnFailed && process.platform === 'win32' && WINDOWS_CMD_SHIMS.test(path.basename(params.argv[0]))) {
+        // The npm/.cmd-shim hint only applies to the LOCAL path (the inner
+        // command is spawned directly). In docker mode the spawned binary is
+        // `docker`, so the shim gotcha does not apply.
+        if (spawnFailed && !useDocker && process.platform === 'win32' && WINDOWS_CMD_SHIMS.test(path.basename(params.argv[0]))) {
           hint = 'On Windows, npm/pnpm/yarn/npx are .cmd shims that cannot be spawned without a shell (and ANTON never uses a shell). ' +
             'Use ["node","--run","<script>"] (Node 22+ runs package.json scripts directly) or invoke the runner binary, e.g. ["node","node_modules/vitest/vitest.mjs","run"].';
+        } else if (spawnFailed && useDocker && (err.code === 'ENOENT')) {
+          hint = 'Docker mode was requested but the `docker` command could not be spawned (ENOENT). Falling back is the caller\'s job — detectDocker() should have caught this.';
         }
         resolve({
           ran: !spawnFailed,
@@ -750,6 +806,7 @@ export async function runProjectTests(params: {
           outputTruncated: false,
           spawnError: spawnFailed ? `${err.code}: ${err.message}` : undefined,
           hint,
+          executionMode,
         });
       },
     );

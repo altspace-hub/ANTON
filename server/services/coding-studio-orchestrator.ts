@@ -80,6 +80,14 @@ import { createCodingIntegration } from './coding-integration.js';
 import { buildAtomLayer } from './prompt-builder.js';
 import { resolveScopedDsn } from './coding-studio-provisioner.js';
 import { callChat } from './provider-router.js';
+import {
+  ensureRepo as gitEnsureRepoImpl,
+  checkoutReleaseBranch as gitCheckoutReleaseImpl,
+  commitTask as gitCommitTaskImpl,
+  type EnsureRepoResult,
+  type CheckoutBranchResult,
+  type CommitTaskResult,
+} from './coding-git.js';
 import { readFile } from 'node:fs/promises';
 
 // ── Public types ────────────────────────────────────────────────────────────
@@ -144,6 +152,10 @@ export interface StudioStepLogEntry {
     | 'task_done'
     | 'task_failed'
     | 'dependency_audit'
+    | 'git_init'
+    | 'git_branch'
+    | 'git_commit'
+    | 'git_error'
     | 'stop'
     | 'done'
     | 'error';
@@ -203,7 +215,17 @@ export interface OrchestratorDeps {
    * Test seam — run the project's test command. Default = runProjectTests
    * (real execFile). In tests a stub returns canned pass/fail.
    */
-  runTests?: (params: { argv: string[]; cwd: string; projectDatabaseUrl?: string | null }) => Promise<TestRunResult>;
+  runTests?: (params: {
+    argv: string[];
+    cwd: string;
+    projectDatabaseUrl?: string | null;
+    // Studio P6 — container isolation. When the project opted into docker mode,
+    // the orchestrator passes containerMode='docker' so the test step runs inside
+    // `docker run` (runProjectTests decides the REAL mode honestly + falls back to
+    // local if docker is unavailable/disabled). Omitted in tests → local path.
+    containerMode?: 'docker' | 'local' | null;
+    language?: string | null;
+  }) => Promise<TestRunResult>;
   /**
    * Test seam — resolve the project's scoped DSN (PROJECT_DATABASE_URL). Default
    * = resolveScopedDsn. Never logged.
@@ -219,6 +241,17 @@ export interface OrchestratorDeps {
    * P4 hooks). Default = createCodingIntegration(db). One per run.
    */
   integration?: Awaited<ReturnType<typeof createCodingIntegration>>;
+  /**
+   * Test seam — REAL GIT (Studio P6). Defaults wire coding-git.ts. A git failure
+   * is NON-FATAL bookkeeping: the orchestrator logs git_error and continues (the
+   * build is the product). Persistence is done inside coding-git via db.
+   *   - gitEnsureRepo: init the repo + author + .gitignore (idempotent).
+   *   - gitCheckoutRelease: create/switch studio/r<NN>-<slug>.
+   *   - gitCommitTask: add -A + commit; nothingToCommit is an honest no-op.
+   */
+  gitEnsureRepo?: (workspaceAbs: string, db: DatabaseAdapter, codingProjectId: string) => Promise<EnsureRepoResult>;
+  gitCheckoutRelease?: (workspaceAbs: string, releaseNumber: number, releaseName: string, db: DatabaseAdapter, releaseId: string) => Promise<CheckoutBranchResult>;
+  gitCommitTask?: (workspaceAbs: string, task: { taskNumber: number | string; title: string }, db: DatabaseAdapter, taskId: string) => Promise<CommitTaskResult>;
 }
 
 // ── Limits ───────────────────────────────────────────────────────────────────
@@ -285,7 +318,14 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
     const r = await applyFilesToWorkspace(p);
     return { written: r.written, unchanged: r.unchanged, backupDir: r.backupDir };
   });
-  const runTests = deps.runTests ?? ((p) => runProjectTests(p));
+  const runTests = deps.runTests ?? ((p) => runProjectTests({
+    argv: p.argv,
+    cwd: p.cwd,
+    projectDatabaseUrl: p.projectDatabaseUrl,
+    containerMode: p.containerMode ?? null,
+    // runProjectTests' language is string|undefined (not null) — coerce.
+    language: p.language ?? undefined,
+  }));
   const resolveProjectDsn = deps.resolveProjectDsn ?? resolveScopedDsn;
   const validateWorkspace = deps.validateWorkspace
     ?? (async (dir) => { const v = await validateWorkspacePath(dir); return { ok: v.ok, resolved: v.resolved, error: v.error }; });
@@ -294,6 +334,14 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
     if (!target) return null;
     try { return await readFile(target, 'utf8'); } catch { return null; }
   });
+
+  // REAL GIT seams (P6). Defaults call coding-git.ts; persistence happens there.
+  const gitEnsureRepo = deps.gitEnsureRepo
+    ?? ((ws: string, d: DatabaseAdapter, pid: string) => gitEnsureRepoImpl(ws, undefined, d, pid));
+  const gitCheckoutRelease = deps.gitCheckoutRelease
+    ?? ((ws: string, num: number, name: string, d: DatabaseAdapter, rid: string) => gitCheckoutReleaseImpl(ws, num, name, undefined, d, rid));
+  const gitCommitTask = deps.gitCommitTask
+    ?? ((ws: string, t: { taskNumber: number | string; title: string }, d: DatabaseAdapter, tid: string) => gitCommitTaskImpl(ws, t, undefined, d, tid));
 
   // The coding-integration instance is created ONCE per orchestrator (per run) —
   // the orchestrator "holds the integration" (the deferred P4 hooks live here).
@@ -394,9 +442,16 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
     workspaceAbs: string;
     testArgv: string[] | null;
     projectDatabaseUrl: string | null;
+    environmentMode: string | null;
+    language: string | null;
   } | { error: string }> {
-    const project = await db.get<{ directory_path: string | null; test_command: string | null }>(
-      'SELECT directory_path, test_command FROM coding_projects WHERE id = ?',
+    const project = await db.get<{
+      directory_path: string | null;
+      test_command: string | null;
+      environment_mode: string | null;
+      studio_language: string | null;
+    }>(
+      'SELECT directory_path, test_command, environment_mode, studio_language FROM coding_projects WHERE id = ?',
       codingProjectId,
     );
     if (!project) return { error: 'Coding project not found' };
@@ -411,7 +466,13 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
       if (v.ok) testArgv = v.argv;
     }
     const projectDatabaseUrl = await resolveProjectDsn(db, codingProjectId).catch(() => null);
-    return { workspaceAbs: validation.resolved, testArgv, projectDatabaseUrl };
+    return {
+      workspaceAbs: validation.resolved,
+      testArgv,
+      projectDatabaseUrl,
+      environmentMode: project.environment_mode ?? null,
+      language: project.studio_language ?? null,
+    };
   }
 
   // ── Step 1: the PLAN (charter → release + task plan) ────────────────────────
@@ -575,7 +636,14 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
   async function runTask(
     codingProjectId: string,
     task: PlanTask,
-    ctx: { workspaceAbs: string; testArgv: string[] | null; projectDatabaseUrl: string | null; reviseCap: number },
+    ctx: {
+      workspaceAbs: string;
+      testArgv: string[] | null;
+      projectDatabaseUrl: string | null;
+      reviseCap: number;
+      containerMode?: 'docker' | 'local' | null;
+      language?: string | null;
+    },
   ): Promise<TaskOutcome> {
     const integration = await getIntegration();
     const codegenModel = resolveCodingModel('codegen'); // Devstral — NON-thinking
@@ -658,7 +726,13 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
         return { status: 'done', reviseRounds: reviseRound };
       }
 
-      const testResult = await runTests({ argv: ctx.testArgv, cwd: ctx.workspaceAbs, projectDatabaseUrl: ctx.projectDatabaseUrl });
+      const testResult = await runTests({
+        argv: ctx.testArgv,
+        cwd: ctx.workspaceAbs,
+        projectDatabaseUrl: ctx.projectDatabaseUrl,
+        containerMode: ctx.containerMode ?? null,
+        language: ctx.language ?? null,
+      });
       const combinedTail = [testResult.stdoutTail, testResult.stderrTail].filter(Boolean).join('\n');
       const summary = parseTestSummary(combinedTail);
       void summary;
@@ -727,6 +801,32 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
     return rows.length;
   }
 
+  // ── REAL GIT (P6) — non-fatal wrappers (git is bookkeeping, not the product) ─
+
+  /**
+   * Run a git seam, NEVER letting it abort the build loop. On success → log a
+   * non-fatal entry; on failure → log a git_error entry and swallow. Returns the
+   * seam result, or null on failure.
+   */
+  async function tryGit<T>(
+    codingProjectId: string,
+    label: string,
+    fn: () => Promise<T>,
+    onOk: (result: T) => Omit<StudioStepLogEntry, 'at'>,
+  ): Promise<T | null> {
+    try {
+      const result = await fn();
+      await log(codingProjectId, onOk(result));
+      return result;
+    } catch (err) {
+      await log(codingProjectId, {
+        kind: 'git_error',
+        message: `${label} failed (non-fatal — build continues): ${err instanceof Error ? err.message : 'git error'}`,
+      });
+      return null;
+    }
+  }
+
   // ── The advancer (resumable tick — drives the whole loop) ───────────────────
 
   /**
@@ -763,6 +863,28 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
     const plan_ = run.plan!;
     const charterArtifact = buildPlanArtifact(plan_);
 
+    // 2b. REAL GIT (P6): ensure the repo once (idempotent), then create/switch to
+    // the release branch (branch-per-release). Both are NON-FATAL — a git failure
+    // logs git_error and the build proceeds (git is bookkeeping, not the product).
+    await tryGit(
+      codingProjectId,
+      'git ensureRepo',
+      () => gitEnsureRepo(ws.workspaceAbs, db, codingProjectId),
+      (r) => ({ kind: 'git_init', message: r.initialized ? 'Initialized a git repository for the workspace.' : 'Workspace already a git repository.' }),
+    );
+    // The release number lives on coding_releases (the plan carries name + id).
+    const relRow = await db.get<{ release_number: number | string | null }>(
+      'SELECT release_number FROM coding_releases WHERE id = ?',
+      plan_.releaseId,
+    ).catch(() => undefined);
+    const releaseNumber = Number(relRow?.release_number) || 1;
+    await tryGit(
+      codingProjectId,
+      'git checkoutReleaseBranch',
+      () => gitCheckoutRelease(ws.workspaceAbs, releaseNumber, plan_.releaseName, db, plan_.releaseId),
+      (r) => ({ kind: 'git_branch', message: `On release branch ${r.branch}${r.switchedExisting ? ' (switched to existing)' : ' (created)'}.` }),
+    );
+
     // 3. START gate (before kickoff) — only if not yet decided this run.
     if (await isStopRequested(codingProjectId)) { await stop(codingProjectId); return (await getRun(codingProjectId))!; }
     if (!(await runGate(codingProjectId, 'start', charterArtifact, 'fast'))) {
@@ -788,6 +910,11 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
         testArgv: ws.testArgv,
         projectDatabaseUrl: ws.projectDatabaseUrl,
         reviseCap: run.reviseCap,
+        // Studio P6 — honor the project's opt-in docker mode in the autonomous
+        // test step. runProjectTests resolves the REAL mode (docker only when the
+        // flag + a live daemon are present) and falls back to local honestly.
+        containerMode: ws.environmentMode === 'docker' ? 'docker' : null,
+        language: ws.language,
       });
 
       task.reviseRounds = outcome.reviseRounds;
@@ -801,6 +928,21 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
         task.status = 'done';
         await db.run("UPDATE coding_tasks SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = ?", task.taskId);
         await log(codingProjectId, { kind: 'task_done', taskId: task.taskId, message: `Task done: "${task.title}".` });
+        // REAL GIT (P6): commit-per-task. NON-FATAL — a git failure logs git_error
+        // and the loop continues. A no-op task (no diff) honestly makes no commit.
+        const taskNumber = plan_.tasks.indexOf(task) + 1;
+        await tryGit(
+          codingProjectId,
+          'git commitTask',
+          () => gitCommitTask(ws.workspaceAbs, { taskNumber, title: task.title }, db, task.taskId),
+          (r) => ({
+            kind: 'git_commit',
+            taskId: task.taskId,
+            message: r.nothingToCommit
+              ? `No changes to commit for "${task.title}" (no-op task — honest).`
+              : `Committed "${task.title}" as ${r.hash ? r.hash.slice(0, 8) : '(unknown)'}.`,
+          }),
+        );
       } else {
         task.status = 'failed';
         await db.run("UPDATE coding_tasks SET status = 'blocked', updated_at = NOW() WHERE id = ?", task.taskId);

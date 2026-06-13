@@ -41,6 +41,12 @@ import {
   type RawDdlRunner,
 } from '../services/coding-studio-provisioner.js';
 import { assertGatePassed, GateBlockedError } from '../services/core-team-panel.js';
+import {
+  detectDocker,
+  containerEnabled,
+  CONTAINER_ENABLE_ENV,
+} from '../services/coding-container.js';
+import { safeError } from '../lib/error-response.js';
 
 // ── Phase Prompt Builders ───────────────────────────────────────────────────
 
@@ -2683,6 +2689,103 @@ export async function createCodingLargeRoutes(
     }
   });
 
+  // ── ANTON Studio Phase 6: container isolation (Docker) ───────────────────
+  //
+  // The HONEST CEILING made real (opt-in). When a project sets
+  // environment_mode='docker' AND the operator enabled CODING_STUDIO_DOCKER AND
+  // Docker is actually present, command runs are wrapped in `docker run` with
+  // the workspace bind-mounted (network off by default) — hostile build/test
+  // code runs in a throwaway container, not on the host. If ANY of those is
+  // false we DO NOT claim isolation: runs fall back to the local execFile path
+  // and we say so plainly.
+
+  // GET /api/coding/projects/:id/container/probe — honest current state.
+  router.get('/coding/projects/:id/container/probe', async (req, res) => {
+    try {
+      const project = await db.get(
+        'SELECT environment_mode FROM coding_projects WHERE id = ?',
+        req.params.id,
+      ) as { environment_mode: string | null } | undefined;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const detection = await detectDocker();
+      const enabledByFlag = containerEnabled();
+      const requested = project.environment_mode === 'docker';
+      // The mode the NEXT run would actually use — all three gates must pass.
+      const effectiveMode: 'docker' | 'local' = requested && enabledByFlag && detection.available ? 'docker' : 'local';
+
+      let reason: string;
+      if (!requested) reason = 'Project is not in docker mode — runs locally (NOT isolated).';
+      else if (!enabledByFlag) reason = `Docker mode requested but the operator has not enabled it (set ${CONTAINER_ENABLE_ENV}=1) — runs locally (NOT isolated).`;
+      else if (!detection.available) reason = `Docker mode requested but Docker is unavailable: ${detection.error ?? 'unknown'} — runs locally (NOT isolated).`;
+      else reason = 'Docker isolation active — build/test runs in a throwaway container with the workspace bind-mounted (network off by default).';
+
+      res.json({
+        dockerAvailable: detection.available,
+        dockerVersion: detection.version ?? null,
+        dockerError: detection.error ?? null,
+        enabledByFlag,
+        enableEnvVar: CONTAINER_ENABLE_ENV,
+        environmentMode: project.environment_mode ?? null,
+        requested,
+        effectiveMode,
+        isolated: effectiveMode === 'docker',
+        reason,
+      });
+    } catch (error) {
+      console.error('[coding-large] Container probe error:', error);
+      res.status(500).json({ error: safeError(error) });
+    }
+  });
+
+  // POST /api/coding/projects/:id/container/mode — body {mode:'docker'|'local'}.
+  // Sets environment_mode to 'docker' or back to 'auto'. Setting 'docker' while
+  // it can't actually isolate still returns 200, but with an HONEST warning that
+  // runs will fall back to local.
+  router.post('/coding/projects/:id/container/mode', async (req, res) => {
+    try {
+      const project = await db.get(
+        'SELECT id FROM coding_projects WHERE id = ?',
+        req.params.id,
+      ) as { id: string } | undefined;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const mode = req.body?.mode;
+      if (mode !== 'docker' && mode !== 'local') {
+        return res.status(400).json({ error: "mode must be 'docker' or 'local'" });
+      }
+
+      // 'local' clears the docker opt-in by restoring the default 'auto'.
+      const environmentMode = mode === 'docker' ? 'docker' : 'auto';
+      await db.run(
+        'UPDATE coding_projects SET environment_mode = ?, updated_at = NOW() WHERE id = ?',
+        environmentMode, req.params.id,
+      );
+
+      let warning: string | null = null;
+      if (mode === 'docker') {
+        const detection = await detectDocker();
+        const enabledByFlag = containerEnabled();
+        if (!enabledByFlag) {
+          warning = `Docker mode is set, but the operator has not enabled it (set ${CONTAINER_ENABLE_ENV}=1). Until then, runs FALL BACK to local — NOT isolated.`;
+        } else if (!detection.available) {
+          warning = `Docker mode is set, but Docker is unavailable: ${detection.error ?? 'unknown'}. Until it is, runs FALL BACK to local — NOT isolated.`;
+        }
+      }
+
+      res.json({
+        environmentMode,
+        warning,
+        verification: mode === 'docker'
+          ? (warning ? 'Mode saved, but isolation is NOT yet effective — see warning.' : 'Docker isolation is set and effective.')
+          : 'Switched back to the local (auto) execFile path — NOT isolated.',
+      });
+    } catch (error) {
+      console.error('[coding-large] Container mode error:', error);
+      res.status(500).json({ error: safeError(error) });
+    }
+  });
+
   // ── ANTON Studio Phase 3: workspace + per-project DB provisioning ─────────
   //
   // On activation the project gets write/exec to exactly
@@ -2937,10 +3040,28 @@ export async function createCodingLargeRoutes(
       // always stripped). null when the project was never provisioned.
       const projectDatabaseUrl = await resolveScopedDsn(db, req.params.id);
 
+      // ── Phase 6: docker-or-local decision (single honest decision point) ──
+      // resolveExecution returns the REAL mode. docker only when the project
+      // opted in + the operator flag is on + Docker actually answers; else
+      // local with a reason. setup needs network (install) → bridge; build/test
+      // default to network OFF (max isolation — the honest win).
+      const { resolveExecution } = await import('../services/coding-container.js');
+      const decision = await resolveExecution({
+        environmentMode: project.environment_mode ?? null,
+        language: project.studio_language ?? null,
+        workspaceAbs: validation.resolved,
+        projectDatabaseUrl,
+        networkMode: kind === 'setup' ? 'bridge' : 'none',
+      });
+
       const result = await runProjectTests({
         argv: validated.argv,
         cwd: validation.resolved,
         projectDatabaseUrl,
+        containerMode: decision.mode,
+        containerImage: decision.image,
+        language: project.studio_language ?? undefined,
+        containerNetwork: kind === 'setup' ? 'bridge' : 'none',
       });
       const combinedTail = [result.stdoutTail, result.stderrTail].filter(Boolean).join('\n');
       const summary = parseTestSummary(combinedTail);
@@ -2996,13 +3117,17 @@ export async function createCodingLargeRoutes(
         } catch { /* atom capture must never break a command run */ }
       }
 
-      const honest = !result.ran
+      // Honest mode suffix: docker = host-isolated; local = NOT isolated.
+      const modeNote = result.executionMode === 'docker'
+        ? ' [ran in a Docker container — host-isolated]'
+        : ` [ran locally — NOT isolated: ${decision.reason ?? 'local mode'}]`;
+      const honest = (!result.ran
         ? `${kind} command could not be started (${result.spawnError ?? 'spawn error'}). Nothing was verified.`
         : result.timedOut
           ? `${kind} TIMED OUT after ${TEST_RUN_LIMITS.timeout_ms} ms — treated as failed.`
           : succeeded
             ? `${kind} succeeded (exit 0, ${result.durationMs} ms).`
-            : `${kind} FAILED (exit ${result.exitCode ?? '?'}, ${result.durationMs} ms).`;
+            : `${kind} FAILED (exit ${result.exitCode ?? '?'}, ${result.durationMs} ms).`) + modeNote;
 
       res.json({
         kind,
@@ -3021,6 +3146,10 @@ export async function createCodingLargeRoutes(
         spawn_error: result.spawnError ?? null,
         hint: result.hint ?? null,
         used_project_database_url: !!projectDatabaseUrl,
+        // The REAL mode used + WHY local (honest — never claim isolation falsely).
+        execution_mode: result.executionMode ?? 'local',
+        isolated: result.executionMode === 'docker',
+        mode_reason: decision.reason ?? null,
         verification: honest,
       });
     } catch (error) {

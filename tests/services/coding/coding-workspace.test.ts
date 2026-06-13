@@ -793,3 +793,99 @@ describe('language presets', () => {
     }
   });
 });
+
+// ── Phase 6: runProjectTests container (docker) path ────────────────────────
+// APPENDED (do not modify the assertions above). Verifies the DEFAULT path is
+// unchanged (no docker, no executionMode) and that containerMode='docker' wraps
+// the configured argv into `docker run … <image> <inner argv>` with the mount,
+// -w /work, and --network none flags — all via the SAME mocked execFile (no
+// real spawn, no real docker).
+
+describe('runProjectTests — container mode (Phase 6)', () => {
+  // A workspace path INSIDE the allowlist (the studio root is auto-allowed).
+  const wsAbs = path.join(getCodingStudioRoot(), 'proj_docker_test');
+
+  it('default path is UNCHANGED: no docker wrap, no executionMode, inner argv spawned directly', async () => {
+    const captured: CapturedCall[] = [];
+    const impl = fakeExecFile({ err: null, stdout: 'Tests  3 passed (3)\n', stderr: '' }, captured);
+    const r = await runProjectTests({ argv: ['node', '--run', 'test'], cwd: wsAbs, execFileImpl: impl });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0].cmd).toBe('node');              // NOT docker
+    expect(captured[0].args).toEqual(['--run', 'test']);
+    expect(r.executionMode).toBeUndefined();           // omitted when containerMode not supplied
+  });
+
+  it("containerMode='local' runs the inner argv directly and reports executionMode='local'", async () => {
+    const captured: CapturedCall[] = [];
+    const impl = fakeExecFile({ err: null, stdout: 'ok', stderr: '' }, captured);
+    const r = await runProjectTests({
+      argv: ['cargo', 'test'], cwd: wsAbs, containerMode: 'local', execFileImpl: impl,
+    });
+    expect(captured[0].cmd).toBe('cargo');             // not wrapped
+    expect(r.executionMode).toBe('local');
+  });
+
+  it("containerMode='docker' wraps into `docker run --rm … --network none -v <ws>:/work -w /work <image> <inner>`", async () => {
+    const captured: CapturedCall[] = [];
+    const impl = fakeExecFile({ err: null, stdout: 'ok', stderr: '' }, captured);
+    const r = await runProjectTests({
+      argv: ['cargo', 'test'], cwd: wsAbs,
+      containerMode: 'docker', language: 'rust', execFileImpl: impl,
+    });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0].cmd).toBe('docker');            // the spawned binary is docker
+    const args = captured[0].args;
+    expect(args[0]).toBe('run');
+    expect(args).toContain('--rm');
+    // network OFF by default for test step.
+    const netIdx = args.indexOf('--network');
+    expect(netIdx).toBeGreaterThanOrEqual(0);
+    expect(args[netIdx + 1]).toBe('none');
+    // workspace bind-mount + workdir.
+    const vIdx = args.indexOf('-v');
+    expect(args[vIdx + 1]).toBe(`${path.resolve(wsAbs)}:/work`);
+    const wIdx = args.indexOf('-w');
+    expect(args[wIdx + 1]).toBe('/work');
+    // rust image, then the inner argv at the tail.
+    expect(args).toContain('rust:1-slim');
+    expect(args.slice(-2)).toEqual(['cargo', 'test']);
+    // host docker CLIENT env never carries a secret DSN (none provided here).
+    const env = captured[0].opts.env as NodeJS.ProcessEnv;
+    expect(env.DATABASE_URL).toBeUndefined();
+    expect(r.executionMode).toBe('docker');
+  });
+
+  it("docker mode passes the scoped DSN to the CONTAINER via -e (never to the docker client env)", async () => {
+    const captured: CapturedCall[] = [];
+    const impl = fakeExecFile({ err: null, stdout: 'ok', stderr: '' }, captured);
+    await runProjectTests({
+      argv: ['node', '--run', 'test'], cwd: wsAbs,
+      containerMode: 'docker', language: 'node',
+      projectDatabaseUrl: 'postgresql://studio_x:pw@localhost/proj_x',
+      execFileImpl: impl,
+    });
+    const args = captured[0].args;
+    expect(args).toContain('-e');
+    expect(args).toContain('PROJECT_DATABASE_URL=postgresql://studio_x:pw@localhost/proj_x');
+    // The DSN is NOT in the docker client's own env (it goes to the container).
+    const env = captured[0].opts.env as NodeJS.ProcessEnv;
+    expect(env[PROJECT_DATABASE_URL_KEY]).toBeUndefined();
+    expect(env.DATABASE_URL).toBeUndefined();
+  });
+
+  it("docker setup step can opt into --network bridge", async () => {
+    const captured: CapturedCall[] = [];
+    const impl = fakeExecFile({ err: null, stdout: 'ok', stderr: '' }, captured);
+    await runProjectTests({
+      argv: ['pip', 'install', '-e', '.'], cwd: wsAbs,
+      containerMode: 'docker', language: 'python', containerNetwork: 'bridge',
+      execFileImpl: impl,
+    });
+    const args = captured[0].args;
+    const netIdx = args.indexOf('--network');
+    expect(args[netIdx + 1]).toBe('bridge');
+    expect(args).toContain('python:3.12-slim');
+  });
+});

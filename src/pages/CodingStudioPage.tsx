@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import CodingBreadcrumb from '@/components/coding/CodingBreadcrumb';
 import PanelVerdictPanel, { type PanelVerdict } from '@/components/coding/PanelVerdictPanel';
+import GitPanel from '@/components/coding/GitPanel';
+import PreviewPanel from '@/components/coding/PreviewPanel';
+import ContainerModeCard from '@/components/coding/ContainerModeCard';
 import { fetchWithAuth } from '@/lib/api';
 import type { StudioMode } from './CodingLandingPage';
 
@@ -383,6 +386,23 @@ export default function CodingStudioPage() {
           )}
         </div>
       </div>
+
+      {/* Workspace tools (Studio P6) — real Git, live preview, container mode.
+          Each is self-contained + honest about its real state (no repo / preview
+          disabled / docker unavailable). Only shown once a project is bound. */}
+      {projectId.trim() && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FolderGit2 className="h-4 w-4 text-adv-teal" />
+            <h2 className="text-sm font-semibold text-adv-off-white">Workspace tools</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <GitPanel projectId={projectId.trim()} />
+            <ContainerModeCard projectId={projectId.trim()} />
+          </div>
+          <PreviewPanel projectId={projectId.trim()} />
+        </div>
+      )}
 
       <div>
         <button onClick={() => navigate('/coding')}

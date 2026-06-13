@@ -658,6 +658,12 @@ app.use('/api', createCodingWorkshopRoutes(db));
 // ANTON Studio — server-side iterate-to-finish ORCHESTRATOR + .anton blueprint export (Studio P5)
 const { createCodingStudioRoutes } = await import('./routes/coding-studio.js');
 app.use('/api', createCodingStudioRoutes(db));
+// ANTON Studio — real Git (branch-per-release / commit-per-task) over the workspace (Studio P6)
+const { createCodingGitRoutes } = await import('./routes/coding-git.js');
+app.use('/api', createCodingGitRoutes(db));
+// ANTON Studio — live local preview server (opt-in CODING_STUDIO_PREVIEW; owns only its own spawned PIDs) (Studio P6)
+const { createCodingPreviewRoutes } = await import('./routes/coding-preview.js');
+app.use('/api', createCodingPreviewRoutes(db));
 // Save-chat-as-module v2 — conversation → distilled module prompt (Wave 4.8)
 const { createDistillRoutes } = await import('./routes/distill.js');
 app.use('/api', createDistillRoutes(db));
@@ -1852,6 +1858,12 @@ const DRAIN_TIMEOUT_MS = 30_000;
 
 function shutdown(signal: string): void {
   logger.info({ signal }, 'Graceful shutdown initiated');
+
+  // ANTON Studio P6 — SIGTERM only the preview dev-servers WE spawned (by their
+  // tracked ChildProcess handles). Never taskkill, never kill by name/port.
+  void import('./services/coding-preview-service.js')
+    .then((m) => m.shutdownAllPreviews?.())
+    .catch(() => {});
 
   // Stop accepting new connections
   httpServer.close(async (closeErr) => {
