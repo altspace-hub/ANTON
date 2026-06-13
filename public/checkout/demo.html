@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pay with FutureChain — Checkout Demo</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;color:#0B1426;margin:0;padding:32px;display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
+    .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;max-width:380px}
+    h1{font-size:20px;margin:0 0 4px}
+    h2{font-size:15px;margin:0 0 12px;color:#334155}
+    .line{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:14px}
+    .total{font-weight:700;border-bottom:none;padding-top:12px;font-size:16px}
+    label{display:block;font-size:12px;color:#64748b;margin:10px 0 4px}
+    input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px}
+    button{margin-top:16px;width:100%;background:#0D7D6C;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:600;cursor:pointer}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .note{font-size:12px;color:#94a3b8;margin-top:12px;line-height:1.5}
+    code{background:#f1f5f9;padding:1px 4px;border-radius:4px;font-size:11px}
+    #log{font-size:11px;color:#475569;white-space:pre-wrap;margin-top:12px;max-height:160px;overflow:auto}
+  </style>
+</head>
+<body>
+  <!-- Fake merchant cart -->
+  <div class="card">
+    <h1>Demo Coffee Co.</h1>
+    <h2>Order summary</h2>
+    <div class="line"><span>2× Cappuccino</span><span>78.00 SEK</span></div>
+    <div class="line"><span>1× Croissant</span><span>32.00 SEK</span></div>
+    <div class="line total"><span>Total</span><span>110.00 SEK</span></div>
+
+    <p class="note">
+      <strong>Security model:</strong> in production your <em>server</em> calls
+      <code>POST /api/checkout/v1/requests</code> with your gateway API key and the
+      sealed amount. The browser never sees the key or the amount. This demo asks
+      you to paste a key + receiving address only because it has no merchant
+      backend of its own.
+    </p>
+
+    <label>Gateway API key (from ANTON Settings → FutureChain → Gateway)</label>
+    <input id="apiKey" type="password" placeholder="paste gateway API key" />
+    <label>Receiving address (watch-only merchant address)</label>
+    <input id="addr" type="text" placeholder="fc_…" />
+    <label>Merchant id (8 chars, A–Z 0–9)</label>
+    <input id="merchantId" type="text" value="DEMO0001" maxlength="8" />
+    <label>FTC per SEK (FX captured at creation)</label>
+    <input id="rate" type="number" value="0.1" step="0.0001" />
+
+    <button id="payBtn">Pay with FutureChain</button>
+    <div id="log"></div>
+  </div>
+
+  <!-- Widget mount target -->
+  <div class="card" id="widgetCard" style="display:none">
+    <h2>Pay with ANTON Pay</h2>
+    <div id="pay"></div>
+  </div>
+
+  <script src="./anton-checkout.js"></script>
+  <script>
+    var base = location.origin;
+    function log(m){ var el=document.getElementById('log'); el.textContent += m + '\n'; el.scrollTop = el.scrollHeight; }
+
+    document.getElementById('payBtn').addEventListener('click', async function () {
+      var btn = this; btn.disabled = true;
+      var apiKey = document.getElementById('apiKey').value.trim();
+      var addr = document.getElementById('addr').value.trim();
+      var merchantId = document.getElementById('merchantId').value.trim();
+      var rate = parseFloat(document.getElementById('rate').value);
+      if (!apiKey || !addr) { log('Need API key + receiving address.'); btn.disabled = false; return; }
+
+      // NOTE: in production this fetch runs on YOUR server, not the browser.
+      var body = {
+        receivingAddress: addr,
+        merchantId: merchantId,
+        fiatAmount: 110.00,
+        fiatCurrency: 'SEK',
+        fiatRate: rate,
+        purpose: 'RETAIL',
+        orderEnvelope: {
+          v: 1, kind: 'order', ref: 'DEMO-' + Date.now(),
+          items: [
+            { name: 'Cappuccino', qty: 2, unitPriceSek: 39, lineTotalSek: 78, vatRate: 12 },
+            { name: 'Croissant', qty: 1, unitPriceSek: 32, lineTotalSek: 32, vatRate: 12 }
+          ],
+          amountSek: 110.00, vatSek: 11.79
+        }
+      };
+      try {
+        var r = await fetch(base + '/api/checkout/v1/requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+          body: JSON.stringify(body)
+        });
+        var data = await r.json();
+        if (!r.ok) { log('Create failed: ' + (data.error || r.status)); btn.disabled = false; return; }
+        log('Request created: ' + data.id + (data.needsAnimated ? ' (animated QR)' : ' (static QR)'));
+        log('Expires: ' + new Date(data.exp * 1000).toLocaleTimeString());
+        document.getElementById('widgetCard').style.display = 'block';
+        AntonCheckout.mount({
+          requestId: data.id,
+          el: '#pay',
+          baseUrl: base,
+          onSeen: function (s) { log('● seen (mempool) tx=' + (s.txId || '')); },
+          onSettled: function (s) { log('✓ confirmed (mined) tx=' + (s.txId || '')); },
+          onExpired: function () { log('✗ expired'); }
+        });
+      } catch (e) {
+        log('Error: ' + e.message); btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

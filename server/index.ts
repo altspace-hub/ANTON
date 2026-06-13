@@ -455,6 +455,24 @@ const { createFCGatewayRoutes } = await import('./routes/fc-gateway.js');
 const { adminRouter: gwAdmin, publicRouter: gwPublic } = await createFCGatewayRoutes(db);
 app.use('/api/gateway', gwPublic);
 
+// Web e-commerce checkout — "Pay with FutureChain" (plan #11 / Area 7).
+// Create is Bearer-apiKey (reuses the gateway validateApiKey); status/QR are
+// public-by-id for the embeddable widget. No keys on the merchant; amount is
+// sealed server-side. See docs/WEB_CHECKOUT.md.
+const { createFCCheckoutRoutes } = await import('./routes/fc-checkout.js');
+const checkoutRouter = await createFCCheckoutRoutes(db);
+app.use('/api/checkout', checkoutRouter);
+// Background settlement sweeper: advance pending→seen→confirmed for live
+// requests + fold in lazy expiry. Status GETs also drive a poll, so this is a
+// belt-and-braces loop for requests no one is currently watching. Opt out with
+// WEB_CHECKOUT_SWEEP_DISABLED=true.
+if (process.env.WEB_CHECKOUT_SWEEP_DISABLED !== 'true') {
+  const { createCheckoutService } = await import('./services/checkout-service.js');
+  const checkoutSvc = await createCheckoutService(db);
+  const sweep = setInterval(() => { void checkoutSvc.pollAllLive().catch(() => {}); }, 15_000);
+  sweep.unref();
+}
+
 // Companion App Gateway — M9: controlled by APP_GATEWAY_ENABLED (default: enabled)
 // Radar fetcher is created here (early) so the companion-app gateway can
 // expose POST /api/app/radar/scan; the main /api/radar mount below shares
