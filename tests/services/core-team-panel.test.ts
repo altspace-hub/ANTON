@@ -243,6 +243,75 @@ describe('runCoreTeamPanel (mocked model — modes + model ids)', () => {
   });
 });
 
+// ── Block-confirmation re-vote (calibration: cut single-sample false blocks) ──
+describe('runCoreTeamPanel block-confirmation re-vote', () => {
+  // callExpert that returns a fixed sequence of responses (one per call).
+  function seq(responses: string[]): { fn: () => Promise<string>; calls: { n: number } } {
+    let i = 0;
+    const calls = { n: 0 };
+    return {
+      calls,
+      fn: async () => { calls.n++; const r = responses[Math.min(i, responses.length - 1)]; i++; return r; },
+    };
+  }
+
+  it('first vote passes → NO re-vote (one call), blockConfirmation null', async () => {
+    onlyMistral();
+    const s = seq([panelJson()]); // all endorse
+    const result = await runCoreTeamPanel(noopDb(), {
+      projectId: 'p', gate: 'start', artifact: 'a', callExpert: s.fn,
+    });
+    expect(s.calls.n).toBe(1);
+    expect(result.verdict.blocking).toBe(false);
+    expect(result.blockConfirmation).toBeNull();
+  });
+
+  it('a single blocking vote among non-blocking re-votes is DOWNGRADED (gate not blocked)', async () => {
+    onlyMistral();
+    // start gate: project_manager is mandatory. Vote 1 dissents (blocks), re-votes endorse.
+    const s = seq([panelJson({ project_manager: 'dissent' }), panelJson(), panelJson()]);
+    const result = await runCoreTeamPanel(noopDb(), {
+      projectId: 'p', gate: 'start', artifact: 'a', callExpert: s.fn,
+    });
+    expect(s.calls.n).toBe(3); // 1 + DEFAULT_BLOCK_CONFIRM(2)
+    expect(result.blockConfirmation).toEqual({ votes: 3, blocked: 1 });
+    expect(result.verdict.blocking).toBe(false); // 1/3 < majority → NOT blocked
+  });
+
+  it('a MAJORITY of blocking votes KEEPS the block', async () => {
+    onlyMistral();
+    const s = seq([panelJson({ project_manager: 'dissent' }), panelJson({ project_manager: 'dissent' }), panelJson()]);
+    const result = await runCoreTeamPanel(noopDb(), {
+      projectId: 'p', gate: 'start', artifact: 'a', callExpert: s.fn,
+    });
+    expect(result.blockConfirmation).toEqual({ votes: 3, blocked: 2 });
+    expect(result.verdict.blocking).toBe(true); // 2/3 → blocked
+  });
+
+  it('blockConfirmationVotes:0 disables the re-vote (single shot still blocks)', async () => {
+    onlyMistral();
+    const s = seq([panelJson({ project_manager: 'dissent' })]);
+    const result = await runCoreTeamPanel(noopDb(), {
+      projectId: 'p', gate: 'start', artifact: 'a', callExpert: s.fn, blockConfirmationVotes: 0,
+    });
+    expect(s.calls.n).toBe(1);
+    expect(result.verdict.blocking).toBe(true);
+    expect(result.blockConfirmation).toBeNull();
+  });
+});
+
+describe('buildPanelSystemPrompt calibration', () => {
+  it('raises the dissent bar and pins per-gate context', () => {
+    const start = buildPanelSystemPrompt('start');
+    expect(start).toContain('GATE CONTEXT (start)');
+    expect(start).toMatch(/RESERVED for a genuine BLOCKER/);
+    expect(start).toMatch(/THIS IS THE DEFAULT verdict for a concern/);
+    const testing = buildPanelSystemPrompt('testing');
+    expect(testing).toContain('GATE CONTEXT (testing)');
+    expect(testing).toMatch(/already PASSED its acceptance tests/);
+  });
+});
+
 // ── System prompt sanity (pure) ─────────────────────────────────────────────
 
 describe('buildPanelSystemPrompt', () => {

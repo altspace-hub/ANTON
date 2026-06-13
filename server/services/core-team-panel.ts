@@ -146,6 +146,14 @@ export interface RunPanelOptions {
     db: DatabaseAdapter,
     input: { topic: string; deliberation: string },
   ) => Promise<DissentExtractionResult>;
+  /**
+   * Calibration — when the FIRST panel run BLOCKS (a mandatory-role dissent),
+   * re-run the panel up to this many MORE times and keep blocking=true only if a
+   * strict MAJORITY of (1 + N) votes block. Reduces single-sample false blocks
+   * from Medium's variance; costs extra calls ONLY on a block (the passing path
+   * is one shot). 0 = off. Default DEFAULT_BLOCK_CONFIRM.
+   */
+  blockConfirmationVotes?: number;
 }
 
 export interface RunPanelResult {
@@ -157,6 +165,12 @@ export interface RunPanelResult {
   chairModel: string | null;
   /** balanced/thorough dissent ledger when produced; null otherwise. */
   dissentLedger: DissentLedger | null;
+  /**
+   * Block-confirmation tally when a re-vote ran (the first vote blocked):
+   * { votes, blocked } over all votes cast. null when the first vote passed
+   * (no re-vote) or confirmation was disabled.
+   */
+  blockConfirmation: { votes: number; blocked: number } | null;
 }
 
 // ── Limits ───────────────────────────────────────────────────────────────
@@ -170,7 +184,28 @@ const PANEL_TIMEOUT_MS = 120_000;
 const EXPERT_MAX_TOKENS = 8_000;
 const CHAIR_MAX_TOKENS = 4_000;
 
+/**
+ * Default extra panel runs to cast when the first run BLOCKS, before trusting it.
+ * 2 → up to 3 total votes, block kept only on a 2-of-3 majority. Cuts single-
+ * sample false blocks without spending anything on the (common) passing path.
+ */
+export const DEFAULT_BLOCK_CONFIRM = 2;
+
 // ── System / user prompt builders (pure — unit-tested without an LLM) ───────
+
+/** Per-gate context that pins what actually warrants a (blocking) dissent vs a flag. */
+function gateDissentHint(gate: PanelGate): string {
+  switch (gate) {
+    case 'start':
+      return 'GATE CONTEXT (start): the artifact is a project CHARTER/plan, not code. Dissent ONLY if the plan is fundamentally unbuildable, unsafe, or off the stated goal. A thin business case, missing acceptance detail, or "is this worth building" on a small internal tool is at most a FLAG.';
+    case 'build':
+      return 'GATE CONTEXT (build): dissent ONLY for an architecture or security decision that is materially harmful or hard to reverse. Style, naming, and refactor preferences are FLAGS.';
+    case 'testing':
+      return 'GATE CONTEXT (testing): the code has already PASSED its acceptance tests. Dissent ONLY for a real correctness, security, or data-safety defect the tests miss. Coverage gaps, edge cases not in scope, and polish are FLAGS — not blockers.';
+    case 'finish':
+      return 'GATE CONTEXT (finish): dissent ONLY for a blocker that makes the result unsafe or unfit to ship. Remaining nice-to-haves and future work are FLAGS.';
+  }
+}
 
 export function buildPanelSystemPrompt(gate: PanelGate): string {
   const mandatory = GATE_MANDATORY_ROLES[gate];
@@ -188,8 +223,12 @@ You MUST role-play all seven experts INDEPENDENTLY. Each expert reasons from the
 RULES:
 - Output ONLY a single fenced JSON block labelled \`json\`. No prose before or after.
 - Report ONLY what the artifact actually supports. NEVER invent facts, features, code, or risks that are not in the artifact. If an expert has nothing material to say, they "endorse" with empty concerns — do NOT manufacture concerns.
-- INDEPENDENCE: a unanimous panel on a non-trivial artifact is SUSPICIOUS. Genuine experts disagree. Do not collapse the seven into one voice.
-- Each expert returns a "verdict": "endorse" (no blocking objection), "flag" (a concern worth addressing but not a blocker), or "dissent" (a fundamental objection — this should not proceed as-is).
+- INDEPENDENCE: each expert reasons from their OWN lens and may disagree — but do NOT manufacture disagreement. An expert with no material concern ENDORSES. Honest disagreement almost always surfaces as a FLAG, only rarely as a DISSENT (see the bar below).
+- Each expert returns ONE "verdict", calibrated to this scale:
+    • "endorse" — good enough to proceed PAST THIS GATE. Minor or future improvements do NOT prevent endorsement.
+    • "flag" — a real concern, missing detail, improvement, or future-hardening item. The build PROCEEDS and the flag is recorded for attention. THIS IS THE DEFAULT verdict for a concern.
+    • "dissent" — RESERVED for a genuine BLOCKER: proceeding would ship something materially broken, unsafe, insecure, data-losing, legally/compliance-violating, or fundamentally off the stated goal, AND it cannot be addressed at a later gate. A mandatory-role dissent HALTS THE ENTIRE BUILD, so use it sparingly and only with a concrete, specific required_change. If you are unsure, or the issue is "could be better", "needs more detail", "lacks an explicit business case", or a nice-to-have — that is a FLAG, not a dissent.
+- ${gateDissentHint(gate)}
 - "concerns": each is { "point": "...", "severity": "low" | "med" | "high" }. "required_change" is the single most important change that expert needs (or null). "rationale" is one or two sentences of WHY.
 - Use the role label EXACTLY as listed below for each expert's "role".
 - Do NOT output a panel-level verdict or a "blocking" flag — those are computed downstream by code, not by you. Just give each expert's honest verdict.
@@ -480,33 +519,66 @@ export async function runCoreTeamPanel(
   const system = buildPanelSystemPrompt(gate);
   const user = buildPanelUserPrompt(gate, opts.artifact);
 
-  let rawText: string;
-  try {
-    rawText = await callExpert({ model: expertModel, system, user });
-  } catch (err) {
-    void recordParseOutcome(db, 'core-team-panel', expertModel, false, err instanceof Error ? err.message : String(err));
-    throw err;
-  }
-
-  const parsed = parsePanelVerdict(rawText, gate);
-  if (!parsed) {
-    void recordParseOutcome(db, 'core-team-panel', expertModel, false, 'unparseable panel output');
-    throw new Error('Core-team panel produced no parseable verdict');
-  }
-  void recordParseOutcome(db, 'core-team-panel', expertModel, true);
-
-  const { panel_verdict, blocking } = computeRollup(parsed.experts);
-
-  const verdict: PanelVerdict = {
-    gate,
-    experts: parsed.experts,
-    agreements: parsed.agreements,
-    dissents: parsed.dissents,
-    open_questions: parsed.open_questions,
-    synthesis: parsed.synthesis,
-    panel_verdict,
-    blocking,
+  // One panel vote → a fully code-computed PanelVerdict (no balanced/thorough
+  // add-ons). Throws on a parse failure (honest: no fabricated verdict).
+  const castVote = async (): Promise<PanelVerdict> => {
+    let rawText: string;
+    try {
+      rawText = await callExpert({ model: expertModel, system, user });
+    } catch (err) {
+      void recordParseOutcome(db, 'core-team-panel', expertModel, false, err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+    const parsed = parsePanelVerdict(rawText, gate);
+    if (!parsed) {
+      void recordParseOutcome(db, 'core-team-panel', expertModel, false, 'unparseable panel output');
+      throw new Error('Core-team panel produced no parseable verdict');
+    }
+    void recordParseOutcome(db, 'core-team-panel', expertModel, true);
+    const rolled = computeRollup(parsed.experts);
+    return {
+      gate,
+      experts: parsed.experts,
+      agreements: parsed.agreements,
+      dissents: parsed.dissents,
+      open_questions: parsed.open_questions,
+      synthesis: parsed.synthesis,
+      panel_verdict: rolled.panel_verdict,
+      blocking: rolled.blocking,
+    };
   };
+
+  let verdict = await castVote();
+  let blockConfirmation: { votes: number; blocked: number } | null = null;
+
+  // Block-confirmation re-vote — ONLY when the first vote blocks. Re-run the
+  // panel and keep blocking=true only on a strict MAJORITY of votes, so a single
+  // unlucky mandatory-role dissent (Medium variance) cannot halt a good build.
+  // The passing path stays one shot (zero extra cost).
+  const extraVotes = opts.blockConfirmationVotes ?? DEFAULT_BLOCK_CONFIRM;
+  if (verdict.blocking && extraVotes > 0) {
+    const votes: PanelVerdict[] = [verdict];
+    for (let i = 0; i < extraVotes; i++) {
+      try { votes.push(await castVote()); } catch { /* a failed re-vote does not count toward a block */ }
+    }
+    const total = votes.length;
+    const blocked = votes.filter((v) => v.blocking).length;
+    const consensusBlocking = blocked * 2 > total; // strict majority of cast votes
+    blockConfirmation = { votes: total, blocked };
+    // Choose a representative vote consistent with the consensus, then override
+    // blocking to the consensus and record the tally honestly.
+    const rep = consensusBlocking
+      ? (votes.find((v) => v.blocking) ?? verdict)
+      : (votes.find((v) => !v.blocking) ?? verdict);
+    const note = consensusBlocking
+      ? `Block-confirmation: ${blocked}/${total} panel votes raised a mandatory-role dissent — majority confirmed, gate BLOCKED.`
+      : `Block-confirmation: only ${blocked}/${total} panel votes raised a mandatory-role dissent — below majority, gate NOT blocked (single-sample variance).`;
+    verdict = {
+      ...rep,
+      blocking: consensusBlocking,
+      synthesis: rep.synthesis ? `${rep.synthesis}\n\n${note}` : note,
+    };
+  }
 
   let chairModel: string | null = null;
   let dissentLedger: DissentLedger | null = null;
@@ -517,7 +589,7 @@ export async function runCoreTeamPanel(
     try {
       const result = await extract(db, {
         topic: `${gate} gate review`,
-        deliberation: expertsTranscript(parsed.experts),
+        deliberation: expertsTranscript(verdict.experts),
       });
       if (result.status === 'extracted' && result.ledger) dissentLedger = result.ledger;
     } catch {
@@ -540,7 +612,7 @@ export async function runCoreTeamPanel(
     }
   }
 
-  return { verdict, mode, expertModel, chairModel, dissentLedger };
+  return { verdict, mode, expertModel, chairModel, dissentLedger, blockConfirmation };
 }
 
 // ── Persistence (7 coding_reviews rows + 1 coding_panel_decisions record) ───
