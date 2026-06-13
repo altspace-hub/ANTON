@@ -1217,23 +1217,37 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   router.get('/portals/visit/:address/pages', async (req, res) => {
     try {
       const portalAddress = decodeURIComponent(req.params.address);
-      const remote = await db.get<{ origin_endpoint: string | null }>(
-        `SELECT origin_endpoint FROM portal_descriptor_cache WHERE portal_address = ?`,
-        portalAddress,
-      );
-      if (remote?.origin_endpoint) {
-        try {
-          // SSRF guard: block loopback/link-local/metadata; allow private LAN peers.
-          await assertSafeLanEgressUrl(remote.origin_endpoint);
-          const r = await fetch(`${remote.origin_endpoint}/api/portals/visit/${encodeURIComponent(portalAddress)}/pages`);
-          if (!r.ok) return res.status(r.status).json({ error: 'Remote returned non-OK' });
-          return res.json(await r.json());
-        } catch {
-          return res.status(503).json({ error: 'Remote portal unreachable' });
-        }
-      }
       const m = portalAddress.match(/^([^.]+(?:\.[^.]+)*)\.([^.]+)\.portal$/);
       if (!m) return res.status(400).json({ error: 'Invalid portal address' });
+
+      // Local-first: if WE own this portal (it exists + is active in our
+      // portals table) serve its pages straight from portal_pages. Only fall
+      // back to the cached origin_endpoint proxy when the portal isn't local.
+      // Without this guard a locally-owned portal whose descriptor_cache also
+      // carries an origin_endpoint (e.g. its own public URL) would proxy to
+      // that origin — and if the origin resolves back to this instance, the
+      // request self-loops until the rate limiter trips.
+      const local = await db.get<{ id: string }>(
+        `SELECT id FROM portals WHERE name = ? AND namespace = ? AND status = 'active'`,
+        m[1], m[2],
+      );
+      if (!local) {
+        const remote = await db.get<{ origin_endpoint: string | null }>(
+          `SELECT origin_endpoint FROM portal_descriptor_cache WHERE portal_address = ?`,
+          portalAddress,
+        );
+        if (remote?.origin_endpoint) {
+          try {
+            // SSRF guard: block loopback/link-local/metadata; allow private LAN peers.
+            await assertSafeLanEgressUrl(remote.origin_endpoint);
+            const r = await fetch(`${remote.origin_endpoint}/api/portals/visit/${encodeURIComponent(portalAddress)}/pages`);
+            if (!r.ok) return res.status(r.status).json({ error: 'Remote returned non-OK' });
+            return res.json(await r.json());
+          } catch {
+            return res.status(503).json({ error: 'Remote portal unreachable' });
+          }
+        }
+      }
       const rows = await db.all<{ path: string; title: string | null; sort_order: number }>(
         `SELECT pp.path, pp.title, pp.sort_order
          FROM portal_pages pp
