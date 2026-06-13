@@ -11,6 +11,8 @@
 // trusting the candidate's ANTON instance.
 
 import { z } from 'zod';
+import { verifyCanonical } from '../../lib/portal-crypto.js';
+import { deriveContactHashFromPublicKey, isValidEd25519PublicKey } from '../identity.js';
 
 // ── Schemas ───────────────────────────────────────────────────────────────
 
@@ -74,9 +76,88 @@ export type CareerPathEntry = z.infer<typeof CareerPathEntrySchema>;
 export type GrowthMap = z.infer<typeof GrowthMapSchema>;
 export type Aspirations = z.infer<typeof AspirationsSchema>;
 
-export function parseCareerProfile(raw: unknown): { ok: true; profile: CareerProfileBundle } | { ok: false; reason: string } {
+export type ParseCareerProfileResult =
+  | { ok: true; profile: CareerProfileBundle }
+  | { ok: false; reason: string };
+
+export interface ParseCareerProfileOptions {
+  /**
+   * Require + verify the candidate's Ed25519 (AAP) signature. Defaults to
+   * `true` because the spec (docs/anton-format/types/career-profile.md
+   * "Signing: REQUIRED") and the bundle's manager-blind / candidate-owned
+   * trust model demand that the importer prove the candidate authored the
+   * data without trusting the candidate's instance. Set to `false` only for
+   * internal in-process round-trips that never cross a trust boundary.
+   */
+  requireSignature?: boolean;
+}
+
+/**
+ * Verify the candidate's AAP signature over a career-profile bundle.
+ *
+ * The signature (base64url, in `signature`) is an Ed25519 signature over the
+ * RFC-8785-canonical form of the bundle with the `signature` field removed —
+ * the same construction used by signCanonical/verifyCanonical elsewhere
+ * (portal descriptors, app envelopes). `signed_by` is the candidate's public
+ * key (88-char hex SPKI DER, or base64url wire form). We also bind the key to
+ * the bundle's `candidate_contact_hash` so a valid signature from an unrelated
+ * key cannot impersonate the named candidate.
+ */
+export function verifyCareerProfileSignature(
+  profile: CareerProfileBundle,
+): { ok: true } | { ok: false; reason: string } {
+  if (!profile.signature || !profile.signed_by) {
+    return { ok: false, reason: 'Career profile is unsigned; signing is REQUIRED for import.' };
+  }
+
+  // Accept hex SPKI DER directly; convert base64url wire form to hex so we can
+  // both verify and derive the contact hash from one canonical key form.
+  let publicKeyHex = profile.signed_by;
+  if (!isValidEd25519PublicKey(publicKeyHex)) {
+    try {
+      const buf = Buffer.from(
+        profile.signed_by.replace(/-/g, '+').replace(/_/g, '/') +
+          '='.repeat((4 - (profile.signed_by.length % 4)) % 4),
+        'base64',
+      );
+      publicKeyHex = buf.toString('hex');
+    } catch {
+      return { ok: false, reason: 'Invalid signing key.' };
+    }
+    if (!isValidEd25519PublicKey(publicKeyHex)) {
+      return { ok: false, reason: 'Invalid signing key.' };
+    }
+  }
+
+  // The signed payload is the bundle without its detached signature.
+  const { signature: _sig, ...signedPayload } = profile;
+  if (!verifyCanonical(signedPayload, profile.signature, publicKeyHex)) {
+    return { ok: false, reason: 'Signature verification failed.' };
+  }
+
+  // Bind the key to the claimed candidate: the contact hash derived from the
+  // signing key MUST equal the bundle's candidate_contact_hash.
+  const derived = deriveContactHashFromPublicKey(publicKeyHex);
+  if (derived !== profile.candidate_contact_hash) {
+    return { ok: false, reason: 'Signing key does not match the candidate contact hash.' };
+  }
+
+  return { ok: true };
+}
+
+export function parseCareerProfile(
+  raw: unknown,
+  options: ParseCareerProfileOptions = {},
+): ParseCareerProfileResult {
+  const requireSignature = options.requireSignature ?? true;
   const r = CareerProfileBundleSchema.safeParse(raw);
   if (!r.success) return { ok: false, reason: r.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ') };
+
+  if (requireSignature) {
+    const verified = verifyCareerProfileSignature(r.data);
+    if (!verified.ok) return { ok: false, reason: verified.reason };
+  }
+
   return { ok: true, profile: r.data };
 }
 

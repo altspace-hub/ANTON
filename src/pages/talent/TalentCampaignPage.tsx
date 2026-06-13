@@ -23,6 +23,12 @@ import {
   UserPlus,
   BarChart3,
   ChevronDown,
+  Sparkles,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  Gavel,
+  Check,
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
@@ -80,6 +86,60 @@ interface AuditEntry {
   created_at: string;
 }
 
+// ── Assessment shapes (from GET /talent/candidates/:id → assessments) ──────
+// JSONB columns arrive as objects from Postgres; older rows may be JSON strings.
+interface DimensionScore {
+  dimension: string;
+  score: number;
+  reasoning?: string;
+  confidence?: number;
+}
+
+interface Uncertainty {
+  dimension: string;
+  description: string;
+  followupRecommended?: boolean;
+}
+
+interface BiasFinding {
+  type: string;
+  description: string;
+  severity: string;
+}
+
+interface FrameworkDriftCheck {
+  aligned: boolean;
+  deviations: string[];
+}
+
+interface Assessment {
+  id: string;
+  candidate_id: string;
+  assessor_type: 'primary' | 'bias_auditor' | string;
+  model_used: string | null;
+  dimension_scores: DimensionScore[] | string;
+  composite_score: number | null;
+  composite_percentage: number | null;
+  reasoning: string | null;
+  thinking_trace: string | null;
+  confidence: number | null;
+  wild_card_flag: boolean;
+  wild_card_reasoning: string | null;
+  uncertainties: Uncertainty[] | string;
+  bias_findings: BiasFinding[] | string;
+  framework_drift_check: FrameworkDriftCheck | string | null;
+  assessed_at: string;
+}
+
+// JSONB may already be parsed (object) or a JSON string (defensive).
+function parseJsonField<T>(v: unknown, fallback: T): T {
+  if (v == null) return fallback;
+  if (typeof v === 'string') {
+    try { return JSON.parse(v) as T; } catch { return fallback; }
+  }
+  return v as T;
+}
+
 const TABS: { id: TabId; label: string; icon: typeof Search }[] = [
   { id: 'discovery', label: 'Discovery', icon: Search },
   { id: 'candidates', label: 'Candidates', icon: Users },
@@ -126,6 +186,16 @@ export default function TalentCampaignPage() {
   const [newDimWeight, setNewDimWeight] = useState('20');
   const [newDimCategory, setNewDimCategory] = useState('custom');
   const [addingDim, setAddingDim] = useState(false);
+
+  // Assessments tab
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [loadingAssessments, setLoadingAssessments] = useState(false);
+  const [assessingId, setAssessingId] = useState<string | null>(null);
+  const [assessError, setAssessError] = useState<string | null>(null);
+  // Human-decision (EU AI Act Art. 14) affordance
+  const [recordingDecision, setRecordingDecision] = useState(false);
+  const [decisionDone, setDecisionDone] = useState(false);
 
   const loadCampaign = useCallback(async () => {
     if (!campaignId) return;
@@ -223,6 +293,88 @@ export default function TalentCampaignPage() {
       }
     } finally {
       setAddingDim(false);
+    }
+  }
+
+  // ── Assessment: load existing assessments for the selected candidate ─────
+  const loadAssessments = useCallback(async (candidateId: string) => {
+    setLoadingAssessments(true);
+    setAssessError(null);
+    setDecisionDone(false);
+    try {
+      const res = await fetchWithAuth(`/api/talent/candidates/${candidateId}`);
+      if (!res.ok) {
+        setAssessments([]);
+        setAssessError('Could not load this candidate.');
+        return;
+      }
+      const data = await res.json();
+      setAssessments((data.assessments ?? []) as Assessment[]);
+    } catch {
+      setAssessments([]);
+      setAssessError('Could not load this candidate.');
+    } finally {
+      setLoadingAssessments(false);
+    }
+  }, []);
+
+  function selectCandidateForAssessment(candidateId: string) {
+    setSelectedCandidateId(candidateId);
+    setActiveTab('assessments');
+    void loadAssessments(candidateId);
+  }
+
+  // ── Assessment: trigger the dual-model run (primary + bias auditor) ──────
+  async function runAssessment(candidateId: string) {
+    setAssessingId(candidateId);
+    setAssessError(null);
+    try {
+      const res = await fetchWithAuth(`/api/talent/candidates/${candidateId}/assess`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        let reason = 'Assessment failed. Check that the scoring framework is defined and the candidate has a CV or responses.';
+        try {
+          const body = await res.json();
+          if (typeof body?.error === 'string') reason = body.error;
+        } catch { /* keep default */ }
+        setAssessError(reason);
+        return;
+      }
+      // The assess endpoint returns ids + composite; the rich rows live in
+      // talent_assessments and come back via GET /candidates/:id.
+      await loadAssessments(candidateId);
+      await loadCandidates();
+      await loadAudit();
+    } catch {
+      setAssessError('Assessment request failed. The server may be unreachable.');
+    } finally {
+      setAssessingId(null);
+    }
+  }
+
+  // ── Human decision (EU AI Act Art. 14 — human oversight of AI scoring) ───
+  async function recordHumanReview(candidateId: string) {
+    if (!campaignId) return;
+    setRecordingDecision(true);
+    try {
+      const res = await fetchWithAuth(`/api/talent/campaigns/${campaignId}/decisions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId,
+          contextType: 'ranking_override',
+          decision: 'reviewed',
+          reasoning: 'Recruiter reviewed the AI assessment and bias-auditor verdict (Art. 14 human oversight).',
+        }),
+      });
+      if (res.ok) {
+        setDecisionDone(true);
+        await loadAudit();
+      }
+    } finally {
+      setRecordingDecision(false);
     }
   }
 
@@ -379,6 +531,13 @@ export default function TalentCampaignPage() {
                           <div className="text-xs text-adv-gray">Score</div>
                         </div>
                       )}
+                      <button
+                        onClick={() => selectCandidateForAssessment(c.id)}
+                        className="flex items-center gap-1.5 rounded-lg border border-adv-teal/40 px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/10"
+                      >
+                        <ClipboardCheck className="h-3.5 w-3.5" />
+                        {c.composite_score !== null ? 'View' : 'Assess'}
+                      </button>
                     </div>
                   );
                 })}
@@ -446,13 +605,261 @@ export default function TalentCampaignPage() {
         {/* ── Assessments Tab ───────────────────────────────────── */}
         {activeTab === 'assessments' && (
           <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-adv-card p-5">
-              <h3 className="text-sm font-medium text-adv-off-white mb-2">Candidate Assessment</h3>
-              <p className="text-sm text-adv-gray">
-                Assessment engine coming in Session 4. Will include dual-model assessment (primary + bias auditor),
-                scoring against the published framework, wild card detection, and follow-up question generation.
-              </p>
+            {/* Candidate picker */}
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-adv-off-white">Dual-model candidate assessment</h3>
+                  <p className="text-xs text-adv-gray mt-1">
+                    A primary assessor scores against your published framework; an independent
+                    second model audits that scoring for bias. Final hiring decisions stay with you (EU AI Act Art. 14).
+                  </p>
+                </div>
+                <select
+                  value={selectedCandidateId ?? ''}
+                  onChange={e => {
+                    const id = e.target.value || null;
+                    setSelectedCandidateId(id);
+                    if (id) void loadAssessments(id);
+                    else setAssessments([]);
+                  }}
+                  className="rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none max-w-[14rem]"
+                >
+                  <option value="">Select a candidate…</option>
+                  {candidates.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedCandidateId && (
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    onClick={() => runAssessment(selectedCandidateId)}
+                    disabled={assessingId === selectedCandidateId || dimensions.length === 0}
+                    className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark disabled:opacity-50"
+                  >
+                    {assessingId === selectedCandidateId
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Assessing…</>
+                      : <><Sparkles className="h-4 w-4" /> {assessments.length > 0 ? 'Re-run assessment' : 'Run assessment'}</>}
+                  </button>
+                  {dimensions.length === 0 && (
+                    <span className="text-xs text-adv-gold">Define scoring dimensions first (Scoring tab).</span>
+                  )}
+                  {assessingId === selectedCandidateId && (
+                    <span className="text-xs text-adv-gray">Running primary assessor + bias auditor — this can take a moment.</span>
+                  )}
+                </div>
+              )}
+
+              {assessError && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/10 px-3 py-2 text-xs text-adv-red">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{assessError}</span>
+                </div>
+              )}
             </div>
+
+            {/* No selection */}
+            {!selectedCandidateId && (
+              <div className="text-center py-10 text-sm text-adv-gray">
+                Select a candidate above, or use the <span className="text-adv-teal">Assess</span> button on the Candidates tab.
+              </div>
+            )}
+
+            {/* Loading */}
+            {selectedCandidateId && loadingAssessments && (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-adv-teal" />
+              </div>
+            )}
+
+            {/* Empty (selected, loaded, no assessment yet) */}
+            {selectedCandidateId && !loadingAssessments && assessments.length === 0 && !assessError && (
+              <div className="text-center py-10 text-sm text-adv-gray">
+                No assessment yet for this candidate. Click <span className="text-adv-teal">Run assessment</span> to score them.
+              </div>
+            )}
+
+            {/* Results */}
+            {selectedCandidateId && !loadingAssessments && assessments.length > 0 && (() => {
+              const primary = assessments.find(a => a.assessor_type === 'primary');
+              const bias = assessments.find(a => a.assessor_type === 'bias_auditor');
+              const dimScores = primary ? parseJsonField<DimensionScore[]>(primary.dimension_scores, []) : [];
+              const uncertainties = primary ? parseJsonField<Uncertainty[]>(primary.uncertainties, []) : [];
+              const biasFindings = bias ? parseJsonField<BiasFinding[]>(bias.bias_findings, []) : [];
+              const drift = bias ? parseJsonField<FrameworkDriftCheck | null>(bias.framework_drift_check, null) : null;
+              const composite = primary?.composite_percentage ?? null;
+              const sevColor = (s: string) =>
+                s === 'high' ? 'text-adv-red bg-adv-red/10 border-adv-red/40'
+                : s === 'medium' ? 'text-adv-gold bg-adv-gold/10 border-adv-gold/40'
+                : 'text-adv-gray bg-adv-gray/10 border-border';
+
+              return (
+                <div className="space-y-4">
+                  {/* ── Primary assessment ─────────────────────────── */}
+                  {primary && (
+                    <div className="rounded-xl border border-border bg-adv-card p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <ClipboardCheck className="h-4 w-4 text-adv-teal" />
+                          <h3 className="text-sm font-medium text-adv-off-white">Primary assessment</h3>
+                          {primary.model_used && (
+                            <span className="text-xs text-adv-blue">{primary.model_used}</span>
+                          )}
+                        </div>
+                        {composite !== null && (
+                          <div className="text-right">
+                            <div className={`text-2xl font-bold ${composite >= 75 ? 'text-adv-green' : composite >= 55 ? 'text-adv-gold' : 'text-adv-red'}`}>
+                              {composite}%
+                            </div>
+                            <div className="text-xs text-adv-gray">
+                              Composite{primary.confidence != null && ` · confidence ${Math.round(primary.confidence * 100)}%`}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {primary.wild_card_flag && (
+                        <div className="mb-3 flex items-start gap-2 rounded-lg border border-adv-gold/40 bg-adv-gold/10 px-3 py-2 text-xs text-adv-gold">
+                          <Sparkles className="h-4 w-4 shrink-0 mt-0.5" />
+                          <span><strong>Wild card.</strong> {primary.wild_card_reasoning ?? 'Unconventional profile worth a closer look.'}</span>
+                        </div>
+                      )}
+
+                      {/* Dimension scores */}
+                      {dimScores.length > 0 && (
+                        <div className="space-y-2 mb-4">
+                          {dimScores.map((d, i) => (
+                            <div key={i} className="rounded-lg border border-border bg-adv-dark px-3 py-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-adv-off-white">{d.dimension}</span>
+                                <span className="text-sm font-bold text-adv-teal">{d.score}/5</span>
+                              </div>
+                              {d.reasoning && <p className="text-xs text-adv-gray mt-1">{d.reasoning}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Overall reasoning */}
+                      {primary.reasoning && (
+                        <div className="mb-3">
+                          <h4 className="text-xs font-medium text-adv-gray uppercase tracking-wide mb-1">Reasoning</h4>
+                          <p className="text-sm text-adv-gray whitespace-pre-wrap">{primary.reasoning}</p>
+                        </div>
+                      )}
+
+                      {/* Stated uncertainties */}
+                      {uncertainties.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-medium text-adv-gray uppercase tracking-wide mb-1">Stated uncertainties</h4>
+                          <ul className="space-y-1">
+                            {uncertainties.map((u, i) => (
+                              <li key={i} className="flex items-start gap-2 text-xs text-adv-gray">
+                                <span className="text-adv-gold mt-0.5">•</span>
+                                <span>
+                                  <strong className="text-adv-off-white">{u.dimension}:</strong> {u.description}
+                                  {u.followupRecommended && <span className="text-adv-blue"> (follow-up recommended)</span>}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {primary.thinking_trace && (
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-xs text-adv-blue">Show reasoning trace</summary>
+                          <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-adv-dark p-3 text-xs text-adv-gray whitespace-pre-wrap">{primary.thinking_trace}</pre>
+                        </details>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Independent bias auditor ───────────────────── */}
+                  {bias && (
+                    <div className="rounded-xl border border-border bg-adv-card p-5">
+                      <div className="flex items-center gap-2 mb-3">
+                        {biasFindings.some(f => f.severity === 'high')
+                          ? <ShieldAlert className="h-4 w-4 text-adv-red" />
+                          : <ShieldCheck className="h-4 w-4 text-adv-green" />}
+                        <h3 className="text-sm font-medium text-adv-off-white">Independent bias auditor</h3>
+                        {bias.model_used && <span className="text-xs text-adv-blue">{bias.model_used}</span>}
+                      </div>
+
+                      <p className="text-xs text-adv-gray mb-3">
+                        A second model — independent of the assessor — reviewed the scoring for proxy
+                        discrimination, framework drift, consistency, and language bias.
+                      </p>
+
+                      {/* Framework alignment verdict */}
+                      {drift && (
+                        <div className={`mb-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${
+                          drift.aligned
+                            ? 'border-adv-green/40 bg-adv-green/10 text-adv-green'
+                            : 'border-adv-gold/40 bg-adv-gold/10 text-adv-gold'}`}>
+                          {drift.aligned ? <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" /> : <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />}
+                          <span>
+                            <strong>{drift.aligned ? 'Aligned with the published framework.' : 'Possible framework drift.'}</strong>
+                            {drift.deviations.length > 0 && <> Deviations: {drift.deviations.join('; ')}</>}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Findings */}
+                      {biasFindings.length > 0 ? (
+                        <div className="space-y-2">
+                          {biasFindings.map((f, i) => (
+                            <div key={i} className={`rounded-lg border px-3 py-2 ${sevColor(f.severity)}`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium capitalize">{f.type.replace(/_/g, ' ')}</span>
+                                <span className="text-xs font-bold uppercase">{f.severity}</span>
+                              </div>
+                              <p className="text-xs mt-1 opacity-90">{f.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs text-adv-green">
+                          <ShieldCheck className="h-4 w-4" />
+                          No bias findings raised by the auditor.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Human decision (Art. 14) ───────────────────── */}
+                  <div className="rounded-xl border border-adv-blue/30 bg-adv-blue/5 p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Gavel className="h-4 w-4 text-adv-blue" />
+                      <h3 className="text-sm font-medium text-adv-off-white">Human oversight (EU AI Act Art. 14)</h3>
+                    </div>
+                    <p className="text-xs text-adv-gray mb-3">
+                      This AI assessment is advisory. A human must make the final candidate-affecting decision.
+                      Recording your review logs it to the audit trail for accountability.
+                    </p>
+                    {decisionDone ? (
+                      <div className="flex items-center gap-2 text-sm text-adv-green">
+                        <Check className="h-4 w-4" /> Human review recorded in the audit trail.
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => recordHumanReview(selectedCandidateId)}
+                        disabled={recordingDecision}
+                        className="flex items-center gap-2 rounded-lg border border-adv-blue/50 px-4 py-2 text-sm font-medium text-adv-blue hover:bg-adv-blue/10 disabled:opacity-50"
+                      >
+                        {recordingDecision ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gavel className="h-4 w-4" />}
+                        Record human review
+                      </button>
+                    )}
+                    <p className="text-[11px] text-adv-gray/60 mt-2">
+                      Last assessed: {assessments[0]?.assessed_at ? new Date(assessments[0].assessed_at).toLocaleString() : '—'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
