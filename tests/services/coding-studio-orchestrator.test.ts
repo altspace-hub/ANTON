@@ -28,8 +28,12 @@ import {
   createStudioOrchestrator,
   clampReviseCap,
   buildPlanArtifact,
+  parseProjectGoals,
+  computeGoalCoverage,
+  buildGoalAlignmentArtifact,
   type OrchestratorDeps,
   type StudioPlan,
+  type StudioGoal,
 } from '../../server/services/coding-studio-orchestrator.js';
 import {
   computeRollup,
@@ -98,6 +102,85 @@ describe('orchestrator pure helpers', () => {
     expect(art).toContain('# Release: MVP');
     expect(art).toContain('[done] Task one (2 revise round(s))');
     expect(art).toContain('[failed] Task two');
+  });
+
+  // ── Goals model (FINISH-gate goal-alignment, pure helpers) ──────────────────
+  it('parseProjectGoals is tolerant (drops garbage, defaults priority, never throws)', () => {
+    expect(parseProjectGoals(null)).toEqual([]);
+    expect(parseProjectGoals('{not json')).toEqual([]);
+    expect(parseProjectGoals('{"not":"array"}')).toEqual([]);
+    const goals = parseProjectGoals(JSON.stringify([
+      { id: 'g1', statement: 'Export CSV', priority: 'mvp' },
+      { id: 'g2', statement: 'Offline', priority: 'banana' }, // bad priority → mvp
+      { statement: '  ' }, // blank → dropped
+      { id: 'g4', statement: 'Later thing', priority: 'later' },
+    ]));
+    expect(goals.map((g) => g.statement)).toEqual(['Export CSV', 'Offline', 'Later thing']);
+    expect(goals[1].priority).toBe('mvp');
+    expect(goals[2].priority).toBe('later');
+  });
+
+  function goalPlan(): { goals: StudioGoal[]; plan: StudioPlan } {
+    const goals: StudioGoal[] = [
+      { id: 'g1', statement: 'Export a CSV ledger', priority: 'mvp' },
+      { id: 'g2', statement: 'Runs offline', priority: 'mvp' },
+      { id: 'g3', statement: 'Dark mode', priority: 'later' },
+    ];
+    const plan: StudioPlan = {
+      releaseId: 'r', releaseName: 'MVP', summary: '',
+      tasks: [
+        { taskId: 't1', releaseId: 'r', title: 'CSV export', description: '', files: [], goalIds: ['g1'], status: 'done', reviseRounds: 0 },
+        { taskId: 't2', releaseId: 'r', title: 'Offline cache', description: '', files: [], goalIds: ['g2'], status: 'failed', reviseRounds: 4 },
+        { taskId: 't3', releaseId: 'r', title: 'Infra setup', description: '', files: [], goalIds: [], status: 'done', reviseRounds: 0 },
+      ],
+    };
+    return { goals, plan };
+  }
+
+  it('computeGoalCoverage classifies covered / at_risk / unaddressed deterministically', () => {
+    const { goals, plan } = goalPlan();
+    const cov = computeGoalCoverage(goals, plan);
+    expect(cov.find((c) => c.goal.id === 'g1')!.status).toBe('covered');   // done task mapped
+    expect(cov.find((c) => c.goal.id === 'g2')!.status).toBe('at_risk');   // only a failed task
+    expect(cov.find((c) => c.goal.id === 'g3')!.status).toBe('unaddressed'); // no task mapped
+    expect(cov.find((c) => c.goal.id === 'g1')!.doneTasks).toEqual(['CSV export']);
+    expect(cov.find((c) => c.goal.id === 'g2')!.failedTasks).toEqual(['Offline cache']);
+  });
+
+  it('HONESTY: a done-but-UNVERIFIED task (no test) is NOT counted as covered', () => {
+    const goals: StudioGoal[] = [{ id: 'g1', statement: 'Do it', priority: 'mvp' }];
+    const plan: StudioPlan = {
+      releaseId: 'r', releaseName: 'R', summary: '',
+      tasks: [{ taskId: 't1', releaseId: 'r', title: 'T1', description: '', files: [], goalIds: ['g1'], status: 'done', reviseRounds: 0, verified: false }],
+    };
+    const cov = computeGoalCoverage(goals, plan);
+    expect(cov[0].status).toBe('at_risk');            // applied but unverified → not proven
+    expect(cov[0].unverifiedTasks).toEqual(['T1']);
+    expect(cov[0].doneTasks).toEqual([]);
+    plan.tasks[0].verified = true;                    // now its tests ran green
+    expect(computeGoalCoverage(goals, plan)[0].status).toBe('covered');
+  });
+
+  it('computeGoalCoverage tolerates a pre-goals plan (tasks without goalIds)', () => {
+    const goals: StudioGoal[] = [{ id: 'g1', statement: 'X', priority: 'mvp' }];
+    const legacyPlan = {
+      releaseId: 'r', releaseName: 'L', summary: '',
+      tasks: [{ taskId: 't', releaseId: 'r', title: 'old', description: '', files: [], status: 'done', reviseRounds: 0 }],
+    } as unknown as StudioPlan;
+    const cov = computeGoalCoverage(goals, legacyPlan);
+    expect(cov[0].status).toBe('unaddressed'); // no goalIds → not mapped, but no throw
+  });
+
+  it('buildGoalAlignmentArtifact surfaces uncovered MVP goals first + falls back without goals', () => {
+    const { goals, plan } = goalPlan();
+    const art = buildGoalAlignmentArtifact(goals, plan);
+    expect(art).toContain('Goal-alignment snapshot');
+    expect(art).toContain('MVP goals NOT yet covered');
+    expect(art).toContain('Runs offline');     // g2 at_risk → in the gap list
+    expect(art).toContain('## Goal coverage');
+    expect(art).toContain('# Release: MVP');    // still includes the plan artifact
+    // No goals → identical to the plan artifact (honest: nothing to align against).
+    expect(buildGoalAlignmentArtifact([], plan)).toBe(buildPlanArtifact(plan));
   });
 
   it('resolveCodingModel maps the roles to the locked Mistral ids', () => {
@@ -263,6 +346,54 @@ describeOrSkip('orchestrator loop (injected LLM/exec/panel)', () => {
     const revs = await db.all("SELECT id FROM coding_workspace_applications WHERE coding_project_id = ? AND kind = 'revision'", codingProjectId);
     expect(revs.length).toBe(1);
     expect(codegenCalls.length).toBe(2); // initial + 1 revision
+  });
+
+  it('GAP 2: persists REAL accumulated codegen tokens + completion_record per task', async () => {
+    testOutcomeQueue = [false, true]; // initial fail + 1 revision = 2 codegen calls
+    const d = deps();
+    d.callCodegen = async (input) => {
+      codegenCalls.push({ model: input.model });
+      return { text: '```ts\n// FILE: src/a.ts\nexport const a = 1;\n```', inputTokens: 100, outputTokens: 50 };
+    };
+    const orch = createStudioOrchestrator(db, d);
+    await orch.startOrResume({ codingProjectId, reviseCap: 4 });
+    await orch.advance(codingProjectId);
+    await orch.approvePlan(codingProjectId);
+    const row = await db.get<{ tokens_consumed: string; completion_record: string; execution_plan: string }>(
+      'SELECT tokens_consumed, completion_record, execution_plan FROM coding_tasks WHERE coding_project_id = ? LIMIT 1', codingProjectId);
+    expect(JSON.parse(row!.tokens_consumed)).toEqual({ input: 200, output: 100, cost_usd: 0 }); // 2 calls x (100,50)
+    const completion = JSON.parse(row!.completion_record);
+    expect(completion.finalStatus).toBe('done');
+    expect(completion.verified).toBe(true);
+    expect(JSON.parse(row!.execution_plan).targetFiles).toBeDefined();
+  });
+
+  it('GAP 2: a plain-string callCodegen yields zero tokens (back-compat)', async () => {
+    testOutcomeQueue = [true];
+    const orch = createStudioOrchestrator(db, deps()); // default stub returns a STRING
+    await orch.startOrResume({ codingProjectId });
+    await orch.advance(codingProjectId);
+    await orch.approvePlan(codingProjectId);
+    const row = await db.get<{ tokens_consumed: string }>('SELECT tokens_consumed FROM coding_tasks WHERE coding_project_id = ? LIMIT 1', codingProjectId);
+    expect(JSON.parse(row!.tokens_consumed)).toEqual({ input: 0, output: 0, cost_usd: 0 });
+  });
+
+  it('GAP 1: the revise codegen prompt carries the earlier-attempts history; progress_log persists it', async () => {
+    testOutcomeQueue = [false, true]; // fail then pass
+    const prompts: string[] = [];
+    const d = deps();
+    d.callCodegen = async (input) => { prompts.push(input.user); return '```ts\n// FILE: src/a.ts\nexport const a = 1;\n```'; };
+    const orch = createStudioOrchestrator(db, d);
+    await orch.startOrResume({ codingProjectId, reviseCap: 4 });
+    await orch.advance(codingProjectId);
+    await orch.approvePlan(codingProjectId);
+    expect(prompts.length).toBe(2);
+    expect(prompts[0]).not.toContain('Earlier attempts'); // the initial pass has no history
+    expect(prompts[1]).toContain('Earlier attempts');      // the revise sees the failed attempt
+    const row = await db.get<{ progress_log: string }>('SELECT progress_log FROM coding_tasks WHERE coding_project_id = ? LIMIT 1', codingProjectId);
+    const log = JSON.parse(row!.progress_log) as Array<{ failure_summary: string }>;
+    expect(log.length).toBeGreaterThanOrEqual(1);
+    expect(log[0].failure_summary).toBeTruthy();
   });
 
   it('enforces the revise cap: marks the task failed honestly after N rounds', async () => {

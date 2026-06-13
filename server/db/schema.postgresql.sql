@@ -1606,6 +1606,10 @@ CREATE TABLE IF NOT EXISTS coding_projects (
   setup_command TEXT,
   build_command TEXT,
   studio_language TEXT,
+  -- ANTON Studio (migration 242): the charter's MEASURABLE GOALS — a JSON
+  -- CharterGoal[] (id/statement/priority 'mvp'|'later'). The yardstick the
+  -- FINISH-gate goal-alignment snapshot checks the build against.
+  goals TEXT DEFAULT '[]',
   created_by TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -1667,6 +1671,13 @@ CREATE TABLE IF NOT EXISTS coding_tasks (
   depends_on TEXT DEFAULT '[]',
   blocks TEXT DEFAULT '[]',
   file_manifest TEXT DEFAULT '{}',
+  -- ANTON Studio (migration 242): goal-alignment threading. goal_ids = which
+  -- charter goal ids this task addresses (JSON id array; '[]' = infra/unmapped).
+  -- goal_alignment = a per-task record written when the task completes (which
+  -- goals it advanced + a short note); NULL until done. Feeds the FINISH gate's
+  -- deterministic goal×coverage snapshot.
+  goal_ids TEXT DEFAULT '[]',
+  goal_alignment TEXT,
   test_results TEXT,
   tokens_consumed TEXT DEFAULT '{"input":0,"output":0,"cost_usd":0}',
   sort_order INTEGER DEFAULT 0,

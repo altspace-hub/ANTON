@@ -1196,6 +1196,14 @@ export async function bundleCodingStudioProject(
     projectId,
   ) as Record<string, unknown> | undefined;
   const plan = run ? safeJsonParse(run.plan as string, null) : null;
+  // Goal-alignment snapshot (built-vs-intended) — the charter goals × the plan
+  // tasks that landed them. Travels in the reusable blueprint so a reviewer sees
+  // what the build was held to and whether each MVP goal was covered.
+  const { parseProjectGoals, computeGoalCoverage } = await import('./coding-studio-orchestrator.js');
+  const studioGoals = parseProjectGoals(project.goals as string | null | undefined);
+  const goalCoverage = plan && Array.isArray((plan as { tasks?: unknown }).tasks)
+    ? computeGoalCoverage(studioGoals, plan as Parameters<typeof computeGoalCoverage>[1])
+    : studioGoals.map((g) => ({ goal: g, doneTasks: [], failedTasks: [], status: 'unaddressed' as const }));
   const planJson = JSON.stringify({
     run: run
       ? {
@@ -1204,6 +1212,8 @@ export async function bundleCodingStudioProject(
         }
       : null,
     plan,
+    goals: studioGoals,
+    goal_coverage: goalCoverage,
     step_log: run ? safeJsonParse(run.step_log as string, []) : [],
   }, null, 2);
 

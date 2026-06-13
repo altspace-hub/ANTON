@@ -32,6 +32,7 @@ type PhaseId = (typeof PHASES)[number]['id'];
 interface ChosenFramework { id: string; name: string; reference?: string; origin: string }
 interface CharterReference { id: string; kind: string; value: string; note?: string }
 interface CharterRisk { id: string; description: string; severity: string; mitigation?: string }
+interface CharterGoal { id: string; statement: string; priority: string }
 
 interface WorkshopState {
   tier: string;
@@ -42,6 +43,7 @@ interface WorkshopState {
   vision: string;
   scope: string;
   mvp: string;
+  goals: CharterGoal[];
   constraints: string;
   jurisdiction: string;
   chosenFrameworks: ChosenFramework[];
@@ -288,6 +290,9 @@ export default function CodingStudioWorkshopPage() {
                 <CharterField label="Problem" value={state.problemStatement} />
                 <CharterField label="Scope" value={state.scope} />
                 <CharterField label="MVP" value={state.mvp} />
+                {state.goals && state.goals.length > 0 && (
+                  <CharterChips label="Goals" items={state.goals.map((g) => `[${g.priority}] ${g.statement}`)} />
+                )}
                 <CharterField label="Jurisdiction" value={state.jurisdiction} />
                 <CharterField label="Language" value={state.language} />
                 {state.techStack.length > 0 && (

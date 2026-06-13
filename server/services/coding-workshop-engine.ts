@@ -106,6 +106,22 @@ export interface CharterRisk {
 }
 
 /**
+ * A measurable GOAL / success-criterion the project must satisfy — the
+ * enumerable, checkable "what does done look like" the build is held to.
+ * Captured in the Scope & MVP phase (problem-first), threaded through the plan
+ * (tasks declare which goal ids they address), and verified at the FINISH gate
+ * as a deterministic goal-alignment snapshot (built-vs-intended). The LLM never
+ * decides the gate — the snapshot just gives the panel the goal×coverage table.
+ */
+export interface CharterGoal {
+  id: string;
+  /** A short, testable statement of done, e.g. "User can export a CSV ledger". */
+  statement: string;
+  /** Whether this goal is required for the MVP or a nice-to-have ('later'). */
+  priority: 'mvp' | 'later';
+}
+
+/**
  * The PROJECT CHARTER — an Engagement-shaped object (the workshop's whole
  * output). Seeds the Studio project + the P2 panel.
  */
@@ -115,6 +131,8 @@ export interface ProjectCharter {
   problemStatement: string;
   scope: string;
   mvp: string;
+  /** Measurable success-criteria the build is held to (the FINISH-gate yardstick). */
+  goals: CharterGoal[];
   constraints: string;
   jurisdiction: string;
   chosenFrameworks: ChosenFramework[];
@@ -142,6 +160,8 @@ export interface WorkshopState {
   vision: string;
   scope: string;
   mvp: string;
+  /** Measurable success-criteria (accreted in the Scope & MVP phase). */
+  goals: CharterGoal[];
   constraints: string;
   jurisdiction: string;
   chosenFrameworks: ChosenFramework[];
@@ -177,6 +197,7 @@ export function createDefaultWorkshopState(tier: WorkshopTier, mode: WorkshopMod
     vision: '',
     scope: '',
     mvp: '',
+    goals: [],
     constraints: '',
     jurisdiction: '',
     chosenFrameworks: [],
@@ -253,7 +274,8 @@ Include this marker on its own line at the END when ready: [PHASE_COMPLETE:probl
 Now define what the FIRST shippable version must do — and what it explicitly will NOT do yet.
 Ask about the must-have features (the MVP) vs the nice-to-haves. Protect the MVP — push extras into a "later" bucket.
 Capture: scope (overall boundary) and mvp (the first build).
-When the MVP is crisp and shippable, summarize and transition.
+ALSO capture a short list of MEASURABLE GOALS — testable "what does done look like" statements (each a concrete success-criterion, e.g. "A user can export a CSV ledger", "The app runs offline"). Mark each goal 'mvp' (required for the first release) or 'later'. These goals become the yardstick the final review checks the build against, so keep them concrete and few (2–6 for an MVP).
+When the MVP + its goals are crisp and shippable, summarize and transition.
 Include this marker when ready: [PHASE_COMPLETE:scope_mvp]`;
 
     case 'context_constraints':
@@ -323,9 +345,10 @@ When the user confirms, include: [PHASE_COMPLETE:risks_review]`;
 function getWorkshopStatePrompt(state: WorkshopState): string {
   return `After your conversational response, also produce a JSON state update on a SEPARATE line at the very END of your response, prefixed with [STATE_UPDATE]:
 
-Format: [STATE_UPDATE]:{"title":"...","problemStatement":"...","vision":"...","scope":"...","mvp":"...","constraints":"...","jurisdiction":"...","chosenFrameworks":[{"id":"...","name":"...","reference":"...","origin":"user"}],"references":[{"kind":"url|folder|web|exemplar","value":"...","note":"..."}],"techStack":["..."],"language":"...","expertPanel":["project_manager","solution_architect"],"risks":[{"description":"...","severity":"low|medium|high","mitigation":"..."}],"summary":"...","currentPhaseProgress":0-100,"canFinalize":true|false}
+Format: [STATE_UPDATE]:{"title":"...","problemStatement":"...","vision":"...","scope":"...","mvp":"...","goals":[{"statement":"A user can export a CSV ledger","priority":"mvp|later"}],"constraints":"...","jurisdiction":"...","chosenFrameworks":[{"id":"...","name":"...","reference":"...","origin":"user"}],"references":[{"kind":"url|folder|web|exemplar","value":"...","note":"..."}],"techStack":["..."],"language":"...","expertPanel":["project_manager","solution_architect"],"risks":[{"description":"...","severity":"low|medium|high","mitigation":"..."}],"summary":"...","currentPhaseProgress":0-100,"canFinalize":true|false}
 
 Only include fields that changed or were newly captured. Partial updates are fine.
+- goals are MEASURABLE success-criteria (testable statements); priority is 'mvp' or 'later'.
 - expertPanel entries MUST be role ids from: ${CORE_TEAM_ROLES.map((r) => r.id).join(', ')}.
 - Set canFinalize to true once you have at least a problemStatement AND a scope (or mvp).
 - currentPhaseProgress is 0-100 for the CURRENT phase.
@@ -348,6 +371,7 @@ Current accumulated charter:
 const VALID_ROLE_IDS = new Set(CORE_TEAM_ROLES.map((r) => r.id));
 const VALID_REF_KINDS = new Set(['url', 'folder', 'web', 'exemplar']);
 const VALID_SEVERITIES = new Set(['low', 'medium', 'high']);
+const VALID_GOAL_PRIORITIES = new Set(['mvp', 'later']);
 
 export function parseWorkshopUpdate(
   response: string,
@@ -364,6 +388,7 @@ export function parseWorkshopUpdate(
   const previousPhase = currentState.phase;
   const updated: WorkshopState = {
     ...currentState,
+    goals: [...currentState.goals],
     chosenFrameworks: [...currentState.chosenFrameworks],
     references: [...currentState.references],
     techStack: [...currentState.techStack],
@@ -459,6 +484,22 @@ export function parseWorkshopUpdate(
         }
       }
 
+      if (Array.isArray(u.goals)) {
+        const existing = new Set(updated.goals.map((g) => g.statement.toLowerCase()));
+        for (const raw of u.goals as Array<Record<string, unknown>>) {
+          if (!raw || typeof raw !== 'object') continue;
+          const statement = typeof raw.statement === 'string' ? raw.statement.trim() : '';
+          if (!statement || existing.has(statement.toLowerCase())) continue;
+          const priority = String(raw.priority ?? '').trim();
+          updated.goals.push({
+            id: randomUUID(),
+            statement,
+            priority: VALID_GOAL_PRIORITIES.has(priority) ? (priority as CharterGoal['priority']) : 'mvp',
+          });
+          existing.add(statement.toLowerCase());
+        }
+      }
+
       if (typeof u.currentPhaseProgress === 'number') {
         updated.currentPhaseProgress = Math.max(0, Math.min(100, u.currentPhaseProgress));
       }
@@ -517,6 +558,7 @@ export function assembleCharter(state: WorkshopState): ProjectCharter {
     problemStatement: state.problemStatement.trim(),
     scope: state.scope.trim(),
     mvp: state.mvp.trim(),
+    goals: state.goals,
     constraints: state.constraints.trim(),
     jurisdiction: state.jurisdiction.trim(),
     chosenFrameworks: state.chosenFrameworks,
@@ -813,8 +855,8 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
       );
       await tx.run(
         `INSERT INTO coding_projects
-           (id, project_id, name, description, tier, status, discovery_summary, tech_stack, expert_panels, created_by)
-         VALUES (?, ?, ?, ?, 'large', 'discovery', ?, ?, ?, ?)`,
+           (id, project_id, name, description, tier, status, discovery_summary, tech_stack, expert_panels, goals, created_by)
+         VALUES (?, ?, ?, ?, 'large', 'discovery', ?, ?, ?, ?, ?)`,
         codingProjectId,
         projectId,
         charter.title,
@@ -822,6 +864,7 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
         discoverySummary,
         JSON.stringify(charter.techStack),
         JSON.stringify(charter.expertPanel),
+        JSON.stringify(charter.goals),
         userId ?? session.userId ?? 'system',
       );
       await tx.run(
@@ -861,6 +904,11 @@ function buildCharterMarkdown(charter: ProjectCharter): string {
   lines.push('## Problem', charter.problemStatement || '_(not captured)_', '');
   if (charter.scope) lines.push('## Scope', charter.scope, '');
   if (charter.mvp) lines.push('## MVP', charter.mvp, '');
+  if (charter.goals.length) {
+    lines.push('## Goals (success-criteria)');
+    for (const g of charter.goals) lines.push(`- [${g.priority}] ${g.statement}`);
+    lines.push('');
+  }
   if (charter.constraints || charter.jurisdiction) {
     lines.push('## Constraints & Context');
     if (charter.jurisdiction) lines.push(`- Jurisdiction: ${charter.jurisdiction}`);

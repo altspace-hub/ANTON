@@ -132,6 +132,26 @@ describe('parseWorkshopUpdate (tolerant parse + phase advance)', () => {
     expect(updatedState.title).toBe('');
   });
 
+  it('parses measurable GOALS (tolerant: bad priority → mvp, dups dropped, blanks dropped)', () => {
+    const reply = `Captured the goals.
+[STATE_UPDATE]:{"goals":[{"statement":"Export a CSV ledger","priority":"mvp"},{"statement":"Runs offline","priority":"banana"},{"statement":"Export a CSV ledger","priority":"later"},{"statement":"  ","priority":"mvp"}]}`;
+    const { updatedState } = parseWorkshopUpdate(reply, base());
+    expect(updatedState.goals).toHaveLength(2); // dup + blank dropped
+    expect(updatedState.goals[0].statement).toBe('Export a CSV ledger');
+    expect(updatedState.goals[0].priority).toBe('mvp');
+    expect(updatedState.goals[1].statement).toBe('Runs offline');
+    expect(updatedState.goals[1].priority).toBe('mvp'); // 'banana' → default 'mvp'
+    expect(updatedState.goals.every((g) => typeof g.id === 'string' && g.id.length > 0)).toBe(true);
+  });
+
+  it('accretes goals across turns without re-adding the same statement', () => {
+    let s = base();
+    s = parseWorkshopUpdate('[STATE_UPDATE]:{"goals":[{"statement":"A","priority":"mvp"}]}', s).updatedState;
+    s = parseWorkshopUpdate('[STATE_UPDATE]:{"goals":[{"statement":"A","priority":"later"},{"statement":"B","priority":"later"}]}', s).updatedState;
+    expect(s.goals.map((g) => g.statement)).toEqual(['A', 'B']);
+    expect(s.goals[0].priority).toBe('mvp'); // first capture wins (dedup on statement)
+  });
+
   it('derives canFinalize once a problem AND a scope/MVP exist', () => {
     let s = base();
     s = parseWorkshopUpdate('[STATE_UPDATE]:{"problemStatement":"a problem"}', s).updatedState;
@@ -165,11 +185,14 @@ describe('assembleCharter (charter assembles from collected state)', () => {
     s.expertPanel = ['project_manager', 'engineering_expert'];
     s.chosenFrameworks = [{ id: 'gdpr', name: 'GDPR', origin: 'user' }];
     s.risks = [{ id: 'r1', description: 'bank API access', severity: 'high' }];
+    s.goals = [{ id: 'g1', statement: 'User sees a runway number', priority: 'mvp' }];
     s.summary = 'A local-first freelance budgeting MVP.';
 
     const charter = assembleCharter(s);
     expect(charter.title).toBe('FreelanceBudget');
     expect(charter.problemStatement).toBe('Freelancers cannot see cashflow');
+    expect(charter.goals).toHaveLength(1);
+    expect(charter.goals[0].statement).toBe('User sees a runway number');
     expect(charter.language).toBe('typescript');
     expect(charter.techStack).toEqual(['react', 'postgres']);
     expect(charter.expertPanel).toEqual(['project_manager', 'engineering_expert']);
