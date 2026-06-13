@@ -48,6 +48,11 @@ export type AntonBundleType =
   | 'workflow'
   | 'skill-pack'
   | 'coding-blueprint'
+  // ANTON Studio (Phase 5): the FULL governed Studio project as a portable,
+  // reusable blueprint — charter + release/task plan + all 4 panel decision
+  // records + chosen frameworks + learned project atoms + the final code
+  // (manifest + written files) + the test results. SOURCE-BEARING.
+  | 'coding-studio-project'
   | 'coding-review-profile'
   | 'script-lite-template'
   | 'script-medium-template'
@@ -130,6 +135,10 @@ export const BUNDLE_TYPE_REGISTRY: Record<AntonBundleType, BundleTypeEntry> = {
   'workflow':                     { label: 'Workflow',                   description: 'Multi-step workflow template',                      contentsKey: 'workflows',            primaryContentDir: 'workflows' },
   'skill-pack':                   { label: 'Skill Pack',                 description: 'Curated bundle of modules and workflows',           contentsKey: 'skill_packs',          primaryContentDir: 'skill-packs' },
   'coding-blueprint':             { label: 'Coding Blueprint',           description: 'Full software project template',                    contentsKey: 'coding_blueprints',    primaryContentDir: 'coding-blueprints' },
+  // ANTON Studio project blueprint (Phase 5). Payload files live at the archive
+  // root (charter.md, plan.json, panels.json, atoms.json, test-results.json, the
+  // code/ tree) — hence the empty primaryContentDir (like module-run / beehive).
+  'coding-studio-project':        { label: 'ANTON Studio Project',       description: 'A governed ANTON Studio build, packaged for reuse: charter + release/task plan + all 4 core-team panel decisions + chosen frameworks + learned project atoms (the lessons) + the final code (manifest + written files) + the test results. Honest about what does NOT travel (scoped DB contents, secrets).', contentsKey: 'coding_studio_projects', primaryContentDir: '' },
   'coding-review-profile':        { label: 'Code Review Profile',        description: 'Code review lens configuration',                    contentsKey: 'coding_review_profiles', primaryContentDir: 'coding-review-profiles' },
   'script-lite-template':         { label: 'Script Lite Template',       description: 'Data analysis script template',                     contentsKey: 'script_lite_templates', primaryContentDir: 'script-lite-templates' },
   'script-medium-template':       { label: 'Script Medium Template',     description: 'Multi-file application template',                   contentsKey: 'script_medium_templates', primaryContentDir: 'script-medium-templates' },
@@ -1135,6 +1144,241 @@ ${releases.map((r: any) => `- **Release ${r.release_number}:** ${r.name} (${r.st
   attachPayloadChecksum(zip);
   const buffer = zip.toBuffer();
   console.log(`[anton-bundler] Created coding-large blueprint for project "${project.name}" (${buffer.length} bytes)`);
+  return buffer;
+}
+
+/**
+ * Bundle an ANTON STUDIO PROJECT as a portable, reusable `.anton` blueprint
+ * (ANTON Studio Phase 5, CODING_STUDIO_DESIGN_2026-06-13.md §F-P5).
+ *
+ * Packages the WHOLE governed Studio build:
+ *   • the CHARTER          (coding_projects.discovery_summary → charter.md)
+ *   • the release/task PLAN (coding_studio_runs.plan → plan.json)
+ *   • ALL 4 PANEL DECISIONS (coding_panel_decisions, start/build/testing/finish
+ *                            → panels.json — the full code-computed verdicts)
+ *   • the chosen FRAMEWORKS (coding_projects.tech_stack/expert_panels → frameworks.json)
+ *   • the learned project ATOMS (knowledge_atoms WHERE coding_project_id → atoms.json,
+ *                            "the lessons")
+ *   • the final CODE        (the latest applied workspace files: a manifest +
+ *                            the written files themselves under code/, when the
+ *                            workspace is still bound + readable — HONEST about
+ *                            what is hash-only vs full content)
+ *   • the TEST RESULTS      (coding_test_runs, executed only → test-results.json)
+ *
+ * Signed via the existing maybeSign path (the route calls signAntonBundle).
+ *
+ * HONEST about what does NOT travel: the SCOPED per-project DATABASE CONTENTS
+ * (proj_<slug> rows) and ANY SECRETS (the scoped DSN / password are in the
+ * encrypted vault, never here). Files that can't be read back from the workspace
+ * ship as a manifest entry (path + before/after hash) with no body.
+ */
+export async function bundleCodingStudioProject(
+  db: DatabaseAdapter,
+  projectId: string,
+  options: { author?: string; governance?: GovernanceMetadata } = {},
+): Promise<Buffer> {
+  const { validateWorkspacePath, resolveTargetPath } = await import('./coding-workspace.js');
+  const { readFile } = await import('node:fs/promises');
+
+  const project = await db.get(
+    'SELECT * FROM coding_projects WHERE id = ?', projectId,
+  ) as Record<string, unknown> | undefined;
+  if (!project) throw new Error('Coding project not found');
+
+  // ── Charter (the workshop output, seeded into discovery_summary) ──────────
+  const charterMd = (typeof project.discovery_summary === 'string' && project.discovery_summary)
+    ? project.discovery_summary
+    : `# Project Charter — ${String(project.name ?? 'Untitled')}\n\n${String(project.description ?? '_(no charter captured)_')}`;
+
+  // ── The release/task plan + run state (the orchestrator's plan) ───────────
+  const run = await db.get(
+    'SELECT id, status, autonomy, revise_cap, plan, step_log, started_at, finished_at FROM coding_studio_runs WHERE coding_project_id = ?',
+    projectId,
+  ) as Record<string, unknown> | undefined;
+  const plan = run ? safeJsonParse(run.plan as string, null) : null;
+  const planJson = JSON.stringify({
+    run: run
+      ? {
+          status: run.status, autonomy: run.autonomy, revise_cap: Number(run.revise_cap) || null,
+          started_at: run.started_at ?? null, finished_at: run.finished_at ?? null,
+        }
+      : null,
+    plan,
+    step_log: run ? safeJsonParse(run.step_log as string, []) : [],
+  }, null, 2);
+
+  // ── All 4 panel decision records (the code-computed verdicts) ─────────────
+  const decisions = await db.all(
+    'SELECT gate, panel_verdict, blocking, mode, verdict_json, model, chair_model, extracted_at FROM coding_panel_decisions WHERE coding_project_id = ? ORDER BY extracted_at ASC',
+    projectId,
+  ) as Array<Record<string, unknown>>;
+  const panelsJson = JSON.stringify(
+    decisions.map((d) => ({
+      gate: d.gate,
+      panel_verdict: d.panel_verdict,
+      blocking: d.blocking === true || d.blocking === 1 || d.blocking === 't',
+      mode: d.mode,
+      model: d.model ?? null,
+      chair_model: d.chair_model ?? null,
+      extracted_at: d.extracted_at ?? null,
+      verdict: typeof d.verdict_json === 'string' ? safeJsonParse(d.verdict_json as string, null) : d.verdict_json,
+    })),
+    null, 2,
+  );
+
+  // ── Chosen frameworks + tech stack + expert panel ─────────────────────────
+  const frameworksJson = JSON.stringify({
+    tech_stack: safeJsonParse(project.tech_stack as string, []),
+    expert_panel: safeJsonParse(project.expert_panels as string, []),
+    studio_language: project.studio_language ?? null,
+  }, null, 2);
+
+  // ── Learned project atoms (the lessons) ───────────────────────────────────
+  let atoms: Array<Record<string, unknown>> = [];
+  try {
+    atoms = await db.all(
+      `SELECT id, content, atom_type, atom_origin, confidence, category, tags, created_at
+         FROM knowledge_atoms WHERE coding_project_id = ? ORDER BY created_at ASC LIMIT 1000`,
+      projectId,
+    ) as Array<Record<string, unknown>>;
+  } catch { /* un-migrated install — no atoms */ }
+  const atomsJson = JSON.stringify(atoms.map((a) => ({
+    atom_type: a.atom_type, atom_origin: a.atom_origin, confidence: a.confidence,
+    category: a.category, content: a.content, created_at: a.created_at,
+  })), null, 2);
+
+  // ── Test results (executed runs only — the honest, verified record) ───────
+  let testRuns: Array<Record<string, unknown>> = [];
+  try {
+    testRuns = await db.all(
+      `SELECT coding_task_id, test_suite_name, pass_count, fail_count, skip_count,
+              total_count, duration_ms, exit_code, timed_out, command, run_at
+         FROM coding_test_runs
+        WHERE coding_project_id = ? AND executed = 1
+        ORDER BY run_at ASC LIMIT 500`,
+      projectId,
+    ) as Array<Record<string, unknown>>;
+  } catch { /* pre-232 column set — skip */ }
+  const testResultsJson = JSON.stringify(testRuns, null, 2);
+
+  // ── The final CODE (latest APPLIED workspace files) ───────────────────────
+  // Be HONEST about what travels: we read the current workspace content for the
+  // paths the build wrote (latest applied application per path). If the
+  // workspace is unbound/unreadable, only the manifest (path + hashes) travels.
+  const applied = await db.all(
+    `SELECT files, applied_at FROM coding_workspace_applications
+      WHERE coding_project_id = ? AND status = 'applied'
+      ORDER BY applied_at ASC LIMIT 500`,
+    projectId,
+  ) as Array<{ files: string; applied_at: string }>;
+  const latestByPath = new Map<string, { hash_after?: string; hash_before?: string | null; action?: string }>();
+  for (const app of applied) {
+    const files = safeJsonParse(app.files, []) as Array<Record<string, unknown>>;
+    for (const f of files) {
+      if (typeof f.path === 'string') {
+        latestByPath.set(f.path, {
+          hash_after: typeof f.hash_after === 'string' ? f.hash_after : (typeof f.hash_new === 'string' ? f.hash_new : undefined),
+          hash_before: (f.hash_before as string | null) ?? null,
+          action: typeof f.action === 'string' ? f.action : undefined,
+        });
+      }
+    }
+  }
+
+  const validation = await validateWorkspacePath(project.directory_path as string | null | undefined);
+  const codeManifest: Array<Record<string, unknown>> = [];
+  const codeFiles: Array<{ path: string; content: string }> = [];
+  for (const [relPath, meta] of latestByPath) {
+    let included = false;
+    if (validation.ok && validation.resolved) {
+      const target = resolveTargetPath(validation.resolved, relPath);
+      if (target) {
+        try {
+          const content = await readFile(target, 'utf8');
+          codeFiles.push({ path: relPath, content });
+          included = true;
+        } catch { /* file removed/unreadable — manifest entry only */ }
+      }
+    }
+    codeManifest.push({
+      path: relPath,
+      action: meta.action ?? 'modify',
+      sha256: meta.hash_after ?? null,
+      content_included: included,
+    });
+  }
+  const codeManifestJson = JSON.stringify({
+    workspace_bound: !!(validation.ok && validation.resolved),
+    files: codeManifest,
+    note: 'content_included=false means the file could not be read back from the bound workspace at export time — only its path + sha256 travels.',
+  }, null, 2);
+
+  // ── Assemble ──────────────────────────────────────────────────────────────
+  const zip = new AdmZip();
+  const specManifest = buildSpecManifest({
+    bundleType: 'coding-studio-project',
+    id: projectId,
+    name: `${String(project.name ?? 'Studio Project')} — Studio Blueprint`,
+    description: (project.description as string) || 'A governed ANTON Studio build, packaged for reuse.',
+    author: options.author,
+    contentsCount: { coding_studio_projects: 1, panels: decisions.length, atoms: atoms.length, code_files: codeFiles.length },
+    createdAt: (project.created_at as string) || undefined,
+    updatedAt: (project.updated_at as string) || undefined,
+    governance: options.governance,
+  });
+  zip.addFile('manifest.json', Buffer.from(JSON.stringify(specManifest, null, 2), 'utf-8'));
+  zip.addFile('charter.md', Buffer.from(charterMd, 'utf-8'));
+  zip.addFile('plan.json', Buffer.from(planJson, 'utf-8'));
+  zip.addFile('panels.json', Buffer.from(panelsJson, 'utf-8'));
+  zip.addFile('frameworks.json', Buffer.from(frameworksJson, 'utf-8'));
+  zip.addFile('atoms.json', Buffer.from(atomsJson, 'utf-8'));
+  zip.addFile('test-results.json', Buffer.from(testResultsJson, 'utf-8'));
+  zip.addFile('code-manifest.json', Buffer.from(codeManifestJson, 'utf-8'));
+  for (const f of codeFiles) {
+    // code/ subtree; paths are workspace-relative, already validated at apply time.
+    const safe = f.path.replace(/\.\.[\\/]/g, '').replace(/^[\\/]+/, '');
+    zip.addFile(`code/${safe}`, Buffer.from(f.content, 'utf-8'));
+  }
+
+  const readme = `# ${String(project.name ?? 'ANTON Studio Project')} — Studio Blueprint
+
+A governed **ANTON Studio** build, packaged so a coworker (or another ANTON) can
+inspect exactly how it was built — and reuse the charter, plan, governance, and
+lessons.
+
+## What travels in this bundle
+
+| File | What it is |
+|---|---|
+| \`charter.md\` | The kickoff-workshop Project Charter (problem-first) |
+| \`plan.json\` | The orchestrator's release + task plan, the run state, and the step log |
+| \`panels.json\` | All ${decisions.length} core-team PANEL DECISIONS (start/build/testing/finish) — the per-expert verdicts + the CODE-COMPUTED rollup + blocking flag |
+| \`frameworks.json\` | The chosen frameworks, tech stack, and expert panel |
+| \`atoms.json\` | ${atoms.length} learned PROJECT ATOMS — the lessons (what failed, not to repeat) |
+| \`test-results.json\` | ${testRuns.length} EXECUTED test run(s) — verified, never LLM-claimed |
+| \`code-manifest.json\` | Every written file's path + sha256 + whether its body is included |
+| \`code/\` | The final written files (${codeFiles.length} included) |
+
+## What does NOT travel (be honest with your recipient)
+
+- **The scoped per-project DATABASE contents.** \`proj_<slug>\`'s rows stay home —
+  only the build, not the data it produced, travels.
+- **Secrets.** The scoped DSN + the generated DB password live ONLY in the
+  encrypted vault — never in this bundle.
+- **Files that could not be read back** from the bound workspace at export time
+  ship as a manifest entry (path + sha256) with no body (\`content_included: false\`).
+- **Determinism.** Reproduction means "same charter + same plan + same models",
+  not a bit-identical rebuild.
+
+---
+**Exported via ANTON Studio**
+`;
+  zip.addFile('README.md', Buffer.from(readme, 'utf-8'));
+
+  // Self-describing payload checksum (the validator auto-verifies checksum_files).
+  attachPayloadChecksum(zip);
+  const buffer = zip.toBuffer();
+  console.log(`[anton-bundler] Created coding-studio-project blueprint for "${String(project.name)}" (${buffer.length} bytes)`);
   return buffer;
 }
 

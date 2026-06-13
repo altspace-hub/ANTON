@@ -101,6 +101,8 @@ const SOURCE_BEARING_TYPES = new Set<string>([
   'script-lite-template',
   'script-medium-template',
   'coding-blueprint',
+  // ANTON Studio project blueprint ships the build's final code under code/.
+  'coding-studio-project',
   'instruction-builder-project',
   'hardware-project',
   'hardware-template',

@@ -201,6 +201,7 @@ Per-type detail pages live in `types/`. The summary table groups them by family.
 | Type | Detail |
 |---|---|
 | `coding-blueprint` | [coding-blueprint.md](types/coding-blueprint.md) |
+| `coding-studio-project` | [coding-studio-project.md](types/coding-studio-project.md) |
 | `coding-review-profile` | [coding-review-profile.md](types/coding-review-profile.md) |
 | `script-lite-template` | [script-lite-template.md](types/script-lite-template.md) |
 | `script-medium-template` | [script-medium-template.md](types/script-medium-template.md) |

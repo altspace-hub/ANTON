@@ -2656,6 +2656,33 @@ export async function createCodingLargeRoutes(
     }
   });
 
+  // GET /api/coding/projects/:id/atoms — the "LESSONS FROM THIS PROJECT" rail
+  // (ANTON Studio P4/P5). Read-only: the project-scoped atoms the build minted
+  // (test failures, panel flags, CVEs, decisions), newest first. No LLM call.
+  router.get('/coding/projects/:id/atoms', async (req, res) => {
+    try {
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const limitRaw = parseInt(String(req.query.limit ?? '20'), 10);
+      const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, limitRaw)) : 20;
+      let atoms: any[] = [];
+      try {
+        atoms = await db.all(
+          `SELECT atom_type, atom_origin, content, confidence, category, created_at
+             FROM knowledge_atoms
+            WHERE coding_project_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?`,
+          req.params.id, limit,
+        );
+      } catch { atoms = []; /* un-migrated install — no scope column */ }
+      res.json({ atoms });
+    } catch (error) {
+      console.error('[coding-large] Project atoms error:', error);
+      res.status(500).json({ error: 'Failed to list project atoms' });
+    }
+  });
+
   // ── ANTON Studio Phase 3: workspace + per-project DB provisioning ─────────
   //
   // On activation the project gets write/exec to exactly

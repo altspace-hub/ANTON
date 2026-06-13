@@ -655,6 +655,9 @@ app.use('/api', createCoreTeamRoutes(db));
 // ANTON Studio — kickoff Workshop → Project Charter → seeds a Studio project (Studio P1)
 const { createCodingWorkshopRoutes } = await import('./routes/coding-workshop.js');
 app.use('/api', createCodingWorkshopRoutes(db));
+// ANTON Studio — server-side iterate-to-finish ORCHESTRATOR + .anton blueprint export (Studio P5)
+const { createCodingStudioRoutes } = await import('./routes/coding-studio.js');
+app.use('/api', createCodingStudioRoutes(db));
 // Save-chat-as-module v2 — conversation → distilled module prompt (Wave 4.8)
 const { createDistillRoutes } = await import('./routes/distill.js');
 app.use('/api', createDistillRoutes(db));
