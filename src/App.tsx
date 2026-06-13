@@ -139,6 +139,7 @@ const PresentationBuilderPage = lazy(() => import('./pages/PresentationBuilderPa
 // Coding Area pages
 const CodingLandingPage = lazy(() => import('./pages/CodingLandingPage'));
 const CodingStudioPage = lazy(() => import('./pages/CodingStudioPage'));
+const CodingStudioWorkshopPage = lazy(() => import('./pages/CodingStudioWorkshopPage'));
 const CodeReviewPage = lazy(() => import('./pages/CodeReviewPage'));
 const ScriptLitePage = lazy(() => import('./pages/ScriptLitePage'));
 const ScriptMediumPage = lazy(() => import('./pages/ScriptMediumPage'));
@@ -602,6 +603,7 @@ export default function App() {
           {/* Coding Area */}
           <Route path="/coding" element={<CodingLandingPage />} />
           <Route path="/coding/studio" element={<CodingStudioPage />} />
+          <Route path="/coding/studio/workshop" element={<CodingStudioWorkshopPage />} />
           <Route path="/coding/review" element={<CodeReviewPage />} />
           <Route path="/coding/script-lite" element={<ScriptLitePage />} />
           <Route path="/coding/script-medium" element={<ScriptMediumPage />} />

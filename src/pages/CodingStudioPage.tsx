@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowLeft, MessageSquare, FolderGit2, Users, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowLeft, MessageSquare, FolderGit2, Users, Loader2, FileCheck2 } from 'lucide-react';
 import CodingBreadcrumb from '@/components/coding/CodingBreadcrumb';
 import PanelVerdictPanel, { type PanelVerdict } from '@/components/coding/PanelVerdictPanel';
 import { fetchWithAuth } from '@/lib/api';
@@ -23,6 +23,10 @@ export default function CodingStudioPage() {
   const rawMode = params.get('mode');
   const studioMode: StudioMode = rawMode === 'ask' ? 'ask' : 'project';
   const projectIdFromUrl = params.get('project') ?? '';
+  // When the kickoff workshop seeds a project it hands the charter off here with
+  // ?project=<id>&from=workshop — surface a confirmation so the gate at 'start'
+  // is the obvious next step.
+  const fromWorkshop = params.get('from') === 'workshop';
 
   const [projectId, setProjectId] = useState(projectIdFromUrl);
   const [gate, setGate] = useState<Gate>('start');
@@ -84,6 +88,20 @@ export default function CodingStudioPage() {
           </div>
         </div>
       </div>
+
+      {fromWorkshop && projectId && (
+        <div className="flex items-start gap-3 rounded-2xl border border-adv-green/40 bg-adv-green/5 p-4">
+          <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-adv-green" />
+          <div className="text-sm text-adv-off-white">
+            <p className="font-semibold text-adv-green">Charter created — Studio project seeded.</p>
+            <p className="mt-0.5 text-xs text-adv-gray">
+              Your kickoff workshop produced a Project Charter and seeded this Studio project. Run the
+              core-team review at the <span className="font-medium text-adv-off-white">start</span> gate
+              below to begin.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Core-team panel runner */}
       <div className="rounded-2xl border border-border bg-adv-card p-5">

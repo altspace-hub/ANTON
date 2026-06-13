@@ -23,9 +23,16 @@ export default function CodingLandingPage() {
   const [recentActivity, setRecentActivity] = useState<RecentItem[]>([]);
   const [studioMode, setStudioMode] = useState<StudioMode>('project');
 
-  // P0: the Studio entry routes to the kickoff shell carrying the chosen mode.
-  // P1/P2 fill the workshop + panel; the mode param is the plug point.
-  const startStudio = () => navigate(`/coding/studio?mode=${studioMode}`);
+  // Studio entry. Project mode (P1) opens the kickoff WORKSHOP → Project Charter
+  // → seeds a Studio project; Ask mode goes straight to the studio shell. The
+  // mode param is carried through so the workshop hands the charter back to the
+  // right surface.
+  const startStudio = () =>
+    navigate(
+      studioMode === 'project'
+        ? `/coding/studio/workshop?mode=${studioMode}`
+        : `/coding/studio?mode=${studioMode}`,
+    );
 
   useEffect(() => {
     const headers: Record<string, string> = {};
