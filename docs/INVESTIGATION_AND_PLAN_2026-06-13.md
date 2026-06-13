@@ -4,6 +4,15 @@
 **Scope:** Seven user-raised areas across Comm, Pay, Business, Portals, HR/Talent, and a strategic web-checkout flagship.
 **Method:** Every claim below is ground-truthed against the actual codebase with `file:line` evidence. Device behaviour confirmed via adb + Chrome DevTools Protocol on two Sony phones (A=QV7202N48K, B=QV7101L31T), read-only / non-destructive.
 
+> ## ✅ STATUS — ALL ITEMS IMPLEMENTED (2026-06-13, same day)
+> Executed across Waves A/B/C (commits `b4f17503 … a8be0489`). Final regression GREEN: typecheck
+> clean, server 1,687, relay 219, comm 664, pay 317, business 326, companion 11 (~3,200 tests, 0 failures).
+> - **#1 Pulse avatars** ✅ (`add8eb77`) · **#2 tax honesty** ✅ + **#4 manual FTC↔fiat rate** ✅ (`1db84b98`) · **#3 Business mode toggle** ✅ + #4 Business (`9b41b1e0`) · **#7 Talent assessment UI + signature** ✅ (`b4f17503`)
+> - **#5 tax `rateAtTx` real fix** ✅ (`eb16ec21`) · **#8 Business Tier-1 (discounts/tipping/email)** ✅ (`b46e24ac`) · **#6 NOLF portal e2e + self-loop fix** ✅ device-verified (`76c82266`)
+> - **#11 Web-checkout MVP "Pay with FutureChain"** ✅ (`b78bc329`, Phase 3 deferred) · **#10 HR positioning** ✅ (`1489d27a`)
+> - **#9 Business Tier-2/3:** modifiers+barcode ✅ (`f27a73d6`) · open tabs+split-by-amount ✅ (`f557840f`) · cash-drawer ✅ (`a8be0489`)
+> - **Deliberately deferred + documented:** #9 split-by-item / tab-transfer / per-staff accounts+shift / loyalty (need a multi-user auth model the single-PIN app lacks); #11 Phase 3 (hosted multi-tenant + relay fan-out + WooCommerce/Shopify plugins); #6 WAN tunnel (LAN/`adb reverse` already proved the loop).
+
 **BUG vs FEATURE legend used throughout:**
 - 🐞 **BUG** — broken or misleading *right now*; a user hits it.
 - 🧩 **FEATURE** — net-new capability; nothing is broken, the gap is "doesn't exist yet."
