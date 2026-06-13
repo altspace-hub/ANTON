@@ -2,7 +2,20 @@
 
 **Doc:** `docs/CODING_STUDIO_DESIGN_2026-06-13.md`
 **Date:** 2026-06-13
-**Status:** Design proposal (not implemented — review first)
+**Status:** Design proposal — **DECISIONS LOCKED 2026-06-13, build started.**
+
+> ## ✅ DECISIONS LOCKED (2026-06-13) — these override the §G recommendations where they differ
+> 1. **Name = ANTON Studio.**
+> 2. **Add (do NOT replace) Coding-Large** — Studio is the guided mode that orchestrates T4.
+> 3. **Per-project DB = SEPARATE DATABASE per project** (user choice, overrides the schema-per-project recommendation): provision `CREATE DATABASE proj_<slug>` + a least-privilege owner role, scoped DSN in the vault, `DROP DATABASE` on project delete. Heavier ops accepted for hard isolation.
+> 4. **Model = ROLE-based mapping** (user: "mistral large = project manager, medium = experts, devstral = code"):
+>    - **Mistral Large 3** (`mistral-large-latest`) → the **orchestrator / Project-Manager / lead reasoning** — architecture, planning, the panel-chair synthesis, goal-alignment, the workshop.
+>    - **Mistral Medium 3.5** (`mistral-medium-latest`) → the **7 expert personas** (the panel deliberation itself).
+>    - **Devstral** (`devstral-medium-latest`) → the **code-generation / edit step**. (Caveat: no extended-thinking — gate to non-thinking code-gen; reasoning escalates to Large.)
+>    - **Mistral Small** (`mistral-small-latest`) → utility (extraction/classification/auto-fix).
+>    Headline picker default = Mistral Large; user can override to any provider.
+> 5. **Toolchains = detect-and-report only** (no auto-install) for the MVP.
+> 6. **Autonomy = MORE AUTONOMOUS** (user choice): after a task plan is approved, the loop may write + run + revise to green across multiple tasks before checking in; approve-before-FIRST-write per task is relaxed to plan-approval; **the expert-panel gates and a revise-round cap are always on**; a STOP control is always available.
 **Author role:** Lead product architect
 **Synthesizes:** 7 ground-truthing dives (I1 foundation/sandbox · I2 7-expert one-model panel · I3 project-scoped coding-atoms · I4 startup workshop + frameworks · I5 workspace/Postgres/multi-language · I6 Mistral default + tiering · I7 competitor landscape)
 
