@@ -378,6 +378,17 @@ describeOrSkip('orchestrator loop (injected LLM/exec/panel)', () => {
     expect(JSON.parse(row!.tokens_consumed)).toEqual({ input: 0, output: 0, cost_usd: 0 });
   });
 
+  it('SAFETY NET: an unexpected throw marks the run failed (not stuck in running)', async () => {
+    const d = deps();
+    d.runTests = async () => { throw new Error('simulated DB/exec outage'); };
+    const orch = createStudioOrchestrator(db, d);
+    await orch.startOrResume({ codingProjectId });
+    await orch.advance(codingProjectId);
+    const run = await orch.approvePlan(codingProjectId); // drives the loop → runTests throws
+    expect(run.status).toBe('failed');             // recorded, NOT left in 'running'
+    expect(run.lastError).toContain('simulated');  // the reason is durable
+  });
+
   it('GAP 1: the revise codegen prompt carries the earlier-attempts history; progress_log persists it', async () => {
     testOutcomeQueue = [false, true]; // fail then pass
     const prompts: string[] = [];

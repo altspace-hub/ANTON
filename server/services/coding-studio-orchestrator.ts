@@ -985,7 +985,28 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
    * The STOP flag is checked between every step. The panel gates + revise cap
    * are ALWAYS enforced. A BLOCKING gate halts with status=blocked.
    */
+  /**
+   * SAFETY NET — never leave a run stuck in 'running'. Drive the build via
+   * advanceInner; if it throws an UNEXPECTED error (e.g. a DB write failed mid-
+   * loop), record the run as 'failed' with the reason instead of bubbling out
+   * (which would leave the row in 'running' forever). A re-run (startOrResume)
+   * can then resume. The "no run / call startOrResume first" throw is preserved
+   * (re-thrown when there is no run to mark).
+   */
   async function advance(codingProjectId: string): Promise<StudioRun> {
+    try {
+      return await advanceInner(codingProjectId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unexpected orchestrator error';
+      const existing = await getRun(codingProjectId).catch(() => null);
+      if (!existing) throw err; // nothing to mark (e.g. startOrResume not called)
+      await patch(codingProjectId, { status: 'failed', last_error: msg }).catch(() => { /* best-effort */ });
+      await log(codingProjectId, { kind: 'error', message: `Run halted on an unexpected error: ${msg}` }).catch(() => { /* best-effort */ });
+      return (await getRun(codingProjectId).catch(() => null)) ?? existing;
+    }
+  }
+
+  async function advanceInner(codingProjectId: string): Promise<StudioRun> {
     let run = await getRun(codingProjectId);
     if (!run) throw new Error('No studio run — call startOrResume first');
 
