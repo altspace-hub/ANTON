@@ -48,12 +48,26 @@ interface CodingAtomArmStats {
   revisions: number;
   meanReviseRounds: number | null;
 }
+// The honest verdict (coding-atom-ab-report.ts) — effect size + significance,
+// NOT the noise-blind delta<=0 gate. "loop_helps" only when beyond noise.
+type CodingAbVerdict = 'insufficient_data' | 'no_detectable_effect' | 'loop_helps' | 'loop_hurts';
+interface CodingAtomAbReport {
+  verdict: CodingAbVerdict;
+  headline: string;
+  detail: string;
+  worksClaimSupported: boolean;
+  delta: number | null;
+  pValue: number | null;
+  effectSize: number | null;
+  effectMagnitude: 'negligible' | 'small' | 'medium' | 'large' | null;
+}
 interface CodingAtomAbStats {
   minPerArm: number;
   sufficient: boolean;
   arms: { injected: CodingAtomArmStats; holdout: CodingAtomArmStats };
   delta: number | null;
   worksClaimSupported: boolean;
+  report?: CodingAtomAbReport;
 }
 
 export default function IntelligenceDashboard() {
@@ -383,20 +397,25 @@ export default function IntelligenceDashboard() {
                 })}
               </div>
 
-              {codingAtomAb.sufficient && codingAtomAb.delta !== null ? (
-                <div className="mt-3 text-sm text-adv-off-white">
-                  Δ (injected − holdout):{' '}
-                  {/* delta < 0 = FEWER revise-rounds when injected = the win */}
-                  <span className={codingAtomAb.delta < 0 ? 'text-adv-teal font-semibold' : codingAtomAb.delta > 0 ? 'text-red-400 font-semibold' : 'font-semibold'}>
-                    {codingAtomAb.delta > 0 ? '+' : ''}{codingAtomAb.delta.toFixed(2)} revisions/task
-                  </span>
-                  <span className="text-xs text-adv-gray ml-2">
-                    {codingAtomAb.worksClaimSupported
-                      ? '— the loop reduces revisions (or is neutral).'
-                      : '— injected used MORE revisions; the loop is not yet shown to help.'}
-                  </span>
-                </div>
-              ) : (
+              {/* Honest verdict — effect size + significance, not delta<=0.
+                  Falls back to the legacy block only if the report is absent. */}
+              {codingAtomAb.report ? (() => {
+                const r = codingAtomAb.report!;
+                const tone =
+                  r.verdict === 'loop_helps' ? 'text-adv-teal'
+                  : r.verdict === 'loop_hurts' ? 'text-red-400'
+                  : 'text-adv-gold';
+                const Icon = r.verdict === 'loop_helps' ? FlaskConical : AlertTriangle;
+                return (
+                  <div className="mt-3">
+                    <div className={`flex items-center gap-2 text-sm font-semibold ${tone}`}>
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      {r.headline}
+                    </div>
+                    <p className="mt-1 text-xs text-adv-gray leading-relaxed">{r.detail}</p>
+                  </div>
+                );
+              })() : (
                 <div className="mt-3 flex items-center gap-2 text-xs text-adv-gray">
                   <AlertTriangle className="w-3.5 h-3.5 text-adv-gold shrink-0" />
                   Insufficient data — needs ≥{codingAtomAb.minPerArm} tasks per arm

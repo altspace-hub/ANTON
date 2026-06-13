@@ -36,6 +36,7 @@
     "db:init": "tsx server/db/init-unified.ts",
     "db:init:pg": "tsx scripts/db-init-pg.ts",
     "db:migrate:pg": "tsx scripts/db-migrate-pg.ts",
+    "atom-ab:report": "tsx scripts/atom-ab-report.ts",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint src server --ext .ts,.tsx --max-warnings 100",
     "lint:fix": "eslint src server --ext .ts,.tsx --fix",

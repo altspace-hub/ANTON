@@ -126,7 +126,48 @@ export async function getCodingAtomAbStats(db: DatabaseAdapter): Promise<CodingA
 
   // The loop "works" only when we have enough data AND injected used no MORE
   // revise-rounds than holdout (delta <= 0). Anything else = no claim.
+  //
+  // NOTE: this gate is NOISE-BLIND — a delta of −0.01 amid huge variance passes
+  // it. coding-atom-ab-report.ts (buildCodingAtomAbReport) supersedes it with an
+  // effect-size + significance verdict; this field stays for back-compat only.
   const worksClaimSupported = sufficient && delta !== null && delta <= 0;
 
   return { minPerArm: MIN_SCORED_PER_ARM, sufficient, arms, delta, worksClaimSupported };
+}
+
+/**
+ * The PER-TASK revise-round samples per arm — the raw arrays the honest reporter
+ * (coding-atom-ab-report.ts) needs to compute spread + a significance test, not
+ * just the means getCodingAtomAbStats() returns. Same query + same deterministic
+ * arm assignment; one element per task the loop actually touched.
+ */
+export interface CodingAtomAbSamples {
+  /** Per-task revise-round counts for the injected (treatment) arm. */
+  injected: number[];
+  /** Per-task revise-round counts for the deterministic 20% holdout arm. */
+  holdout: number[];
+}
+
+export async function getCodingAtomAbSamples(db: DatabaseAdapter): Promise<CodingAtomAbSamples> {
+  const out: CodingAtomAbSamples = { injected: [], holdout: [] };
+
+  let rows: Array<{ coding_task_id: string; revisions: number | string }>;
+  try {
+    rows = await db.all(
+      `SELECT coding_task_id,
+              SUM(CASE WHEN kind = 'revision' THEN 1 ELSE 0 END) AS revisions
+       FROM coding_workspace_applications
+       WHERE coding_task_id IS NOT NULL
+       GROUP BY coding_task_id`,
+    ) as Array<{ coding_task_id: string; revisions: number | string }>;
+  } catch {
+    // Table missing (un-migrated install) — honest empty samples.
+    return out;
+  }
+
+  for (const r of rows) {
+    if (!r.coding_task_id) continue;
+    out[assignTaskAtomArm(r.coding_task_id)].push(Number(r.revisions) || 0);
+  }
+  return out;
 }

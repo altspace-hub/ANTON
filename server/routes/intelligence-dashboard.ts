@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
 import { getAtomAbStats, setAtomAbEnabled } from '../services/atom-ab.js';
 import { getCodingAtomAbStats } from '../services/coding-atom-stats.js';
+import { getCodingAtomAbReport } from '../services/coding-atom-ab-report.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
@@ -60,7 +61,17 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   // not assumed (the Markets lesson).
   router.get('/intelligence/coding-atom-ab', async (_req, res) => {
     try {
-      res.json(await getCodingAtomAbStats(db));
+      // Back-compat stats (means/delta) PLUS the honest effect-size +
+      // significance verdict (coding-atom-ab-report.ts) that supersedes the
+      // noise-blind `worksClaimSupported` flag.
+      const [stats, report] = await Promise.all([
+        getCodingAtomAbStats(db),
+        getCodingAtomAbReport(db),
+      ]);
+      // Override the TOP-LEVEL worksClaimSupported with the honest, noise-aware
+      // verdict so an API consumer reading only the legacy flag cannot overclaim
+      // on a noise-sized delta. `report` carries the full effect-size detail.
+      res.json({ ...stats, worksClaimSupported: report.worksClaimSupported, report });
     } catch (error: unknown) {
       console.error('[intelligence/coding-atom-ab]', error);
       res.status(500).json({ error: errMsg(error) });
