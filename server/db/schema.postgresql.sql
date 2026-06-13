@@ -1599,6 +1599,13 @@ CREATE TABLE IF NOT EXISTS coding_projects (
   environment_mode TEXT CHECK(environment_mode IN ('auto','guided','handoff','docker')),
   current_phase INTEGER DEFAULT 0,
   current_release_id TEXT,
+  -- ANTON Studio Phase 3 (migration 238): the per-language command SET (each a
+  -- JSON argv array, run via execFile through the approve gate). test_command
+  -- was added in migration 232; setup/build complete the set. studio_language is
+  -- a free-text preset hint (typescript|python|rust|node) — commands are truth.
+  setup_command TEXT,
+  build_command TEXT,
+  studio_language TEXT,
   created_by TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -1728,6 +1735,80 @@ CREATE TABLE IF NOT EXISTS coding_test_runs (
   run_at TIMESTAMPTZ DEFAULT NOW(),
   run_by TEXT DEFAULT 'system'
 );
+
+-- ═══════════════════════════════════════════════════════════════════
+-- ANTON Studio (the guided coding studio) — Phases 1/3/5.
+-- Folded from migrations 237 / 238 / 240. Fresh init runs the schema THEN
+-- replays the migrations, so these are also created there; folded here to keep
+-- the schema file the accurate source of truth for the Studio feature.
+-- ═══════════════════════════════════════════════════════════════════
+
+-- Phase 1 (migration 237): the kickoff WORKSHOP that opens a Studio project and
+-- produces a Project CHARTER. A resumable, tiered, 8-phase talk cloned from
+-- discovery_sessions; on finalize the charter seeds a coding_project.
+CREATE TABLE IF NOT EXISTS coding_workshop_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT,
+  coding_project_id TEXT REFERENCES coding_projects(id) ON DELETE SET NULL,
+  tier TEXT NOT NULL DEFAULT 'standard' CHECK(tier IN ('lite','standard','professional','expert')),
+  mode TEXT NOT NULL DEFAULT 'project' CHECK(mode IN ('ask','project')),
+  state TEXT NOT NULL DEFAULT '{}',
+  status TEXT DEFAULT 'active' CHECK(status IN ('active','paused','completed','abandoned')),
+  charter TEXT,
+  started_at TIMESTAMPTZ DEFAULT NOW(),
+  last_active_at TIMESTAMPTZ DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
+  autosave_version INTEGER DEFAULT 0,
+  schema_version INTEGER DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS idx_coding_workshop_sessions_user
+  ON coding_workshop_sessions (user_id, last_active_at DESC);
+CREATE INDEX IF NOT EXISTS idx_coding_workshop_sessions_project
+  ON coding_workshop_sessions (coding_project_id);
+
+-- Phase 3 (migration 238): the per-project scoped-DSN vault. LOCKED DECISION 3 =
+-- a SEPARATE Postgres DATABASE per project (proj_<slug>) owned by a least-priv
+-- role (studio_<slug>); the real CREATE/DROP DATABASE+ROLE is runtime-provisioned
+-- by coding-studio-provisioner.ts. scoped_dsn_encrypted (AES-256-GCM) NEVER
+-- reaches an LLM prompt, an API response, or a log.
+CREATE TABLE IF NOT EXISTS coding_studio_databases (
+  coding_project_id TEXT PRIMARY KEY
+    REFERENCES coding_projects(id) ON DELETE CASCADE,
+  db_name TEXT NOT NULL,
+  role_name TEXT NOT NULL,
+  scoped_dsn_encrypted TEXT NOT NULL,
+  provisioned_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Phase 5 (migration 240): the autonomous iterate-to-finish ORCHESTRATOR's
+-- job-runner row (one per project, UNIQUE → re-start RESUMES). The orchestrator
+-- advances it tick-by-tick; the UI polls status; STOP sets stop_requested. The
+-- panel gates (P2) + the revise-round cap are ALWAYS enforced regardless of
+-- autonomy. blocked = a BLOCKING panel dissent halted the run (assertGatePassed).
+CREATE TABLE IF NOT EXISTS coding_studio_runs (
+  id TEXT PRIMARY KEY,
+  coding_project_id TEXT NOT NULL UNIQUE
+    REFERENCES coding_projects(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN (
+      'pending','running','awaiting_plan','awaiting_gate','blocked','done','stopped','failed'
+    )),
+  current_task TEXT,
+  autonomy TEXT NOT NULL DEFAULT 'more' CHECK (autonomy IN ('more','ask')),
+  revise_cap INTEGER NOT NULL DEFAULT 4 CHECK (revise_cap >= 1 AND revise_cap <= 20),
+  stop_requested BOOLEAN NOT NULL DEFAULT FALSE,
+  plan JSONB,
+  awaiting_gate TEXT CHECK (awaiting_gate IN ('start','build','testing','finish')),
+  last_error TEXT,
+  step_log JSONB NOT NULL DEFAULT '[]',
+  created_by TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  started_at TIMESTAMPTZ,
+  finished_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_coding_studio_runs_status
+  ON coding_studio_runs (status);
 
 CREATE TABLE IF NOT EXISTS code_review_sessions (
   id TEXT PRIMARY KEY,
