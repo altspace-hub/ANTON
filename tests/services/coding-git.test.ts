@@ -49,15 +49,16 @@ interface FakeResponse {
  */
 function makeFakeExec(
   calls: GitCall[],
-  responder: (args: string[]) => FakeResponse,
+  responder: (args: string[], cwd: string) => FakeResponse,
 ): ExecFileImpl {
   // The real signature is execFile(file, args, options, callback). We only use
   // that 4-arg form in coding-git.ts.
   const fn = ((file: string, args: string[], _options: unknown, cb: (e: unknown, out: string, err: string) => void) => {
     // Assert no shell ever — argv[0] must be the git binary.
     expect(file).toBe('git');
-    calls.push({ args, cwd: (typeof _options === 'object' && _options && 'cwd' in _options ? String((_options as { cwd: unknown }).cwd) : '') });
-    const r = responder(args);
+    const cwd = (typeof _options === 'object' && _options && 'cwd' in _options ? String((_options as { cwd: unknown }).cwd) : '');
+    calls.push({ args, cwd });
+    const r = responder(args, cwd);
     const code = r.code ?? 0;
     queueMicrotask(() => {
       if (code === 0) {
@@ -168,10 +169,14 @@ describe('ensureRepo', () => {
     await rm(path.join(ws, '.gitignore'), { force: true });
   });
 
-  it('is a no-op (alreadyRepo) when already a work tree', async () => {
-    const exec = makeFakeExec(calls, (args) => {
+  it('is a no-op (alreadyRepo) when the workspace IS the repo root', async () => {
+    const exec = makeFakeExec(calls, (args, cwd) => {
       if (sub(args) === 'rev-parse' && args.includes('--is-inside-work-tree')) {
         return { code: 0, stdout: 'true\n' };
+      }
+      // The toplevel IS the workspace → this workspace is its own repo root.
+      if (sub(args) === 'rev-parse' && args.includes('--show-toplevel')) {
+        return { code: 0, stdout: cwd + '\n' };
       }
       return { code: 0, stdout: '' };
     });
@@ -179,6 +184,25 @@ describe('ensureRepo', () => {
     expect(result).toEqual({ initialized: false, alreadyRepo: true });
     expect(calls.some((c) => c.args[0] === 'init')).toBe(false);
     expect(calls.some((c) => c.args[0] === 'config')).toBe(false);
+  });
+
+  it('inits a DEDICATED repo when the workspace is nested inside an ENCLOSING repo', async () => {
+    // The regression for the dogfood incident: a workspace under the ANTON repo
+    // reports --is-inside-work-tree=true but --show-toplevel = the PARENT repo,
+    // so the studio must `git init` its own nested repo, never touch the parent.
+    const exec = makeFakeExec(calls, (args, cwd) => {
+      if (sub(args) === 'rev-parse' && args.includes('--is-inside-work-tree')) {
+        return { code: 0, stdout: 'true\n' };
+      }
+      if (sub(args) === 'rev-parse' && args.includes('--show-toplevel')) {
+        return { code: 0, stdout: path.dirname(cwd) + '\n' }; // an ENCLOSING repo
+      }
+      return { code: 0, stdout: '' };
+    });
+    const result = await ensureRepo(ws, exec);
+    expect(result).toEqual({ initialized: true, alreadyRepo: false });
+    expect(calls.some((c) => c.args[0] === 'init')).toBe(true); // dedicated repo created
+    await rm(path.join(ws, '.gitignore'), { force: true }).catch(() => {});
   });
 
   it('throws GitError when git init fails', async () => {

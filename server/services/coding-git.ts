@@ -55,6 +55,20 @@ venv/
 .env.local
 `;
 
+/**
+ * Path equality for the repo-root check. `git rev-parse --show-toplevel` returns
+ * a forward-slash absolute path; compare it to the resolved workspace, normalising
+ * separators + trailing slash, case-insensitively on Windows.
+ */
+function samePath(a: string, b: string): boolean {
+  const norm = (p: string): string => {
+    let n = path.resolve(p).replace(/\\/g, '/').replace(/\/+$/, '');
+    if (process.platform === 'win32') n = n.toLowerCase();
+    return n;
+  };
+  return norm(a) === norm(b);
+}
+
 // ── Exec helper (no shell, injectable) ──────────────────────────────────────
 
 interface GitExecResult {
@@ -214,8 +228,17 @@ export async function ensureRepo(
 ): Promise<EnsureRepoResult> {
   const resolved = await ensureAllowedWorkspace(workspaceAbs);
 
-  const probe = await runGit(resolved, ['rev-parse', '--is-inside-work-tree'], execFileImpl);
-  const alreadyRepo = probe.ok && probe.stdout.trim() === 'true';
+  // "Inside a work tree" is NOT enough — a Studio workspace nested under another
+  // repo (e.g. CODING_STUDIO_ROOT under the ANTON repo) would otherwise make the
+  // studio operate on the ENCLOSING repo (its `git add -A` / branch / commit hit
+  // the parent). Only treat it as already-a-repo when the workspace IS the repo
+  // ROOT; otherwise `git init` a DEDICATED (nested) repo so the studio is isolated.
+  const inside = await runGit(resolved, ['rev-parse', '--is-inside-work-tree'], execFileImpl);
+  let alreadyRepo = false;
+  if (inside.ok && inside.stdout.trim() === 'true') {
+    const top = await runGit(resolved, ['rev-parse', '--show-toplevel'], execFileImpl);
+    alreadyRepo = top.ok && samePath(top.stdout.trim(), resolved);
+  }
 
   let initialized = false;
   if (!alreadyRepo) {

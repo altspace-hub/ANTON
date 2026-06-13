@@ -108,3 +108,6 @@ data/test-corpus/*/docs/*
 
 # Scratch on-device driving scripts (superseded by tests/device/)
 .live-walk/
+
+# ANTON Studio scratch workspaces (dogfood runs)
+.studio-workspaces/

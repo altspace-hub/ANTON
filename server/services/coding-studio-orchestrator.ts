@@ -1140,7 +1140,7 @@ async function defaultCallPlanner(input: OrchestratorPlanInput): Promise<{ relea
 \`\`\`json
 { "releaseName": "...", "summary": "...", "tasks": [ { "title": "...", "description": "...", "files": ["src/..."] } ] }
 \`\`\`
-Keep it to the MVP — 3 to 10 tasks. Do not invent scope beyond the charter.`;
+Use as FEW tasks as the scope genuinely needs: a single small file = 1 task; a typical MVP = 3 to 7; only go higher for genuinely larger scope. CRITICAL: each task must leave the project's test suite PASSING when it is done — so do NOT split one file's implementation across several tasks (the tests only go green once that file is fully correct, which would make the earlier sub-tasks fail spuriously). Do not invent scope beyond the charter.`;
   const chat = await callChat({
     model: input.model,
     system,
