@@ -2944,6 +2944,31 @@ export async function createCodingLargeRoutes(
           result.timedOut ? 1 : 0, combinedTail, (req as any).userId || 'system');
       }
 
+      // ── Studio P4: project-scoped atom capture for the test command path ────
+      // (the multi-language /commands/test runner mirrors /tests/run). Only the
+      // 'test' kind is a pass/fail learning signal; setup/build are not.
+      if (kind === 'test' && result.ran) {
+        try {
+          let afterRevision = false;
+          if (succeeded && coding_task_id) {
+            const rev = await db.get(
+              `SELECT 1 AS x FROM coding_workspace_applications
+               WHERE coding_task_id = ? AND coding_project_id = ? AND kind = 'revision' LIMIT 1`,
+              coding_task_id, req.params.id) as { x: number } | undefined;
+            afterRevision = !!rev;
+          }
+          const integration = await createCodingIntegration(db);
+          integration.captureTestResult({
+            projectId: req.params.id,
+            taskId: coding_task_id,
+            passed: succeeded,
+            afterRevision,
+            argv: validated.argv,
+            outputTail: combinedTail,
+          });
+        } catch { /* atom capture must never break a command run */ }
+      }
+
       const honest = !result.ran
         ? `${kind} command could not be started (${result.spawnError ?? 'spawn error'}). Nothing was verified.`
         : result.timedOut
@@ -3357,6 +3382,30 @@ export async function createCodingLargeRoutes(
           coding_task_id, req.params.id);
       }
 
+      // ── Studio P4: project-scoped atom capture (fire-and-forget, no-LLM) ────
+      // FAILED → test.failed; PASSED after a prior kind='revision' → pattern.works.
+      if (result.ran) {
+        try {
+          let afterRevision = false;
+          if (passed && coding_task_id) {
+            const rev = await db.get(
+              `SELECT 1 AS x FROM coding_workspace_applications
+               WHERE coding_task_id = ? AND coding_project_id = ? AND kind = 'revision' LIMIT 1`,
+              coding_task_id, req.params.id) as { x: number } | undefined;
+            afterRevision = !!rev;
+          }
+          const integration = await createCodingIntegration(db);
+          integration.captureTestResult({
+            projectId: req.params.id,
+            taskId: coding_task_id,
+            passed,
+            afterRevision,
+            argv: validated.argv,
+            outputTail: combinedTail,
+          });
+        } catch { /* atom capture must never break a test run */ }
+      }
+
       const honest = !result.ran
         ? `Test command could not be started (${result.spawnError ?? 'spawn error'}). Nothing was verified.`
         : result.timedOut
@@ -3535,6 +3584,14 @@ export async function createCodingLargeRoutes(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, id, req.params.id, title, description || '', rationale || '', severity, owner || null, target_release_id || null, source, source_task_id || null);
 
+      // ── Studio P4: high/critical tech-debt → risk.identified project atom ───
+      try {
+        const integration = await createCodingIntegration(db);
+        integration.captureTechDebt({
+          projectId: req.params.id, title, severity, taskId: source_task_id || null,
+        });
+      } catch { /* atom capture must never break tech-debt creation */ }
+
       res.json({ id, title, severity, status: 'open' });
     } catch (error) {
       console.error('[coding-large] Create tech debt error:', error);
@@ -3644,6 +3701,23 @@ export async function createCodingLargeRoutes(
       const { status } = req.body;
       if (!status) return res.status(400).json({ error: 'status is required' });
       await db.run("UPDATE coding_changes SET status = ?, approved_at = CASE WHEN ? = 'approved' THEN NOW() ELSE approved_at END, updated_at = NOW() WHERE id = ? AND coding_project_id = ?", status, status, req.params.cid, req.params.id);
+
+      // ── Studio P4: an APPROVED change → decision.approval project atom ──────
+      if (status === 'approved') {
+        try {
+          const ch = await db.get(
+            'SELECT title, change_level, rationale FROM coding_changes WHERE id = ? AND coding_project_id = ?',
+            req.params.cid, req.params.id) as { title: string; change_level: string | null; rationale: string | null } | undefined;
+          if (ch) {
+            const integration = await createCodingIntegration(db);
+            integration.captureArchDecision({
+              projectId: req.params.id, title: ch.title,
+              changeLevel: ch.change_level, rationale: ch.rationale,
+            });
+          }
+        } catch { /* atom capture must never break a change approval */ }
+      }
+
       res.json({ id: req.params.cid, status });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update change' });

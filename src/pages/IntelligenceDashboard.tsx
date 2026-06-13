@@ -39,6 +39,23 @@ interface AtomAbStats {
   delta: number | null;
 }
 
+// ANTON Studio Phase 4 — project-scoped coding-atoms loop effectiveness
+// (GET /api/intelligence/coding-atom-ab). Primary metric = mean revise-rounds
+// per task; FEWER is better, so a NEGATIVE delta is the win.
+interface CodingAtomArmStats {
+  tasks: number;
+  scored: number;
+  revisions: number;
+  meanReviseRounds: number | null;
+}
+interface CodingAtomAbStats {
+  minPerArm: number;
+  sufficient: boolean;
+  arms: { injected: CodingAtomArmStats; holdout: CodingAtomArmStats };
+  delta: number | null;
+  worksClaimSupported: boolean;
+}
+
 export default function IntelligenceDashboard() {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'timeline' | 'heatmap' | 'temporal' | 'memory' | 'insights'>('insights');
@@ -49,6 +66,7 @@ export default function IntelligenceDashboard() {
   const [entities, setEntities] = useState<EntityNode[]>([]);
   const [atomAb, setAtomAb] = useState<AtomAbStats | null>(null);
   const [atomAbToggling, setAtomAbToggling] = useState(false);
+  const [codingAtomAb, setCodingAtomAb] = useState<CodingAtomAbStats | null>(null);
 
   // Temporal data
   const [atomsPerDay, setAtomsPerDay] = useState<TemporalDataPoint[]>([]);
@@ -119,6 +137,17 @@ export default function IntelligenceDashboard() {
       }
     } catch (err) {
       console.error('Failed to load atom A/B stats:', err);
+    }
+
+    // Load coding-atoms loop A/B stats independently (ANTON Studio P4)
+    try {
+      const cRes = await fetch('/api/intelligence/coding-atom-ab');
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        if (cData && cData.arms) setCodingAtomAb(cData as CodingAtomAbStats);
+      }
+    } catch (err) {
+      console.error('Failed to load coding-atom A/B stats:', err);
     }
 
     // Load temporal data independently
@@ -317,6 +346,61 @@ export default function IntelligenceDashboard() {
                   <AlertTriangle className="w-3.5 h-3.5 text-adv-gold shrink-0" />
                   Insufficient data — needs ≥{atomAb.minPerArm} scored runs per arm
                   (currently {atomAb.arms.injected.scored} injected / {atomAb.arms.holdout.scored} holdout).
+                  No verdict is published below that threshold.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Coding-atoms loop effectiveness (ANTON Studio P4 — revise-rounds) */}
+          {codingAtomAb && (
+            <div className="bg-card border border-border rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FlaskConical className="w-4 h-4 text-adv-teal" />
+                <span className="text-sm font-medium text-adv-off-white">Coding-atoms loop (project memory)</span>
+                <span className="text-xs text-adv-gray">
+                  — does injecting a project's own lessons cut revise-rounds? Fewer is better. Measured, not assumed.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {([
+                  { key: 'injected' as const, label: 'With project lessons (injected)' },
+                  { key: 'holdout' as const, label: 'Without lessons (holdout)' },
+                ]).map(({ key, label }) => {
+                  const arm = codingAtomAb.arms[key];
+                  return (
+                    <div key={key} className="bg-secondary border border-border rounded-lg p-3">
+                      <div className="text-xs text-adv-gray mb-1">{label}</div>
+                      <div className="text-xl font-bold text-adv-off-white">
+                        {arm.meanReviseRounds !== null ? `${arm.meanReviseRounds.toFixed(2)} revisions/task` : '—'}
+                      </div>
+                      <div className="text-xs text-adv-gray mt-1">
+                        {arm.scored} task{arm.scored !== 1 ? 's' : ''} · {arm.revisions} revision{arm.revisions !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {codingAtomAb.sufficient && codingAtomAb.delta !== null ? (
+                <div className="mt-3 text-sm text-adv-off-white">
+                  Δ (injected − holdout):{' '}
+                  {/* delta < 0 = FEWER revise-rounds when injected = the win */}
+                  <span className={codingAtomAb.delta < 0 ? 'text-adv-teal font-semibold' : codingAtomAb.delta > 0 ? 'text-red-400 font-semibold' : 'font-semibold'}>
+                    {codingAtomAb.delta > 0 ? '+' : ''}{codingAtomAb.delta.toFixed(2)} revisions/task
+                  </span>
+                  <span className="text-xs text-adv-gray ml-2">
+                    {codingAtomAb.worksClaimSupported
+                      ? '— the loop reduces revisions (or is neutral).'
+                      : '— injected used MORE revisions; the loop is not yet shown to help.'}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-3 flex items-center gap-2 text-xs text-adv-gray">
+                  <AlertTriangle className="w-3.5 h-3.5 text-adv-gold shrink-0" />
+                  Insufficient data — needs ≥{codingAtomAb.minPerArm} tasks per arm
+                  (currently {codingAtomAb.arms.injected.scored} injected / {codingAtomAb.arms.holdout.scored} holdout).
                   No verdict is published below that threshold.
                 </div>
               )}

@@ -583,8 +583,24 @@ export async function buildAtomLayer(
   moduleId?: string | null,
   userMessage?: string | null,
   sessionId?: string | null,
+  // ANTON Studio Phase 4: when set, this is a coding-project run — prepend a
+  // "## LESSONS FROM THIS PROJECT" block (its own captured atoms) and boost
+  // same-project atoms in the relevance rank. Backward-compatible: non-coding
+  // runs (undefined) are completely unaffected.
+  codingProjectId?: string | null,
 ): Promise<string> {
   try {
+    // Build the project-lessons block FIRST so it is always injected for a coding
+    // run (even when the hybrid ranker buries the project's own atoms behind
+    // higher-scoring general ones). Prepended to whatever the general layer returns.
+    const lessonsBlock = codingProjectId
+      ? await buildProjectLessonsBlock(db, codingProjectId)
+      : '';
+    const withLessons = (general: string): string => {
+      if (!lessonsBlock) return general;
+      return general ? `${lessonsBlock}\n\n${general}` : lessonsBlock;
+    };
+
     // ── Try full hybrid search if we have a user message ─────────────────
     if (userMessage && userMessage.trim().length > 5) {
       try {
@@ -596,7 +612,7 @@ export async function buildAtomLayer(
           minSimilarity: 0.25,
         });
 
-        if (!Array.isArray(results) || results.length === 0) return buildAtomLayerFallback(db, areaId);
+        if (!Array.isArray(results) || results.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));
 
         // Enrich results with metadata from knowledge_atoms table.
         // Hybrid search metadata may be sparse (old embeddings), so we
@@ -605,12 +621,12 @@ export async function buildAtomLayer(
         const placeholders = atomIds.map(() => '?').join(',');
         const atomRows = await db.all(
           `SELECT id, content, atom_type, category, confidence, source_area_id, source_module_id,
-                  created_at, superseded_by
+                  created_at, superseded_by, coding_project_id
            FROM knowledge_atoms WHERE id IN (${placeholders})`,
           ...atomIds
         ) as Array<{ id: string; content: string; atom_type: string; category: string;
           confidence: number; source_area_id: string | null; source_module_id: string | null;
-          created_at: string; superseded_by: string | null;
+          created_at: string; superseded_by: string | null; coding_project_id: string | null;
         }>;
 
         const atomMap = new Map(atomRows.map(a => [a.id, a]));
@@ -632,19 +648,20 @@ export async function buildAtomLayer(
                 source_module_id: atom.source_module_id,
                 created_at: atom.created_at,
                 is_superseded: atom.superseded_by ? 1 : 0,
+                coding_project_id: atom.coding_project_id,
               } as Record<string, unknown>,
             };
           });
 
-        if (enriched.length === 0) return buildAtomLayerFallback(db, areaId);
+        if (enriched.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));
 
-        // Apply ANTON boosts (confidence, recency, area/module relevance, superseded)
-        const boosted = await applyAntonBoosts(enriched, { areaId, moduleId }, db);
+        // Apply ANTON boosts (confidence, recency, area/module + project relevance, superseded)
+        const boosted = await applyAntonBoosts(enriched, { areaId, moduleId, codingProjectId }, db);
 
         // Apply token budget cap
         const capped = applyTokenBudget(boosted, 4000);
 
-        if (capped.length === 0) return buildAtomLayerFallback(db, areaId);
+        if (capped.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));
 
         // ── Log retrieval feedback (non-blocking) ──────────────────────────
         if (sessionId) {
@@ -673,7 +690,7 @@ export async function buildAtomLayer(
           const conf = typeof meta.confidence === 'number' ? Math.round(meta.confidence * 100) : 80;
           lines.push(`- [${cat}/${type}] ${r.content_text} (${conf}% confidence)`);
         }
-        return lines.join('\n');
+        return withLessons(lines.join('\n'));
 
       } catch (hybridErr) {
         // Hybrid search failed — fall through to SQL fallback
@@ -682,7 +699,53 @@ export async function buildAtomLayer(
     }
 
     // ── SQL fallback (original behaviour) ────────────────────────────────
-    return buildAtomLayerFallback(db, areaId);
+    return withLessons(await buildAtomLayerFallback(db, areaId));
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * ANTON Studio Phase 4 — build the "## LESSONS FROM THIS PROJECT" block.
+ *
+ * A direct, deterministic same-project query (NOT the hybrid ranker) so a
+ * project's own captured lessons are ALWAYS surfaced for its next run. Ordered
+ * with the most actionable provenance FIRST (test.failed + review.flag), then
+ * the rest, newest within each group. Returns '' on any failure (e.g. the
+ * coding_project_id column missing on an un-migrated install) — never throws.
+ */
+async function buildProjectLessonsBlock(
+  db: DatabaseAdapter,
+  codingProjectId: string,
+): Promise<string> {
+  try {
+    const rows = await db.all(
+      `SELECT content, atom_type, atom_origin, confidence
+       FROM knowledge_atoms
+       WHERE coding_project_id = ? AND is_active = 1
+       ORDER BY
+         CASE
+           WHEN atom_type IN ('test.failed','review.flag') THEN 0
+           ELSE 1
+         END ASC,
+         created_at DESC
+       LIMIT 15`,
+      codingProjectId,
+    ) as Array<{ content: string; atom_type: string; atom_origin: string | null; confidence: number }>;
+
+    if (!Array.isArray(rows) || rows.length === 0) return '';
+
+    const lines = [
+      '## LESSONS FROM THIS PROJECT',
+      "Insights captured from THIS project's own build so far — what failed, what reviewers flagged, what now works, and the decisions taken. Do NOT repeat past mistakes; build on what works:",
+      '',
+    ];
+    for (const r of rows) {
+      const type = r.atom_type || 'lesson';
+      const conf = typeof r.confidence === 'number' ? Math.round(r.confidence * 100) : 85;
+      lines.push(`- [${type}] ${r.content} (${conf}% confidence)`);
+    }
+    return lines.join('\n');
   } catch {
     return '';
   }

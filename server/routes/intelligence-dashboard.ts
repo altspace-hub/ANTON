@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
 import { getAtomAbStats, setAtomAbEnabled } from '../services/atom-ab.js';
+import { getCodingAtomAbStats } from '../services/coding-atom-stats.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
@@ -48,6 +49,20 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       res.json(await getAtomAbStats(db));
     } catch (error: unknown) {
       console.error('[intelligence/atom-ab]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // GET /api/intelligence/coding-atom-ab — ANTON Studio Phase 4: does the
+  // PROJECT-SCOPED coding-atoms loop actually cut revise-rounds? Mean revise-
+  // rounds per task (injected vs deterministic 20% holdout) + an honest
+  // insufficient-data state below MIN_SCORED_PER_ARM tasks per arm. Measured,
+  // not assumed (the Markets lesson).
+  router.get('/intelligence/coding-atom-ab', async (_req, res) => {
+    try {
+      res.json(await getCodingAtomAbStats(db));
+    } catch (error: unknown) {
+      console.error('[intelligence/coding-atom-ab]', error);
       res.status(500).json({ error: errMsg(error) });
     }
   });

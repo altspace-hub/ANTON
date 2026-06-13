@@ -15,6 +15,10 @@ import type { HybridSearchResult } from './hybrid-search.js';
 export interface BoostContext {
   areaId?: string | null;
   moduleId?: string | null;
+  // ANTON Studio Phase 4: when set, atoms scoped to this coding project are the
+  // project's OWN lessons — boosted ~2.0x (mirrors the area-1.3x block) so they
+  // outrank generic atoms in the next plan/edit of the same project.
+  codingProjectId?: string | null;
 }
 
 /**
@@ -78,6 +82,13 @@ export async function applyAntonBoosts(
       // ── Module relevance: 1.2x for atoms from the same module ──
       if (context.moduleId && meta.source_module_id === context.moduleId) {
         boost *= 1.2;
+      }
+
+      // ── Project relevance (Studio P4): 2.0x for THIS project's own atoms ──
+      // The project's captured lessons (test failures, review flags, what works,
+      // decisions) are the most relevant context for its own next step.
+      if (context.codingProjectId && meta.coding_project_id === context.codingProjectId) {
+        boost *= 2.0;
       }
 
       // ── Superseded penalty: 0.1x for superseded atoms ──

@@ -706,6 +706,9 @@ CREATE TABLE IF NOT EXISTS knowledge_atoms (
   is_active INTEGER DEFAULT 1,
   -- PostgreSQL tsvector column replaces SQLite FTS5 virtual table
   search_vector tsvector
+  -- ANTON Studio Phase 4 (migration 239) adds coding_project_id + atom_origin
+  -- via ALTER below — AFTER coding_projects is defined (it's created later in
+  -- this file, so the FK cannot be declared inline here).
 );
 
 CREATE TABLE IF NOT EXISTS knowledge_entity_refs (
@@ -1600,6 +1603,20 @@ CREATE TABLE IF NOT EXISTS coding_projects (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ANTON Studio Phase 4 (migration 239): PROJECT SCOPE TAG on knowledge_atoms.
+-- Added here (after coding_projects exists) because knowledge_atoms is defined
+-- earlier in this file, so the FK cannot be declared inline at its CREATE TABLE.
+-- ON DELETE SET NULL: deleting a project keeps its learned atoms as general
+-- knowledge; they simply lose the project scope tag.
+ALTER TABLE knowledge_atoms
+  ADD COLUMN IF NOT EXISTS coding_project_id TEXT
+    REFERENCES coding_projects(id) ON DELETE SET NULL;
+ALTER TABLE knowledge_atoms
+  ADD COLUMN IF NOT EXISTS atom_origin TEXT;
+CREATE INDEX IF NOT EXISTS idx_knowledge_atoms_coding_project
+  ON knowledge_atoms (coding_project_id)
+  WHERE coding_project_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS coding_releases (
   id TEXT PRIMARY KEY,
