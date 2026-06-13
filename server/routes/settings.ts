@@ -7,6 +7,8 @@ import {
   getPersistedDefaultModelSync,
   setPersistedDefaultModel,
 } from '../services/default-model-store.js';
+import { initAreaDefaultModelStore } from '../services/area-default-model-store.js';
+import { initCodingModelStrategy } from '../services/coding-model-resolver.js';
 import { getCustomModelConfigs } from '../services/model-adapter.js';
 import {
   DEFAULT_UTILITY_MODEL,
@@ -52,6 +54,9 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // the sync resolvers never miss on first call.
   initDefaultModelStore(db);
   initUtilityModelStore(db);
+  // ANTON Studio P0: prime the per-area default + coding role-strategy caches.
+  initAreaDefaultModelStore(db);
+  initCodingModelStrategy(db);
 
   // GET /api/settings/default-model — the server-side default model and
   // where it comes from (Settings persistence vs .env vs unset).

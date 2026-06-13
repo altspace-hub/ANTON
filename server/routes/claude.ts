@@ -32,6 +32,8 @@ import { isKnownAudience, getAudiencePrompt } from '../services/audience-adapter
 import { createBudgetMiddleware } from '../middleware/budget.js';
 import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
+import { getEffectiveDefaultModel } from '../services/default-model-store.js';
+import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { validate } from '../lib/validate.js';
 import { ClaudeMessageSchema } from '../lib/schemas.js';
 import { acquireStream, releaseStream } from '../services/stream-limiter.js';
@@ -125,7 +127,20 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       } = req.body;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
-      let policyModel = (model as string) || 'claude-opus-4-8';
+      //
+      // Model-resolution precedence (highest first), CODING_STUDIO_DESIGN §C-req7:
+      //   1. user override        — the session `model` from the request body
+      //   2. compliance enforce_model — applied below (governance, wins over all)
+      //   3. AREA default         — area_default_model:<areaId> (Studio seeds coding=mistral-large)
+      //   4. product default      — persisted Settings choice / env DEFAULT_MODEL
+      //   5. env / opus literal   — final fallback
+      // Only the *fallback* (when no user model is sent) consults rungs 3–5;
+      // a user-selected model and the enforce_model override are unchanged.
+      let policyModel =
+        (model as string) ||
+        getAreaDefaultModelSync(areaId as string | null | undefined) ||
+        getEffectiveDefaultModel() ||
+        'claude-opus-4-8';
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId

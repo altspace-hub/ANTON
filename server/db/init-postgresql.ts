@@ -62,6 +62,13 @@ export async function initPostgresDatabase(connectionString: string): Promise<Da
 
   // 3c. Default app_settings
   await db.run("INSERT INTO app_settings (key, value) VALUES ('monthly_budget_cap', '0') ON CONFLICT DO NOTHING");
+  // ANTON Studio P0: the Coding area's headline default model (Mistral Large)
+  // + the per-role model strategy (orchestrator/expert/codegen/utility). Both
+  // also have in-code fallbacks (area-default-model-store seeds + the
+  // coding-model-resolver role defaults), so a missing row is still correct;
+  // these rows make the values discoverable + user-editable in app_settings.
+  await db.run("INSERT INTO app_settings (key, value) VALUES ('area_default_model:coding', 'mistral-large-latest') ON CONFLICT DO NOTHING");
+  await db.run(`INSERT INTO app_settings (key, value) VALUES ('coding_model_strategy', '{"orchestrator":"mistral-large-latest","expert":"mistral-medium-latest","codegen":"devstral-medium-latest","utility":"mistral-small-latest"}') ON CONFLICT DO NOTHING`);
 
   // 3d. Default radar_settings
   await db.run("INSERT INTO radar_settings (key, value) VALUES ('auto_scan_enabled', '0') ON CONFLICT (key) DO NOTHING");
