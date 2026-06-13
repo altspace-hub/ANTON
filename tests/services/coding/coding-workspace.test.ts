@@ -35,6 +35,13 @@ import {
   validateRelativePath,
   validateTestArgv,
   validateWorkspacePath,
+  getCodingStudioRoot,
+  buildCommandEnv,
+  PROJECT_DATABASE_URL_KEY,
+  probeToolchain,
+  languagePreset,
+  allLanguagePresets,
+  venvPython,
   type ExecFileImpl,
 } from '../../../server/services/coding-workspace.js';
 
@@ -229,8 +236,11 @@ describe('validateWorkspacePath (ALLOWED_FOLDER_PATHS)', () => {
     }
   });
 
-  it('getAllowedBases has NO default fallback', () => {
-    expect(getAllowedBases({} as NodeJS.ProcessEnv)).toEqual([]);
+  it('getAllowedBases adds NO user dirs when ALLOWED_FOLDER_PATHS is unset — only the auto-owned studio root', () => {
+    // Phase 3: the ANTON Studio root is the ONE safe widening (an ANTON-owned
+    // dir). User directories still stay closed when the allowlist is empty.
+    const bases = getAllowedBases({ CODING_STUDIO_ROOT: 'C:\\anton\\studio' } as NodeJS.ProcessEnv);
+    expect(bases).toEqual([path.resolve('C:\\anton\\studio')]);
   });
 });
 
@@ -596,5 +606,190 @@ describe('buildApplicationRecord', () => {
     expect(record.diff_summary.totals.create).toBe(1);
     expect(record.diff_summary.totals.modify).toBe(1);
     expect(record.diff_summary.per_file['src/b.ts'].action).toBe('modify');
+  });
+});
+
+// ── Phase 3: studio-root auto-allow (the one safe widening) ──────────────────
+
+describe('getCodingStudioRoot + getAllowedBases widening', () => {
+  it('defaults to ./coding-studio resolved to absolute', () => {
+    const root = getCodingStudioRoot({});
+    expect(path.isAbsolute(root)).toBe(true);
+    expect(root.toLowerCase()).toContain('coding-studio');
+  });
+
+  it('honours CODING_STUDIO_ROOT', () => {
+    const root = getCodingStudioRoot({ CODING_STUDIO_ROOT: 'C:\\anton\\studio' } as NodeJS.ProcessEnv);
+    expect(root).toBe(path.resolve('C:\\anton\\studio'));
+  });
+
+  it('appends the studio root to the user allowlist (the only auto-added base)', () => {
+    const bases = getAllowedBases({ ALLOWED_FOLDER_PATHS: 'C:\\projects', CODING_STUDIO_ROOT: 'C:\\anton\\studio' } as NodeJS.ProcessEnv);
+    expect(bases).toContain(path.resolve('C:\\projects'));
+    expect(bases).toContain(path.resolve('C:\\anton\\studio'));
+  });
+
+  it('still adds the studio root even when ALLOWED_FOLDER_PATHS is empty (user dirs stay closed)', () => {
+    const bases = getAllowedBases({ ALLOWED_FOLDER_PATHS: '', CODING_STUDIO_ROOT: 'C:\\anton\\studio' } as NodeJS.ProcessEnv);
+    expect(bases).toEqual([path.resolve('C:\\anton\\studio')]);
+  });
+
+  it('de-dupes when the operator also lists the studio root explicitly', () => {
+    const root = path.resolve('C:\\anton\\studio');
+    const bases = getAllowedBases({ ALLOWED_FOLDER_PATHS: root, CODING_STUDIO_ROOT: 'C:\\anton\\studio' } as NodeJS.ProcessEnv);
+    expect(bases.filter((b) => b === root)).toHaveLength(1);
+  });
+
+  it('a studio path validates against the auto-allowed base (no manual allowlist edit)', async () => {
+    const ws = await mkdtemp(path.join(os.tmpdir(), 'anton-studio-root-'));
+    try {
+      const projDir = path.join(ws, 'proj_abc12345');
+      await mkdir(projDir, { recursive: true });
+      // ALLOWED_FOLDER_PATHS is EMPTY — the studio root alone makes this writable.
+      const v = await validateWorkspacePath(projDir, { ALLOWED_FOLDER_PATHS: '', CODING_STUDIO_ROOT: ws } as NodeJS.ProcessEnv);
+      expect(v.ok).toBe(true);
+      expect(v.resolved).toBe(path.resolve(projDir));
+    } finally {
+      await rm(ws, { recursive: true, force: true });
+    }
+  });
+
+  it('a path OUTSIDE the studio root is still rejected when the allowlist is empty', async () => {
+    const outside = await mkdtemp(path.join(os.tmpdir(), 'anton-outside-'));
+    const studio = await mkdtemp(path.join(os.tmpdir(), 'anton-studio-'));
+    try {
+      const v = await validateWorkspacePath(outside, { ALLOWED_FOLDER_PATHS: '', CODING_STUDIO_ROOT: studio } as NodeJS.ProcessEnv);
+      expect(v.ok).toBe(false);
+      expect(v.error).toMatch(/outside ALLOWED_FOLDER_PATHS/i);
+    } finally {
+      await rm(outside, { recursive: true, force: true });
+      await rm(studio, { recursive: true, force: true });
+    }
+  });
+});
+
+// ── Phase 3: buildCommandEnv (scoped DSN in, server DATABASE_URL NEVER) ──────
+
+describe('buildCommandEnv', () => {
+  const source = {
+    PATH: '/usr/bin',
+    CARGO_HOME: '/home/x/.cargo',
+    RUSTUP_HOME: '/home/x/.rustup',
+    VIRTUAL_ENV: '/proj/.venv',
+    DATABASE_URL: 'postgresql://anton:anton@localhost/anton', // the SERVER db — must NOT leak
+    ANTHROPIC_API_KEY: 'sk-ant-SECRET',
+    NODE_OPTIONS: '--inspect',
+  } as NodeJS.ProcessEnv;
+
+  it('injects PROJECT_DATABASE_URL but NEVER the server DATABASE_URL', () => {
+    const env = buildCommandEnv('postgresql://studio_x:pw@localhost/proj_x', source);
+    expect(env[PROJECT_DATABASE_URL_KEY]).toBe('postgresql://studio_x:pw@localhost/proj_x');
+    expect(env.DATABASE_URL).toBeUndefined();          // server DSN stripped
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();     // server secret stripped
+    expect(env.NODE_OPTIONS).toBeUndefined();
+  });
+
+  it('keeps the Rust/Python toolchain homes (locations, not secrets)', () => {
+    const env = buildCommandEnv(null, source);
+    expect(env.CARGO_HOME).toBe('/home/x/.cargo');
+    expect(env.RUSTUP_HOME).toBe('/home/x/.rustup');
+    expect(env.VIRTUAL_ENV).toBe('/proj/.venv');
+  });
+
+  it('omits PROJECT_DATABASE_URL when the project was never provisioned', () => {
+    const env = buildCommandEnv(null, source);
+    expect(env[PROJECT_DATABASE_URL_KEY]).toBeUndefined();
+    expect(env.DATABASE_URL).toBeUndefined();
+  });
+
+  it('runProjectTests injects PROJECT_DATABASE_URL into the spawn env, never the server DATABASE_URL', async () => {
+    const captured: CapturedCall[] = [];
+    const impl = fakeExecFile({ err: null, stdout: 'ok', stderr: '' }, captured);
+    await runProjectTests({
+      argv: ['cargo', 'test'], cwd: '/ws',
+      projectDatabaseUrl: 'postgresql://studio_x:pw@localhost/proj_x',
+      execFileImpl: impl,
+    });
+    const env = captured[0].opts.env as NodeJS.ProcessEnv;
+    expect(env[PROJECT_DATABASE_URL_KEY]).toBe('postgresql://studio_x:pw@localhost/proj_x');
+    expect(env.DATABASE_URL).toBeUndefined();
+  });
+});
+
+// ── Phase 3: probeToolchain (honest green/red, mocked execFile) ──────────────
+
+describe('probeToolchain', () => {
+  /** A version-probe execFile mock: green for the listed cmds, red otherwise. */
+  function toolMock(green: Set<string>): ExecFileImpl {
+    return ((cmd: string, _args: string[], _opts: unknown, cb: (e: Error | null, so: string, se: string) => void) => {
+      setImmediate(() => {
+        if (green.has(cmd)) cb(null, `${cmd} 1.2.3\n`, '');
+        else cb(Object.assign(new Error('not found'), { code: 'ENOENT' }), '', '');
+      });
+      return {} as ReturnType<ExecFileImpl>;
+    }) as unknown as ExecFileImpl;
+  }
+
+  it('reports rust READY (green) when cargo + rustc are present', async () => {
+    const status = await probeToolchain('rust', toolMock(new Set(['cargo', 'rustc'])));
+    expect(status.ready).toBe(true);
+    expect(status.probes.every((p) => p.available)).toBe(true);
+    expect(status.probes.find((p) => p.command === 'cargo')?.version).toContain('1.2.3');
+  });
+
+  it('reports rust NOT ready (red) when cargo is missing — never fakes a pass', async () => {
+    const status = await probeToolchain('rust', toolMock(new Set(['rustc'])));
+    expect(status.ready).toBe(false);
+    expect(status.probes.find((p) => p.command === 'cargo')?.available).toBe(false);
+    expect(status.note).toMatch(/incomplete|missing/i);
+  });
+
+  it('node is always available (we ARE node)', async () => {
+    const status = await probeToolchain('node', toolMock(new Set())); // nothing green
+    expect(status.ready).toBe(true);
+    expect(status.probes[0].command).toBe('node');
+    expect(status.probes[0].version).toBe(process.version);
+  });
+
+  it('python red when neither python nor py nor python3 resolves', async () => {
+    const status = await probeToolchain('python', toolMock(new Set())); // none green
+    expect(status.ready).toBe(false);
+  });
+});
+
+// ── Phase 3: language presets (right argv, no shells) ───────────────────────
+
+describe('language presets', () => {
+  it('TS preset = tsc --noEmit (build) + node --run test (test), no npm shim', () => {
+    const p = languagePreset('typescript');
+    expect(p.build_command).toEqual(['node', 'node_modules/typescript/bin/tsc', '--noEmit']);
+    expect(p.test_command).toEqual(['node', '--run', 'test']);
+  });
+
+  it('Python preset = venv + pip install + pytest, with the venv python IN ARGV (no PATH mutation)', () => {
+    const p = languagePreset('python');
+    expect(p.setup_command).toEqual(['python', '-m', 'venv', '.venv']);
+    expect(p.build_command?.[0]).toBe(venvPython());
+    expect(p.build_command).toContain('pip');
+    expect(p.test_command?.[0]).toBe(venvPython());
+    expect(p.test_command).toContain('pytest');
+    // OS-aware venv python path.
+    expect(venvPython()).toBe(process.platform === 'win32' ? '.venv\\Scripts\\python.exe' : '.venv/bin/python');
+  });
+
+  it('Rust preset = cargo build / cargo test', () => {
+    const p = languagePreset('rust');
+    expect(p.build_command).toEqual(['cargo', 'build']);
+    expect(p.test_command).toEqual(['cargo', 'test']);
+  });
+
+  it('every preset command is a valid argv (validateTestArgv accepts it — no shells)', () => {
+    for (const preset of allLanguagePresets()) {
+      for (const cmd of [preset.setup_command, preset.build_command, preset.test_command]) {
+        if (!cmd) continue;
+        const v = validateTestArgv(cmd);
+        expect(v.ok, `${preset.language}: ${cmd.join(' ')}`).toBe(true);
+      }
+    }
   });
 });

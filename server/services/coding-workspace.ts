@@ -305,10 +305,34 @@ export interface WorkspaceValidation {
   exists?: boolean;
 }
 
-/** ALLOWED_FOLDER_PATHS, resolved. NO default — unset means nothing is writable. */
+/**
+ * The ANTON Studio root (env CODING_STUDIO_ROOT, default ./coding-studio),
+ * resolved. This is the ONE safe widening of the allowlist: a single
+ * ANTON-OWNED directory (not the user's disk), auto-appended to the allowed
+ * bases so Studio can `mkdir coding-studio/<project-slug>/` and bind it
+ * through the existing validators without the operator having to add it to
+ * ALLOWED_FOLDER_PATHS by hand. Provisioning derives the slug from the project
+ * id (never LLM text); the per-project subdir stays inside this root.
+ */
+export const DEFAULT_CODING_STUDIO_ROOT = './coding-studio';
+
+export function getCodingStudioRoot(env: NodeJS.ProcessEnv = process.env): string {
+  const raw = (env.CODING_STUDIO_ROOT ?? '').trim() || DEFAULT_CODING_STUDIO_ROOT;
+  return path.resolve(raw);
+}
+
+/**
+ * ALLOWED_FOLDER_PATHS, resolved, PLUS the ANTON Studio root.
+ * NO default for the user's own paths — an unset ALLOWED_FOLDER_PATHS still
+ * means none of the user's directories are writable. The Studio root is the
+ * only base we add unconditionally because ANTON owns it.
+ */
 export function getAllowedBases(env: NodeJS.ProcessEnv = process.env): string[] {
   const raw = env.ALLOWED_FOLDER_PATHS ?? '';
-  return raw.split(',').map((p) => p.trim()).filter(Boolean).map((p) => path.resolve(p));
+  const userBases = raw.split(',').map((p) => p.trim()).filter(Boolean).map((p) => path.resolve(p));
+  const studioRoot = getCodingStudioRoot(env);
+  // De-dupe in case the operator also listed the studio root explicitly.
+  return userBases.includes(studioRoot) ? userBases : [...userBases, studioRoot];
 }
 
 /**
@@ -583,7 +607,23 @@ export const TEST_ENV_KEEP = [
   'XDG_CACHE_HOME', 'XDG_DATA_HOME', 'XDG_CONFIG_HOME',
   'LANG', 'LC_ALL', 'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'OS',
   'USER', 'LOGNAME', 'SHELL',
+  // ── Phase 3 multi-language toolchain caches/homes ──────────────────────────
+  // Rust (rustup/cargo) and Python (venv) need their home/cache dirs to find
+  // installed toolchains and write build artifacts. These are LOCATIONS, never
+  // secrets. CARGO_TARGET_DIR is honoured if the operator set it (lets builds
+  // share a target/ dir that can be cleaned up — see the disk-usage follow-up).
+  'CARGO_HOME', 'RUSTUP_HOME', 'CARGO_TARGET_DIR', 'RUSTUP_TOOLCHAIN',
+  'VIRTUAL_ENV', 'PYTHONPATH', 'PIP_CACHE_DIR',
 ] as const;
+
+/**
+ * The single secret deliberately injected into a Studio run env: the scoped
+ * PROJECT_DATABASE_URL (points at proj_<slug> AS studio_<slug>). It is NOT in
+ * TEST_ENV_KEEP — TEST_ENV_KEEP strips the server's DATABASE_URL — and is only
+ * ever added by buildCommandEnv() from the per-project vault. NEVER un-strip
+ * the server DATABASE_URL.
+ */
+export const PROJECT_DATABASE_URL_KEY = 'PROJECT_DATABASE_URL';
 
 export function buildTestEnv(source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
@@ -593,6 +633,23 @@ export function buildTestEnv(source: NodeJS.ProcessEnv = process.env): NodeJS.Pr
   env.CI = 'true';
   env.NO_COLOR = '1';
   env.FORCE_COLOR = '0';
+  return env;
+}
+
+/**
+ * Studio command env = the allowlisted test env (server secrets + the server's
+ * own DATABASE_URL are stripped) PLUS, when provided, the project's scoped
+ * PROJECT_DATABASE_URL. The server DATABASE_URL is NEVER re-introduced here —
+ * we only ever set the least-privilege per-project DSN.
+ */
+export function buildCommandEnv(
+  projectDatabaseUrl: string | null | undefined,
+  source: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const env = buildTestEnv(source);
+  // Defence in depth: even if buildTestEnv ever leaked DATABASE_URL, strip it.
+  delete env.DATABASE_URL;
+  if (projectDatabaseUrl) env[PROJECT_DATABASE_URL_KEY] = projectDatabaseUrl;
   return env;
 }
 
@@ -638,6 +695,12 @@ export async function runProjectTests(params: {
   cwd: string;
   timeoutMs?: number;
   execFileImpl?: ExecFileImpl;
+  /**
+   * The project's scoped DSN. When set it is injected as PROJECT_DATABASE_URL
+   * (the only deliberately-injected secret); the server's own DATABASE_URL is
+   * always stripped regardless. Omit/null for commands that need no DB.
+   */
+  projectDatabaseUrl?: string | null;
 }): Promise<TestRunResult> {
   const execFileImpl = params.execFileImpl ?? nodeExecFile;
   const timeoutMs = Math.min(params.timeoutMs ?? TEST_RUN_LIMITS.timeout_ms, TEST_RUN_LIMITS.timeout_ms);
@@ -651,7 +714,7 @@ export async function runProjectTests(params: {
         cwd: params.cwd,
         timeout: timeoutMs,
         maxBuffer: TEST_RUN_LIMITS.max_output_bytes,
-        env: buildTestEnv(),
+        env: buildCommandEnv(params.projectDatabaseUrl ?? null),
         windowsHide: true,
       },
       (err: ExecFileException | null, stdout: string | Buffer, stderr: string | Buffer) => {
@@ -785,4 +848,195 @@ export function buildApplicationRecord(
   });
 
   return { files: entries, diff_summary: { per_file: perFile, totals } };
+}
+
+// ── Multi-language toolchain probe (Phase 3 — honest detect-and-report) ──────
+//
+// Clones script-sandbox.ts's resolveRuntime discipline: execFile <cmd>
+// --version with a short timeout, NO shell. Reports green/red per language —
+// NEVER fakes a pass when the runtime is absent (the design's honesty rule for
+// the §C-req5 "detect and report only" MVP). detect-and-report only: ANTON
+// does NOT install toolchains.
+
+export type ToolchainLanguage = 'typescript' | 'python' | 'rust' | 'node';
+
+export interface ToolProbe {
+  /** The command that was probed (e.g. 'cargo'). */
+  command: string;
+  /** True iff `<command> --version` exited 0. */
+  available: boolean;
+  /** Trimmed first line of --version output, when available. */
+  version: string | null;
+}
+
+export interface ToolchainStatus {
+  language: ToolchainLanguage;
+  /** True iff ALL required commands for the language probed green. */
+  ready: boolean;
+  probes: ToolProbe[];
+  /** Honest one-liner for the UI. */
+  note: string;
+}
+
+/** The commands each language needs to build/test, in argv form (first elem is the binary). */
+const TOOLCHAIN_COMMANDS: Record<ToolchainLanguage, string[]> = {
+  node: ['node'],
+  // TS builds/tests via the project's own tsc + node 22's --run; we probe both
+  // node and tsc. tsc may be a project-local binary; the probe is best-effort.
+  typescript: ['node', 'tsc'],
+  python: ['python', 'pip'],
+  rust: ['cargo', 'rustc'],
+};
+
+const PROBE_CANDIDATES: Record<string, string[]> = {
+  // Honour the same Windows/Unix python ordering as script-sandbox.
+  python: process.platform === 'win32' ? ['python', 'py', 'python3'] : ['python3', 'python'],
+  pip: process.platform === 'win32' ? ['pip', 'pip3'] : ['pip3', 'pip'],
+};
+
+async function probeOne(command: string, execFileImpl: ExecFileImpl): Promise<ToolProbe> {
+  const candidates = PROBE_CANDIDATES[command] ?? [command];
+  for (const candidate of candidates) {
+    const result = await new Promise<{ ok: boolean; out: string }>((resolve) => {
+      try {
+        execFileImpl(
+          candidate, ['--version'],
+          { timeout: 5_000, windowsHide: true, env: buildTestEnv() },
+          (err, stdout, stderr) => {
+            const out = String(stdout || '') || String(stderr || '');
+            resolve({ ok: !err, out });
+          },
+        );
+      } catch {
+        resolve({ ok: false, out: '' });
+      }
+    });
+    if (result.ok) {
+      const version = result.out.split('\n')[0]?.trim() || null;
+      return { command: candidate, available: true, version };
+    }
+  }
+  return { command, available: false, version: null };
+}
+
+/**
+ * Probe the toolchain for one language. NEVER fabricates — a missing runtime is
+ * reported red. Injectable execFile for tests (no real spawn).
+ */
+export async function probeToolchain(
+  language: ToolchainLanguage,
+  execFileImpl: ExecFileImpl = nodeExecFile,
+): Promise<ToolchainStatus> {
+  const commands = TOOLCHAIN_COMMANDS[language];
+  const probes: ToolProbe[] = [];
+  for (const cmd of commands) {
+    // node is the running process — it is always available.
+    if (cmd === 'node') {
+      probes.push({ command: 'node', available: true, version: process.version });
+      continue;
+    }
+    probes.push(await probeOne(cmd, execFileImpl));
+  }
+  const ready = probes.every((p) => p.available);
+  const missing = probes.filter((p) => !p.available).map((p) => p.command);
+  const note = ready
+    ? `${language} toolchain detected (${probes.map((p) => p.version ?? p.command).join(', ')}).`
+    : `${language} toolchain incomplete — missing: ${missing.join(', ')}. Install it yourself; ANTON does not install toolchains.`;
+  return { language, ready, probes, note };
+}
+
+/** Probe all supported languages at once. */
+export async function probeAllToolchains(
+  execFileImpl: ExecFileImpl = nodeExecFile,
+): Promise<ToolchainStatus[]> {
+  const langs: ToolchainLanguage[] = ['typescript', 'python', 'rust'];
+  return Promise.all(langs.map((l) => probeToolchain(l, execFileImpl)));
+}
+
+// ── Per-language command presets (Phase 3 — §C-req5) ────────────────────────
+//
+// The single test_command generalises into setup/build/test per project, each
+// an argv ARRAY run through the SAME approve→execFile gate as tests. These
+// presets are honest defaults the UI can offer; every value is a validated
+// argv (validateTestArgv rejects shells). Python passes the venv python path
+// IN ARGV (we never mutate PATH); on POSIX the venv binary lives in bin/, on
+// Windows in Scripts/.
+
+export type CommandKind = 'setup' | 'build' | 'test';
+
+export interface LanguagePreset {
+  language: ToolchainLanguage;
+  label: string;
+  setup_command: string[] | null;
+  build_command: string[] | null;
+  test_command: string[] | null;
+  /** Honest caveats (Windows shims, venv path, network needed, …). */
+  notes: string[];
+}
+
+/** The relative path to the venv's python, OS-aware (argv, never PATH mutation). */
+export function venvPython(venvDir = '.venv'): string {
+  return process.platform === 'win32'
+    ? `${venvDir}\\Scripts\\python.exe`
+    : `${venvDir}/bin/python`;
+}
+
+/**
+ * Built-in per-language presets. TS uses node 22's `tsc --noEmit` (typecheck)
+ * for build + `node --run test` for test (no npm shim — see runProjectTests'
+ * Windows hint). Python creates a venv, installs, and runs pytest THROUGH the
+ * venv python (in argv). Rust uses cargo build / cargo test.
+ */
+export function languagePreset(language: ToolchainLanguage): LanguagePreset {
+  switch (language) {
+    case 'typescript':
+      return {
+        language, label: 'TypeScript',
+        // tsc lives in the project's node_modules; invoke it via node so no shim is needed.
+        setup_command: null,
+        build_command: ['node', 'node_modules/typescript/bin/tsc', '--noEmit'],
+        test_command: ['node', '--run', 'test'],
+        notes: [
+          'Build = tsc --noEmit (typecheck). Invoked via node so no npm/.cmd shim is needed on Windows.',
+          'Test = node --run test (Node 22+ runs the package.json "test" script directly).',
+          'Adjust to your runner, e.g. ["node","node_modules/vitest/vitest.mjs","run"].',
+        ],
+      };
+    case 'python':
+      return {
+        language, label: 'Python',
+        setup_command: ['python', '-m', 'venv', '.venv'],
+        build_command: [venvPython(), '-m', 'pip', 'install', '-e', '.'],
+        test_command: [venvPython(), '-m', 'pytest', '-q'],
+        notes: [
+          'Setup creates a .venv; build installs the project into it; tests run THROUGH the venv python (passed in argv — PATH is never mutated).',
+          'pip install needs network — see the sandbox security note (a malicious setup.py runs arbitrary code).',
+          'On Windows the venv python is .venv\\Scripts\\python.exe; on POSIX .venv/bin/python.',
+        ],
+      };
+    case 'rust':
+      return {
+        language, label: 'Rust',
+        setup_command: null,
+        build_command: ['cargo', 'build'],
+        test_command: ['cargo', 'test'],
+        notes: [
+          'cargo build / cargo test. Needs rustup/cargo installed (ANTON detects but does not install it).',
+          'cargo build downloads crates — needs network. A malicious build.rs runs arbitrary code; this is not a container.',
+          'Set CARGO_TARGET_DIR to control where target/ grows (kept in the env allowlist) — no disk caps yet.',
+        ],
+      };
+    case 'node':
+      return {
+        language, label: 'Node',
+        setup_command: null,
+        build_command: null,
+        test_command: ['node', '--run', 'test'],
+        notes: ['Test = node --run test (no npm shim).'],
+      };
+  }
+}
+
+export function allLanguagePresets(): LanguagePreset[] {
+  return (['typescript', 'python', 'rust', 'node'] as ToolchainLanguage[]).map(languagePreset);
 }

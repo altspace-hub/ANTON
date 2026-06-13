@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
 import { createCodingIntegration } from '../services/coding-integration.js';
 import {
   FILE_BLOCK_FORMAT_VERSION,
@@ -16,9 +17,30 @@ import {
   runProjectTests,
   validateTestArgv,
   validateWorkspacePath,
+  getCodingStudioRoot,
+  probeAllToolchains,
+  allLanguagePresets,
+  languagePreset,
   type ApplicationFileEntry,
   type FileDiff,
+  type ToolchainLanguage,
 } from '../services/coding-workspace.js';
+import {
+  deriveProjectSlug,
+  projectDbName,
+  projectRoleName,
+  probeCreatedbCapability,
+  provisionProjectDatabase,
+  teardownProjectDatabase,
+  ddlRunnerFromAdapter,
+  storeScopedDsn,
+  getProvisionMeta,
+  resolveScopedDsn,
+  deleteProvisionRecord,
+  CREATEDB_HINT,
+  type RawDdlRunner,
+} from '../services/coding-studio-provisioner.js';
+import { assertGatePassed, GateBlockedError } from '../services/core-team-panel.js';
 
 // ── Phase Prompt Builders ───────────────────────────────────────────────────
 
@@ -1810,8 +1832,32 @@ Be thorough within the scope, but do not expand beyond it. If you identify issue
   return message;
 }
 
-export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Router> {
+/**
+ * Optional dependency injection for ANTON Studio Phase 3. Tests pass a mock
+ * DDL runner + a fake server DSN so provisioning/teardown exercise the right
+ * CREATE/DROP statements WITHOUT touching a real database or running real
+ * toolchains. Production omits all of these and the real PostgreSQL pool +
+ * process.env.DATABASE_URL are used.
+ */
+export interface CodingLargeDeps {
+  /** Build a raw-DDL runner from the adapter (default: the real pg pool). */
+  ddlRunner?: (db: DatabaseAdapter) => RawDdlRunner;
+  /** The server's own DSN (default: process.env.DATABASE_URL). */
+  serverDsn?: string;
+}
+
+export async function createCodingLargeRoutes(
+  db: DatabaseAdapter,
+  deps: CodingLargeDeps = {},
+): Promise<Router> {
   const router = Router();
+
+  const makeDdlRunner = deps.ddlRunner ?? ddlRunnerFromAdapter;
+  const getServerDsn = (): string => {
+    const dsn = deps.serverDsn ?? process.env.DATABASE_URL;
+    if (!dsn) throw new Error('DATABASE_URL is not set — cannot provision a per-project database');
+    return dsn;
+  };
 
   // ── Project CRUD ─────────────────────────────────────────────────────────
 
@@ -2610,6 +2656,370 @@ export async function createCodingLargeRoutes(db: DatabaseAdapter): Promise<Rout
     }
   });
 
+  // ── ANTON Studio Phase 3: workspace + per-project DB provisioning ─────────
+  //
+  // On activation the project gets write/exec to exactly
+  // coding-studio/<project-slug>/ (the studio root is auto-allowed by
+  // getAllowedBases) AND a SEPARATE Postgres DATABASE proj_<slug> owned by a
+  // least-privilege role studio_<slug> (LOCKED DECISION 3 — a separate DB, not
+  // a schema; a separate DB cannot see anton/fc_* by construction). The grant
+  // IS the bind row (directory_path) + the encrypted scoped DSN in the vault.
+  //
+  // HONEST SECURITY CEILING (see coding-studio-provisioner.ts):
+  //   • The sandbox network is NOT blocked; this is execFile in a local process,
+  //     NOT a container. cargo/pip/npm need network and a malicious
+  //     build.rs/setup.py runs arbitrary code. A true jail needs Docker/Firejail
+  //     (P6 — environment_mode='docker' reserved).
+  //   • No CPU/mem/disk caps yet — only the wall-clock timeout + 1 MB output cap.
+  //     Follow-up: a coding-studio/ disk-usage check + CARGO_TARGET_DIR cleanup.
+  //   • The generated DB password is NEVER logged.
+
+  // POST /api/coding/projects/:id/workspace/provision
+  router.post('/coding/projects/:id/workspace/provision', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      // Slug derives from the SERVER-minted project id — NEVER LLM text.
+      let slug: string;
+      try {
+        slug = deriveProjectSlug(req.params.id);
+      } catch {
+        return res.status(400).json({ error: 'Cannot derive a safe workspace slug from this project id.' });
+      }
+
+      // 1. mkdir coding-studio/<slug>/ and bind it via the EXISTING validators
+      //    (the studio root is auto-allowed, so this passes without the operator
+      //    editing ALLOWED_FOLDER_PATHS — the one safe widening).
+      const studioRoot = getCodingStudioRoot();
+      const workspaceDir = path.join(studioRoot, slug);
+      await mkdir(workspaceDir, { recursive: true });
+      const wsValidation = await validateWorkspacePath(workspaceDir);
+      if (!wsValidation.ok || !wsValidation.resolved) {
+        return res.status(500).json({
+          error: `Provisioned workspace failed validation: ${wsValidation.error}`,
+          validation: wsValidation,
+        });
+      }
+
+      // 2. Provision the SEPARATE database. CREATE DATABASE needs CREATEDB on the
+      //    connecting role — if it's missing, return a CLEAR actionable error and
+      //    do NOT silently fall back to a schema or the server DB.
+      const cap = await probeCreatedbCapability(db);
+      if (!cap.ok) {
+        return res.status(412).json({
+          error: CREATEDB_HINT,
+          createdb_capability: cap,
+          verification: 'No database was created. The folder was created and bound; the DB step is blocked until the role can CREATE DATABASE/ROLE.',
+        });
+      }
+
+      const dbName = projectDbName(slug);
+      const roleName = projectRoleName(slug);
+      const runner = makeDdlRunner(db);
+      const serverDsn = getServerDsn();
+
+      // Idempotent re-provision: tear down any prior DB/role for this project first.
+      await teardownProjectDatabase({ runner, dbName, roleName }).catch(() => { /* first run — nothing to drop */ });
+
+      const provisioned = await provisionProjectDatabase({ runner, serverDsn, slug });
+
+      // 3. Store the scoped DSN ENCRYPTED in the vault (never logged/echoed).
+      await storeScopedDsn(db, {
+        codingProjectId: req.params.id,
+        dbName: provisioned.dbName,
+        roleName: provisioned.roleName,
+        scopedDsn: provisioned.scopedDsn,
+      });
+
+      // 4. Bind the workspace + remember the studio language hint (no secrets here).
+      const language = typeof req.body?.language === 'string' && ['typescript', 'python', 'rust', 'node'].includes(req.body.language)
+        ? req.body.language as ToolchainLanguage
+        : null;
+      await db.run(
+        'UPDATE coding_projects SET directory_path = ?, studio_language = COALESCE(?, studio_language), environment_mode = COALESCE(environment_mode, ?), updated_at = NOW() WHERE id = ?',
+        wsValidation.resolved, language, 'local', req.params.id,
+      );
+
+      res.json({
+        provisioned: true,
+        workspace: {
+          directory_path: wsValidation.resolved,
+          // Display-only: where it sits relative to the studio root.
+          studio_root: studioRoot,
+        },
+        database: {
+          // Metadata only — the DSN/password are NEVER returned.
+          db_name: provisioned.dbName,
+          role_name: provisioned.roleName,
+          scope: `A private Postgres database "${provisioned.dbName}" owned by least-privilege role "${provisioned.roleName}" — it cannot connect to ANTON's own database.`,
+        },
+        consent: 'ANTON Studio can read/write files in coding-studio/' + slug + '/ and use a private database; it cannot touch the rest of ANTON or your home folder.',
+        verification: `Folder bound + private database provisioned. The scoped DSN is encrypted in the vault and injected only as PROJECT_DATABASE_URL into command runs.`,
+      });
+    } catch (error) {
+      console.error('[coding-large] Provision error:', error);
+      res.status(500).json({ error: 'Failed to provision workspace + database' });
+    }
+  });
+
+  // GET /api/coding/projects/:id/toolchain — honest per-language detect-and-report.
+  router.get('/coding/projects/:id/toolchain', async (req, res) => {
+    try {
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const toolchains = await probeAllToolchains();
+      res.json({
+        toolchains,
+        presets: allLanguagePresets(),
+        note: 'Detect-and-report only — ANTON does not install toolchains. A red status means the runtime is genuinely absent (never faked green).',
+      });
+    } catch (error) {
+      console.error('[coding-large] Toolchain probe error:', error);
+      res.status(500).json({ error: 'Failed to probe toolchains' });
+    }
+  });
+
+  // GET /api/coding/projects/:id/commands — the per-project command set + DB scope.
+  router.get('/coding/projects/:id/commands', async (req, res) => {
+    try {
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const meta = await getProvisionMeta(db, req.params.id);
+      res.json({
+        commands: {
+          setup: parseCommandColumn(project.setup_command),
+          build: parseCommandColumn(project.build_command),
+          test: parseCommandColumn(project.test_command),
+        },
+        studio_language: project.studio_language ?? null,
+        database: meta ? { db_name: meta.db_name, role_name: meta.role_name, provisioned_at: meta.provisioned_at } : null,
+        presets: allLanguagePresets(),
+        limits: TEST_RUN_LIMITS,
+      });
+    } catch (error) {
+      console.error('[coding-large] Get commands error:', error);
+      res.status(500).json({ error: 'Failed to get commands' });
+    }
+  });
+
+  // PUT /api/coding/projects/:id/commands/:kind — argv ARRAY (never a shell), or null.
+  router.put('/coding/projects/:id/commands/:kind', async (req, res) => {
+    try {
+      const kind = req.params.kind;
+      if (!['setup', 'build', 'test'].includes(kind)) {
+        return res.status(400).json({ error: "kind must be 'setup', 'build', or 'test'" });
+      }
+      const column = kind === 'setup' ? 'setup_command' : kind === 'build' ? 'build_command' : 'test_command';
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const { argv } = req.body;
+      if (argv === null) {
+        await db.run(`UPDATE coding_projects SET ${column} = NULL, updated_at = NOW() WHERE id = ?`, req.params.id);
+        return res.json({ kind, command: null });
+      }
+      const validated = validateTestArgv(argv);
+      if (!validated.ok) return res.status(400).json({ error: validated.reason });
+      await db.run(`UPDATE coding_projects SET ${column} = ?, updated_at = NOW() WHERE id = ?`, JSON.stringify(validated.argv), req.params.id);
+      res.json({ kind, command: validated.argv, limits: TEST_RUN_LIMITS });
+    } catch (error) {
+      console.error('[coding-large] Save command error:', error);
+      res.status(500).json({ error: 'Failed to save command' });
+    }
+  });
+
+  // POST /api/coding/projects/:id/commands/:kind/apply-preset — seed from a language preset.
+  router.post('/coding/projects/:id/commands/apply-preset', async (req, res) => {
+    try {
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+      const language = req.body?.language;
+      if (!['typescript', 'python', 'rust', 'node'].includes(language)) {
+        return res.status(400).json({ error: 'language must be typescript, python, rust, or node' });
+      }
+      const preset = languagePreset(language as ToolchainLanguage);
+      await db.run(
+        'UPDATE coding_projects SET setup_command = ?, build_command = ?, test_command = ?, studio_language = ?, updated_at = NOW() WHERE id = ?',
+        preset.setup_command ? JSON.stringify(preset.setup_command) : null,
+        preset.build_command ? JSON.stringify(preset.build_command) : null,
+        preset.test_command ? JSON.stringify(preset.test_command) : null,
+        language, req.params.id,
+      );
+      res.json({ applied: language, preset });
+    } catch (error) {
+      console.error('[coding-large] Apply preset error:', error);
+      res.status(500).json({ error: 'Failed to apply preset' });
+    }
+  });
+
+  // POST /api/coding/projects/:id/commands/:kind/run
+  // Generalises /tests/run to setup/build/test. Same gate: explicit approval +
+  // execFile (no shell). The build/test commands are arbitrary code execution
+  // BY DESIGN. The build-gate guard refuses to run code while a mandatory
+  // core-team role dissents at the BUILD gate (the enforced governance gate).
+  router.post('/coding/projects/:id/commands/:kind/run', async (req, res) => {
+    try {
+      const kind = req.params.kind;
+      if (!['setup', 'build', 'test'].includes(kind)) {
+        return res.status(400).json({ error: "kind must be 'setup', 'build', or 'test'" });
+      }
+      const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const { approved, coding_task_id = null } = req.body;
+      if (approved !== true) {
+        return res.status(400).json({
+          error: `Explicit approval required: this executes your configured ${kind} command in the workspace (arbitrary code execution by design). Send approved: true from the confirmation UI.`,
+        });
+      }
+
+      // GATE GUARD: a blocking BUILD-gate dissent halts code execution. A gate
+      // that was never reviewed does NOT block (the panel has not spoken).
+      try {
+        await assertGatePassed(db, req.params.id, 'build');
+      } catch (gateErr) {
+        if (gateErr instanceof GateBlockedError) {
+          return res.status(409).json({
+            error: gateErr.message,
+            gate: gateErr.gate,
+            gate_status: gateErr.status,
+            verification: 'Nothing was executed — resolve the blocking core-team dissent at the build gate and re-run the panel first.',
+          });
+        }
+        throw gateErr;
+      }
+
+      const column = kind === 'setup' ? 'setup_command' : kind === 'build' ? 'build_command' : 'test_command';
+      const argvRaw = parseCommandColumn(project[column]);
+      if (!argvRaw) {
+        return res.status(400).json({
+          error: `No ${kind} command configured for this project. Set one (as an argv array) or apply a language preset first.`,
+          verification: `${kind}: not configured.`,
+        });
+      }
+      const validated = validateTestArgv(argvRaw);
+      if (!validated.ok) return res.status(400).json({ error: `Stored ${kind} command is invalid: ${validated.reason}` });
+
+      const validation = await validateWorkspacePath(project.directory_path);
+      if (!validation.ok || !validation.resolved) {
+        return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
+      }
+
+      // Inject ONLY the scoped PROJECT_DATABASE_URL (the server DATABASE_URL is
+      // always stripped). null when the project was never provisioned.
+      const projectDatabaseUrl = await resolveScopedDsn(db, req.params.id);
+
+      const result = await runProjectTests({
+        argv: validated.argv,
+        cwd: validation.resolved,
+        projectDatabaseUrl,
+      });
+      const combinedTail = [result.stdoutTail, result.stderrTail].filter(Boolean).join('\n');
+      const summary = parseTestSummary(combinedTail);
+      const succeeded = result.ran && result.exitCode === 0 && !result.timedOut;
+
+      // Persist test runs the same way /tests/run does so the loop sees them;
+      // setup/build outcomes go on the task progress log only.
+      let testRunId: string | null = null;
+      if (kind === 'test') {
+        testRunId = randomUUID();
+        await db.run(`
+          INSERT INTO coding_test_runs
+            (id, coding_project_id, coding_task_id, test_type, test_suite_name,
+             results, pass_count, fail_count, skip_count, total_count, duration_ms,
+             executed, command, exit_code, timed_out, output_tail, run_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
+        `, testRunId, req.params.id, coding_task_id, 'unit', validated.argv.join(' '),
+          JSON.stringify({
+            executed: true, kind, argv: validated.argv, cwd: validation.resolved,
+            exit_code: result.exitCode, timed_out: result.timedOut,
+            spawn_error: result.spawnError ?? null, output_truncated: result.outputTruncated,
+            summary_recognized: summary.recognized, used_project_database_url: !!projectDatabaseUrl,
+            limits: TEST_RUN_LIMITS,
+          }),
+          summary.pass_count, summary.fail_count, summary.skip_count,
+          summary.pass_count + summary.fail_count + summary.skip_count,
+          result.durationMs, JSON.stringify(validated.argv), result.exitCode,
+          result.timedOut ? 1 : 0, combinedTail, (req as any).userId || 'system');
+      }
+
+      const honest = !result.ran
+        ? `${kind} command could not be started (${result.spawnError ?? 'spawn error'}). Nothing was verified.`
+        : result.timedOut
+          ? `${kind} TIMED OUT after ${TEST_RUN_LIMITS.timeout_ms} ms — treated as failed.`
+          : succeeded
+            ? `${kind} succeeded (exit 0, ${result.durationMs} ms).`
+            : `${kind} FAILED (exit ${result.exitCode ?? '?'}, ${result.durationMs} ms).`;
+
+      res.json({
+        kind,
+        testRunId,
+        executed: true,
+        succeeded,
+        ran: result.ran,
+        exit_code: result.exitCode,
+        timed_out: result.timedOut,
+        duration_ms: result.durationMs,
+        pass_count: summary.pass_count,
+        fail_count: summary.fail_count,
+        skip_count: summary.skip_count,
+        summary_recognized: summary.recognized,
+        output_tail: combinedTail,
+        spawn_error: result.spawnError ?? null,
+        hint: result.hint ?? null,
+        used_project_database_url: !!projectDatabaseUrl,
+        verification: honest,
+      });
+    } catch (error) {
+      console.error('[coding-large] Command run error:', error);
+      res.status(500).json({ error: 'Failed to run command' });
+    }
+  });
+
+  // DELETE /api/coding/projects/:id — tear down the per-project DB + role.
+  // The FK cascade drops the vault row; the real Postgres DATABASE + ROLE must
+  // be dropped explicitly (a cascade can't drop them).
+  router.delete('/coding/projects/:id', async (req, res) => {
+    try {
+      const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
+      if (!project) return res.status(404).json({ error: 'Project not found' });
+
+      const meta = await getProvisionMeta(db, req.params.id);
+      let databaseDropped = false;
+      let dropError: string | null = null;
+      if (meta) {
+        try {
+          await teardownProjectDatabase({ runner: makeDdlRunner(db), dbName: meta.db_name, roleName: meta.role_name });
+          databaseDropped = true;
+        } catch (err) {
+          // Honest: do NOT delete the project record if we couldn't drop the DB,
+          // otherwise the orphaned database + role leak with no record to clean up.
+          dropError = err instanceof Error ? err.message : 'drop failed';
+        }
+        if (dropError) {
+          return res.status(500).json({
+            error: `Failed to drop the per-project database/role: ${dropError}`,
+            verification: 'The project was NOT deleted so the database can be retried/cleaned up manually.',
+          });
+        }
+        await deleteProvisionRecord(db, req.params.id);
+      }
+
+      await db.run('DELETE FROM coding_projects WHERE id = ?', req.params.id);
+      res.json({
+        deleted: true,
+        database_dropped: databaseDropped,
+        verification: databaseDropped
+          ? `Project deleted; private database "${meta?.db_name}" and role "${meta?.role_name}" dropped.`
+          : 'Project deleted (no provisioned database to drop).',
+      });
+    } catch (error) {
+      console.error('[coding-large] Delete project error:', error);
+      res.status(500).json({ error: 'Failed to delete project' });
+    }
+  });
+
   // ── Apply-to-workspace (Wave 5.2 — parse → diff → review → approve) ───────
 
   // POST /api/coding/projects/:id/tasks/:tid/apply/preview
@@ -3389,6 +3799,17 @@ function parseTestCommand(project: any): string[] | null {
   if (!project?.test_command) return null;
   try {
     const parsed = JSON.parse(project.test_command);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A JSON-argv command column (setup/build/test) → argv array or null. */
+function parseCommandColumn(raw: unknown): string[] | null {
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    const parsed = JSON.parse(raw);
     return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
   } catch {
     return null;
