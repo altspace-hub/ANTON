@@ -22,6 +22,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ServerDeps } from './server.js';
+import { runModalFlow } from './server.js';
 import { ProposalValidationError } from './proposals.js';
 
 /** MCP tool definitions — identical method names to the JSON-RPC
@@ -153,7 +154,7 @@ export function buildMcpServer(deps: ServerDeps): Server {
  *  client is treated as a built-in agent identity named "mcp-stdio".
  *  Phase 2 can plumb the MCP client info through if/when that
  *  becomes useful for the modal "AGENT:" line. */
-async function dispatchMcpTool(
+export async function dispatchMcpTool(
   deps: ServerDeps, name: string, args: Record<string, unknown>,
 ): Promise<unknown> {
   switch (name) {
@@ -180,11 +181,12 @@ async function dispatchMcpTool(
           ...(typeof args.agentNote === 'string' ? { agentNote: args.agentNote } : {}),
           ...(typeof args.ttlMs === 'number' ? { ttlMs: args.ttlMs } : {}),
         });
-        // The MCP transport doesn't have the JSON-RPC server's
-        // background-modal-flow because there's no separate request
-        // context — we kick the same fire-and-forget flow off here.
+        // Kick off the SAME fire-and-forget modal flow the JSON-RPC server
+        // uses (single source of truth — forwards the passphrase, guards the
+        // approve-race). MCP has no pairing event, so pass now() as the pairing
+        // time → the modal shows "just now".
         const now = deps.now ?? Date.now;
-        void runMcpModalFlow(deps, 'mcp-stdio', proposal.id, now);
+        void runModalFlow(deps, 'mcp-stdio', now(), proposal.id, now);
         return { proposalId: proposal.id, expiresAt: proposal.expiresAt };
       } catch (e) {
         if (e instanceof ProposalValidationError) {
@@ -208,58 +210,4 @@ async function dispatchMcpTool(
     default:
       throw new Error(`unknown tool: ${name}`);
   }
-}
-
-/** MCP-side modal runner — same logic as server.ts::runModalFlow but
- *  duplicated rather than exported because the two transports may
- *  diverge on how they attribute the agent identity / pairing time. */
-async function runMcpModalFlow(
-  deps: ServerDeps, agentName: string, proposalId: string, now: () => number,
-): Promise<void> {
-  const proposal = deps.proposals.get(proposalId);
-  if (!proposal || proposal.state !== 'pending') return;
-  const snap = await deps.walletStatus();
-  const hint = await deps.counterpartyHint(proposal.to);
-  const hasPass = await deps.walletHasPassphrase();
-  const estimatedFeeFtc = 0.001;
-
-  let decision;
-  try {
-    decision = await deps.modal.promptForDecision({
-      proposalId,
-      agentName,
-      agentPairedAgo: 'just now', // MCP clients don't have a pairing event
-      to: proposal.to,
-      ...(hint?.label ? { toLabel: hint.label } : {}),
-      ...(hint?.seenTimes !== undefined ? { toSeenTimes: hint.seenTimes } : {}),
-      amountFtc: proposal.amountFtc,
-      feeFtc: estimatedFeeFtc,
-      ...(proposal.agentNote ? { agentNote: proposal.agentNote } : {}),
-      balanceAfterFtc: snap.balanceFtc - proposal.amountFtc - estimatedFeeFtc,
-      walletHasPassphrase: hasPass,
-      expiresAtMs: proposal.expiresAt,
-    });
-  } catch (e) {
-    deps.proposals.reject(proposalId, `modal error: ${e instanceof Error ? e.message : String(e)}`);
-    return;
-  }
-
-  if (decision.kind === 'reject') {
-    deps.proposals.reject(proposalId, decision.reason);
-    return;
-  }
-  deps.proposals.approve(proposalId);
-  try {
-    const { txId } = await deps.submitPayment({
-      to: proposal.to,
-      amountFtc: proposal.amountFtc,
-      ...(proposal.reference !== undefined ? { reference: proposal.reference } : {}),
-    });
-    deps.proposals.markSent(proposalId, txId);
-  } catch (e) {
-    deps.proposals.reject(proposalId, `submit failed: ${e instanceof Error ? e.message : String(e)}`);
-  }
-  // `now` is unused here but kept in the signature for parity with
-  // server.ts::runModalFlow.
-  void now;
 }

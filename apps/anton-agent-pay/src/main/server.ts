@@ -321,8 +321,12 @@ export function buildServer(
 }
 
 /** Run the modal + submit-on-approve flow for a freshly-proposed
- *  payment. Caller (server) does NOT await this. */
-async function runModalFlow(
+ *  payment. Caller does NOT await this. Exported so the MCP transport
+ *  (mcp.ts) reuses the EXACT same approve→submit→markSent path — the two
+ *  transports must never diverge (a past divergence dropped the passphrase
+ *  and the approve-race guard on the MCP side). MCP passes its own
+ *  agentName + now() as agentPairedAt (→ "just now"). */
+export async function runModalFlow(
   deps: ServerDeps, agentName: string, agentPairedAt: number,
   proposalId: string, now: () => number,
 ): Promise<void> {
@@ -366,8 +370,14 @@ async function runModalFlow(
     return;
   }
 
-  // Approved — flip state, submit, mark sent.
-  deps.proposals.approve(proposalId);
+  // Approved — flip state, but ONLY submit if the flip actually landed on
+  // 'approved'. If the proposal was cancelled (agent cancelProposal) or expired
+  // between the modal opening and the operator's approve, approve() returns
+  // undefined / an 'expired' proposal — we MUST NOT broadcast a payment for it
+  // (that would send real FTC while the record says cancelled/expired, and the
+  // spend would be invisible to the 24h cap).
+  const approved = deps.proposals.approve(proposalId);
+  if (!approved || approved.state !== 'approved') return;
   try {
     const { txId } = await deps.submitPayment({
       to: proposal.to,

@@ -182,20 +182,32 @@ describe('ProposalStore spend caps', () => {
       .toThrow(/per-payment cap/);
   });
 
-  it('24h cap counts only SENT value and resets after the window', () => {
+  it('24h cap counts sent AND in-flight value, releasing on terminal-non-sent + window reset', () => {
     const store = new ProposalStore(clock.now, { maxDailyFtc: 50 });
     // Send 30 FTC.
     const p1 = store.propose('a', { to: TO, amountFtc: 30 });
     store.approve(p1.id); store.markSent(p1.id, 'tx1');
     // 25 more would breach 50 (30 already sent) → rejected.
     expect(() => store.propose('a', { to: TO, amountFtc: 25 })).toThrow(/24h cap/);
-    // A merely-PROPOSED (not sent) 20 is fine (30 sent + 20 = 50, at the cap) and,
-    // crucially, leaving it pending does NOT consume cap — only `sent` counts.
-    store.propose('a', { to: TO, amountFtc: 20 }); // pending, never sent
-    // So another 20 is still fine: the pending one above didn't move the needle.
+    // 20 is fine (30 sent + 20 = 50, at the cap) — left PENDING (in-flight).
+    const p2 = store.propose('a', { to: TO, amountFtc: 20 });
+    // Now even 1 more breaches: the pending 20 counts as in-flight, so a burst of
+    // concurrent proposals can't be approved past the ceiling.
+    expect(() => store.propose('a', { to: TO, amountFtc: 1 })).toThrow(/24h cap/);
+    // Rejecting the pending one RELEASES its 20.
+    store.reject(p2.id, 'operator');
     expect(() => store.propose('a', { to: TO, amountFtc: 20 })).not.toThrow();
-    // Advance past 24h → the earlier send no longer counts → big payment ok.
+    // Advance past 24h → both the earlier send and the now-aged in-flight no
+    // longer count → a fresh 50 is fine.
     clock.advance(24 * 60 * 60 * 1000 + 1);
     expect(() => store.propose('a', { to: TO, amountFtc: 50 })).not.toThrow();
+  });
+
+  it('cancelled / expired proposals release their in-flight cap value', () => {
+    const store = new ProposalStore(clock.now, { maxDailyFtc: 10 });
+    const p1 = store.propose('a', { to: TO, amountFtc: 8 }); // pending, 8 in-flight
+    expect(() => store.propose('a', { to: TO, amountFtc: 5 })).toThrow(/24h cap/); // 8+5>10
+    store.cancel(p1.id); // releases the 8
+    expect(() => store.propose('a', { to: TO, amountFtc: 5 })).not.toThrow();
   });
 });

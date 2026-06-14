@@ -6,16 +6,22 @@ LangGraph, or any cURL / Python script — propose and send **FutureChain (FTC)*
 
 It reuses the proven Agent Pay core verbatim — the JSON-RPC server, the MCP server, the
 proposal state machine, pairing/bearer auth, and the real on-chain submit
-(`@futurechain/sdk`) — and adds only the two things a headless deployment needs:
+(`@futurechain/sdk`) — and adds only the things a headless deployment needs:
 
-- **A terminal approval boundary** (`CliModalDriver`) — every payment prints a summary in
-  *your* terminal and waits for you to type `y`. No auto-approve, no allow-list, no
-  "remember this agent". This is the safety boundary.
+- **A human approval boundary** — every payment must be approved by the operator, in one of
+  two modes:
+  - **Terminal** (`CliModalDriver`, default for the JSON-RPC transport) — the payment prints
+    a summary in *your* terminal and waits for you to type `y`.
+  - **Browser** (`WebConfirmModalDriver`, default under `--mcp-stdio`) — the payment prints a
+    one-time confirm **URL** to your terminal; you open it and click **Approve / Reject**
+    (typing the wallet passphrase if the wallet is protected). Needed because in `--mcp-stdio`
+    mode the MCP transport owns stdin, so terminal keystrokes aren't available.
+  Either way: no auto-approve, no allow-list, no "remember this agent". This is the safety boundary.
 - **Hard spend caps** — optional per-payment and rolling-24h ceilings, enforced in code
   **before** the approval prompt is even shown.
 
-> **Trust model.** The agent can *ask*. Only the human at the keyboard can *approve*. The
-> caps are a second, code-level backstop that the model cannot talk its way past.
+> **Trust model.** The agent can *ask*. Only the human (typed `y` or a browser click) can
+> *approve*. The caps are a second, code-level backstop that the model cannot talk its way past.
 
 ---
 
@@ -75,7 +81,9 @@ Type `y` → it submits on-chain. Anything else (or no answer before the proposa
 | `AGENT_PAY_WALLET_DIR` | `~/.anton-fc-standalone` | Where the encrypted wallet file lives |
 | `AGENT_PAY_MNEMONIC` | — | BIP-39 mnemonic to import **on first run only** (never overwrites) |
 | `AGENT_PAY_MAX_PER_PAYMENT_FTC` | ∞ | Reject any single payment above this |
-| `AGENT_PAY_MAX_DAILY_FTC` | ∞ | Reject when sent-in-last-24h + this payment would exceed it |
+| `AGENT_PAY_MAX_DAILY_FTC` | ∞ | Reject when (sent **or in-flight** in the last 24h) + this payment would exceed it — counts pending/approved value so a burst can't be approved past the ceiling |
+| `AGENT_PAY_APPROVAL` | `terminal`, or `web` under `--mcp-stdio` | Force the approval mode: `terminal` (type `y`) or `web` (browser click) |
+| `AGENT_PAY_WEB_CONFIRM_AUTOOPEN` | `false` | In `web` mode, best-effort auto-open the browser to the confirm URL |
 | `AGENT_PAY_NODE_URL` | public RPC | FutureChain RPC endpoint |
 | `AGENT_PAY_API_KEY` | — | Bearer for auth-required submit endpoints (e.g. a hosted relay) |
 
@@ -198,11 +206,35 @@ Run with `--mcp-stdio` to expose the same tools over the Model Context Protocol:
 
 Claude Desktop then sees the FutureChain payment tools and can call `proposePayment`.
 
-> **⚠ stdio approval caveat.** In `--mcp-stdio` mode the MCP transport owns **stdin**, so the
-> terminal approval cannot read your keystrokes — proposals will TTL-reject. Use the
-> JSON-RPC transport (above) when you want interactive terminal approval today. A
-> **web-confirm driver** (approve in a browser) is the planned follow-up for fully headless
-> Claude-Desktop launches.
+### Approving in the browser (stdio mode)
+
+In `--mcp-stdio` mode the MCP transport owns **stdin**, so terminal `y`-approval isn't
+possible — the gateway automatically uses the **browser** approval driver. When Claude
+proposes a payment, the gateway prints a one-time confirm URL to its **stderr** (visible in
+Claude Desktop's MCP server logs / the launching terminal):
+
+```
+  ⚠  PAYMENT APPROVAL REQUIRED — an AI agent wants to send FTC
+     Agent:  claude-desktop  (paired just now)
+     To:     fc_VEH4mJb5P9hKEaWkiuXRG6e6jooCnQZqKs
+     Amount: 2.5 FTC  (fee ~0.001 FTC)
+     → Approve or reject in your browser:
+       http://127.0.0.1:49250/confirm/UkhT3...e9
+```
+
+Open that URL, review the payment, and click **Approve** (or **Reject**). Set
+`AGENT_PAY_WEB_CONFIRM_AUTOOPEN=true` to have the gateway open your browser automatically.
+
+How it stays safe — two independent secrets + a hardened browser wall:
+- The **confirmSecret** in the URL path is a single-use 256-bit capability, printed only to
+  the operator's stderr (never stdout — which MCP owns — never any log) and never returned by
+  any `/rpc` method. The agent can't learn or guess it.
+- A second **pageNonce** is embedded in the served page and must be echoed back on the POST,
+  so even a same-origin/rebinding failure can't drive a blind approval.
+- The decision POST also requires a loopback **Host**, an allowlisted **Origin**, and
+  `Sec-Fetch-Site: same-origin`; it accepts **no bearer**; the page is served under a locked
+  `Content-Security-Policy` with `X-Frame-Options: DENY` (no clickjacking). Single-use,
+  TTL-bound, fail-closed (anything malformed → reject).
 
 ---
 
@@ -212,11 +244,16 @@ Claude Desktop then sees the FutureChain payment tools and can call `proposePaym
 - **Bearer per agent.** No call without a token minted from a fresh, 60s pair code.
 - **Human-in-the-loop, non-bypassable.** Every send funnels through the *same*
   `ModalDriver.promptForDecision` the Electron app uses; the standalone wires the terminal
-  driver — there is no code path that sends without it.
+  *or* browser driver — there is no code path that sends without one.
 - **Caps are code, not prompt.** `maxPerPaymentFtc` / `maxDailyFtc` are checked in
-  `ProposalStore.propose()` **before** the modal; the agent cannot argue around them, and
-  only **`sent`** value counts toward the 24h window.
-- **No secrets on stdout / in logs.** The wallet passphrase is read on its own line and
-  never echoed; the banner and prompts go to stderr.
+  `ProposalStore.propose()` **before** the modal; the agent cannot argue around them. The 24h
+  cap counts **sent + in-flight** (pending/approved) value, so a burst of concurrent proposals
+  can't be approved past the ceiling; value is released when a proposal is rejected/expired/cancelled.
+- **No ghost payments.** A payment is submitted on-chain **only** if `approve()` lands on
+  `approved`; if the agent cancelled or the TTL expired between the modal opening and the
+  operator's click, the submit is skipped (both transports share one `runModalFlow`).
+- **No secrets on stdout / in logs.** The wallet passphrase (terminal: read on its own line;
+  browser: posted over loopback only) is never echoed; the confirm URL, banner, and prompts
+  go to stderr only. The agent's `getProposal` never exposes the confirm secret.
 
 See `docs/ANTON_AGENT_PAY_SPEC.md` for the full Agent Pay design this builds on.

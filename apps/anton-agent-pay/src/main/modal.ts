@@ -27,9 +27,13 @@ export interface ModalDriver {
    *  respect `payload.expiresAtMs` — if the user hasn't decided by
    *  then, resolve with `{ kind: 'reject', reason: 'expired' }`.
    *
-   *  Concurrency: implementations must serialise modal display.
-   *  Showing two payment modals at once would confuse the user. The
-   *  caller (server.ts) does NOT queue — it's the driver's job. */
+   *  Concurrency: OS-WINDOW implementations (Electron) must serialise modal
+   *  display — showing two payment windows at once would confuse the user, and
+   *  the caller (server.ts) does NOT queue. URL-based drivers (the standalone
+   *  WebConfirmModalDriver) MAY instead run parallel pending confirmations,
+   *  since each proposal gets its own distinct, self-describing confirm page;
+   *  such drivers should bound the number of simultaneously-outstanding
+   *  confirmations instead. */
   promptForDecision(payload: ModalPayload): Promise<ModalDecision>;
 }
 

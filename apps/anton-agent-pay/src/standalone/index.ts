@@ -45,6 +45,7 @@ import {
   getChainClient, submitPayment as chainSubmitPayment, fetchRecentTransactions,
 } from '../main/chain.js';
 import { CliModalDriver } from './cli-modal.js';
+import { WebConfirmModalDriver } from './web-confirm.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -124,6 +125,17 @@ async function main(): Promise<void> {
     ...(num(process.env.AGENT_PAY_MAX_DAILY_FTC) !== undefined ? { maxDailyFtc: num(process.env.AGENT_PAY_MAX_DAILY_FTC) } : {}),
   };
 
+  // Approval mode. Terminal (typed `y` on stdin) works for the interactive
+  // JSON-RPC transport. But in --mcp-stdio mode the MCP transport OWNS stdin, so
+  // terminal approval can't read keystrokes → default to the browser driver
+  // there. AGENT_PAY_APPROVAL=terminal|web forces either explicitly.
+  const approvalEnv = (process.env.AGENT_PAY_APPROVAL ?? '').trim().toLowerCase();
+  const approvalMode: 'terminal' | 'web' =
+    approvalEnv === 'web' ? 'web'
+    : approvalEnv === 'terminal' ? 'terminal'
+    : mcpStdio ? 'web' : 'terminal';
+  const webAutoOpen = (process.env.AGENT_PAY_WEB_CONFIRM_AUTOOPEN ?? '').trim().toLowerCase() === 'true';
+
   const wallet = new Wallet(new FileStorageBackend(walletDir));
 
   // First-run import from a mnemonic, but NEVER overwrite an existing wallet.
@@ -137,15 +149,20 @@ async function main(): Promise<void> {
     }
   }
 
+  const modal = approvalMode === 'web'
+    ? new WebConfirmModalDriver({ port, now: Date.now, log, autoOpen: webAutoOpen })
+    : new CliModalDriver();                      // approve in THIS terminal
   const deps: ServerDeps = {
     pairings: new PairingStore(),
     proposals: new ProposalStore(Date.now, limits),
-    modal: new CliModalDriver(),                // approve in THIS terminal
+    modal,
     ...(await buildWalletDeps(wallet)),
   };
   setActiveModalDriver(deps.modal);
 
   const app = buildServer(deps);
+  // The web driver mounts its /confirm routes on the SAME app before listen().
+  if (modal instanceof WebConfirmModalDriver) modal.registerRoutes(app);
   await app.listen({ host: '127.0.0.1', port });
   const code = deps.pairings.newCode();
 
@@ -157,13 +174,14 @@ async function main(): Promise<void> {
   log(` Pair code:  ${code}    (valid 60s)`);
   log(` Wallet:     ${walletReady ? 'ready' : 'NONE — read-only (set AGENT_PAY_MNEMONIC to send)'}`);
   log(` Caps:       per-payment ${limits.maxPerPaymentFtc ?? '∞'} FTC · 24h ${limits.maxDailyFtc ?? '∞'} FTC`);
-  log(` Approval:   every payment needs a typed "y" in THIS terminal — no bypass`);
-  if (mcpStdio) {
-    log(' MCP:        stdio enabled. NOTE: in stdio mode the terminal approval');
-    log('             cannot read your keystrokes (stdin belongs to MCP) — use the');
-    log('             JSON-RPC transport for interactive approval until the');
-    log('             web-confirm driver lands.');
+  if (approvalMode === 'web') {
+    log(' Approval:   BROWSER — each payment prints a one-time confirm URL to THIS');
+    log('             terminal; open it and click Approve/Reject. No bypass.');
+    if (webAutoOpen) log('             (auto-open enabled)');
+  } else {
+    log(' Approval:   every payment needs a typed "y" in THIS terminal — no bypass');
   }
+  if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 
   if (mcpStdio) {

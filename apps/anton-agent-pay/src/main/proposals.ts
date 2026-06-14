@@ -40,8 +40,10 @@ export interface ProposeArgs {
 export interface SpendLimits {
   /** Reject any single proposal whose amount exceeds this many FTC. */
   maxPerPaymentFtc?: number;
-  /** Reject a proposal when (FTC SENT in the trailing 24h + this amount) would
-   *  exceed this many FTC. A rolling daily ceiling on actually-sent value. */
+  /** Reject a proposal when (FTC sent-or-in-flight in the trailing 24h + this
+   *  amount) would exceed this many FTC. A rolling daily ceiling that counts
+   *  in-flight (pending/approved) value too, so a burst of concurrent proposals
+   *  can't be approved past the ceiling. */
   maxDailyFtc?: number;
 }
 
@@ -57,12 +59,18 @@ export class ProposalStore {
     private readonly limits: SpendLimits = {},
   ) {}
 
-  /** FTC actually SENT in the trailing 24h (for the daily cap). */
-  private sentLast24h(): number {
+  /** FTC sent OR in-flight (pending/approved) in the trailing 24h — the basis
+   *  for the daily cap. Counting in-flight value (not just `sent`) is what makes
+   *  the ceiling hold under concurrency: N proposals each individually under the
+   *  cap can't be approved past it, because each later propose() already sees the
+   *  earlier ones' value reserved. Value is released automatically when a
+   *  proposal reaches a terminal non-sent state (rejected/expired/cancelled). */
+  private committedLast24h(): number {
     const since = this.nowFn() - DAY_MS;
     let spent = 0;
     for (const p of this.byId.values()) {
-      if (p.state === 'sent' && p.createdAt >= since) spent += p.amountFtc;
+      const counts = p.state === 'sent' || p.state === 'pending' || p.state === 'approved';
+      if (counts && p.createdAt >= since) spent += p.amountFtc;
     }
     return spent;
   }
@@ -97,11 +105,11 @@ export class ProposalStore {
       );
     }
     if (this.limits.maxDailyFtc !== undefined) {
-      const spent = this.sentLast24h();
+      const spent = this.committedLast24h();
       if (spent + args.amountFtc > this.limits.maxDailyFtc) {
         throw new ProposalValidationError(
           `this payment (${args.amountFtc} FTC) would exceed the 24h cap of ${this.limits.maxDailyFtc} FTC `
-          + `(${spent.toFixed(4)} FTC already sent in the last 24h)`,
+          + `(${spent.toFixed(4)} FTC already sent or in-flight in the last 24h)`,
         );
       }
     }
