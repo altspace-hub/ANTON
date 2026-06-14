@@ -1,0 +1,238 @@
+{
+  "formatVersion": "1.0",
+  "id": "ai-model-risk-assessment",
+  "label": "AI & Model Risk Assessment",
+  "shortLabel": "Model Risk",
+  "icon": "Bot",
+  "description": "First-class AI and model-risk assessment for financial-crime and credit models: builds a model inventory, then assesses transaction-monitoring drift, sanctions-screening match calibration, credit-scoring fairness, and GenAI/synthetic-identity fraud models across the full model lifecycle. Grounded in the EU AI Act, EBA model-governance expectations, DORA ICT-risk, and the SR 11-7 / TRIM lineage.",
+  "color": "adv-blue",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "maturity-assessment",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of regulated entity owns or operates these models?",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment / E-Money Institution"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto-Asset Service Provider (CASP)"
+        },
+        {
+          "value": "lending_fintech",
+          "label": "Consumer / SME Lending Fintech"
+        },
+        {
+          "value": "other",
+          "label": "Other Regulated Entity"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which regulatory regimes apply to the models in scope?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU (AI Act / EBA / DORA)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK (PRA SS1/23)"
+        },
+        {
+          "value": "us",
+          "label": "US (SR 11-7 / OCC)"
+        }
+      ]
+    },
+    {
+      "id": "model_categories",
+      "type": "multi-select",
+      "label": "Model Categories in Scope",
+      "description": "Which financial-crime and credit models should the assessment cover?",
+      "required": true,
+      "options": [
+        {
+          "value": "transaction_monitoring",
+          "label": "Transaction Monitoring (drift, alert quality, tuning)"
+        },
+        {
+          "value": "sanctions_screening",
+          "label": "Sanctions / PEP Screening (name-matching, FP/FN calibration)"
+        },
+        {
+          "value": "credit_scoring",
+          "label": "Credit / Creditworthiness Scoring (AI Act high-risk)"
+        },
+        {
+          "value": "fraud_synthetic_id",
+          "label": "Fraud / Synthetic-Identity Detection"
+        },
+        {
+          "value": "genai",
+          "label": "GenAI / LLM-Assisted Models (alert narration, copilots, deepfake screening)"
+        },
+        {
+          "value": "customer_risk_rating",
+          "label": "Customer Risk Rating / KYC Risk Scoring"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle_focus",
+      "type": "multi-select",
+      "label": "Lifecycle Stages to Prioritise",
+      "description": "Which stages of the model lifecycle should the assessment emphasise?",
+      "options": [
+        {
+          "value": "development",
+          "label": "Development & Data Sourcing"
+        },
+        {
+          "value": "validation",
+          "label": "Independent Validation"
+        },
+        {
+          "value": "deployment",
+          "label": "Deployment & Change Management"
+        },
+        {
+          "value": "monitoring",
+          "label": "Ongoing Monitoring & Model KRIs"
+        },
+        {
+          "value": "human_oversight",
+          "label": "Human Oversight & Override"
+        },
+        {
+          "value": "decommission",
+          "label": "Decommission / Retirement"
+        }
+      ]
+    },
+    {
+      "id": "ai_act_classification",
+      "type": "select",
+      "label": "EU AI Act Classification (best estimate)",
+      "description": "Creditworthiness/credit-scoring models are high-risk under Annex III(5)(b). How are the in-scope models currently classified?",
+      "options": [
+        {
+          "value": "undetermined",
+          "label": "Not yet determined"
+        },
+        {
+          "value": "high_risk_credit",
+          "label": "High-risk — creditworthiness / credit scoring (Annex III)"
+        },
+        {
+          "value": "high_risk_other",
+          "label": "High-risk — other Annex III use case"
+        },
+        {
+          "value": "limited_or_minimal",
+          "label": "Limited / minimal risk (e.g. internal AML triage)"
+        },
+        {
+          "value": "gpai_component",
+          "label": "Uses a general-purpose AI / foundation model component"
+        },
+        {
+          "value": "not_ai_act",
+          "label": "Deterministic / rules-based — outside AI Act scope"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe any known model issues: drift, validation backlog, vendor opacity, bias findings, alert-quality complaints, audit or supervisory observations.",
+      "placeholder": "e.g. TM scenarios last tuned 2023; SAR conversion rate fell to 1.2%; sanctions screening fuzzy-match threshold never benchmarked; credit model is a vendor black box with no validation report; no documented human-override log for declined applications..."
+    }
+  ],
+  "exampleInput": "We are a Nordic consumer-lending fintech (~80 staff, SE/FI/DK lending licence) running three model families that nobody has formally inventoried as 'models': an AI credit-scoring model from a third-party vendor that drives auto-decline decisions, an in-house transaction-monitoring engine with ~40 rules plus a gradient-boosted alert-scoring overlay, and an OFAC/EU sanctions-screening tool with fuzzy name matching. Build a model inventory with owners and materiality tiers, then assess model risk across the lifecycle. We are most worried about three things: the credit model is a high-risk AI Act system but we have no validation report from the vendor and no fairness/bias testing across protected groups; the TM overlay has drifted — SAR conversion fell from 4% to 1.2% over a year and the scenarios were last tuned in 2023; and the sanctions tool's fuzzy-match threshold was set by the vendor at install and never benchmarked, so we don't know our false-negative exposure. There is no independent validation function, no model KRIs, and the only human oversight is a caseworker who 'usually' reviews declines.",
+  "exampleValues": {
+    "entity_type": "lending_fintech",
+    "jurisdiction": ["eu", "sweden", "finland"],
+    "model_categories": ["credit_scoring", "transaction_monitoring", "sanctions_screening"],
+    "lifecycle_focus": ["validation", "monitoring", "human_oversight"],
+    "ai_act_classification": "high_risk_credit",
+    "known_concerns": "Credit model is a vendor black box, high-risk under AI Act Annex III, no validation report or bias testing across protected groups. TM alert-scoring overlay has drifted — SAR conversion 4% to 1.2% in a year, scenarios last tuned 2023. Sanctions fuzzy-match threshold set by vendor at install and never benchmarked; false-negative exposure unknown. No independent validation function and no model KRIs."
+  },
+  "recommendedPersonas": [
+    "tech-expert",
+    "fcp-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "model-risk",
+    "ai-act",
+    "ai-governance",
+    "transaction-monitoring",
+    "sanctions-screening",
+    "credit-scoring",
+    "fairness",
+    "dora",
+    "validation"
+  ],
+  "contentType": "risk_register"
+}

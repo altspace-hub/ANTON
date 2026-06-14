@@ -96,6 +96,30 @@
       ]
     },
     {
+      "id": "amla_supervision_category",
+      "type": "select",
+      "label": "AMLA Supervision Category",
+      "description": "How will the entity be supervised once AMLA is operational (from July 2027)? Drives the depth of data-readiness and direct-request expectations.",
+      "options": [
+        {
+          "value": "undetermined",
+          "label": "Not yet determined"
+        },
+        {
+          "value": "amla_direct",
+          "label": "Directly supervised by AMLA (selected obliged entity)"
+        },
+        {
+          "value": "national_under_amla",
+          "label": "National supervisor under AMLA coordination"
+        },
+        {
+          "value": "non_selected",
+          "label": "Non-selected obliged entity (national supervision)"
+        }
+      ]
+    },
+    {
       "id": "focus_areas",
       "type": "multi-select",
       "label": "AMLR Focus Areas",
@@ -128,6 +152,18 @@
         {
           "value": "reporting",
           "label": "STR Reporting (Art. 70–76)"
+        },
+        {
+          "value": "crypto_tm",
+          "label": "Crypto Transaction Monitoring & Travel Rule (CASPs)"
+        },
+        {
+          "value": "correspondent_concentration",
+          "label": "Correspondent / Nested-Account Concentration"
+        },
+        {
+          "value": "remittance_resilience",
+          "label": "Remittance-Network & MVTS Resilience"
         }
       ]
     },

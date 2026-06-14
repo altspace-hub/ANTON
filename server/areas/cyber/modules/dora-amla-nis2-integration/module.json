@@ -1,0 +1,141 @@
+{
+  "formatVersion": "1.0",
+  "id": "dora-amla-nis2-integration",
+  "label": "DORA + AMLA + NIS2 Integration Orchestrator",
+  "shortLabel": "Tri-Framework",
+  "icon": "Network",
+  "description": "Stitches DORA, AMLA/AMLR and NIS2 into ONE programme: a shared ICT/asset inventory, an overlap-vs-distinct obligations matrix, a reconciled incident-reporting timeline, unified third-party registers, and a single sequenced roadmap — not three parallel projects.",
+  "color": "adv-blue",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "regulatory-comparison",
+      "gap-scoring-matrix",
+      "action-plan",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "DORA (EU) 2022/2554 + ESA RTS/ITS, AMLR (EU) 2024/1624, AMLA Reg (EU) 2024/1620, AMLD6 (EU) 2024/1640, NIS2 Dir (EU) 2022/2555 + national transposition, MiCA (EU) 2023/1114, TFR (EU) 2023/1113"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Type of financial entity",
+      "description": "Drives which frameworks bind and how they overlap (e.g. a CASP is captured by DORA, AMLR/MiCA/TFR, and often NIS2 simultaneously).",
+      "required": true,
+      "options": [
+        { "value": "credit_institution", "label": "Credit Institution / Bank" },
+        { "value": "payment_institution", "label": "Payment / E-Money Institution" },
+        { "value": "investment_firm", "label": "Investment Firm / Asset Manager" },
+        { "value": "insurance", "label": "Insurance / Reinsurance Undertaking" },
+        { "value": "casp", "label": "Crypto-Asset Service Provider (CASP under MiCA)" },
+        { "value": "market_infra", "label": "Trading Venue / CCP / CSD" },
+        { "value": "mvts", "label": "MVTS / Remittance / Money Services Business" },
+        { "value": "other", "label": "Other obliged / essential entity" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "DORA and AMLR apply uniformly EU-wide; NIS2 is a Directive transposed nationally with material divergence — select all that apply.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU-level (baseline)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway (EEA)" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "ireland", "label": "Ireland" },
+        { "value": "other", "label": "Other Member State" }
+      ]
+    },
+    {
+      "id": "frameworks_in_scope",
+      "type": "multi-select",
+      "label": "Frameworks in scope",
+      "description": "Confirm which of the three regimes bind this entity. The orchestrator only adds value where at least two overlap.",
+      "required": true,
+      "options": [
+        { "value": "dora", "label": "DORA — ICT operational resilience ((EU) 2022/2554)" },
+        { "value": "amla_amlr", "label": "AMLA / AMLR — AML supervision & data readiness ((EU) 2024/1620 + 2024/1624)" },
+        { "value": "nis2", "label": "NIS2 — cybersecurity & incident reporting ((EU) 2022/2555)" },
+        { "value": "mica_tfr", "label": "MiCA / TFR — crypto & travel rule (if CASP)" }
+      ]
+    },
+    {
+      "id": "integration_focus",
+      "type": "multi-select",
+      "label": "Integration deliverables to produce",
+      "description": "Which cross-framework reconciliations should the orchestrator build? Each stitches obligations that are otherwise managed in silos.",
+      "options": [
+        { "value": "shared_inventory", "label": "Shared ICT / critical-asset / data inventory" },
+        { "value": "overlap_matrix", "label": "Overlapping vs distinct obligations mapping matrix" },
+        { "value": "incident_timeline", "label": "Reconciled incident-reporting timeline (DORA / NIS2 / STR)" },
+        { "value": "third_party_register", "label": "Unified third-party / outsourcing / supply-chain register" },
+        { "value": "governance_attestation", "label": "Reconciled board governance & attestation order" },
+        { "value": "single_roadmap", "label": "Single sequenced implementation roadmap" }
+      ]
+    },
+    {
+      "id": "current_state",
+      "type": "select",
+      "label": "Current programme maturity",
+      "description": "How are the three regimes currently being run?",
+      "options": [
+        { "value": "siloed", "label": "Three separate projects / owners, no shared artefacts" },
+        { "value": "partial", "label": "Partially aligned — some shared registers, no unified timeline" },
+        { "value": "integrated", "label": "Integrated programme exists — validate and find residual gaps" },
+        { "value": "greenfield", "label": "Greenfield — designing the integrated programme now" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns, conflicts or audit findings",
+      "description": "Describe known tensions between the regimes, prior findings, or specific reconciliation pain points.",
+      "placeholder": "e.g. The same Azure tenancy is in our DORA Register of Information but absent from the NIS2 supply-chain list; ICT incident escalation runs to the CISO while STR escalation runs to the MLRO with no shared trigger; the DORA Register of Information and the AMLR outsourcing register are maintained on different spreadsheets by different teams; a Q3 supervisory letter questioned why a ransomware event was reported to the national CSIRT but not assessed for STR implications."
+    }
+  ],
+  "exampleInput": "We are a Swedish payment institution (~250 staff, e-money licence, ~80% of volume on a single cloud provider) that has just realised we are simultaneously in scope for DORA, AMLR/AMLA and the Swedish NIS2 transposition (Cybersäkerhetslagen). Today these run as three separate projects: a DORA workstream owned by IT resilience, an AMLR readiness programme owned by the MLRO, and a NIS2 project owned by the CISO. They use different asset lists, different third-party registers, and have never reconciled their incident-reporting clocks. Last quarter a ransomware incident on our KYC vendor was reported to the national CSIRT under NIS2, classified as a major ICT incident under DORA, but nobody assessed whether the compromised customer data also created an STR/SAR obligation — and our board got three different incident narratives. Build us the integrated picture: one critical-asset and ICT/data inventory, a matrix showing which obligations overlap versus which are distinct across the three regimes, a single reconciled incident-reporting timeline that places the DORA initial/intermediate/final reports, the NIS2 24h early-warning / 72h notification / 1-month final, and any STR filing on one clock with a shared trigger, a single third-party register that satisfies the DORA Article 28 Register of Information, AMLR outsourcing oversight, and NIS2 supply-chain requirements at once, a reconciled board attestation order, and one sequenced roadmap. We do NOT want three parallel programmes.",
+  "exampleValues": {
+    "entity_type": "payment_institution",
+    "jurisdiction": ["eu", "sweden"],
+    "frameworks_in_scope": ["dora", "amla_amlr", "nis2"],
+    "integration_focus": ["shared_inventory", "overlap_matrix", "incident_timeline", "third_party_register", "governance_attestation", "single_roadmap"],
+    "current_state": "siloed",
+    "known_concerns": "Same cloud tenancy appears in the DORA Register of Information but not the NIS2 supply-chain list. ICT incident escalation runs to the CISO; STR escalation runs to the MLRO; no shared trigger. A KYC-vendor ransomware event was reported to the CSIRT and classified as a major ICT incident, but never assessed for STR implications. Board received three divergent incident narratives."
+  },
+  "recommendedPersonas": [
+    "cyber-expert",
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "dora",
+    "amlr",
+    "amla",
+    "nis2",
+    "cross-framework",
+    "ict-resilience",
+    "incident-reporting",
+    "third-party-risk",
+    "orchestrator"
+  ],
+  "contentType": "analytic_report"
+}

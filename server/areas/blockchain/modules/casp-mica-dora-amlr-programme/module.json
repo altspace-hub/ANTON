@@ -1,0 +1,175 @@
+{
+  "formatVersion": "1.0",
+  "id": "casp-mica-dora-amlr-programme",
+  "label": "CASP Integrated Compliance Operating Model (MiCA + DORA + AMLR/TFR)",
+  "shortLabel": "CASP Operating Model",
+  "icon": "Network",
+  "description": "Treats MiCA, DORA and AMLR/TFR as ONE compliance programme for a Crypto-Asset Service Provider, not three. Maps where the frameworks overlap and where they diverge, designs a single operating model with shared controls, and hands off to the FCP gap-analysis and risk-assessment workflows for the AML/CFT legs.",
+  "color": "adv-blue",
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "professional": "opus",
+    "notes": "Cross-framework article citations (MiCA 2023/1114, DORA 2022/2554, AMLR 2024/1624, TFR 2023/1113) must be accurate. Opus 4.8 strongly recommended for the overlap/divergence mapping."
+  },
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "executive-summary",
+      "regulatory-comparison",
+      "raci-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "MiCA Regulation (EU) 2023/1114, DORA Regulation (EU) 2022/2554, AMLR (EU) 2024/1624, AMLD6 (EU) 2024/1640, TFR (EU) 2023/1113, ESMA/EBA RTS-ITS, ESA DORA RTS, EBA Travel Rule and CASP risk-factor guidelines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_profile",
+      "type": "select",
+      "label": "CASP Profile",
+      "description": "What kind of crypto-asset service provider is this operating model for? This drives which MiCA services, DORA criticality and AMLR exposures dominate.",
+      "required": true,
+      "options": [
+        {
+          "value": "exchange-custodial",
+          "label": "Custodial exchange (trading platform + custody + fiat on/off-ramp)"
+        },
+        {
+          "value": "custodian",
+          "label": "Pure custodian / wallet provider"
+        },
+        {
+          "value": "broker-rto",
+          "label": "Broker / RTO / order execution (non-custodial)"
+        },
+        {
+          "value": "bank-casp",
+          "label": "Bank or credit/payment institution acting as CASP (Art. 60 notification)"
+        },
+        {
+          "value": "issuer-plus-casp",
+          "label": "Token issuer (EMT/ART) that also provides CASP services"
+        },
+        {
+          "value": "transfer-payments",
+          "label": "Crypto transfer / payments-focused CASP"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "select",
+      "label": "Home Member State (NCA)",
+      "description": "The EU member state of authorisation. Drives the lead NCA, national add-ons and FIU/Travel-Rule reporting conventions.",
+      "required": true,
+      "options": [
+        { "value": "se", "label": "Sweden (Finansinspektionen)" },
+        { "value": "de", "label": "Germany (BaFin)" },
+        { "value": "fr", "label": "France (AMF/ACPR)" },
+        { "value": "nl", "label": "Netherlands (AFM/DNB)" },
+        { "value": "ie", "label": "Ireland (CBI)" },
+        { "value": "lu", "label": "Luxembourg (CSSF)" },
+        { "value": "mt", "label": "Malta (MFSA)" },
+        { "value": "lt", "label": "Lithuania (Lietuvos bankas)" },
+        { "value": "fi", "label": "Finland (FIN-FSA)" },
+        { "value": "dk", "label": "Denmark (Finanstilsynet)" },
+        { "value": "other-eu", "label": "Other EU member state" }
+      ]
+    },
+    {
+      "id": "casp_services",
+      "type": "multi-select",
+      "label": "MiCA Services in Scope (Art. 3(1)(16))",
+      "description": "Which authorised CASP services does the entity provide? Custody and operation of a trading platform raise both the DORA criticality and the AMLR monitoring burden the most.",
+      "options": [
+        { "value": "custody", "label": "Custody & administration of crypto-assets" },
+        { "value": "trading-platform", "label": "Operation of a trading platform" },
+        { "value": "exchange-fiat", "label": "Exchange for funds (fiat on/off-ramp)" },
+        { "value": "exchange-crypto", "label": "Exchange crypto-for-crypto" },
+        { "value": "order-execution", "label": "Execution of orders for clients" },
+        { "value": "rto", "label": "Reception & transmission of orders" },
+        { "value": "transfer", "label": "Transfer services for clients" },
+        { "value": "placing", "label": "Placing of crypto-assets" },
+        { "value": "advice-portfolio", "label": "Advice / portfolio management" }
+      ]
+    },
+    {
+      "id": "programme_objective",
+      "type": "select",
+      "label": "Primary Objective of This Engagement",
+      "description": "What decision is this operating model meant to support?",
+      "required": true,
+      "options": [
+        { "value": "design-tom", "label": "Design the integrated target operating model (greenfield / pre-authorisation)" },
+        { "value": "consolidate-silos", "label": "Consolidate existing MiCA / DORA / AML silos into one programme" },
+        { "value": "overlap-map", "label": "Produce the overlap/divergence map and shared-control catalogue only" },
+        { "value": "audit-readiness", "label": "Assess integrated programme for supervisory / internal-audit readiness" },
+        { "value": "incident-harmonisation", "label": "Harmonise incident, outsourcing and record-keeping across the three regimes" }
+      ]
+    },
+    {
+      "id": "shared_domains",
+      "type": "chips",
+      "label": "Cross-Framework Domains to Prioritise",
+      "description": "Where the three regimes touch the same control. Leave blank to cover all six convergence domains plus the divergent ones.",
+      "options": [
+        { "value": "governance", "label": "Governance & management body accountability" },
+        { "value": "third-party", "label": "Outsourcing / ICT third-party risk" },
+        { "value": "custody-safeguarding", "label": "Custody & client-asset safeguarding" },
+        { "value": "incident", "label": "Incident detection, classification & reporting" },
+        { "value": "record-keeping", "label": "Record-keeping & retention" },
+        { "value": "resilience-testing", "label": "DORA resilience & TLPT testing (distinct)" },
+        { "value": "whitepaper-market-abuse", "label": "MiCA whitepaper / market abuse (distinct)" },
+        { "value": "cdd-ubo-monitoring", "label": "AMLR CDD / UBO / monitoring + Travel Rule (distinct)" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Silos or Prior Findings",
+      "description": "Describe existing organisational silos, duplicated controls, prior NCA/audit feedback, or upcoming deadlines that the operating model must resolve.",
+      "placeholder": "e.g. MiCA team and MLRO function report to different committees; DORA register of ICT third parties does not list the same custody sub-custodian named in the MiCA custody policy; Travel Rule solution went live but is not in the DORA critical-function inventory; two separate incident playbooks with different thresholds..."
+    }
+  ],
+  "exampleInput": "We are a custodial crypto exchange authorised as a CASP in Sweden (Finansinspektionen), ~140 staff, offering custody, an order-book trading platform, and EUR/SEK on- and off-ramps. We currently run three separate programmes with three separate owners: a MiCA authorisation/conduct team under the General Counsel, a DORA/ICT resilience team under the CISO, and an AML/CFT function under the MLRO — each with its own committee, its own outsourcing register, and its own incident playbook. The board has asked us to stop running them as three regimes and design a single integrated compliance operating model. Show me where MiCA (2023/1114), DORA (2022/2554) and AMLR/TFR (2024/1624 + 2023/1113) overlap so we can build shared controls, where they genuinely diverge so we don't over-collapse them, and a RACI for the consolidated model. Known pain points: our DORA register of ICT third parties does not reconcile with the sub-custodian named in the MiCA custody policy; our Travel Rule (TFR) solution is live but isn't classed as a critical ICT function under DORA; and we have two incident-reporting thresholds that conflict. Then tell me exactly which ANTON workflows to run next for the AML/CFT legs.",
+  "exampleValues": {
+    "entity_profile": "exchange-custodial",
+    "jurisdiction": "se",
+    "casp_services": ["custody", "trading-platform", "exchange-fiat"],
+    "programme_objective": "consolidate-silos",
+    "shared_domains": ["governance", "third-party", "custody-safeguarding", "incident", "record-keeping"],
+    "known_concerns": "DORA ICT third-party register does not reconcile with the sub-custodian named in the MiCA custody policy. Travel Rule (TFR) solution is live but not classified as a critical/important ICT function under DORA. Two conflicting incident-reporting thresholds (one MiCA/market-abuse, one DORA major-incident). MiCA, DORA and AML each report into a different committee with no single accountable owner."
+  },
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "fcp-expert",
+    "cyber-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "casp",
+    "mica",
+    "dora",
+    "amlr",
+    "tfr",
+    "travel-rule",
+    "operating-model",
+    "integrated-compliance",
+    "crypto",
+    "regulatory"
+  ],
+  "contentType": "analytic_report"
+}

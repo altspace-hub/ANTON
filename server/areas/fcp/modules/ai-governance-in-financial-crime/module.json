@@ -1,0 +1,153 @@
+{
+  "formatVersion": "1.0",
+  "id": "ai-governance-in-financial-crime",
+  "label": "AI Governance in Financial Crime",
+  "shortLabel": "AI Governance",
+  "icon": "Bot",
+  "description": "Governance and control framework for AI/ML used in financial-crime systems (transaction monitoring, screening, fraud, KYC) at the intersection of the AMLR risk-based approach, DORA ICT governance, and EU AI Act Title III high-risk requirements.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "action-plan"
+    ],
+    "transparencyLevel": 2,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "What type of obliged entity deploys the AI/ML system?",
+      "required": true,
+      "options": [
+        { "value": "bank", "label": "Bank / Credit Institution" },
+        { "value": "payment_emoney", "label": "Payment / E-Money Institution" },
+        { "value": "investment", "label": "Investment Firm / Asset Manager" },
+        { "value": "insurance", "label": "Insurance Undertaking" },
+        { "value": "casp", "label": "Crypto-Asset Service Provider (CASP / MiCA)" },
+        { "value": "regtech_vendor", "label": "RegTech / AI Vendor (provider role under the AI Act)" },
+        { "value": "other", "label": "Other Obliged Entity" }
+      ]
+    },
+    {
+      "id": "ai_use_case",
+      "type": "multi-select",
+      "label": "AI/ML Use Case(s)",
+      "description": "Where is the AI/ML applied across the financial-crime control stack?",
+      "required": true,
+      "options": [
+        { "value": "tm_alerting", "label": "Transaction Monitoring — alert generation / scenario scoring" },
+        { "value": "alert_triage", "label": "Alert triage / hibernation / auto-closure" },
+        { "value": "screening", "label": "Sanctions / PEP / adverse-media name screening (fuzzy matching)" },
+        { "value": "fraud", "label": "Fraud / APP-scam / account-takeover detection" },
+        { "value": "kyc_onboarding", "label": "KYC / identity verification / document & biometric checks" },
+        { "value": "customer_risk", "label": "Customer / entity risk-rating models" },
+        { "value": "network_analytics", "label": "Network / graph analytics, perpetual KYC, segmentation" },
+        { "value": "genai_assist", "label": "GenAI assistance (SAR drafting, investigation summarisation)" }
+      ]
+    },
+    {
+      "id": "model_provenance",
+      "type": "select",
+      "label": "Model Provenance",
+      "description": "Who built and trains the model? Determines the provider vs deployer split under EU AI Act Art. 16/26.",
+      "required": true,
+      "options": [
+        { "value": "in_house", "label": "Built in-house (we are provider + deployer)" },
+        { "value": "vendor_blackbox", "label": "Third-party vendor, no model access (we are deployer)" },
+        { "value": "vendor_configurable", "label": "Vendor model, tuned/retrained on our data (shared provider duties)" },
+        { "value": "foundation_genai", "label": "Foundation / GPAI model via API (e.g. for GenAI assist)" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which regimes apply to the deployment?",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU (AMLR / DORA / AI Act)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway (EEA)" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "uk", "label": "UK" }
+      ]
+    },
+    {
+      "id": "assessment_focus",
+      "type": "multi-select",
+      "label": "Assessment Focus",
+      "description": "Which AI-governance control domains should the analysis prioritise?",
+      "options": [
+        { "value": "risk_mgmt_system", "label": "AI risk-management system (AI Act Art. 9)" },
+        { "value": "data_governance", "label": "Data & data governance / bias sources (AI Act Art. 10)" },
+        { "value": "documentation", "label": "Technical documentation & model documentation (AI Act Art. 11 + Annex IV)" },
+        { "value": "logging_records", "label": "Record-keeping / logging & auditability (AI Act Art. 12)" },
+        { "value": "transparency_explainability", "label": "Transparency & explainability of alert/SAR decisions (Art. 13)" },
+        { "value": "human_oversight", "label": "Human oversight design (Art. 14)" },
+        { "value": "accuracy_robustness", "label": "Accuracy, robustness & cybersecurity (Art. 15)" },
+        { "value": "bias_fairness", "label": "Bias & fairness testing / disparate-impact" },
+        { "value": "vendor_assurance", "label": "Vendor / third-party AI assurance (DORA + AI Act Art. 25/26)" },
+        { "value": "ict_governance", "label": "ICT governance & resilience (DORA Art. 5–6)" },
+        { "value": "sandbox", "label": "Regulatory AI-sandbox engagement readiness (AI Act Art. 57–61)" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe the model lifecycle status, any audit/validation findings, oversight gaps, or supervisory feedback on the AI system.",
+      "placeholder": "e.g. ML alert-scoring model retrained quarterly but no documented bias test; investigators trust the score and rarely override (automation-bias risk); vendor will not disclose features; no AI inventory mapping use cases to AI Act risk tiers; SAR rationale cannot reference which model signals drove the alert."
+    }
+  ],
+  "exampleInput": "We are a Swedish bank (~2,400 staff, full AMLR scope, directly DORA-regulated) that replaced our legacy rules-only transaction-monitoring engine with a supervised-ML alert-scoring model from a RegTech vendor. The model ranks alerts 0-100 and our level-1 team auto-closes everything below 30; roughly 65% of alerts are now suppressed before a human sees them. The model is retrained quarterly on our investigators' disposition labels. Compliance is worried we cannot explain to Finansinspektionen why a given customer's alert was suppressed, the vendor will not share the feature list ('proprietary'), and we have never run a bias or disparate-impact test across customer segments. We also use a GenAI assistant (foundation model via API) to draft SAR narratives. Assess our AI governance against EU AI Act Title III high-risk requirements, AMLR risk-based-approach and record-keeping obligations, and DORA ICT third-party governance — and tell us what we must fix before the AI Act high-risk obligations bite in August 2026 and before our next FI inspection. We have no AI system inventory and no documented human-oversight model for the auto-closure threshold.",
+  "exampleValues": {
+    "entity_type": "bank",
+    "ai_use_case": ["tm_alerting", "alert_triage", "genai_assist"],
+    "model_provenance": "vendor_configurable",
+    "jurisdiction": ["eu", "sweden"],
+    "assessment_focus": [
+      "risk_mgmt_system",
+      "transparency_explainability",
+      "human_oversight",
+      "bias_fairness",
+      "vendor_assurance",
+      "logging_records"
+    ],
+    "known_concerns": "ML alert-scoring model auto-closes ~65% of alerts below score 30 with no human review; no documented human-oversight model for the threshold (automation-bias risk). Vendor will not disclose features ('proprietary'), blocking explainability and model documentation. No bias / disparate-impact test ever run. GenAI SAR-drafting assistant on a foundation model with no logging of prompts/outputs. No AI system inventory mapping use cases to AI Act risk tiers."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "tech-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "ai-governance",
+    "ai-act",
+    "model-risk",
+    "transaction-monitoring",
+    "dora",
+    "amlr",
+    "explainability",
+    "human-oversight"
+  ],
+  "contentType": "gap_analysis"
+}

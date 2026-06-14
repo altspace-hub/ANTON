@@ -1,0 +1,204 @@
+{
+  "formatVersion": "1.0",
+  "id": "model-risk-audit-framework",
+  "label": "Model Risk Audit Framework",
+  "shortLabel": "Model Audit",
+  "icon": "ClipboardCheck",
+  "color": "adv-gold",
+  "areaId": "audit",
+  "perspective": "auditor",
+  "description": "Third-line internal-audit framework for auditing financial-crime and credit models — transaction monitoring, sanctions screening, credit scoring, synthetic-identity detection. Builds the model audit universe, risk-based scope, and test procedures across data lineage, tuning governance, validation independence, bias, explainability and DORA/EU AI Act evidence.",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "audit-report",
+      "gap-scoring-matrix",
+      "board-pack"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU AI Act, DORA RTS/ITS, BCBS 239, SR 11-7 / ECB TRIM model governance, EBA validation guidance, IIA / ISACA model-audit practice"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "model_types",
+      "type": "multi-select",
+      "label": "Models in the audit scope",
+      "description": "Which financial-crime and credit models should this audit cover? Drives the test procedures and applicable regulatory lenses.",
+      "required": true,
+      "options": [
+        {
+          "value": "transaction_monitoring",
+          "label": "AML Transaction Monitoring (rules + ML scenarios)"
+        },
+        {
+          "value": "sanctions_screening",
+          "label": "Sanctions / Watchlist Screening (name + payment matching)"
+        },
+        {
+          "value": "credit_scoring",
+          "label": "Credit Scoring / Underwriting (PD / origination)"
+        },
+        {
+          "value": "credit_irb",
+          "label": "Credit IRB / IFRS 9 (PD-LGD-EAD, ECL)"
+        },
+        {
+          "value": "synthetic_identity",
+          "label": "Synthetic-Identity / Application-Fraud Detection"
+        },
+        {
+          "value": "kyc_risk_rating",
+          "label": "Customer Risk-Rating / KYC Scoring"
+        },
+        {
+          "value": "fraud_realtime",
+          "label": "Real-time Payment-Fraud Scoring"
+        },
+        {
+          "value": "genai_assist",
+          "label": "GenAI / LLM-assisted Investigations or Adjudication"
+        }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution type",
+      "description": "What type of regulated entity owns these models?",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment or E-Money Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Company"
+        },
+        {
+          "value": "casp",
+          "label": "Crypto-Asset Service Provider (CASP / MiCA)"
+        },
+        {
+          "value": "other",
+          "label": "Other Obliged / Regulated Entity"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which regulatory regimes apply? Determines the DORA / EU AI Act / national-supervisor overlay.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU (DORA / AI Act / AMLR)" },
+        { "value": "sweden", "label": "Sweden (FI)" },
+        { "value": "finland", "label": "Finland (FIN-FSA)" },
+        { "value": "denmark", "label": "Denmark (DFSA)" },
+        { "value": "norway", "label": "Norway (Finanstilsynet)" },
+        { "value": "germany", "label": "Germany (BaFin)" },
+        { "value": "uk", "label": "UK (PRA SS1/23 / FCA)" }
+      ]
+    },
+    {
+      "id": "audit_objective",
+      "type": "select",
+      "label": "Primary audit objective",
+      "description": "What is the deliverable for — a fresh universe and plan, a full thematic engagement, or assurance for a specific committee?",
+      "required": true,
+      "options": [
+        {
+          "value": "universe_plan",
+          "label": "Build the model audit universe + risk-based plan"
+        },
+        {
+          "value": "thematic_engagement",
+          "label": "Scope a single thematic model-risk audit (test programme + evidence)"
+        },
+        {
+          "value": "ai_act_dora_readiness",
+          "label": "EU AI Act + DORA assurance readiness review"
+        },
+        {
+          "value": "validation_assurance",
+          "label": "Assurance over the second-line validation function"
+        },
+        {
+          "value": "board_opinion",
+          "label": "Board / Audit Committee opinion on model risk"
+        }
+      ]
+    },
+    {
+      "id": "test_dimensions",
+      "type": "multi-select",
+      "label": "Test dimensions to emphasise",
+      "description": "Which parts of the model lifecycle should the test procedures dig into?",
+      "options": [
+        { "value": "data_lineage", "label": "Data lineage & input quality (BCBS 239)" },
+        { "value": "tuning_thresholds", "label": "Tuning / threshold governance & ATL-BTL testing" },
+        { "value": "validation_independence", "label": "Independent validation & effective challenge" },
+        { "value": "performance_monitoring", "label": "Ongoing performance monitoring & drift" },
+        { "value": "bias_fairness", "label": "Bias / fairness testing (esp. credit & AI Act)" },
+        { "value": "explainability", "label": "Explainability & documentation evidence" },
+        { "value": "human_in_loop", "label": "Human-in-the-loop & override controls" },
+        { "value": "change_management", "label": "Model change & version management" },
+        { "value": "resilience_tlpt", "label": "ICT resilience & DORA TLPT intersection" },
+        { "value": "vendor_models", "label": "Third-party / vendor & GenAI model oversight" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues, prior findings or supervisory focus",
+      "description": "Describe any prior audit findings, validation backlog, supervisory letters, near-misses, or model-performance concerns.",
+      "placeholder": "e.g. TM thresholds last tuned 2022 with no below-the-line testing; validation function reports to the model owner, not independently; no inventory entry for the new GenAI alert-summarisation tool; FI flagged sanctions fuzzy-match calibration in last SREP; credit scorecard PSI breaching amber for 3 quarters with no action."
+    }
+  ],
+  "exampleInput": "We are a Nordic mid-tier bank (group ~3,500 FTE) with a Swedish parent and branches in Finland and Norway. Internal Audit needs a board-grade model-risk audit framework and a first-year plan. The model estate includes a vendor transaction-monitoring platform (rules plus a newer ML anomaly layer), a sanctions screening engine, an IRB credit PD model, a behavioural application-fraud / synthetic-identity model, and a recently piloted GenAI tool that drafts SAR narratives and summarises alerts for investigators. We have a second-line validation team but they sit within the CRO's model-development reporting line, and the GenAI tool was deployed by the financial-crime ops team outside the model inventory. We need to (1) build the model audit universe and a risk-based 12-month plan, and (2) define the test procedures for a first deep-dive on transaction monitoring — covering data lineage, threshold tuning governance, validation independence, performance monitoring and the human-in-the-loop alert workflow — and show how this intersects DORA TLPT and EU AI Act obligations. Audit Committee wants an opinion on whether model risk is adequately controlled.",
+  "exampleValues": {
+    "model_types": ["transaction_monitoring", "sanctions_screening", "credit_irb", "synthetic_identity", "genai_assist"],
+    "entity_type": "bank",
+    "jurisdiction": ["eu", "sweden", "finland", "norway"],
+    "audit_objective": "universe_plan",
+    "test_dimensions": ["data_lineage", "tuning_thresholds", "validation_independence", "performance_monitoring", "human_in_loop", "resilience_tlpt"],
+    "known_concerns": "Validation team reports into the CRO's model-development line — independence questionable. GenAI SAR-drafting tool deployed by FC ops outside the model inventory, no risk classification under the AI Act. TM ML anomaly layer is a vendor black box with no local explainability evidence. Sanctions fuzzy-match thresholds never below-the-line tested. IRB PD scorecard PSI amber for 3 quarters with no documented action."
+  },
+  "recommendedPersonas": [
+    "tech-expert",
+    "fcp-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "audit",
+    "model-risk",
+    "third-line",
+    "transaction-monitoring",
+    "ai-act",
+    "dora",
+    "bcbs-239",
+    "credit-models"
+  ],
+  "contentType": "analytic_report"
+}

@@ -104,6 +104,14 @@ Organise the gap analysis across AMLR's thematic structure. Cover all applicable
 - Data readiness for AMLA direct data requests
 - AMLA RTS/ITS implementation timeline tracking
 
+### 10. CASP / Crypto-Asset Branch (only when the entity is a Crypto-Asset Service Provider)
+When `entity_type` is `crypto` (a CASP), the AMLR analysis above still applies in full, but extend it with the crypto-specific obligations and treat the CASP's regulatory perimeter as the **intersection of AMLR + MiCA + TFR (and DORA for ICT)**:
+- **Travel Rule (Transfer of Funds Regulation (EU) 2023/1113):** originator/beneficiary information on crypto transfers, treatment of transfers to/from self-hosted (unhosted) wallets, and the de-minimis/no-threshold rules for CASP-to-CASP transfers.
+- **Crypto transaction monitoring:** on-chain analytics coverage, sanctioned-address and mixer/tumbler exposure, cross-chain and bridge typologies, stablecoin on/off-ramp risk.
+- **CASP CDD specifics:** wallet attribution, source-of-funds for crypto, and risk-scoring of counterparties identified only by wallet address.
+- **MiCA interface (Regulation (EU) 2023/1114):** market-abuse, custody/safeguarding, and white-paper obligations that sit alongside the AML/CFT programme (flag, do not assess in depth here — hand off below).
+- **Hand-off / bridge:** for the deep crypto-regulatory legs, explicitly direct the user to the dedicated ANTON crypto modules — `mica-gap-analysis`, `casp-authorization`, `crypto-aml-cft`, `stablecoin-compliance`, and `defi-regulatory` — and to `casp-mica-dora-amlr-programme` for the integrated MiCA + DORA + AMLR operating-model view. State clearly which findings belong to the AML/CFT (this module) leg versus the prudential/market-conduct legs handled by those modules.
+
 ---
 
 ## REMEDIATION EFFORT SCALE

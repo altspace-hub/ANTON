@@ -17,7 +17,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": false,
+        "webSearchEnabled": true,
         "description": ""
       },
       "localFolder": {

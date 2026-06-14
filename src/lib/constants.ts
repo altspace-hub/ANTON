@@ -22,6 +22,7 @@ import {
   SURFACED_INSURANCE_MODULES,
   SURFACED_ACCOUNTING_MODULES,
 } from './area-patches/surfaced-modules-patch';
+import { TIER_A_MODULES } from './area-patches/tier-a-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -136,7 +137,7 @@ export const MODULES: ModuleDefinition[] = [
       creativity: 'balanced',
       outputFormats: ['maturity-assessment', 'detailed-findings'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
       },
     },
   },
@@ -306,7 +307,7 @@ export const MODULES: ModuleDefinition[] = [
       creativity: 'strict',
       outputFormats: ['detailed-findings', 'policy-document'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -342,7 +343,7 @@ export const MODULES: ModuleDefinition[] = [
       creativity: 'balanced',
       outputFormats: ['action-plan', 'maturity-assessment'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -2660,6 +2661,8 @@ export const AREAS = [
       'cash-intensive-business-risk', 'correspondent-banking-dd', 'de-risking-impact-assessment',
       'hawala-ivts-risk-assessment', 'informal-remittance-corridor-analysis', 'ivts-detection-investigation',
       'remittance-compliance-framework', 'tbml-assessment', 'trade-finance-due-diligence',
+      // AI governance (2026-06-14 audit plan, Tier A):
+      'ai-governance-in-financial-crime',
     ],
   },
   {
@@ -2690,6 +2693,8 @@ export const AREAS = [
       'workpaper-reviewer', 'finding-followup-tracker', 'evidence-request-generator',
       'audit-committee-pack', 'issue-rating-calibrator', 'three-lines-assessment',
       'continuous-audit-design',
+      // Model-risk audit (2026-06-14 audit plan, Tier A):
+      'model-risk-audit-framework',
     ],
   },
   {
@@ -2729,6 +2734,8 @@ export const AREAS = [
     moduleIds: [
       'enterprise-risk', 'risk-appetite', 'operational-risk',
       'scenario-analysis', 'third-party-risk',
+      // AI/model risk (2026-06-14 audit plan, Tier A):
+      'ai-model-risk-assessment',
     ],
   },
   // ── Wave 2 Areas ─────────────────────────────────────────
@@ -2744,6 +2751,8 @@ export const AREAS = [
       // Surfaced server modules (June 2026, plan 1.5):
       'cloud-security-review', 'incident-response-plan', 'nis2-compliance',
       'pen-test-scope', 'security-awareness-training', 'third-party-security',
+      // Cross-framework orchestrator (2026-06-14 audit plan, Tier A):
+      'dora-amla-nis2-integration',
     ],
   },
   {
@@ -3354,6 +3363,8 @@ export const AREAS = [
       'mica-gap-analysis', 'casp-authorization', 'stablecoin-compliance',
       'crypto-aml-cft', 'blockchain-investigation', 'crypto-risk-assessment',
       'defi-regulatory',
+      // Integrated CASP operating model (2026-06-14 audit plan, Tier A):
+      'casp-mica-dora-amlr-programme',
     ],
   },
 
@@ -3790,6 +3801,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...SURFACED_CONSULTING_MODULES,
     ...SURFACED_INSURANCE_MODULES,
     ...SURFACED_ACCOUNTING_MODULES,
+    ...TIER_A_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {
