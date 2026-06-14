@@ -164,3 +164,38 @@ describe('ProposalStore', () => {
     expect(store.get(p.id)?.state).toBe('pending');
   });
 });
+
+// ── Spend caps (standalone gateway safety) ───────────────────────────────────
+describe('ProposalStore spend caps', () => {
+  let clock: FakeClock;
+  beforeEach(() => { clock = new FakeClock(); clock.set(1_000_000); });
+
+  it('no limits → unchanged (a big payment is allowed)', () => {
+    const store = new ProposalStore(clock.now);
+    expect(() => store.propose('a', { to: TO, amountFtc: 1_000_000 })).not.toThrow();
+  });
+
+  it('per-payment cap rejects an over-cap ask BEFORE any modal', () => {
+    const store = new ProposalStore(clock.now, { maxPerPaymentFtc: 100 });
+    expect(() => store.propose('a', { to: TO, amountFtc: 100 })).not.toThrow(); // at the cap is ok
+    expect(() => store.propose('a', { to: TO, amountFtc: 100.01 }))
+      .toThrow(/per-payment cap/);
+  });
+
+  it('24h cap counts only SENT value and resets after the window', () => {
+    const store = new ProposalStore(clock.now, { maxDailyFtc: 50 });
+    // Send 30 FTC.
+    const p1 = store.propose('a', { to: TO, amountFtc: 30 });
+    store.approve(p1.id); store.markSent(p1.id, 'tx1');
+    // 25 more would breach 50 (30 already sent) → rejected.
+    expect(() => store.propose('a', { to: TO, amountFtc: 25 })).toThrow(/24h cap/);
+    // A merely-PROPOSED (not sent) 20 is fine (30 sent + 20 = 50, at the cap) and,
+    // crucially, leaving it pending does NOT consume cap — only `sent` counts.
+    store.propose('a', { to: TO, amountFtc: 20 }); // pending, never sent
+    // So another 20 is still fine: the pending one above didn't move the needle.
+    expect(() => store.propose('a', { to: TO, amountFtc: 20 })).not.toThrow();
+    // Advance past 24h → the earlier send no longer counts → big payment ok.
+    clock.advance(24 * 60 * 60 * 1000 + 1);
+    expect(() => store.propose('a', { to: TO, amountFtc: 50 })).not.toThrow();
+  });
+});

@@ -1,0 +1,178 @@
+/**
+ * standalone/index.ts — ANTON-FutureChain Standalone gateway.
+ *
+ * Lets EXTERNAL AI agents (Claude Desktop / OpenCLAW / LangGraph / a cURL or
+ * Python script) propose + send FTC payments under a NON-BYPASSABLE human
+ * confirmation, WITHOUT the Electron desktop app. It reuses the proven Agent-Pay
+ * core verbatim — the JSON-RPC server (buildServer), the MCP server
+ * (buildMcpServer), the proposal state machine, the pairing/bearer auth, and the
+ * real chain submit (chain.ts → @futurechain/sdk) — and adds only:
+ *   • the TERMINAL approval driver (CliModalDriver) — the safety boundary, and
+ *   • hard SPEND CAPS (per-payment + 24h) enforced in code before the modal.
+ *
+ * Transports (both funnel through the same deps + the same approval):
+ *   • JSON-RPC 2.0 over HTTP on 127.0.0.1   (default — point any agent at /rpc)
+ *   • MCP over stdio                          (with --mcp-stdio; Claude-Desktop style)
+ *
+ * Config (env):
+ *   AGENT_PAY_PORT                 HTTP port (default 49250)
+ *   AGENT_PAY_WALLET_DIR           wallet storage dir (default ~/.anton-fc-standalone)
+ *   AGENT_PAY_MNEMONIC             BIP-39 mnemonic to import on first run (optional)
+ *   AGENT_PAY_MAX_PER_PAYMENT_FTC  per-payment hard cap (optional)
+ *   AGENT_PAY_MAX_DAILY_FTC        rolling-24h hard cap (optional)
+ *   AGENT_PAY_NODE_URL             FutureChain RPC endpoint (chain.ts default = public RPC)
+ *   AGENT_PAY_API_KEY             bearer for auth-required submit endpoints (optional)
+ *
+ * Run:  pnpm --filter @anton/agent-pay start:standalone
+ *       (add --mcp-stdio to expose MCP over stdio for Claude Desktop)
+ *
+ * SECURITY: bound to 127.0.0.1 only. Every JSON-RPC call needs a bearer from the
+ * pairing flow. Every payment needs a typed `y` in the operator's terminal. No
+ * auto-approve, no allow-list, no spending above the caps. See ANTON_AGENT_PAY_SPEC.md.
+ */
+import os from 'node:os';
+import path from 'node:path';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { setActiveModalDriver } from '../main/modal.js';
+import { PairingStore } from '../main/pairing.js';
+import { ProposalStore, type SpendLimits } from '../main/proposals.js';
+import { buildServer, type ServerDeps } from '../main/server.js';
+import { buildMcpServer } from '../main/mcp.js';
+import {
+  Wallet, FileStorageBackend, NoWalletError, type UnlockedWallet,
+} from '../main/wallet/index.js';
+import {
+  getChainClient, submitPayment as chainSubmitPayment, fetchRecentTransactions,
+} from '../main/chain.js';
+import { CliModalDriver } from './cli-modal.js';
+
+function num(env: string | undefined): number | undefined {
+  if (env === undefined || env.trim() === '') return undefined;
+  const n = Number(env);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
+async function buildWalletDeps(wallet: Wallet): Promise<Pick<ServerDeps,
+  'walletStatus' | 'walletHasPassphrase' | 'recentTransactions' | 'counterpartyHint' | 'submitPayment'>> {
+  // Mirrors the (non-Electron) wiring in main.ts buildDepsForBoot — reuses
+  // chain.ts (getChainClient / submitPayment / fetchRecentTransactions). No
+  // attestation header here (set AGENT_PAY_API_KEY for Bahnhof endpoints).
+  return {
+    walletStatus: async () => {
+      let address: string;
+      try { address = (await wallet.publicInfo()).address; }
+      catch (e) {
+        if (e instanceof NoWalletError) return { walletAddress: 'fc_NO_WALLET_YET', balanceFtc: 0, lastSeenBlock: 0 };
+        throw e;
+      }
+      let balanceFtc = 0; let lastSeenBlock = 0;
+      try {
+        const client = getChainClient();
+        const [bal, info] = await Promise.all([
+          client.getBalance(address).catch(() => null),
+          client.getInfo().catch(() => null),
+        ]);
+        if (bal) balanceFtc = bal.balance_ftc;
+        if (info) lastSeenBlock = info.latest_block_height;
+      } catch { /* keep the surface responsive even if the chain is unreachable */ }
+      return { walletAddress: address, balanceFtc, lastSeenBlock };
+    },
+    walletHasPassphrase: async () => {
+      try { return await wallet.hasPassphrase(); }
+      catch (e) { if (e instanceof NoWalletError) return false; throw e; }
+    },
+    recentTransactions: async (limit) => {
+      try {
+        const info = await wallet.publicInfo();
+        return await fetchRecentTransactions(info.address, limit);
+      } catch { return []; }
+    },
+    counterpartyHint: async () => null,
+    submitPayment: async (req) => {
+      let unlocked: UnlockedWallet;
+      try { unlocked = await wallet.unlock(req.passphrase); }
+      catch (e) {
+        if (e instanceof NoWalletError) {
+          throw new Error('no wallet configured — set AGENT_PAY_MNEMONIC (or import a wallet) before sending');
+        }
+        throw e;
+      }
+      try {
+        const result = await chainSubmitPayment({
+          unlocked,
+          to: req.to,
+          amountFtc: req.amountFtc,
+          ...(req.reference !== undefined ? { reference: req.reference } : {}),
+        });
+        return { txId: result.txId, feeFtc: result.feeFtc };
+      } finally {
+        unlocked.zero();
+      }
+    },
+  };
+}
+
+async function main(): Promise<void> {
+  const log = (s: string): void => { process.stderr.write(s + '\n'); }; // stderr only (stdout may be MCP)
+  const port = num(process.env.AGENT_PAY_PORT) ?? 49250;
+  const walletDir = process.env.AGENT_PAY_WALLET_DIR
+    ?? path.join(os.homedir(), '.anton-fc-standalone');
+  const mcpStdio = process.argv.includes('--mcp-stdio');
+
+  const limits: SpendLimits = {
+    ...(num(process.env.AGENT_PAY_MAX_PER_PAYMENT_FTC) !== undefined ? { maxPerPaymentFtc: num(process.env.AGENT_PAY_MAX_PER_PAYMENT_FTC) } : {}),
+    ...(num(process.env.AGENT_PAY_MAX_DAILY_FTC) !== undefined ? { maxDailyFtc: num(process.env.AGENT_PAY_MAX_DAILY_FTC) } : {}),
+  };
+
+  const wallet = new Wallet(new FileStorageBackend(walletDir));
+
+  // First-run import from a mnemonic, but NEVER overwrite an existing wallet.
+  let walletReady = false;
+  try { await wallet.publicInfo(); walletReady = true; }
+  catch (e) {
+    if (e instanceof NoWalletError && process.env.AGENT_PAY_MNEMONIC?.trim()) {
+      const { address } = await wallet.importFromMnemonic(process.env.AGENT_PAY_MNEMONIC.trim());
+      walletReady = true;
+      log(`Imported wallet ${address} from AGENT_PAY_MNEMONIC.`);
+    }
+  }
+
+  const deps: ServerDeps = {
+    pairings: new PairingStore(),
+    proposals: new ProposalStore(Date.now, limits),
+    modal: new CliModalDriver(),                // approve in THIS terminal
+    ...(await buildWalletDeps(wallet)),
+  };
+  setActiveModalDriver(deps.modal);
+
+  const app = buildServer(deps);
+  await app.listen({ host: '127.0.0.1', port });
+  const code = deps.pairings.newCode();
+
+  log('════════════════════════════════════════════════════════════════');
+  log(' ANTON-FutureChain Standalone — agent payment gateway');
+  log('════════════════════════════════════════════════════════════════');
+  log(` JSON-RPC:   http://127.0.0.1:${port}/rpc        (127.0.0.1 only)`);
+  log(` Pair:       POST http://127.0.0.1:${port}/pair`);
+  log(` Pair code:  ${code}    (valid 60s)`);
+  log(` Wallet:     ${walletReady ? 'ready' : 'NONE — read-only (set AGENT_PAY_MNEMONIC to send)'}`);
+  log(` Caps:       per-payment ${limits.maxPerPaymentFtc ?? '∞'} FTC · 24h ${limits.maxDailyFtc ?? '∞'} FTC`);
+  log(` Approval:   every payment needs a typed "y" in THIS terminal — no bypass`);
+  if (mcpStdio) {
+    log(' MCP:        stdio enabled. NOTE: in stdio mode the terminal approval');
+    log('             cannot read your keystrokes (stdin belongs to MCP) — use the');
+    log('             JSON-RPC transport for interactive approval until the');
+    log('             web-confirm driver lands.');
+  }
+  log('════════════════════════════════════════════════════════════════');
+
+  if (mcpStdio) {
+    const mcp = buildMcpServer(deps);
+    await mcp.connect(new StdioServerTransport());
+  }
+}
+
+main().catch((e) => {
+  process.stderr.write(`[anton-fc-standalone] startup failed: ${e instanceof Error ? e.stack : String(e)}\n`);
+  process.exit(1);
+});

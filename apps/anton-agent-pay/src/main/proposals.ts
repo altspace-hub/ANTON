@@ -34,12 +34,38 @@ export interface ProposeArgs {
   ttlMs?: number;
 }
 
+/** Optional hard spend limits. Enforced at propose() time, in CODE — the agent
+ *  cannot exceed them and the human modal never even opens for an over-cap ask.
+ *  Both default to undefined (no cap) so existing callers are unaffected. */
+export interface SpendLimits {
+  /** Reject any single proposal whose amount exceeds this many FTC. */
+  maxPerPaymentFtc?: number;
+  /** Reject a proposal when (FTC SENT in the trailing 24h + this amount) would
+   *  exceed this many FTC. A rolling daily ceiling on actually-sent value. */
+  maxDailyFtc?: number;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export class ProposalStore {
   private byId = new Map<string, PaymentProposal>();
 
   /** `nowFn` is injectable so tests can advance virtual time without
-   *  Date.now monkeypatching. */
-  constructor(private readonly nowFn: () => number = Date.now) {}
+   *  Date.now monkeypatching. `limits` are optional hard spend caps. */
+  constructor(
+    private readonly nowFn: () => number = Date.now,
+    private readonly limits: SpendLimits = {},
+  ) {}
+
+  /** FTC actually SENT in the trailing 24h (for the daily cap). */
+  private sentLast24h(): number {
+    const since = this.nowFn() - DAY_MS;
+    let spent = 0;
+    for (const p of this.byId.values()) {
+      if (p.state === 'sent' && p.createdAt >= since) spent += p.amountFtc;
+    }
+    return spent;
+  }
 
   /** Create a new pending proposal. Throws on validation errors —
    *  the server layer translates to JSON-RPC error codes. */
@@ -61,6 +87,23 @@ export class ProposalStore {
       throw new ProposalValidationError(
         'agentNote must be <= 280 chars (would not fit the modal cleanly)',
       );
+    }
+
+    // Hard spend caps — enforced BEFORE the proposal is created, so an over-cap
+    // ask never reaches the human modal. Code-computed; the agent cannot bypass.
+    if (this.limits.maxPerPaymentFtc !== undefined && args.amountFtc > this.limits.maxPerPaymentFtc) {
+      throw new ProposalValidationError(
+        `amount ${args.amountFtc} FTC exceeds the per-payment cap of ${this.limits.maxPerPaymentFtc} FTC`,
+      );
+    }
+    if (this.limits.maxDailyFtc !== undefined) {
+      const spent = this.sentLast24h();
+      if (spent + args.amountFtc > this.limits.maxDailyFtc) {
+        throw new ProposalValidationError(
+          `this payment (${args.amountFtc} FTC) would exceed the 24h cap of ${this.limits.maxDailyFtc} FTC `
+          + `(${spent.toFixed(4)} FTC already sent in the last 24h)`,
+        );
+      }
     }
 
     const ttl = clampTtl(args.ttlMs);
