@@ -128,11 +128,14 @@ export function createCodingWorkshopRoutes(
   // ── POST /coding/workshop/sessions/:id/respond ──────────────────────────
   router.post('/coding/workshop/sessions/:id/respond', async (req, res) => {
     try {
-      const body = z.object({ message: z.string().min(1).max(20_000) }).safeParse(req.body ?? {});
+      const body = z.object({
+        message: z.string().min(1).max(20_000),
+        attachmentIds: z.array(z.string().max(300)).max(10).optional(),
+      }).safeParse(req.body ?? {});
       if (!body.success) { res.status(400).json({ error: 'message is required' }); return; }
       const session = await loadOwned(req as AuthedRequest, req.params.id, res);
       if (!session) return;
-      const result = await engine.processUserResponse(req.params.id, body.data.message.trim());
+      const result = await engine.processUserResponse(req.params.id, body.data.message.trim(), body.data.attachmentIds ?? []);
       res.json(result);
     } catch (err) {
       res.status(502).json({ error: safeError(err) });

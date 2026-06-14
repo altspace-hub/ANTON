@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Sparkles, Send, Loader2, CheckCircle2, Circle, ArrowLeft, ArrowRight,
   Target, ListChecks, Globe, ShieldCheck, BookOpen, Code2, Users, AlertTriangle, FileCheck2,
+  Paperclip, X,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodingBreadcrumb from '@/components/coding/CodingBreadcrumb';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { fetchWithAuth } from '@/lib/api';
 import type { StudioMode } from './CodingLandingPage';
 
@@ -76,6 +78,8 @@ export default function CodingStudioWorkshopPage() {
   const [finalizing, setFinalizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { files, upload, remove } = useFileUpload();
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -123,20 +127,26 @@ export default function CodingStudioWorkshopPage() {
   async function send() {
     const text = input.trim();
     if (!text || loading || !sessionId) return;
+    const attachmentIds = files.filter((f) => f.status === 'done').map((f) => f.id);
+    const attachedNames = files.filter((f) => f.status === 'done').map((f) => f.name);
     setInput('');
     setError(null);
-    setMessages((m) => [...m, { role: 'user', content: text }]);
+    setMessages((m) => [...m, {
+      role: 'user',
+      content: attachedNames.length ? `${text}\n\n📎 ${attachedNames.join(', ')}` : text,
+    }]);
     setLoading(true);
     try {
       const res = await fetchWithAuth(`/api/coding/workshop/sessions/${sessionId}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, attachmentIds }),
       });
       const json = (await res.json()) as { response?: string; state?: WorkshopState; error?: string };
       if (!res.ok || !json.state) throw new Error(json.error ?? 'The facilitator could not respond.');
       setState(json.state);
       setMessages((m) => [...m, { role: 'assistant', content: json.response ?? '' }]);
+      files.forEach((f) => remove(f.id)); // consumed this turn
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The facilitator could not respond.');
     } finally {
@@ -168,7 +178,7 @@ export default function CodingStudioWorkshopPage() {
   const currentIdx = state ? PHASES.findIndex((p) => p.id === state.phase) : 0;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4 p-6">
+    <div className="mx-auto max-w-[1600px] space-y-4 p-6">
       <CodingBreadcrumb items={[{ label: 'Studio' }, { label: 'Kickoff Workshop' }]} />
 
       <div className="rounded-2xl border-2 border-adv-teal bg-adv-card p-5 shadow-lg shadow-adv-teal/10">
@@ -186,7 +196,7 @@ export default function CodingStudioWorkshopPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr_280px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)_300px]">
         {/* ── Progress rail ─────────────────────────────────────────────── */}
         <aside className="rounded-2xl border border-border bg-adv-card p-4">
           <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-adv-gray">Phases</h2>
@@ -217,7 +227,7 @@ export default function CodingStudioWorkshopPage() {
         </aside>
 
         {/* ── Chat ──────────────────────────────────────────────────────── */}
-        <section className="flex min-h-[60vh] flex-col rounded-2xl border border-border bg-adv-card">
+        <section className="flex min-h-[68vh] flex-col rounded-2xl border border-border bg-adv-card">
           <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
             {booting && (
               <div className="flex items-center gap-2 text-sm text-adv-gray">
@@ -253,7 +263,45 @@ export default function CodingStudioWorkshopPage() {
           {error && <p className="px-4 pb-1 text-xs text-adv-red">{error}</p>}
 
           <div className="border-t border-border p-3">
+            {/* Attached-file chips */}
+            {files.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {files.map((f) => (
+                  <span
+                    key={f.id}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-adv-dark px-2 py-0.5 text-[11px] text-adv-off-white"
+                  >
+                    {f.status === 'uploading' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3 text-adv-teal" />}
+                    <span className="max-w-[160px] truncate">{f.name}</span>
+                    {f.status === 'error' && <span className="text-adv-red">failed</span>}
+                    <button onClick={() => remove(f.id)} className="text-adv-gray hover:text-adv-red" title="Remove">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".csv,.txt,.pdf,.docx,.doc,.xlsx,.xls,.md,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const list = e.target.files;
+                  if (list) Array.from(list).forEach((file) => void upload(file));
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={booting || loading}
+                title="Attach files (CSV samples, regulation PDFs, docs) for context"
+                className="inline-flex h-[42px] items-center justify-center rounded-lg border border-border bg-adv-dark px-3 text-adv-gray transition-colors hover:text-adv-teal disabled:opacity-50"
+              >
+                <Paperclip className="h-4 w-4" />
+              </button>
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -261,7 +309,7 @@ export default function CodingStudioWorkshopPage() {
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); }
                 }}
                 rows={2}
-                placeholder="Answer the facilitator…"
+                placeholder="Answer the facilitator… (or attach files for context)"
                 disabled={booting || loading}
                 className="flex-1 resize-none rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white disabled:opacity-50"
               />
@@ -327,8 +375,8 @@ export default function CodingStudioWorkshopPage() {
 
           <button
             onClick={() => void finalize()}
-            disabled={!state?.canFinalize || finalizing}
-            title={state?.canFinalize ? 'Seed a Studio project from this charter' : 'Capture the problem and scope first'}
+            disabled={(!state?.canFinalize && !(state?.problemStatement?.trim() && (state?.scope?.trim() || state?.mvp?.trim()))) || finalizing}
+            title={canFinalizeNow(state) ? 'Seed a Studio project from this charter' : 'Capture the problem and scope first'}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-semibold text-adv-dark transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {finalizing ? (
@@ -353,6 +401,14 @@ export default function CodingStudioWorkshopPage() {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Belt-and-suspenders: the charter is finalize-ready if the backend opened the
+ *  gate OR it already carries a problem + scope/mvp (so an imperfect model that
+ *  never emitted canFinalize can't trap the user). Mirrors the engine's derive. */
+function canFinalizeNow(state: WorkshopState | null): boolean {
+  if (!state) return false;
+  return state.canFinalize || (!!state.problemStatement?.trim() && (!!state.scope?.trim() || !!state.mvp?.trim()));
+}
 
 function buildMessages(
   state: WorkshopState,

@@ -160,6 +160,42 @@ describe('parseWorkshopUpdate (tolerant parse + phase advance)', () => {
     expect(s.canFinalize).toBe(true);
   });
 
+  it('TOLERANT: captures a BARE JSON object (no [STATE_UPDATE] marker) and strips it from the reply', () => {
+    // The exact bug: Mistral emits bare JSON, not the marker → fields were lost.
+    const reply = `Got it — here is the scope.\n\n{ "scope": "Fiat tx only", "currentPhaseProgress": 30 }`;
+    const { cleanResponse, updatedState } = parseWorkshopUpdate(reply, base());
+    expect(updatedState.scope).toBe('Fiat tx only');
+    expect(updatedState.currentPhaseProgress).toBe(30);
+    expect(cleanResponse).not.toMatch(/\{/);          // raw JSON stripped from the visible reply
+    expect(cleanResponse).toContain('Got it');
+  });
+
+  it('TOLERANT: captures a fenced ```json block', () => {
+    const reply = 'Locked.\n\n```json\n{"mvp":"nightly batch rules","canFinalize":true}\n```';
+    const { updatedState } = parseWorkshopUpdate(reply, base());
+    expect(updatedState.mvp).toBe('nightly batch rules');
+    expect(updatedState.canFinalize).toBe(true);
+  });
+
+  it('FALLBACK: advances the phase on currentPhaseProgress=100 even WITHOUT a [PHASE_COMPLETE] marker', () => {
+    const reply = `References are complete.\n\n{ "references": [{"kind":"url","value":"https://x"}], "currentPhaseProgress": 100 }`;
+    const s = base();
+    s.phase = 'references';
+    const { updatedState, phaseChanged } = parseWorkshopUpdate(reply, s);
+    expect(phaseChanged).toBe(true);
+    expect(updatedState.phase).toBe('tech_stack');          // advanced references -> tech_stack
+    expect(updatedState.completedPhases).toContain('references');
+    expect(updatedState.currentPhaseProgress).toBe(0);
+  });
+
+  it('MONOTONIC: a later canFinalize:false does NOT slam the gate shut', () => {
+    let s = base();
+    s = parseWorkshopUpdate('[STATE_UPDATE]:{"problemStatement":"p","scope":"s"}', s).updatedState;
+    expect(s.canFinalize).toBe(true);
+    s = parseWorkshopUpdate('[STATE_UPDATE]:{"canFinalize":false}', s).updatedState;
+    expect(s.canFinalize).toBe(true); // still finalize-ready (problem + scope persist)
+  });
+
   it('marks canFinalize after all 8 phases complete', () => {
     let s = base();
     for (const phase of WORKSHOP_PHASES) {
