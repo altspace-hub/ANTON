@@ -1,0 +1,157 @@
+{
+  "formatVersion": "1.0",
+  "id": "gig-economy-wage-advance-detection",
+  "label": "Gig & Wage-Advance Affordability Analyzer",
+  "shortLabel": "EWA & Gig Credit",
+  "icon": "Wallet",
+  "description": "Assess affordability and over-reliance risk for variable-income gig workers and earned-wage-access (EWA) / wage-advance products. Detects income volatility, advance cycling, and designs responsible-lending controls for thin-file applicants.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU Consumer Credit Directive (CCD2) (EU) 2023/2225; EBA Guidelines on loan origination and monitoring (EBA/GL/2020/06); EBA Guidelines on creditworthiness assessment under the Mortgage Credit Directive; FCA CONC (Consumer Credit sourcebook) and the FCA Consumer Duty (PRIN 2A); FCA guidance on Employer Salary Advance Schemes; PSD2 (EU) 2015/2366 account-information access; GDPR (EU) 2016/679 (Art. 22 automated decisions); EU AI Act (EU) 2024/1689 (creditworthiness as Annex III high-risk); gig-economy income-volatility and EWA cycling typologies"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_type",
+      "type": "select",
+      "label": "Product / Assessment Type",
+      "description": "What kind of variable-income credit or advance product is being assessed?",
+      "required": true,
+      "options": [
+        {
+          "value": "ewa_employer",
+          "label": "Employer-integrated earned-wage access (salary-deduction repayment)"
+        },
+        {
+          "value": "ewa_direct",
+          "label": "Direct-to-consumer wage advance (no employer link)"
+        },
+        {
+          "value": "gig_income_loan",
+          "label": "Gig-income instalment loan / line of credit"
+        },
+        {
+          "value": "bnpl_thin_file",
+          "label": "BNPL / short-term credit for thin-file applicant"
+        },
+        {
+          "value": "portfolio_review",
+          "label": "Portfolio-level over-reliance / cycling review"
+        },
+        {
+          "value": "product_design",
+          "label": "Responsible-lending product design (pre-launch)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Regulatory Jurisdiction(s)",
+      "description": "Which consumer-credit regimes apply to the product or lender?",
+      "required": true,
+      "options": [
+        { "value": "eu_ccd2", "label": "EU (CCD2 2023/2225)" },
+        { "value": "uk_fca", "label": "UK (FCA CONC / Consumer Duty)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "us_state", "label": "US (state EWA / lending law)" },
+        { "value": "other", "label": "Other / cross-border" }
+      ]
+    },
+    {
+      "id": "income_profile",
+      "type": "select",
+      "label": "Worker Income Profile",
+      "description": "What does the applicant's income look like? Drives the volatility methodology.",
+      "options": [
+        { "value": "single_platform", "label": "Single gig platform, regular payouts" },
+        { "value": "multi_platform", "label": "Multiple platforms, fragmented payouts" },
+        { "value": "seasonal", "label": "Seasonal / highly cyclical earnings" },
+        { "value": "mixed_paye_gig", "label": "Mixed: part PAYE salary + part gig" },
+        { "value": "informal_cash", "label": "Largely informal / cash, limited records" },
+        { "value": "unknown", "label": "Not yet characterised" }
+      ]
+    },
+    {
+      "id": "data_sources",
+      "type": "multi-select",
+      "label": "Available Data Sources",
+      "description": "Which evidence is available to assess affordability and detect cycling?",
+      "options": [
+        { "value": "bank_open_banking", "label": "Bank transactions via open banking (PSD2 AIS)" },
+        { "value": "platform_earnings", "label": "Gig-platform earnings feed / payout API" },
+        { "value": "payroll_employer", "label": "Employer payroll / accrued-wage data (EWA)" },
+        { "value": "bureau", "label": "Credit bureau / reference-agency file" },
+        { "value": "advance_history", "label": "Internal advance / repayment history" },
+        { "value": "self_declared", "label": "Self-declared income only" }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Analysis Focus",
+      "description": "Which questions should the analysis prioritise?",
+      "options": [
+        { "value": "affordability", "label": "Affordability / disposable-income assessment" },
+        { "value": "volatility", "label": "Income-volatility characterisation" },
+        { "value": "cycling", "label": "Over-reliance / advance-cycling detection" },
+        { "value": "product_risk", "label": "EWA product-design risk (fees, limits, framing)" },
+        { "value": "regulatory", "label": "Regulatory classification & creditworthiness duty" },
+        { "value": "vulnerability", "label": "Vulnerability & financial-hardship signals" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe the applicant, portfolio, or product, and any specific concerns — observed cycling, fee structure, prior arrears, data limitations, or supervisory questions.",
+      "placeholder": "e.g. Applicant has taken 9 advances in the last 30 days, each cleared on payout day; multi-platform delivery + ride-hail income; we charge a flat 5 EUR fee per advance regardless of size; no open-banking consent, only platform payout feed available..."
+    }
+  ],
+  "exampleInput": "We run a direct-to-consumer earned-wage-access app in the EU and UK and want a responsible-lending review of one applicant plus a view on our product design. The worker drives for two ride-hail platforms and delivers for a third; net earnings over the last 90 days were roughly 1,450 / 2,310 / 1,180 EUR per month (highly volatile, seasonal dip in month 3). They have requested 11 advances in the past 30 days, almost all repaid on the next payout day, and the outstanding advance balance now consistently sits above 60% of their average daily earnings. We charge a flat 4.99 EUR fee per advance plus an optional 'instant' 1.99 EUR. Open-banking consent was declined; we only have the platform payout feeds and our own advance history. Assess affordability, characterise income volatility, tell us whether this is over-reliance / cycling, classify the product under CCD2 and FCA Consumer Duty, and flag any product-design or vulnerability issues.",
+  "exampleValues": {
+    "product_type": "ewa_direct",
+    "jurisdiction": ["eu_ccd2", "uk_fca"],
+    "income_profile": "multi_platform",
+    "data_sources": ["platform_earnings", "advance_history"],
+    "focus_areas": ["affordability", "volatility", "cycling", "product_risk", "regulatory"],
+    "known_concerns": "11 advances in 30 days, almost all repaid on next payout; outstanding advance balance consistently above 60% of average daily earnings; flat 4.99 EUR fee + 1.99 EUR instant fee; open-banking consent declined, only platform payout feed + internal advance history available; seasonal earnings dip in the most recent month."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "finance-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "earned-wage-access",
+    "ewa",
+    "gig-economy",
+    "affordability",
+    "responsible-lending",
+    "income-volatility",
+    "thin-file",
+    "ccd2",
+    "consumer-duty",
+    "credit-navigator"
+  ],
+  "contentType": "analytic_report"
+}

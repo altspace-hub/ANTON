@@ -1,0 +1,218 @@
+{
+  "formatVersion": "1.0",
+  "id": "innovation-sandbox-application",
+  "label": "Innovation Sandbox & DLT Pilot Application",
+  "shortLabel": "Sandbox Application",
+  "icon": "FlaskConical",
+  "description": "Prepare a regulatory-sandbox, innovation-hub, or DLT Pilot Regime application under Regulation (EU) 2022/858. Covers eligibility, application content, test parameters and limits, investor-protection and safeguarding terms, exit strategy, and structured regulator engagement.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "action-plan",
+      "regulatory-comparison"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "DLT Pilot Regime Regulation (EU) 2022/858, ESMA DLT Pilot Regime guidance and exemption-request templates, MiCA (EU) 2023/1114, MiFID II / MiFIR, CSDR (EU) 909/2014, national NCA sandbox / innovation-hub guidance (BaFin, AMF, Finansinspektionen, FIN-FSA, CBI, MFSA), EFIF and EBA/ESMA/EIOPA innovation-facilitator reports"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "facility_type",
+      "type": "select",
+      "label": "Facility / Regime Sought",
+      "description": "Which innovation pathway are you applying to? This determines the legal basis, the NCA process, and what exemptions are even available.",
+      "required": true,
+      "options": [
+        {
+          "value": "dlt_mtf",
+          "label": "DLT Pilot — DLT Multilateral Trading Facility (DLT MTF), Art. 8"
+        },
+        {
+          "value": "dlt_ss",
+          "label": "DLT Pilot — DLT Settlement System (DLT SS), Art. 9"
+        },
+        {
+          "value": "dlt_tss",
+          "label": "DLT Pilot — DLT Trading & Settlement System (DLT TSS), Art. 10"
+        },
+        {
+          "value": "regulatory_sandbox",
+          "label": "National regulatory sandbox (live testing, restricted authorisation)"
+        },
+        {
+          "value": "innovation_hub",
+          "label": "Innovation hub (informal guidance / no-action-style engagement)"
+        },
+        {
+          "value": "undetermined",
+          "label": "Not yet determined — help me choose the right pathway"
+        }
+      ]
+    },
+    {
+      "id": "nca_jurisdiction",
+      "type": "select",
+      "label": "Competent Authority (NCA)",
+      "description": "Which member state's NCA will receive the application? The DLT Pilot Regime is operated by national NCAs with ESMA coordination.",
+      "required": true,
+      "options": [
+        {
+          "value": "de",
+          "label": "Germany — BaFin"
+        },
+        {
+          "value": "fr",
+          "label": "France — AMF / ACPR"
+        },
+        {
+          "value": "se",
+          "label": "Sweden — Finansinspektionen"
+        },
+        {
+          "value": "fi",
+          "label": "Finland — FIN-FSA"
+        },
+        {
+          "value": "ie",
+          "label": "Ireland — Central Bank of Ireland"
+        },
+        {
+          "value": "lu",
+          "label": "Luxembourg — CSSF"
+        },
+        {
+          "value": "mt",
+          "label": "Malta — MFSA"
+        },
+        {
+          "value": "nl",
+          "label": "Netherlands — AFM / DNB"
+        },
+        {
+          "value": "lt",
+          "label": "Lithuania — Bank of Lithuania"
+        },
+        {
+          "value": "other",
+          "label": "Other EU/EEA member state"
+        }
+      ]
+    },
+    {
+      "id": "applicant_status",
+      "type": "select",
+      "label": "Applicant Authorisation Status",
+      "description": "What authorisations does the applicant already hold? This decides whether you need a parallel MiFID II / CSDR authorisation alongside the DLT permission.",
+      "required": true,
+      "options": [
+        {
+          "value": "new_entrant",
+          "label": "New entrant — no existing investment-firm / CSD authorisation"
+        },
+        {
+          "value": "mifid_firm",
+          "label": "Authorised investment firm / market operator (MiFID II)"
+        },
+        {
+          "value": "csd",
+          "label": "Authorised CSD (CSDR (EU) 909/2014)"
+        },
+        {
+          "value": "credit_institution",
+          "label": "Credit institution"
+        },
+        {
+          "value": "casp_emt_art",
+          "label": "MiCA-authorised CASP / EMT or ART issuer"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Application Sections to Prioritise",
+      "description": "Which parts of the application package need the most work right now?",
+      "options": [
+        {
+          "value": "eligibility",
+          "label": "Eligibility & instrument scope (Art. 3 caps)"
+        },
+        {
+          "value": "exemptions",
+          "label": "Specific permission & exemption requests (Arts. 4–6)"
+        },
+        {
+          "value": "business_plan",
+          "label": "Business plan & operating model"
+        },
+        {
+          "value": "dlt_resilience",
+          "label": "DLT functioning, IT & cyber resilience (DORA interface)"
+        },
+        {
+          "value": "safeguarding",
+          "label": "Safeguarding of participants' funds, collateral & assets"
+        },
+        {
+          "value": "investor_protection",
+          "label": "Investor protection & client information"
+        },
+        {
+          "value": "test_parameters",
+          "label": "Test parameters, monitoring & reporting to the NCA"
+        },
+        {
+          "value": "exit_transition",
+          "label": "Exit / transition strategy (Art. 7(7))"
+        },
+        {
+          "value": "amlcft",
+          "label": "AML/CFT & market-abuse controls"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns, Constraints or Pre-Application Feedback",
+      "description": "Describe any known weaknesses, hard constraints, or feedback already received from the NCA or ESMA. Absence of a clear exit strategy or a compensatory-measure for each exemption is the most common rejection driver — flag what you have and have not yet addressed.",
+      "placeholder": "e.g. NCA pre-application feedback questioned our delivery-versus-payment model on a permissionless ledger; we have no exit plan if we breach the EUR 6bn aggregate market-value cap; settlement finality under Settlement Finality Directive is unresolved for our self-hosted-wallet participants."
+    }
+  ],
+  "exampleInput": "We are a Swedish fintech (12 staff, not yet authorised) preparing a DLT Pilot Regime application to Finansinspektionen for a DLT Trading and Settlement System (DLT TSS) under Article 10 of Regulation (EU) 2022/858. We want to admit tokenised SME shares and a small tokenised bond programme, settled on a permissioned ledger with an e-money-token cash leg. Because a TSS draws its exemptions from Article 6 (which applies Articles 4 and 5 mutatis mutandis), we plan to request the Article 5 / Article 6 exemptions from the CSDR book-entry and settlement-finality requirements (CSDR Arts. 3, 39 and 40) so retail participants can hold DLT financial instruments directly via self-hosted wallets, plus the MiFID II intermediation exemption (via Article 4 / Article 6) so they can be direct members of the venue without a mandatory investment-firm intermediary. Draft the application content, set defensible test parameters against the Article 3 caps, design the compensatory measures for each requested exemption, and build a credible Article 7(7) exit/transition strategy if we breach a cap or the NCA withdraws the permission. Known weak spots: settlement finality for self-hosted-wallet holders is unresolved, and we have not yet sized our aggregate market value against the EUR 6 billion threshold (or our action plan at the EUR 9 billion transition ceiling).",
+  "exampleValues": {
+    "facility_type": "dlt_tss",
+    "nca_jurisdiction": "se",
+    "applicant_status": "new_entrant",
+    "focus_areas": ["eligibility", "exemptions", "safeguarding", "exit_transition"],
+    "known_concerns": "Requesting the Art. 5/Art. 6 CSDR book-entry exemption (direct holding via self-hosted wallets) and the Art. 4/Art. 6 MiFID II intermediation exemption (direct venue membership), but compensatory measures are not yet drafted. Settlement finality under the Settlement Finality Directive is unresolved for self-hosted-wallet holders. Aggregate market value not yet sized against the EUR 6bn cap — no Art. 7(7) exit/transition plan if the EUR 9bn ceiling is breached."
+  },
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "legal-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "dlt-pilot-regime",
+    "regulatory-sandbox",
+    "innovation-hub",
+    "tokenisation",
+    "mica",
+    "csdr",
+    "regulatory"
+  ],
+  "contentType": "policy_document"
+}

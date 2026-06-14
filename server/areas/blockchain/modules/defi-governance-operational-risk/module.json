@@ -1,0 +1,262 @@
+{
+  "formatVersion": "1.0",
+  "id": "defi-governance-operational-risk",
+  "label": "DeFi Governance & Operational Risk Assessment",
+  "shortLabel": "DeFi Ops Risk",
+  "icon": "ShieldAlert",
+  "description": "Assess governance and operational risk in DeFi protocols: smart-contract and oracle risk, governance-token concentration, admin keys and upgradeability, MEV, the MiCA 'sufficiently decentralised' perimeter question, and an operational-resilience lens (DORA-style). Produces a scored risk register and remediation plan for builders, DAOs, investors, and regulated firms with DeFi exposure.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "risk-appetite-statement",
+      "gap-scoring-matrix",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "MiCA (Regulation (EU) 2023/1114) Recitals 22 & 75–77 on fully decentralised services; DORA (Regulation (EU) 2022/2554) ICT-risk and third-party concentration provisions; ESMA/EBA technical standards and the ESMA DeFi reports; IOSCO Policy Recommendations for DeFi (Nov 2023); FSB high-level recommendations on crypto-asset activities (July 2023); BIS/ECB DeFi and MEV research; on-chain governance data (token-holder concentration, multisig signer sets, timelock parameters); audit findings and exploit post-mortems (oracle manipulation, governance attacks, bridge hacks)"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "protocol_type",
+      "type": "select",
+      "label": "Protocol / Structure Type",
+      "description": "What kind of DeFi protocol or structure is being assessed?",
+      "required": true,
+      "options": [
+        {
+          "value": "amm-dex",
+          "label": "AMM / Decentralised exchange (DEX)"
+        },
+        {
+          "value": "lending",
+          "label": "Lending / borrowing protocol (Aave/Compound model)"
+        },
+        {
+          "value": "stablecoin-cdp",
+          "label": "CDP / collateralised stablecoin (DAI/crvUSD model)"
+        },
+        {
+          "value": "liquid-staking",
+          "label": "Liquid staking / restaking protocol"
+        },
+        {
+          "value": "yield-aggregator",
+          "label": "Yield aggregator / vault strategy"
+        },
+        {
+          "value": "perps-derivatives",
+          "label": "Perpetuals / on-chain derivatives"
+        },
+        {
+          "value": "bridge",
+          "label": "Cross-chain bridge / interoperability"
+        },
+        {
+          "value": "dao-treasury",
+          "label": "DAO / on-chain treasury & governance"
+        },
+        {
+          "value": "rwa",
+          "label": "Tokenised real-world assets (RWA)"
+        }
+      ]
+    },
+    {
+      "id": "assessor_role",
+      "type": "select",
+      "label": "Your Role / Vantage Point",
+      "description": "Who is commissioning this assessment? This sets which risks are actionable for you and the regulatory-attribution lens.",
+      "required": true,
+      "options": [
+        {
+          "value": "core-team",
+          "label": "Core team / protocol foundation (building or operating it)"
+        },
+        {
+          "value": "dao-contributor",
+          "label": "DAO contributor / delegate / multisig signer"
+        },
+        {
+          "value": "investor-lp",
+          "label": "Investor / LP / treasury allocator doing diligence"
+        },
+        {
+          "value": "regulated-firm",
+          "label": "Regulated firm assessing DeFi exposure (CASP, fund, bank)"
+        },
+        {
+          "value": "auditor-advisor",
+          "label": "Auditor / risk advisor / security reviewer"
+        },
+        {
+          "value": "regulator-policy",
+          "label": "Regulator / policy maker"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) for the Perimeter View",
+      "description": "Which regulatory perimeters should the MiCA / operational-resilience analysis consider?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU / MiCA + DORA"
+        },
+        {
+          "value": "uk",
+          "label": "UK / FCA"
+        },
+        {
+          "value": "us",
+          "label": "US / SEC / CFTC / FinCEN"
+        },
+        {
+          "value": "sg",
+          "label": "Singapore / MAS"
+        },
+        {
+          "value": "ch",
+          "label": "Switzerland / FINMA"
+        },
+        {
+          "value": "ae",
+          "label": "UAE / VARA / ADGM"
+        }
+      ]
+    },
+    {
+      "id": "centralisation_vectors",
+      "type": "multi-select",
+      "label": "Known Centralisation / Control Vectors",
+      "description": "Which control points exist? These drive both the operational-risk score and the MiCA 'sufficiently decentralised' perimeter question.",
+      "options": [
+        {
+          "value": "upgradeable-proxy",
+          "label": "Upgradeable proxy contracts (admin can change logic)"
+        },
+        {
+          "value": "admin-keys",
+          "label": "Admin keys / privileged roles (pause, mint, parameter set)"
+        },
+        {
+          "value": "multisig",
+          "label": "Multisig controls critical functions"
+        },
+        {
+          "value": "no-timelock",
+          "label": "No timelock / short timelock on privileged actions"
+        },
+        {
+          "value": "oracle-dependency",
+          "label": "Critical dependency on price oracle(s)"
+        },
+        {
+          "value": "token-concentration",
+          "label": "Concentrated governance-token holdings (whales / VCs / team)"
+        },
+        {
+          "value": "centralised-frontend",
+          "label": "Centralised front-end / interface operator"
+        },
+        {
+          "value": "off-chain-keeper",
+          "label": "Off-chain keepers / sequencer / relayer dependency"
+        },
+        {
+          "value": "single-chain-infra",
+          "label": "Single L1/L2 or RPC / hosting concentration"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Risk Domains to Prioritise",
+      "description": "Which of the eight DeFi risk domains should the assessment go deep on?",
+      "options": [
+        {
+          "value": "smart-contract",
+          "label": "Smart-contract & code risk (audits, upgradeability, formal verification)"
+        },
+        {
+          "value": "oracle",
+          "label": "Oracle & price-feed manipulation risk"
+        },
+        {
+          "value": "governance",
+          "label": "Governance-token concentration & capture"
+        },
+        {
+          "value": "admin-key",
+          "label": "Admin-key / upgradeability / privileged-action risk"
+        },
+        {
+          "value": "mev",
+          "label": "MEV (sandwich, front-running, liquidation, reorg risk)"
+        },
+        {
+          "value": "economic",
+          "label": "Economic / market risk (liquidity, depeg, liquidation cascades)"
+        },
+        {
+          "value": "mica-perimeter",
+          "label": "MiCA 'sufficiently decentralised' perimeter question"
+        },
+        {
+          "value": "operational-resilience",
+          "label": "Operational resilience (DORA-style ICT, third-party, incident response)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Incidents or Concerns",
+      "description": "Describe any known weaknesses, prior incidents/exploits, audit findings still open, recent governance disputes, or specific worries.",
+      "placeholder": "e.g. Single Chainlink feed with no fallback on a thin-liquidity collateral asset; 7-of-11 multisig but 4 signers share one custody provider; top 5 wallets hold 58% of governance token; timelock was reduced to 6h after a contentious vote; front-end hosted on a single cloud region..."
+    }
+  ],
+  "exampleInput": "We run the core team for an EVM lending protocol live on Ethereum mainnet and two L2s, with about $400m TVL. Governance is a token + an OpenZeppelin Governor with a 48h timelock, but a 4-of-7 multisig (Safe) still holds the proxy admin and can pause markets and change interest-rate and collateral-factor parameters without going through governance. Prices come from Chainlink feeds, with a Uniswap v3 TWAP as a fallback for two long-tail collaterals. The top 6 wallets hold roughly 52% of the governance token (team + two VCs, partly vested). We are pre-launching an EU-facing front-end and want to understand (a) our real operational and governance risk and how to reduce it, and (b) whether we plausibly fall inside or outside MiCA as a 'sufficiently decentralised' service, given the admin keys and the front-end we operate. Known weak spots: no formal verification on the latest rate-model change, the timelock can be bypassed via the multisig pause+upgrade path, and we have no documented incident-response runbook.",
+  "exampleValues": {
+    "protocol_type": "lending",
+    "assessor_role": "core-team",
+    "jurisdiction": ["eu"],
+    "centralisation_vectors": ["upgradeable-proxy", "admin-keys", "multisig", "oracle-dependency", "token-concentration", "centralised-frontend"],
+    "focus_areas": ["smart-contract", "oracle", "governance", "admin-key", "mica-perimeter", "operational-resilience"],
+    "known_concerns": "4-of-7 multisig holds proxy admin and can pause + change collateral factors outside governance; timelock bypassable via pause+upgrade path. Top 6 wallets hold ~52% of governance token (team + 2 VCs). Chainlink primary with Uniswap v3 TWAP fallback on two thin-liquidity collaterals — no circuit breaker. No formal verification on latest rate-model change. No documented incident-response runbook."
+  },
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "cyber-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "defi",
+    "operational-risk",
+    "governance",
+    "smart-contract-risk",
+    "oracle-risk",
+    "mev",
+    "mica-perimeter",
+    "dora",
+    "admin-keys",
+    "decentralisation"
+  ],
+  "contentType": "risk_register"
+}

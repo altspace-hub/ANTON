@@ -1,0 +1,197 @@
+{
+  "formatVersion": "1.0",
+  "id": "esg-adjusted-financial-reporting",
+  "label": "ESG-Adjusted Financial Reporting",
+  "shortLabel": "ESG Reporting",
+  "icon": "Leaf",
+  "description": "Connect sustainability data to the financial statements. Assess CSRD/ESRS double-materiality, ISSB IFRS S1/S2 disclosures, climate-related estimates in IAS 36 impairment and IAS 37 provisions, and the connectivity between the sustainability statement and the financials.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CSRD (EU) 2022/2464; ESRS Delegated Regulation (EU) 2023/2772 (Set 1); ISSB IFRS S1 and IFRS S2; IAS 1 / IAS 36 / IAS 37 / IAS 8; IFRS Sustainability Connectivity guidance and the IFRS/ISSB-EFRAG interoperability material; EFRAG IG 1 (Materiality Assessment) and IG 2 (Value Chain); GRI; TCFD; NGFS climate scenarios; SFDR (EU) 2019/2088"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "reporting_framework",
+      "type": "chips",
+      "label": "Reporting Framework(s)",
+      "description": "Which sustainability and financial reporting frameworks apply to this entity?",
+      "required": true,
+      "options": [
+        {
+          "value": "csrd_esrs",
+          "label": "CSRD / ESRS (EU)"
+        },
+        {
+          "value": "issb",
+          "label": "ISSB IFRS S1 / S2"
+        },
+        {
+          "value": "ifrs_accounting",
+          "label": "IFRS Accounting (IAS 1/36/37)"
+        },
+        {
+          "value": "us_gaap",
+          "label": "US GAAP (financials)"
+        },
+        {
+          "value": "tcfd_gri",
+          "label": "Legacy TCFD / GRI baseline"
+        }
+      ]
+    },
+    {
+      "id": "entity_profile",
+      "type": "select",
+      "label": "Entity Profile",
+      "description": "What is the reporting profile of the entity? Drives CSRD scope, phase-in, and proportionality.",
+      "required": true,
+      "options": [
+        {
+          "value": "large_listed_eu",
+          "label": "Large EU listed (PIE) — CSRD wave 1/2"
+        },
+        {
+          "value": "large_non_listed_eu",
+          "label": "Large EU non-listed — CSRD wave 2"
+        },
+        {
+          "value": "listed_sme_eu",
+          "label": "Listed SME (EU) — LSME phase-in"
+        },
+        {
+          "value": "non_eu_parent",
+          "label": "Non-EU parent with EU presence (third-country)"
+        },
+        {
+          "value": "issb_adopter",
+          "label": "ISSB-jurisdiction reporter (non-CSRD)"
+        }
+      ]
+    },
+    {
+      "id": "industry_sector",
+      "type": "select",
+      "label": "Industry / Sector",
+      "description": "Sector context drives sector-specific climate estimates, transition risk and SICS/sector materiality.",
+      "options": [
+        {
+          "value": "industrials_manufacturing",
+          "label": "Industrials / Manufacturing"
+        },
+        {
+          "value": "energy_utilities",
+          "label": "Energy / Utilities"
+        },
+        {
+          "value": "financial_services",
+          "label": "Financial Services / Insurance"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real Estate / Construction"
+        },
+        {
+          "value": "consumer_retail",
+          "label": "Consumer Goods / Retail"
+        },
+        {
+          "value": "technology",
+          "label": "Technology / Software"
+        },
+        {
+          "value": "other",
+          "label": "Other Sector"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Analysis Focus Areas",
+      "description": "Which connectivity and estimation areas should the analysis prioritise?",
+      "options": [
+        {
+          "value": "double_materiality",
+          "label": "Double-Materiality Assessment (ESRS 1)"
+        },
+        {
+          "value": "iface_impairment",
+          "label": "Climate in IAS 36 Impairment"
+        },
+        {
+          "value": "provisions",
+          "label": "Provisions & Onerous Contracts (IAS 37)"
+        },
+        {
+          "value": "connectivity",
+          "label": "Sustainability–Financial Connectivity"
+        },
+        {
+          "value": "useful_lives",
+          "label": "Asset Useful Lives & Decommissioning"
+        },
+        {
+          "value": "issb_climate",
+          "label": "ISSB Climate Resilience (IFRS S2)"
+        },
+        {
+          "value": "interoperability",
+          "label": "ESRS–ISSB Interoperability"
+        },
+        {
+          "value": "assurance_readiness",
+          "label": "Limited-Assurance Readiness"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe known weak spots, prior auditor comments, areas of estimation uncertainty, or coherence problems between the sustainability statement and the financials.",
+      "placeholder": "e.g. Net-zero 2040 commitment disclosed in the front half, but no equivalent change to asset useful lives or impairment assumptions in the notes; auditor raised a coherence question on the carbon price used in goodwill impairment vs. the transition plan..."
+    }
+  ],
+  "exampleInput": "We are a large EU-listed industrials group (CSRD wave 1, first full ESRS report for FY2025, parent prepares IFRS consolidated accounts). We have publicly committed to net-zero by 2040 and to phasing out a coal-fired production line by 2030. The sustainability statement (front half) describes the transition plan and a rising internal carbon price, but the financial statements still depreciate the affected plant over its original 25-year useful life and the latest goodwill impairment test uses a discount rate and cash-flow forecast that ignore the transition. Our auditor has flagged a potential connectivity/coherence problem. Assess the double-materiality assessment against ESRS 1, review how climate-related matters should flow into IAS 36 impairment and IAS 37 provisions (including decommissioning and any onerous contracts), and evaluate the coherence between the sustainability statement and the financial statements. Known weak spots: the carbon price used in the transition plan is not reflected in value-in-use; useful lives have not been revisited; no IAS 1 disclosure of major sources of estimation uncertainty linked to climate.",
+  "exampleValues": {
+    "reporting_framework": ["csrd_esrs", "ifrs_accounting"],
+    "entity_profile": "large_listed_eu",
+    "industry_sector": "industrials_manufacturing",
+    "focus_areas": ["double_materiality", "iface_impairment", "provisions", "connectivity", "useful_lives"],
+    "known_concerns": "Net-zero 2040 + coal line phase-out by 2030 disclosed in the sustainability statement, but plant still depreciated over the original 25-year life and goodwill impairment ignores the transition. Internal carbon price not reflected in value-in-use. No IAS 1.125 estimation-uncertainty disclosure linked to climate. Auditor flagged a coherence problem between the front and back halves."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "csrd",
+    "esrs",
+    "issb",
+    "ias-36",
+    "ias-37",
+    "double-materiality",
+    "connectivity",
+    "sustainability-reporting"
+  ],
+  "contentType": "gap_analysis"
+}

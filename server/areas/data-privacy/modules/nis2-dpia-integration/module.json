@@ -1,0 +1,153 @@
+{
+  "formatVersion": "1.0",
+  "id": "nis2-dpia-integration",
+  "areaId": "data-privacy",
+  "label": "NIS2 Security & GDPR DPIA Integration",
+  "shortLabel": "NIS2 + DPIA",
+  "icon": "ShieldCheck",
+  "description": "Run a combined security-and-privacy assessment that maps NIS2 (EU) 2022/2555 Art. 21 risk-management measures onto the GDPR (EU) 2016/679 Art. 35 DPIA. Reuse one evidence base for incident handling, supply-chain, and access controls so a single integrated assessment satisfies both regimes without duplicate effort.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "privacy-impact-assessment",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "NIS2 Directive (EU) 2022/2555 (Art. 21 measures, Art. 23 incident reporting, Art. 20 governance); Commission Implementing Regulation (EU) 2024/2690 (technical & methodological requirements for relevant digital-infrastructure entities); GDPR (EU) 2016/679 (Art. 32 security, Art. 33/34 breach notification, Art. 35 DPIA, Art. 36 prior consultation); EDPB Guidelines 9/2022 on personal-data-breach notification and prior Guidelines 01/2021; WP29/EDPB DPIA guidance WP248 rev.01; ENISA technical guidance on NIS2 security measures; national DPA mandatory-DPIA lists; ISO/IEC 27001:2022 and ISO/IEC 27005:2022; the entity's own ISMS, risk register, and processing records"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_classification",
+      "type": "select",
+      "label": "NIS2 Entity Classification",
+      "description": "How is the organisation classified under NIS2? This drives the supervisory regime, deadlines, and the depth of Art. 21 measures expected.",
+      "required": true,
+      "options": [
+        {
+          "value": "essential",
+          "label": "Essential entity (Annex I — e.g. energy, banking, health, digital infrastructure)"
+        },
+        {
+          "value": "important",
+          "label": "Important entity (Annex II — e.g. postal, waste, manufacturing, digital providers)"
+        },
+        {
+          "value": "digital_infra",
+          "label": "Relevant digital-infrastructure entity (cloud, DNS, data centre, MSP/MSSP — Reg. 2024/2690 in scope)"
+        },
+        {
+          "value": "in_scope_tbd",
+          "label": "In scope but classification not yet confirmed"
+        },
+        {
+          "value": "out_of_scope",
+          "label": "Below the NIS2 size threshold / not in a covered sector (privacy-only assessment)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) of Establishment / Main Establishment",
+      "description": "Where is the entity established? Drives the competent CSIRT/authority, national NIS2 transposition, and lead DPA under GDPR Art. 56.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU (directive-level)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "ireland", "label": "Ireland" },
+        { "value": "netherlands", "label": "Netherlands" },
+        { "value": "other_ms", "label": "Other EU Member State" }
+      ]
+    },
+    {
+      "id": "processing_context",
+      "type": "textarea",
+      "label": "Processing Activity / System in Scope",
+      "description": "Describe the system, service, or processing activity being assessed — what it does, what personal data it processes, who the data subjects are, and which network-and-information systems support it.",
+      "required": true,
+      "placeholder": "e.g. A SaaS customer portal hosting account, transaction, and support data for ~400,000 EEA retail customers; runs on an EU cloud region; integrates a third-party identity-verification provider and an outsourced 24/7 SOC; recent migration introduced a new managed-service provider for backups."
+    },
+    {
+      "id": "overlap_domains",
+      "type": "multi-select",
+      "label": "Overlap Domains to Co-Assess",
+      "description": "Which control domains overlap between NIS2 Art. 21 and the GDPR DPIA, and should be assessed once for both?",
+      "options": [
+        { "value": "incident_handling", "label": "Incident handling & reporting (NIS2 Art. 21(2)(b) + 23 ↔ GDPR Art. 33/34)" },
+        { "value": "supply_chain", "label": "Supply-chain & third-party security (NIS2 Art. 21(2)(d) ↔ GDPR Art. 28 processors)" },
+        { "value": "access_control", "label": "Access control & MFA (NIS2 Art. 21(2)(i)/(j) ↔ GDPR Art. 32)" },
+        { "value": "bcm_backups", "label": "Business continuity, backup & crisis management (NIS2 Art. 21(2)(c))" },
+        { "value": "vuln_handling", "label": "Vulnerability handling & disclosure (NIS2 Art. 21(2)(e))" },
+        { "value": "crypto_encryption", "label": "Cryptography & encryption (NIS2 Art. 21(2)(h) ↔ GDPR Art. 32(1)(a))" },
+        { "value": "risk_governance", "label": "Risk-management governance & management accountability (NIS2 Art. 20 ↔ GDPR accountability Art. 5(2)/24)" },
+        { "value": "asset_data_inventory", "label": "Asset / data inventory & classification (NIS2 Art. 21(2)(a) ↔ GDPR Art. 30 RoPA)" }
+      ]
+    },
+    {
+      "id": "high_risk_indicators",
+      "type": "chips",
+      "label": "DPIA High-Risk Indicators Present",
+      "description": "Which GDPR Art. 35 high-risk triggers apply (WP248 criteria)? Presence of two or more typically mandates a DPIA.",
+      "options": [
+        { "value": "large_scale", "label": "Large-scale processing" },
+        { "value": "special_categories", "label": "Special-category or criminal data (Art. 9/10)" },
+        { "value": "children", "label": "Children's data (Art. 8)" },
+        { "value": "systematic_monitoring", "label": "Systematic monitoring" },
+        { "value": "profiling_automated", "label": "Profiling / automated decisions (Art. 22)" },
+        { "value": "new_technology", "label": "New / innovative technology" },
+        { "value": "data_matching", "label": "Matching or combining datasets" },
+        { "value": "vulnerable_subjects", "label": "Vulnerable data subjects" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Findings, or Concerns",
+      "description": "Describe known weaknesses, prior incidents, audit findings, supervisory correspondence, or specific overlap concerns you want the integrated assessment to focus on.",
+      "placeholder": "e.g. We already run an ISO 27001 ISMS and an Art. 35 DPIA process, but they are owned by separate teams and duplicate the same supplier and incident questions. A ransomware near-miss in Q4 exposed that our incident-reporting playbook does not align the NIS2 24-hour early-warning deadline with the GDPR 72-hour breach window. Backup MSP onboarded without a documented Art. 28 DPA or NIS2 supplier-security review."
+    }
+  ],
+  "exampleInput": "We are a Swedish cloud-hosting and managed-services provider (~250 staff) classified as an essential entity for digital infrastructure under NIS2, with a main establishment in Sweden. We operate a multi-tenant SaaS platform processing account, billing, and support data for roughly 400,000 EEA retail customers, plus some special-category support tickets. We already maintain an ISO 27001 ISMS and run GDPR Article 35 DPIAs for major changes, but the security team and the DPO run them as two separate exercises that ask suppliers and incident owners the same questions twice. We just onboarded a new backup managed-service provider and are migrating to a new EU cloud region. Run a combined NIS2 Article 21 + GDPR DPIA assessment focused on incident handling, supply-chain, and access controls — show where the two regimes overlap, where one is stricter, and how to run a single integrated assessment that satisfies both. Known pain point: our incident playbook does not reconcile the NIS2 24-hour early-warning deadline with the GDPR 72-hour breach-notification window, and the new backup MSP was onboarded without a documented Article 28 DPA or NIS2 supplier-security review.",
+  "exampleValues": {
+    "entity_classification": "digital_infra",
+    "jurisdiction": ["eu", "sweden"],
+    "processing_context": "Multi-tenant SaaS platform on an EU cloud region processing account, billing, and support data for ~400,000 EEA retail customers, including some special-category support tickets. Supported by an outsourced 24/7 SOC, a third-party identity-verification provider, and a newly onboarded backup managed-service provider. Migration to a new EU cloud region in progress.",
+    "overlap_domains": ["incident_handling", "supply_chain", "access_control"],
+    "high_risk_indicators": ["large_scale", "special_categories", "systematic_monitoring"],
+    "known_concerns": "Security team and DPO run NIS2 and DPIA exercises separately and ask suppliers/incident owners the same questions twice. Incident playbook does not reconcile the NIS2 24-hour early-warning deadline with the GDPR 72-hour breach window. New backup MSP onboarded without a documented Art. 28 DPA or NIS2 supplier-security review."
+  },
+  "recommendedPersonas": [
+    "cyber-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "nis2",
+    "gdpr",
+    "dpia",
+    "article-21",
+    "article-35",
+    "security",
+    "privacy",
+    "incident-response",
+    "supply-chain",
+    "integrated-assessment"
+  ],
+  "contentType": "gap_analysis"
+}

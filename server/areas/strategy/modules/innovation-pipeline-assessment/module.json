@@ -1,0 +1,170 @@
+{
+  "formatVersion": "1.0",
+  "id": "innovation-pipeline-assessment",
+  "label": "Innovation Pipeline Assessment",
+  "shortLabel": "Innovation Pipeline",
+  "icon": "FlaskConical",
+  "description": "Assess an innovation pipeline and portfolio: stage-gate health, three-horizons balance, real-option value, kill-criteria discipline, resource allocation, and innovation-accounting metrics. Upload portfolio data and project briefs, get a structured, decision-ready assessment.",
+  "color": "adv-gold",
+  "areaId": "strategy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Stage-Gate (Cooper), Three Horizons (McKinsey/Baghai-Coley-White), real-options valuation, discovery-driven planning (McGrath-MacMillan), Lean Startup innovation accounting (Ries), ISO 56002 innovation management, design thinking, jobs-to-be-done"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organization_context",
+      "type": "select",
+      "label": "Organisation type / innovation context",
+      "description": "What kind of organisation and innovation setting does this pipeline sit in? Drives the appropriate balance of horizons and metrics.",
+      "required": true,
+      "options": [
+        {
+          "value": "corporate_rnd",
+          "label": "Established corporate with internal R&D"
+        },
+        {
+          "value": "scaleup",
+          "label": "Scale-up / growth-stage company"
+        },
+        {
+          "value": "cvc_incubator",
+          "label": "Corporate venture / incubator / innovation lab"
+        },
+        {
+          "value": "product_company",
+          "label": "Product / software company"
+        },
+        {
+          "value": "industrial_deeptech",
+          "label": "Industrial / hardware / deep-tech"
+        },
+        {
+          "value": "public_nonprofit",
+          "label": "Public sector / non-profit innovation programme"
+        }
+      ]
+    },
+    {
+      "id": "assessment_objective",
+      "type": "select",
+      "label": "Primary objective of the assessment",
+      "description": "What decision does this assessment need to inform?",
+      "options": [
+        {
+          "value": "portfolio_balance",
+          "label": "Rebalance the portfolio across horizons"
+        },
+        {
+          "value": "stage_gate_health",
+          "label": "Diagnose stage-gate / governance health"
+        },
+        {
+          "value": "resource_allocation",
+          "label": "Reallocate budget and people"
+        },
+        {
+          "value": "kill_prune",
+          "label": "Decide which projects to kill / prune"
+        },
+        {
+          "value": "annual_review",
+          "label": "Annual / board innovation review"
+        },
+        {
+          "value": "due_diligence",
+          "label": "Investor / acquirer due diligence on a pipeline"
+        }
+      ]
+    },
+    {
+      "id": "focus_dimensions",
+      "type": "multi-select",
+      "label": "Assessment dimensions to prioritise",
+      "description": "Which lenses should the assessment weight most heavily?",
+      "options": [
+        {
+          "value": "stage_gate",
+          "label": "Stage-Gate discipline & gate quality"
+        },
+        {
+          "value": "three_horizons",
+          "label": "Three-Horizons portfolio balance"
+        },
+        {
+          "value": "real_options",
+          "label": "Real-option value & sequencing"
+        },
+        {
+          "value": "kill_criteria",
+          "label": "Kill-criteria & de-commitment discipline"
+        },
+        {
+          "value": "resource_allocation",
+          "label": "Resource allocation & capacity"
+        },
+        {
+          "value": "innovation_accounting",
+          "label": "Innovation accounting & leading metrics"
+        },
+        {
+          "value": "strategic_fit",
+          "label": "Strategic fit & ambition alignment"
+        }
+      ]
+    },
+    {
+      "id": "portfolio_snapshot",
+      "type": "textarea",
+      "label": "Portfolio snapshot",
+      "description": "List the active initiatives with whatever data you have: name, current stage/gate, horizon, budget, team size, time-in-stage, and key metrics (e.g. validated learning, NPV, adoption).",
+      "placeholder": "e.g. Project Atlas — H3, in Development gate, EUR 1.8M committed, 12 FTE, 14 months in stage, no paying customers yet. Project Beacon — H1, Launch, EUR 0.4M, breaking even..."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues or concerns",
+      "description": "Describe anything you already suspect: zombie projects, gates that never say no, all eggs in one horizon, sunk-cost commitments, capacity overload, missing metrics.",
+      "placeholder": "e.g. We have not killed a project in 3 years. Most of the budget is in incremental H1 work. The big H3 bet has slipped its gate four times but keeps getting funded..."
+    }
+  ],
+  "exampleInput": "We are a EUR 600M industrial-automation company with an internal R&D function (~80 engineers) running 14 active innovation initiatives. Leadership feels we are busy but not bold: almost everything is incremental, our one big platform bet keeps slipping, and we have not formally killed a project in over two years. Assess our innovation pipeline. We use a five-gate Stage-Gate process on paper, but gates rarely reject anything and budgets roll forward by default. Help us judge whether the portfolio is balanced across the three horizons, whether our gates and kill-criteria actually work, and where we should reallocate money and people. Known weak spots: no validated-learning metrics on early-stage projects, the platform programme (Project Atlas, EUR 1.8M committed, 14 months in the Development gate, still no paying pilot) keeps getting re-funded, and two legacy projects look like zombies nobody will cancel.",
+  "exampleValues": {
+    "organization_context": "industrial_deeptech",
+    "assessment_objective": "portfolio_balance",
+    "focus_dimensions": ["three_horizons", "stage_gate", "kill_criteria", "resource_allocation"],
+    "portfolio_snapshot": "Project Atlas — H3 platform bet, in Development gate, EUR 1.8M committed, 12 FTE, 14 months in stage, no paying pilot, gate slipped 4x. Project Beacon — H1, Launch, EUR 0.4M, near break-even. Two legacy projects (Helix, Orbit) — H1 maintenance, low team, no clear sunset plan, suspected zombies. ~9 other small incremental initiatives.",
+    "known_concerns": "No validated-learning or innovation-accounting metrics on early-stage work. Have not killed a project in over 2 years; budgets roll forward by default. Portfolio heavily skewed to incremental H1. Project Atlas re-funded despite repeatedly missing its gate criteria — possible sunk-cost commitment."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "pe-vc-expert"
+  ],
+  "tags": [
+    "innovation",
+    "portfolio",
+    "stage-gate",
+    "three-horizons",
+    "real-options",
+    "strategy"
+  ],
+  "contentType": "scorecard"
+}

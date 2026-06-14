@@ -1,0 +1,204 @@
+{
+  "formatVersion": "1.0",
+  "id": "real-time-vat-compliance",
+  "label": "Real-Time VAT & E-Invoicing Readiness",
+  "shortLabel": "Real-Time VAT",
+  "icon": "ReceiptText",
+  "description": "Assess readiness for continuous/real-time VAT reporting and structured e-invoicing. Covers the EU VAT in the Digital Age (ViDA) package (adopted 11 Mar 2025 as Directive (EU) 2025/516; reporting obligations apply from 2030), national digital reporting and e-invoicing mandates (Italy SdI, France, Poland KSeF, Spain SII/Verifactu), transaction-level VAT determination, and the data architecture and controls needed for near-real-time compliance.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "data-readiness-scorecard",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU VAT in the Digital Age (ViDA) package — adopted by the Council on 11 Mar 2025 as Council Directive (EU) 2025/516, Council Regulation (EU) 2025/517 and Council Implementing Regulation (EU) 2025/518 (originating from COM/2022/701, 703, 704; political agreement 5 Nov 2024), amending Directive 2006/112/EC, with staggered application dates to 2035; Directive 2006/112/EC (the VAT Directive); EN 16931 European e-invoicing standard; Italy Sistema di Interscambio (SdI) + FatturaPA; France e-invoicing/e-reporting reform (Article 153 LF 2020, Factur-X, PPF/PDP model); Poland KSeF / FA(3) schema; Spain SII + Verifactu (RD 1007/2023); national tax authority technical specifications and onboarding guides; ISO 20022; Peppol BIS Billing 3.0 + Peppol PINT"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Jurisdiction(s) in scope",
+      "description": "Which countries' digital reporting / e-invoicing mandates apply to your transactions?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu_vida",
+          "label": "EU-wide (ViDA — adopted, applies from 2030)"
+        },
+        {
+          "value": "italy",
+          "label": "Italy (SdI / FatturaPA)"
+        },
+        {
+          "value": "france",
+          "label": "France (PPF / PDP e-reporting)"
+        },
+        {
+          "value": "poland",
+          "label": "Poland (KSeF)"
+        },
+        {
+          "value": "spain",
+          "label": "Spain (SII / Verifactu)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (B2B e-invoicing mandate)"
+        },
+        {
+          "value": "belgium",
+          "label": "Belgium (Peppol B2B 2026)"
+        },
+        {
+          "value": "nordics_other",
+          "label": "Nordics / other EU"
+        }
+      ]
+    },
+    {
+      "id": "business_profile",
+      "type": "select",
+      "label": "Business profile",
+      "description": "What best describes the entity and its transaction footprint? Drives which reporting flows (domestic vs intra-EU) are critical.",
+      "required": true,
+      "options": [
+        {
+          "value": "domestic_b2b",
+          "label": "Domestic B2B trader (single country)"
+        },
+        {
+          "value": "multi_eu_b2b",
+          "label": "Multi-country EU B2B (intra-Community supplies)"
+        },
+        {
+          "value": "b2c_ecommerce",
+          "label": "B2C / e-commerce (incl. OSS/IOSS)"
+        },
+        {
+          "value": "platform_marketplace",
+          "label": "Digital platform / marketplace (deemed supplier)"
+        },
+        {
+          "value": "financial_partial_exempt",
+          "label": "Financial / partially-exempt business"
+        },
+        {
+          "value": "group_shared_service",
+          "label": "Group with shared service centre / central finance"
+        }
+      ]
+    },
+    {
+      "id": "current_systems",
+      "type": "multi-select",
+      "label": "Current systems & data landscape",
+      "description": "Which capabilities exist today? Gaps here drive the data-architecture and controls findings.",
+      "options": [
+        {
+          "value": "erp_modern",
+          "label": "Modern ERP (SAP S/4HANA, Oracle, MS Dynamics, NetSuite)"
+        },
+        {
+          "value": "erp_legacy",
+          "label": "Legacy / on-prem ERP or multiple disparate systems"
+        },
+        {
+          "value": "tax_engine",
+          "label": "Dedicated tax determination engine"
+        },
+        {
+          "value": "einvoice_platform",
+          "label": "E-invoicing / compliance platform or Peppol Access Point"
+        },
+        {
+          "value": "manual_excel",
+          "label": "Manual / spreadsheet-based VAT preparation"
+        },
+        {
+          "value": "master_data_governance",
+          "label": "Formal master-data governance (customers, items, tax codes)"
+        }
+      ]
+    },
+    {
+      "id": "assessment_focus",
+      "type": "multi-select",
+      "label": "Assessment focus",
+      "description": "Which dimensions should the readiness assessment prioritise?",
+      "options": [
+        {
+          "value": "vida_dr",
+          "label": "ViDA Digital Reporting Requirements (intra-EU)"
+        },
+        {
+          "value": "national_mandates",
+          "label": "National e-invoicing / e-reporting mandates"
+        },
+        {
+          "value": "vat_determination",
+          "label": "Transaction-level VAT determination logic"
+        },
+        {
+          "value": "data_quality",
+          "label": "Master data & invoice data quality (EN 16931 fields)"
+        },
+        {
+          "value": "platform_economy",
+          "label": "Platform economy / deemed-supplier rules"
+        },
+        {
+          "value": "single_vat_reg",
+          "label": "Single VAT Registration / OSS extension"
+        },
+        {
+          "value": "controls_governance",
+          "label": "Controls, reconciliation & tax governance"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues or concerns",
+      "description": "Describe current pain points, upcoming go-live dates, prior audit findings, or specific transaction types that worry you.",
+      "placeholder": "e.g. Italy SdI rejections (code 00400 nature/rate mismatch) running at ~6%; French e-reporting go-live approaching with no PDP selected; intra-EU triangulation flows lack clean party VAT IDs; reduced-rate determination for mixed supplies is manual..."
+    }
+  ],
+  "exampleInput": "We are a mid-size manufacturer headquartered in Sweden with subsidiaries in Italy, France and Poland and B2B sales across the EU. We run SAP ECC (migrating to S/4HANA in 2027) with a bolt-on tax engine for some flows but manual VAT coding for others. Italy is already live on SdI but we see periodic rejections; France's mandate is approaching and we have not selected a PDP; Poland KSeF go-live is on our radar. Assess our readiness for continuous/real-time VAT reporting and structured e-invoicing across these jurisdictions and against the EU ViDA proposal. Focus on transaction-level VAT determination, the quality of our EN 16931 invoice data and master data, and the controls/reconciliation architecture we need for near-real-time compliance. Known weak spots: triangulation and intra-Community supply flows often have missing or unvalidated counterparty VAT numbers, and reduced-rate determination on mixed supplies is done manually by the AP team.",
+  "exampleValues": {
+    "jurisdictions": ["eu_vida", "italy", "france", "poland"],
+    "business_profile": "multi_eu_b2b",
+    "current_systems": ["erp_legacy", "tax_engine", "einvoice_platform"],
+    "assessment_focus": ["vida_dr", "national_mandates", "vat_determination", "data_quality", "controls_governance"],
+    "known_concerns": "Italy SdI live but periodic rejections; France PDP not yet selected with the mandate approaching; Poland KSeF on the roadmap. Intra-Community supply and triangulation flows often have missing/unvalidated counterparty VAT numbers (no VIES check at order entry). Reduced-rate determination on mixed supplies is manual. SAP ECC today, S/4HANA migration planned 2027."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "tech-expert"
+  ],
+  "tags": [
+    "accounting",
+    "vat",
+    "vida",
+    "e-invoicing",
+    "real-time-reporting",
+    "tax",
+    "compliance"
+  ],
+  "contentType": "scorecard"
+}

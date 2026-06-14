@@ -1,0 +1,180 @@
+{
+  "formatVersion": "1.0",
+  "id": "venture-capital-fund-analytics",
+  "label": "Venture Capital Fund Analytics",
+  "shortLabel": "VC Fund Analytics",
+  "icon": "TrendingUp",
+  "description": "Fund-level VC analytics: portfolio construction and reserves/follow-on modelling, TVPI/DPI/RVPI and IRR, the J-curve, loss-ratio and power-law return concentration, and ILPA-aligned LP reporting.",
+  "color": "adv-blue",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "investment-memo",
+      "executive-summary",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "ILPA Reporting Template (Fee, Expense & Carried Interest) and ILPA Quarterly Reporting Standards; ILPA Performance / Capital Account guidance; GIPS 2020 (CFA Institute) for private-market composites and money-weighted return; IPEV Valuation Guidelines (Dec 2022) and IFRS 13 / IAS 28 fair-value basis; SFDR (EU) 2019/2088 fund disclosure where ESG is in scope; standard VC literature on power-law return distributions, reserve ratios and the J-curve."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "fund_stage",
+      "type": "select",
+      "label": "Fund stage / strategy",
+      "description": "What stage does the fund primarily invest at? Drives expected loss ratio, ownership target, and reserve intensity.",
+      "required": true,
+      "options": [
+        {
+          "value": "pre_seed_seed",
+          "label": "Pre-seed / Seed"
+        },
+        {
+          "value": "early_a_b",
+          "label": "Early-stage (Series A/B)"
+        },
+        {
+          "value": "multi_stage",
+          "label": "Multi-stage / generalist"
+        },
+        {
+          "value": "growth",
+          "label": "Growth / late-stage"
+        },
+        {
+          "value": "secondaries",
+          "label": "Secondaries / continuation"
+        },
+        {
+          "value": "fund_of_funds",
+          "label": "Fund-of-funds"
+        }
+      ]
+    },
+    {
+      "id": "analysis_focus",
+      "type": "multi-select",
+      "label": "Analysis focus",
+      "description": "Which fund-level questions should the analysis prioritise?",
+      "options": [
+        {
+          "value": "construction",
+          "label": "Portfolio construction (check size, ownership, # of companies)"
+        },
+        {
+          "value": "reserves",
+          "label": "Reserves & follow-on (recycling, reserve ratio)"
+        },
+        {
+          "value": "performance",
+          "label": "Performance metrics (TVPI/DPI/RVPI, gross vs net IRR)"
+        },
+        {
+          "value": "jcurve",
+          "label": "J-curve & pacing (cash-flow timing, vintage benchmarking)"
+        },
+        {
+          "value": "concentration",
+          "label": "Loss-ratio & power-law return concentration"
+        },
+        {
+          "value": "lp_reporting",
+          "label": "ILPA-aligned LP reporting (capital accounts, fees, carry)"
+        }
+      ]
+    },
+    {
+      "id": "fund_lifecycle",
+      "type": "select",
+      "label": "Fund lifecycle stage",
+      "description": "Where is the fund in its life? Determines whether metrics are forecast (model-driven) or realised (reporting-driven).",
+      "options": [
+        {
+          "value": "pre_fundraise",
+          "label": "Pre-fundraise / construction modelling"
+        },
+        {
+          "value": "investment_period",
+          "label": "Investment period (deploying)"
+        },
+        {
+          "value": "harvest",
+          "label": "Harvest / post-investment-period"
+        },
+        {
+          "value": "winding_down",
+          "label": "Winding down / extension"
+        }
+      ]
+    },
+    {
+      "id": "reporting_basis",
+      "type": "select",
+      "label": "Valuation / reporting basis",
+      "description": "Which valuation and reporting standards apply to the fund?",
+      "options": [
+        {
+          "value": "ipev_ifrs",
+          "label": "IPEV Guidelines + IFRS 13 fair value"
+        },
+        {
+          "value": "us_gaap_asc820",
+          "label": "US GAAP (ASC 820 fair value)"
+        },
+        {
+          "value": "ilpa_gips",
+          "label": "ILPA template + GIPS-compliant returns"
+        },
+        {
+          "value": "internal",
+          "label": "Internal / not yet determined"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Fund context, data & known concerns",
+      "description": "Describe the fund (size, vintage, # of portfolio companies, ownership targets, paid-in to date) and any known concerns about construction, pacing, marks, or LP-reporting gaps.",
+      "placeholder": "e.g. EUR 80m seed fund, 2022 vintage, 30 cos targeted, ~12% entry ownership, 50% reserves. PIC EUR 34m, one EUR 6x markup carries the marks; concerned the J-curve looks worse than peers and our DPI is still 0.0x at year 3..."
+    }
+  ],
+  "exampleInput": "We manage an EUR 80m seed-stage fund (2022 vintage, EU/Nordic focus). Target portfolio: ~30 companies, EUR ~1.2m initial cheques at ~12% entry ownership, 50% of fund reserved for follow-ons. We are at the end of year 3: paid-in capital is EUR 34m, 19 initial investments made, one company marked up 6x (it is currently 55% of our gross NAV), three written off, the rest at or near cost. Net IRR is slightly negative and DPI is 0.0x — our LPs are asking whether the fund is tracking. Run a fund-level analytics review: pressure-test our portfolio construction and reserve ratio, compute and interpret TVPI/DPI/RVPI and gross vs net IRR with the J-curve in mind, assess the power-law / loss-ratio concentration risk in the current book, and tell us what an ILPA-aligned quarterly LP report should say about where we stand. Known concern: a single position dominates the marks and we have not yet deployed reserves at scale.",
+  "exampleValues": {
+    "fund_stage": "pre_seed_seed",
+    "analysis_focus": ["construction", "reserves", "performance", "jcurve", "concentration", "lp_reporting"],
+    "fund_lifecycle": "investment_period",
+    "reporting_basis": "ipev_ifrs",
+    "known_concerns": "EUR 80m seed fund, 2022 vintage. PIC EUR 34m, 19 initial cheques, ~12% entry ownership, 50% reserves. One position is 6x and ~55% of gross NAV; 3 write-offs; DPI 0.0x at year 3; net IRR slightly negative. LPs asking if the fund is on track. Reserves largely undeployed."
+  },
+  "recommendedPersonas": [
+    "pe-vc-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "venture-capital",
+    "fund-analytics",
+    "portfolio-construction",
+    "tvpi",
+    "dpi",
+    "irr",
+    "j-curve",
+    "power-law",
+    "reserves",
+    "ilpa",
+    "lp-reporting"
+  ],
+  "contentType": "analytic_report"
+}

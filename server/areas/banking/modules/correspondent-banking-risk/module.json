@@ -1,0 +1,181 @@
+{
+  "formatVersion": "1.0",
+  "id": "correspondent-banking-risk",
+  "label": "Correspondent Banking Risk",
+  "shortLabel": "Corr. Banking",
+  "icon": "Network",
+  "description": "Bank-side correspondent banking risk management: respondent risk rating, the Wolfsberg CBDD questionnaire, nested / downstream-clearing risk, transaction monitoring of correspondent flows, and exit / de-risking governance against AMLR Art. 36–39 and FATF R.13.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AMLR (EU) 2024/1624 Art. 36–39 (Art. 36 cross-border correspondent EDD; Art. 38 third-country respondent measures; Art. 39 shell-institution prohibition); AMLD6 (EU) 2024/1640; FATF Recommendation 13 + Interpretive Note; Wolfsberg Correspondent Banking Due Diligence Questionnaire (CBDDQ) v1.4 (2023) and the Wolfsberg Correspondent Banking Principles; Wolfsberg/ICC/BAFT Trade Finance Principles; Basel Committee guidelines on sound management of ML/TF risks (Annex 2 — correspondent banking); FATF Guidance on Correspondent Banking Services (2016); FSB de-risking reports; EBA Guidelines on ML/TF risk factors (EBA/GL/2021/02) on correspondent relationships; TFR (EU) 2023/1113 for payment-message information."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "role",
+      "type": "select",
+      "label": "Your Role in the Relationship",
+      "description": "Are you the correspondent (account-providing) bank assessing a respondent, or the respondent seeking / maintaining access?",
+      "required": true,
+      "options": [
+        {
+          "value": "correspondent",
+          "label": "Correspondent bank (we provide the account / clearing)"
+        },
+        {
+          "value": "respondent",
+          "label": "Respondent bank (we hold the account / use the service)"
+        },
+        {
+          "value": "both",
+          "label": "Both directions (full two-way relationship)"
+        },
+        {
+          "value": "supervisor_audit",
+          "label": "Second / third line review (audit, MLRO, supervisor view)"
+        }
+      ]
+    },
+    {
+      "id": "relationship_type",
+      "type": "multi-select",
+      "label": "Relationship / Service Types in Scope",
+      "description": "Which correspondent products and structures does this assessment cover?",
+      "required": true,
+      "options": [
+        {
+          "value": "vostro_nostro",
+          "label": "Traditional vostro / nostro cash clearing"
+        },
+        {
+          "value": "payable_through",
+          "label": "Payable-through accounts (PTA)"
+        },
+        {
+          "value": "nested",
+          "label": "Nested / downstream correspondent clearing"
+        },
+        {
+          "value": "trade_finance",
+          "label": "Trade finance (LCs, guarantees, documentary collections)"
+        },
+        {
+          "value": "fx_mm",
+          "label": "FX / money-market / securities settlement lines"
+        },
+        {
+          "value": "mvts_pisp",
+          "label": "MSB / MVTS / fintech / e-money respondents"
+        }
+      ]
+    },
+    {
+      "id": "respondent_jurisdiction",
+      "type": "chips",
+      "label": "Respondent Jurisdiction(s)",
+      "description": "Where is the respondent (or its ultimate clearing flows) domiciled? Drives the geography risk leg.",
+      "required": true,
+      "options": [
+        {
+          "value": "eu_eea",
+          "label": "EU / EEA"
+        },
+        {
+          "value": "uk_us",
+          "label": "UK / US / other FATF-strong"
+        },
+        {
+          "value": "fatf_grey",
+          "label": "FATF grey-list (increased monitoring)"
+        },
+        {
+          "value": "fatf_black",
+          "label": "FATF black-list / call-for-action (DPRK, Iran, Myanmar)"
+        },
+        {
+          "value": "high_risk_third",
+          "label": "AMLR Annex III / EU high-risk third country"
+        },
+        {
+          "value": "offshore_fc",
+          "label": "Offshore / secrecy financial centre"
+        }
+      ]
+    },
+    {
+      "id": "objective",
+      "type": "select",
+      "label": "Decision This Assessment Supports",
+      "description": "What is the deliverable being prepared for?",
+      "options": [
+        {
+          "value": "onboarding",
+          "label": "New-relationship onboarding / approval"
+        },
+        {
+          "value": "periodic_review",
+          "label": "Periodic / event-driven review (re-rating)"
+        },
+        {
+          "value": "remediation",
+          "label": "Remediation of an existing relationship"
+        },
+        {
+          "value": "exit_governance",
+          "label": "Exit / de-risking decision and governance"
+        },
+        {
+          "value": "framework_gap",
+          "label": "Framework gap analysis (programme-level)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Red Flags, or Concerns",
+      "description": "Describe the respondent, observed flows, prior findings, or specific worries to focus the analysis. Include CBDDQ gaps, alert trends, or any negative news.",
+      "placeholder": "e.g. Respondent is a smaller bank in a FATF grey-list jurisdiction whose CBDDQ shows it does not screen its own downstream FIs; we have observed nested MSB flows it did not disclose; correspondent TM is generating round-amount, rapid-pass-through alerts to the same five beneficiary banks; last on-site visit was 2022..."
+    }
+  ],
+  "exampleInput": "We are the FCC / correspondent banking team at a Nordic universal bank (EUR-clearing correspondent for EEA and select EMEA respondents). We are running an event-driven review of a respondent bank in a FATF grey-list jurisdiction after our transaction-monitoring team flagged rising USD pass-through volumes to the same handful of beneficiary banks. The respondent's Wolfsberg CBDDQ (v1.4) is on file from 2023 but several AML-programme and downstream-clearing questions are answered 'partially' or left blank, and it has not disclosed whether it provides nested / downstream correspondent services to other FIs or MSBs. Produce a respondent risk re-rating, identify the nested / payable-through-account exposure and the correspondent-flow TM gaps, set out what additional information and CBDDQ clarifications we must obtain, and frame an exit-versus-remediate decision with the governance steps and FATF R.13 / AMLR Art. 36–39 basis. We do not want blanket de-risking — show the proportionate path.",
+  "exampleValues": {
+    "role": "correspondent",
+    "relationship_type": ["vostro_nostro", "nested", "mvts_pisp"],
+    "respondent_jurisdiction": ["fatf_grey"],
+    "objective": "periodic_review",
+    "known_concerns": "Rising USD pass-through to five repeat beneficiary banks; CBDDQ (2023, v1.4) has blank downstream-clearing and AML-programme answers; respondent has not disclosed nested MSB / FI relationships; last on-site review 2022; correspondent TM only screens our respondent, not the underlying ordering/beneficiary parties in the MT202COV / pacs.009 cover chain."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "correspondent-banking",
+    "wolfsberg-cbddq",
+    "nested-accounts",
+    "de-risking",
+    "transaction-monitoring",
+    "fatf-r13",
+    "amlr"
+  ],
+  "contentType": "analytic_report"
+}

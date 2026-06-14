@@ -1,0 +1,199 @@
+{
+  "formatVersion": "1.0",
+  "id": "fintech-unit-economics-valuation",
+  "label": "Fintech Unit Economics & Valuation",
+  "shortLabel": "Fintech UE & Valuation",
+  "icon": "TrendingUp",
+  "description": "Build a defensible unit-economics and valuation picture for a fintech: contribution margin, CAC/LTV, cohort retention, take-rate, regulatory-capital drag, and the right multiple (revenue vs gross-profit) across lending, payments and SaaS-fintech models.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "investment-memo",
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Comparable-company multiples and operating benchmarks for listed fintechs (Adyen, Block, PayPal, Affirm, SoFi, Nubank, Wise, dLocal), payments and lending sector reports, and prudential/own-funds frameworks (CRR/CRD, PSD2, EMD2, MiCA own-funds for CASPs). Use web search to refresh current trading multiples and any recent transaction comparables; flag retrieval date."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_model",
+      "type": "select",
+      "label": "Primary Fintech Model",
+      "description": "Which revenue archetype best describes the company? This drives the correct unit-economics formulae and the revenue-vs-gross-profit multiple choice.",
+      "required": true,
+      "options": [
+        {
+          "value": "payments_acquiring",
+          "label": "Payments / Acquiring (take-rate on volume)"
+        },
+        {
+          "value": "lending_balance_sheet",
+          "label": "Lending — Balance-Sheet / Own-Book"
+        },
+        {
+          "value": "lending_marketplace",
+          "label": "Lending — Marketplace / Originate-to-Distribute"
+        },
+        {
+          "value": "bnpl",
+          "label": "BNPL / Embedded Credit"
+        },
+        {
+          "value": "saas_fintech",
+          "label": "SaaS-Fintech (software + payments / banking-as-a-service)"
+        },
+        {
+          "value": "neobank",
+          "label": "Neobank / Digital Bank (interchange + net interest)"
+        },
+        {
+          "value": "wealth_invest",
+          "label": "Wealthtech / Investing (AUM-based)"
+        },
+        {
+          "value": "crypto_casp",
+          "label": "Crypto / CASP (trading + custody)"
+        },
+        {
+          "value": "infra_b2b",
+          "label": "Infrastructure / B2B API (usage-based)"
+        }
+      ]
+    },
+    {
+      "id": "stage_and_geography",
+      "type": "select",
+      "label": "Stage & Primary Geography",
+      "description": "Funding stage and the main licensing/regulatory geography — sets benchmark ranges and the prudential framework to apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "seed_eu",
+          "label": "Seed / Pre-Series A — EU/EEA"
+        },
+        {
+          "value": "growth_eu",
+          "label": "Series A–C / Growth — EU/EEA"
+        },
+        {
+          "value": "latestage_eu",
+          "label": "Late-stage / Pre-IPO — EU/EEA"
+        },
+        {
+          "value": "growth_uk",
+          "label": "Growth — UK (FCA-regulated)"
+        },
+        {
+          "value": "growth_us",
+          "label": "Growth — US"
+        },
+        {
+          "value": "growth_em",
+          "label": "Growth — Emerging Markets (LatAm / SE-Asia / Africa)"
+        }
+      ]
+    },
+    {
+      "id": "analysis_focus",
+      "type": "multi-select",
+      "label": "Analysis Focus",
+      "description": "Which parts of the unit-economics-and-valuation chain should the analysis prioritise?",
+      "options": [
+        {
+          "value": "contribution_margin",
+          "label": "Contribution margin / take-rate decomposition"
+        },
+        {
+          "value": "cac_ltv",
+          "label": "CAC, payback & LTV"
+        },
+        {
+          "value": "cohort_retention",
+          "label": "Cohort retention & revenue durability"
+        },
+        {
+          "value": "credit_loss",
+          "label": "Credit-loss / risk-adjusted margin (lending/BNPL)"
+        },
+        {
+          "value": "capital_drag",
+          "label": "Regulatory-capital & funding drag"
+        },
+        {
+          "value": "valuation_multiple",
+          "label": "Valuation — multiple selection & comparables"
+        },
+        {
+          "value": "scenario_dcf",
+          "label": "Scenario / DCF & sensitivity"
+        }
+      ]
+    },
+    {
+      "id": "valuation_purpose",
+      "type": "select",
+      "label": "Purpose of the Analysis",
+      "description": "Why is this being done? Frames the conservatism and the deliverable.",
+      "options": [
+        {
+          "value": "ic_diligence",
+          "label": "IC / pre-investment diligence (buy-side)"
+        },
+        {
+          "value": "fundraise",
+          "label": "Fundraise positioning (sell-side / company)"
+        },
+        {
+          "value": "portfolio_review",
+          "label": "Portfolio monitoring / mark review"
+        },
+        {
+          "value": "exit_prep",
+          "label": "Exit / IPO readiness"
+        }
+      ]
+    },
+    {
+      "id": "known_data",
+      "type": "textarea",
+      "label": "Known Metrics, Data & Concerns",
+      "description": "Paste any actuals you have (revenue, TPV/volume, take-rate, CAC, gross margin, NDR, charge-offs, capital ratios) and flag known weak spots or contested assumptions.",
+      "placeholder": "e.g. EUR 18m net revenue, TPV EUR 2.4bn, blended take-rate 0.75%; CAC SEK 1,900, payback 14 months; gross margin 42%; own-book loan portfolio EUR 60m, annualised net charge-offs 4.8%; CET1 19% under CRR. Concern: 60% of revenue from one acquiring partner; LTV uses a 7-year life with no churn step-up."
+    }
+  ],
+  "exampleInput": "We are evaluating a Series B European payments-and-embedded-finance company for a potential lead investment. They report EUR 22m net revenue (TTM), EUR 3.1bn total payment volume, and a 0.71% blended take-rate, plus a small own-book BNPL portfolio (EUR 45m) embedded at checkout. The company guides to a 6x forward net-revenue multiple at a EUR 220m pre-money. Management's deck shows LTV/CAC of 5.2x and 110% net revenue retention. Build a defensible unit-economics and valuation view: decompose the take-rate and contribution margin (net of interchange, scheme fees and processing cost), pressure-test CAC payback and the LTV assumptions (life, discount rate, churn), assess the credit-loss and regulatory-capital drag from the BNPL book, and recommend whether a revenue or gross-profit multiple is appropriate — with a comparable-company cross-check and an IC-ready recommendation on entry valuation.",
+  "exampleValues": {
+    "business_model": "payments_acquiring",
+    "stage_and_geography": "growth_eu",
+    "analysis_focus": ["contribution_margin", "cac_ltv", "credit_loss", "capital_drag", "valuation_multiple"],
+    "valuation_purpose": "ic_diligence",
+    "known_data": "EUR 22m net revenue TTM; TPV EUR 3.1bn; blended take-rate 0.71%; own-book BNPL portfolio EUR 45m embedded at checkout; LTV/CAC 5.2x and NRR 110% per management; guided 6x forward net-revenue multiple at EUR 220m pre-money. Concerns: LTV assumes 7-year customer life with flat churn; gross margin not disclosed (only net revenue); credit losses on the BNPL book not separately reported; revenue concentration in two acquiring partners."
+  },
+  "recommendedPersonas": [
+    "pe-vc-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "fintech",
+    "unit-economics",
+    "valuation",
+    "cac-ltv",
+    "take-rate",
+    "due-diligence"
+  ],
+  "contentType": "analytic_report"
+}

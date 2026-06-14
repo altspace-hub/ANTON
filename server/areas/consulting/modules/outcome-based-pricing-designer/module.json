@@ -1,0 +1,216 @@
+{
+  "formatVersion": "1.0",
+  "id": "outcome-based-pricing-designer",
+  "label": "Outcome-Based Pricing Designer",
+  "shortLabel": "Outcome Pricing",
+  "icon": "TrendingUp",
+  "description": "Design outcome-based and value-based pricing for professional services. Define measurable outcomes and baselines, structure risk-sharing and gain-share mechanics, set guardrails, and decide when outcome pricing beats time-and-materials or fixed-fee.",
+  "color": "adv-blue",
+  "areaId": "consulting",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "detailed-findings",
+      "risk-appetite-statement"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Professional-services pricing literature (Ron Baker / VeraSage value-pricing, Monitor Deloitte and McKinsey value-based pricing frameworks), gain-share and risk-reward contracting practice (managed-services and BPO outcome contracts, NEC4 target-cost / pain-share-gain-share Option C, IPA / Project 13 alliance contracting), benefit-isolation and engagement-economics references (Phillips ROI Methodology), and ILPA-style fee-and-incentive transparency norms. Use web search to confirm current benchmark fee structures and any client-named contract terms."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "service_type",
+      "type": "select",
+      "label": "Service / Engagement Type",
+      "description": "What kind of professional-services engagement are you pricing?",
+      "required": true,
+      "options": [
+        {
+          "value": "strategy_advisory",
+          "label": "Strategy / Management Advisory"
+        },
+        {
+          "value": "transformation",
+          "label": "Operational / Cost Transformation"
+        },
+        {
+          "value": "tech_implementation",
+          "label": "Technology Implementation / Systems Integration"
+        },
+        {
+          "value": "managed_service",
+          "label": "Managed Service / BPO (recurring)"
+        },
+        {
+          "value": "marketing_growth",
+          "label": "Marketing / Demand-Generation / Growth"
+        },
+        {
+          "value": "recovery_litigation",
+          "label": "Recovery / Litigation / Claims (contingent)"
+        },
+        {
+          "value": "other",
+          "label": "Other Professional Service"
+        }
+      ]
+    },
+    {
+      "id": "client_context",
+      "type": "select",
+      "label": "Buyer Context",
+      "description": "Where does the buyer sit, and how mature is procurement? This drives how aggressive the risk-sharing can be.",
+      "required": true,
+      "options": [
+        {
+          "value": "enterprise_procurement",
+          "label": "Enterprise with mature, sceptical procurement"
+        },
+        {
+          "value": "mid_market",
+          "label": "Mid-market, sponsor-led buying"
+        },
+        {
+          "value": "public_sector",
+          "label": "Public sector / regulated (audit-constrained)"
+        },
+        {
+          "value": "founder_smb",
+          "label": "Founder / SMB, fast decision"
+        },
+        {
+          "value": "pe_portfolio",
+          "label": "PE-backed / value-creation mandate"
+        }
+      ]
+    },
+    {
+      "id": "candidate_outcomes",
+      "type": "multi-select",
+      "label": "Candidate Outcome Metrics",
+      "description": "Which outcomes might the fee attach to? Pick the ones the engagement can plausibly move and measure. Avoid attaching fees to metrics you don't control.",
+      "options": [
+        {
+          "value": "cost_savings",
+          "label": "Hard cost savings / run-rate reduction"
+        },
+        {
+          "value": "revenue_uplift",
+          "label": "Revenue / margin uplift"
+        },
+        {
+          "value": "cash_working_capital",
+          "label": "Cash released / working-capital improvement"
+        },
+        {
+          "value": "recovery_amount",
+          "label": "Amount recovered / claim settled"
+        },
+        {
+          "value": "cycle_time_sla",
+          "label": "Cycle-time / SLA / throughput improvement"
+        },
+        {
+          "value": "conversion_pipeline",
+          "label": "Conversion / qualified-pipeline / CAC"
+        },
+        {
+          "value": "milestone_acceptance",
+          "label": "Milestone delivery / go-live acceptance"
+        },
+        {
+          "value": "risk_reduction",
+          "label": "Risk / compliance-exposure reduction"
+        }
+      ]
+    },
+    {
+      "id": "attribution_difficulty",
+      "type": "select",
+      "label": "Attribution & Baseline Clarity",
+      "description": "Can you cleanly attribute the outcome to your work and establish a defensible baseline? This is the single biggest determinant of whether outcome pricing is viable.",
+      "options": [
+        {
+          "value": "clean",
+          "label": "Clean — direct line of sight, measurable baseline"
+        },
+        {
+          "value": "shared",
+          "label": "Shared — client/third parties co-influence the result"
+        },
+        {
+          "value": "noisy",
+          "label": "Noisy — many external/market factors, weak baseline"
+        },
+        {
+          "value": "unknown",
+          "label": "Not yet established"
+        }
+      ]
+    },
+    {
+      "id": "current_pricing",
+      "type": "select",
+      "label": "Current / Default Pricing Model",
+      "description": "What is the fallback you are comparing outcome pricing against?",
+      "options": [
+        {
+          "value": "tm",
+          "label": "Time-and-materials / day rate"
+        },
+        {
+          "value": "fixed_fee",
+          "label": "Fixed fee / fixed scope"
+        },
+        {
+          "value": "retainer",
+          "label": "Retainer / subscription"
+        },
+        {
+          "value": "none",
+          "label": "Greenfield — no current model"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Deal Specifics, Constraints & Known Concerns",
+      "description": "Describe the engagement economics, target outcome size, what you control vs. don't, baseline data availability, the client's risk appetite, margin floor, and any procurement or legal constraints.",
+      "placeholder": "e.g. Target run-rate saving ~SEK 40m over 18 months; baseline contested because client reorganised last year; client wants us 'skin in the game' but has a hard cap on success fees; our delivery cost ~SEK 9m; client controls IT change freeze that could delay benefits..."
+    }
+  ],
+  "exampleInput": "We're a 40-person operations-consulting firm pitching an 18-month procurement-and-supply-chain cost-transformation to a Nordic industrials group. The client's CFO is pushing for 'skin in the game' and dislikes our usual time-and-materials proposal (~SEK 12m). Realistic addressable spend is ~SEK 800m and we believe 5–8% is harvestable, but a chunk depends on the client actually enforcing new supplier contracts, and they reorganised procurement last year so the baseline spend figure is contested. Procurement wants a cap on any success fee and audited savings. Design an outcome-based / gain-share pricing model: how to set the baseline, what share to take, what guardrails and floors we need, how to handle attribution where the client co-delivers, and whether a hybrid (reduced fixed fee + gain-share) beats pure contingency or our current T&M.",
+  "exampleValues": {
+    "service_type": "transformation",
+    "client_context": "enterprise_procurement",
+    "candidate_outcomes": ["cost_savings", "cash_working_capital"],
+    "attribution_difficulty": "shared",
+    "current_pricing": "tm",
+    "known_concerns": "Target run-rate saving 5–8% of ~SEK 800m addressable spend over 18 months. Baseline contested after a 2025 procurement reorg. A material portion of savings depends on the client enforcing renegotiated supplier contracts (we advise, they sign). Procurement insists on a cap on success fees and independently audited savings. Our fully-loaded delivery cost is ~SEK 9m; we will not go below a ~25% margin floor on committed time."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "pricing",
+    "value-based-pricing",
+    "gain-share",
+    "professional-services",
+    "commercial-strategy"
+  ],
+  "contentType": "analytic_report"
+}

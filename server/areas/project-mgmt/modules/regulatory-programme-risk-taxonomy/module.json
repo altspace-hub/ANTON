@@ -1,0 +1,163 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-programme-risk-taxonomy",
+  "label": "Regulatory Programme Risk Taxonomy & Register",
+  "shortLabel": "Reg Programme Risk",
+  "icon": "ShieldAlert",
+  "description": "Build a structured risk taxonomy and RAID register for a large regulatory-change programme — interpretation, supervisory-deadline, dependency/sequencing, resourcing, scope-creep, and evidence/audit-trail risk — with programme-governance and escalation structures.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "executive-summary",
+      "raci-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU financial-services regulatory calendars and application dates (AMLR (EU) 2024/1624, AMLA Reg (EU) 2024/1620, AMLD6 (EU) 2024/1640, DORA (EU) 2022/2554, NIS2 (EU) 2022/2555, MiCA (EU) 2023/1114, TFR (EU) 2023/1113, EU AI Act (EU) 2024/1689, CSRD (EU) 2022/2464 + ESRS); programme/portfolio risk frameworks (MoP, MSP, PRINCE2, PMI PMBOK, ISO 21502, ISO 31000, COSO ERM); programme governance and RAID practice"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "programme_context",
+      "type": "textarea",
+      "label": "Programme context",
+      "description": "Describe the regulatory-change programme: the driving instrument(s), the obliged entity, current phase, and the binding application/compliance dates you are working toward.",
+      "required": true,
+      "placeholder": "e.g. AMLR (EU) 2024/1624 + DORA (EU) 2022/2554 readiness programme for a Swedish e-money institution (~120 FTE). Phase 2 (Data & Systems), ~55% complete. AMLR application 10 July 2027; AMLA operational since July 2025 (direct supervision from Jan 2028); DORA already applicable since 17 Jan 2025 with a live ICT third-party register obligation."
+    },
+    {
+      "id": "regulatory_instruments",
+      "type": "multi-select",
+      "label": "Regulatory instruments in scope",
+      "description": "Which instruments is this programme delivering against? Drives interpretation-risk and supervisory-deadline analysis.",
+      "required": true,
+      "options": [
+        {
+          "value": "amlr",
+          "label": "AMLR (EU) 2024/1624 — applies 10 Jul 2027"
+        },
+        {
+          "value": "amla",
+          "label": "AMLA Reg (EU) 2024/1620 — authority operational since Jul 2025, direct supervision from Jan 2028"
+        },
+        {
+          "value": "amld6",
+          "label": "AMLD6 (EU) 2024/1640 — transposition by 10 Jul 2027"
+        },
+        {
+          "value": "dora",
+          "label": "DORA (EU) 2022/2554 — applies since 17 Jan 2025"
+        },
+        {
+          "value": "nis2",
+          "label": "NIS2 (EU) 2022/2555 — national transposition (deadline 17 Oct 2024)"
+        },
+        {
+          "value": "mica",
+          "label": "MiCA (EU) 2023/1114 — ART/EMT from Jun 2024, CASP regime from Dec 2024"
+        },
+        {
+          "value": "tfr",
+          "label": "TFR (EU) 2023/1113 (Travel Rule) — applies since 30 Dec 2024"
+        },
+        {
+          "value": "ai_act",
+          "label": "EU AI Act (EU) 2024/1689 — phased to Aug 2026/2027"
+        },
+        {
+          "value": "csrd",
+          "label": "CSRD (EU) 2022/2464 + ESRS — phased reporting"
+        },
+        {
+          "value": "other",
+          "label": "Other / national instrument (specify in context)"
+        }
+      ]
+    },
+    {
+      "id": "entity_jurisdiction",
+      "type": "chips",
+      "label": "Entity jurisdiction(s) & supervisor",
+      "description": "Which jurisdiction(s) and national competent authority set the supervisory timetable and transposition rules for this programme?",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU-level / cross-border" },
+        { "value": "sweden", "label": "Sweden (Finansinspektionen)" },
+        { "value": "finland", "label": "Finland (FIN-FSA)" },
+        { "value": "denmark", "label": "Denmark (Finanstilsynet)" },
+        { "value": "norway", "label": "Norway (Finanstilsynet)" },
+        { "value": "germany", "label": "Germany (BaFin)" },
+        { "value": "uk", "label": "UK (FCA / PRA)" }
+      ]
+    },
+    {
+      "id": "risk_dimensions",
+      "type": "multi-select",
+      "label": "Risk dimensions to emphasise",
+      "description": "Which programme-risk categories should the taxonomy and register prioritise?",
+      "options": [
+        { "value": "interpretation", "label": "Interpretation risk (ambiguous/unfinalised RTS/ITS, Level-2/3 gaps)" },
+        { "value": "deadline", "label": "Supervisory-deadline risk (application dates, transposition, day-one obligations)" },
+        { "value": "dependency", "label": "Dependency & sequencing risk (critical path, upstream/downstream)" },
+        { "value": "resourcing", "label": "Resourcing & capacity risk (SME availability, vendor reliance, key-person)" },
+        { "value": "scope_creep", "label": "Scope-creep risk (perimeter expansion, gold-plating, requirement drift)" },
+        { "value": "evidence", "label": "Evidence / audit-trail risk (traceability, defensibility, examination readiness)" },
+        { "value": "data_tech", "label": "Data & technology delivery risk (migration, system change, data quality)" },
+        { "value": "governance", "label": "Governance & decision risk (mandate, accountability, escalation latency)" },
+        { "value": "change_adoption", "label": "Change-adoption & operating-model risk (BAU handover, training, embedding)" }
+      ]
+    },
+    {
+      "id": "governance_maturity",
+      "type": "select",
+      "label": "Programme governance maturity",
+      "description": "How established is the programme's governance and assurance today? Calibrates how aggressively to flag governance/escalation risk.",
+      "options": [
+        { "value": "forming", "label": "Forming — no formal SteerCo / RAID discipline yet" },
+        { "value": "established", "label": "Established — SteerCo, RAID log, and stage gates in place" },
+        { "value": "assured", "label": "Assured — independent assurance / three-lines model operating" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues, concerns, or prior findings",
+      "description": "Describe known risks, audit/assurance findings, missed milestones, contested interpretations, or vendor problems already on your radar.",
+      "placeholder": "e.g. AMLA RTS on CDD still in draft — our build assumes the consultation text. Vendor for the screening platform slipped 6 weeks. Internal audit flagged weak traceability between requirements and test evidence. UBO data-model decision contested between Compliance and Data teams."
+    }
+  ],
+  "exampleInput": "We run a combined AMLR + DORA readiness programme for a Swedish e-money institution (~120 FTE, Finansinspektionen-supervised). We are in Phase 2 (Data & Systems), roughly 55% complete. AMLR (EU) 2024/1624 applies from 10 July 2027; AMLA (EU) 2024/1620 has been operational since July 2025 and begins direct supervision of selected entities from January 2028; DORA (EU) 2022/2554 has applied since 17 January 2025 and our ICT third-party register is a live day-one obligation we are still completing. Build me a programme risk taxonomy and a populated RAID register. I am most worried about three things: (1) several AMLA RTS/ITS are still in draft, so our requirements may shift under us; (2) the AMLR application date is fixed and immovable while two upstream dependencies (the new screening platform and the UBO data model) are slipping; and (3) internal audit has already flagged weak traceability between our requirements and our test evidence, which is an examination-readiness problem. Give me a governance and escalation structure to manage it.",
+  "exampleValues": {
+    "programme_context": "Combined AMLR (EU) 2024/1624 + DORA (EU) 2022/2554 readiness programme for a Swedish e-money institution (~120 FTE), supervised by Finansinspektionen. Phase 2 (Data & Systems), ~55% complete. AMLR application 10 July 2027; AMLA operational since July 2025 with direct supervision from January 2028; DORA applicable since 17 Jan 2025 with the ICT third-party register still being completed.",
+    "regulatory_instruments": ["amlr", "amla", "dora"],
+    "entity_jurisdiction": ["eu", "sweden"],
+    "risk_dimensions": ["interpretation", "deadline", "dependency", "evidence"],
+    "governance_maturity": "established",
+    "known_concerns": "Several AMLA RTS/ITS still in draft, so requirements may shift. Screening-platform vendor slipped 6 weeks and the UBO data model is contested between Compliance and Data. Internal audit flagged weak traceability between requirements and test evidence — an examination-readiness concern. AMLR application date (10 Jul 2027) is fixed and cannot move."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "project-management",
+    "programme-risk",
+    "raid",
+    "regulatory-change",
+    "governance",
+    "risk-taxonomy"
+  ],
+  "contentType": "risk_register"
+}

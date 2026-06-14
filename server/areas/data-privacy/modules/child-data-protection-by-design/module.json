@@ -1,0 +1,210 @@
+{
+  "formatVersion": "1.0",
+  "id": "child-data-protection-by-design",
+  "label": "Children's Data Protection by Design",
+  "shortLabel": "Children's Data",
+  "icon": "Baby",
+  "description": "Assess and design protection for children's personal data in services likely to be accessed by children. Covers GDPR Art. 8 age of consent and parental authorisation, the UK Age Appropriate Design Code, EDPB and ICO guidance, and EU AI Act provisions on minors — producing a child-focused DPIA with an age-assurance / exclusion-risk balance.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "privacy-impact-assessment",
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "GDPR (EU) 2016/679 Art. 8 (child consent), Art. 6(1)(f) and Recital 38, Art. 12 (transparency), Art. 35 (DPIA); UK GDPR Art. 8 (age 13); ICO Age Appropriate Design Code (Children's Code) 15 standards; EDPB Guidelines 05/2020 on consent and EDPB ongoing work on children's data; ICO Opinion on Age Assurance (Oct 2021) and Commissioner's Opinion; EU AI Act (EU) 2024/1689 Art. 5 prohibitions exploiting vulnerabilities of age and Recitals on minors; UN Convention on the Rights of the Child General Comment No. 25 (digital environment); national DPA guidance (CNIL recommendations on children's rights, Datatilsynet, IMY)"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "service_type",
+      "type": "select",
+      "label": "Service / Product Type",
+      "description": "What kind of online service is being assessed? This drives which Children's Code standards and risk vectors are most relevant.",
+      "required": true,
+      "options": [
+        {
+          "value": "social_media",
+          "label": "Social media / messaging / UGC platform"
+        },
+        {
+          "value": "gaming",
+          "label": "Game or gaming platform (incl. in-game economy)"
+        },
+        {
+          "value": "edtech",
+          "label": "EdTech / learning platform"
+        },
+        {
+          "value": "streaming",
+          "label": "Video / audio streaming or content"
+        },
+        {
+          "value": "ecommerce",
+          "label": "E-commerce / marketplace"
+        },
+        {
+          "value": "fintech_youth",
+          "label": "Youth banking / fintech / pocket-money app"
+        },
+        {
+          "value": "health_wellbeing",
+          "label": "Health, wellbeing or mental-health app"
+        },
+        {
+          "value": "general_likely_accessed",
+          "label": "General service likely to be accessed by children"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which regimes apply? GDPR Art. 8 lets Member States set the digital-consent age between 13 and 16, so the applicable threshold varies.",
+      "required": true,
+      "options": [
+        {
+          "value": "eu_gdpr",
+          "label": "EU / GDPR (Art. 8 — age 13–16 per Member State)"
+        },
+        {
+          "value": "uk",
+          "label": "UK (UK GDPR age 13 + Children's Code)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (consent age 13)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (consent age 16)"
+        },
+        {
+          "value": "france",
+          "label": "France (consent age 15)"
+        },
+        {
+          "value": "ireland",
+          "label": "Ireland (consent age 16, Fundamentals)"
+        }
+      ]
+    },
+    {
+      "id": "age_assurance_approach",
+      "type": "select",
+      "label": "Current Age-Assurance Approach",
+      "description": "How does the service currently establish the age of its users? Drives the proportionality and exclusion-risk balance.",
+      "required": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None — no age check (self-declared birthday only or nothing)"
+        },
+        {
+          "value": "self_declaration",
+          "label": "Self-declaration (date-of-birth gate)"
+        },
+        {
+          "value": "age_estimation",
+          "label": "Age estimation (facial / behavioural / capability)"
+        },
+        {
+          "value": "hard_verification",
+          "label": "Hard identifiers (ID document / credit reference / parental account)"
+        },
+        {
+          "value": "third_party",
+          "label": "Third-party / certified age-assurance provider"
+        },
+        {
+          "value": "all_treated_as_children",
+          "label": "Treat all users as children (no distinction)"
+        }
+      ]
+    },
+    {
+      "id": "data_practices",
+      "type": "multi-select",
+      "label": "Data Practices to Assess",
+      "description": "Which child-impacting practices are present and should be assessed against the Children's Code and AI Act?",
+      "options": [
+        {
+          "value": "profiling",
+          "label": "Profiling / behavioural targeting of users"
+        },
+        {
+          "value": "recommender",
+          "label": "Recommender / feed-ranking system"
+        },
+        {
+          "value": "geolocation",
+          "label": "Geolocation collection or sharing"
+        },
+        {
+          "value": "nudge_design",
+          "label": "Nudge techniques / engagement-maximising design"
+        },
+        {
+          "value": "third_party_sharing",
+          "label": "Third-party data sharing / ad-tech"
+        },
+        {
+          "value": "default_settings",
+          "label": "Default privacy / visibility settings"
+        },
+        {
+          "value": "parental_controls",
+          "label": "Parental controls and oversight tools"
+        },
+        {
+          "value": "ai_features",
+          "label": "AI features (chatbot, generative, emotion/age inference)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe any known weaknesses, regulator correspondence, complaints, or design decisions you are unsure about.",
+      "placeholder": "e.g. Default account visibility is 'public'; recommender feed is the same for all ages; self-declared DOB only; we run interest-based ads to 13–15s; received an ICO Children's Code self-assessment prompt..."
+    }
+  ],
+  "exampleInput": "We run a Nordic social/UGC app (~400k monthly users, ~20% estimated to be under 18) offered in the EU and the UK. Onboarding asks for a self-declared date of birth only. Profiles default to public, the recommender feed is identical for all ages, and we serve interest-based ads to users aged 13–17. We are EU-established (Sweden) but have significant UK traffic, so the ICO Children's Code applies. We're adding an AI chat companion that infers mood from messages. Assess us against GDPR Art. 8, the Age Appropriate Design Code, EDPB guidance and the EU AI Act provisions on minors, and produce a child-focused DPIA. Specific worries: our self-declaration age gate is weak, but harder age verification could exclude legitimate teenage users and over-collect ID data. Help us strike the age-assurance vs exclusion-risk balance and tell us which defaults must change.",
+  "exampleValues": {
+    "service_type": "social_media",
+    "jurisdiction": ["eu_gdpr", "uk", "sweden"],
+    "age_assurance_approach": "self_declaration",
+    "data_practices": ["profiling", "recommender", "third_party_sharing", "default_settings", "ai_features"],
+    "known_concerns": "Default account visibility is public for all users including under-18s. Recommender feed is identical regardless of age. Interest-based ads served to 13–17s. New AI chat companion infers mood from message content. Self-declared DOB is the only age signal — concerned it is too weak under the Children's Code but worried hard verification excludes teens and over-collects ID."
+  },
+  "recommendedPersonas": [
+    "legal-expert",
+    "tech-expert"
+  ],
+  "tags": [
+    "children",
+    "gdpr",
+    "article-8",
+    "age-appropriate-design-code",
+    "dpia",
+    "ai-act",
+    "privacy-by-design",
+    "age-assurance"
+  ],
+  "contentType": "risk_register"
+}

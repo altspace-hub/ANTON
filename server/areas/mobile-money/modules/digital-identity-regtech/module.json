@@ -1,0 +1,207 @@
+{
+  "formatVersion": "1.0",
+  "id": "digital-identity-regtech",
+  "label": "Digital Identity & eKYC for Inclusion",
+  "shortLabel": "Digital ID RegTech",
+  "icon": "Fingerprint",
+  "description": "Design and assess digital-identity and eKYC RegTech for financial inclusion: national digital ID, tiered/risk-based KYC for the unbanked, GSMA mobile identity, and the privacy-vs-exclusion-vs-AML/CFT balance.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "impact-assessment",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "FATF Recommendations 10 & 1 + FATF Guidance on Digital ID (2020) and Financial Inclusion (2017/2025 update); GSMA Mobile Money and Mobile Identity / Digital Identity programmes; World Bank ID4D and the Principles on Identification for Sustainable Development; ISO/IEC 29115 (LoA) and ISO/IEC 18013-5 (mobile driving licence / mDL); NIST SP 800-63-3 (IAL/AAL/FAL); eIDAS 2.0 (Regulation (EU) 2024/1183) and the EU Digital Identity Wallet; AMLR (EU) 2024/1624 remote-identification and eIDAS-means provisions; GDPR (EU) 2016/679 (Art. 9 biometrics, Art. 22 automated decisions, Art. 35 DPIA); national digital-ID schemes (Aadhaar/India Stack, BankID, MOSIP, national eID)."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "market_context",
+      "type": "select",
+      "label": "Market / Deployment Context",
+      "description": "What kind of market is this digital-identity / eKYC design or assessment for? Drives the inclusion-vs-AML/CFT trade-off calibration.",
+      "required": true,
+      "options": [
+        {
+          "value": "emerging_low_id",
+          "label": "Emerging market, low foundational-ID coverage (large unbanked / undocumented population)"
+        },
+        {
+          "value": "emerging_national_id",
+          "label": "Emerging market with a maturing national digital-ID scheme"
+        },
+        {
+          "value": "developed_eid",
+          "label": "Developed market with strong eID (e.g. EU eIDAS / Nordic BankID)"
+        },
+        {
+          "value": "humanitarian_refugee",
+          "label": "Humanitarian / refugee / displaced-population context"
+        },
+        {
+          "value": "cross_border",
+          "label": "Cross-border / remittance corridor (multi-jurisdiction)"
+        }
+      ]
+    },
+    {
+      "id": "provider_type",
+      "type": "select",
+      "label": "Provider / Solution Type",
+      "description": "Who is deploying or relying on the identity solution?",
+      "required": true,
+      "options": [
+        {
+          "value": "mno_mobile_money",
+          "label": "Mobile Network Operator / mobile-money provider"
+        },
+        {
+          "value": "bank_psp",
+          "label": "Bank / Payment Service Provider / e-money institution"
+        },
+        {
+          "value": "fintech_neobank",
+          "label": "Fintech / neobank / wallet"
+        },
+        {
+          "value": "regtech_vendor",
+          "label": "RegTech / digital-ID / eKYC vendor"
+        },
+        {
+          "value": "regulator_govt",
+          "label": "Regulator / central bank / government ID authority"
+        },
+        {
+          "value": "ngo_donor",
+          "label": "NGO / donor / development agency"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) / Region(s)",
+      "description": "Which jurisdictions or regions apply? Select all relevant.",
+      "required": true,
+      "options": [
+        {
+          "value": "sub_saharan_africa",
+          "label": "Sub-Saharan Africa"
+        },
+        {
+          "value": "south_asia",
+          "label": "South Asia"
+        },
+        {
+          "value": "southeast_asia",
+          "label": "Southeast Asia"
+        },
+        {
+          "value": "latam",
+          "label": "Latin America & Caribbean"
+        },
+        {
+          "value": "mena",
+          "label": "Middle East & North Africa"
+        },
+        {
+          "value": "eu_eidas",
+          "label": "EU / eIDAS"
+        },
+        {
+          "value": "global_corridor",
+          "label": "Cross-border corridor (multiple)"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Focus Areas",
+      "description": "Which dimensions should the analysis prioritise?",
+      "options": [
+        {
+          "value": "tiered_kyc",
+          "label": "Tiered / risk-based KYC design (FATF R.10 + R.1)"
+        },
+        {
+          "value": "ekyc_loa",
+          "label": "eKYC & identity assurance levels (LoA / IAL / AAL)"
+        },
+        {
+          "value": "national_digital_id",
+          "label": "National digital ID / foundational-ID reliance"
+        },
+        {
+          "value": "mobile_identity",
+          "label": "GSMA mobile identity & SIM-registration data"
+        },
+        {
+          "value": "biometrics",
+          "label": "Biometrics, liveness & deduplication"
+        },
+        {
+          "value": "privacy_data_protection",
+          "label": "Privacy & data protection (GDPR / data minimisation)"
+        },
+        {
+          "value": "exclusion_risk",
+          "label": "Exclusion & error-rate / fairness risk"
+        },
+        {
+          "value": "aml_cft_balance",
+          "label": "AML/CFT-vs-inclusion proportionality"
+        },
+        {
+          "value": "cross_border_interop",
+          "label": "Cross-border interoperability & e-signature trust"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Constraints or Concerns",
+      "description": "Describe the specific design questions, known gaps, population characteristics, prior findings, or trade-offs you want addressed.",
+      "placeholder": "e.g. We onboard agents and rural customers with low-coverage national ID; biometric fingerprint capture fails for manual labourers (high false-reject rate); regulator requires full KYC even for low-value wallets; concerns about SIM-swap and address-of-record reliability..."
+    }
+  ],
+  "exampleInput": "We are a mobile-money provider in a Sub-Saharan market launching a low-value wallet for first-time, mostly rural and undocumented customers. National foundational-ID coverage is roughly 60% and skewed against women and informal workers. The central bank's AML/CFT rules currently demand the same full KYC for a $5 wallet as for a full bank account, which is killing activation. We want to design a tiered, risk-based KYC ladder: a basic mobile-identity tier (SIM registration + self-asserted data + transaction/balance limits) that steps up to full eKYC against the national digital ID and a fingerprint/selfie check as customers transact more. Assess this against FATF Recommendations 1 and 10 and the FATF Digital ID guidance, map the identity assurance levels we actually need at each tier, and tell us where the design creates exclusion risk (biometric false-rejects, women without ID) and privacy risk (over-collection of SIM and biometric data), and how to argue the proportionality case to the regulator.",
+  "exampleValues": {
+    "market_context": "emerging_low_id",
+    "provider_type": "mno_mobile_money",
+    "jurisdiction": ["sub_saharan_africa"],
+    "focus_areas": ["tiered_kyc", "ekyc_loa", "national_digital_id", "exclusion_risk", "aml_cft_balance"],
+    "known_concerns": "National ID coverage ~60%, skewed against women and informal workers. Regulator demands identical full KYC for a $5 wallet and a full bank account. Fingerprint capture has a high false-reject rate for manual labourers. Concerns about over-collection of SIM and biometric data and SIM-swap fraud on the address-of-record."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "tech-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "digital-identity",
+    "ekyc",
+    "financial-inclusion",
+    "tiered-kyc",
+    "mobile-money",
+    "aml-cft",
+    "privacy",
+    "regtech"
+  ],
+  "contentType": "analytic_report"
+}

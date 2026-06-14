@@ -1,0 +1,141 @@
+{
+  "formatVersion": "1.0",
+  "id": "regulatory-risk-startup-assessment",
+  "label": "Regulatory Risk Assessment for Startups",
+  "shortLabel": "Reg Risk (Startup)",
+  "icon": "ShieldAlert",
+  "description": "Pragmatic, stage-appropriate regulatory-risk assessment for founders: licensing perimeter, data and privacy, sector-specific rules (fintech, health, AI), the real cost of getting it wrong, and a risk-prioritised compliance roadmap proportionate to your stage and runway.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "executive-summary",
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU and national regulatory instruments relevant to early-stage companies: GDPR (EU) 2016/679, the EU AI Act (EU) 2024/1689, the AMLR (EU) 2024/1624 / AMLD6 (EU) 2024/1640 / AMLA Reg (EU) 2024/1620 package, MiCA (EU) 2023/1114, EMD2 2009/110/EC, PSD2 2015/2366, the Transfer of Funds Regulation (EU) 2023/1113, DORA (EU) 2022/2554, the Medical Devices Regulation (EU) 2017/745, the Digital Services Act (EU) 2022/2065, the Digital Markets Act (EU) 2022/1925, consumer-protection directives, and national licensing regimes. Supplement with current supervisory guidance via web search when in-force dates or transitional periods are decisive."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "business_model",
+      "type": "select",
+      "label": "Core Business Model",
+      "description": "What does the startup actually do? This determines which regulatory perimeters can be triggered.",
+      "required": true,
+      "options": [
+        { "value": "fintech_payments", "label": "Fintech — payments / e-money / wallet" },
+        { "value": "fintech_lending", "label": "Fintech — lending / credit / BNPL" },
+        { "value": "crypto", "label": "Crypto / digital assets (token, exchange, custody)" },
+        { "value": "healthtech", "label": "Healthtech / digital health / medical software" },
+        { "value": "ai_ml", "label": "AI / ML product (model, agent, or AI-enabled SaaS)" },
+        { "value": "marketplace", "label": "Marketplace / platform / gig economy" },
+        { "value": "saas_data", "label": "B2B / B2C SaaS handling personal or sensitive data" },
+        { "value": "consumer", "label": "Consumer product / e-commerce / D2C" },
+        { "value": "deeptech", "label": "Deeptech / hardware / climate / energy" },
+        { "value": "other", "label": "Other / multiple models" }
+      ]
+    },
+    {
+      "id": "stage",
+      "type": "select",
+      "label": "Company Stage",
+      "description": "Stage sets the proportionality bar — how much compliance is enough right now versus what can wait.",
+      "required": true,
+      "options": [
+        { "value": "idea", "label": "Idea / pre-build — validating the concept" },
+        { "value": "pre_seed", "label": "Pre-seed — building MVP, pre-revenue" },
+        { "value": "seed", "label": "Seed — first customers / first revenue" },
+        { "value": "series_a", "label": "Series A — scaling, raising institutional capital" },
+        { "value": "growth", "label": "Growth / Series B+ — multi-market expansion" }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Markets / Jurisdictions",
+      "description": "Where are the customers, the users, and the company established? Drives which regimes have territorial reach.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU (single market)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "nordics", "label": "Other Nordics (FI/DK/NO)" },
+        { "value": "uk", "label": "UK" },
+        { "value": "us", "label": "United States" },
+        { "value": "global", "label": "Global / multi-region" }
+      ]
+    },
+    {
+      "id": "data_profile",
+      "type": "multi-select",
+      "label": "Data & Technology Profile",
+      "description": "Select everything the product collects, processes, or relies on — each item can pull in a distinct regime.",
+      "options": [
+        { "value": "personal_data", "label": "Personal data of EU residents (GDPR)" },
+        { "value": "special_category", "label": "Special-category data (health, biometric, etc.)" },
+        { "value": "children", "label": "Data of children / under-18 users" },
+        { "value": "ai_decisions", "label": "AI/automated decisions affecting people" },
+        { "value": "payments_data", "label": "Payment / financial account data" },
+        { "value": "cross_border", "label": "Cross-border data transfers (outside EEA)" },
+        { "value": "third_party_models", "label": "Third-party LLMs / foundation models / external APIs" },
+        { "value": "none", "label": "No personal data / not applicable" }
+      ]
+    },
+    {
+      "id": "runway_constraints",
+      "type": "select",
+      "label": "Runway / Risk Appetite",
+      "description": "How much room is there to invest in compliance now? Shapes how aggressively we sequence the roadmap.",
+      "options": [
+        { "value": "tight", "label": "Tight — <9 months runway, minimise spend" },
+        { "value": "moderate", "label": "Moderate — 9–18 months, balanced" },
+        { "value": "funded", "label": "Well-funded — invest ahead of need" },
+        { "value": "regulated_target", "label": "Targeting a regulated market — compliance is the moat" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns or Specific Questions",
+      "description": "Describe what worries you, what an investor flagged in diligence, or any specific 'are we allowed to do this?' questions.",
+      "placeholder": "e.g. We hold customer funds in a pooled account before paying out merchants — do we need an e-money or payment licence? Investor diligence flagged that we have no DPA with our LLM provider and no record of processing. We market a symptom-checker as 'not a medical device' — is that defensible?"
+    }
+  ],
+  "exampleInput": "We are a pre-seed Swedish startup (4 founders, no revenue yet) building an AI-powered personal-finance app for EU consumers. The app connects to users' bank accounts via an open-banking aggregator, categorises spending with an LLM, and will later let users move money between their own accounts and round up purchases into a savings pot we hold. We process transaction history and want to add a 'financial coach' that nudges users. We are raising a EUR 1.5M seed round in 6 months and an investor has asked for a regulatory-risk summary. Assess our regulatory perimeter (do we need a payment or e-money licence? are we a credit intermediary?), our GDPR and EU AI Act exposure given the LLM and the automated nudges, the realistic cost of getting licensing wrong, and give us a stage-appropriate compliance roadmap we can actually afford before the raise.",
+  "exampleValues": {
+    "business_model": "fintech_payments",
+    "stage": "pre_seed",
+    "jurisdictions": ["eu", "sweden"],
+    "data_profile": ["personal_data", "ai_decisions", "payments_data", "third_party_models"],
+    "runway_constraints": "tight",
+    "known_concerns": "We will hold user savings in a pooled 'round-up' pot before sweeping to their account — unsure if this triggers an e-money or payment-services licence. We use a third-party LLM to categorise transactions and generate financial nudges, with no DPA and no AI Act analysis done. Investor diligence wants a one-page regulatory-risk view before the seed round."
+  },
+  "recommendedPersonas": [
+    "legal-expert",
+    "strategy-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "startups",
+    "regulatory-risk",
+    "licensing",
+    "gdpr",
+    "ai-act",
+    "fintech",
+    "compliance",
+    "founders"
+  ],
+  "contentType": "risk_register"
+}

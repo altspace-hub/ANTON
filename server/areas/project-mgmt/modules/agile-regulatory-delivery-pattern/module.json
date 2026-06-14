@@ -1,0 +1,197 @@
+{
+  "formatVersion": "1.0",
+  "id": "agile-regulatory-delivery-pattern",
+  "label": "Agile Regulatory Delivery Pattern",
+  "shortLabel": "Agile Reg Delivery",
+  "icon": "GitBranch",
+  "description": "Adapt agile delivery for fixed-deadline, fixed-scope regulatory programmes. Embed compliance gates inside sprints, write regulatory acceptance criteria, make evidence and audit trail a definition-of-done, and reconcile iterative delivery with immovable supervisory milestones (AMLR, DORA, MiCA, CSRD, EU AI Act).",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "project-plan",
+      "action-plan",
+      "raci-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Scrum Guide (2020) and SAFe; Disciplined Agile; EU regulatory instruments and their compliance dates — AMLR (EU) 2024/1624 (apply 10 Jul 2027), AMLA Reg (EU) 2024/1620 (AMLA operational mid-2025, direct supervision from 2028), AMLD6 (EU) 2024/1640, DORA (EU) 2022/2554 (apply 17 Jan 2025), MiCA (EU) 2023/1114, TFR (EU) 2023/1113, EU AI Act (EU) 2024/1689 (staged 2025–2027), CSRD (EU) 2022/2464 + ESRS; supervisory expectations on change management, evidence and audit trail (EBA, ESMA, national competent authorities)"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "programme_context",
+      "type": "select",
+      "label": "Regulatory Programme Context",
+      "description": "Which regulatory driver is the fixed deadline for this delivery?",
+      "required": true,
+      "options": [
+        {
+          "value": "amlr_amla",
+          "label": "AMLR / AMLA readiness (EU AML reform — apply 10 Jul 2027)"
+        },
+        {
+          "value": "dora",
+          "label": "DORA operational resilience (EU 2022/2554)"
+        },
+        {
+          "value": "mica_tfr",
+          "label": "MiCA / Travel Rule (crypto-asset, EU 2023/1114 + 2023/1113)"
+        },
+        {
+          "value": "ai_act",
+          "label": "EU AI Act conformity (EU 2024/1689)"
+        },
+        {
+          "value": "csrd_esrs",
+          "label": "CSRD / ESRS sustainability reporting (EU 2022/2464)"
+        },
+        {
+          "value": "other_reg",
+          "label": "Other supervisory / statutory deadline"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) / Supervisor(s)",
+      "description": "Which regulators set or enforce the milestone?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU level (EBA / ESMA / AMLA)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (Finansinspektionen)"
+        },
+        {
+          "value": "finland",
+          "label": "Finland (FIN-FSA)"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark (Finanstilsynet)"
+        },
+        {
+          "value": "norway",
+          "label": "Norway (Finanstilsynet)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (BaFin)"
+        },
+        {
+          "value": "uk",
+          "label": "UK (FCA / PRA)"
+        }
+      ]
+    },
+    {
+      "id": "delivery_maturity",
+      "type": "select",
+      "label": "Current Delivery Operating Model",
+      "description": "How does the team currently deliver? Drives how much of the pattern is a redesign versus an overlay.",
+      "options": [
+        {
+          "value": "agile_native",
+          "label": "Agile-native (Scrum/SAFe), but no compliance gates"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid (agile squads inside a waterfall PMO / stage-gate)"
+        },
+        {
+          "value": "waterfall",
+          "label": "Waterfall / classic PMO — moving toward iterative"
+        },
+        {
+          "value": "ad_hoc",
+          "label": "Ad-hoc / no consistent delivery framework"
+        }
+      ]
+    },
+    {
+      "id": "milestone_map",
+      "type": "textarea",
+      "label": "Fixed Regulatory Milestones & Dates",
+      "description": "List the immovable supervisory milestones, their dates, and any dependency between them. These become the backward-planning anchors.",
+      "placeholder": "e.g.\n- 10 Jul 2027: AMLR provisions apply (hard stop)\n- Q4 2026: Board sign-off on updated BWRA required before policy rewrite\n- Mar 2027: Supervisory dialogue / readiness self-assessment to FI\n- 2028: AMLA direct supervision begins for selected entities"
+    },
+    {
+      "id": "scope_workstreams",
+      "type": "multi-select",
+      "label": "In-Scope Delivery Workstreams",
+      "description": "Which compliance workstreams will be delivered iteratively under this pattern?",
+      "options": [
+        {
+          "value": "policy",
+          "label": "Policy & procedure rewrite"
+        },
+        {
+          "value": "systems",
+          "label": "Systems / data / technology build"
+        },
+        {
+          "value": "controls",
+          "label": "Control design & testing"
+        },
+        {
+          "value": "governance",
+          "label": "Governance & accountability changes"
+        },
+        {
+          "value": "training",
+          "label": "Training & operating-model rollout"
+        },
+        {
+          "value": "evidence",
+          "label": "Evidence pack / audit-trail production"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Constraints, Risks or Concerns",
+      "description": "Describe what is making fixed-deadline delivery hard: scope creep, dependency on regulator clarifications (RTS/ITS not yet final), vendor lead times, audit findings, resource gaps.",
+      "placeholder": "e.g. Key AMLA RTS on CDD not yet finalised, so acceptance criteria for the onboarding workstream are provisional. Vendor for transaction-monitoring has a 6-month implementation lead time. Internal Audit flagged weak change-control evidence in the last cycle. Product owner is shared across three regulatory programmes."
+    }
+  ],
+  "exampleInput": "We are a Swedish payment institution running an AMLR/AMLA readiness programme that must be operational by the 10 July 2027 application date. We deliver in two-week Scrum sprints across four squads (onboarding/CDD, transaction monitoring, policy & governance, and data/reporting), but our PMO still runs a classic stage-gate over the top and Internal Audit recently flagged that our change-control evidence is thin and reconstructed after the fact. Some AMLA RTS we depend on are not yet final. Design an agile delivery pattern for this programme: how to embed compliance gates inside sprints, write regulatory acceptance criteria and a regulator-grade definition-of-done, backward-plan the sprints from the immovable supervisory milestones, and run the programme so that the audit trail is a by-product of delivery rather than a scramble at the end.",
+  "exampleValues": {
+    "programme_context": "amlr_amla",
+    "jurisdiction": ["eu", "sweden"],
+    "delivery_maturity": "hybrid",
+    "milestone_map": "10 Jul 2027: AMLR provisions apply (hard stop). Q4 2026: Board sign-off on refreshed business-wide risk assessment. Mar 2027: readiness self-assessment to Finansinspektionen. 2028: AMLA direct-supervision regime begins.",
+    "scope_workstreams": ["policy", "systems", "controls", "evidence"],
+    "known_concerns": "Several AMLA RTS we depend on are not yet final, so onboarding acceptance criteria are provisional. Transaction-monitoring vendor has a 6-month lead time. Internal Audit flagged weak, after-the-fact change-control evidence. The product owner is shared across three programmes."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "project-management",
+    "agile",
+    "regulatory-delivery",
+    "compliance",
+    "scrum",
+    "audit-trail",
+    "amlr",
+    "dora"
+  ],
+  "contentType": "plan_document"
+}

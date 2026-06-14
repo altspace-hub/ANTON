@@ -1,0 +1,209 @@
+{
+  "formatVersion": "1.0",
+  "id": "venture-debt-navigator",
+  "label": "Venture Debt Navigator",
+  "shortLabel": "Venture Debt",
+  "icon": "Landmark",
+  "description": "Structure venture debt the right way: assess when it fits, model the dilution-vs-runway trade-off, size warrants and covenants, quantify MOIC impact, select lenders, and sequence the facility around the equity round.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "executive-summary",
+      "investment-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": ""
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_stage",
+      "type": "select",
+      "label": "Company Stage",
+      "description": "Where is the company in its financing lifecycle? Venture debt is generally available from late-seed onward and is cheapest when paired with a fresh equity round.",
+      "required": true,
+      "options": [
+        {
+          "value": "pre_seed",
+          "label": "Pre-Seed (typically too early for venture debt)"
+        },
+        {
+          "value": "seed",
+          "label": "Seed / Late-Seed"
+        },
+        {
+          "value": "series_a",
+          "label": "Series A"
+        },
+        {
+          "value": "series_b",
+          "label": "Series B"
+        },
+        {
+          "value": "series_c_plus",
+          "label": "Series C+ / Growth"
+        },
+        {
+          "value": "pre_ipo",
+          "label": "Pre-IPO / Late-Stage"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction / Lender Market",
+      "description": "Where is the company domiciled and which lender market are you raising in? Term conventions, security packages, and lender depth differ materially between the US and Europe.",
+      "required": true,
+      "options": [
+        {
+          "value": "us",
+          "label": "United States"
+        },
+        {
+          "value": "uk",
+          "label": "United Kingdom"
+        },
+        {
+          "value": "eu_nordics",
+          "label": "EU — Nordics"
+        },
+        {
+          "value": "eu_dach",
+          "label": "EU — DACH"
+        },
+        {
+          "value": "eu_other",
+          "label": "EU — Other"
+        },
+        {
+          "value": "rest_of_world",
+          "label": "Rest of World"
+        }
+      ]
+    },
+    {
+      "id": "use_of_proceeds",
+      "type": "select",
+      "label": "Primary Use of Proceeds",
+      "description": "What is the debt actually buying? This determines whether venture debt is the right instrument and how lenders will view the credit.",
+      "options": [
+        {
+          "value": "runway_extension",
+          "label": "Runway extension to reach next milestone / next round"
+        },
+        {
+          "value": "round_topup",
+          "label": "Top-up alongside an equity round (reduce dilution)"
+        },
+        {
+          "value": "growth_capex",
+          "label": "Growth investment — sales, marketing, GTM scaling"
+        },
+        {
+          "value": "working_capital",
+          "label": "Working capital / receivables financing"
+        },
+        {
+          "value": "acquisition",
+          "label": "Acquisition or buy-and-build financing"
+        },
+        {
+          "value": "bridge_insurance",
+          "label": "Insurance bridge / optionality (drawable but undrawn)"
+        }
+      ]
+    },
+    {
+      "id": "instrument_focus",
+      "type": "multi-select",
+      "label": "Areas to Prioritise",
+      "description": "Which aspects of the structuring should the analysis go deepest on?",
+      "options": [
+        {
+          "value": "fit",
+          "label": "Fit & timing — is venture debt right, and when"
+        },
+        {
+          "value": "sizing",
+          "label": "Facility sizing vs ARR / equity / runway"
+        },
+        {
+          "value": "warrants",
+          "label": "Warrant coverage & pricing (dilution impact)"
+        },
+        {
+          "value": "covenants",
+          "label": "Covenants, MAC clauses & financial conditions"
+        },
+        {
+          "value": "economics",
+          "label": "All-in cost: rate, OID, fees, end-of-term, prepayment"
+        },
+        {
+          "value": "moic",
+          "label": "Founder & investor MOIC / dilution impact"
+        },
+        {
+          "value": "lender_selection",
+          "label": "Lender selection & term-sheet comparison"
+        },
+        {
+          "value": "round_interplay",
+          "label": "Interplay with the equity round & intercreditor"
+        }
+      ]
+    },
+    {
+      "id": "financial_context",
+      "type": "textarea",
+      "label": "Financial & Cap-Table Context",
+      "description": "Give the numbers the analysis needs: ARR/MRR and growth, monthly burn and current runway, last round (size, valuation, date), cash on hand, and current cap-table dilution.",
+      "placeholder": "e.g. EUR 4.2M ARR growing 90% YoY; monthly net burn EUR 350K, ~10 months cash runway; last round Series A EUR 12M post at EUR 9M post-money, closed Mar 2025; founders hold 48% fully diluted, ESOP 12%..."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns or Constraints",
+      "description": "Describe specific worries, constraints, or term-sheet terms you want pressure-tested — e.g. proposed warrant coverage, covenant headroom, board sensitivity to debt, existing lender, or a tight equity-round timeline.",
+      "placeholder": "e.g. Lender proposing 12% warrant coverage on a 30% facility — feels high. Board is debt-averse after a prior down round. Equity round not yet committed; lender wants it signed before funding. Existing EUR 1M working-capital line from the house bank with a negative pledge."
+    }
+  ],
+  "exampleInput": "We are a Series A B2B SaaS company in Stockholm: EUR 4.2M ARR growing ~90% YoY, monthly net burn EUR 350K, about 10 months of cash runway. We closed a EUR 12M Series A (EUR 9M pre, EUR 21M post) in March 2025; founders hold ~48% fully diluted, ESOP is 12%. We want to extend runway to hit EUR 10M ARR before raising a Series B in ~14 months, and we'd rather not do a bridge equity round at the current mark. Two venture-debt lenders have given indicative terms: one offering a EUR 4M facility at SOFR+8.5% with 10% warrant coverage and a 12-month interest-only period, the other EUR 3M at a fixed 11% with 6% warrant coverage but tighter financial covenants. Help me decide whether venture debt is the right move now, size the facility against our ARR and runway, compare the two term sheets, model the dilution-vs-runway trade-off and the MOIC impact, and tell me how to sequence the facility around the Series B.",
+  "exampleValues": {
+    "company_stage": "series_a",
+    "jurisdiction": ["eu_nordics"],
+    "use_of_proceeds": "runway_extension",
+    "instrument_focus": ["fit", "sizing", "warrants", "economics", "moic", "lender_selection"],
+    "financial_context": "EUR 4.2M ARR growing ~90% YoY; monthly net burn EUR 350K, ~10 months cash runway; Series A EUR 12M (EUR 9M pre / EUR 21M post) closed Mar 2025; founders 48% fully diluted, ESOP 12%; cash on hand ~EUR 3.5M.",
+    "known_concerns": "Lender A: EUR 4M at SOFR+8.5%, 10% warrant coverage, 12mo IO. Lender B: EUR 3M fixed 11%, 6% warrant coverage, tighter covenants (min-cash and ARR floor). Board is wary of covenants after seeing a peer trip a MAC clause. Series B not yet committed."
+  },
+  "recommendedPersonas": [
+    "pe-vc-expert",
+    "finance-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "venture-debt",
+    "startup-finance",
+    "warrants",
+    "covenants",
+    "dilution",
+    "moic",
+    "fundraising"
+  ],
+  "contentType": "analytic_report"
+}

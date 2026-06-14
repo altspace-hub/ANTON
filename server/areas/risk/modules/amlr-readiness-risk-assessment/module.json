@@ -1,0 +1,162 @@
+{
+  "formatVersion": "1.0",
+  "id": "amlr-readiness-risk-assessment",
+  "label": "AMLR Readiness Risk Assessment",
+  "shortLabel": "AMLR Readiness",
+  "icon": "ShieldAlert",
+  "description": "A risk-based readiness assessment for AMLR (EU) 2024/1624 go-live (applicable 10 July 2027). Scores preparedness across CDD, beneficial ownership, transaction monitoring, governance, data and supervision-category, and produces a residual readiness-risk heatmap with a prioritised, time-boxed remediation runway.",
+  "color": "adv-red",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "maturity-assessment",
+      "data-readiness-scorecard",
+      "executive-summary",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AMLR (EU) 2024/1624; AMLA Regulation (EU) 2024/1620; AMLD6 (EU) 2024/1640; TFR (EU) 2023/1113; MiCA (EU) 2023/1114; DORA (EU) 2022/2554; GDPR (EU) 2016/679; EBA Guidelines on ML/TF risk factors and risk-based supervision; FATF Recommendations (2023); Wolfsberg CBDD Principles; national transposition and supervisor guidance (Finansinspektionen, BaFin, FCA, FIN-FSA, Finanstilsynet)."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Obliged Entity Type",
+      "description": "What type of obliged entity is the readiness assessment for? Drives which AMLR obligations and which AMLA supervisory expectations apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "payment_emoney",
+          "label": "Payment / E-Money Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Life Insurance / Insurance Intermediary"
+        },
+        {
+          "value": "casp",
+          "label": "Crypto-Asset Service Provider (CASP)"
+        },
+        {
+          "value": "mvts",
+          "label": "Money / Value Transfer Service (Remittance)"
+        },
+        {
+          "value": "other",
+          "label": "Other Obliged Entity (DNFBP, gatekeeper, etc.)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) of Operation",
+      "description": "Where does the entity operate or hold authorisation? Flags national transposition (AMLD6 (EU) 2024/1640) divergences and the home/host FIU interface.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU (AMLR single rulebook)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway (EEA)" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "ireland", "label": "Ireland" },
+        { "value": "other_eu", "label": "Other EU/EEA Member State" }
+      ]
+    },
+    {
+      "id": "amla_supervision_category",
+      "type": "select",
+      "label": "Expected AMLA Supervision Category",
+      "description": "How is the entity expected to be supervised once AMLA (Reg (EU) 2024/1620) is operational (from 1 July 2025; direct supervision of selected entities from 2028)? Sets the depth of data-readiness and direct-request expectations.",
+      "required": true,
+      "options": [
+        { "value": "undetermined", "label": "Not yet determined" },
+        { "value": "amla_selected", "label": "Likely a selected obliged entity (direct AMLA supervision)" },
+        { "value": "national_under_amla", "label": "National supervisor under AMLA coordination / college" },
+        { "value": "non_selected", "label": "Non-selected (national supervision only)" }
+      ]
+    },
+    {
+      "id": "readiness_dimensions",
+      "type": "multi-select",
+      "label": "Readiness Dimensions to Score",
+      "description": "Which readiness dimensions should the heatmap prioritise? Leave broad for a full-programme baseline; narrow to stress a known weak spot.",
+      "options": [
+        { "value": "cdd", "label": "Customer Due Diligence & ongoing monitoring (AMLR Title III)" },
+        { "value": "ubo", "label": "Beneficial Ownership identification & verification (AMLR Title IV)" },
+        { "value": "tm", "label": "Transaction Monitoring & detection coverage" },
+        { "value": "screening", "label": "PEP & Sanctions Screening" },
+        { "value": "reporting", "label": "STR Reporting & FIU connectivity" },
+        { "value": "governance", "label": "Governance, compliance function & board accountability (AMLR Title II)" },
+        { "value": "policies", "label": "Policies, controls & business-wide risk assessment" },
+        { "value": "data", "label": "Data quality, records & AMLA direct-request readiness" },
+        { "value": "training", "label": "Training & staff competency" },
+        { "value": "travel_rule", "label": "Travel Rule / TFR (EU) 2023/1113 (CASP & payment flows)" }
+      ]
+    },
+    {
+      "id": "current_baseline",
+      "type": "select",
+      "label": "Current Framework Baseline",
+      "description": "What is the existing AML/CFT framework built against? Establishes the distance to AMLR's single rulebook.",
+      "options": [
+        { "value": "amld5_national", "label": "AMLD5 / national ML Act, last refreshed pre-2024" },
+        { "value": "amld_recent", "label": "AMLD5/6 framework refreshed within last 24 months" },
+        { "value": "amlr_inflight", "label": "AMLR uplift already in flight (partial)" },
+        { "value": "greenfield", "label": "New / greenfield programme being built to AMLR directly" },
+        { "value": "unknown", "label": "Unknown / mixed legacy" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns, Findings or Constraints",
+      "description": "Describe known weak spots, prior audit or supervisory findings, system constraints, resourcing limits, or any decisions already taken that shape the readiness runway.",
+      "placeholder": "e.g. UBO verification relies on registry extracts alone; business-wide risk assessment not refreshed since 2024; transaction-monitoring rules never tuned; FI supervisory letter on PEP controls in Q3 2024; core banking data is fragmented across two platforms and cannot be queried within examination timeframes..."
+    }
+  ],
+  "exampleInput": "We are a Swedish payment institution (~140 staff, e-money licence) preparing for AMLR (EU) 2024/1624 going live on 10 July 2027. Our framework was last rebuilt in 2022 against AMLD5 and the Swedish Money Laundering Act, and we have not refreshed it since. We onboard merchants and consumers remotely across the Nordics, including some higher-risk verticals (gaming, crypto on-ramps), and we are unsure whether we will be pulled in as an AMLA selected entity. Run a risk-based readiness assessment scoring our preparedness across CDD, beneficial ownership, transaction monitoring, governance, data and the supervision-category dimension, and give me a residual readiness-risk heatmap plus a prioritised remediation runway to 10 July 2027. Known weak spots: UBO verification relies on registry extracts alone, our business-wide risk assessment has not been refreshed since 2024, our transaction-monitoring scenarios have never been tuned, and customer data is split across two platforms that cannot be queried quickly.",
+  "exampleValues": {
+    "entity_type": "payment_emoney",
+    "jurisdiction": ["eu", "sweden"],
+    "amla_supervision_category": "undetermined",
+    "readiness_dimensions": ["cdd", "ubo", "tm", "governance", "data"],
+    "current_baseline": "amld5_national",
+    "known_concerns": "UBO verification relies on registry extracts only — no independent verification step. Business-wide risk assessment last refreshed 2024. Transaction-monitoring scenarios never tuned since go-live. Customer and transaction data split across two platforms; cannot be queried within examination timeframes. AMLA selection status unknown."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "amlr",
+    "amla",
+    "readiness",
+    "risk-assessment",
+    "go-live",
+    "compliance",
+    "regulatory"
+  ],
+  "contentType": "scorecard"
+}

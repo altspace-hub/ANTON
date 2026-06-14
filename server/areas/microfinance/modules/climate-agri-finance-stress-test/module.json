@@ -1,0 +1,236 @@
+{
+  "formatVersion": "1.0",
+  "id": "climate-agri-finance-stress-test",
+  "label": "Climate Agri-Finance Stress Test",
+  "shortLabel": "Agri Climate Stress",
+  "icon": "CloudRainWind",
+  "description": "Climate stress-testing for agricultural and smallholder lending portfolios. Run drought, flood and yield-shock scenarios, project portfolio-at-risk under climate stress, model an index-insurance overlay, and adapt NGFS-style scenarios for agri-MFIs.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "NGFS climate scenarios (Phase V, 2024); IPCC AR6 regional projections; FAO and IFAD agricultural-finance guidance; CGAP smallholder-finance research; IAIS index-insurance papers; national meteorological / agro-climatic data; Basel Committee climate-risk principles (BCBS, June 2022)."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "portfolio_context",
+      "type": "select",
+      "label": "Lender Type",
+      "description": "What kind of institution holds the agricultural lending book under test?",
+      "required": true,
+      "options": [
+        {
+          "value": "mfi",
+          "label": "Microfinance Institution (MFI) / NBFI"
+        },
+        {
+          "value": "agri_coop",
+          "label": "Agricultural Cooperative / SACCO"
+        },
+        {
+          "value": "rural_bank",
+          "label": "Rural / Community Bank"
+        },
+        {
+          "value": "digital_lender",
+          "label": "Digital / Fintech Agri-Lender"
+        },
+        {
+          "value": "dfi_fund",
+          "label": "DFI / Blended-Finance Fund / Apex Lender"
+        },
+        {
+          "value": "other",
+          "label": "Other Agri-Finance Provider"
+        }
+      ]
+    },
+    {
+      "id": "geography",
+      "type": "chips",
+      "label": "Geography / Agro-Climatic Zone",
+      "description": "Where is the portfolio exposed? Select the dominant agro-climatic zone(s).",
+      "required": true,
+      "options": [
+        {
+          "value": "sahel_semiarid",
+          "label": "Sahel / Semi-Arid (rainfed)"
+        },
+        {
+          "value": "east_africa_highland",
+          "label": "East Africa Highland"
+        },
+        {
+          "value": "south_asia_monsoon",
+          "label": "South Asia Monsoon"
+        },
+        {
+          "value": "southeast_asia_delta",
+          "label": "SE Asia Delta / Flood-Prone"
+        },
+        {
+          "value": "latam_andean",
+          "label": "LatAm Andean / Highland"
+        },
+        {
+          "value": "coastal_cyclone",
+          "label": "Coastal / Cyclone-Exposed"
+        },
+        {
+          "value": "irrigated",
+          "label": "Irrigated Perimeter"
+        }
+      ]
+    },
+    {
+      "id": "crop_mix",
+      "type": "multi-select",
+      "label": "Dominant Crops / Value Chains",
+      "description": "Which crops or value chains dominate the agricultural book? Drives yield-shock sensitivity.",
+      "options": [
+        {
+          "value": "maize",
+          "label": "Maize / Staple Cereals"
+        },
+        {
+          "value": "rice",
+          "label": "Rice / Paddy"
+        },
+        {
+          "value": "coffee_cocoa",
+          "label": "Coffee / Cocoa (perennial cash crop)"
+        },
+        {
+          "value": "cotton",
+          "label": "Cotton / Fibre"
+        },
+        {
+          "value": "horticulture",
+          "label": "Horticulture / Vegetables"
+        },
+        {
+          "value": "livestock_dairy",
+          "label": "Livestock / Dairy / Pastoral"
+        },
+        {
+          "value": "mixed_smallholder",
+          "label": "Mixed Smallholder (subsistence + cash)"
+        }
+      ]
+    },
+    {
+      "id": "scenario_set",
+      "type": "multi-select",
+      "label": "Stress Scenarios to Run",
+      "description": "Which climate-stress scenarios should the test cover? Map onto NGFS-style narratives where relevant.",
+      "options": [
+        {
+          "value": "drought_1in10",
+          "label": "Drought — 1-in-10-year (moderate)"
+        },
+        {
+          "value": "drought_1in25",
+          "label": "Drought — 1-in-25-year (severe / Current Policies tail)"
+        },
+        {
+          "value": "flood_riverine",
+          "label": "Flood — riverine / flash"
+        },
+        {
+          "value": "cyclone_windstorm",
+          "label": "Cyclone / Windstorm asset loss"
+        },
+        {
+          "value": "heat_yield",
+          "label": "Heat-stress yield shock (chronic / Hot House World)"
+        },
+        {
+          "value": "price_shock",
+          "label": "Commodity price collapse (transition / basis)"
+        },
+        {
+          "value": "compound",
+          "label": "Compound multi-hazard (drought + price)"
+        }
+      ]
+    },
+    {
+      "id": "insurance_overlay",
+      "type": "select",
+      "label": "Index-Insurance Overlay",
+      "description": "Is a parametric / index-insurance overlay in place or being modelled? Drives the risk-transfer leg of the test.",
+      "options": [
+        {
+          "value": "none",
+          "label": "No insurance overlay"
+        },
+        {
+          "value": "weather_index",
+          "label": "Weather-index (rainfall / temperature trigger)"
+        },
+        {
+          "value": "area_yield",
+          "label": "Area-yield index (AYII)"
+        },
+        {
+          "value": "ndvi_satellite",
+          "label": "Satellite / NDVI vegetation index"
+        },
+        {
+          "value": "livestock_index",
+          "label": "Index-Based Livestock Insurance (IBLI)"
+        },
+        {
+          "value": "modelling_new",
+          "label": "Modelling a new overlay (not yet in place)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns, Data & Prior Losses",
+      "description": "Describe known concentrations, prior climate-driven loss events, data limitations, basis-risk experience, or supervisory expectations.",
+      "placeholder": "e.g. 2023 short-rains failure drove PAR30 from 4% to 19% in two branches; index payout under-triggered (basis risk); we have no geocoded loan locations; supervisor has asked for a climate scenario annex to the 2026 ICAAP..."
+    }
+  ],
+  "exampleInput": "We are an MFI in Kenya with a KES 850M agricultural book (~14,000 active smallholder borrowers) concentrated in semi-arid eastern counties. The book is mostly maize and mixed smallholder, single rainfed season, with a small dairy / pastoral sub-portfolio. After the 2022-2023 short-rains failure our PAR30 on the agri book spiked from about 5% to 22% in the worst branches and we restructured a large share of loans. We have a pilot weather-index insurance overlay on roughly 30% of the book but borrowers complained it did not pay out in a year they clearly lost their crop. We have loan-level data but no reliable geocoding of farms. Run a climate stress test: model 1-in-10 and 1-in-25 drought, a heat-stress yield shock, and a compound drought-plus-price scenario; show projected portfolio-at-risk and expected credit loss under each; assess how much the index overlay actually absorbs (net of basis risk); and frame it against NGFS-style scenarios for a climate annex our regulator now expects.",
+  "exampleValues": {
+    "portfolio_context": "mfi",
+    "geography": ["sahel_semiarid", "east_africa_highland"],
+    "crop_mix": ["maize", "mixed_smallholder", "livestock_dairy"],
+    "scenario_set": ["drought_1in10", "drought_1in25", "heat_yield", "compound"],
+    "insurance_overlay": "weather_index",
+    "known_concerns": "2022-2023 short-rains failure pushed agri PAR30 from ~5% to ~22% in worst branches; large restructuring round. Pilot weather-index overlay on ~30% of book under-triggered in a clear loss year (basis risk complaints). Loan-level data exists but farms are not geocoded. Regulator now expects a climate scenario annex in the ICAAP."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "climate-risk",
+    "agri-finance",
+    "microfinance",
+    "stress-test",
+    "ngfs",
+    "index-insurance"
+  ],
+  "contentType": "analytic_report"
+}

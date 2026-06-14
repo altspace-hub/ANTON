@@ -1,0 +1,151 @@
+{
+  "formatVersion": "1.0",
+  "id": "nis2-critical-asset-risk-framework",
+  "label": "NIS2 Critical-Asset Risk Framework",
+  "shortLabel": "NIS2 Asset Risk",
+  "icon": "ShieldAlert",
+  "description": "Classify essential vs important entity status, build a critical-asset inventory, assess the Art. 21 cybersecurity risk-management measures and supply-chain security, and evidence Art. 20 management-body accountability under the NIS2 Directive (EU) 2022/2555.",
+  "color": "adv-blue",
+  "areaId": "risk",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "risk-appetite-statement",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "NIS2 Directive (EU) 2022/2555; the Commission Implementing Regulation (EU) 2024/2690 on technical/methodological requirements of Art. 21 measures; national transposition acts (e.g. Sweden's cybersäkerhetslag, Germany's NIS2UmsuCG, Finland's Kyberturvallisuuslaki); ENISA guidance and the NIS Cooperation Group reference documents; ISO/IEC 27001:2022 and 27005; IEC 62443 for OT/ICS; the EU Cyber Resilience Act (Regulation (EU) 2024/2847) for product security interfaces."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_classification",
+      "type": "select",
+      "label": "Provisional NIS2 Classification",
+      "description": "How does the organisation expect to be classified under NIS2? Drives obligation depth, supervisory regime, and penalty ceiling. Leave as 'undetermined' if the classification itself is part of the scope.",
+      "required": true,
+      "options": [
+        {
+          "value": "essential",
+          "label": "Essential entity (Annex I + size threshold; ex-ante supervision)"
+        },
+        {
+          "value": "important",
+          "label": "Important entity (Annex II or medium-sized; ex-post supervision)"
+        },
+        {
+          "value": "designated",
+          "label": "Specifically designated regardless of size (Art. 2(2))"
+        },
+        {
+          "value": "out_of_scope",
+          "label": "Believed out of scope (verify against Art. 2 + Annexes)"
+        },
+        {
+          "value": "undetermined",
+          "label": "Not yet determined — classify as part of this assessment"
+        }
+      ]
+    },
+    {
+      "id": "sector",
+      "type": "select",
+      "label": "Primary Sector",
+      "description": "Which NIS2 Annex I (high-criticality) or Annex II (other critical) sector best describes the entity's core activity?",
+      "required": true,
+      "options": [
+        { "value": "energy", "label": "Energy (Annex I)" },
+        { "value": "transport", "label": "Transport (Annex I)" },
+        { "value": "banking_fmi", "label": "Banking / Financial Market Infrastructure (Annex I)" },
+        { "value": "health", "label": "Health (Annex I)" },
+        { "value": "drinking_waste_water", "label": "Drinking / Waste Water (Annex I)" },
+        { "value": "digital_infrastructure", "label": "Digital Infrastructure / ICT service management (Annex I)" },
+        { "value": "public_administration", "label": "Public Administration (Annex I)" },
+        { "value": "space", "label": "Space (Annex I)" },
+        { "value": "digital_providers", "label": "Digital Providers — marketplaces / search / social (Annex II)" },
+        { "value": "manufacturing", "label": "Manufacturing (Annex II)" },
+        { "value": "post_chemicals_food", "label": "Postal / Chemicals / Food / Research (Annex II)" }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) of Establishment / Operation",
+      "description": "Where is the entity established and where does it provide services? Determines which national transposition law and competent authority apply, and whether the main-establishment rule (Art. 26) concentrates jurisdiction.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU — Directive baseline" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway (EEA)" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "netherlands", "label": "Netherlands" }
+      ]
+    },
+    {
+      "id": "assessment_scope",
+      "type": "multi-select",
+      "label": "Assessment Scope",
+      "description": "Which parts of the NIS2 framework should this assessment prioritise?",
+      "options": [
+        { "value": "classification", "label": "Entity classification & scoping (Art. 2–3, 24)" },
+        { "value": "asset_inventory", "label": "Critical-asset & dependency inventory" },
+        { "value": "risk_measures", "label": "Art. 21 risk-management measures (the ten)" },
+        { "value": "supply_chain", "label": "Supply-chain security (Art. 21(2)(d))" },
+        { "value": "governance", "label": "Art. 20 management-body accountability & training" },
+        { "value": "incident_reporting", "label": "Incident reporting readiness (Art. 23 — 24h/72h/1m)" },
+        { "value": "ot_ics", "label": "OT / ICS / industrial control systems" },
+        { "value": "registration", "label": "Entity registration & jurisdiction (Art. 3(4), 26, 27)" }
+      ]
+    },
+    {
+      "id": "environment_profile",
+      "type": "textarea",
+      "label": "Environment & Asset Profile",
+      "description": "Describe the technology estate, critical services, key dependencies (cloud, MSPs, OT), and anything already known about the entity's NIS2 readiness.",
+      "placeholder": "e.g. Two regional data centres + Azure; a SCADA/OT network for substation control on an isolated VLAN; managed SOC outsourced to a Nordic MSSP; ~30 ICT suppliers, of which 4 are deemed critical. CEO sponsors security but the board has had no NIS2 training."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Known weak spots, prior audit findings, supervisory contact, or incidents relevant to NIS2.",
+      "placeholder": "e.g. No formal asset inventory beyond a CMDB that is ~60% complete; supplier contracts lack security clauses; last incident (ransomware on a non-critical file server, 2024) was never reported because reporting obligations were unclear; MFA not enforced for admin access to the OT jump host."
+    }
+  ],
+  "exampleInput": "We are a Swedish regional electricity distribution operator (~600 employees, turnover ~€180m) preparing for the cybersäkerhetslag transposing NIS2. We expect to be an essential entity in the Energy sector (Annex I) and are also already designated under the older Swedish critical-infrastructure regime. Our estate spans two data centres plus Azure for corporate IT, and a SCADA/OT network controlling primary substations on segmented VLANs with some legacy RTUs that cannot run modern crypto. Our SOC is outsourced to a Nordic MSSP and we have roughly 35 ICT suppliers, four of which (the SCADA vendor, the MSSP, an Azure landing-zone integrator, and a billing SaaS) we believe are critical. Build us a critical-asset risk framework: confirm our essential-entity classification, produce a prioritised critical-asset and dependency inventory, score our maturity against the ten Art. 21 measures with particular attention to supply-chain security and OT, assess our Art. 20 management-body accountability and training gap, and tell us what our 24-hour/72-hour incident reporting flow to CERT-SE needs to look like. Known weak spots: no single authoritative asset inventory (the CMDB is ~60% complete), supplier contracts contain no security or audit clauses, and the board has never had NIS2 training.",
+  "exampleValues": {
+    "entity_classification": "essential",
+    "sector": "energy",
+    "jurisdiction": ["eu", "sweden"],
+    "assessment_scope": ["classification", "asset_inventory", "risk_measures", "supply_chain", "governance", "ot_ics"],
+    "environment_profile": "Two regional data centres plus Azure for corporate IT; a SCADA/OT network for substation control on segmented VLANs with legacy RTUs that cannot run modern crypto; SOC outsourced to a Nordic MSSP; ~35 ICT suppliers of which 4 are deemed critical (SCADA vendor, MSSP, Azure integrator, billing SaaS).",
+    "known_concerns": "No single authoritative asset inventory — CMDB ~60% complete. Supplier contracts lack security/audit clauses. The board has never had NIS2 training. MFA not enforced on the OT jump host. The 2024 ransomware incident on a non-critical file server was never reported because reporting obligations were unclear."
+  },
+  "recommendedPersonas": [
+    "cyber-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "nis2",
+    "cybersecurity",
+    "critical-infrastructure",
+    "risk-management",
+    "supply-chain",
+    "governance"
+  ],
+  "contentType": "risk_register"
+}

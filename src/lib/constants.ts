@@ -24,6 +24,7 @@ import {
 } from './area-patches/surfaced-modules-patch';
 import { TIER_A_MODULES } from './area-patches/tier-a-patch';
 import { TIER_B_MODULES } from './area-patches/tier-b-patch';
+import { TIER_C_MODULES } from './area-patches/tier-c-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -2666,6 +2667,8 @@ export const AREAS = [
       'ai-governance-in-financial-crime',
       // Beneficial-ownership orchestration (Tier B):
       'beneficial-ownership-orchestration',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'correspondent-concentration-risk',
     ],
   },
   {
@@ -2683,6 +2686,8 @@ export const AREAS = [
       'regulatory-deadline-tracker', 'board-legal-summary', 'multi-jurisdiction-comparison',
       // FDI screening (Tier B):
       'fdi-screening-compliance',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'amla-supervisory-cooperation',
     ],
   },
   {
@@ -2714,6 +2719,8 @@ export const AREAS = [
       // Surfaced server modules (June 2026, plan 1.5):
       'benchmarking-best-practice', 'change-management-strategy', 'client-workshop-facilitator',
       'expert-testimony-prep', 'value-assessment-benefits',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'outcome-based-pricing-designer', 'esg-integration-in-delivery',
     ],
   },
   {
@@ -2731,6 +2738,8 @@ export const AREAS = [
       // Banking horizon modules (Tier B):
       'liquidity-adequacy-assessment', 'open-finance-strategy',
       'fintech-credit-risk-assessment', 'payment-institution-licensing-roadmap',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'correspondent-banking-risk',
     ],
   },
   {
@@ -2744,6 +2753,8 @@ export const AREAS = [
       'scenario-analysis', 'third-party-risk',
       // AI/model risk (2026-06-14 audit plan, Tier A):
       'ai-model-risk-assessment',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'amlr-readiness-risk-assessment', 'nis2-critical-asset-risk-framework',
     ],
   },
   // ── Wave 2 Areas ─────────────────────────────────────────
@@ -2784,6 +2795,8 @@ export const AREAS = [
     color: 'adv-blue',
     moduleIds: [
       'data-quality', 'data-governance', 'analytics-design', 'data-strategy',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'amlr-data-quality-governance',
     ],
   },
   {
@@ -2797,6 +2810,9 @@ export const AREAS = [
       // Surfaced server modules (June 2026, plan 1.5):
       'alternative-investment-dd', 'esg-investment-screening', 'fund-due-diligence',
       'investor-reporting-factsheet', 'portfolio-risk-analytics', 'regulatory-capital-assessment',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'venture-capital-fund-analytics', 'secondary-market-assessment',
+      'csrd-data-impact-assessment',
     ],
   },
   {
@@ -2814,6 +2830,8 @@ export const AREAS = [
       // Batch 1 (E):
       'sop-writer', 'kpi-dashboard-updater', 'incident-report-processor',
       'sla-monitor', 'capacity-planning',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'regulatory-programme-risk-taxonomy', 'agile-regulatory-delivery-pattern',
     ],
   },
   {
@@ -2827,6 +2845,8 @@ export const AREAS = [
       // Batch 1 (E):
       'competitive-intelligence', 'board-meeting-prep', 'okr-progress-tracker',
       'partnership-evaluation', 'market-entry-briefing',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'digital-transformation-business-case', 'innovation-pipeline-assessment',
     ],
   },
   // ── Wave 3 Areas ─────────────────────────────────────────
@@ -2838,6 +2858,9 @@ export const AREAS = [
     color: 'adv-gold',
     moduleIds: [
       'business-plan', 'pitch-deck', 'funding-strategy', 'mvp-scoping', 'cofounder-agreements',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'series-b-plus-scaling-plan', 'venture-debt-navigator',
+      'regulatory-risk-startup-assessment',
     ],
   },
   {
@@ -2905,6 +2928,8 @@ export const AREAS = [
       'aaoifi-compliance', 'internal-controls-sox', 'treasury-cash-management',
       // Accounting horizon modules (Tier B):
       'ifrs-18-transition-roadmap', 'pillar-two-minimum-tax-assessment',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'esg-adjusted-financial-reporting', 'real-time-vat-compliance',
     ],
   },
   {
@@ -3123,6 +3148,8 @@ export const AREAS = [
       'privacy-notice-drafter', 'cross-border-transfer-assessment', 'breach-response-plan',
       // AI Act profiling/bias (Tier B):
       'ai-act-profiling-bias-assessment',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'nis2-dpia-integration', 'child-data-protection-by-design',
     ],
   },
   {
@@ -3160,6 +3187,8 @@ export const AREAS = [
       'mobile-money-compliance-framework', 'mobile-money-aml', 'emi-licensing-guide',
       'digital-lending-compliance', 'cross-border-mobile-payments',
       'agent-banking-oversight', 'fintech-sandbox-application',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'instant-payment-interoperability', 'digital-identity-regtech',
     ],
   },
   {
@@ -3171,6 +3200,8 @@ export const AREAS = [
     moduleIds: [
       'financial-inclusion-strategy', 'microfinance-credit-scoring', 'mfi-regulatory-compliance',
       'group-lending-risk', 'social-performance-reporting', 'islamic-microfinance',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'climate-agri-finance-stress-test',
     ],
   },
   {
@@ -3255,6 +3286,8 @@ export const AREAS = [
       'loan-comparison', 'microfinance-application', 'group-lending-guide',
       'credit-score-builder', 'collateral-explainer', 'predatory-lending-checker',
       'loan-default-rights', 'business-plan-for-loan',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'gig-economy-wage-advance-detection',
     ],
   },
   {
@@ -3364,6 +3397,8 @@ export const AREAS = [
       'financial-analysis', 'valuation-framework', 'ic-memo',
       'portfolio-monitoring', 'value-creation', 'exit-planning',
       'fund-reporting', 'deal-structure', 'team-assessment',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'fintech-unit-economics-valuation',
     ],
   },
   // ── Area 35: Crypto & Blockchain Compliance ────────────────────────────────
@@ -3379,6 +3414,9 @@ export const AREAS = [
       'defi-regulatory',
       // Integrated CASP operating model (2026-06-14 audit plan, Tier A):
       'casp-mica-dora-amlr-programme',
+      // Tier-C backlog (2026-06-14 audit plan):
+      'emr-token-classification', 'innovation-sandbox-application',
+      'defi-governance-operational-risk',
     ],
   },
 
@@ -3817,6 +3855,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...SURFACED_ACCOUNTING_MODULES,
     ...TIER_A_MODULES,
     ...TIER_B_MODULES,
+    ...TIER_C_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

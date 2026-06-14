@@ -1,0 +1,172 @@
+{
+  "formatVersion": "1.0",
+  "id": "digital-transformation-business-case",
+  "label": "Digital Transformation Business Case",
+  "shortLabel": "DX Business Case",
+  "icon": "TrendingUp",
+  "description": "Build a rigorous, board-ready digital-transformation business case: value drivers, cost-to-serve, build-vs-buy, change-and-execution risk, TCO/ROI and benefits realisation, and the target operating model.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "investment-memo",
+      "executive-summary",
+      "budget-resource-estimate"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Vendor pricing pages and analyst TCO benchmarks (Gartner, Forrester, IDC); cloud-provider pricing calculators (AWS/Azure/GCP); industry productivity and cost-to-serve benchmarks; case studies of comparable transformations; CSRD/ESRS and ISSB IFRS S1/S2 disclosure expectations where the programme touches sustainability or technology-spend disclosure."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "organisation_context",
+      "type": "select",
+      "label": "Organisation Type & Sector",
+      "description": "What kind of organisation and sector is this business case for? Drives benchmark selection and the relevant operating-model archetype.",
+      "required": true,
+      "options": [
+        {
+          "value": "financial_services",
+          "label": "Financial Services / Banking / Insurance"
+        },
+        {
+          "value": "industrial_manufacturing",
+          "label": "Industrial / Manufacturing / Supply Chain"
+        },
+        {
+          "value": "retail_consumer",
+          "label": "Retail / Consumer / E-commerce"
+        },
+        {
+          "value": "healthcare_lifesciences",
+          "label": "Healthcare / Life Sciences"
+        },
+        {
+          "value": "public_sector",
+          "label": "Public Sector / Government"
+        },
+        {
+          "value": "professional_services",
+          "label": "Professional Services / B2B Services"
+        },
+        {
+          "value": "technology_saas",
+          "label": "Technology / SaaS / Platform"
+        },
+        {
+          "value": "other",
+          "label": "Other / Cross-sector"
+        }
+      ]
+    },
+    {
+      "id": "transformation_scope",
+      "type": "multi-select",
+      "label": "Transformation Scope",
+      "description": "Which dimensions of the transformation are in scope for this business case?",
+      "options": [
+        {
+          "value": "core_platform",
+          "label": "Core platform / ERP / system-of-record replacement"
+        },
+        {
+          "value": "data_ai",
+          "label": "Data, analytics & AI / GenAI enablement"
+        },
+        {
+          "value": "customer_digital",
+          "label": "Customer-facing digital channels & journeys"
+        },
+        {
+          "value": "process_automation",
+          "label": "Process automation / workflow / RPA"
+        },
+        {
+          "value": "cloud_migration",
+          "label": "Cloud migration & infrastructure modernisation"
+        },
+        {
+          "value": "operating_model",
+          "label": "Target operating model & ways of working"
+        },
+        {
+          "value": "cyber_resilience",
+          "label": "Cyber & operational resilience uplift"
+        }
+      ]
+    },
+    {
+      "id": "investment_horizon",
+      "type": "select",
+      "label": "Investment Horizon & Decision Stage",
+      "description": "What decision is this business case supporting, and over what horizon?",
+      "options": [
+        {
+          "value": "concept_funding",
+          "label": "Concept / seed funding to scope and prove value"
+        },
+        {
+          "value": "full_programme_approval",
+          "label": "Full programme approval (multi-year capital request)"
+        },
+        {
+          "value": "stage_gate_reapproval",
+          "label": "Stage-gate re-approval / continuation decision"
+        },
+        {
+          "value": "build_vs_buy",
+          "label": "Build-vs-buy / vendor-selection decision"
+        },
+        {
+          "value": "portfolio_prioritisation",
+          "label": "Portfolio prioritisation across competing initiatives"
+        }
+      ]
+    },
+    {
+      "id": "financial_parameters",
+      "type": "textarea",
+      "label": "Financial & Sizing Parameters (if known)",
+      "description": "Any indicative numbers that should anchor the model: budget envelope, headcount, current cost-to-serve, baseline revenue, hurdle rate / WACC, expected useful life. Leave blank to work from sector benchmarks.",
+      "placeholder": "e.g. Indicative capex envelope EUR 18m over 3 years; ~2,400 FTE; current cost-to-serve ~EUR 34 per transaction; hurdle rate 11% (WACC + risk premium); 7-year useful life on the platform; opex run-rate uplift not yet quantified."
+    },
+    {
+      "id": "known_constraints",
+      "type": "textarea",
+      "label": "Known Constraints, Risks & Stakeholder Concerns",
+      "description": "Describe the legacy estate, organisational constraints, prior failed attempts, regulatory exposure, vendor lock-in, change-saturation, or board scepticism that the business case must address head-on.",
+      "placeholder": "e.g. Two prior ERP attempts written off; heavy customisation on a 19-year-old core; CFO wants benefits booked, not 'enablement' soft benefits; data quality poor (no single customer view); DORA + NIS2 ICT-resilience obligations in scope; change-saturation after a recent reorg."
+    }
+  ],
+  "exampleInput": "We are a mid-market Nordic commercial insurer (~2,400 FTE, EUR 1.1bn GWP) running a 19-year-old policy-administration core with heavy customisation. The board has asked for a business case to modernise: replace the core, build a single customer view, and stand up a GenAI-assisted claims and underwriting support layer. Two prior core-replacement attempts were written off. The CFO is openly sceptical of 'enablement' benefits and wants hard, bookable savings tied to cost-to-serve and loss-ratio improvement. We have an indicative capex envelope of EUR 18m over three years but no validated opex impact. Build-vs-buy is genuinely open — there are two strong SaaS policy-admin vendors and an in-house build option. DORA and NIS2 ICT-resilience obligations are in scope, and we are change-saturated after a 2025 reorganisation. Produce a board-ready business case with a quantified value model, TCO/ROI, a defensible build-vs-buy recommendation, the execution-risk picture, a benefits-realisation plan, and the target operating model.",
+  "exampleValues": {
+    "organisation_context": "financial_services",
+    "transformation_scope": ["core_platform", "data_ai", "operating_model", "cyber_resilience"],
+    "investment_horizon": "full_programme_approval",
+    "financial_parameters": "Indicative capex envelope EUR 18m over 3 years; ~2,400 FTE; EUR 1.1bn GWP; current cost-to-serve high vs peers; hurdle rate 11%; 7-year useful life on the new core; opex impact not yet validated.",
+    "known_constraints": "Two prior core-replacement attempts written off. 19-year-old heavily customised core. CFO wants bookable savings, not soft 'enablement' benefits. No single customer view; data quality poor. DORA + NIS2 ICT-resilience obligations in scope. Change-saturated after a 2025 reorg. Build-vs-buy genuinely open: two SaaS vendors vs in-house build."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "digital-transformation",
+    "business-case",
+    "tco-roi",
+    "operating-model",
+    "build-vs-buy"
+  ],
+  "contentType": "analytic_report"
+}

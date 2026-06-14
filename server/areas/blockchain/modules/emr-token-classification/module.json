@@ -1,0 +1,201 @@
+{
+  "formatVersion": "1.0",
+  "id": "emr-token-classification",
+  "label": "MiCA Crypto-Asset Classification",
+  "shortLabel": "Token Classification",
+  "icon": "Coins",
+  "description": "Classify a crypto-asset under MiCA (EU) 2023/1114 — e-money token (EMT), asset-referenced token (ART), other crypto-asset, or out-of-scope. Test against the significant-token thresholds, map the EMD2 interface for EMTs, and derive the issuer obligations that follow each class.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "regulatory-comparison",
+      "detailed-findings"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Regulation (EU) 2023/1114 (MiCA) Titles III, IV and Annexes; Directive 2009/110/EC (EMD2); Regulation (EU) 2023/1113 (TFR); EBA and ESMA MiCA Level 2/3 measures (RTS/ITS/guidelines on classification, significance, white papers, own funds); ESMA classification guidelines under Art. 97 MiCA."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "asset_profile",
+      "type": "select",
+      "label": "Crypto-Asset Profile",
+      "description": "Which description best fits the value-stabilisation design of the asset?",
+      "required": true,
+      "options": [
+        {
+          "value": "single_fiat",
+          "label": "Pegged 1:1 to a single official currency (e.g. EUR or USD)"
+        },
+        {
+          "value": "basket_fiat",
+          "label": "References a basket of official currencies"
+        },
+        {
+          "value": "commodity_or_crypto",
+          "label": "References commodities, other crypto-assets, or a mixed basket"
+        },
+        {
+          "value": "algorithmic",
+          "label": "Algorithmic / no reserve backing the stabilisation mechanism"
+        },
+        {
+          "value": "utility",
+          "label": "Provides access to a good/service on a DLT network (utility)"
+        },
+        {
+          "value": "no_stabilisation",
+          "label": "No value-stabilisation aim (free-floating)"
+        },
+        {
+          "value": "unsure",
+          "label": "Unsure — help me determine this"
+        }
+      ]
+    },
+    {
+      "id": "issuer_role",
+      "type": "select",
+      "label": "Your Role / Entity Type",
+      "description": "From whose perspective is the classification being run? This drives which authorisation and obligations follow.",
+      "required": true,
+      "options": [
+        {
+          "value": "credit_institution",
+          "label": "Credit institution (bank)"
+        },
+        {
+          "value": "emi",
+          "label": "Electronic money institution (EMI under EMD2)"
+        },
+        {
+          "value": "casp",
+          "label": "Crypto-asset service provider (CASP) seeking to offer/admit"
+        },
+        {
+          "value": "startup_issuer",
+          "label": "New issuer / project team (offeror seeking authorisation)"
+        },
+        {
+          "value": "advisor",
+          "label": "Adviser / counsel assessing on behalf of a client"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Home / Relevant Jurisdiction(s)",
+      "description": "Which competent authorities are relevant for authorisation and the white-paper notification?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU-wide / passporting"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (Finansinspektionen)"
+        },
+        {
+          "value": "finland",
+          "label": "Finland (FIN-FSA)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (BaFin)"
+        },
+        {
+          "value": "france",
+          "label": "France (AMF / ACPR)"
+        },
+        {
+          "value": "ireland",
+          "label": "Ireland (Central Bank)"
+        }
+      ]
+    },
+    {
+      "id": "significance_signals",
+      "type": "multi-select",
+      "label": "Significance Indicators (if known)",
+      "description": "Tick any threshold the asset is approaching or expected to exceed — these drive the significant-EMT / significant-ART assessment and EBA supervision.",
+      "options": [
+        {
+          "value": "holders_10m",
+          "label": "More than 10 million holders"
+        },
+        {
+          "value": "value_5bn",
+          "label": "Issue value / reserve above EUR 5 billion"
+        },
+        {
+          "value": "tx_2_5m_daily",
+          "label": "More than 2.5 million transactions / EUR 500m daily"
+        },
+        {
+          "value": "global_relevance",
+          "label": "International / cross-border activity at scale"
+        },
+        {
+          "value": "interconnected",
+          "label": "Interconnected with the financial system"
+        },
+        {
+          "value": "multiple_emt_art",
+          "label": "Issuer also issues other ARTs/EMTs or provides CASP services"
+        },
+        {
+          "value": "none_known",
+          "label": "None known / below all thresholds"
+        }
+      ]
+    },
+    {
+      "id": "design_details",
+      "type": "textarea",
+      "label": "Asset Design & Known Concerns",
+      "description": "Describe the redemption mechanism, reserve composition, par-value claim, rights conferred to holders, distribution channels, and any classification doubts or supervisory feedback received.",
+      "placeholder": "e.g. Token is redeemable at par in EUR on demand; reserve held in segregated bank deposits and short-dated EU sovereign bonds; holders have a direct claim on the issuer; uncertain whether the 'rewards' feature creates an interest-bearing characteristic prohibited under MiCA Art. 50..."
+    }
+  ],
+  "exampleInput": "We are a Swedish EMI planning to issue 'NordEUR', a token redeemable 1:1 in euro on demand, fully backed by segregated EUR bank deposits and short-dated EU sovereign bonds. We expect distribution across the Nordics and Germany via two partner CASPs, and we project crossing 10 million holders and EUR 5 billion in issuance within 18 months. Classify NordEUR under MiCA, confirm whether it is an EMT or an ART, walk us through the EMD2 interface and the par-value/redemption-at-any-moment and no-interest rules, test it against the significant-EMT thresholds, and set out the issuer obligations and white-paper / authorisation path that follow. We also offer holders a small loyalty reward for holding the token — flag any conflict with the no-interest prohibition.",
+  "exampleValues": {
+    "asset_profile": "single_fiat",
+    "issuer_role": "emi",
+    "jurisdiction": ["eu", "sweden", "germany"],
+    "significance_signals": ["holders_10m", "value_5bn"],
+    "design_details": "Token redeemable 1:1 in EUR on demand. Reserve = segregated EUR bank deposits + short-dated EU sovereign bonds. Holders have a direct legal claim on the issuer at par. Distribution via two partner CASPs across the Nordics and Germany. A loyalty 'reward' accrues to holders the longer they hold — need confirmation this does not breach the MiCA no-interest prohibition for EMTs."
+  },
+  "recommendedPersonas": [
+    "crypto-blockchain-expert",
+    "legal-expert"
+  ],
+  "tags": [
+    "mica",
+    "crypto-asset",
+    "stablecoin",
+    "emt",
+    "art",
+    "classification",
+    "regulatory"
+  ],
+  "contentType": "analytic_report"
+}

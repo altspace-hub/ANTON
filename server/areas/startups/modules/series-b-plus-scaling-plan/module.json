@@ -1,0 +1,208 @@
+{
+  "formatVersion": "1.0",
+  "id": "series-b-plus-scaling-plan",
+  "label": "Series B+ Scaling Plan",
+  "shortLabel": "Scaling Plan",
+  "icon": "TrendingUp",
+  "description": "Build a Series B+ scaling plan: unit economics at scale, organisational design, go-to-market motion evolution, international expansion, governance maturation, and the metrics that gate later rounds.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "executive-summary",
+      "investment-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "SaaS/usage-based benchmark sets (Bessemer Cloud Index / state-of-cloud, OpenView SaaS Benchmarks, ICONIQ Growth, KeyBanc/SCALE survey, ChartMogul, a16z growth-stage essays); the Rule of 40; ARR / NRR / CAC-payback / magic-number / burn-multiple definitions; ILPA reporting and LP-update conventions for governance maturation."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "company_context",
+      "type": "select",
+      "label": "Business Model",
+      "description": "Which model best describes how the company makes money? Drives which unit-economics and benchmark set applies.",
+      "required": true,
+      "options": [
+        {
+          "value": "saas_subscription",
+          "label": "B2B SaaS (seat / subscription)"
+        },
+        {
+          "value": "usage_based",
+          "label": "Usage-based / consumption (incl. AI/API)"
+        },
+        {
+          "value": "plg_selfserve",
+          "label": "Product-led / self-serve"
+        },
+        {
+          "value": "marketplace",
+          "label": "Marketplace / platform (take-rate)"
+        },
+        {
+          "value": "fintech_transactional",
+          "label": "Fintech / transactional / payments"
+        },
+        {
+          "value": "hardware_hybrid",
+          "label": "Hardware / hardware-enabled hybrid"
+        },
+        {
+          "value": "other",
+          "label": "Other / mixed model"
+        }
+      ]
+    },
+    {
+      "id": "target_round",
+      "type": "select",
+      "label": "Round Being Planned For",
+      "description": "Which round does this scaling plan need to get the company to (and through)?",
+      "required": true,
+      "options": [
+        {
+          "value": "series_b",
+          "label": "Series B (scale the proven motion)"
+        },
+        {
+          "value": "series_c",
+          "label": "Series C (multi-product / multi-geo)"
+        },
+        {
+          "value": "series_d_plus",
+          "label": "Series D+ / pre-IPO growth"
+        },
+        {
+          "value": "growth_pe",
+          "label": "Growth equity / late-stage PE"
+        },
+        {
+          "value": "ipo_track",
+          "label": "IPO readiness track"
+        }
+      ]
+    },
+    {
+      "id": "expansion_geographies",
+      "type": "chips",
+      "label": "Expansion Geographies in Scope",
+      "description": "Which markets is the company scaling into over the plan horizon? Affects GTM, hiring, and compliance load.",
+      "options": [
+        {
+          "value": "nordics",
+          "label": "Nordics"
+        },
+        {
+          "value": "dach",
+          "label": "DACH"
+        },
+        {
+          "value": "uk_ireland",
+          "label": "UK & Ireland"
+        },
+        {
+          "value": "southern_eu",
+          "label": "Southern / Western EU"
+        },
+        {
+          "value": "north_america",
+          "label": "North America"
+        },
+        {
+          "value": "apac",
+          "label": "APAC"
+        },
+        {
+          "value": "mena",
+          "label": "Middle East / GCC"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Scaling Workstreams to Prioritise",
+      "description": "Which dimensions of the scaling plan should the analysis go deepest on?",
+      "options": [
+        {
+          "value": "unit_economics",
+          "label": "Unit economics at scale (CAC payback, NRR, magic number, burn multiple)"
+        },
+        {
+          "value": "org_design",
+          "label": "Organisational design & leadership hiring"
+        },
+        {
+          "value": "gtm_evolution",
+          "label": "GTM-motion evolution (PLG → sales-led / hybrid, segmentation)"
+        },
+        {
+          "value": "international",
+          "label": "International expansion sequencing & entity setup"
+        },
+        {
+          "value": "governance",
+          "label": "Governance maturation (board, audit, FP&A, controls)"
+        },
+        {
+          "value": "pricing_packaging",
+          "label": "Pricing & packaging at scale"
+        },
+        {
+          "value": "round_metrics",
+          "label": "Round-gating metrics & milestone map"
+        }
+      ]
+    },
+    {
+      "id": "current_metrics",
+      "type": "textarea",
+      "label": "Current Metrics & Trajectory",
+      "description": "Share the numbers that matter: ARR and growth rate, NRR/GRR, gross margin, CAC payback, burn / runway, headcount, and current geography mix.",
+      "placeholder": "e.g. EUR 14M ARR growing ~80% YoY, NRR 118%, GRR 91%, gross margin 76%, CAC payback ~16 months, net burn EUR 900K/month, ~24 months runway, 95 FTE, ~70% Nordics / 30% DACH revenue..."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Risks or Concerns",
+      "description": "Describe known weak spots, board pushback, or areas you are unsure how to scale — these become priority findings.",
+      "placeholder": "e.g. Net retention is slipping in self-serve; first two enterprise AEs not yet at quota; no VP Sales hired; US expansion under board pressure but no entity or playbook; FP&A still in spreadsheets; SOC 2 not started..."
+    }
+  ],
+  "exampleInput": "We are a Stockholm-headquartered B2B SaaS company at ~EUR 14M ARR, growing ~80% YoY, with NRR around 118% and 76% gross margins. We raised a EUR 12M Series A 20 months ago and are planning a Series B in the next 9-12 months. Today we are mostly Nordics with an early DACH motion; the board wants a credible North America entry. Our GTM is a hybrid of product-led self-serve at the low end and a small (4-person) sales-led team upmarket, but we have never hired a VP Sales and CAC payback has crept to ~16 months. FP&A still lives in spreadsheets and we have no real board cadence beyond quarterly decks. Build a Series B+ scaling plan: stress-test our unit economics at scale, design the org we need by the next round, evolve the GTM motion, sequence international expansion, mature our governance, and tell me exactly which metrics will gate the Series B.",
+  "exampleValues": {
+    "company_context": "saas_subscription",
+    "target_round": "series_b",
+    "expansion_geographies": ["nordics", "dach", "north_america"],
+    "focus_areas": ["unit_economics", "org_design", "gtm_evolution", "international", "round_metrics"],
+    "current_metrics": "EUR 14M ARR, ~80% YoY growth, NRR 118%, GRR 91%, gross margin 76%, CAC payback ~16 months, net burn EUR 900K/month, ~24 months runway, 95 FTE, ~70% Nordics / 30% DACH revenue. Hybrid PLG + 4-person sales-led team, no VP Sales.",
+    "known_concerns": "CAC payback creeping toward 16 months; no VP Sales hired; US entry under board pressure but no entity, no playbook, no first US hire; FP&A still in spreadsheets; no formal board/audit cadence; SOC 2 / ISO 27001 not started despite enterprise pipeline."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "pe-vc-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "startup",
+    "scaling",
+    "series-b",
+    "unit-economics",
+    "go-to-market",
+    "governance"
+  ],
+  "contentType": "analytic_report"
+}

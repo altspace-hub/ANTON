@@ -1,0 +1,192 @@
+{
+  "formatVersion": "1.0",
+  "id": "amla-supervisory-cooperation",
+  "label": "AMLA Supervisory Cooperation",
+  "shortLabel": "AMLA Cooperation",
+  "icon": "Network",
+  "description": "Prepare an obliged entity to engage with the new AMLA supervisory architecture under Regulation (EU) 2024/1620: direct AMLA vs national supervision, selection criteria, Joint Supervisory Teams, supervisory colleges, joint analysis of cross-border SARs, the central AML/CFT database, and information-exchange and cooperation duties.",
+  "color": "adv-blue",
+  "areaId": "legal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "action-plan",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Regulation (EU) 2024/1620 (AMLA Regulation); AMLR (EU) 2024/1624; AMLD6 (EU) 2024/1640; AMLA selection methodology and RTS/ITS; EBA-to-AMLA transition materials; national supervisor transition guidance (Finansinspektionen, BaFin, FSA DK/FI/NO)."
+    },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_profile",
+      "type": "select",
+      "label": "Obliged Entity Type",
+      "description": "What type of obliged entity is engaging with the AMLA architecture? This shapes whether direct-supervision selection and college duties are likely to apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "credit_institution",
+          "label": "Credit Institution (Bank)"
+        },
+        {
+          "value": "payment_emoney",
+          "label": "Payment / E-Money Institution"
+        },
+        {
+          "value": "casp",
+          "label": "Crypto-Asset Service Provider (CASP)"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Life Insurance / Insurance Intermediary"
+        },
+        {
+          "value": "other_financial",
+          "label": "Other Financial-Sector Obliged Entity"
+        },
+        {
+          "value": "non_financial",
+          "label": "Non-Financial Obliged Entity (DNFBP)"
+        }
+      ]
+    },
+    {
+      "id": "supervision_status",
+      "type": "select",
+      "label": "Expected Supervision Status",
+      "description": "How does the entity expect to be supervised once AMLA's direct-supervision regime begins? Drives the depth of selection-readiness vs national-cooperation analysis.",
+      "required": true,
+      "options": [
+        {
+          "value": "undetermined",
+          "label": "Not yet determined"
+        },
+        {
+          "value": "amla_direct_candidate",
+          "label": "Likely directly supervised by AMLA (selected obliged entity)"
+        },
+        {
+          "value": "borderline",
+          "label": "Borderline against the selection criteria"
+        },
+        {
+          "value": "national_supervision",
+          "label": "National supervision (non-selected), under AMLA coordination"
+        }
+      ]
+    },
+    {
+      "id": "footprint",
+      "type": "chips",
+      "label": "Cross-Border Footprint",
+      "description": "Member States and EEA markets where the entity is established or operates under freedom-to-provide-services. Cross-border presence is central to AMLA's selection criteria and college formation.",
+      "options": [
+        {
+          "value": "home_only",
+          "label": "Home Member State only"
+        },
+        {
+          "value": "nordics",
+          "label": "Nordic-Baltic cluster"
+        },
+        {
+          "value": "eu_6plus",
+          "label": "Established/operating in 6+ Member States"
+        },
+        {
+          "value": "third_country",
+          "label": "Third-country branches / group entities"
+        },
+        {
+          "value": "fps_passport",
+          "label": "Freedom-to-provide-services passporting"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Cooperation Focus Areas",
+      "description": "Which parts of the AMLA architecture should the analysis prioritise?",
+      "options": [
+        {
+          "value": "selection",
+          "label": "Direct-supervision selection criteria & readiness"
+        },
+        {
+          "value": "jst",
+          "label": "Joint Supervisory Teams (JSTs) & on-site engagement"
+        },
+        {
+          "value": "colleges",
+          "label": "AML/CFT supervisory colleges"
+        },
+        {
+          "value": "joint_analysis",
+          "label": "Joint analysis of cross-border SARs (FIU support)"
+        },
+        {
+          "value": "central_database",
+          "label": "Central AML/CFT database & data submission"
+        },
+        {
+          "value": "info_exchange",
+          "label": "Information exchange & cooperation duties"
+        },
+        {
+          "value": "powers_sanctions",
+          "label": "AMLA supervisory powers, requests & pecuniary sanctions"
+        },
+        {
+          "value": "transition",
+          "label": "EBA-to-AMLA transition & timeline tracking"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe any known gaps, supervisory history, group structure complications, or data-readiness concerns relevant to AMLA engagement.",
+      "placeholder": "e.g. We passport into 8 Member States and may meet the selection threshold; our group reporting cannot produce consolidated data quickly; we have an open national supervisory action that may transfer to a JST..."
+    }
+  ],
+  "exampleInput": "We are a Nordic-headquartered e-money institution (~400 staff) operating across 8 EU/EEA Member States under freedom-to-provide-services, with crypto on-ramp partnerships and a Baltic processing subsidiary. We are trying to understand how the new AMLA architecture under Regulation (EU) 2024/1620 will affect us: whether our cross-border footprint puts us in scope for AMLA's first direct-supervision selection, how a Joint Supervisory Team would interact with Finansinspektionen, whether a supervisory college will be set up for our group, and what data and cooperation duties we must be ready for. Map our likely supervision status against the selection criteria, set out the engagement model with the national supervisor during the EBA-to-AMLA transition, and give us a 12-month readiness action plan. Known concern: our group cannot currently produce consolidated cross-border transaction data within typical supervisory request timeframes.",
+  "exampleValues": {
+    "entity_profile": "payment_emoney",
+    "supervision_status": "borderline",
+    "footprint": ["nordics", "eu_6plus", "fps_passport"],
+    "focus_areas": ["selection", "jst", "colleges", "central_database", "transition"],
+    "known_concerns": "We passport into 8 Member States and may cross the direct-selection threshold. The group cannot produce consolidated cross-border transaction data within typical supervisory request timeframes. An open Finansinspektionen action may need to be handed over to a Joint Supervisory Team."
+  },
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "amla",
+    "supervision",
+    "amlr",
+    "cooperation",
+    "eu",
+    "regulatory"
+  ],
+  "contentType": "analytic_report"
+}

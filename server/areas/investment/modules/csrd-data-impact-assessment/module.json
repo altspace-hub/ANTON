@@ -1,0 +1,235 @@
+{
+  "formatVersion": "1.0",
+  "id": "csrd-data-impact-assessment",
+  "label": "CSRD Sustainability-Data Impact Assessment",
+  "shortLabel": "CSRD Data Impact",
+  "icon": "LineChart",
+  "description": "Assess how CSRD (EU) 2022/2464 and ESRS-mandated sustainability data feed investment analysis — valuation and screening inputs, SFDR (EU) 2019/2088 Art. 8/9 alignment and PAI indicators, greenwashing risk, and data-availability gaps across the portfolio.",
+  "color": "adv-blue",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CSRD (EU) 2022/2464; ESRS Delegated Regulation (EU) 2023/2772 (ESRS 1, ESRS 2, E1–E5, S1–S4, G1); SFDR (EU) 2019/2088 + RTS Delegated Regulation (EU) 2022/1288 (Art. 8/9, PAI Table 1); EU Taxonomy Regulation (EU) 2020/852 + Disclosures Delegated Act; ISSB IFRS S1/S2; CSRD Omnibus simplification proposals (label as proposals); EFRAG ESRS implementation guidance; ESMA guidelines on funds' names using ESG terms; CSDDD (EU) 2024/1760"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "investor_role",
+      "type": "select",
+      "label": "Investor / User Role",
+      "description": "Whose perspective is this assessment from? Drives which disclosure obligations and data uses dominate.",
+      "required": true,
+      "options": [
+        {
+          "value": "asset_manager_sfdr",
+          "label": "Asset manager — SFDR Art. 8/9 product(s)"
+        },
+        {
+          "value": "asset_owner",
+          "label": "Asset owner / pension fund (LP)"
+        },
+        {
+          "value": "pe_vc_gp",
+          "label": "PE / VC general partner"
+        },
+        {
+          "value": "credit_fixed_income",
+          "label": "Credit / fixed-income analyst"
+        },
+        {
+          "value": "equity_research",
+          "label": "Equity research / fundamental analyst"
+        },
+        {
+          "value": "esg_data_team",
+          "label": "ESG / sustainability data team"
+        }
+      ]
+    },
+    {
+      "id": "portfolio_scope",
+      "type": "select",
+      "label": "Portfolio / Asset Class in Scope",
+      "description": "What is being analysed? Determines ESRS data availability and the in-scope/out-of-scope reporter mix.",
+      "required": true,
+      "options": [
+        {
+          "value": "listed_equity",
+          "label": "Listed equities (large-cap, in CSRD scope)"
+        },
+        {
+          "value": "listed_smid",
+          "label": "Listed SMID-cap (phased / wave-2 reporters)"
+        },
+        {
+          "value": "corporate_credit",
+          "label": "Corporate credit / bonds"
+        },
+        {
+          "value": "private_equity",
+          "label": "Private equity (mostly out-of-scope investees)"
+        },
+        {
+          "value": "private_credit",
+          "label": "Private credit / direct lending"
+        },
+        {
+          "value": "infrastructure_re",
+          "label": "Infrastructure / real estate"
+        },
+        {
+          "value": "multi_asset",
+          "label": "Multi-asset / mixed portfolio"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Reporting / Domicile Jurisdiction(s)",
+      "description": "Which disclosure regimes govern the fund and its investees?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU (CSRD / SFDR / Taxonomy)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "uk",
+          "label": "UK (SDR / TPT)"
+        },
+        {
+          "value": "us",
+          "label": "US (SEC / ISSB-aligned)"
+        },
+        {
+          "value": "global_issb",
+          "label": "Global (ISSB IFRS S1/S2)"
+        }
+      ]
+    },
+    {
+      "id": "use_cases",
+      "type": "multi-select",
+      "label": "Investment Use Cases for the Data",
+      "description": "How will ESRS/CSRD data be consumed? Prioritises which datapoints and gaps matter most.",
+      "options": [
+        {
+          "value": "sfdr_pai",
+          "label": "SFDR PAI indicator reporting (RTS Table 1)"
+        },
+        {
+          "value": "sfdr_alignment",
+          "label": "SFDR Art. 8/9 product alignment & website disclosures"
+        },
+        {
+          "value": "taxonomy_alignment",
+          "label": "EU Taxonomy alignment (turnover / capex / opex)"
+        },
+        {
+          "value": "valuation_dcf",
+          "label": "Valuation inputs (transition cost, carbon price, stranded-asset risk)"
+        },
+        {
+          "value": "screening_exclusion",
+          "label": "Negative / norms-based screening & exclusions"
+        },
+        {
+          "value": "engagement_stewardship",
+          "label": "Engagement & stewardship target-setting"
+        },
+        {
+          "value": "greenwashing_control",
+          "label": "Greenwashing risk control & claims substantiation"
+        },
+        {
+          "value": "client_lp_reporting",
+          "label": "Client / LP sustainability reporting"
+        }
+      ]
+    },
+    {
+      "id": "data_sourcing",
+      "type": "select",
+      "label": "Current Data Sourcing Model",
+      "description": "Where does the firm get sustainability data today? Shapes the data-availability gap and coverage estimate.",
+      "options": [
+        {
+          "value": "vendor_only",
+          "label": "Third-party ESG vendor estimates only (e.g. MSCI / Sustainalytics / ISS)"
+        },
+        {
+          "value": "vendor_plus_reported",
+          "label": "Vendor data + issuer-reported ESRS where available"
+        },
+        {
+          "value": "reported_first",
+          "label": "Reported-first (CSRD/ESRS), vendor as fallback"
+        },
+        {
+          "value": "direct_engagement",
+          "label": "Direct issuer/investee data collection (questionnaires)"
+        },
+        {
+          "value": "undetermined",
+          "label": "Not yet determined / being built"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Data Gaps or Concerns",
+      "description": "Describe known coverage gaps, estimated-vs-reported tensions, greenwashing exposures, audit findings, or supervisory focus areas.",
+      "placeholder": "e.g. ~40% of the small-cap sleeve are non-CSRD reporters so Scope 3 is fully estimated; an Art. 9 fund markets a 'net-zero aligned' label but ~half of holdings have no science-based target; ESMA fund-name rules force a relabel decision by Q4..."
+    }
+  ],
+  "exampleInput": "We run a EUR 1.2bn Article 9 European equity fund and an Article 8 multi-asset fund, both SFDR-classified in 2022. With the first wave of CSRD/ESRS reports now landing for FY2024, we want to understand how this newly mandated, assured sustainability data should change our valuation and screening inputs, and where it does NOT yet cover us. About a third of the Art. 8 sleeve sits in SMID-caps and private holdings that are out of CSRD scope, so their Scope 3 emissions and ESRS E1 transition-plan datapoints are still vendor-estimated. Run a sustainability-data impact assessment: map the ESRS datapoints we actually need for our SFDR PAI Table 1 reporting and EU Taxonomy alignment, assess the data-availability gap by holding type, flag where reliance on estimates creates greenwashing risk for our 'net-zero aligned' Art. 9 marketing claim, and tell us how transition costs and carbon-price assumptions from ESRS E1 should flow into our DCF assumptions. Known concern: our Art. 9 fund name uses 'sustainable' and we have not yet checked it against the ESMA fund-naming guidelines.",
+  "exampleValues": {
+    "investor_role": "asset_manager_sfdr",
+    "portfolio_scope": "multi_asset",
+    "jurisdiction": ["eu", "sweden"],
+    "use_cases": ["sfdr_pai", "taxonomy_alignment", "valuation_dcf", "greenwashing_control"],
+    "data_sourcing": "vendor_plus_reported",
+    "known_concerns": "~33% of the Art. 8 sleeve are non-CSRD reporters (SMID/private) — Scope 3 and ESRS E1 transition-plan data are fully estimated. Art. 9 fund markets a 'net-zero aligned' claim but a material share of holdings lack a validated science-based target. Fund name uses 'sustainable' and has not been checked against the ESMA fund-naming guidelines (effective for existing funds from 21 May 2025)."
+  },
+  "recommendedPersonas": [
+    "pe-vc-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "csrd",
+    "esrs",
+    "sfdr",
+    "pai",
+    "eu-taxonomy",
+    "greenwashing",
+    "data-availability",
+    "valuation",
+    "article-8",
+    "article-9",
+    "issb"
+  ],
+  "contentType": "scorecard"
+}

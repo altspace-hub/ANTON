@@ -1,0 +1,183 @@
+{
+  "formatVersion": "1.0",
+  "id": "esg-integration-in-delivery",
+  "label": "ESG Integration in Delivery",
+  "shortLabel": "ESG-by-Design",
+  "icon": "Leaf",
+  "description": "Embed ESG into consulting delivery: engagement-level materiality, ESG-by-design recommendations, measurable advice impact, and greenwashing-safe client deliverables — anchored to CSRD/ESRS, ISSB IFRS S1/S2, and SFDR.",
+  "color": "adv-green",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "impact-assessment",
+      "executive-summary",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "CSRD (EU) 2022/2464 + ESRS, ISSB IFRS S1/S2, SFDR (EU) 2019/2088, EU Taxonomy Regulation (EU) 2020/852, NGFS climate scenarios, GRI Standards, IAS 36/37, plus the client's engagement materials and any sector frameworks supplied via local folders."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "engagement_type",
+      "type": "select",
+      "label": "Engagement Type",
+      "description": "What kind of consulting engagement are we embedding ESG into?",
+      "required": true,
+      "options": [
+        {
+          "value": "strategy",
+          "label": "Corporate / Growth Strategy"
+        },
+        {
+          "value": "operating_model",
+          "label": "Operating Model / Organisation Design"
+        },
+        {
+          "value": "transformation",
+          "label": "Transformation / Cost Programme"
+        },
+        {
+          "value": "ma_diligence",
+          "label": "M&A / Commercial Due Diligence"
+        },
+        {
+          "value": "tech_data",
+          "label": "Technology / Data / Digital"
+        },
+        {
+          "value": "policy_regulatory",
+          "label": "Policy / Regulatory Advisory"
+        },
+        {
+          "value": "other",
+          "label": "Other Engagement Type"
+        }
+      ]
+    },
+    {
+      "id": "client_context",
+      "type": "select",
+      "label": "Client Sector & Reporting Regime",
+      "description": "Which disclosure regime is the client subject to? This drives the materiality lens and the greenwashing-risk surface.",
+      "required": true,
+      "options": [
+        {
+          "value": "csrd_eu",
+          "label": "EU large/listed — CSRD + ESRS in scope"
+        },
+        {
+          "value": "issb_global",
+          "label": "Global — ISSB IFRS S1/S2 (jurisdictional adoption)"
+        },
+        {
+          "value": "sfdr_finance",
+          "label": "Financial market participant — SFDR / Taxonomy"
+        },
+        {
+          "value": "value_chain",
+          "label": "Private / SME in a CSRD client's value chain (VSME)"
+        },
+        {
+          "value": "voluntary",
+          "label": "Voluntary reporter — no mandatory regime yet"
+        }
+      ]
+    },
+    {
+      "id": "esg_dimensions",
+      "type": "multi-select",
+      "label": "Priority ESG Dimensions",
+      "description": "Which ESG topics should the integration prioritise for this engagement?",
+      "options": [
+        {
+          "value": "climate",
+          "label": "Climate change — mitigation, adaptation, transition plan (ESRS E1 / IFRS S2)"
+        },
+        {
+          "value": "nature",
+          "label": "Pollution, water, biodiversity & circular economy (ESRS E2–E5)"
+        },
+        {
+          "value": "workforce",
+          "label": "Own workforce & value-chain workers (ESRS S1–S2)"
+        },
+        {
+          "value": "communities_consumers",
+          "label": "Affected communities & consumers (ESRS S3–S4)"
+        },
+        {
+          "value": "governance",
+          "label": "Business conduct & governance (ESRS G1)"
+        },
+        {
+          "value": "taxonomy",
+          "label": "EU Taxonomy alignment / green-revenue claims"
+        }
+      ]
+    },
+    {
+      "id": "deliverable_stage",
+      "type": "select",
+      "label": "Where Are We in Delivery?",
+      "description": "Determines whether to run engagement-level materiality, ESG-by-design review of recommendations, or a greenwashing screen of a near-final deliverable.",
+      "options": [
+        {
+          "value": "scoping",
+          "label": "Scoping — set engagement-level ESG materiality"
+        },
+        {
+          "value": "analysis",
+          "label": "Analysis — bake ESG into recommendations (by-design)"
+        },
+        {
+          "value": "measurement",
+          "label": "Measurement — define advice-impact metrics & baseline"
+        },
+        {
+          "value": "deliverable_review",
+          "label": "Deliverable review — greenwashing & defensibility screen"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Claims, or Concerns",
+      "description": "Describe the recommendation set, any green/net-zero claims already drafted, client sensitivities, or impact expectations the sponsor has voiced.",
+      "placeholder": "e.g. Deck already claims the new product line is 'carbon-neutral' and 'fully sustainable'; sponsor wants a headline ESG number for the board; no baseline emissions data exists yet; client has a 2030 net-zero pledge but no transition plan..."
+    }
+  ],
+  "exampleInput": "We are mid-delivery on a growth-strategy engagement for a Nordic industrial manufacturer (~3,000 FTE, listed, CSRD-in-scope from FY2025). The recommendation is to expand a coatings product line and enter two new export markets. The client's sponsor wants a one-line ESG message for the board, and the draft deck already labels the new line 'sustainable' and 'climate-friendly'. There is no double-materiality assessment for this product decision, no Scope 3 baseline, and the client has a 2030 net-zero pledge with no published transition plan. Embed ESG-by-design into our recommendations, define how we will measure the impact of our advice, and screen the deck for greenwashing before it goes to the board.",
+  "exampleValues": {
+    "engagement_type": "strategy",
+    "client_context": "csrd_eu",
+    "esg_dimensions": ["climate", "governance", "taxonomy"],
+    "deliverable_stage": "deliverable_review",
+    "known_concerns": "Deck labels the new coatings line 'sustainable' and 'climate-friendly' with no evidence. No double-materiality assessment for the product decision. No Scope 3 baseline. 2030 net-zero pledge exists but no ESRS E1 transition plan. Sponsor wants a single headline ESG number for the board."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "esg",
+    "sustainability",
+    "csrd",
+    "double-materiality",
+    "greenwashing",
+    "consulting"
+  ],
+  "contentType": "analytic_report"
+}

@@ -1,0 +1,200 @@
+{
+  "formatVersion": "1.0",
+  "id": "correspondent-concentration-risk",
+  "label": "Correspondent & Nested Concentration Risk",
+  "shortLabel": "Correspondent Concentration",
+  "icon": "Network",
+  "description": "Aggregate and assess concentration risk across correspondent-banking and nested relationships — by respondent, jurisdiction and downstream-clearing chain — under AMLR Art. 36 and the Wolfsberg CBDD framework. Weighs the de-risking-vs-concentration trade-off and runs single-point-of-failure analysis for MVTS and remittance corridors.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "risk-appetite-statement",
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AMLR (EU) 2024/1624 (esp. Art. 36 on enhanced due diligence for cross-border correspondent relationships and payable-through accounts, Art. 37 for CASP correspondent relationships, Art. 38 for third-country respondents, and Art. 39 on the shell-institution prohibition); AMLD6 (EU) 2024/1640; the AMLA Regulation (EU) 2024/1620; the Wolfsberg Group Correspondent Banking Due Diligence Questionnaire (CBDQ v1.4) and Correspondent Banking Principles; the Wolfsberg/BAFT Payment Transparency Standards and the Wolfsberg Statement on the Treatment of Sanctions in Correspondent Banking; FATF Recommendation 13 and the FATF Guidance on Correspondent Banking Services (2016); the FSB/CPMI work on correspondent-banking decline and remittance access; BCBS 'Sound management of risks related to money laundering and financing of terrorism' (Annex 2 on correspondent banking); ISO 20022 / pacs.008 and the Travel Rule under the TFR (EU) 2023/1113 for crypto/VASP nesting."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "institution_role",
+      "type": "select",
+      "label": "Your Role in the Chain",
+      "description": "Are you the correspondent providing accounts/clearing, the respondent relying on a correspondent, or an intermediary/MVTS operator in the middle?",
+      "required": true,
+      "options": [
+        {
+          "value": "correspondent",
+          "label": "Correspondent / Clearing Bank (provides nostro/vostro accounts)"
+        },
+        {
+          "value": "respondent",
+          "label": "Respondent Bank (relies on a correspondent for access)"
+        },
+        {
+          "value": "intermediary",
+          "label": "Intermediary / Hub Bank (both upstream and downstream)"
+        },
+        {
+          "value": "mvts",
+          "label": "MVTS / Money Remittance Operator"
+        },
+        {
+          "value": "emi_psp",
+          "label": "EMI / Payment Institution / Fintech using a sponsor bank"
+        },
+        {
+          "value": "casp",
+          "label": "Crypto-Asset Service Provider (VASP-to-VASP / banking access)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdictions",
+      "type": "chips",
+      "label": "Corridors & Jurisdictions in Scope",
+      "description": "Which booking-centre, respondent and downstream jurisdictions or remittance corridors does this concentration assessment cover?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU / EEA"
+        },
+        {
+          "value": "nordics",
+          "label": "Nordics"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "us_usd",
+          "label": "US / USD-clearing"
+        },
+        {
+          "value": "mena",
+          "label": "MENA"
+        },
+        {
+          "value": "sub_saharan_africa",
+          "label": "Sub-Saharan Africa"
+        },
+        {
+          "value": "south_asia",
+          "label": "South Asia"
+        },
+        {
+          "value": "high_risk_third_country",
+          "label": "High-risk third country (AMLR Annex III / FATF lists)"
+        }
+      ]
+    },
+    {
+      "id": "concentration_dimension",
+      "type": "multi-select",
+      "label": "Concentration Dimensions to Aggregate",
+      "description": "Across which dimensions should exposure be aggregated and ranked?",
+      "options": [
+        {
+          "value": "by_respondent",
+          "label": "By respondent / counterparty (single-name exposure)"
+        },
+        {
+          "value": "by_jurisdiction",
+          "label": "By jurisdiction / corridor"
+        },
+        {
+          "value": "by_nesting",
+          "label": "By nested / downstream-clearing chain"
+        },
+        {
+          "value": "by_product",
+          "label": "By product (USD clearing, FX, trade finance, MVTS)"
+        },
+        {
+          "value": "by_currency",
+          "label": "By settlement currency / clearing rail"
+        },
+        {
+          "value": "single_point_failure",
+          "label": "Single-point-of-failure / corridor resilience"
+        }
+      ]
+    },
+    {
+      "id": "trigger_context",
+      "type": "select",
+      "label": "What is Driving This Assessment?",
+      "description": "Context sharpens the recommendation — concentration appetite, a de-risking decision, and SPOF resilience are weighed differently depending on the trigger.",
+      "options": [
+        {
+          "value": "appetite_review",
+          "label": "Routine concentration / risk-appetite review"
+        },
+        {
+          "value": "derisking_decision",
+          "label": "Pending exit / de-risking decision on a respondent or corridor"
+        },
+        {
+          "value": "single_correspondent_loss",
+          "label": "Loss or threatened loss of a critical correspondent"
+        },
+        {
+          "value": "supervisory_request",
+          "label": "Supervisory request / examination follow-up"
+        },
+        {
+          "value": "new_corridor",
+          "label": "Onboarding a new corridor or downstream chain"
+        },
+        {
+          "value": "ma_integration",
+          "label": "M&A / portfolio integration (inherited relationships)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Concerns, Data & Findings",
+      "description": "Describe what you already know — exposure figures, the largest respondents, identified nesting, prior audit or supervisory findings, corridor dependencies, or the de-risking trade-off you are wrestling with.",
+      "placeholder": "e.g. 62% of inbound USD volume clears through a single US correspondent; we have identified two respondents that are themselves providing downstream USD clearing to MVTS operators in a higher-risk corridor; supervisor flagged nested-account visibility in last year's exam; we are considering exiting the corridor but it serves a large diaspora remittance population..."
+    }
+  ],
+  "exampleInput": "We are a mid-sized Nordic bank acting as a regional USD/EUR correspondent. Roughly 58% of our inbound USD clearing volume depends on a single US dollar-clearing correspondent, and our three largest respondent banks together account for over 70% of vostro turnover. During a recent review we found that two of those respondents are themselves clearing for downstream MVTS operators and smaller banks in a higher-risk corridor — i.e. nesting we did not have full visibility over. We are under pressure to de-risk the corridor, but it carries a large diaspora remittance flow and exiting could leave the corridor with no compliant channel. Aggregate our concentration exposure by respondent, by jurisdiction and by nested chain under AMLR Art. 36 and the Wolfsberg CBDD framework, assess single-point-of-failure risk on our USD-clearing dependency and the remittance corridor, weigh the de-risking-vs-concentration trade-off, and propose a concentration risk-appetite position with triggers and mitigations.",
+  "exampleValues": {
+    "institution_role": "correspondent",
+    "jurisdictions": ["eu", "nordics", "us_usd", "high_risk_third_country"],
+    "concentration_dimension": ["by_respondent", "by_jurisdiction", "by_nesting", "single_point_failure"],
+    "trigger_context": "derisking_decision",
+    "known_concerns": "58% of inbound USD clearing depends on a single US correspondent (SPOF). Top 3 respondents = >70% of vostro turnover. Two respondents are nesting downstream MVTS/smaller-bank clearing in a higher-risk corridor without full transparency to us. Supervisor flagged nested-account visibility at last exam. De-risking the corridor would remove the last compliant channel for a large diaspora remittance flow."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "correspondent-banking",
+    "concentration-risk",
+    "nested-accounts",
+    "de-risking",
+    "mvts",
+    "amlr",
+    "wolfsberg"
+  ],
+  "contentType": "risk_register"
+}

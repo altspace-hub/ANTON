@@ -1,0 +1,238 @@
+{
+  "formatVersion": "1.0",
+  "id": "amlr-data-quality-governance",
+  "label": "AML/CFT Data-Quality Governance",
+  "shortLabel": "AML Data Quality",
+  "icon": "DatabaseZap",
+  "description": "Field-level data-quality governance for AML/CFT programmes: beneficial-owner completeness, screening-list timeliness, CDD field accuracy, risk-tiered retention, and end-to-end data lineage for AMLA direct data requests. Applies ISO 8000 and BCBS 239 dimensions to AML data.",
+  "color": "adv-blue",
+  "areaId": "data-analytics",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "data-readiness-scorecard",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AMLR (EU) 2024/1624; AMLA Regulation (EU) 2024/1620; AMLD6 (EU) 2024/1640; TFR (EU) 2023/1113; GDPR (EU) 2016/679; ISO 8000 (data quality); BCBS 239 (risk data aggregation); ISO 20022; EBA Guidelines on ML/TF risk factors; FATF Recommendations (2023)."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Obliged Entity Type",
+      "description": "What type of obliged entity owns the AML/CFT data estate being assessed?",
+      "required": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "Bank / Credit Institution"
+        },
+        {
+          "value": "fintech",
+          "label": "Fintech / Payment or E-Money Institution"
+        },
+        {
+          "value": "investment",
+          "label": "Investment Firm / Asset Manager"
+        },
+        {
+          "value": "insurance",
+          "label": "Insurance Undertaking"
+        },
+        {
+          "value": "crypto",
+          "label": "Crypto-Asset Service Provider (CASP)"
+        },
+        {
+          "value": "mvts",
+          "label": "Money / Value Transfer Service (MVTS)"
+        },
+        {
+          "value": "other",
+          "label": "Other Obliged Entity"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which jurisdictions govern the retention, lineage and supervisory-access expectations for this data?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU / AMLR + AMLA"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "germany",
+          "label": "Germany"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        }
+      ]
+    },
+    {
+      "id": "amla_supervision_category",
+      "type": "select",
+      "label": "AMLA Supervision Category",
+      "description": "How will the entity be supervised once AMLA is operational (from 1 July 2025; direct supervision from 2028)? Drives the depth of data-lineage and direct-request readiness expected.",
+      "options": [
+        {
+          "value": "undetermined",
+          "label": "Not yet determined"
+        },
+        {
+          "value": "amla_direct",
+          "label": "Directly supervised by AMLA (selected obliged entity)"
+        },
+        {
+          "value": "national_under_amla",
+          "label": "National supervisor under AMLA coordination"
+        },
+        {
+          "value": "non_selected",
+          "label": "Non-selected obliged entity (national supervision)"
+        }
+      ]
+    },
+    {
+      "id": "data_domains",
+      "type": "multi-select",
+      "label": "Data Domains in Scope",
+      "description": "Which AML/CFT data domains should the data-quality assessment cover?",
+      "options": [
+        {
+          "value": "ubo",
+          "label": "Beneficial-Ownership / UBO Records"
+        },
+        {
+          "value": "cdd_fields",
+          "label": "CDD / KYC Identity & Profile Fields"
+        },
+        {
+          "value": "screening",
+          "label": "Sanctions / PEP / Adverse-Media Screening Lists"
+        },
+        {
+          "value": "transactions",
+          "label": "Transaction & Payment-Message Data (ISO 20022 / pacs.008)"
+        },
+        {
+          "value": "risk_scoring",
+          "label": "Customer Risk-Rating & Scoring Data"
+        },
+        {
+          "value": "retention",
+          "label": "Retention, Archival & Deletion Records"
+        },
+        {
+          "value": "lineage",
+          "label": "Data Lineage & Source-System Provenance"
+        },
+        {
+          "value": "reference",
+          "label": "Reference / Golden-Source Master Data"
+        }
+      ]
+    },
+    {
+      "id": "quality_dimensions",
+      "type": "multi-select",
+      "label": "Priority Quality Dimensions",
+      "description": "Which ISO 8000 / BCBS 239 data-quality dimensions matter most for this engagement?",
+      "options": [
+        {
+          "value": "completeness",
+          "label": "Completeness (e.g. UBO field coverage)"
+        },
+        {
+          "value": "accuracy",
+          "label": "Accuracy (CDD fields match verified source)"
+        },
+        {
+          "value": "timeliness",
+          "label": "Timeliness (screening-list freshness, periodic-review currency)"
+        },
+        {
+          "value": "consistency",
+          "label": "Consistency (same value across systems)"
+        },
+        {
+          "value": "uniqueness",
+          "label": "Uniqueness (no duplicate customer/UBO records)"
+        },
+        {
+          "value": "validity",
+          "label": "Validity (format/domain conformance, e.g. LEI, BIC)"
+        },
+        {
+          "value": "lineage_traceability",
+          "label": "Traceability / Lineage (source provenance for AMLA requests)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Data-Quality Issues or Concerns",
+      "description": "Describe any known data-quality problems, audit findings, system-migration legacy, or supervisory feedback on data.",
+      "placeholder": "e.g. UBO percentages frequently null on legacy onboardings; sanctions list refresh is a manual weekly batch; customer addresses inconsistent between core banking and the screening engine; no documented lineage from source system to the screening payload..."
+    }
+  ],
+  "exampleInput": "We are a Finnish payment institution (~200 staff) preparing for AMLR application and likely selection for AMLA-coordinated supervision. We hold roughly 40,000 active business customers onboarded across three different KYC systems over the last decade, plus a 2021 core-banking migration that we suspect dropped or truncated several beneficial-ownership fields. Sanctions and PEP lists are refreshed by a nightly batch, but adverse-media is a quarterly manual pull. We have never produced an end-to-end lineage diagram showing how a UBO ownership percentage travels from the source registry extract into the screening payload and the customer risk score. Assess our AML/CFT data quality at field level — beneficial-owner completeness, CDD field accuracy, screening-list timeliness, risk-tiered retention against the AMLR 5-year rule versus our GDPR minimisation baseline, and the data lineage we would need to satisfy an AMLA direct data request. Produce a data-readiness scorecard and a prioritised remediation list. Known weak spots: UBO percentages are frequently null on pre-2021 records and we cannot currently evidence when a given sanctions match was screened against which list version.",
+  "exampleValues": {
+    "entity_type": "fintech",
+    "jurisdiction": ["eu", "finland"],
+    "amla_supervision_category": "national_under_amla",
+    "data_domains": ["ubo", "cdd_fields", "screening", "retention", "lineage"],
+    "quality_dimensions": ["completeness", "accuracy", "timeliness", "lineage_traceability"],
+    "known_concerns": "UBO ownership percentages frequently null on pre-2021 core-banking-migration records. Adverse-media screening is a quarterly manual pull; only sanctions/PEP are nightly. No end-to-end lineage from source registry extract to screening payload to risk score. Cannot evidence which sanctions list version a historic match was screened against."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "tech-expert"
+  ],
+  "tags": [
+    "amlr",
+    "data-quality",
+    "data-governance",
+    "bcbs-239",
+    "iso-8000",
+    "amla",
+    "compliance"
+  ],
+  "contentType": "scorecard"
+}

@@ -1,0 +1,193 @@
+{
+  "formatVersion": "1.0",
+  "id": "instant-payment-interoperability",
+  "label": "Instant-Payment Interoperability",
+  "shortLabel": "IPS Interop",
+  "icon": "ArrowLeftRight",
+  "description": "Assess domestic instant-payment systems and mobile-money interoperability in emerging markets — switch design, ISO 20022 messaging, settlement and risk, regional rails (PAPSS, regional RTGS), with the consumer-redress and AML/CFT overlay.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "BIS CPMI Principles for Financial Market Infrastructures (2012) and the CPMI/World Bank Payment Aspects of Financial Inclusion (PAFI) report; CPMI report on interoperability (Fast payments, multilateral platforms); ISO 20022 message catalogue (pacs.008 / pacs.002 / pacs.004 / pacs.028 / camt.054); national instant-payment scheme rules and switch operating manuals (Nigeria NIBSS NIP/NQR, Ghana GhIPSS GIP/GhanaPay, Kenya PesaLink/IPSL and the CBK National Payments Strategy, India NPCI UPI, Brazil Banco Central Pix, Tanzania TIPS, AfricaNenda SIIPS report); PAPSS (Pan-African Payment and Settlement System) rulebook and regional RTGS/RTGS-linkage arrangements (REPSS, SADC-RTGS / SIRESS, COMESA); FATF Recommendations (2023), FATF guidance on financial inclusion and AML/CFT, FATF Recommendation 16 (wire transfers); Level One Project / Mojaloop design principles; central-bank consumer-protection and dispute-resolution circulars; G20 Roadmap for Enhancing Cross-Border Payments."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "market_context",
+      "type": "select",
+      "label": "Market / Jurisdiction Context",
+      "description": "Which market or regional rail is the assessment primarily about? Drives the scheme rules, switch operator, and supervisor referenced.",
+      "required": true,
+      "options": [
+        {
+          "value": "nigeria",
+          "label": "Nigeria — NIBSS (NIP / NQR), CBN"
+        },
+        {
+          "value": "ghana",
+          "label": "Ghana — GhIPSS (GIP / GhanaPay), BoG"
+        },
+        {
+          "value": "kenya",
+          "label": "Kenya — PesaLink / IPSL, M-PESA, CBK"
+        },
+        {
+          "value": "tanzania",
+          "label": "Tanzania — TIPS, BoT"
+        },
+        {
+          "value": "regional_papss",
+          "label": "Regional — PAPSS (Afreximbank / AfCFTA)"
+        },
+        {
+          "value": "regional_rtgs",
+          "label": "Regional RTGS / linkage (SADC-RTGS, REPSS, COMESA)"
+        },
+        {
+          "value": "other_em",
+          "label": "Other emerging market / new domestic switch"
+        }
+      ]
+    },
+    {
+      "id": "participant_role",
+      "type": "select",
+      "label": "Your Role in the System",
+      "description": "What is the assessed entity's position relative to the instant-payment system?",
+      "required": true,
+      "options": [
+        {
+          "value": "scheme_operator",
+          "label": "Scheme operator / switch / payment-system operator"
+        },
+        {
+          "value": "bank_participant",
+          "label": "Direct participant bank / settlement member"
+        },
+        {
+          "value": "mmo_emi",
+          "label": "Mobile-money operator / e-money issuer (MMO/EMI)"
+        },
+        {
+          "value": "fintech_psp",
+          "label": "Fintech / PSP / aggregator (indirect access)"
+        },
+        {
+          "value": "regulator",
+          "label": "Central bank / regulator / oversight authority"
+        }
+      ]
+    },
+    {
+      "id": "assessment_lens",
+      "type": "multi-select",
+      "label": "Assessment Lenses",
+      "description": "Which dimensions of interoperability should the analysis prioritise?",
+      "options": [
+        {
+          "value": "messaging",
+          "label": "Messaging & standards (ISO 20022, addressing, QR)"
+        },
+        {
+          "value": "settlement",
+          "label": "Settlement model, liquidity & prefunding"
+        },
+        {
+          "value": "switch_access",
+          "label": "Switch governance, access & participation rules"
+        },
+        {
+          "value": "redress",
+          "label": "Consumer redress, disputes & error resolution"
+        },
+        {
+          "value": "amlcft",
+          "label": "AML/CFT, sanctions & travel-rule overlay"
+        },
+        {
+          "value": "resilience",
+          "label": "Operational resilience, fraud & finality"
+        },
+        {
+          "value": "crossborder",
+          "label": "Cross-border / regional rail integration"
+        },
+        {
+          "value": "fx_pricing",
+          "label": "FX, pricing transparency & inclusion"
+        }
+      ]
+    },
+    {
+      "id": "iso_migration_status",
+      "type": "select",
+      "label": "ISO 20022 Migration Status",
+      "description": "Where is the system on the ISO 20022 / message-standard journey? Drives interoperability and cross-border readiness findings.",
+      "options": [
+        {
+          "value": "legacy_proprietary",
+          "label": "Legacy / proprietary messaging (ISO 8583 or bespoke)"
+        },
+        {
+          "value": "in_migration",
+          "label": "Mid-migration (coexistence / translation layer)"
+        },
+        {
+          "value": "iso20022_native",
+          "label": "ISO 20022 native"
+        },
+        {
+          "value": "undetermined",
+          "label": "Not yet determined / mixed"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe known pain points: settlement-liquidity stress, failed-transaction backlog, redress complaints, AML typology concerns, interoperability disputes, or supervisory findings.",
+      "placeholder": "e.g. Reversal of failed P2P transfers takes 5+ days; deferred net settlement creates intraday exposure when a large participant misses a cycle; mobile-money wallets and bank accounts are not addressable on the same alias directory; rising APP/social-engineering fraud with no liability-allocation rule..."
+    }
+  ],
+  "exampleInput": "We operate a mobile-money business (~6 million active wallets) in a West African market and we are joining the national instant-payment switch as a direct participant next year. The switch runs on a deferred net settlement model with three cycles a day; we hold a prefunded settlement account at a sponsor bank. We are mid-migration from a proprietary ISO 8583-style message set to ISO 20022 pacs.008. Assess our readiness for interoperable bank-to-wallet and wallet-to-wallet transfers, focusing on settlement-liquidity risk, failed-transaction reversal and consumer redress, and the AML/CFT and travel-rule overlay for cross-network transfers. Known weak spots: our failed-transfer reversal SLA is informal and disputes are handled by email; we have no agreed liability-allocation rule for authorised push-payment fraud; and our alias directory cannot resolve a bank account and a wallet under the same phone number.",
+  "exampleValues": {
+    "market_context": "other_em",
+    "participant_role": "mmo_emi",
+    "assessment_lens": ["settlement", "redress", "amlcft", "messaging"],
+    "iso_migration_status": "in_migration",
+    "known_concerns": "Failed-transfer reversal SLA is informal and disputes are handled over email with no logged audit trail. No agreed liability-allocation rule for authorised push-payment (APP) / social-engineering fraud. Alias directory cannot resolve a bank account and a wallet under the same MSISDN, so customers cannot pay across networks by phone number. Deferred net settlement creates intraday exposure if a large participant misses a cycle."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "fcp-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "instant-payments",
+    "mobile-money",
+    "interoperability",
+    "iso20022",
+    "settlement",
+    "financial-inclusion",
+    "papss"
+  ],
+  "contentType": "gap_analysis"
+}

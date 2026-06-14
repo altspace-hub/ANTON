@@ -1,0 +1,229 @@
+{
+  "formatVersion": "1.0",
+  "id": "secondary-market-assessment",
+  "label": "Private-Market Secondaries Assessment",
+  "shortLabel": "Secondaries",
+  "icon": "Repeat",
+  "description": "Assess private-market secondary transactions — LP-led portfolio sales and GP-led continuation vehicles. NAV-based pricing, discount/premium drivers, GP-led conflicts of interest, and due diligence on a secondary portfolio.",
+  "color": "adv-blue",
+  "areaId": "investment",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "investment-memo",
+      "detailed-findings",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IPEV Valuation Guidelines (Dec 2022), ILPA Continuation Funds Guidance (2023) and ILPA Reporting Template, AIFMD II (Directive (EU) 2024/927), SEC Private Fund Adviser Rules context, Jefferies/Evercore/Lazard secondary market volume & pricing reviews, cash-flow / J-curve and NAV mechanics"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "transaction_type",
+      "type": "select",
+      "label": "Secondary transaction type",
+      "description": "What kind of secondary are you assessing? This drives the conflicts and pricing lens applied.",
+      "required": true,
+      "options": [
+        {
+          "value": "lp_led_portfolio",
+          "label": "LP-led — multi-fund portfolio sale"
+        },
+        {
+          "value": "lp_led_single",
+          "label": "LP-led — single-fund stake / strip sale"
+        },
+        {
+          "value": "gp_led_single_asset_cv",
+          "label": "GP-led — single-asset continuation vehicle"
+        },
+        {
+          "value": "gp_led_multi_asset_cv",
+          "label": "GP-led — multi-asset continuation vehicle"
+        },
+        {
+          "value": "gp_led_tender",
+          "label": "GP-led — tender offer / stapled secondary"
+        },
+        {
+          "value": "preferred_equity_nav",
+          "label": "Preferred equity / NAV financing"
+        }
+      ]
+    },
+    {
+      "id": "side",
+      "type": "select",
+      "label": "Your role in the transaction",
+      "description": "Which side of the table are you advising? The standard of review differs for buyers, rolling LPs, and the GP.",
+      "required": true,
+      "options": [
+        {
+          "value": "secondary_buyer",
+          "label": "Secondary buyer / lead investor"
+        },
+        {
+          "value": "selling_lp",
+          "label": "Selling LP (liquidity-seeking)"
+        },
+        {
+          "value": "rolling_lp",
+          "label": "Existing / rolling LP (status-quo option)"
+        },
+        {
+          "value": "gp_sponsor",
+          "label": "GP / sponsor running the process"
+        },
+        {
+          "value": "lpac_member",
+          "label": "LPAC member / fiduciary reviewer"
+        }
+      ]
+    },
+    {
+      "id": "strategy_geography",
+      "type": "chips",
+      "label": "Underlying strategy & geography",
+      "description": "What sits inside the portfolio being transacted?",
+      "options": [
+        {
+          "value": "buyout",
+          "label": "Buyout"
+        },
+        {
+          "value": "growth",
+          "label": "Growth equity"
+        },
+        {
+          "value": "venture",
+          "label": "Venture"
+        },
+        {
+          "value": "private_credit",
+          "label": "Private credit"
+        },
+        {
+          "value": "infra_real_assets",
+          "label": "Infra / real assets"
+        },
+        {
+          "value": "europe",
+          "label": "Europe"
+        },
+        {
+          "value": "north_america",
+          "label": "North America"
+        },
+        {
+          "value": "global",
+          "label": "Global"
+        }
+      ]
+    },
+    {
+      "id": "reference_date_basis",
+      "type": "select",
+      "label": "Reference-date / pricing basis",
+      "description": "What NAV reference date underpins the headline price, and how stale is it?",
+      "options": [
+        {
+          "value": "latest_audited",
+          "label": "Latest audited NAV (year-end)"
+        },
+        {
+          "value": "latest_quarterly",
+          "label": "Latest unaudited quarterly NAV"
+        },
+        {
+          "value": "stale_two_quarters",
+          "label": "NAV 2+ quarters stale (interim flows to bridge)"
+        },
+        {
+          "value": "gp_fair_value_marks",
+          "label": "GP fair-value marks pending independent opinion"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Assessment focus areas",
+      "description": "Which dimensions should the analysis prioritise?",
+      "options": [
+        {
+          "value": "nav_pricing",
+          "label": "NAV-based pricing & discount/premium bridge"
+        },
+        {
+          "value": "asset_dd",
+          "label": "Underlying asset / portfolio company due diligence"
+        },
+        {
+          "value": "conflicts",
+          "label": "GP-led conflicts of interest & process fairness"
+        },
+        {
+          "value": "alignment_terms",
+          "label": "Alignment, GP rollover & economics (carry / fees)"
+        },
+        {
+          "value": "deal_structure",
+          "label": "Deal structure, deferrals & leverage"
+        },
+        {
+          "value": "cashflow_returns",
+          "label": "Cash-flow modelling, gross-to-net & return bridge"
+        },
+        {
+          "value": "legal_regulatory",
+          "label": "Legal, fiduciary & regulatory (AIFMD II / SEC)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues, deal facts or concerns",
+      "description": "Describe the deal economics, the stated rationale, and anything you already find questionable — concentration, recent markups, fairness-opinion status, deferral terms, GP rollover, prior process outcomes.",
+      "placeholder": "e.g. Single-asset CV for the GP's #1 holding, marked up 1.6x in the quarter before launch; GP is rolling 100% of crystallised carry but resetting the hurdle; only one fairness opinion, commissioned by the GP; 25% of price on an 18-month deferral; LPAC given 20 business days to elect."
+    }
+  ],
+  "exampleInput": "We are a secondary buyer evaluating a single-asset continuation vehicle. A European mid-market buyout GP is moving its best portfolio company — a SaaS business held in Fund III since 2019 — into a new continuation fund at a reference NAV of EUR 480M, struck on the Q3 unaudited mark. The asset was written up from 1.1x to 1.7x in the two quarters before the process launched. The GP is rolling 100% of its crystallised Fund III carry into the CV but is resetting the carry hurdle to 8% on a fresh 20% carry, and proposes a EUR 150M NAV facility at the CV level. There is a single fairness opinion, commissioned and paid for by the GP, and the existing Fund III LPs have 20 business days to elect roll-or-sell at the same price. Assess the NAV-based pricing and the appropriate discount or premium to reference NAV, the underlying-asset due diligence priorities, the conflicts of interest and process fairness against ILPA's continuation-fund guidance, and give us a buy / pass / re-price recommendation with the key conditions.",
+  "exampleValues": {
+    "transaction_type": "gp_led_single_asset_cv",
+    "side": "secondary_buyer",
+    "strategy_geography": ["buyout", "growth", "europe"],
+    "reference_date_basis": "latest_quarterly",
+    "focus_areas": ["nav_pricing", "conflicts", "alignment_terms", "asset_dd"],
+    "known_concerns": "Single-asset CV for the GP's crown-jewel SaaS holding, written up 1.1x to 1.7x in the two quarters before launch. GP rolls 100% of crystallised carry but resets the hurdle and takes fresh 20% carry. EUR 150M NAV facility at CV level. One GP-commissioned fairness opinion. Rolling LPs given 20 business days at the same price with no status-quo roll option clearly disclosed."
+  },
+  "recommendedPersonas": [
+    "pe-vc-expert",
+    "finance-expert"
+  ],
+  "tags": [
+    "secondaries",
+    "gp-led",
+    "continuation-vehicle",
+    "lp-led",
+    "nav-pricing",
+    "conflicts-of-interest",
+    "ilpa",
+    "ipev",
+    "private-equity",
+    "due-diligence"
+  ],
+  "contentType": "analytic_report"
+}
