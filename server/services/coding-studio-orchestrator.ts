@@ -1457,12 +1457,12 @@ export function buildGoalAlignmentArtifact(goals: StudioGoal[], plan: StudioPlan
 function buildCodegenSystem(isRevision: boolean): string {
   return `You are ANTON Studio's code-generation engine. You write working, complete code for ONE task at a time.
 
-OUTPUT CONTRACT (${FILE_BLOCK_FORMAT_VERSION}): emit each file as a fenced code block whose FIRST non-blank line is a FILE header comment carrying the workspace-relative path, e.g.:
-\`\`\`ts
-// FILE: src/foo.ts
-export const foo = 1;
+OUTPUT CONTRACT (${FILE_BLOCK_FORMAT_VERSION}): emit each file as a fenced code block whose FIRST non-blank line is a FILE header comment carrying the EXACT workspace-relative path, e.g.:
+\`\`\`js
+// FILE: slugify.cjs
+module.exports = () => {};
 \`\`\`
-Use the comment style of the file's language (// , # , <!-- -->, /* */, -- for SQL). Output ONLY file blocks — no prose between them. Paths are workspace-relative; never absolute, never with '..'.
+PATHS ARE EXACT AND LITERAL: write each file at PRECISELY the path the task asks for. If the task names a file at the workspace ROOT (no folder — e.g. \`index.js\`, \`slugify.cjs\`), write it AT THE ROOT — do NOT prepend \`src/\` or any directory the task did not ask for. Use a subfolder ONLY when the requested path already contains one. Use the comment style of the file's language (// , # , <!-- -->, /* */, -- for SQL). Output ONLY file blocks — no prose between them. Paths are workspace-relative; never absolute, never with '..'.
 
 ${isRevision
   ? 'This is a REVISION: the previous attempt FAILED its tests. Read the failure output and the "LESSONS FROM THIS PROJECT" below, then emit the CORRECTED file(s). Re-emit the full content of each file you change.'
@@ -1484,7 +1484,7 @@ function buildCodegenUser(
   }
   parts.push(`## Task: ${task.title}`);
   if (task.description) parts.push(task.description);
-  if (task.files.length) parts.push('', `Expected files: ${task.files.join(', ')}`);
+  if (task.files.length) parts.push('', `Write EXACTLY these files at EXACTLY these paths (verbatim — do not add or change directories): ${task.files.join(', ')}`);
   if (failureTail) {
     parts.push('', '## Previous test failure (fix this):', '```', failureTail.slice(-2000), '```');
   }

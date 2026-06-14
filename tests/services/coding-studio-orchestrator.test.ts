@@ -378,6 +378,19 @@ describeOrSkip('orchestrator loop (injected LLM/exec/panel)', () => {
     expect(JSON.parse(row!.tokens_consumed)).toEqual({ input: 0, output: 0, cost_usd: 0 });
   });
 
+  it('the codegen prompt instructs EXACT/root file paths (no src/ bias)', async () => {
+    testOutcomeQueue = [true];
+    let sys = ''; let usr = '';
+    const d = deps();
+    d.callCodegen = async (input) => { sys = input.system; usr = input.user; return '```js\n// FILE: src/a.ts\nexport const a = 1;\n```'; };
+    const orch = createStudioOrchestrator(db, d);
+    await orch.startOrResume({ codingProjectId });
+    await orch.advance(codingProjectId);
+    await orch.approvePlan(codingProjectId);
+    expect(sys).toMatch(/EXACT AND LITERAL|do NOT prepend `?src\//i); // root-honoring rule present
+    expect(usr).toMatch(/EXACTLY these paths/i);                      // reinforced in the task prompt
+  });
+
   it('SAFETY NET: an unexpected throw marks the run failed (not stuck in running)', async () => {
     const d = deps();
     d.runTests = async () => { throw new Error('simulated DB/exec outage'); };
