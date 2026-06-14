@@ -89,9 +89,11 @@ Characters outside [a-z0-9] (including unicode letters and punctuation) are inte
 collapsed to hyphens — this is an ASCII-slug by design. No external input is executed.
 
 ## Deliverable
-A single file 'slugify.cjs' that exports the function via CommonJS:
+EXACTLY ONE file at the WORKSPACE ROOT named \`slugify.cjs\` (path \`./slugify.cjs\` —
+NOT \`src/slugify.cjs\`, NOT any subfolder), exporting the function via CommonJS:
   module.exports = slugify;
-so the existing test (run with \`node test.cjs\`) passes. No dependencies, no build step.
+The fixed test does \`require('./slugify.cjs')\` from the workspace root, so the file
+MUST be at the root for \`node test.cjs\` to find it. No dependencies, no build step.
 
 ## Scope
 ONE task. Do not add a CLI, a package.json, types, or extra files — just slugify.cjs.`;
