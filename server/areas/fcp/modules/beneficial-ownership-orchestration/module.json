@@ -1,0 +1,185 @@
+{
+  "formatVersion": "1.0",
+  "id": "beneficial-ownership-orchestration",
+  "label": "Beneficial Ownership Orchestration",
+  "shortLabel": "BO Orchestration",
+  "icon": "Network",
+  "description": "Identify and verify beneficial owners across two regimes at once: AMLR (EU) 2024/1624 UBO obligations (25% ownership-or-control threshold, indirect/multi-tier chains, senior-managing-official fallback, nominees, trusts and legal arrangements, BO-register cross-checking post-CJEU C-37/20) and the EU FDI Screening Regulation (EU) 2019/452 controlling-ownership lens for sensitive sectors. Produces a dual-threshold cross-walk that shows who is a UBO for AML/CFT versus who is a controlling owner triggering FDI screening, and where the ownership-chain analysis is shared versus divergent.",
+  "color": "adv-teal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "regulatory-comparison",
+      "gap-scoring-matrix"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "AMLR (EU) 2024/1624 (UBO / beneficial ownership, applicable 10 July 2027); the EU FDI Screening Regulation (EU) 2019/452 (in force since 11 October 2020); CJEU Case C-37/20 (WM and Sovim, 22 November 2022) on BO-register public access; AMLD-era central BO registers; FATF Recommendations 24 and 25 (beneficial ownership of legal persons and arrangements)."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "structure_type",
+      "type": "select",
+      "label": "Structure Type",
+      "description": "What kind of legal person or arrangement sits at the top of the chain you are analysing?",
+      "required": true,
+      "options": [
+        {
+          "value": "private_company",
+          "label": "Private limited company / corporate group"
+        },
+        {
+          "value": "listed_or_subsidiary",
+          "label": "Listed company or subsidiary of a listed group"
+        },
+        {
+          "value": "fund_or_spv",
+          "label": "Investment fund / holding SPV / GP-LP structure"
+        },
+        {
+          "value": "trust_or_arrangement",
+          "label": "Trust or similar legal arrangement (foundation, fideicomiso, Anstalt)"
+        },
+        {
+          "value": "partnership_or_other",
+          "label": "Partnership / cooperative / other legal person"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) of the Chain",
+      "description": "Where are the entities in the ownership chain incorporated or administered? Select all that apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU / EEA (AMLR + FDI Regulation apply)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway / EEA"
+        },
+        {
+          "value": "uk",
+          "label": "UK (PSC regime, NSI Act 2021)"
+        },
+        {
+          "value": "offshore",
+          "label": "Offshore / third country in the chain"
+        }
+      ]
+    },
+    {
+      "id": "analysis_lens",
+      "type": "multi-select",
+      "label": "Regimes in Scope",
+      "description": "Which ownership lenses should the orchestration apply? Run both to produce the dual-threshold cross-walk.",
+      "options": [
+        {
+          "value": "amlr_ubo",
+          "label": "AMLR UBO identification & verification (AML/CFT)"
+        },
+        {
+          "value": "fdi_screening",
+          "label": "FDI Screening controlling-ownership lens (Reg. 2019/452)"
+        },
+        {
+          "value": "cross_walk",
+          "label": "Dual-threshold cross-walk (shared vs divergent chain analysis)"
+        },
+        {
+          "value": "register_reconciliation",
+          "label": "BO-register cross-check / reconciliation (discrepancy reporting)"
+        }
+      ]
+    },
+    {
+      "id": "sensitive_sector",
+      "type": "select",
+      "label": "FDI-Sensitive Sector Exposure",
+      "description": "Does the target operate in a sector caught by Art. 4 of Reg. (EU) 2019/452 (critical infrastructure, critical tech, dual-use, critical inputs, sensitive data, media)? Drives whether the FDI lens is live.",
+      "options": [
+        {
+          "value": "none_known",
+          "label": "No known sensitive-sector activity"
+        },
+        {
+          "value": "critical_infrastructure",
+          "label": "Critical infrastructure (energy, transport, water, health, financial market infra)"
+        },
+        {
+          "value": "critical_technology",
+          "label": "Critical / dual-use technology (AI, semiconductors, quantum, cyber, aerospace)"
+        },
+        {
+          "value": "critical_inputs",
+          "label": "Critical inputs (energy supply, raw materials, food security)"
+        },
+        {
+          "value": "sensitive_data_or_media",
+          "label": "Sensitive personal data or media / press"
+        },
+        {
+          "value": "multiple_or_unsure",
+          "label": "Multiple or unsure — assess sector exposure"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Structure Facts & Concerns",
+      "description": "Paste the ownership chain as known, plus any concerns: layering, nominees, bearer instruments, no natural person above threshold, register discrepancies, foreign-government or sovereign-fund involvement, opacity of an intermediate vehicle.",
+      "placeholder": "e.g. Three-tier chain: EU OpCo held 60% by a Lux HoldCo, which is held 40% by a Cayman fund and 60% by a family trust; no single natural person appears to exceed 25% by direct count; one intermediate vehicle has nominee shareholders; a sovereign wealth fund holds a 12% blocking-rights stake at OpCo level."
+    }
+  ],
+  "exampleInput": "We are running enhanced due diligence on a proposed acquisition target, NordGrid Systems AB (a Swedish operator of SCADA software for regional power distribution), ahead of onboarding the acquirer as a corporate banking client and assessing whether the deal trips FDI screening. The chain as disclosed: NordGrid AB is 100% owned by NordGrid Holding S.à r.l. (Luxembourg). NordGrid Holding is owned 45% by Aurelia Capital Fund II SCSp (a Lux GP-LP fund, GP is Aurelia Capital Management S.à r.l.), 30% by Meridian Family Trust (a Jersey discretionary trust, settlor deceased, protector is a Swiss lawyer), and 25% by Cobalt Strategic Investments Ltd (BVI, which we understand is a co-invest vehicle for a Gulf sovereign-linked LP). No natural person appears to hold 25% directly. Please orchestrate the beneficial-ownership analysis under AMLR — identify the UBOs through the layered chain, apply the senior-managing-official fallback if needed, deal with the trust roles and the nominee question — AND in parallel run the FDI Screening Regulation lens, because NordGrid sits in critical energy infrastructure and there is apparent foreign/sovereign control. Give me the dual-threshold cross-walk showing who is a UBO versus who is a controlling owner for FDI, where the chain analysis is shared, and flag the BO-register reconciliation we need to file.",
+  "exampleValues": {
+    "structure_type": "fund_or_spv",
+    "jurisdiction": ["eu", "sweden", "offshore"],
+    "analysis_lens": ["amlr_ubo", "fdi_screening", "cross_walk", "register_reconciliation"],
+    "sensitive_sector": "critical_infrastructure",
+    "known_concerns": "Three-tier chain via a Lux HoldCo. Holders: 45% Lux GP-LP fund (Aurelia Capital Fund II SCSp), 30% Jersey discretionary trust (settlor deceased, Swiss-lawyer protector), 25% BVI co-invest vehicle understood to front a Gulf sovereign-linked LP. No natural person at or above 25% by direct count. Nominee shareholders suspected at the BVI layer. Target is critical energy infrastructure (SCADA for power distribution), so apparent foreign/sovereign control likely trips FDI screening. BO-register extract for the Lux HoldCo lists only the GP director as UBO — suspected discrepancy to be reported."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert",
+    "pe-vc-expert"
+  ],
+  "tags": [
+    "beneficial-ownership",
+    "ubo",
+    "amlr",
+    "fdi-screening",
+    "ownership-chain",
+    "trusts",
+    "cross-walk"
+  ],
+  "contentType": "entity_register"
+}

@@ -1,0 +1,157 @@
+{
+  "formatVersion": "1.0",
+  "id": "fintech-credit-risk-assessment",
+  "label": "Fintech Credit-Risk Assessment",
+  "shortLabel": "Fintech Credit Risk",
+  "icon": "Calculator",
+  "description": "Credit-risk assessment for fintech, alternative-data and embedded lending — cash-flow-based, behavioural and alt-data underwriting, thin-file / no-file populations, BNPL and embedded-finance exposures, alt-data model governance and fairness, and affordability under EBA/GL/2020/06 and CCD2 (EU) 2023/2225. The fintech variant of traditional credit risk.",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "decision-memo"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EBA Guidelines on Loan Origination and Monitoring (EBA/GL/2020/06); Consumer Credit Directive (EU) 2023/2225 (CCD2, transposition by 20 Nov 2025, application from 20 Nov 2026); CRR (EU) 575/2013 as amended by CRR3 (EU) 2024/1623; IFRS 9 expected-credit-loss staging; EBA ICAAP/ILAAP Guidelines (EBA/GL/2016/10) and SREP (EBA/GL/2022/03); EU AI Act (EU) 2024/1689 (high-risk creditworthiness systems, Annex III(5)(b)); GDPR (EU) 2016/679 Art. 22 automated decision-making; national consumer-credit transposition (Sweden Konsumentkreditlagen, FI guidance)."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "lending_model",
+      "type": "select",
+      "label": "Lending model / product",
+      "description": "Which fintech lending model is being assessed? This drives the relevant alt-data, affordability and concentration lenses.",
+      "required": true,
+      "options": [
+        {
+          "value": "consumer_instalment",
+          "label": "Consumer instalment / personal loan (alt-data underwriting)"
+        },
+        {
+          "value": "bnpl",
+          "label": "BNPL / pay-in-instalments (now in CCD2 scope)"
+        },
+        {
+          "value": "embedded_pos",
+          "label": "Embedded / point-of-sale finance (merchant-distributed)"
+        },
+        {
+          "value": "sme_cashflow",
+          "label": "SME cash-flow / revenue-based lending"
+        },
+        {
+          "value": "thin_file_credit",
+          "label": "Thin-file / no-file / new-to-credit population"
+        },
+        {
+          "value": "marketplace_p2p",
+          "label": "Marketplace / P2P originate-to-distribute"
+        },
+        {
+          "value": "salary_advance",
+          "label": "Earned-wage access / salary advance"
+        }
+      ]
+    },
+    {
+      "id": "entity_jurisdiction",
+      "type": "chips",
+      "label": "Entity & jurisdiction(s)",
+      "description": "Where is the lender authorised and where are the borrowers? Drives which transposition of CCD2 and which national caps apply.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU / EEA (CCD2, EBA GLs)" },
+        { "value": "sweden", "label": "Sweden (Konsumentkreditlagen, FI)" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway" },
+        { "value": "germany", "label": "Germany (BaFin)" },
+        { "value": "uk", "label": "UK (FCA CONC)" }
+      ]
+    },
+    {
+      "id": "data_sources",
+      "type": "multi-select",
+      "label": "Underwriting data sources in use",
+      "description": "Which signals feed the credit decision? Each carries distinct governance, fairness and CCD2 Art. 18 data-quality obligations.",
+      "options": [
+        { "value": "bureau", "label": "Traditional bureau / register data" },
+        { "value": "open_banking", "label": "Open-banking / account aggregation (cash-flow)" },
+        { "value": "transaction", "label": "Internal transaction / payment behaviour" },
+        { "value": "telco_utility", "label": "Telco / utility / rental payment history" },
+        { "value": "device_behavioural", "label": "Device / behavioural / digital-footprint signals" },
+        { "value": "psychometric", "label": "Psychometric / questionnaire data" },
+        { "value": "social_ecommerce", "label": "Social / e-commerce / platform data" },
+        { "value": "ml_model", "label": "ML / gradient-boosted / neural scoring model" }
+      ]
+    },
+    {
+      "id": "assessment_focus",
+      "type": "multi-select",
+      "label": "Assessment focus areas",
+      "description": "Which dimensions should the assessment prioritise?",
+      "options": [
+        { "value": "affordability", "label": "Affordability & creditworthiness (EBA/GL/2020/06, CCD2 Art. 18)" },
+        { "value": "model_governance", "label": "Alt-data model governance & validation" },
+        { "value": "fairness", "label": "Fairness / bias / explainability (AI Act, GDPR Art. 22)" },
+        { "value": "ecl_provisioning", "label": "ECL / IFRS 9 staging & provisioning adequacy" },
+        { "value": "early_warning", "label": "Early-warning & collections" },
+        { "value": "concentration", "label": "Portfolio & merchant concentration" },
+        { "value": "funding_liquidity", "label": "Funding / liquidity interplay (warehouse, forward-flow)" }
+      ]
+    },
+    {
+      "id": "portfolio_context",
+      "type": "textarea",
+      "label": "Portfolio & business context",
+      "description": "Book size, vintages, approval rate, average ticket, observed loss/roll rates, funding structure.",
+      "placeholder": "e.g., €180M consumer instalment book, 14-month average tenor, 62% approval rate, 30+ DPD at 4.1% on the latest 6 vintages, funded via a €150M warehouse with a 8% first-loss tranche and a forward-flow buyer for the senior."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues or concerns",
+      "description": "Known model weaknesses, supervisory feedback, drift, complaints, or affordability gaps.",
+      "placeholder": "e.g., Open-banking categorisation degrades for gig-economy borrowers; the GBM score has not been revalidated since launch 14 months ago; BNPL affordability relies on soft signals only; a thematic FI review of consumer-credit affordability is expected this year."
+    }
+  ],
+  "exampleInput": "We are a Nordic embedded-lending fintech offering BNPL and consumer instalment credit at merchant checkout across Sweden and Finland (~€180M book, average ticket €420, 14-month tenor). Underwriting is a gradient-boosted model fed by open-banking cash-flow categorisation, internal repayment behaviour, telco/utility history, and a thin bureau pull — roughly 35% of applicants are thin-file or new-to-credit. We're preparing for CCD2 application (BNPL now in scope) and an expected Finansinspektionen thematic review on affordability. Please assess our credit-risk and affordability framework: (1) is our affordability assessment defensible under EBA/GL/2020/06 and CCD2 Art. 18 given the alt-data inputs and thin-file population; (2) is the GBM model governance, validation and fairness posture adequate against the AI Act high-risk creditworthiness regime and GDPR Art. 22; (3) review IFRS 9 ECL staging for BNPL short-tenor exposures; and (4) flag concentration (top-5 merchants = 48% of originations) and the funding/liquidity interplay with our warehouse first-loss. Known weak spots: the model has not been revalidated since launch 14 months ago, and open-banking categorisation degrades for gig-economy income.",
+  "exampleValues": {
+    "lending_model": "bnpl",
+    "entity_jurisdiction": ["eu", "sweden", "finland"],
+    "data_sources": ["open_banking", "transaction", "telco_utility", "bureau", "ml_model"],
+    "assessment_focus": ["affordability", "model_governance", "fairness", "ecl_provisioning", "concentration", "funding_liquidity"],
+    "portfolio_context": "€180M embedded BNPL + instalment book, average ticket €420, 14-month tenor, ~35% thin-file/new-to-credit, top-5 merchants = 48% of originations. Funded via a €150M warehouse with an 8% first-loss tranche and a forward-flow buyer for the senior.",
+    "known_concerns": "GBM model not revalidated since launch 14 months ago. Open-banking categorisation degrades for gig-economy income. BNPL affordability relies on soft signals only. Expecting an FI thematic affordability review."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "credit-risk",
+    "fintech",
+    "alternative-data",
+    "bnpl",
+    "embedded-finance",
+    "affordability",
+    "model-governance",
+    "ccd2",
+    "eba-loan-origination"
+  ],
+  "contentType": "risk_register"
+}

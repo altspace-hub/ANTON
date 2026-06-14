@@ -1,0 +1,196 @@
+{
+  "formatVersion": "1.0",
+  "id": "ifrs-18-transition-roadmap",
+  "label": "IFRS 18 Transition Roadmap",
+  "shortLabel": "IFRS 18 Roadmap",
+  "icon": "FileText",
+  "description": "Build a practical transition roadmap to IFRS 18 Presentation and Disclosure in Financial Statements (effective 1 Jan 2027, replacing IAS 1). Maps current P&L lines to the new operating / investing / financing categories, inventories and governs Management-Defined Performance Measures (MPMs), assesses systems and tagging impact, plans comparatives, and frames the earnings-quality / investor-communication story.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "IFRS 18 Presentation and Disclosure in Financial Statements (issued Apr 2024, effective annual periods beginning on/after 1 Jan 2027, replacing IAS 1); IAS 7 Statement of Cash Flows (consequential amendments); IAS 8; IFRS 7; ESEF / ESMA inline XBRL tagging and the IFRS Accounting Taxonomy; IASB Basis for Conclusions and Illustrative Examples for IFRS 18; EU endorsement status via EFRAG; Big Four IFRS 18 implementation guidance"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Reporting Entity Type",
+      "description": "What kind of IFRS reporter is this roadmap for? Drives which main-business-activity classification overrides (IFRS 18 paras on entities that invest in assets or provide financing to customers) are likely to bite.",
+      "required": true,
+      "options": [
+        {
+          "value": "corporate",
+          "label": "General corporate (no specified main activity)"
+        },
+        {
+          "value": "financial_institution",
+          "label": "Bank / Credit Institution (provides financing as a main activity)"
+        },
+        {
+          "value": "insurer",
+          "label": "Insurer (IFRS 17 reporter)"
+        },
+        {
+          "value": "investment_entity",
+          "label": "Investment entity / fund (invests in assets as a main activity)"
+        },
+        {
+          "value": "real_estate",
+          "label": "Real estate / investment-property group"
+        },
+        {
+          "value": "conglomerate",
+          "label": "Diversified group with multiple specified main activities"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Reporting Framework / Jurisdiction(s)",
+      "description": "Which IFRS endorsement regime and filing/tagging rules apply? Drives EU endorsement timing and ESEF iXBRL tagging expectations.",
+      "required": true,
+      "options": [
+        {
+          "value": "ifrs_iasb",
+          "label": "IFRS as issued by the IASB"
+        },
+        {
+          "value": "ifrs_eu",
+          "label": "IFRS as endorsed by the EU (EFRAG / ESEF)"
+        },
+        {
+          "value": "uk",
+          "label": "UK-adopted IFRS"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (Nasdaq Stockholm / RFR 1)"
+        },
+        {
+          "value": "other_ifrs",
+          "label": "Other IFRS jurisdiction"
+        }
+      ]
+    },
+    {
+      "id": "listing_status",
+      "type": "select",
+      "label": "Listing & Filing Status",
+      "description": "Is the entity listed, and does it file structured (iXBRL/ESEF) accounts? Drives the depth of the digital-tagging and MPM-tagging workstream.",
+      "options": [
+        {
+          "value": "listed_esef",
+          "label": "Listed — files ESEF / structured iXBRL"
+        },
+        {
+          "value": "listed_other",
+          "label": "Listed — no structured-tagging mandate"
+        },
+        {
+          "value": "private_ifrs",
+          "label": "Private but reports under full IFRS"
+        },
+        {
+          "value": "subsidiary",
+          "label": "Subsidiary in an IFRS group reporting pack"
+        }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Roadmap Focus Areas",
+      "description": "Which parts of the IFRS 18 transition should this roadmap prioritise?",
+      "options": [
+        {
+          "value": "categories",
+          "label": "P&L categories — operating / investing / financing classification"
+        },
+        {
+          "value": "subtotals",
+          "label": "New mandatory subtotals (operating profit; profit before financing & income tax)"
+        },
+        {
+          "value": "mpm",
+          "label": "Management-Defined Performance Measures (MPMs) inventory & reconciliations"
+        },
+        {
+          "value": "aggregation",
+          "label": "Aggregation / disaggregation & 'other' line discipline"
+        },
+        {
+          "value": "cash_flow",
+          "label": "Statement of cash flows consequentials (IAS 7)"
+        },
+        {
+          "value": "systems_tagging",
+          "label": "Systems, chart of accounts & iXBRL/ESEF tagging"
+        },
+        {
+          "value": "comparatives",
+          "label": "Comparatives, transition & restatement mechanics"
+        },
+        {
+          "value": "investor_comms",
+          "label": "Earnings-quality & investor-communication impact"
+        }
+      ]
+    },
+    {
+      "id": "current_structure",
+      "type": "textarea",
+      "label": "Current P&L Structure & Non-GAAP Measures",
+      "description": "Describe how the current statement of profit or loss is presented (by nature / by function), the subtotals used today, and any alternative performance measures or non-GAAP metrics published (in the front half, results release, or investor deck).",
+      "placeholder": "e.g. P&L presented by function down to operating profit; we publish Adjusted EBITDA, Adjusted operating profit excluding restructuring and impairment, and Free Cash Flow in the results release and APM appendix. Interest on a customer-financing book is currently inside revenue."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe any known pain points: unusual income/expense items, equity-method associates, FX, ERP/consolidation-tool constraints, or APMs you suspect become MPMs.",
+      "placeholder": "e.g. Share of profit of associates is integral to operations but unclear where it sits; our consolidation tool has no field to tag MPM adjustments; restructuring costs are spread across functional lines so an MPM reconciliation will be hard to build."
+    }
+  ],
+  "exampleInput": "We are a Nasdaq Stockholm-listed industrials group (~SEK 18bn revenue, IFRS as endorsed by the EU, ESEF filer) preparing for IFRS 18 for the financial year beginning 1 January 2027, with 2026 as the comparative. Today our statement of profit or loss is presented by function down to operating profit, and we publish Adjusted EBITDA, Adjusted operating profit (excluding restructuring, impairments and M&A costs) and organic growth as APMs in the results release and a non-GAAP appendix. We have a small captive-finance arm that lends to dealers, equity-accounted associates in two JVs, and material FX on intercompany funding. Build a transition roadmap: map our current P&L lines to the new operating/investing/financing categories, confirm where the new mandatory subtotals land, inventory which of our APMs become Management-Defined Performance Measures and what reconciliations and governance they will need, assess the chart-of-accounts and ESEF tagging impact, and flag earnings-quality and investor-communication consequences. Known worries: classification of associate results and the captive-finance interest, and our consolidation tool currently has nowhere to capture MPM adjustment columns.",
+  "exampleValues": {
+    "entity_type": "conglomerate",
+    "jurisdiction": ["ifrs_eu", "sweden"],
+    "listing_status": "listed_esef",
+    "focus_areas": ["categories", "subtotals", "mpm", "systems_tagging", "comparatives"],
+    "current_structure": "P&L by function down to operating profit. Published APMs: Adjusted EBITDA, Adjusted operating profit (ex-restructuring, impairment, M&A), organic growth, free cash flow. Captive-finance interest sits inside revenue; share of associates shown below operating profit.",
+    "known_concerns": "Unclear classification of equity-accounted associate results and captive-finance interest. Restructuring costs spread across functional lines, complicating MPM reconciliations. Consolidation tool has no field to capture MPM adjustment columns or to tag operating/investing/financing categories."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "ifrs-18",
+    "ias-1",
+    "presentation-disclosure",
+    "mpm",
+    "transition",
+    "accounting",
+    "investor-relations"
+  ],
+  "contentType": "plan_document"
+}

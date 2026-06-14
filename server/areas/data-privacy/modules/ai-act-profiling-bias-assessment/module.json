@@ -1,0 +1,242 @@
+{
+  "formatVersion": "1.0",
+  "id": "ai-act-profiling-bias-assessment",
+  "label": "AI Act Profiling & Bias Assessment",
+  "shortLabel": "Bias & FRIA",
+  "icon": "Scale",
+  "description": "Bias and fundamental-rights assessment for high-risk AI systems at the intersection of the EU AI Act (high-risk Annex III, Art. 27 FRIA, data-governance, human-oversight) and GDPR (Art. 22 automated decisions, Art. 9 special-category data, DPIA). Covers the high-risk classification decision, the FRIA/DPIA interface, protected-attribute and proxy bias testing, fairness metrics, human-oversight design, and explanation rights.",
+  "color": "adv-blue",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU AI Act (EU) 2024/1689 (Annex III high-risk, Art. 9 risk management, Art. 10 data governance, Art. 14 human oversight, Art. 15 accuracy/robustness, Art. 27 FRIA); GDPR (EU) 2016/679 (Art. 5 fairness, Art. 9 special categories, Art. 22 automated decisions, Art. 35 DPIA); EDPB Guidelines on automated decision-making and profiling; EDPB DPIA guidance; national DPA guidance on ADM and AI"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "system_use_case",
+      "type": "select",
+      "label": "AI System Use Case",
+      "description": "Which Annex III high-risk use case best describes the system? Drives the classification path and the protected groups most at risk.",
+      "required": true,
+      "options": [
+        {
+          "value": "creditworthiness",
+          "label": "Creditworthiness / credit scoring (Annex III(5)(b))"
+        },
+        {
+          "value": "essential_services",
+          "label": "Eligibility for essential public/private services & benefits (Annex III(5)(a))"
+        },
+        {
+          "value": "insurance",
+          "label": "Life & health insurance risk assessment / pricing (Annex III(5)(c))"
+        },
+        {
+          "value": "employment",
+          "label": "Recruitment, selection & worker management (Annex III(4))"
+        },
+        {
+          "value": "education",
+          "label": "Education & vocational access / assessment (Annex III(3))"
+        },
+        {
+          "value": "law_enforcement_migration",
+          "label": "Law-enforcement / migration / asylum profiling (Annex III(6)–(7))"
+        },
+        {
+          "value": "not_annex_iii",
+          "label": "Not (yet) classified — help me run the high-risk classification first"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s) / Deployment Scope",
+      "description": "Where is the system placed on the market or put into service, and whose data subjects does it affect?",
+      "required": true,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU (AI Act + GDPR)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (IMY)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (BfDI / Länder DPAs)"
+        },
+        {
+          "value": "france",
+          "label": "France (CNIL)"
+        },
+        {
+          "value": "ireland",
+          "label": "Ireland (DPC)"
+        },
+        {
+          "value": "netherlands",
+          "label": "Netherlands (AP)"
+        },
+        {
+          "value": "eea_other",
+          "label": "Other EEA"
+        }
+      ]
+    },
+    {
+      "id": "actor_role",
+      "type": "select",
+      "label": "Your Role Under the AI Act",
+      "description": "Provider and deployer obligations differ. The FRIA (Art. 27) is primarily a deployer duty; data-governance and bias-mitigation in design (Art. 10) bind the provider.",
+      "required": true,
+      "options": [
+        {
+          "value": "provider",
+          "label": "Provider (we develop / place the system on the market)"
+        },
+        {
+          "value": "deployer_public",
+          "label": "Deployer — public body or provider of public services"
+        },
+        {
+          "value": "deployer_private",
+          "label": "Deployer — private (bank, insurer, employer, etc.)"
+        },
+        {
+          "value": "provider_and_deployer",
+          "label": "Both provider and deployer (in-house build)"
+        }
+      ]
+    },
+    {
+      "id": "assessment_components",
+      "type": "multi-select",
+      "label": "Assessment Components in Scope",
+      "description": "Which parts of the bias / fundamental-rights workstream should the analysis prioritise?",
+      "options": [
+        {
+          "value": "classification",
+          "label": "High-risk classification decision (Art. 6 + Annex III, Art. 6(3) exemption)"
+        },
+        {
+          "value": "fria_dpia",
+          "label": "FRIA (Art. 27) ↔ DPIA (GDPR Art. 35) coherent interface"
+        },
+        {
+          "value": "art22",
+          "label": "GDPR Art. 22 — solely-automated decision basis, safeguards, human intervention"
+        },
+        {
+          "value": "data_governance",
+          "label": "Data governance & training-data bias (AI Act Art. 10)"
+        },
+        {
+          "value": "bias_testing",
+          "label": "Protected-attribute & proxy bias testing methodology + fairness metrics"
+        },
+        {
+          "value": "special_category",
+          "label": "Special-category-data dilemma in bias measurement (Art. 9 + AI Act Art. 10(5))"
+        },
+        {
+          "value": "human_oversight",
+          "label": "Human-oversight design (AI Act Art. 14) & meaningful intervention"
+        },
+        {
+          "value": "transparency",
+          "label": "Transparency & explanation rights (Art. 13/22 + AI Act Art. 13/86)"
+        }
+      ]
+    },
+    {
+      "id": "protected_attributes",
+      "type": "chips",
+      "label": "Protected / Sensitive Attributes of Concern",
+      "description": "Which attributes (or their proxies) must the bias testing cover? Several are GDPR Art. 9 special categories — flag where direct collection is itself a legal question.",
+      "options": [
+        {
+          "value": "sex_gender",
+          "label": "Sex / gender"
+        },
+        {
+          "value": "race_ethnicity",
+          "label": "Racial / ethnic origin (Art. 9)"
+        },
+        {
+          "value": "age",
+          "label": "Age"
+        },
+        {
+          "value": "disability",
+          "label": "Disability / health (Art. 9)"
+        },
+        {
+          "value": "religion",
+          "label": "Religion / belief (Art. 9)"
+        },
+        {
+          "value": "nationality_migration",
+          "label": "Nationality / migration status"
+        },
+        {
+          "value": "socioeconomic_proxy",
+          "label": "Socio-economic proxies (postcode, name, device)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Findings, or Concerns",
+      "description": "Describe the model, the decision it drives, any disparity already observed, prior audit/DPA findings, and what data you do or do not hold on protected attributes.",
+      "placeholder": "e.g. Gradient-boosted credit model declines ~18% of applicants; internal review found a 9pp approval-rate gap between two postcode clusters that correlate with ethnicity; we do not collect ethnicity, so we cannot measure disparate impact directly; reviewers rubber-stamp 96% of model recommendations; adverse-action letters give only a generic reason code..."
+    }
+  ],
+  "exampleInput": "We are a Swedish consumer-lender (deployer, ~300 staff) about to put a new gradient-boosted credit-decisioning model into service across the Nordics. It scores all retail applicants and auto-declines below a cutoff; ~22% of decisions are made with no human looking at the file. Legal has confirmed this is an Annex III(5)(b) creditworthiness use case and therefore high-risk, and that the auto-decline is a solely-automated decision under GDPR Art. 22. We have a 2023 DPIA but no FRIA, and we have never tested the model for disparate impact because we do not collect race or ethnicity. An internal review found a 9 percentage-point approval-rate gap between two postcode clusters that our data-science team believes correlate with ethnic origin and migration background. Reviewers who do see flagged files override the model in under 4% of cases. Adverse-action letters cite only a numeric reason code. Please (1) confirm the high-risk classification and the Art. 22 basis, (2) design a coherent FRIA-and-DPIA so we do not run two overlapping assessments, (3) give us a defensible protected-attribute and proxy bias-testing methodology — including how we can measure disparate impact without unlawfully collecting Art. 9 data — with the right fairness metrics for a credit cutoff, and (4) tell us what is broken in our human-oversight and explanation set-up.",
+  "exampleValues": {
+    "system_use_case": "creditworthiness",
+    "jurisdiction": ["eu", "sweden"],
+    "actor_role": "deployer_private",
+    "assessment_components": ["fria_dpia", "art22", "bias_testing", "special_category", "human_oversight", "transparency"],
+    "protected_attributes": ["race_ethnicity", "nationality_migration", "socioeconomic_proxy", "sex_gender"],
+    "known_concerns": "Annex III(5)(b) high-risk credit model auto-declines ~22% of applicants with no human review. 2023 DPIA exists; no FRIA. Never tested for disparate impact because race/ethnicity not collected. 9pp approval gap between two postcode clusters believed to correlate with ethnic origin. Human reviewers override <4% of model recommendations. Adverse-action letters give only a numeric reason code."
+  },
+  "recommendedPersonas": [
+    "legal-expert",
+    "tech-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "ai-act",
+    "gdpr",
+    "bias",
+    "fundamental-rights",
+    "fria",
+    "article-22",
+    "profiling",
+    "fairness",
+    "high-risk-ai"
+  ],
+  "contentType": "gap_analysis"
+}

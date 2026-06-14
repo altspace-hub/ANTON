@@ -1,0 +1,189 @@
+{
+  "formatVersion": "1.0",
+  "id": "pillar-two-minimum-tax-assessment",
+  "label": "Pillar Two Minimum Tax Assessment",
+  "shortLabel": "Pillar Two",
+  "icon": "Calculator",
+  "description": "Assess OECD/G20 Pillar Two GloBE 15% global minimum tax exposure under the EU Minimum Tax Directive (EU) 2022/2523. Determine in-scope MNE groups, compute the GloBE effective tax rate by jurisdiction, quantify top-up tax (IIR/UTPR/QDMTT), test transitional CbCR safe harbours, and produce a data-readiness gap list for the GloBE Information Return.",
+  "color": "adv-gold",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "OECD/G20 Pillar Two GloBE Model Rules + Commentary + Administrative Guidance; EU Minimum Tax Directive (EU) 2022/2523 (IIR from 2024, UTPR from 2025, QDMTT); OECD Safe Harbours and Penalty Relief (transitional CbCR safe harbour); GloBE Information Return (GIR); national implementing acts (Sweden Tilläggsskattelag, Finland, Denmark, Germany MinStG, Ireland, Netherlands)"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "group_role",
+      "type": "select",
+      "label": "Reporting Entity Role",
+      "description": "What is this entity's position in the MNE group? Drives which charging provision (IIR / UTPR / QDMTT) is likely to apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "upe",
+          "label": "Ultimate Parent Entity (UPE)"
+        },
+        {
+          "value": "ipe",
+          "label": "Intermediate Parent Entity (IPE)"
+        },
+        {
+          "value": "pope",
+          "label": "Partially-Owned Parent Entity (POPE)"
+        },
+        {
+          "value": "constituent",
+          "label": "Constituent Entity / operating subsidiary"
+        },
+        {
+          "value": "jv",
+          "label": "Joint Venture / JV subsidiary"
+        },
+        {
+          "value": "designated_filer",
+          "label": "Designated Filing Entity (group GIR filer)"
+        },
+        {
+          "value": "advisor",
+          "label": "External advisor assessing a client group"
+        }
+      ]
+    },
+    {
+      "id": "headquarter_jurisdiction",
+      "type": "chips",
+      "label": "UPE / Filing Jurisdiction(s)",
+      "description": "Where is the UPE located and which implementing regimes apply? Determines the IIR ordering rule and the relevant QDMTT.",
+      "required": true,
+      "options": [
+        {
+          "value": "sweden",
+          "label": "Sweden (Tilläggsskattelag 2023:875)"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark (Minimumsbeskatningsloven)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (MinStG)"
+        },
+        {
+          "value": "ireland",
+          "label": "Ireland"
+        },
+        {
+          "value": "netherlands",
+          "label": "Netherlands (Wet minimumbelasting)"
+        },
+        {
+          "value": "eu_other",
+          "label": "Other EU Member State"
+        },
+        {
+          "value": "non_eu",
+          "label": "Third country (non-EU)"
+        }
+      ]
+    },
+    {
+      "id": "assessment_scope",
+      "type": "multi-select",
+      "label": "Assessment Scope",
+      "description": "Which Pillar Two workstreams should the assessment prioritise?",
+      "options": [
+        {
+          "value": "scoping",
+          "label": "In-scope determination (EUR 750m CbCR threshold)"
+        },
+        {
+          "value": "etr",
+          "label": "GloBE ETR computation by jurisdiction"
+        },
+        {
+          "value": "topup",
+          "label": "Top-up tax & jurisdictional blending"
+        },
+        {
+          "value": "sbie",
+          "label": "Substance-Based Income Exclusion (SBIE)"
+        },
+        {
+          "value": "safe_harbour",
+          "label": "Transitional CbCR safe harbours"
+        },
+        {
+          "value": "qdmtt",
+          "label": "QDMTT exposure & ordering"
+        },
+        {
+          "value": "data_readiness",
+          "label": "Data readiness & GloBE Information Return"
+        },
+        {
+          "value": "deferred_tax",
+          "label": "Deferred tax / total deferred tax adjustment"
+        }
+      ]
+    },
+    {
+      "id": "low_tax_jurisdictions",
+      "type": "textarea",
+      "label": "Known Low-Tax or Sensitive Jurisdictions",
+      "description": "List jurisdictions where the group operates that may have a sub-15% GloBE ETR, headline-rate < 15%, large tax incentives, or where data is hardest to obtain.",
+      "placeholder": "e.g. Operations in Ireland (12.5% headline), a holding company in Luxembourg with notional interest deduction, an R&D entity in a free zone, and a financing entity with significant deferred tax."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues, Data Gaps, or Concerns",
+      "description": "Describe what you already know: prior-year ETR estimates, data-availability problems, GIR readiness, M&A activity, or specific technical questions.",
+      "placeholder": "e.g. First in-scope year is FY2024. We pass the transitional CbCR safe harbour in most jurisdictions on the simplified ETR test but are unsure about a jurisdiction with stranded deferred tax assets. Our consolidation system does not split covered taxes by jurisdiction. We acquired a target mid-year and the closing has not been allocated."
+    }
+  ],
+  "exampleInput": "We are the group tax function of a Swedish-headquartered industrial MNE (consolidated revenue ~EUR 2.3bn, around 40 constituent entities across the EU, UK, US, Ireland, Switzerland and a financing entity in Luxembourg). The UPE files in Sweden under the Tilläggsskattelag. FY2024 is our first in-scope year. We have run the transitional CbCR safe harbour off our 2023 and 2024 qualified CbCR and pass the simplified ETR test in most jurisdictions, but Ireland and Luxembourg are borderline, and Switzerland fails the routine-profits test. Please assess: (1) confirm we are an in-scope MNE group; (2) compute an indicative GloBE ETR by jurisdiction for Ireland, Luxembourg and Switzerland and quantify any top-up tax; (3) tell us where the Substance-Based Income Exclusion meaningfully reduces the top-up; (4) confirm whether Switzerland's QDMTT eliminates our IIR exposure there; and (5) give us a data-readiness gap list for the GloBE Information Return, because our consolidation system does not currently split covered taxes or deferred tax by jurisdiction. Known weak spot: a mid-year US acquisition whose purchase price allocation is not finalised.",
+  "exampleValues": {
+    "group_role": "designated_filer",
+    "headquarter_jurisdiction": ["sweden"],
+    "assessment_scope": ["scoping", "etr", "topup", "sbie", "safe_harbour", "qdmtt", "data_readiness"],
+    "low_tax_jurisdictions": "Ireland (12.5% headline, R&D credit), Luxembourg financing entity (interest deductions, possible sub-15% ETR), Switzerland (canton-level rate, fails routine-profits limb of the transitional safe harbour).",
+    "known_concerns": "FY2024 first in-scope year. Pass transitional CbCR safe harbour in most jurisdictions on simplified ETR test; Ireland and Luxembourg borderline; Switzerland fails routine-profits test. Consolidation system does not split covered taxes or deferred tax by jurisdiction. Mid-year US acquisition, purchase price allocation not finalised."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "legal-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "pillar-two",
+    "globe",
+    "minimum-tax",
+    "beps",
+    "oecd",
+    "tax",
+    "accounting",
+    "eu-directive-2022-2523"
+  ],
+  "contentType": "analytic_report"
+}

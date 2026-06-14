@@ -1,0 +1,160 @@
+{
+  "formatVersion": "1.0",
+  "id": "open-finance-strategy",
+  "label": "Open Finance Strategy & Governance",
+  "shortLabel": "Open Finance Strategy",
+  "icon": "Network",
+  "description": "Strategy and governance for the move beyond open banking to open finance. Frames the 2023 EU package — PSD3, PSR and FIDA — as PROPOSALS not yet in force, against the in-force PSD2 (EU) 2015/2366. Covers consent-driven data sharing, the data-holder / data-user ecosystem, premium and contractual API schemes, perimeter and authorisation, customer-permission dashboards, liability and fraud-data sharing, and the strategic and product response (monetisation, partnerships, build-vs-buy).",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "balanced",
+    "outputFormats": [
+      "decision-memo",
+      "executive-summary",
+      "impact-assessment"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "In force: PSD2 Directive (EU) 2015/2366; EMD2 Directive 2009/110/EC; GDPR (EU) 2016/679; Data Act (EU) 2023/2854; EBA RTS on SCA & CSC (Commission Delegated Regulation (EU) 2018/389). PROPOSALS (not yet in force, 2023 package): PSD3 (revised payment services directive) COM(2023) 366, PSR (payment services regulation) COM(2023) 367, and FIDA — Financial Data Access framework — COM(2023) 360. Track trilogue / final-text status before relying on article numbers."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "entity_role",
+      "type": "select",
+      "label": "Primary role in the open-finance ecosystem",
+      "description": "Which role best describes the institution's strategic position? FIDA splits the market into data holders and data users; the same firm can be both.",
+      "required": true,
+      "options": [
+        {
+          "value": "incumbent_bank",
+          "label": "Incumbent bank / credit institution (data holder + potential data user)"
+        },
+        {
+          "value": "payment_institution",
+          "label": "Payment / e-money institution (PI / EMI)"
+        },
+        {
+          "value": "insurer_pension",
+          "label": "Insurer / pension provider (in FIDA scope as data holder)"
+        },
+        {
+          "value": "asset_manager",
+          "label": "Asset / wealth manager / investment firm"
+        },
+        {
+          "value": "fintech_tpp",
+          "label": "Fintech / third-party provider (primarily a data user)"
+        },
+        {
+          "value": "aggregator_platform",
+          "label": "Aggregator / platform / FISP (financial information service provider)"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction(s)",
+      "description": "Which markets is the strategy for? FIDA, PSD3 and PSR are EU instruments; passporting and national gold-plating shape the strategy.",
+      "required": true,
+      "options": [
+        { "value": "eu", "label": "EU / EEA (single market)" },
+        { "value": "sweden", "label": "Sweden" },
+        { "value": "finland", "label": "Finland" },
+        { "value": "denmark", "label": "Denmark" },
+        { "value": "norway", "label": "Norway (EEA)" },
+        { "value": "germany", "label": "Germany" },
+        { "value": "uk", "label": "UK (Smart Data / FCA, outside FIDA)" }
+      ]
+    },
+    {
+      "id": "data_scope",
+      "type": "multi-select",
+      "label": "Data categories in scope",
+      "description": "Which FIDA-eligible data categories beyond payment accounts is the strategy considering? This drives the data-sharing scheme(s) the firm must join or build.",
+      "options": [
+        { "value": "payment_accounts", "label": "Payment accounts (already in PSD2 scope)" },
+        { "value": "savings_credit", "label": "Savings, mortgages, loans & credit agreements" },
+        { "value": "investments", "label": "Investments / securities accounts (MiFID instruments)" },
+        { "value": "pensions", "label": "Pensions (occupational & personal)" },
+        { "value": "insurance", "label": "Non-life insurance products" },
+        { "value": "crypto", "label": "Crypto-asset holdings (MiCA-scope assets)" },
+        { "value": "creditworthiness", "label": "Creditworthiness data for credit / affordability" }
+      ]
+    },
+    {
+      "id": "strategic_posture",
+      "type": "select",
+      "label": "Strategic posture",
+      "description": "What stance is the board leaning toward for open finance? Drives the build-vs-buy and monetisation analysis.",
+      "options": [
+        { "value": "undetermined", "label": "Not yet determined — help frame the choice" },
+        { "value": "defensive", "label": "Defensive — comply, protect the customer base, minimise leakage" },
+        { "value": "platform", "label": "Platform play — become a data hub / aggregator for others" },
+        { "value": "data_user", "label": "Data-user growth — build new products on others' data" },
+        { "value": "monetiser", "label": "Monetiser — premium / contractual APIs beyond the mandated baseline" }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "Focus areas",
+      "description": "Which dimensions of the open-finance strategy should the analysis prioritise?",
+      "options": [
+        { "value": "ecosystem", "label": "Data-holder / data-user ecosystem positioning" },
+        { "value": "schemes", "label": "Financial-data-sharing schemes & API standards (mandated vs premium)" },
+        { "value": "perimeter", "label": "Perimeter, authorisation & FISP registration" },
+        { "value": "consent", "label": "Customer permission dashboards & consent management" },
+        { "value": "liability", "label": "Liability allocation & fraud-data sharing" },
+        { "value": "monetisation", "label": "Monetisation, pricing & partnership models" },
+        { "value": "build_vs_buy", "label": "Build-vs-buy / target operating model" },
+        { "value": "governance", "label": "Governance, accountability & board reporting" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known constraints, ambitions or concerns",
+      "description": "Describe the firm's current open-banking estate, commercial ambitions, board appetite, and any known constraints or worries.",
+      "placeholder": "e.g. Berlin Group PSD2 APIs live since 2020 but treated purely as a cost centre — no premium tier. Board wants a position paper before the FIDA trilogue concludes. Worried about becoming a 'dumb pipe'. Legacy core makes real-time data access hard. No customer-facing consent dashboard today; permissions are scattered across product silos."
+    }
+  ],
+  "exampleInput": "We are a mid-sized Nordic universal bank (Sweden + Finland, ~3,500 staff) and the board has asked Strategy & Digital for a position paper on open finance before the FIDA trilogue concludes. Today we run Berlin Group PSD2 APIs (live since 2020) purely as a compliance cost centre — AISP/PISP access is free, unmonitored, and we have no premium tier. Beyond payment accounts we hold savings, mortgages, a sizeable investment book and an occupational-pension arm, all of which fall into FIDA's data-holder scope. We're worried about three things: (1) becoming a 'dumb pipe' if fintechs and the big platforms harvest our data while we capture none of the value; (2) what FIDA's mandatory financial-data-sharing schemes and 'reasonable compensation' actually require of us as a data holder versus what we can charge for via premium/contractual APIs; and (3) whether we should be a platform/aggregator ourselves (a data hub for smaller Nordic institutions) or focus on becoming a data user to enrich our own lending and advice. Please frame PSD3, PSR and FIDA correctly as proposals not yet in force, set out the data-holder/data-user ecosystem choices, the perimeter and FISP-authorisation implications, the consent-dashboard and liability/fraud-data-sharing obligations, and give the board a clear build-vs-buy and monetisation decision frame. Known weak spots: no customer-facing permission dashboard today (consents are scattered across product silos), and our legacy core makes real-time non-payment data access genuinely hard.",
+  "exampleValues": {
+    "entity_role": "incumbent_bank",
+    "jurisdiction": ["eu", "sweden", "finland"],
+    "data_scope": ["payment_accounts", "savings_credit", "investments", "pensions"],
+    "strategic_posture": "undetermined",
+    "focus_areas": ["ecosystem", "schemes", "monetisation", "build_vs_buy", "consent"],
+    "known_concerns": "Berlin Group PSD2 APIs live since 2020 but run as a pure compliance cost centre — free AISP/PISP access, no premium tier, no usage analytics. Board fears 'dumb pipe' outcome. No customer-facing consent dashboard; permissions scattered across product silos. Legacy core makes real-time non-payment data access hard. Occupational-pension arm and investment book bring large new data-holder obligations under FIDA."
+  },
+  "recommendedPersonas": [
+    "strategy-expert",
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "open-finance",
+    "FIDA",
+    "PSD3",
+    "PSR",
+    "open-banking",
+    "strategy",
+    "governance",
+    "monetisation",
+    "data-sharing"
+  ],
+  "contentType": "analytic_report"
+}

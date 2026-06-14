@@ -1,0 +1,178 @@
+{
+  "formatVersion": "1.0",
+  "id": "liquidity-adequacy-assessment",
+  "label": "ILAAP — Liquidity Adequacy Assessment",
+  "shortLabel": "ILAAP",
+  "icon": "Droplets",
+  "description": "Build, review, or stress-test an Internal Liquidity Adequacy Assessment Process (ILAAP) against the EBA ICAAP/ILAAP Guidelines (EBA/GL/2016/10), SREP (EBA/GL/2022/03), and the CRR LCR + NSFR. Covers liquidity risk identification, counterbalancing capacity, the survival horizon, idiosyncratic/market-wide/combined stress, intraday liquidity, the contingency funding plan, funds-transfer pricing, and ILAAP document/governance architecture.",
+  "color": "adv-blue",
+  "areaId": "banking",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EBA ICAAP/ILAAP Guidelines (EBA/GL/2016/10); EBA SREP Guidelines (EBA/GL/2022/03); CRR (EU) 575/2013 as amended by CRR3 (EU) 2024/1623 — LCR (Art. 412 + Delegated Reg. (EU) 2015/61) and NSFR (Arts. 428a–428az); BCBS 248 intraday liquidity monitoring; EBA Guidelines on funding plans; ECB ILAAP expectations; DORA (EU) 2022/2554 for ICT/operational continuity of the liquidity function."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "deliverable",
+      "type": "select",
+      "label": "Deliverable",
+      "description": "What do you need produced?",
+      "required": true,
+      "options": [
+        {
+          "value": "full_ilaap_review",
+          "label": "Full ILAAP document review (gap analysis vs EBA/GL/2016/10)"
+        },
+        {
+          "value": "build_ilaap",
+          "label": "Build / draft an ILAAP from scratch"
+        },
+        {
+          "value": "stress_design",
+          "label": "Liquidity stress-test scenario design (idiosyncratic / market-wide / combined)"
+        },
+        {
+          "value": "survival_horizon",
+          "label": "Survival horizon & counterbalancing capacity analysis"
+        },
+        {
+          "value": "cfp_review",
+          "label": "Contingency Funding Plan (CFP) review / build"
+        },
+        {
+          "value": "intraday",
+          "label": "Intraday liquidity assessment (BCBS 248)"
+        },
+        {
+          "value": "ftp_review",
+          "label": "Funds-Transfer-Pricing (FTP) framework review"
+        },
+        {
+          "value": "supervisory_readiness",
+          "label": "Supervisory / SREP liquidity readiness check"
+        }
+      ]
+    },
+    {
+      "id": "entity_type",
+      "type": "select",
+      "label": "Institution Type",
+      "description": "Which type of institution is in scope? Drives proportionality and the applicable regime.",
+      "required": true,
+      "options": [
+        {
+          "value": "significant_bank",
+          "label": "Significant credit institution (ECB-SSM directly supervised)"
+        },
+        {
+          "value": "lsi_bank",
+          "label": "Less-significant credit institution (NCA supervised)"
+        },
+        {
+          "value": "small_noncomplex",
+          "label": "Small and non-complex institution (CRR Art. 4(1)(145))"
+        },
+        {
+          "value": "investment_firm",
+          "label": "Investment firm (IFR/IFD-scoped)"
+        },
+        {
+          "value": "large_pi_emi",
+          "label": "Large / DORA-scoped payment or e-money institution"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "type": "chips",
+      "label": "Jurisdiction / Supervisor",
+      "description": "Which supervisory regime(s) apply? Flags national add-ons over the EU single rulebook.",
+      "required": true,
+      "options": [
+        { "value": "eu_ecb", "label": "EU — ECB / SSM" },
+        { "value": "sweden", "label": "Sweden (Finansinspektionen)" },
+        { "value": "finland", "label": "Finland (FIN-FSA)" },
+        { "value": "denmark", "label": "Denmark (Finanstilsynet)" },
+        { "value": "norway", "label": "Norway (Finanstilsynet / EEA)" },
+        { "value": "germany", "label": "Germany (BaFin / Bundesbank)" },
+        { "value": "uk", "label": "UK (PRA — ILAAP/ILG)" }
+      ]
+    },
+    {
+      "id": "focus_areas",
+      "type": "multi-select",
+      "label": "ILAAP Focus Areas",
+      "description": "Which building blocks of the ILAAP should the analysis prioritise?",
+      "options": [
+        { "value": "risk_identification", "label": "Liquidity & funding risk identification (material risk inventory)" },
+        { "value": "buffers_cbc", "label": "Liquidity buffers & counterbalancing capacity" },
+        { "value": "survival_horizon", "label": "Survival horizon" },
+        { "value": "stress_testing", "label": "Stress testing (idiosyncratic / market-wide / combined)" },
+        { "value": "lcr_nsfr", "label": "Regulatory metrics — LCR & NSFR" },
+        { "value": "intraday", "label": "Intraday liquidity (BCBS 248)" },
+        { "value": "cfp", "label": "Contingency Funding Plan" },
+        { "value": "ftp", "label": "Funds-Transfer Pricing & internal liquidity cost allocation" },
+        { "value": "governance", "label": "Governance, risk appetite & board approval" },
+        { "value": "data_ict", "label": "Data quality, MIS & ICT resilience (DORA)" }
+      ]
+    },
+    {
+      "id": "balance_sheet_profile",
+      "type": "textarea",
+      "label": "Balance-sheet & funding profile",
+      "description": "Brief funding and liquidity profile so the analysis is calibrated to the actual book.",
+      "placeholder": "e.g. EUR 18bn total assets; retail deposit-funded (62%, of which ~40% insured); wholesale unsecured 14%, covered-bond programme 11%, repo 9%; loan book mostly mortgages; HQLA buffer ~EUR 2.4bn (mostly Level 1 govies + central-bank reserves); LCR 148%, NSFR 121%; one foreign branch in EUR and a small USD book."
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known issues, prior findings or concerns",
+      "description": "Any prior SREP findings, internal-audit points, model weaknesses, or areas of supervisory focus.",
+      "placeholder": "e.g. Last SREP letter flagged weak FTP (liquidity cost not passed to business lines); CFP has no defined invocation triggers or escalation owner; deposit-behaviouralisation assumptions not back-tested since 2023; intraday monitoring is end-of-day only — no BCBS 248 reporting; survival horizon assumes 100% rollover of wholesale funding."
+    }
+  ],
+  "exampleInput": "We are a Swedish less-significant credit institution (~EUR 18bn assets, Finansinspektionen-supervised) refreshing our ILAAP for the 2026 cycle and the upcoming SREP dialogue. Funding is mostly retail deposits (~62%, roughly 40% covered by the deposit guarantee) plus a covered-bond programme, some senior unsecured, and short-dated repo; the loan book is predominantly residential mortgages. Current LCR ~148%, NSFR ~121%, HQLA buffer ~EUR 2.4bn (Level 1 govies + central-bank reserves). Please review our ILAAP against EBA/GL/2016/10 and the SREP guidelines, with priority on the stress-testing suite, the survival horizon, the contingency funding plan, and funds-transfer pricing. Known weak spots: our last SREP letter criticised the FTP framework (liquidity cost is not charged back to business lines), the CFP has no documented invocation triggers or named escalation owner, deposit behaviouralisation assumptions have not been back-tested since 2023, and intraday liquidity is monitored end-of-day only with no BCBS 248 metrics. Produce a gap matrix plus a detailed-findings narrative for the Critical and High items.",
+  "exampleValues": {
+    "deliverable": "full_ilaap_review",
+    "entity_type": "lsi_bank",
+    "jurisdiction": ["eu_ecb", "sweden"],
+    "focus_areas": ["stress_testing", "survival_horizon", "cfp", "ftp"],
+    "balance_sheet_profile": "EUR 18bn total assets; retail deposit-funded (62%, ~40% DGS-covered); covered-bond programme, senior unsecured and short-dated repo for the remainder; loan book predominantly residential mortgages. HQLA buffer ~EUR 2.4bn (Level 1 govies + central-bank reserves). LCR ~148%, NSFR ~121%. One foreign branch, small USD book.",
+    "known_concerns": "Last SREP letter criticised the FTP framework — liquidity cost not charged back to business lines. CFP has no documented invocation triggers or named escalation owner. Deposit behaviouralisation assumptions not back-tested since 2023. Intraday liquidity monitored end-of-day only; no BCBS 248 metrics reported. Survival horizon assumes 100% rollover of wholesale funding."
+  },
+  "recommendedPersonas": [
+    "finance-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "ilaap",
+    "liquidity-risk",
+    "lcr",
+    "nsfr",
+    "stress-testing",
+    "contingency-funding-plan",
+    "intraday-liquidity",
+    "srep",
+    "prudential",
+    "banking"
+  ],
+  "contentType": "analytic_report"
+}

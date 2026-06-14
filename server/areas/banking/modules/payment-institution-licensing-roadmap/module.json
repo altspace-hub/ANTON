@@ -1,0 +1,159 @@
+{
+  "formatVersion": "1.0",
+  "id": "payment-institution-licensing-roadmap",
+  "label": "PI / EMI Authorisation Roadmap",
+  "shortLabel": "PI/EMI Licensing",
+  "icon": "Landmark",
+  "description": "Builds the authorisation roadmap for a Payment Institution or E-Money Institution under PSD2 (EU) 2015/2366 and EMD2 2009/110/EC — from gap assessment to a submission-ready application dossier. Covers the programme of operations, business plan, initial capital and own-funds methods A/B/C, safeguarding, governance and outsourcing, security/SCA and operational-and-security risk (DORA interface), PII for AISP/PISP, the NCA timeline, passporting, and wind-down planning.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "action-plan",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "PSD2 Directive (EU) 2015/2366 and its Annex I services; EMD2 Directive 2009/110/EC; EBA Guidelines on authorisation and registration under PSD2 (EBA/GL/2017/09); EBA RTS on SCA and common secure communication (Commission Delegated Regulation (EU) 2018/389); EBA Guidelines on ICT and security risk management (EBA/GL/2019/04) and their migration to DORA (Regulation (EU) 2022/2554); EBA Guidelines on the PII minimum monetary amount for PISP/AISP (EBA/GL/2017/08); national NCA application packs (Finansinspektionen, Finanssivalvonta, BaFin, CBI, DNB, CSSF); the PSD3 Directive and PSR proposals (COM(2023) 366 and COM(2023) 367) as forthcoming, not yet in force."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "licence_type",
+      "type": "select",
+      "label": "Authorisation sought",
+      "description": "Which licence are you applying for? This drives the capital, safeguarding and PII expectations.",
+      "required": true,
+      "options": [
+        {
+          "value": "pi_full",
+          "label": "Payment Institution — full authorisation (PSD2 Art. 5)"
+        },
+        {
+          "value": "pi_aisp_only",
+          "label": "Account Information Service Provider only (registration, PSD2 Art. 33)"
+        },
+        {
+          "value": "pi_pisp",
+          "label": "Payment Institution providing Payment Initiation (PISP)"
+        },
+        {
+          "value": "small_pi",
+          "label": "Small / limited-network Payment Institution (national exemption, Art. 32)"
+        },
+        {
+          "value": "emi_full",
+          "label": "E-Money Institution — full authorisation (EMD2 Art. 3)"
+        },
+        {
+          "value": "emi_small",
+          "label": "Small E-Money Institution (national waiver, EMD2 Art. 9)"
+        }
+      ]
+    },
+    {
+      "id": "home_jurisdiction",
+      "type": "select",
+      "label": "Home Member State / NCA",
+      "description": "Where will you seek authorisation? Determines the competent authority, the application pack and language.",
+      "required": true,
+      "options": [
+        { "value": "sweden", "label": "Sweden — Finansinspektionen" },
+        { "value": "finland", "label": "Finland — Finanssivalvonta (FIN-FSA)" },
+        { "value": "denmark", "label": "Denmark — Finanstilsynet" },
+        { "value": "ireland", "label": "Ireland — Central Bank of Ireland" },
+        { "value": "netherlands", "label": "Netherlands — De Nederlandsche Bank (DNB)" },
+        { "value": "germany", "label": "Germany — BaFin" },
+        { "value": "luxembourg", "label": "Luxembourg — CSSF" },
+        { "value": "other_eea", "label": "Other EEA Member State" }
+      ]
+    },
+    {
+      "id": "payment_services",
+      "type": "multi-select",
+      "label": "Annex I payment services in scope",
+      "description": "Which PSD2 Annex I services will the institution provide? Each adds specific dossier content.",
+      "options": [
+        { "value": "annex1_1_2", "label": "Cash placement / withdrawal on a payment account (Annex I(1)–(2))" },
+        { "value": "annex1_3", "label": "Execution of payment transactions — credit transfers, direct debits, card (Annex I(3))" },
+        { "value": "annex1_4", "label": "Execution where funds covered by a credit line (Annex I(4))" },
+        { "value": "annex1_5", "label": "Issuing and/or acquiring of payment instruments (Annex I(5))" },
+        { "value": "annex1_6", "label": "Money remittance (Annex I(6))" },
+        { "value": "annex1_7", "label": "Payment Initiation Services — PISP (Annex I(7))" },
+        { "value": "annex1_8", "label": "Account Information Services — AISP (Annex I(8))" },
+        { "value": "emoney", "label": "Issuance / distribution / redemption of e-money (EMD2)" }
+      ]
+    },
+    {
+      "id": "own_funds_method",
+      "type": "select",
+      "label": "Preferred own-funds method (PI)",
+      "description": "For a Payment Institution, which ongoing own-funds method do you intend to use (PSD2 Art. 9)? EMIs use the EMD2 Art. 5 average-outstanding-e-money method.",
+      "options": [
+        { "value": "undecided", "label": "Not yet decided — recommend a method" },
+        { "value": "method_a", "label": "Method A — 10% of preceding-year fixed overheads" },
+        { "value": "method_b", "label": "Method B — scaled % of payment volume (k-factor applied)" },
+        { "value": "method_c", "label": "Method C — % of income (relevant indicator x multiplication factor)" },
+        { "value": "emd2_method", "label": "EMI — 2% of average outstanding e-money (EMD2 Art. 5)" }
+      ]
+    },
+    {
+      "id": "readiness_stage",
+      "type": "select",
+      "label": "Where are you in the journey?",
+      "description": "Sets whether this is a gap assessment, a dossier-build, or a pre-submission review.",
+      "options": [
+        { "value": "scoping", "label": "Scoping — deciding licence type and perimeter" },
+        { "value": "gap", "label": "Gap assessment — what is missing for an application" },
+        { "value": "dossier_build", "label": "Building the application dossier now" },
+        { "value": "pre_submission", "label": "Pre-submission review of a near-complete pack" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns, constraints or open questions",
+      "description": "Describe your business model, funding flows, safeguarding approach, outsourcing, and any known weak spots or NCA pre-application feedback.",
+      "placeholder": "e.g. Safeguarding via segregated client account at a partner bank but no fallback insurance arrangement; cloud-hosted core with a single critical outsourcer (DORA register not built); two proposed board members lack regulated-firm experience; uncertain which own-funds method gives the lowest ongoing capital; want to passport into DE/FR within 12 months."
+    }
+  ],
+  "exampleInput": "We are a Stockholm-based fintech (18 FTE, pre-revenue) preparing a full Payment Institution application to Finansinspektionen. We will offer money remittance (Annex I(6)) and payment-initiation services (PISP, Annex I(7)) to SMEs across the Nordics, with passporting into Germany and the Netherlands planned within 12 months. We have a draft business plan and a three-year P&L, but our programme of operations is thin on transaction flows, and we have not modelled which own-funds method (A/B/C) minimises ongoing capital. Safeguarding will be a segregated client-money account at a Swedish partner bank; we have no insurance/guarantee fallback yet. Core processing is on AWS via one critical outsourcer — we have not built a DORA outsourcing register or an ICT third-party risk assessment, and our SCA design (RTS (EU) 2018/389) is still conceptual. Two of our four proposed board members have never worked in a regulated firm. Produce an authorisation roadmap: tell us exactly what the FI dossier must contain, where our biggest gaps are, the realistic timeline including the NCA clock, the PII we need as a PISP, and a wind-down plan outline. Bridge from our PSD3 gap analysis to a submission-ready pack.",
+  "exampleValues": {
+    "licence_type": "pi_full",
+    "home_jurisdiction": "sweden",
+    "payment_services": ["annex1_6", "annex1_7"],
+    "own_funds_method": "undecided",
+    "readiness_stage": "dossier_build",
+    "known_concerns": "Programme of operations thin on transaction flows; own-funds method A/B/C not modelled. Safeguarding via segregated client account at a Swedish partner bank, no insurance/guarantee fallback. Single critical cloud outsourcer (AWS) — no DORA outsourcing register or ICT third-party risk assessment. SCA design still conceptual. Two of four proposed board members have no regulated-firm experience. Passporting into DE and NL planned within 12 months."
+  },
+  "recommendedPersonas": [
+    "fcp-expert",
+    "legal-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "psd2",
+    "emd2",
+    "payment-institution",
+    "e-money",
+    "authorisation",
+    "licensing",
+    "safeguarding",
+    "own-funds",
+    "passporting",
+    "dora",
+    "wind-down"
+  ],
+  "contentType": "plan_document"
+}

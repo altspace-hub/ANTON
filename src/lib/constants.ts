@@ -23,6 +23,7 @@ import {
   SURFACED_ACCOUNTING_MODULES,
 } from './area-patches/surfaced-modules-patch';
 import { TIER_A_MODULES } from './area-patches/tier-a-patch';
+import { TIER_B_MODULES } from './area-patches/tier-b-patch';
 
 export const MODULES: ModuleDefinition[] = [
   {
@@ -2663,6 +2664,8 @@ export const AREAS = [
       'remittance-compliance-framework', 'tbml-assessment', 'trade-finance-due-diligence',
       // AI governance (2026-06-14 audit plan, Tier A):
       'ai-governance-in-financial-crime',
+      // Beneficial-ownership orchestration (Tier B):
+      'beneficial-ownership-orchestration',
     ],
   },
   {
@@ -2678,6 +2681,8 @@ export const AREAS = [
       // Batch 1:
       'regulatory-horizon-scanning', 'contract-clause-checker', 'gdpr-dsar-handler',
       'regulatory-deadline-tracker', 'board-legal-summary', 'multi-jurisdiction-comparison',
+      // FDI screening (Tier B):
+      'fdi-screening-compliance',
     ],
   },
   {
@@ -2723,6 +2728,9 @@ export const AREAS = [
       // Batch 1:
       'product-approval-review', 'complaint-root-cause', 'regulatory-reporting-reconciliation',
       'psd3-gap-analysis', 'banking-license-support',
+      // Banking horizon modules (Tier B):
+      'liquidity-adequacy-assessment', 'open-finance-strategy',
+      'fintech-credit-risk-assessment', 'payment-institution-licensing-roadmap',
     ],
   },
   {
@@ -2895,6 +2903,8 @@ export const AREAS = [
       'financial-statement-drafter', 'expense-policy-checker',
       // Surfaced server modules (June 2026, plan 1.5):
       'aaoifi-compliance', 'internal-controls-sox', 'treasury-cash-management',
+      // Accounting horizon modules (Tier B):
+      'ifrs-18-transition-roadmap', 'pillar-two-minimum-tax-assessment',
     ],
   },
   {
@@ -3029,6 +3039,8 @@ export const AREAS = [
     color: 'adv-red',
     moduleIds: [
       'tenancy-disputes', 'employment-rights', 'consumer-protection', 'personal-contracts', 'small-claims',
+      // Global-South consumer protection (Tier B coherence pair):
+      'global-south-consumer-protection',
     ],
   },
   {
@@ -3109,6 +3121,8 @@ export const AREAS = [
     moduleIds: [
       'gdpr-compliance-assessment', 'dpia-builder', 'dsr-handler',
       'privacy-notice-drafter', 'cross-border-transfer-assessment', 'breach-response-plan',
+      // AI Act profiling/bias (Tier B):
+      'ai-act-profiling-bias-assessment',
     ],
   },
   {
@@ -3802,6 +3816,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...SURFACED_INSURANCE_MODULES,
     ...SURFACED_ACCOUNTING_MODULES,
     ...TIER_A_MODULES,
+    ...TIER_B_MODULES,
   ];
   for (const m of patchModules) {
     if (!existingIds.has(m.id)) {

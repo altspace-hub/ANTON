@@ -1,0 +1,203 @@
+{
+  "formatVersion": "1.0",
+  "id": "fdi-screening-compliance",
+  "label": "FDI Screening Compliance",
+  "shortLabel": "FDI Screening",
+  "icon": "Landmark",
+  "description": "Assess whether a transaction is notifiable under the EU FDI Screening Regulation (EU) 2019/452 and national screening mechanisms (Germany AWG/AWV, France IEF, Italy Golden Power, Nordic regimes). Covers notifiability triggers, the EU cooperation mechanism, standstill obligations, conditions/mitigation, and the financial-institution acquirer/target angle.",
+  "color": "adv-blue",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "detailed-findings",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU FDI Screening Regulation (EU) 2019/452 (in force since 11 Oct 2020); Commission revision proposal COM(2024) 23 (forthcoming, not in force); national mechanisms — Germany AWG/AWV, France Code monétaire et financier (IEF / Art. R151-1 et seq.), Italy Golden Power (Decree-Law 21/2012), Nordic regimes (Sweden Screening of Foreign Direct Investments Act SFS 2023:560, Denmark Investment Screening Act, Finland Act 172/2012); EU Dual-Use Regulation (EU) 2021/821; Annex of (EU) 2019/452 listing illustrative EU programmes/projects of Union interest."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "transaction_type",
+      "type": "select",
+      "label": "Transaction Type",
+      "description": "What is the structure of the investment being assessed?",
+      "required": true,
+      "options": [
+        {
+          "value": "acquisition_control",
+          "label": "Acquisition of control (majority / controlling stake)"
+        },
+        {
+          "value": "minority_stake",
+          "label": "Minority stake acquisition (threshold-crossing)"
+        },
+        {
+          "value": "greenfield",
+          "label": "Greenfield investment / new establishment"
+        },
+        {
+          "value": "asset_deal",
+          "label": "Asset acquisition (business unit / IP / infrastructure)"
+        },
+        {
+          "value": "internal_reorg",
+          "label": "Intra-group reorganisation / change of ultimate owner"
+        },
+        {
+          "value": "joint_venture",
+          "label": "Joint venture / strategic partnership"
+        }
+      ]
+    },
+    {
+      "id": "screening_jurisdictions",
+      "type": "chips",
+      "label": "Screening Jurisdiction(s)",
+      "description": "Where is the target (or its assets/operations) located? Select every Member State whose screening mechanism may apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "eu_cooperation",
+          "label": "EU cooperation mechanism (Reg. 2019/452)"
+        },
+        {
+          "value": "germany",
+          "label": "Germany (AWG / AWV)"
+        },
+        {
+          "value": "france",
+          "label": "France (IEF — Code monétaire et financier)"
+        },
+        {
+          "value": "italy",
+          "label": "Italy (Golden Power)"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden (SFS 2023:560)"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark (Investment Screening Act)"
+        },
+        {
+          "value": "finland",
+          "label": "Finland (Act 172/2012)"
+        },
+        {
+          "value": "other_ms",
+          "label": "Other EU Member State"
+        }
+      ]
+    },
+    {
+      "id": "acquirer_origin",
+      "type": "select",
+      "label": "Acquirer Origin / Control",
+      "description": "Where is the acquirer ultimately controlled from? Non-EU origin is the primary trigger; some regimes also screen state-linked EU acquirers.",
+      "required": true,
+      "options": [
+        {
+          "value": "non_eu_private",
+          "label": "Non-EU — privately controlled"
+        },
+        {
+          "value": "non_eu_state_linked",
+          "label": "Non-EU — state-owned / state-influenced / SWF"
+        },
+        {
+          "value": "eu_with_non_eu_uent",
+          "label": "EU entity with non-EU ultimate beneficial owner"
+        },
+        {
+          "value": "eu_genuine",
+          "label": "EU — genuine EU ultimate control"
+        },
+        {
+          "value": "unknown",
+          "label": "Ultimate control structure not yet confirmed"
+        }
+      ]
+    },
+    {
+      "id": "target_sector",
+      "type": "multi-select",
+      "label": "Target Sector / Sensitivity Factors",
+      "description": "Select every factor in Art. 4 of (EU) 2019/452 that the target touches. Each materially raises notifiability and screening likelihood.",
+      "options": [
+        {
+          "value": "critical_infrastructure",
+          "label": "Critical infrastructure (energy, transport, water, health, comms, data, financial, electoral)"
+        },
+        {
+          "value": "critical_technologies",
+          "label": "Critical / dual-use technologies (AI, semiconductors, robotics, quantum, aerospace, defence)"
+        },
+        {
+          "value": "critical_inputs",
+          "label": "Supply of critical inputs (energy, raw materials, food security)"
+        },
+        {
+          "value": "sensitive_data",
+          "label": "Access to sensitive / personal data (incl. data processors)"
+        },
+        {
+          "value": "media",
+          "label": "Media freedom and pluralism"
+        },
+        {
+          "value": "financial_sector",
+          "label": "Financial sector (bank / insurer / market infrastructure as target)"
+        },
+        {
+          "value": "dual_use",
+          "label": "Dual-use items listed under Reg. (EU) 2021/821"
+        },
+        {
+          "value": "none_obvious",
+          "label": "No obvious sensitive factor (assess de minimis / catch-all)"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Deal Facts & Known Concerns",
+      "description": "Describe the parties, the controlling chain, the target's activities, signing/long-stop dates, and any known sensitivities (state links, prior screening history, parallel merger control).",
+      "placeholder": "e.g. Acquirer is a Gulf sovereign-wealth-fund subsidiary; target operates a Swedish data-centre serving a regional grid operator; signing in 6 weeks with a non-EU co-investor; parallel EU merger-control filing expected..."
+    }
+  ],
+  "exampleInput": "We are buy-side counsel on Project Aurora. The acquirer is a Luxembourg holding company ultimately controlled by a Gulf sovereign wealth fund (~70%) with a US private-equity co-investor (~30%). The target is a Swedish group that operates a colocation data-centre in Stockholm (a designated tier-3 facility serving a regional grid operator and a defence-adjacent SaaS tenant) and a smaller German subsidiary developing edge-AI inference chips. We are acquiring 100% of the equity. Signing is targeted in eight weeks, completion ~Q4. There is a parallel EU merger-control notification in preparation. Please assess: (1) is this notifiable under the Swedish, German and EU regimes; (2) what standstill obligations bite and what the realistic timeline looks like; (3) what conditions/mitigation a screening authority is likely to demand on the data-centre and the chip subsidiary; and (4) how the sovereign-wealth-fund control chain changes the analysis. Known concern: the data-centre's defence-adjacent tenant was not disclosed in the data room until last week, and we have no confirmed organigram above the Gulf fund.",
+  "exampleValues": {
+    "transaction_type": "acquisition_control",
+    "screening_jurisdictions": ["eu_cooperation", "sweden", "germany"],
+    "acquirer_origin": "non_eu_state_linked",
+    "target_sector": ["critical_infrastructure", "critical_technologies", "sensitive_data"],
+    "known_concerns": "Ultimate control sits with a Gulf sovereign wealth fund (~70%) above a Luxembourg holdco; defence-adjacent data-centre tenant disclosed late and not in the original organigram; parallel EU merger-control filing in preparation; no confirmed organigram above the Gulf fund."
+  },
+  "recommendedPersonas": [
+    "legal-expert",
+    "strategy-expert"
+  ],
+  "tags": [
+    "fdi-screening",
+    "foreign-investment",
+    "national-security",
+    "golden-power",
+    "regulatory"
+  ],
+  "contentType": "analytic_report"
+}

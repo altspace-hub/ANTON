@@ -1,0 +1,197 @@
+{
+  "formatVersion": "1.0",
+  "id": "global-south-consumer-protection",
+  "label": "Global-South Consumer Financial Protection",
+  "shortLabel": "Global-South CFP",
+  "icon": "Scale",
+  "description": "Assess consumer financial protection issues in Global-South markets — digital-lending abuse, mobile-money redress, pricing transparency, over-indebtedness, and data privacy — against representative national regimes (Kenya, Nigeria, Bangladesh, India) and the realities of thin-regulation, ADR, and informal-justice settings.",
+  "color": "adv-gold",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "executive-summary",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Kenya Consumer Protection Act 2012 + CBK consumer-protection guidelines & Digital Credit Providers Regulations 2022; Nigeria FCCPA 2018 + CBN Consumer Protection Framework 2016 / Consumer Protection Regulations 2019 + FCCPC Limited Interim Framework for Digital Lending 2022; Bangladesh Consumer Rights Protection Act 2009 + Bangladesh Bank guidelines; India Consumer Protection Act 2019 + RBI Digital Lending Guidelines 2022 + RBI Fair Practices Code; mobile-money / EMI consumer-redress rules; data-protection statutes (Kenya DPA 2019, Nigeria NDPA 2023, India DPDP Act 2023 + DPDP Rules 2025, Bangladesh PDPO 2025 — enforcement deferred to ~mid-2027); GSMA / CGAP / SMART Campaign / FATF financial-inclusion guidance."
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "market",
+      "type": "chips",
+      "label": "Market / Jurisdiction",
+      "description": "Which national consumer-finance regime(s) apply? Each anchors a different statutory and supervisory baseline.",
+      "required": true,
+      "options": [
+        {
+          "value": "kenya",
+          "label": "Kenya (CPA 2012 + CBK / DCP Regs)"
+        },
+        {
+          "value": "nigeria",
+          "label": "Nigeria (FCCPA 2018 + CBN Framework)"
+        },
+        {
+          "value": "bangladesh",
+          "label": "Bangladesh (CRPA 2009 + Bangladesh Bank)"
+        },
+        {
+          "value": "india",
+          "label": "India (CPA 2019 + RBI Digital Lending)"
+        },
+        {
+          "value": "other_africa",
+          "label": "Other Sub-Saharan Africa"
+        },
+        {
+          "value": "other_south_asia",
+          "label": "Other South / Southeast Asia"
+        },
+        {
+          "value": "thin_regulation",
+          "label": "Thin / emerging-regulation market"
+        }
+      ]
+    },
+    {
+      "id": "provider_type",
+      "type": "select",
+      "label": "Provider / Product Type",
+      "description": "What kind of financial provider or product is the consumer dealing with? Drives which conduct rules and redress channels apply.",
+      "required": true,
+      "options": [
+        {
+          "value": "digital_lender",
+          "label": "Digital / app-based lender (DCP / NBFC-fintech)"
+        },
+        {
+          "value": "mobile_money",
+          "label": "Mobile-money / EMI operator (M-Pesa-type wallet)"
+        },
+        {
+          "value": "mfi_sacco",
+          "label": "Microfinance institution / SACCO / cooperative"
+        },
+        {
+          "value": "bank",
+          "label": "Bank / deposit-taking institution"
+        },
+        {
+          "value": "bnpl_merchant_credit",
+          "label": "BNPL / merchant or agent credit"
+        },
+        {
+          "value": "informal",
+          "label": "Informal / unlicensed lender or agent"
+        }
+      ]
+    },
+    {
+      "id": "harm_areas",
+      "type": "multi-select",
+      "label": "Consumer-Harm Areas",
+      "description": "Which harms or protection themes should the assessment prioritise?",
+      "options": [
+        {
+          "value": "lending_abuse",
+          "label": "Digital-lending abuse, harassment & shaming collections"
+        },
+        {
+          "value": "pricing_transparency",
+          "label": "Pricing & APR / total-cost transparency disclosure"
+        },
+        {
+          "value": "over_indebtedness",
+          "label": "Over-indebtedness & affordability / suitability"
+        },
+        {
+          "value": "mobile_money_redress",
+          "label": "Mobile-money errors, fraud & wrong-recipient redress"
+        },
+        {
+          "value": "data_privacy",
+          "label": "Data harvesting, contact-list scraping & privacy"
+        },
+        {
+          "value": "complaints_adr",
+          "label": "Complaints handling, ADR & informal-justice routes"
+        },
+        {
+          "value": "unfair_terms",
+          "label": "Unfair contract terms & misleading marketing"
+        },
+        {
+          "value": "agent_conduct",
+          "label": "Agent-network conduct & cash-in/cash-out abuse"
+        }
+      ]
+    },
+    {
+      "id": "role",
+      "type": "select",
+      "label": "Your Role",
+      "description": "Who is this assessment for? Shapes whether the output is advocacy-facing or provider-remediation-facing.",
+      "options": [
+        {
+          "value": "advocate",
+          "label": "Consumer advocate / legal-aid / civil society"
+        },
+        {
+          "value": "provider_compliance",
+          "label": "Inclusive-finance provider — compliance / conduct"
+        },
+        {
+          "value": "regulator",
+          "label": "Regulator / supervisor / policy"
+        },
+        {
+          "value": "consumer",
+          "label": "Affected consumer / borrower"
+        }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known Issues or Concerns",
+      "description": "Describe the specific situation, complaint, product terms, or conduct pattern — and any documents available (loan agreement, SMS/screenshots, statements, prior complaint correspondence).",
+      "placeholder": "e.g. App-based lender charged a 'service fee' that doubled the headline interest; on a 3-day default they messaged my phone contacts. Loan agreement (screenshot) and call-log available. I want to know what rules were broken and where to complain."
+    }
+  ],
+  "exampleInput": "I run a consumer-advocacy clinic in Nairobi and we're seeing a wave of complaints against a Kenyan app-based digital lender. Typical fact pattern: a borrower takes a KES 5,000 loan advertised as '7-day, low cost'; the headline interest is quoted as a flat fee, but a 'processing fee' and 'rollover fee' push the effective cost well above 100% APR with nothing disclosed as an annualised rate. On a 2-day default the app sends SMS to the borrower's phone contacts ('debt-shaming') and threatens to report them to the CRBs. The app pulled the full contact list and SMS inbox at install. The lender is a registered Digital Credit Provider. Assess this against Kenyan law and CBK rules — Consumer Protection Act 2012, the CBK Digital Credit Providers Regulations 2022, and the Data Protection Act 2019 — tell me which conduct is a statutory breach versus a guideline breach, and map the redress routes (CBK, ODPC, Competition Authority, small claims, ADR). Known weak spots in our case file: we have screenshots and the loan agreement, but no signed proof the borrower consented to contact-list access.",
+  "exampleValues": {
+    "market": ["kenya"],
+    "provider_type": "digital_lender",
+    "harm_areas": ["lending_abuse", "pricing_transparency", "data_privacy", "complaints_adr"],
+    "role": "advocate",
+    "known_concerns": "Effective cost >100% with no APR disclosed; debt-shaming SMS to the borrower's contacts on a 2-day default; full contact-list + SMS-inbox harvesting at install. Lender is a registered DCP. We hold screenshots and the loan agreement but no signed consent for contact-list access."
+  },
+  "recommendedPersonas": [
+    "legal-expert",
+    "fcp-expert"
+  ],
+  "tags": [
+    "consumer-protection",
+    "global-south",
+    "digital-lending",
+    "mobile-money",
+    "financial-inclusion",
+    "data-privacy",
+    "over-indebtedness"
+  ],
+  "contentType": "analytic_report"
+}
