@@ -211,7 +211,7 @@ export default function VoiceInput({ onTranscript, disabled }: Props) {
       {/* Live captions popover (spec §8.4) */}
       {listening && (
         <div
-          className="absolute bottom-14 left-1/2 -translate-x-1/2 max-w-[280px] rounded-[var(--radius-r2)] px-3 py-1.5 text-[0.75rem] shadow-lg backdrop-blur-sm"
+          className="absolute bottom-14 left-1/2 -translate-x-1/2 max-w-[280px] rounded-[var(--radius-r2)] px-3 py-1.5 text-xs shadow-lg backdrop-blur-sm"
           style={{
             background: 'var(--color-red)',
             color: 'var(--color-accent-fg)',

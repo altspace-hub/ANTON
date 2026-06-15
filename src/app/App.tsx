@@ -351,7 +351,7 @@ export default function App() {
           queued-while-offline messages are being replayed on reconnect. */}
       {flushingQueue && (
         <div
-          className="flex flex-shrink-0 items-center justify-center gap-2 px-4 py-1.5 text-[0.75rem] font-medium"
+          className="flex flex-shrink-0 items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium"
           style={{ background: 'var(--color-accent-soft)', color: 'var(--color-accent)' }}
           role="status"
         >

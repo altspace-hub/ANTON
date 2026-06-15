@@ -67,7 +67,7 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
         >
           Pick your ANTON colour
         </div>
-        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
           Your companion shows this colour on approvals, live states, and accents.
           Change it any time in Settings — it only affects your device.
         </p>
@@ -90,7 +90,7 @@ export default function PersonalizePage({ onContinue, onBack }: Props): JSX.Elem
               {initials}
             </div>
             <div className="flex-1">
-              <div className="text-[0.875rem] font-semibold text-[var(--color-text)]">{name}</div>
+              <div className="text-sm font-semibold text-[var(--color-text)]">{name}</div>
               <div className="text-[0.6875rem] text-[var(--color-text-muted)]">
                 {orgName} · {current.label}
               </div>

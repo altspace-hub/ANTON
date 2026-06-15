@@ -82,7 +82,7 @@ export default function ProfilePage({ onBack }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <p
-                className="truncate text-[1rem] font-semibold"
+                className="truncate text-base font-semibold"
                 style={{ color: 'var(--color-text)' }}
               >
                 {identity?.displayName || 'Unnamed'}
@@ -109,7 +109,7 @@ export default function ProfilePage({ onBack }: Props) {
               id="profile-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-[var(--radius-r2)] px-4 text-[0.875rem] focus:outline-none"
+              className="w-full rounded-[var(--radius-r2)] px-4 text-sm focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -125,7 +125,7 @@ export default function ProfilePage({ onBack }: Props) {
               id="profile-language"
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="w-full rounded-[var(--radius-r2)] px-4 text-[0.875rem] focus:outline-none"
+              className="w-full rounded-[var(--radius-r2)] px-4 text-sm focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -158,7 +158,7 @@ export default function ProfilePage({ onBack }: Props) {
           <div style={{ borderTop: '1px solid var(--color-border-soft)' }} className="pt-4">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center rounded-[var(--radius-r2)] text-[0.8125rem] font-semibold transition active:scale-[0.99]"
+              className="flex w-full items-center justify-center rounded-[var(--radius-r2)] text-sm font-semibold transition active:scale-[0.99]"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',

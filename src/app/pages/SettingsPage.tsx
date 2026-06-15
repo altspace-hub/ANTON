@@ -78,7 +78,7 @@ export default function SettingsPage({ onBack }: Props) {
                 border: '1px solid var(--color-border)',
               }}
             >
-              <div className="mb-2 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+              <div className="mb-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 App logo
               </div>
               <div className="flex items-center gap-3">
@@ -136,26 +136,26 @@ export default function SettingsPage({ onBack }: Props) {
               }}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+                <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                   Contact Hash
                 </span>
                 <button
                   onClick={handleCopyId}
-                  className="text-[0.75rem] font-semibold transition"
+                  className="text-xs font-semibold transition"
                   style={{ color: 'var(--color-accent)' }}
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
               <p
-                className="mt-2 break-all font-mono text-[0.75rem]"
+                className="mt-2 break-all font-mono text-xs"
                 style={{ color: 'var(--color-text)' }}
               >
                 {identity?.contactHash || 'Not registered'}
               </p>
               {identity?.displayName && (
                 <p
-                  className="mt-2 text-[0.75rem]"
+                  className="mt-2 text-xs"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   Signed in as <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{identity.displayName}</span>
@@ -187,7 +187,7 @@ export default function SettingsPage({ onBack }: Props) {
                   <Ico name="key" size={17} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                     Export Identity
                   </div>
                   <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
@@ -219,7 +219,7 @@ export default function SettingsPage({ onBack }: Props) {
                   <Ico name="alert" size={17} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-red)' }}>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--color-red)' }}>
                     Delete All Data
                   </div>
                   <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-red)', opacity: 0.7 }}>
@@ -241,7 +241,7 @@ export default function SettingsPage({ onBack }: Props) {
               }}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[0.8125rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+                <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                   ANTON Companion
                 </span>
                 <span className="font-mono text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>

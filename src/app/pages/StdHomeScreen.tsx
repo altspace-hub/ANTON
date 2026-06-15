@@ -143,7 +143,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
                 style={{ width: 10, height: 10, background: 'var(--color-accent)' }}
               />
               <span
-                className="text-[0.8125rem] font-bold"
+                className="text-sm font-bold"
                 style={{ color: 'var(--color-accent)' }}
               >
                 Waiting for you
@@ -156,7 +156,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
               {top.title}
             </div>
             {top.summary && (
-              <p className="mt-1 text-[0.9375rem] leading-relaxed text-[var(--color-text-body)]">
+              <p className="mt-1 text-base leading-relaxed text-[var(--color-text-body)]">
                 {top.summary}
               </p>
             )}
@@ -188,7 +188,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
                 style={{ width: 10, height: 10, background: 'var(--color-green)' }}
               />
               <span
-                className="text-[0.8125rem] font-bold"
+                className="text-sm font-bold"
                 style={{ color: 'var(--color-green)' }}
               >
                 You're all caught up
@@ -200,7 +200,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
             >
               Nothing needs your attention right now.
             </div>
-            <p className="mt-1 text-[0.9375rem] text-[var(--color-text-muted)]">
+            <p className="mt-1 text-base text-[var(--color-text-muted)]">
               ANTON is keeping an eye on things at {orgName}.
             </p>
           </div>
@@ -213,7 +213,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
             style={{ border: '1px solid var(--color-border)' }}
           >
             <div
-              className="mb-1 text-[0.8125rem] font-bold"
+              className="mb-1 text-sm font-bold"
               style={{ color: 'var(--color-gold)' }}
             >
               Also waiting
@@ -259,7 +259,7 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
                   {plainTime(s.updated_at)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[1rem] font-semibold text-[var(--color-text)]">
+                  <div className="text-base font-semibold text-[var(--color-text)]">
                     {s.title || 'Conversation with ANTON'}
                   </div>
                   <div className="mt-0.5 text-sm text-[var(--color-text-muted)]">
@@ -279,10 +279,10 @@ export default function StdHomeScreen({ orgId, orgName, onNavigate }: Props) {
         >
           <Ico name="mic" color="var(--color-accent)" size={26} />
           <div className="flex-1 text-left">
-            <div className="text-[0.9375rem] font-semibold text-[var(--color-text)]">
+            <div className="text-base font-semibold text-[var(--color-text)]">
               Ask ANTON anything
             </div>
-            <div className="text-[0.8125rem] text-[var(--color-text-muted)]">
+            <div className="text-sm text-[var(--color-text-muted)]">
               Tap and talk, or type
             </div>
           </div>

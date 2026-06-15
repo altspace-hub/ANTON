@@ -148,7 +148,7 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
         </span>
         <div className="min-w-0 flex-1">
           <h1
-            className="truncate text-[0.9375rem] font-semibold"
+            className="truncate text-base font-semibold"
             style={{ color: 'var(--color-text)', letterSpacing: '-0.15px' }}
           >
             {contactName}
@@ -178,11 +178,11 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                 No messages yet
               </p>
               <p
-                className="mx-auto mt-1 max-w-[260px] text-[0.75rem] leading-relaxed"
+                className="mx-auto mt-1 max-w-[260px] text-xs leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Send the first message below. Everything here is end-to-end
@@ -213,7 +213,7 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
           }}
           rows={1}
           placeholder="Message…"
-          className="min-h-[44px] flex-1 resize-none rounded-[var(--radius-r2)] px-3 py-2.5 text-[0.90625rem] leading-relaxed focus:outline-none"
+          className="min-h-[44px] flex-1 resize-none rounded-[var(--radius-r2)] px-3 py-2.5 text-sm leading-relaxed focus:outline-none"
           style={{
             background: 'var(--color-bg)',
             color: 'var(--color-text)',
@@ -246,7 +246,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
             className="rounded-[16px] px-3.5 py-2.5"
             style={{ background: 'var(--color-accent)', color: 'var(--color-accent-fg)' }}
           >
-            <p className="break-words whitespace-pre-wrap text-[0.90625rem] leading-[1.5]">
+            <p className="break-words whitespace-pre-wrap text-sm leading-[1.5]">
               {m.body || ''}
             </p>
           </div>
@@ -272,7 +272,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
             border: '1px solid var(--color-border)',
           }}
         >
-          <p className="break-words whitespace-pre-wrap text-[0.90625rem] leading-[1.5]">
+          <p className="break-words whitespace-pre-wrap text-sm leading-[1.5]">
             {m.body || ''}
           </p>
         </div>

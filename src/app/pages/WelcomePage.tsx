@@ -103,7 +103,7 @@ export default function WelcomePage({ onComplete }: Props): JSX.Element {
           >
             Companion
           </div>
-          <p className="mt-3 max-w-[260px] text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
+          <p className="mt-3 max-w-[260px] text-sm leading-relaxed text-[var(--color-text-muted)]">
             Connect to your organisation's ANTON instance. Identity stays on this device.
           </p>
         </div>

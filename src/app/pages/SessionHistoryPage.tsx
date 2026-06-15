@@ -74,11 +74,11 @@ export default function SessionHistoryPage({ orgId, orgName, onSelectSession, on
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
                 No conversations yet
               </p>
               <p
-                className="mt-1 max-w-[260px] text-[0.8125rem]"
+                className="mt-1 max-w-[260px] text-sm"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Start a chat from the Chat tab and it'll appear here.
@@ -97,13 +97,13 @@ export default function SessionHistoryPage({ orgId, orgName, onSelectSession, on
                 >
                   <div className="min-w-0 flex-1">
                     <div
-                      className="truncate text-[0.90625rem] font-semibold"
+                      className="truncate text-sm font-semibold"
                       style={{ color: 'var(--color-text)', lineHeight: 1.3 }}
                     >
                       {s.title || 'Untitled conversation'}
                     </div>
                     <div
-                      className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[0.71875rem]"
+                      className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs"
                       style={{ color: 'var(--color-text-muted)' }}
                     >
                       <span>{s.message_count} {s.message_count === 1 ? 'message' : 'messages'}</span>

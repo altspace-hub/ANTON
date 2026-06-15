@@ -17,7 +17,7 @@ export function SheetTitle({ children, className = '', style, ...rest }: SheetTi
   return (
     <h2
       {...rest}
-      className={`text-[0.9375rem] font-bold ${className}`}
+      className={`text-base font-bold ${className}`}
       style={{ color: 'var(--color-text)', letterSpacing: '-0.2px', ...style }}
     >
       {children}

@@ -97,7 +97,7 @@ export default function TaskScreen({ orgId }: Props) {
               onChange={e => setNewTask(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
               placeholder="Quick add task…"
-              className="flex-1 rounded-[var(--radius-r2)] px-4 text-[0.875rem] focus:outline-none"
+              className="flex-1 rounded-[var(--radius-r2)] px-4 text-sm focus:outline-none"
               style={{
                 background: 'var(--color-surface)',
                 color: 'var(--color-text)',
@@ -118,7 +118,7 @@ export default function TaskScreen({ orgId }: Props) {
           {error && (
             <div
               role="alert"
-              className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
+              className="rounded-[var(--radius-r2)] px-3 py-2 text-xs"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',
@@ -141,11 +141,11 @@ export default function TaskScreen({ orgId }: Props) {
               >
                 <Ico name="checkSquare" size={28} />
               </span>
-              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
                 No tasks yet
               </p>
               <p
-                className="mt-1 max-w-[280px] text-[0.8125rem]"
+                className="mt-1 max-w-[280px] text-sm"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Add tasks above or ask ANTON in chat.
@@ -188,7 +188,7 @@ export default function TaskScreen({ orgId }: Props) {
                     </button>
                     <div className="min-w-0 flex-1">
                       <p
-                        className="text-[0.875rem] leading-tight"
+                        className="text-sm leading-tight"
                         style={{
                           color: 'var(--color-text)',
                           fontWeight: 500,

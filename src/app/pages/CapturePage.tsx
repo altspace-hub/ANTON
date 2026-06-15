@@ -278,10 +278,10 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
               <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                 <div className="rounded-[var(--radius-r3)] border border-white/20 bg-black/60 p-4 text-white">
                   <div className="mb-1 text-sm font-semibold">Camera unavailable</div>
-                  <div className="text-[0.75rem] opacity-80">{streamErr}</div>
+                  <div className="text-xs opacity-80">{streamErr}</div>
                   <button
                     onClick={() => void pickFromLibrary()}
-                    className="mt-3 rounded-[var(--radius-r1)] bg-white/15 px-4 py-2 text-[0.8125rem] font-semibold"
+                    className="mt-3 rounded-[var(--radius-r1)] bg-white/15 px-4 py-2 text-sm font-semibold"
                   >
                     Pick from library instead
                   </button>
@@ -302,7 +302,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
                 href={capture.shareUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-3 inline-block break-all text-[0.75rem]"
+                className="mt-3 inline-block break-all text-xs"
                 style={{ color: 'var(--color-accent)' }}
               >
                 {capture.shareUrl}
@@ -331,7 +331,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
               <button
                 key={m.id}
                 onClick={() => changeMode(m.id)}
-                className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[0.75rem] font-semibold transition active:scale-95"
+                className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition active:scale-95"
                 style={{
                   background: active ? 'var(--color-accent)' : 'var(--color-surface)',
                   color: active ? 'var(--color-accent-fg)' : 'var(--color-text-body)',
@@ -357,7 +357,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
             maxLength={2000}
             rows={2}
             placeholder="Add a note (optional)…"
-            className="w-full resize-none rounded-[var(--radius-r2)] border px-3 py-2.5 text-[0.8125rem] focus:outline-none"
+            className="w-full resize-none rounded-[var(--radius-r2)] border px-3 py-2.5 text-sm focus:outline-none"
             style={{
               background: 'var(--color-surface)',
               color: 'var(--color-text)',
@@ -427,7 +427,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
               onClick={discardCapture}
               disabled={busy}
               aria-label="Discard and retake"
-              className="flex-shrink-0 rounded-[var(--radius-r2)] px-4 py-3 text-[0.8125rem] font-semibold transition active:scale-95 disabled:opacity-40"
+              className="flex-shrink-0 rounded-[var(--radius-r2)] px-4 py-3 text-sm font-semibold transition active:scale-95 disabled:opacity-40"
               style={{
                 background: 'transparent',
                 color: 'var(--color-text-body)',
@@ -441,7 +441,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
             <button
               onClick={() => void send()}
               disabled={busy}
-              className="flex-1 rounded-[var(--radius-r2)] py-3 text-[0.875rem] font-semibold transition active:scale-95 disabled:opacity-40"
+              className="flex-1 rounded-[var(--radius-r2)] py-3 text-sm font-semibold transition active:scale-95 disabled:opacity-40"
               style={{
                 background: 'var(--color-accent)',
                 color: 'var(--color-accent-fg)',

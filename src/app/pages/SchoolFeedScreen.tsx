@@ -195,7 +195,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
                 >
                   Set up your School profile on the main ANTON to start a learning streak.
                 </div>
-                <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-muted)]">
                   Once your course is configured, the day's lesson will appear here with a one-tap "continue" button.
                 </p>
               </div>
@@ -262,7 +262,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
               <Ico name="camera" color="var(--color-accent)" size={20} />
               <button
                 onClick={() => onNavigate('capture')}
-                className="flex-1 text-left text-[0.75rem] leading-relaxed text-[var(--color-text-body)]"
+                className="flex-1 text-left text-xs leading-relaxed text-[var(--color-text-body)]"
               >
                 <b>Stuck on homework?</b> Snap a photo — ANTON shows you the steps, doesn't just give the answer.
               </button>

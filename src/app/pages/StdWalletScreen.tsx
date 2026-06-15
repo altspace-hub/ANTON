@@ -145,7 +145,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
           >
             {balance ?? '— FTC'}
           </div>
-          <div className="mt-1 text-[0.8125rem] opacity-85">FutureChain · FTC</div>
+          <div className="mt-1 text-sm opacity-85">FutureChain · FTC</div>
         </div>
 
         {/* This companion wallet is read-only. Live send & receive happen in
@@ -159,7 +159,7 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
           }}
         >
           <Ico name="wallet" color="var(--color-text-muted)" size={18} />
-          <span className="text-[0.875rem] text-[var(--color-text-body)]">
+          <span className="text-sm text-[var(--color-text-body)]">
             Send &amp; receive happen in ANTON Pay.
           </span>
         </div>
@@ -214,8 +214,8 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
                 </span>
               </div>
               <div className="flex-1">
-                <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.who}</div>
-                <div className="text-[0.8125rem] text-[var(--color-text-muted)]">{r.sub} · {r.t}</div>
+                <div className="text-base font-semibold text-[var(--color-text)]">{r.who}</div>
+                <div className="text-sm text-[var(--color-text-muted)]">{r.sub} · {r.t}</div>
               </div>
               <div
                 className="font-bold"

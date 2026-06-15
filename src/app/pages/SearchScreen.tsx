@@ -37,7 +37,7 @@ function SourceCard({ s }: { s: PathfinderSource }) {
         {s.n}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[0.75rem] font-semibold leading-tight text-[var(--color-text)]">
+        <div className="text-xs font-semibold leading-tight text-[var(--color-text)]">
           {s.title}
         </div>
         <div className="mt-0.5 font-mono text-[0.6875rem] text-[var(--color-text-muted)]">
@@ -132,7 +132,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             }}
             rows={2}
             placeholder="Ask anything about your instance, the regulations you track, your portfolio…"
-            className="min-h-[44px] flex-1 resize-none bg-transparent text-[0.875rem] leading-relaxed text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
+            className="min-h-[44px] flex-1 resize-none bg-transparent text-sm leading-relaxed text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
             disabled={running}
           />
           <Btn
@@ -166,7 +166,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                 ANTON is thinking…
               </span>
             </div>
-            <p className="text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
+            <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
               Searching your instance, then synthesising a cited answer.
             </p>
           </div>
@@ -222,7 +222,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                         />
                       )}
                     </div>
-                    <div className="flex-1 pb-1 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]">
+                    <div className="flex-1 pb-1 text-xs leading-relaxed text-[var(--color-text-body)]">
                       {t}
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
               style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
             >
               <div
-                className="text-[0.875rem] leading-relaxed text-[var(--color-text)]"
+                className="text-sm leading-relaxed text-[var(--color-text)]"
                 style={{ wordBreak: 'break-word' }}
               >
                 {segments.length > 0 ? segments.map((seg, i) => (

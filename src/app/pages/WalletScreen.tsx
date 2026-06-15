@@ -68,7 +68,7 @@ export default function WalletScreen({ orgId }: Props) {
           {error && (
             <div
               role="alert"
-              className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
+              className="rounded-[var(--radius-r2)] px-3 py-2 text-xs"
               style={{
                 background: 'var(--color-red-dim)',
                 color: 'var(--color-red)',
@@ -141,7 +141,7 @@ export default function WalletScreen({ orgId }: Props) {
                       >
                         <div className="min-w-0 flex items-center gap-2">
                           <span
-                            className="text-[0.875rem] font-semibold"
+                            className="text-sm font-semibold"
                             style={{ color: 'var(--color-text)' }}
                           >
                             {w.name}
@@ -149,7 +149,7 @@ export default function WalletScreen({ orgId }: Props) {
                           <Pill tone="neutral" mono>{w.wallet_type.toUpperCase()}</Pill>
                         </div>
                         <span
-                          className="text-[0.875rem] font-bold"
+                          className="text-sm font-bold"
                           style={{ color: 'var(--color-accent)' }}
                         >
                           {formatFtc(w.balance_ftc)} FTC
@@ -174,10 +174,10 @@ export default function WalletScreen({ orgId }: Props) {
                   >
                     <Ico name="wallet" size={28} />
                   </span>
-                  <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                     No wallet yet
                   </p>
-                  <p className="mt-1 max-w-[260px] text-center text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+                  <p className="mt-1 max-w-[260px] text-center text-xs" style={{ color: 'var(--color-text-muted)' }}>
                     Set up a wallet in your ANTON instance under FutureChain settings.
                   </p>
                 </div>
@@ -194,7 +194,7 @@ export default function WalletScreen({ orgId }: Props) {
                       border: '1px solid var(--color-border)',
                     }}
                   >
-                    <p className="text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                       No transactions yet
                     </p>
                   </div>
@@ -219,7 +219,7 @@ export default function WalletScreen({ orgId }: Props) {
                         >
                           <div className="min-w-0 flex-1">
                             <p
-                              className="truncate text-[0.84375rem] font-semibold"
+                              className="truncate text-sm font-semibold"
                               style={{ color: 'var(--color-text)' }}
                             >
                               {tx.description || 'Transaction'}
@@ -234,7 +234,7 @@ export default function WalletScreen({ orgId }: Props) {
                             </div>
                           </div>
                           <span
-                            className="text-[0.84375rem] font-bold"
+                            className="text-sm font-bold"
                             style={{
                               color: negative ? 'var(--color-red)' : 'var(--color-green)',
                             }}
@@ -257,14 +257,14 @@ export default function WalletScreen({ orgId }: Props) {
                 }}
               >
                 <h3
-                  className="mb-1.5 flex items-center gap-2 text-[0.75rem] font-semibold"
+                  className="mb-1.5 flex items-center gap-2 text-xs font-semibold"
                   style={{ color: 'var(--color-text)' }}
                 >
                   <img src={fcLogoUrl} width={20} height={20} alt=""
                        aria-hidden style={{ borderRadius: '50%', flexShrink: 0 }} />
                   About FutureChain
                 </h3>
-                <p className="text-[0.71875rem] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
                   FutureChain (FTC) is ANTON's payment network for AI services. Premium queries,
                   marketplace purchases, and delegated tasks are settled in FTC. Your organisation may
                   provide a monthly FTC allowance.

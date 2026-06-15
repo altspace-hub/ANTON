@@ -47,7 +47,7 @@ export function ErrorPill({
         <Ico name="alert" color="var(--color-red)" size={16} />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[0.8125rem] font-semibold leading-snug">{message}</div>
+        <div className="text-sm font-semibold leading-snug">{message}</div>
       </div>
       {onRetry && (
         <Btn variant="ghost" size="sm" onClick={onRetry}>

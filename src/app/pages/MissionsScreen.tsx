@@ -77,11 +77,11 @@ export default function MissionsScreen({ orgId, onBack }: Props): JSX.Element {
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="sparkles" size={28} />
               </span>
-              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
                 No missions yet
               </p>
               <p
-                className="mx-auto mt-1 max-w-[280px] text-[0.8125rem] leading-relaxed"
+                className="mx-auto mt-1 max-w-[280px] text-sm leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Create a mission in the Pro UI on your desktop ANTON. They'll
@@ -158,14 +158,14 @@ function MissionRow({ m, orgId, onChanged }: {
       <div className="flex items-start gap-2.5">
         <div className="min-w-0 flex-1">
           <div
-            className="text-[0.90625rem] font-semibold"
+            className="text-sm font-semibold"
             style={{ color: 'var(--color-text)', letterSpacing: '-0.15px' }}
           >
             {m.title}
           </div>
           {m.description && (
             <p
-              className="mt-1 line-clamp-2 text-[0.78125rem] leading-relaxed"
+              className="mt-1 line-clamp-2 text-xs leading-relaxed"
               style={{ color: 'var(--color-text-muted)' }}
             >
               {m.description}

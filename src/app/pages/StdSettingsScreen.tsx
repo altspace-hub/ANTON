@@ -65,7 +65,7 @@ function ModeCard({
       >
         {label}
       </div>
-      <div className="mt-1 text-[0.8125rem] leading-snug text-[var(--color-text-muted)]">
+      <div className="mt-1 text-sm leading-snug text-[var(--color-text-muted)]">
         {description}
       </div>
       <div
@@ -133,7 +133,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
               onClick={() => setMode('pro')}
             />
           </div>
-          <div className="mt-3 text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
+          <div className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
             You can switch any time. Your data and connections stay the same.
           </div>
         </div>
@@ -167,8 +167,8 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                     style={{ width: 24, height: 24, background: currentAccent?.hex || 'var(--color-accent)' }}
                   />
                   <div className="flex-1">
-                    <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.title}</div>
-                    <div className="mt-0.5 text-[0.875rem] text-[var(--color-text-muted)]">
+                    <div className="text-base font-semibold text-[var(--color-text)]">{r.title}</div>
+                    <div className="mt-0.5 text-sm text-[var(--color-text-muted)]">
                       {currentAccent?.label}
                     </div>
                   </div>
@@ -227,7 +227,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
                       })}
                     </div>
                     {currentAccent?.sub && (
-                      <div className="mt-3 text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
+                      <div className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">
                         <b className="text-[var(--color-text)]">{currentAccent.label}</b> — {currentAccent.sub}
                       </div>
                     )}
@@ -249,9 +249,9 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
               }}
             >
               <div className="flex-1">
-                <div className="text-[1rem] font-semibold text-[var(--color-text)]">{r.title}</div>
+                <div className="text-base font-semibold text-[var(--color-text)]">{r.title}</div>
                 {'sub' in r && r.sub && (
-                  <div className="mt-0.5 text-[0.875rem] text-[var(--color-text-muted)]">{r.sub}</div>
+                  <div className="mt-0.5 text-sm text-[var(--color-text-muted)]">{r.sub}</div>
                 )}
               </div>
             </div>

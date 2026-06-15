@@ -91,15 +91,15 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
           style={{ background: 'var(--color-border)' }}
         />
         <div className="px-4 pb-1 pt-1">
-          <h2 className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>Instances</h2>
-          <p className="mt-0.5 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>Instances</h2>
+          <p className="mt-0.5 text-xs" style={{ color: 'var(--color-text-muted)' }}>
             Tap to switch which ANTON the app talks to.
           </p>
         </div>
         <div className="max-h-[60dvh] overflow-y-auto px-3 py-3 space-y-2">
           {instances.length === 0 && (
             <div
-              className="rounded-[var(--radius-r2)] px-4 py-6 text-center text-[0.75rem]"
+              className="rounded-[var(--radius-r2)] px-4 py-6 text-center text-xs"
               style={{
                 border: '1px dashed var(--color-border)',
                 background: 'var(--color-bg)',
@@ -122,7 +122,7 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
         >
           <button
             onClick={() => { onClose(); onAddInstance?.(); }}
-            className="flex-1 rounded-[var(--radius-r2)] px-4 py-2.5 text-[0.8125rem] font-semibold transition active:scale-[0.98]"
+            className="flex-1 rounded-[var(--radius-r2)] px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98]"
             style={{
               background: 'var(--color-accent)',
               color: 'var(--color-accent-fg)',
@@ -133,7 +133,7 @@ export default function InstanceSwitcher({ open, onClose, onAddInstance }: Props
           </button>
           <button
             onClick={onClose}
-            className="rounded-[var(--radius-r2)] px-4 py-2.5 text-[0.8125rem]"
+            className="rounded-[var(--radius-r2)] px-4 py-2.5 text-sm"
             style={{
               border: '1px solid var(--color-border)',
               color: 'var(--color-text-muted)',
@@ -165,7 +165,7 @@ function InstanceCard({ instance, active, onPick, onUnpair }: { instance: Instan
         <button onClick={onPick} className="flex-1 text-left">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ background: dotColor }} />
-            <span className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
               {instance.display_name}
             </span>
             {active && (
@@ -177,11 +177,11 @@ function InstanceCard({ instance, active, onPick, onUnpair }: { instance: Instan
               </span>
             )}
           </div>
-          <div className="mt-1 text-[0.71875rem] break-all" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="mt-1 text-xs break-all" style={{ color: 'var(--color-text-muted)' }}>
             {instance.server_base}
           </div>
           {instance.org && (
-            <div className="mt-1 text-[0.71875rem]" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
               {instance.org.name} · {instance.org.role}
             </div>
           )}

@@ -190,7 +190,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
               {briefing.headline ?? 'Quiet morning. No active narratives.'}
             </div>
             {briefing.blurb && (
-              <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]">
+              <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-body)]">
                 {briefing.blurb}
               </p>
             )}

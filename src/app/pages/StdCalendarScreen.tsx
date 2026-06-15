@@ -114,7 +114,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
             }}
           >
             <div className="text-[0.6875rem] opacity-80">{d.d}</div>
-            <div className="mt-0.5 text-[1.0625rem] font-bold">{d.n}</div>
+            <div className="mt-0.5 text-lg font-bold">{d.n}</div>
           </button>
         ))}
       </div>
@@ -154,7 +154,7 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
                   style={{ background: 'var(--color-accent-soft)' }}
                 >
                   <Ico name="sparkles" color="var(--color-accent)" size={14} />
-                  <span className="text-[0.8125rem] text-[var(--color-text)]">{e.anton_prep}</span>
+                  <span className="text-sm text-[var(--color-text)]">{e.anton_prep}</span>
                 </div>
               )}
             </div>

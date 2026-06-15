@@ -18,7 +18,7 @@ export default function ReasoningDrawer({ thinking }: Props) {
     <div className="mt-1.5">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-[0.75rem] transition"
+        className="flex items-center gap-1.5 text-xs transition"
         style={{ color: 'var(--color-text-muted)' }}
         aria-expanded={open}
       >
@@ -33,7 +33,7 @@ export default function ReasoningDrawer({ thinking }: Props) {
       </button>
       {open && (
         <div
-          className="mt-2 rounded-[var(--radius-r2)] px-3 py-2.5 text-[0.75rem] leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto"
+          className="mt-2 rounded-[var(--radius-r2)] px-3 py-2.5 text-xs leading-relaxed whitespace-pre-wrap max-h-60 overflow-y-auto"
           style={{
             background: 'var(--color-surface)',
             color: 'var(--color-text-muted)',

@@ -89,7 +89,7 @@ export default function PortalsScreen({ orgId, onBack }: Props): JSX.Element {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitSearch(); } }}
             placeholder="Search by name, topic, or description…"
-            className="flex-1 bg-transparent text-[0.875rem] focus:outline-none"
+            className="flex-1 bg-transparent text-sm focus:outline-none"
             style={{ color: 'var(--color-text)', minWidth: 0 }}
           />
           {draft && (
@@ -126,11 +126,11 @@ export default function PortalsScreen({ orgId, onBack }: Props): JSX.Element {
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="grid" size={28} />
               </span>
-              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
                 {query ? `Nothing matched "${query}"` : 'No portals to discover yet'}
               </p>
               <p
-                className="mx-auto mt-1 max-w-[280px] text-[0.8125rem] leading-relaxed"
+                className="mx-auto mt-1 max-w-[280px] text-sm leading-relaxed"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 {query
@@ -200,7 +200,7 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
         </span>
         <div className="min-w-0 flex-1">
           <h2
-            className="truncate text-[0.9375rem] font-semibold"
+            className="truncate text-base font-semibold"
             style={{ color: 'var(--color-text)', letterSpacing: '-0.15px' }}
           >
             {portal.display_title || portal.name}
@@ -218,7 +218,7 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
 
       {portal.description && (
         <p
-          className="mt-2.5 text-[0.8125rem] leading-relaxed"
+          className="mt-2.5 text-sm leading-relaxed"
           style={{ color: 'var(--color-text-body)' }}
         >
           {portal.description}

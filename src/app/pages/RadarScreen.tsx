@@ -289,7 +289,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
             >
               {briefHeadlines[0]}
             </div>
-            <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]">
+            <p className="mt-1.5 text-xs leading-relaxed text-[var(--color-text-body)]">
               {briefHeadlines.slice(1).join(' · ')}
             </p>
             {ttsAvailable() && (
@@ -376,7 +376,7 @@ export default function RadarScreen(_props: Props): JSX.Element {
                 {/* blurb */}
                 {it.blurb && (
                   <div
-                    className="mt-1 text-[0.75rem] leading-relaxed text-[var(--color-text-body)]"
+                    className="mt-1 text-xs leading-relaxed text-[var(--color-text-body)]"
                   >
                     {it.blurb}
                   </div>

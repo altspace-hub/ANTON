@@ -28,7 +28,7 @@ export default function DisplaySizePicker(): JSX.Element {
             }}
           >
             <div className="min-w-0 flex-1">
-              <div className="text-[0.875rem] font-semibold text-[var(--color-text)]">{d.label}</div>
+              <div className="text-sm font-semibold text-[var(--color-text)]">{d.label}</div>
               <div className="text-[0.6875rem] text-[var(--color-text-muted)]">{d.sub}</div>
             </div>
             {active && <Ico name="check" size={16} color="var(--color-accent)" />}

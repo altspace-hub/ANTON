@@ -373,10 +373,10 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="message" size={28} />
               </span>
-              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
                 Ask anything
               </p>
-              <p className="mt-1 max-w-[300px] text-[0.8125rem]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="mt-1 max-w-[300px] text-sm" style={{ color: 'var(--color-text-muted)' }}>
                 {orgName ? `${orgName}'s ANTON is ready.` : 'Your ANTON is ready.'}
               </p>
             </div>
@@ -413,7 +413,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                   {moduleDetail.label}
                 </h2>
                 <p
-                  className="mt-2 text-[0.84375rem] leading-relaxed"
+                  className="mt-2 text-sm leading-relaxed"
                   style={{ color: 'var(--color-text-body)' }}
                 >
                   {moduleDetail.description}
@@ -437,13 +437,13 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                     What ANTON does here
                   </div>
                   {moduleDetail.persona && (
-                    <p className="text-[0.8125rem] leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
                       {moduleDetail.persona}
                     </p>
                   )}
                   {moduleDetail.roleObjective && (
                     <p
-                      className="mt-2 text-[0.78125rem] leading-relaxed"
+                      className="mt-2 text-xs leading-relaxed"
                       style={{ color: 'var(--color-text-muted)' }}
                     >
                       {moduleDetail.roleObjective}
@@ -572,7 +572,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               <button
                 onClick={() => applyModel(null, 'Default')}
                 aria-label="Reset to default model"
-                className="text-[0.65625rem] underline"
+                className="text-[0.6875rem] underline"
                 style={{ color: 'var(--color-text-muted)' }}
               >
                 Reset
@@ -593,7 +593,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               onKeyDown={handleKeyDown}
               placeholder="Message ANTON…"
               rows={1}
-              className="flex-1 resize-none bg-transparent text-[0.9375rem] focus:outline-none"
+              className="flex-1 resize-none bg-transparent text-base focus:outline-none"
               style={{
                 color: 'var(--color-text)',
                 lineHeight: 1.4,

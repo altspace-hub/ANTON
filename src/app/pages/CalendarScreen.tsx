@@ -170,7 +170,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
             }}
           >
             <div className="text-[0.6875rem] font-medium opacity-70">{d.d}</div>
-            <div className="text-[0.875rem] font-bold">{d.n}</div>
+            <div className="text-sm font-bold">{d.n}</div>
           </button>
         ))}
       </div>
@@ -183,7 +183,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
             style={{ background: 'var(--color-accent-soft)' }}
           >
             <Ico name="sparkles" color="var(--color-accent)" size={14} />
-            <div className="flex-1 text-[0.75rem] leading-snug text-[var(--color-text)]">
+            <div className="flex-1 text-xs leading-snug text-[var(--color-text)]">
               <b>ANTON prepped</b> {today.prep.title}{today.prep.note && <> — {today.prep.note}</>}
             </div>
             <Pill tone="teal" style={{ fontSize: '0.6875rem' }}>READY</Pill>

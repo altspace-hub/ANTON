@@ -73,14 +73,14 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
       {errMsg && (
         <div
           role="alert"
-          className="rounded-[var(--radius-r2)] px-3 py-2 text-[0.75rem]"
+          className="rounded-[var(--radius-r2)] px-3 py-2 text-xs"
           style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}
         >
           {errMsg}
         </div>
       )}
       {!loading && !errMsg && models.length === 0 && (
-        <p className="px-1 py-6 text-center text-[0.8125rem]" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="px-1 py-6 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
           No model providers configured on this instance. Add an API key
           (Anthropic, OpenAI, Mistral, or Google) in the desktop ANTON's
           Settings → Models.
@@ -145,7 +145,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
                             )}
                           </div>
                           <div
-                            className="mt-0.5 text-[0.71875rem]"
+                            className="mt-0.5 text-xs"
                             style={{ color: 'var(--color-text-muted)' }}
                           >
                             {PROVIDER_BADGE[m.provider] ?? m.provider} · {m.description}
@@ -172,7 +172,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
           {selectedModelId && (
             <button
               onClick={() => onSelect(null, 'Default')}
-              className="mt-1 self-start text-[0.75rem] underline"
+              className="mt-1 self-start text-xs underline"
               style={{ color: 'var(--color-text-muted)' }}
             >
               Use org default ({defaultModel || '—'})

@@ -183,10 +183,10 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
             >
               <Ico name="qr" size={26} />
             </div>
-            <div className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+            <div className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
               No organisations yet
             </div>
-            <div className="mt-1 text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
               Scan a QR code or enter an invitation token to get started.
             </div>
             <div className="mt-4">
@@ -225,7 +225,7 @@ export default function ConnectionsPage({ onSelectOrg, onJoinNew, onProfile }: P
                   </div>
                   <div className="min-w-0 flex-1">
                     <div
-                      className="truncate text-[0.875rem] font-semibold"
+                      className="truncate text-sm font-semibold"
                       style={{ color: 'var(--color-text)' }}
                     >
                       {conn.name}

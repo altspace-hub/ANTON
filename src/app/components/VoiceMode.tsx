@@ -171,20 +171,20 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
         </div>
         {phase === 'listening' && partial && (
           <div
-            className="mt-4 max-w-md text-[1.125rem] leading-relaxed"
+            className="mt-4 max-w-md text-lg leading-relaxed"
             style={{ color: 'var(--color-text)' }}
           >
             {partial}
           </div>
         )}
         {phase === 'thinking' && (
-          <div className="mt-4 text-[0.9375rem]" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="mt-4 text-base" style={{ color: 'var(--color-text-muted)' }}>
             Thinking…
           </div>
         )}
         {phase === 'speaking' && reply && (
           <div
-            className="mt-4 max-w-md text-[0.9375rem] leading-relaxed"
+            className="mt-4 max-w-md text-base leading-relaxed"
             style={{ color: 'var(--color-text)' }}
           >
             {reply}
@@ -193,7 +193,7 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
         {errMsg && (
           <div
             role="alert"
-            className="mt-4 text-[0.8125rem]"
+            className="mt-4 text-sm"
             style={{ color: 'var(--color-red)' }}
           >
             {errMsg}
@@ -237,7 +237,7 @@ export default function VoiceMode({ onSubmit, onClose }: VoiceModeProps) {
             </>
           )}
         </button>
-        <div className="text-[0.75rem]" style={{ color: 'var(--color-text-muted)' }}>
+        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
           {phase === 'idle' && 'Hold to talk · Tap to toggle'}
           {phase === 'listening' && 'Release to send'}
           {phase === 'thinking' && 'Routing to ANTON…'}

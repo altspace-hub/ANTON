@@ -167,7 +167,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                 }
               }}
               placeholder="Review a vendor I've never seen before"
-              className="flex-1 bg-transparent text-[0.75rem] text-white placeholder:text-white/70 focus:outline-none"
+              className="flex-1 bg-transparent text-xs text-white placeholder:text-white/70 focus:outline-none"
               style={{ minWidth: 0 }}
             />
             <button
@@ -266,7 +266,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                   value={browseQuery}
                   onChange={(e) => setBrowseQuery(e.target.value)}
                   placeholder="Search modules…"
-                  className="flex-1 bg-transparent text-[0.84375rem] focus:outline-none"
+                  className="flex-1 bg-transparent text-sm focus:outline-none"
                   style={{ color: 'var(--color-text)' }}
                   aria-label="Search modules"
                 />
@@ -293,7 +293,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                 return (
                   <div className="mx-4 mb-4 rounded-[var(--radius-r2)] border border-dashed px-4 py-8 text-center"
                        style={{ borderColor: 'var(--color-border)' }}>
-                    <p className="text-[0.8125rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
                       No modules match "{browseQuery}"
                     </p>
                     <p className="mt-1 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>

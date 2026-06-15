@@ -210,7 +210,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
               ANTON digest
             </span>
           </div>
-          <div className="text-[0.75rem] leading-relaxed text-[var(--color-text)]">
+          <div className="text-xs leading-relaxed text-[var(--color-text)]">
             <b>{unread}</b> unread
             {externalUnread > 0 && <> · <b>{externalUnread}</b> external</>}
             {draftCount > 0 && <> · <b>{draftCount}</b> draft{draftCount === 1 ? '' : 's'} ready</>}

@@ -120,7 +120,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                 onChange={e => setDraft(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void add(); } }}
                 placeholder="What needs to happen?"
-                className="flex-1 rounded-[var(--radius-r2)] px-3 text-[0.875rem] focus:outline-none"
+                className="flex-1 rounded-[var(--radius-r2)] px-3 text-sm focus:outline-none"
                 style={{
                   background: 'var(--color-bg)',
                   color: 'var(--color-text)',
@@ -165,10 +165,10 @@ export default function ScheduleScreen({ orgId }: Props) {
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
                 <Ico name="calendar" size={28} />
               </span>
-              <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
+              <p className="text-base font-semibold" style={{ color: 'var(--color-text)' }}>
                 Nothing on the schedule
               </p>
-              <p className="mt-1 max-w-[280px] text-[0.8125rem]" style={{ color: 'var(--color-text-muted)' }}>
+              <p className="mt-1 max-w-[280px] text-sm" style={{ color: 'var(--color-text-muted)' }}>
                 Add a deadline above or wait for one to sync from your desktop ANTON.
               </p>
             </div>
@@ -208,7 +208,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <span
-                          className="text-[0.875rem] font-semibold leading-tight"
+                          className="text-sm font-semibold leading-tight"
                           style={{ color: overdue ? 'var(--color-red)' : 'var(--color-text)' }}
                         >
                           {d.title}
@@ -217,7 +217,7 @@ export default function ScheduleScreen({ orgId }: Props) {
                       </div>
                       {d.due_date && (
                         <p
-                          className="mt-1 text-[0.71875rem]"
+                          className="mt-1 text-xs"
                           style={{ color: overdue ? 'var(--color-red)' : 'var(--color-text-muted)' }}
                         >
                           {overdue ? 'Overdue · ' : ''}{new Date(d.due_date).toLocaleDateString()}

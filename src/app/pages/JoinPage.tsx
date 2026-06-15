@@ -373,7 +373,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         >
           Pair with your ANTON
         </div>
-        <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[var(--color-text-muted)]">
+        <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">
           Scan the QR your admin showed you. We'll mint a fresh Ed25519 key on this device and
           confirm with a 6-digit code if needed.
         </p>
@@ -434,7 +434,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
                   <Ico name="qr" color="var(--color-accent)" size={36} />
                 </div>
                 <span className="text-sm font-semibold text-[var(--color-text)]">Tap to scan QR</span>
-                <span className="px-6 text-center text-[0.75rem] leading-relaxed text-[var(--color-text-muted)]">
+                <span className="px-6 text-center text-xs leading-relaxed text-[var(--color-text-muted)]">
                   The QR contains the server URL + a one-time token (≤60s TTL)
                 </span>
               </button>
