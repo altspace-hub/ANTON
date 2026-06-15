@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Ico, Spinner } from '../components/ui';
+import { AppHeader, Ico, Spinner } from '../components/ui';
 import { getCalendarToday, type CalendarToday, type CalendarColor } from '../services/calendar';
 import CalendarEventSheet from '../components/CalendarEventSheet';
 
@@ -71,35 +71,21 @@ export default function StdCalendarScreen({ orgId, onBack }: Props): JSX.Element
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      {/* Top bar */}
-      <div
-        className="flex items-start gap-3 px-[18px] py-3"
-        style={{ background: 'var(--color-bg)' }}
-      >
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="-ml-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
-        >
-          <Ico name="chevronLeft" color="var(--color-text)" size={26} />
-        </button>
-        <div className="flex-1">
-          <div
-            className="text-[var(--color-text)]"
-            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+      <AppHeader
+        variant="large"
+        title="Today"
+        subtitle={headerSub}
+        onBack={onBack}
+        right={
+          <button
+            aria-label="Add event"
+            onClick={() => setSheetOpen(true)}
+            className="-mr-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
           >
-            Today
-          </div>
-          <div className="mt-1 text-sm text-[var(--color-text-muted)]">{headerSub}</div>
-        </div>
-        <button
-          aria-label="Add event"
-          onClick={() => setSheetOpen(true)}
-          className="-mr-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
-        >
-          <Ico name="plus" color="var(--color-text)" size={24} />
-        </button>
-      </div>
+            <Ico name="plus" color="var(--color-text)" size={24} />
+          </button>
+        }
+      />
 
       {/* Weekday strip */}
       <div className="flex gap-1.5 px-3.5 pb-3.5">

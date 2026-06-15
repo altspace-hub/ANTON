@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Ico, Spinner, ErrorPill } from '../components/ui';
+import { Ico, Spinner, ErrorPill, AppHeader } from '../components/ui';
 import { getOrgWallet } from '../services/api';
 
 interface Props {
@@ -102,29 +102,12 @@ export default function StdWalletScreen({ orgId, onBack }: Props): JSX.Element {
   return (
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       {/* Top bar */}
-      <div
-        className="flex items-start gap-3 px-[18px] py-3"
-        style={{ background: 'var(--color-bg)' }}
-      >
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="-ml-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
-        >
-          <Ico name="chevronLeft" color="var(--color-text)" size={26} />
-        </button>
-        <div className="flex-1">
-          <div
-            className="text-[var(--color-text)]"
-            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
-          >
-            Money
-          </div>
-          <div className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Your FutureChain account
-          </div>
-        </div>
-      </div>
+      <AppHeader
+        variant="large"
+        title="Money"
+        subtitle="Your FutureChain account"
+        onBack={onBack}
+      />
 
       <div className="flex-1 overflow-y-auto px-4 pb-4 pt-2">
         {error && (

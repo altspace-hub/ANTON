@@ -14,7 +14,7 @@
  */
 
 import { useState } from 'react';
-import { Ico } from '../components/ui';
+import { Ico, AppHeader } from '../components/ui';
 import DisplaySizePicker from '../components/DisplaySizePicker';
 import { usePersonalization } from '../components/ui/PersonalizationContext';
 import { ACCENTS, type AccentKey } from '../services/personalization';
@@ -94,17 +94,7 @@ export default function StdSettingsScreen({ onBack: _onBack }: Props): JSX.Eleme
   return (
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       {/* Top bar — large title */}
-      <div className="px-[18px] py-3" style={{ background: 'var(--color-bg)' }}>
-        <div
-          className="text-[var(--color-text)]"
-          style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
-        >
-          You
-        </div>
-        <div className="mt-1 text-sm text-[var(--color-text-muted)]">
-          {name} · {orgLabel}
-        </div>
-      </div>
+      <AppHeader variant="large" title="You" subtitle={`${name} · ${orgLabel}`} />
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2">
         {/* App mode hero */}

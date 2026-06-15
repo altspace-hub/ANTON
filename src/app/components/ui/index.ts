@@ -24,8 +24,8 @@ export type { AvatarProps }      from './Avatar';
 export { Ico }                   from './Ico';
 export type { IcoProps, IcoName } from './Ico';
 
-export { PageHeader }            from './PageHeader';
-export type { PageHeaderProps }  from './PageHeader';
+export { PageHeader, AppHeader }            from './PageHeader';
+export type { PageHeaderProps, AppHeaderProps } from './PageHeader';
 
 export { MonogramTile, MODULE_GLYPH, getModuleGlyph, hasModuleGlyph } from './MonogramTile';
 export type { MonogramTileProps, MonogramTone } from './MonogramTile';

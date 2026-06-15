@@ -15,7 +15,7 @@
  */
 
 import { useState } from 'react';
-import { Btn, Ico, Spinner } from '../components/ui';
+import { AppHeader, Btn, Ico, Spinner } from '../components/ui';
 import type { MailMessage } from '../services/mail';
 import { replyToMail } from '../services/api';
 import { tick, success as hapticSuccess, error as hapticError } from '../services/haptics';
@@ -60,29 +60,12 @@ export default function StdThreadScreen({ orgId, message, onBack, onOpenInPro }:
   return (
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
       {/* Top bar */}
-      <div
-        className="flex items-start gap-3 px-[18px] py-3"
-        style={{ background: 'var(--color-bg)' }}
-      >
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="-ml-2.5 flex h-11 w-11 flex-shrink-0 items-center justify-center"
-        >
-          <Ico name="chevronLeft" color="var(--color-text)" size={26} />
-        </button>
-        <div className="flex-1">
-          <div
-            className="text-[var(--color-text)]"
-            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
-          >
-            {message.from_name}
-          </div>
-          <div className="mt-1 text-sm text-[var(--color-text-muted)]">
-            {message.provider === 'anton' ? 'Here to help' : 'External sender'}
-          </div>
-        </div>
-      </div>
+      <AppHeader
+        variant="large"
+        title={message.from_name}
+        subtitle={message.provider === 'anton' ? 'Here to help' : 'External sender'}
+        onBack={onBack}
+      />
 
       {/* Thread body */}
       <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-4 pb-4 pt-2">

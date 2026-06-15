@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Ico, Spinner, ErrorPill } from '../components/ui';
+import { AppHeader, Ico, Spinner, ErrorPill } from '../components/ui';
 import { listMailInbox, inboxTime, type MailMessage } from '../services/mail';
 
 interface Props {
@@ -47,29 +47,19 @@ export default function StdMailScreen({ orgId, onOpenThread }: Props): JSX.Eleme
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--color-bg)' }}>
-      {/* Top bar */}
-      <div
-        className="flex items-start gap-3 px-[18px] py-3"
-        style={{ background: 'var(--color-bg)' }}
-      >
-        <div className="flex-1">
-          <div
-            className="text-[var(--color-text)]"
-            style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.4px', lineHeight: 1.1 }}
+      <AppHeader
+        variant="large"
+        title="Messages"
+        subtitle={unread > 0 ? `You have ${unread} new` : 'All caught up'}
+        right={
+          <button
+            aria-label="Search messages"
+            className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center"
           >
-            Messages
-          </div>
-          <div className="mt-1 text-sm text-[var(--color-text-muted)]">
-            {unread > 0 ? `You have ${unread} new` : 'All caught up'}
-          </div>
-        </div>
-        <button
-          aria-label="Search messages"
-          className="-mr-2 flex h-11 w-11 flex-shrink-0 items-center justify-center"
-        >
-          <Ico name="search" color="var(--color-text-muted)" size={22} />
-        </button>
-      </div>
+            <Ico name="search" color="var(--color-text-muted)" size={22} />
+          </button>
+        }
+      />
 
       {/* List */}
       <div className="flex-1 overflow-y-auto pb-2">

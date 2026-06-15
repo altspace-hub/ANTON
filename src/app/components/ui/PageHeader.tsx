@@ -1,62 +1,72 @@
 /**
- * PageHeader — Standard top bar for sub-screens (Settings, Profile, History,
- * Schedule, etc.). Single source of truth so screens stop drifting.
+ * AppHeader — the ONE top-bar primitive for both app modes (design-review:
+ * "converge chrome, keep the fork at IA level"). Two variants share one
+ * component so Pro and Standard stop drifting into ad-hoc headers:
  *
- *   <PageHeader title="Settings" onBack={() => …} />
- *   <PageHeader title="Profile" subtitle="Daniel Bardun" onBack={fn} right={<Btn />} />
+ *   variant="compact"  Pro sub-screens — 52px, surface bg, hairline border,
+ *                      16px title, 22px back. (the former PageHeader)
+ *   variant="large"    Standard mode — iOS-large-title feel, bg, no border,
+ *                      24px title, 26px back. Standard's friendlier voice.
  *
- * Spec: 52px tall, surface bg, hairline bottom border, 44px back hit-zone,
- * 16px semibold title, optional 11px muted subtitle.
+ *   <AppHeader title="Settings" onBack={fn} />                       // compact
+ *   <AppHeader variant="large" title="Today" subtitle={sub} onBack={fn}
+ *              right={<button …/>} />
+ *
+ * `PageHeader` stays exported as a back-compat alias (= compact) so existing
+ * Pro screens need no change.
  */
 
 import type { ReactNode } from 'react';
 import { Ico } from './Ico';
 
-export interface PageHeaderProps {
+export interface AppHeaderProps {
   title: string;
   subtitle?: string;
   onBack?: () => void;
-  /** Optional right-side action node (e.g., a settings cog button) */
+  /** Optional right-side action node (e.g., a cog or add button). */
   right?: ReactNode;
+  /** compact = Pro sub-screen bar (default); large = Standard large-title. */
+  variant?: 'compact' | 'large';
 }
 
-export function PageHeader({ title, subtitle, onBack, right }: PageHeaderProps) {
+export function AppHeader({ title, subtitle, onBack, right, variant = 'compact' }: AppHeaderProps) {
+  const large = variant === 'large';
   return (
     <div
-      className="flex flex-shrink-0 items-center gap-1 px-2 py-2"
+      className={`flex flex-shrink-0 ${large ? 'items-start gap-3 px-[18px] py-3' : 'items-center gap-1 px-2 py-2'}`}
       style={{
-        background: 'var(--color-surface)',
-        borderBottom: '1px solid var(--color-border-soft)',
+        background: large ? 'var(--color-bg)' : 'var(--color-surface)',
+        borderBottom: large ? 'none' : '1px solid var(--color-border-soft)',
       }}
     >
       {onBack ? (
         <button
           onClick={onBack}
           aria-label="Back"
-          className="flex items-center justify-center transition active:opacity-50"
-          style={{ width: 44, height: 44, color: 'var(--color-text)' }}
+          className={`flex flex-shrink-0 items-center justify-center transition active:opacity-50 ${large ? '-ml-2.5 h-11 w-11' : ''}`}
+          style={large ? { color: 'var(--color-text)' } : { width: 44, height: 44, color: 'var(--color-text)' }}
         >
-          <Ico name="chevronLeft" size={22} />
+          <Ico name="chevronLeft" size={large ? 26 : 22} />
         </button>
       ) : (
-        <div style={{ width: 44, height: 44 }} />
+        // compact reserves a back-sized spacer to keep the title centred-ish;
+        // large lets the title sit flush-left (iOS large-title style).
+        !large && <div style={{ width: 44, height: 44 }} />
       )}
-      <div className="min-w-0 flex-1 px-1">
+      <div className={`min-w-0 flex-1 ${large ? '' : 'px-1'}`}>
         <h1
           className="truncate"
-          style={{
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: 'var(--color-text)',
-            letterSpacing: '-0.2px',
-            lineHeight: 1.2,
-          }}
+          style={
+            large
+              ? { fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.4px', lineHeight: 1.1 }
+              : { fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.2px', lineHeight: 1.2 }
+          }
         >
           {title}
         </h1>
         {subtitle && (
           <p
-            className="mt-0.5 truncate text-[0.6875rem]"
+            className={`truncate ${large ? 'mt-1 text-sm' : 'mt-0.5 text-[0.6875rem]'}`}
             style={{ color: 'var(--color-text-muted)' }}
           >
             {subtitle}
@@ -68,4 +78,10 @@ export function PageHeader({ title, subtitle, onBack, right }: PageHeaderProps) 
       </div>
     </div>
   );
+}
+
+/** Back-compat alias — the compact variant (the former PageHeader). */
+export type PageHeaderProps = Omit<AppHeaderProps, 'variant'>;
+export function PageHeader(props: PageHeaderProps) {
+  return <AppHeader variant="compact" {...props} />;
 }
