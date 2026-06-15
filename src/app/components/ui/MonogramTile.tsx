@@ -23,13 +23,13 @@ import type { CSSProperties } from 'react';
 export type MonogramTone = 'red' | 'blue' | 'gold' | 'teal' | 'plum' | 'slate' | 'green';
 
 const TONE: Record<MonogramTone, { bg: string; fg: string }> = {
-  red:   { bg: '#B73A2B', fg: '#FFFFFF' },
-  blue:  { bg: '#2D5BB8', fg: '#FFFFFF' },
-  gold:  { bg: '#B98326', fg: '#FFFFFF' },
-  teal:  { bg: 'var(--color-accent)', fg: '#FFFFFF' },
-  plum:  { bg: '#6A3E8F', fg: '#FFFFFF' },
-  slate: { bg: '#23252E', fg: '#F4EFE6' },
-  green: { bg: '#1F8A5C', fg: '#FFFFFF' },
+  red:   { bg: 'var(--color-mono-red)',   fg: '#FFFFFF' },
+  blue:  { bg: 'var(--color-mono-blue)',  fg: '#FFFFFF' },
+  gold:  { bg: 'var(--color-mono-gold)',  fg: '#FFFFFF' },
+  teal:  { bg: 'var(--color-accent)',     fg: '#FFFFFF' },
+  plum:  { bg: 'var(--color-mono-plum)',  fg: '#FFFFFF' },
+  slate: { bg: 'var(--color-mono-slate)', fg: '#F4EFE6' },
+  green: { bg: 'var(--color-green)',       fg: '#FFFFFF' },
 };
 
 export interface MonogramTileProps {

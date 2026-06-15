@@ -277,7 +277,13 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    // On mobile (coarse pointer / native), Enter inserts a newline like the
+    // big chat apps — let the textarea handle it natively, never submit.
+    // On desktop, Enter (without Shift) sends; Shift+Enter still = newline.
+    if (e.key === 'Enter' && !e.shiftKey && !isMobileComposer()) {
+      e.preventDefault();
+      handleSend();
+    }
   }
 
   const hasInput = input.trim().length > 0;
@@ -337,6 +343,23 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
             </div>
           ) : null}
         </div>
+        {/* Model chip — compact, in the header so the user knows which brain
+            is answering without it crowding the composer. Opens the picker. */}
+        <button
+          onClick={() => setModelPickerOpen(true)}
+          aria-label={`Model: ${modelLabel}. Tap to change.`}
+          title={`Model: ${modelLabel}`}
+          className="flex max-w-[40%] flex-shrink items-center gap-1 rounded-full px-2 py-1 transition active:opacity-60"
+          style={{
+            background: 'var(--color-surface-alt)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-body)',
+          }}
+        >
+          <Ico name="sparkles" color={modelId ? 'var(--color-accent)' : 'var(--color-text-muted)'} size={11} />
+          <span className="truncate text-xs font-semibold">{modelLabel}</span>
+          <Ico name="chevronDown" color="var(--color-text-muted)" size={11} />
+        </button>
         {/* Right-side action: only meaningful inside a module — exit back to free chat. */}
         {moduleId && onClearModule ? (
           <button
@@ -501,15 +524,34 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
             </div>
           )}
 
-          {messages.map(msg => (
-            <ChatBubble
-              key={msg.id}
-              role={msg.role}
-              content={msg.content}
-              timestamp={msg.timestamp}
-              isError={msg.isError}
-            />
-          ))}
+          {messages.map((msg, i) => {
+            // Cluster divider: when a message starts >5 min after the
+            // previous one, drop a small centered time label so long-running
+            // threads read as distinct sessions rather than one wall of text.
+            const prev = messages[i - 1];
+            const showDivider = prev != null
+              && msg.timestamp - prev.timestamp > CLUSTER_GAP_MS;
+            return (
+              <div key={msg.id} className="flex flex-col gap-6">
+                {showDivider && (
+                  <div className="flex justify-center" aria-hidden="true">
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: 'var(--color-text-faint)' }}
+                    >
+                      {formatClusterTime(msg.timestamp)}
+                    </span>
+                  </div>
+                )}
+                <ChatBubble
+                  role={msg.role}
+                  content={msg.content}
+                  timestamp={msg.timestamp}
+                  isError={msg.isError}
+                />
+              </div>
+            );
+          })}
 
           {/* Typing indicator — bare dots, no fake bubble */}
           {streaming && (
@@ -548,37 +590,6 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
       >
         <div className="mx-auto max-w-2xl px-3 pt-2"
              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0) + 10px)' }}>
-          {/* Model chip — opens the picker. Placed above the composer so
-              the user knows which brain is about to answer before they hit
-              send. modelId null → showing the org default in the chip. */}
-          <div className="mb-2 flex items-center justify-between px-1">
-            <button
-              onClick={() => setModelPickerOpen(true)}
-              aria-label={`Model: ${modelLabel}. Tap to change.`}
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1 transition active:opacity-60"
-              style={{
-                background: 'var(--color-surface-alt)',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-body)',
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-              }}
-            >
-              <Ico name="sparkles" color={modelId ? 'var(--color-accent)' : 'var(--color-text-muted)'} size={11} />
-              <span>{modelLabel}</span>
-              <Ico name="chevronDown" color="var(--color-text-muted)" size={11} />
-            </button>
-            {modelId && (
-              <button
-                onClick={() => applyModel(null, 'Default')}
-                aria-label="Reset to default model"
-                className="text-[0.6875rem] underline"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                Reset
-              </button>
-            )}
-          </div>
           <div
             className="flex items-end gap-1.5 rounded-[22px] pl-3.5 pr-1.5 py-1.5"
             style={{
@@ -634,4 +645,34 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
 
 function msgsLength(d: SessionDetail): number {
   return (d.messages ?? []).length;
+}
+
+/** Gap (ms) between two consecutive messages above which we draw a small
+ *  centered time divider, so a paused-then-resumed thread reads as clusters. */
+const CLUSTER_GAP_MS = 5 * 60 * 1000;
+
+/** Short, locale-aware label for a cluster divider: same-day shows the time,
+ *  otherwise a compact date + time. Pure formatting — no i18n string needed. */
+function formatClusterTime(ts: number): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  if (sameDay) return time;
+  const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return `${date} · ${time}`;
+}
+
+/** True on touch-first surfaces (native Capacitor shell or a coarse pointer),
+ *  where Enter should insert a newline rather than send — matching the
+ *  convention of every major mobile chat app. */
+function isMobileComposer(): boolean {
+  if (typeof window === 'undefined') return false;
+  const isNative = Boolean(
+    (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
+      .Capacitor?.isNativePlatform?.(),
+  );
+  if (isNative) return true;
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia('(pointer: coarse)').matches;
 }

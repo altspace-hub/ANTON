@@ -44,6 +44,16 @@
   --color-plum:         #6A3E8F;
   --color-plum-dim:     #E0D0ED;
 
+  /* ── Monogram tile tones (LOCKED — deeper hues for white-text contrast)
+     Used only by MonogramTile. Intentionally darker than the lighter
+     status colours above so 2-letter white glyphs stay legible. Do NOT
+     repoint these to --color-red/blue/gold — that would lose contrast. */
+  --color-mono-red:     #B73A2B;
+  --color-mono-blue:    #2D5BB8;
+  --color-mono-gold:    #B98326;
+  --color-mono-plum:    #6A3E8F;
+  --color-mono-slate:   #23252E;
+
   /* ── Surfaces (specialised) ─────────────────────────────────
      Camera viewfinder needs true black (not warm-linen) so the
      captured image preview reads accurately. */

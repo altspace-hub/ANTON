@@ -88,7 +88,7 @@ export default function Logo({ size = 72, skin: skinOverride, rounded = 'lg', cl
     <ChevronMark
       size={size}
       radius={radius}
-      bg="#2DD4A8"
+      bg="var(--color-accent)"
       stroke="#FFFFFF"
       opacities={[0.45, 0.75, 1]}
       className={className}
