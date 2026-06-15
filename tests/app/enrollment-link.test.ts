@@ -45,16 +45,19 @@ describe('validateServerUrl', () => {
     expect(() => validateServerUrl('https://anton.example.com:8443/foo')).not.toThrow();
   });
 
-  it('accepts http on localhost / 127.0.0.1', () => {
+  it('accepts http only on same-device loopback', () => {
     expect(() => validateServerUrl('http://localhost:3011')).not.toThrow();
     expect(() => validateServerUrl('http://127.0.0.1')).not.toThrow();
+    expect(() => validateServerUrl('http://[::1]:3011')).not.toThrow();
   });
 
-  it('accepts http on private LAN ranges', () => {
-    expect(() => validateServerUrl('http://192.168.1.10')).not.toThrow();
-    expect(() => validateServerUrl('http://10.0.0.5:3011')).not.toThrow();
-    expect(() => validateServerUrl('http://172.16.0.5')).not.toThrow();
-    expect(() => validateServerUrl('http://anton.local')).not.toThrow();
+  it('rejects http on LAN / .local — networked plaintext requires HTTPS (or mesh)', () => {
+    // Previously allowed; tightened so "all networked data encrypted in transit"
+    // holds. A cert-less local instance should pair with a mesh QR instead.
+    expect(() => validateServerUrl('http://192.168.1.10')).toThrow(/HTTPS/);
+    expect(() => validateServerUrl('http://10.0.0.5:3011')).toThrow(/HTTPS/);
+    expect(() => validateServerUrl('http://172.16.0.5')).toThrow(/HTTPS/);
+    expect(() => validateServerUrl('http://anton.local')).toThrow(/HTTPS/);
   });
 
   it('rejects http on public hostnames', () => {

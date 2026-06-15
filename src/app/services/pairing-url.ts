@@ -67,7 +67,16 @@ export function parsePairingLink(raw: string): ParsedPairingLink | null {
 }
 
 /**
- * Validates a server URL — HTTPS only, or HTTP on local-dev / LAN.
+ * Validates a direct-fetch server URL. HTTPS is required for any host reached
+ * over a network; plain HTTP is permitted ONLY for same-device loopback
+ * (developer / in-browser testing), which never crosses the wire.
+ *
+ * A LAN instance without a TLS certificate must pair with a mesh QR
+ * (anton://enroll?pkg=…) — that path is end-to-end encrypted through the relay
+ * and makes no direct HTTP call, so it bypasses this check entirely. This keeps
+ * the app's promise that all *networked* user data is encrypted in transit
+ * (previously LAN HTTP sent pairing tokens / queries / photos in cleartext).
+ *
  * Throws an Error with a user-friendly message on failure.
  */
 export function validateServerUrl(url: string): void {
@@ -76,15 +85,17 @@ export function validateServerUrl(url: string): void {
   try { parsed = new URL(url); } catch { throw new Error('Invalid server URL'); }
   if (parsed.protocol === 'https:') return;
   if (parsed.protocol === 'http:') {
+    // Loopback only: localhost / 127.0.0.1 / ::1 stay on the same device and
+    // never hit the network, so plain HTTP there cannot be intercepted. Any
+    // other host (LAN IP, *.local, public) over HTTP would expose the pairing
+    // token, queries, photos and messages in cleartext — require HTTPS (or the
+    // encrypted mesh QR for a cert-less local instance).
     const host = parsed.hostname;
-    const isLocal =
+    const isLoopback =
       host === 'localhost' || host === '127.0.0.1' ||
-      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /\.local$/.test(host);
-    if (isLocal) return;
-    throw new Error('Server URL must use HTTPS (HTTP only allowed on LAN)');
+      host === '::1' || host === '[::1]';
+    if (isLoopback) return;
+    throw new Error('This connection must use HTTPS. For a local instance without a certificate, pair with a mesh QR code (it stays encrypted).');
   }
   throw new Error('Server URL must use HTTPS');
 }
