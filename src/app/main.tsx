@@ -1,5 +1,6 @@
 // Apply personalization (accent + mode) BEFORE React renders to prevent flash
 import './services/personalization';
+import '../fonts';
 
 import { createRoot } from 'react-dom/client';
 import App from './App';
