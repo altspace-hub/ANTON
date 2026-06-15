@@ -57,7 +57,7 @@ import TabBar from './components/TabBar';
 import BottomSheet from './components/BottomSheet';
 import { fetchWithAuth } from './services/api';
 import { usePersonalization } from './components/ui/PersonalizationContext';
-import { Ico } from './components/ui';
+import { Ico, SectionLabel } from './components/ui';
 
 type AuthScreen = 'welcome' | 'join' | 'personalize' | 'connections';
 
@@ -272,6 +272,14 @@ export default function App() {
   // Priority: BottomSheets register themselves and pop first; then this
   // handler runs through More-menu → sub-screen → Home → exit-prompt.
   const handleAndroidBack = useCallback((): AppBackResult => {
+    // Auth screens render before the workspace, but this handler is registered
+    // at the root so it fires on them too. Without this branch, hardware-back
+    // on Join/Personalize fell through to the exit-prompt — a dead-end. Step
+    // back through the auth stack instead: Join/Personalize → Welcome; on
+    // Connections (the root for a paired/returning user, no deeper screen to
+    // pop) the exit-prompt is the sensible behaviour.
+    if (authScreen === 'join' || authScreen === 'personalize') { setAuthScreen('welcome'); return 'handled'; }
+    if (authScreen === 'connections') { return 'exit'; }
     if (showMore)                      { setShowMore(false);      return 'handled'; }
     if (selectedMail && activeTab === 'std_thread') { setActiveTab('std_mail'); return 'handled'; }
     if (chatContact && activeTab === 'community_chat') { setChatContact(null); setActiveTab('community'); return 'handled'; }
@@ -291,7 +299,7 @@ export default function App() {
     if (activeTab === 'capture' || activeTab === 'approvals' || activeTab === 'voice') { setActiveTab('home'); return 'handled'; }
     // On home (or any root state) → ask for exit-prompt
     return 'exit';
-  }, [showMore, activeTab, sessionId, selectedMail, chatContact]);
+  }, [authScreen, showMore, activeTab, sessionId, selectedMail, chatContact]);
 
   useAndroidBackButton({ onBack: handleAndroidBack });
 
@@ -563,56 +571,74 @@ export default function App() {
           Way Forward §06: monogram glyph system, no emoji. Each tile has its
           own Ico from the design-system set + a stable accent colour cue. */}
       {!isStandard && <BottomSheet open={showMore} onClose={() => setShowMore(false)} title="More" maxHeight="68dvh">
-        <div className="grid grid-cols-3 gap-2.5">
+        {/* Grouped into labelled sections (was one flat 18-tile grid — no
+            hierarchy). Every tile keeps its original id/icon/onClick; the
+            'back' tile still routes to Switch Org. Layout-only refactor. */}
+        <div className="space-y-4">
           {([
-            { id: 'work',     icon: 'briefcase',   label: 'Work',       tint: 'var(--color-accent)' },
-            { id: 'mail',     icon: 'mail',        label: 'Mail',       tint: 'var(--color-blue)' },
-            { id: 'calendar', icon: 'calendar',    label: 'Calendar',   tint: 'var(--color-accent)' },
-            { id: 'school',   icon: 'graduation',  label: 'School',     tint: 'var(--color-blue)' },
-            { id: 'schedule', icon: 'schedule',    label: 'Schedule',   tint: 'var(--color-text)' },
-            { id: 'tasks',    icon: 'checkSquare', label: 'Tasks',      tint: 'var(--color-green)' },
-            { id: 'search',   icon: 'search',      label: 'Pathfinder', tint: 'var(--color-accent)' },
-            { id: 'markets',  icon: 'barChart',    label: 'Markets',    tint: 'var(--color-gold)' },
-            { id: 'radar',    icon: 'radar',       label: 'Radar',      tint: 'var(--color-accent)' },
-            { id: 'wallet',   icon: 'wallet',      label: 'Wallet',     tint: 'var(--color-text)' },
-            { id: 'missions', icon: 'sparkles',    label: 'Missions',   tint: 'var(--color-accent)' },
-            { id: 'mywork',   icon: 'folder',      label: 'My Work',    tint: 'var(--color-blue)' },
-            { id: 'portals',  icon: 'grid',        label: 'Portals',    tint: 'var(--color-accent)' },
-            { id: 'community',icon: 'users',       label: 'Community',  tint: 'var(--color-blue)' },
-            { id: 'history',  icon: 'clock',       label: 'History',    tint: 'var(--color-text-muted)' },
-            { id: 'profile',  icon: 'user',        label: 'Profile',    tint: 'var(--color-text)' },
-            { id: 'settings', icon: 'settings',    label: 'Settings',   tint: 'var(--color-text-muted)' },
-            { id: 'back',     icon: 'switchOrg',   label: 'Switch Org', tint: 'var(--color-text-body)' },
-          ] as const).map(item => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setShowMore(false);
-                if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
-                else setActiveTab(item.id as OrgTab);
-              }}
-              className="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-r2)] py-3.5 transition hover:shadow-sm active:scale-[0.97]"
-              style={{
-                background: 'var(--color-surface)',
-                color: 'var(--color-text)',
-                border: '1px solid var(--color-border)',
-                minHeight: 78,
-              }}
-            >
-              <span
-                className="flex items-center justify-center rounded-[var(--radius-r1)]"
-                style={{
-                  width: 36, height: 36,
-                  background: 'var(--color-surface-alt)',
-                  color: item.tint,
-                }}
-              >
-                <Ico name={item.icon} size={20} />
-              </span>
-              <span className="text-[0.6875rem] font-semibold" style={{ color: 'var(--color-text-body)' }}>
-                {item.label}
-              </span>
-            </button>
+            { section: 'Workspace', items: [
+              { id: 'work',     icon: 'briefcase',   label: 'Work',       tint: 'var(--color-accent)' },
+              { id: 'mywork',   icon: 'folder',      label: 'My Work',    tint: 'var(--color-blue)' },
+              { id: 'missions', icon: 'sparkles',    label: 'Missions',   tint: 'var(--color-accent)' },
+              { id: 'search',   icon: 'search',      label: 'Pathfinder', tint: 'var(--color-accent)' },
+              { id: 'school',   icon: 'graduation',  label: 'School',     tint: 'var(--color-blue)' },
+            ] },
+            { section: 'Comms & Calendar', items: [
+              { id: 'mail',     icon: 'mail',        label: 'Mail',       tint: 'var(--color-blue)' },
+              { id: 'calendar', icon: 'calendar',    label: 'Calendar',   tint: 'var(--color-accent)' },
+              { id: 'schedule', icon: 'schedule',    label: 'Schedule',   tint: 'var(--color-text)' },
+              { id: 'tasks',    icon: 'checkSquare', label: 'Tasks',      tint: 'var(--color-green)' },
+              { id: 'community',icon: 'users',       label: 'Community',  tint: 'var(--color-blue)' },
+            ] },
+            { section: 'Intelligence', items: [
+              { id: 'markets',  icon: 'barChart',    label: 'Markets',    tint: 'var(--color-gold)' },
+              { id: 'radar',    icon: 'radar',       label: 'Radar',      tint: 'var(--color-accent)' },
+              { id: 'portals',  icon: 'grid',        label: 'Portals',    tint: 'var(--color-accent)' },
+              { id: 'wallet',   icon: 'wallet',      label: 'Wallet',     tint: 'var(--color-text)' },
+            ] },
+            { section: 'Account', items: [
+              { id: 'history',  icon: 'clock',       label: 'History',    tint: 'var(--color-text-muted)' },
+              { id: 'profile',  icon: 'user',        label: 'Profile',    tint: 'var(--color-text)' },
+              { id: 'settings', icon: 'settings',    label: 'Settings',   tint: 'var(--color-text-muted)' },
+              { id: 'back',     icon: 'switchOrg',   label: 'Switch Org', tint: 'var(--color-text-body)' },
+            ] },
+          ] as const).map(group => (
+            <div key={group.section}>
+              <SectionLabel className="mb-2 px-0.5">{group.section}</SectionLabel>
+              <div className="grid grid-cols-3 gap-2.5">
+                {group.items.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setShowMore(false);
+                      if (item.id === 'back') { setSelectedOrgId(null); setAuthScreen('connections'); }
+                      else setActiveTab(item.id as OrgTab);
+                    }}
+                    className="flex flex-col items-center justify-center gap-2 rounded-[var(--radius-r2)] py-3.5 transition hover:shadow-sm active:scale-[0.97]"
+                    style={{
+                      background: 'var(--color-surface)',
+                      color: 'var(--color-text)',
+                      border: '1px solid var(--color-border)',
+                      minHeight: 78,
+                    }}
+                  >
+                    <span
+                      className="flex items-center justify-center rounded-[var(--radius-r1)]"
+                      style={{
+                        width: 36, height: 36,
+                        background: 'var(--color-surface-alt)',
+                        color: item.tint,
+                      }}
+                    >
+                      <Ico name={item.icon} size={20} />
+                    </span>
+                    <span className="text-[0.6875rem] font-semibold" style={{ color: 'var(--color-text-body)' }}>
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </BottomSheet>}

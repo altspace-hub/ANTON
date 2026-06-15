@@ -13,6 +13,8 @@ import { getIdentity, clearIdentity } from '../services/identity';
 import { clearSession } from '../services/api';
 import { Ico, PageHeader, SectionLabel } from '../components/ui';
 import DisplaySizePicker from '../components/DisplaySizePicker';
+import { usePersonalization } from '../components/ui/PersonalizationContext';
+import { ACCENTS, type AccentKey } from '../services/personalization';
 import Logo from '../components/Logo';
 import {
   getLogoSkin, setLogoSkin, onLogoSkinChange,
@@ -23,6 +25,7 @@ interface Props { onBack: () => void; }
 
 export default function SettingsPage({ onBack }: Props) {
   const identity = getIdentity();
+  const { accent, mode, setAccent, setMode } = usePersonalization();
   const [copied, setCopied] = useState(false);
   const [logoSkin, setLogoSkinState] = useState<LogoSkin>(getLogoSkin());
   useEffect(() => onLogoSkinChange(setLogoSkinState), []);
@@ -116,6 +119,91 @@ export default function SettingsPage({ onBack }: Props) {
               <p className="mt-3 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
                 Changes apply immediately across the app. Affects in-app branding only — the home-screen launcher icon is fixed at install time.
               </p>
+            </div>
+          </section>
+
+          {/* App mode + accent — Pro users previously had NO in-app path back
+              to Standard or to change accent (a one-way door; only escape was
+              Delete-All-Data). Mirrors StdSettingsScreen's mode/accent controls. */}
+          <section>
+            <SectionLabel className="mb-2.5">App mode</SectionLabel>
+            <div
+              className="rounded-[var(--radius-r2)] p-4"
+              style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+            >
+              <button
+                onClick={() => setMode(mode === 'pro' ? 'standard' : 'pro')}
+                className="flex w-full items-center gap-3 text-left transition active:scale-[0.99]"
+              >
+                <span
+                  className="flex flex-shrink-0 items-center justify-center rounded-[var(--radius-r1)]"
+                  style={{
+                    width: 34, height: 34,
+                    background: 'var(--color-accent-soft)',
+                    color: 'var(--color-accent)',
+                  }}
+                >
+                  <Ico name={mode === 'pro' ? 'user' : 'sparkles'} size={17} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                    {mode === 'pro' ? 'Switch to Standard mode' : 'Switch to Pro mode'}
+                  </div>
+                  <div className="mt-0.5 text-[0.6875rem]" style={{ color: 'var(--color-text-muted)' }}>
+                    {mode === 'pro'
+                      ? 'Simpler — one thing at a time, for daily life'
+                      : 'All modules, more detail, advanced tools'}
+                  </div>
+                </div>
+                <Ico name="chevronRight" size={16} color="var(--color-text-faint)" />
+              </button>
+
+              <div className="mt-4">
+                <div className="mb-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                  Accent colour
+                </div>
+                <div className="grid grid-cols-4 gap-2.5">
+                  {ACCENTS.map((a) => {
+                    const active = a.id === accent;
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => setAccent(a.id as AccentKey)}
+                        className="relative aspect-square rounded-[16px]"
+                        style={{
+                          background: a.hex,
+                          border: active ? '3px solid var(--color-text)' : '3px solid transparent',
+                          boxShadow: active
+                            ? `0 6px 18px color-mix(in srgb, ${a.hex} 50%, transparent)`
+                            : '0 2px 6px rgba(0,0,0,0.08)',
+                        }}
+                        aria-label={a.label}
+                        aria-pressed={active}
+                      >
+                        {active && (
+                          <span
+                            className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+                            style={{ background: '#fff', color: a.hex }}
+                          >
+                            <Ico name="check" size={12} color="currentColor" />
+                          </span>
+                        )}
+                        <span
+                          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 rounded-b-[12px]"
+                          style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.45))' }}
+                          aria-hidden="true"
+                        />
+                        <span
+                          className="absolute bottom-1.5 left-2 right-2 text-left font-semibold text-white"
+                          style={{ fontSize: '0.6875rem', textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}
+                        >
+                          {a.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </section>
 

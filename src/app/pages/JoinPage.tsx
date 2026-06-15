@@ -552,12 +552,26 @@ export default function JoinPage({ onJoined, onBack }: Props) {
           </div>
         )}
 
-        {/* Status row — Internet / LAN / TTL */}
+        {/* Status row — honest, mode-aware. The pulsing green "active" dot only
+            shows while the camera scanner is actually running; otherwise the dot
+            is a static idle grey (or gold while pairing). No static "TTL 60s":
+            the form holds no live enrollment package, so a countdown here would
+            be fiction — the real ≤60s TTL is enforced server-side at pair time. */}
         <div className="mt-3 flex items-center gap-2 text-[0.6875rem] text-[var(--color-text-muted)]">
-          <StatusDot tone={loading ? 'gold' : 'green'} pulse size={8} />
-          <span>{loading ? 'Pairing…' : 'Awaiting scan'}</span>
-          <span className="flex-1" />
-          <span className="font-mono text-[var(--color-text-faint)]">TTL 60s</span>
+          <StatusDot
+            tone={loading ? 'gold' : showScanner ? 'green' : 'gray'}
+            pulse={loading || showScanner}
+            size={8}
+          />
+          <span>
+            {loading
+              ? 'Pairing…'
+              : showScanner
+                ? 'Scanning…'
+                : mode === 'manual'
+                  ? 'Enter server + token'
+                  : 'Tap to scan QR'}
+          </span>
         </div>
 
         <Btn
