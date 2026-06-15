@@ -117,7 +117,7 @@ the paired instance, which **may forward them to an LLM provider**.
 
 **Top-level answers**
 - Collect or share required user data? → **Yes**
-- All collected data **encrypted in transit**? → **⚠ See decision #2.** WAN traffic is HTTPS and mesh is Noise-IK E2E, **but pairing currently permits plaintext HTTP on a LAN** (`localhost`/`192.168.*`/`*.local`). As shipped today the honest answer is **"No, some data is not encrypted in transit"** — unless you enforce HTTPS/mesh (recommended) before launch.
+- All collected data **encrypted in transit**? → **Yes** (fixed 2026-06-15, commit `5022d9da`). Pairing now requires HTTPS for any networked host; plain HTTP is allowed only for same-device loopback (`localhost`/`127.0.0.1`/`::1`, which never crosses the wire), and a cert-less local instance pairs via the E2E-encrypted mesh QR. The runtime user-data path (`server_base`) is gated the same way. *(The 30s reachability probe to `/api/app/discover` carries no user data.)*
 - Provide a way to **request data deletion**? → **Yes** (Sign out / Unpair / Delete-all-data + uninstall; server-side data lives on the user's own instance).
 
 | Data type (category) | Collected | Shared | Ephemeral | Req/Opt | Purposes | Why |
@@ -143,9 +143,9 @@ the paired instance, which **may forward them to an LLM provider**.
    and for Pay the **payer's real name** (always) and **postal address** (≥ €1000) — is written to a
    world-readable blockchain. Declare these as **Shared**, and strongly consider surfacing it in-app
    + in the privacy policy (it's a genuine, irreversible privacy property users should understand).
-2. **Companion LAN-HTTP gap.** Decide: enforce HTTPS/mesh even on LAN (recommended → then you can
-   answer "all encrypted in transit = Yes"), **or** honestly answer "No, some data is not encrypted
-   in transit." Do not answer "Yes" while plaintext LAN pairing is allowed.
+2. ~~**Companion LAN-HTTP gap.**~~ **RESOLVED 2026-06-15 (commit `5022d9da`)** — pairing now requires
+   HTTPS for off-device hosts (loopback-only HTTP; cert-less local instances use the E2E mesh QR), so
+   Companion can answer "all encrypted in transit = **Yes**."
 3. **Push token rows are conditional.** FCM/APNs is gated off by default in Pay/Comm/Companion. If push
    is **not** in the launch build, delete the push-token rows; if it is, keep them (Shared = Google/Apple).
 4. **Privacy-policy URL.** All four forms require a public privacy-policy URL — blocked on the
