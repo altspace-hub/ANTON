@@ -133,7 +133,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
             Mail
           </h1>
           <div
-            className="font-mono text-[0.625rem] text-[var(--color-text-muted)]"
+            className="font-mono text-[0.6875rem] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
           >
             {antonAddress}{externalConnected > 0 && ` · +${externalConnected} connected`}
@@ -205,7 +205,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
             <Ico name="sparkles" color="var(--color-accent)" size={13} />
             <span
               className="font-mono font-bold uppercase"
-              style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.6875rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
             >
               ANTON digest
             </span>
@@ -261,7 +261,7 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
                   <div className="mb-0.5 flex items-center gap-1.5">
                     <span
                       className="font-mono font-bold uppercase"
-                      style={{ fontSize: '0.5625rem', color, letterSpacing: '0.4px' }}
+                      style={{ fontSize: '0.6875rem', color, letterSpacing: '0.4px' }}
                     >
                       {tagLabel}
                     </span>
@@ -272,12 +272,12 @@ export default function UnifiedMailScreen({ orgId, onNavigate, onOpenSettings }:
                       · {m.from_name}
                     </span>
                     {m.is_external && (
-                      <Pill tone="gold" style={{ padding: '1px 5px', fontSize: '0.5625rem' }}>EXT</Pill>
+                      <Pill tone="gold" style={{ padding: '1px 5px', fontSize: '0.6875rem' }}>EXT</Pill>
                     )}
                     <span className="flex-1" />
                     <span
                       className="font-mono text-[var(--color-text-faint)]"
-                      style={{ fontSize: '0.625rem' }}
+                      style={{ fontSize: '0.6875rem' }}
                     >
                       {inboxTime(m.received_at)}
                     </span>

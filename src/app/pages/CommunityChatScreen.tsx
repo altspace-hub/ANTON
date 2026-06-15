@@ -154,7 +154,7 @@ export default function CommunityChatScreen({ orgId, contactHash, contactName, o
             {contactName}
           </h1>
           <div
-            className="truncate font-mono text-[0.625rem]"
+            className="truncate font-mono text-[0.6875rem]"
             style={{ color: 'var(--color-text-muted)', letterSpacing: '0.3px' }}
           >
             {contactHash}
@@ -251,7 +251,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
             </p>
           </div>
           <div
-            className="mt-0.5 px-1 text-right font-mono text-[0.625rem]"
+            className="mt-0.5 px-1 text-right font-mono text-[0.6875rem]"
             style={{ color: 'var(--color-text-faint)', letterSpacing: '0.3px' }}
           >
             {formatTime(m.timestamp)}
@@ -277,7 +277,7 @@ function Bubble({ m }: { m: CommunityMessage }): JSX.Element {
           </p>
         </div>
         <div
-          className="mt-0.5 px-1 font-mono text-[0.625rem]"
+          className="mt-0.5 px-1 font-mono text-[0.6875rem]"
           style={{ color: 'var(--color-text-faint)', letterSpacing: '0.3px' }}
         >
           {formatTime(m.timestamp)}

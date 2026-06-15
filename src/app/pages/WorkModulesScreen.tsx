@@ -138,7 +138,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
             <Ico name="sparkles" color="#fff" size={13} />
             <span
               className="font-mono font-bold uppercase"
-              style={{ fontSize: '0.625rem', letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.6875rem', letterSpacing: '0.5px' }}
             >
               Find the right module
             </span>
@@ -231,14 +231,14 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
                   </div>
                   <div
                     className="mt-0.5 font-mono uppercase text-[var(--color-text-muted)]"
-                    style={{ fontSize: '0.625rem', letterSpacing: '0.3px' }}
+                    style={{ fontSize: '0.6875rem', letterSpacing: '0.3px' }}
                   >
                     {m.description}
                   </div>
                   {m.busy && m.message && (
                     <div
                       className="mt-2 font-mono font-bold"
-                      style={{ fontSize: '0.625rem', color: COLOR_VAR[m.color] }}
+                      style={{ fontSize: '0.6875rem', color: COLOR_VAR[m.color] }}
                     >
                       {m.message}
                     </div>
@@ -362,7 +362,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
               <p
                 className="font-mono uppercase"
                 style={{
-                  fontSize: '0.625rem',
+                  fontSize: '0.6875rem',
                   letterSpacing: '0.5px',
                   color: 'var(--color-text-faint)',
                 }}

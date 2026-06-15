@@ -100,7 +100,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
           >
             Calendar
           </h1>
-          <div className="font-mono text-[0.625rem] text-[var(--color-text-muted)]">
+          <div className="font-mono text-[0.6875rem] text-[var(--color-text-muted)]">
             {headerDate}{today && ` · ${today.sources.length} sources`}
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
               {s.label}
               <span
                 className="font-mono text-[var(--color-text-faint)]"
-                style={{ fontSize: '0.625rem' }}
+                style={{ fontSize: '0.6875rem' }}
               >
                 {s.count}
               </span>
@@ -169,7 +169,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
               color: d.isToday ? 'var(--color-surface)' : 'var(--color-text-body)',
             }}
           >
-            <div className="text-[0.5625rem] font-medium opacity-70">{d.d}</div>
+            <div className="text-[0.6875rem] font-medium opacity-70">{d.d}</div>
             <div className="text-[0.875rem] font-bold">{d.n}</div>
           </button>
         ))}
@@ -186,7 +186,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
             <div className="flex-1 text-[0.75rem] leading-snug text-[var(--color-text)]">
               <b>ANTON prepped</b> {today.prep.title}{today.prep.note && <> — {today.prep.note}</>}
             </div>
-            <Pill tone="teal" style={{ fontSize: '0.625rem' }}>READY</Pill>
+            <Pill tone="teal" style={{ fontSize: '0.6875rem' }}>READY</Pill>
           </div>
         )}
 
@@ -210,7 +210,7 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
                   </div>
                   <div
                     className="font-mono text-[var(--color-text-muted)]"
-                    style={{ fontSize: '0.625rem' }}
+                    style={{ fontSize: '0.6875rem' }}
                   >
                     {e.duration_minutes}m
                   </div>
@@ -233,8 +233,8 @@ export default function CalendarScreen({ orgId, onNavigate }: Props): JSX.Elemen
                     >
                       {e.title}
                     </span>
-                    {e.anton && <Pill tone="teal" style={{ fontSize: '0.5625rem' }}>ANTON</Pill>}
-                    {e.ext && <Pill tone="gold" style={{ fontSize: '0.5625rem' }}>EXT</Pill>}
+                    {e.anton && <Pill tone="teal" style={{ fontSize: '0.6875rem' }}>ANTON</Pill>}
+                    {e.ext && <Pill tone="gold" style={{ fontSize: '0.6875rem' }}>EXT</Pill>}
                   </div>
                   <div className="text-[0.6875rem] text-[var(--color-text-muted)]">
                     {e.location}

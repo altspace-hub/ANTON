@@ -217,7 +217,7 @@ function CheckpointCard({ c, onOpen }: { c: Checkpoint; onOpen: () => void }) {
     >
       {/* Mono uppercase severity tag */}
       <div
-        className="mb-2 inline-flex items-center gap-1.5 font-mono text-[0.625rem] font-bold uppercase"
+        className="mb-2 inline-flex items-center gap-1.5 font-mono text-[0.6875rem] font-bold uppercase"
         style={{ color: sevColour, letterSpacing: '0.7px' }}
       >
         <span
@@ -238,7 +238,7 @@ function CheckpointCard({ c, onOpen }: { c: Checkpoint; onOpen: () => void }) {
       )}
       {/* Meta row */}
       <div
-        className="mt-2.5 flex items-center gap-2 font-mono text-[0.625rem]"
+        className="mt-2.5 flex items-center gap-2 font-mono text-[0.6875rem]"
         style={{ color: 'var(--color-text-muted)' }}
       >
         <span>{relativeTime(c.created_at)}</span>
@@ -316,7 +316,7 @@ function DetailSheet({ c, onClose, onApprove, onReject, onModify }: {
         {/* Severity tag */}
         <div className="px-5 pt-2">
           <div
-            className="inline-flex items-center gap-1.5 font-mono text-[0.625rem] font-bold uppercase"
+            className="inline-flex items-center gap-1.5 font-mono text-[0.6875rem] font-bold uppercase"
             style={{ color: sevColour, letterSpacing: '0.7px' }}
           >
             <span

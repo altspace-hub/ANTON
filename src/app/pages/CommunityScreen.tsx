@@ -147,7 +147,7 @@ export default function CommunityScreen({ orgId, onBack, onOpenChat }: Props): J
                     style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
                   >
                     <span className="mb-2 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
-                      <Ico name="user" size={24} />
+                      <Ico name="users" size={24} />
                     </span>
                     <p className="text-[0.875rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                       No contacts yet

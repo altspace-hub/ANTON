@@ -101,7 +101,7 @@ export default function SettingsPage({ onBack }: Props) {
                     >
                       <Logo size={48} skin={skin} />
                       <span
-                        className="text-[0.625rem]"
+                        className="text-[0.6875rem]"
                         style={{
                           color: active ? 'var(--color-accent)' : 'var(--color-text-muted)',
                           fontWeight: active ? 700 : 500,

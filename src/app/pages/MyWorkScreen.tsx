@@ -159,7 +159,7 @@ export default function MyWorkScreen({ orgId, onBack, onOpenSession }: Props): J
               }}
             >
               <span className="mb-3 inline-flex" style={{ color: 'var(--color-text-faint)' }}>
-                <Ico name="briefcase" size={28} />
+                <Ico name="folder" size={28} />
               </span>
               <p className="text-[0.9375rem] font-semibold" style={{ color: 'var(--color-text)' }}>
                 {query ? `Nothing matched "${query}"` : 'Nothing here yet'}

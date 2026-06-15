@@ -40,7 +40,7 @@ function SourceCard({ s }: { s: PathfinderSource }) {
         <div className="text-[0.75rem] font-semibold leading-tight text-[var(--color-text)]">
           {s.title}
         </div>
-        <div className="mt-0.5 font-mono text-[0.625rem] text-[var(--color-text-muted)]">
+        <div className="mt-0.5 font-mono text-[0.6875rem] text-[var(--color-text-muted)]">
           {s.domain}
         </div>
         {s.snippet && (
@@ -50,7 +50,7 @@ function SourceCard({ s }: { s: PathfinderSource }) {
         )}
       </div>
       {isPrivate && (
-        <Pill tone="teal" style={{ fontSize: '0.5625rem', alignSelf: 'flex-start' }}>YOURS</Pill>
+        <Pill tone="teal" style={{ fontSize: '0.6875rem', alignSelf: 'flex-start' }}>YOURS</Pill>
       )}
     </div>
   );
@@ -104,7 +104,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             Pathfinder
           </h1>
           <div
-            className="font-mono text-[0.625rem] text-[var(--color-text-muted)]"
+            className="font-mono text-[0.6875rem] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
           >
             Search that thinks
@@ -161,7 +161,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
               <Spinner size="xs" />
               <span
                 className="font-mono font-bold uppercase"
-                style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                style={{ fontSize: '0.6875rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
               >
                 ANTON is thinking…
               </span>
@@ -182,7 +182,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
             >
               <div
                 className="mb-1 font-mono text-[var(--color-text-muted)]"
-                style={{ fontSize: '0.625rem', letterSpacing: '0.5px' }}
+                style={{ fontSize: '0.6875rem', letterSpacing: '0.5px' }}
               >
                 YOUR QUESTION
               </div>
@@ -201,7 +201,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                   <Ico name="sparkles" color="var(--color-accent)" size={13} />
                   <span
                     className="font-mono font-bold uppercase"
-                    style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                    style={{ fontSize: '0.6875rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
                   >
                     {traceHeader}
                   </span>
@@ -245,7 +245,7 @@ export default function SearchScreen({ orgId }: Props): JSX.Element {
                     : <sup
                         key={i}
                         className="font-bold"
-                        style={{ color: 'var(--color-accent)', fontSize: '0.625rem', padding: '0 1px' }}
+                        style={{ color: 'var(--color-accent)', fontSize: '0.6875rem', padding: '0 1px' }}
                       >[{seg.n}]</sup>
                 )) : result.answer}
               </div>

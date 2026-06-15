@@ -135,7 +135,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
             Markets
           </h1>
           <div
-            className="font-mono text-[0.625rem] text-[var(--color-text-muted)]"
+            className="font-mono text-[0.6875rem] text-[var(--color-text-muted)]"
             style={{ letterSpacing: '0.3px' }}
           >
             <span style={{ color: live.color }}>{live.label}</span>
@@ -178,7 +178,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
               <Ico name="sparkles" color="var(--color-accent)" size={14} />
               <span
                 className="font-mono font-bold uppercase"
-                style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+                style={{ fontSize: '0.6875rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
               >
                 Morning briefing · by your ANTON
               </span>
@@ -255,7 +255,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
                       </div>
                       {r.name && (
                         <div
-                          className="mt-0.5 truncate text-[0.625rem] text-[var(--color-text-muted)]"
+                          className="mt-0.5 truncate text-[0.6875rem] text-[var(--color-text-muted)]"
                           style={{ maxWidth: 130 }}
                         >
                           {r.name}
@@ -312,7 +312,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
           >
             <div
               className="mb-1 font-mono font-bold uppercase"
-              style={{ fontSize: '0.625rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
+              style={{ fontSize: '0.6875rem', color: 'var(--color-accent)', letterSpacing: '0.5px' }}
             >
               Local prediction · Monte Carlo
             </div>
@@ -350,7 +350,7 @@ export default function MarketsScreen(_props: Props): JSX.Element {
             </div>
             <div
               className="flex justify-between font-mono text-[var(--color-text-muted)]"
-              style={{ fontSize: '0.625rem' }}
+              style={{ fontSize: '0.6875rem' }}
             >
               {prediction.buckets.map((b, i) => (
                 <span key={i}>

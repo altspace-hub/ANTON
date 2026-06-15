@@ -73,6 +73,11 @@
   --color-adv-green:       var(--color-green);
   --color-adv-blue:        var(--color-blue);
 
+  /* ── Type-size floor (S3) ───────────────────────────────
+     No font size below 0.6875rem (11px). Prefer Tailwind text-xs/sm/base/lg
+     over pasted px→rem literals; never put --text-* in @theme (it redefines
+     the text-* utilities in Tailwind v4). */
+
   /* ── Typography ──────────────────────────────────────────── */
   --font-sans: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;

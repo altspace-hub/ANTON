@@ -37,7 +37,7 @@ function ChatBubbleImpl({ role, content, isError }: Props) {
           }}
         >
           <div
-            className="mb-1 font-mono text-[0.625rem] font-bold uppercase"
+            className="mb-1 font-mono text-[0.6875rem] font-bold uppercase"
             style={{ letterSpacing: '0.6px' }}
           >
             Error

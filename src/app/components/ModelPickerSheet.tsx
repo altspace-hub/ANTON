@@ -95,7 +95,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
               <div key={tier}>
                 <div
                   className="mb-1.5 font-mono uppercase"
-                  style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                  style={{ fontSize: '0.6875rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                 >
                   {TIER_LABELS[tier]}
                 </div>
@@ -134,7 +134,7 @@ export default function ModelPickerSheet({ open, orgId, selectedModelId, onClose
                               <span
                                 className="rounded-full px-1.5 py-0.5 font-mono uppercase"
                                 style={{
-                                  fontSize: '0.5625rem',
+                                  fontSize: '0.6875rem',
                                   letterSpacing: '0.4px',
                                   background: 'var(--color-text-faint)',
                                   color: 'var(--color-surface)',

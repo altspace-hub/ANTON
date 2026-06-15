@@ -147,7 +147,7 @@ export default function PortalsScreen({ orgId, onBack }: Props): JSX.Element {
               {grouped.map(([cat, items]) => (
                 <div key={cat} className="space-y-2">
                   <div
-                    className="px-1 font-mono text-[0.625rem] font-semibold uppercase"
+                    className="px-1 font-mono text-[0.6875rem] font-semibold uppercase"
                     style={{ color: 'var(--color-text-muted)', letterSpacing: '0.6px' }}
                   >
                     {cat}
@@ -207,7 +207,7 @@ function PortalCard({ portal }: { portal: PortalSummary }): JSX.Element {
           </h2>
           {cat && (
             <div
-              className="mt-0.5 font-mono text-[0.625rem]"
+              className="mt-0.5 font-mono text-[0.6875rem]"
               style={{ color: 'var(--color-text-muted)', letterSpacing: '0.4px' }}
             >
               {cat}

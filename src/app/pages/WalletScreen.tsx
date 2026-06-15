@@ -94,7 +94,7 @@ export default function WalletScreen({ orgId }: Props) {
                 }}
               >
                 <p
-                  className="mb-2 font-mono text-[0.625rem] font-semibold uppercase"
+                  className="mb-2 font-mono text-[0.6875rem] font-semibold uppercase"
                   style={{ color: 'var(--color-accent-dark)', letterSpacing: '0.6px' }}
                 >
                   Total Balance
@@ -112,7 +112,7 @@ export default function WalletScreen({ orgId }: Props) {
                 </p>
                 {wallets.length > 0 && wallets[0].address && (
                   <p
-                    className="mt-2 truncate font-mono text-[0.625rem]"
+                    className="mt-2 truncate font-mono text-[0.6875rem]"
                     style={{ color: 'var(--color-accent-dark)', opacity: 0.75 }}
                   >
                     {wallets[0].address.slice(0, 24)}…

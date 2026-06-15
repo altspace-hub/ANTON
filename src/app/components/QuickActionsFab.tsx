@@ -113,7 +113,7 @@ function ActionTile({ icon, tint, label, badge, onClick }: {
             background: 'var(--color-red)',
             border: '1.5px solid var(--color-surface)',
             minWidth: 20, height: 20, padding: '0 6px',
-            fontSize: '0.625rem',
+            fontSize: '0.6875rem',
           }}
         >
           {badge > 99 ? '99+' : badge}

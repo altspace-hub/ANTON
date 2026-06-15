@@ -69,7 +69,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
           >
             School
           </h1>
-          <div className="font-mono text-[0.625rem] text-[var(--color-text-muted)]">
+          <div className="font-mono text-[0.6875rem] text-[var(--color-text-muted)]">
             {feed ? `${feed.day_label} · ${feed.course_label}` : 'Loading…'}
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function SchoolFeedScreen({ orgId, onNavigate }: Props): JSX.Elem
               >
                 <div
                   className="mb-1.5 font-mono font-bold uppercase"
-                  style={{ fontSize: '0.625rem', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}
+                  style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}
                 >
                   Get started
                 </div>

@@ -93,7 +93,7 @@ export default function ProfilePage({ onBack }: Props) {
                   style={{ width: 6, height: 6, background: 'var(--color-green)' }}
                 />
                 <span
-                  className="truncate font-mono text-[0.625rem]"
+                  className="truncate font-mono text-[0.6875rem]"
                   style={{ color: 'var(--color-text-muted)', letterSpacing: '0.4px' }}
                 >
                   {identity?.contactHash || '—'}
@@ -168,7 +168,7 @@ export default function ProfilePage({ onBack }: Props) {
               Sign out
             </button>
             <p
-              className="mt-3 text-center font-mono text-[0.625rem]"
+              className="mt-3 text-center font-mono text-[0.6875rem]"
               style={{ color: 'var(--color-text-faint)', letterSpacing: '0.4px' }}
             >
               ANTON COMPANION · v1.0

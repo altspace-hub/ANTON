@@ -440,7 +440,7 @@ export default function HomeScreen({ orgId, onNavigate, onOpenSession }: Props) 
                     </p>
                     <p
                       className="mt-2"
-                      style={{ fontSize: '0.625rem', color: 'var(--color-text-faint)' }}
+                      style={{ fontSize: '0.6875rem', color: 'var(--color-text-faint)' }}
                     >
                       {new Date(a.created_at).toLocaleDateString()}
                     </p>

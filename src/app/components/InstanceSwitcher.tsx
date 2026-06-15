@@ -170,7 +170,7 @@ function InstanceCard({ instance, active, onPick, onUnpair }: { instance: Instan
             </span>
             {active && (
               <span
-                className="font-mono text-[0.625rem] uppercase"
+                className="font-mono text-[0.6875rem] uppercase"
                 style={{ color: 'var(--color-accent)', letterSpacing: '0.6px' }}
               >
                 Active
@@ -186,7 +186,7 @@ function InstanceCard({ instance, active, onPick, onUnpair }: { instance: Instan
             </div>
           )}
           {instance.contact_hash && (
-            <div className="mt-1 font-mono text-[0.625rem]" style={{ color: 'var(--color-text-faint)' }}>
+            <div className="mt-1 font-mono text-[0.6875rem]" style={{ color: 'var(--color-text-faint)' }}>
               {instance.contact_hash}
             </div>
           )}

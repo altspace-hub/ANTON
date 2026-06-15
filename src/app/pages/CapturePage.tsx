@@ -291,7 +291,7 @@ export default function CapturePage({ orgId, orgName, onSent, onBack }: Props) {
           </>
         ) : capture.isText ? (
           <div className="absolute inset-0 overflow-y-auto bg-[var(--color-surface)] p-5">
-            <div className="text-[0.625rem] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <div className="text-[0.6875rem] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Shared text
             </div>
             <div className="mt-2 whitespace-pre-wrap text-sm" style={{ color: 'var(--color-text)' }}>

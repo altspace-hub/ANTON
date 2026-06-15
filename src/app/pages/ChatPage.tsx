@@ -401,7 +401,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                   <Ico name="sparkles" color="var(--color-accent)" size={14} />
                   <span
                     className="font-mono uppercase"
-                    style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-accent)' }}
+                    style={{ fontSize: '0.6875rem', letterSpacing: '0.5px', color: 'var(--color-accent)' }}
                   >
                     {moduleDetail.areaLabel ? `${moduleDetail.areaLabel} module` : 'Module loaded'}
                   </span>
@@ -432,7 +432,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                 >
                   <div
                     className="mb-2 font-mono uppercase"
-                    style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                    style={{ fontSize: '0.6875rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                   >
                     What ANTON does here
                   </div>
@@ -458,7 +458,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                 <div className="px-1">
                   <div
                     className="mb-1.5 font-mono uppercase"
-                    style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                    style={{ fontSize: '0.6875rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                   >
                     Produces
                   </div>
@@ -485,7 +485,7 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
               <div className="px-1 pt-1">
                 <div
                   className="mb-1.5 font-mono uppercase"
-                  style={{ fontSize: '0.625rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
+                  style={{ fontSize: '0.6875rem', letterSpacing: '0.5px', color: 'var(--color-text-muted)' }}
                 >
                   Try asking
                 </div>

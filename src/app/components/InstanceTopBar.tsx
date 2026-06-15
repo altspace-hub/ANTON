@@ -165,7 +165,7 @@ export default function InstanceTopBar({ onAddInstance, onOpenApprovals, pending
                   minWidth: 16,
                   height: 16,
                   padding: '0 4px',
-                  fontSize: '0.5625rem',
+                  fontSize: '0.6875rem',
                   lineHeight: 1,
                 }}
               >
