@@ -141,8 +141,11 @@ the paired instance, which **may forward them to an LLM provider**.
 
 1. **Public-ledger "shared" is real and permanent (Pay / Business / Comm wallet).** Payment data —
    and for Pay the **payer's real name** (always) and **postal address** (≥ €1000) — is written to a
-   world-readable blockchain. Declare these as **Shared**, and strongly consider surfacing it in-app
-   + in the privacy policy (it's a genuine, irreversible privacy property users should understand).
+   world-readable blockchain. Declare these as **Shared**. **In-app surfacing DONE 2026-06-16 (commit
+   `0ee2c59f`):** a one-time `OnChainPrivacySheet` (gated before the first send / wallet-connect) plus
+   a persistent "Recorded on the public FutureChain ledger" line on the Review/QR screens. *Still to
+   do (yours):* mirror the same disclosure in the published **privacy policy** copy. Copy is
+   DRAFT-pending-counsel (bump `ONCHAIN_DISCLOSURE_VERSION` when final lands).
 2. ~~**Companion LAN-HTTP gap.**~~ **RESOLVED 2026-06-15 (commit `5022d9da`)** — pairing now requires
    HTTPS for off-device hosts (loopback-only HTTP; cert-less local instances use the E2E mesh QR), so
    Companion can answer "all encrypted in transit = **Yes**."
