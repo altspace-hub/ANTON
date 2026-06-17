@@ -28,23 +28,38 @@ async function pollGame(s, id, pred, tries = 14) {
 const setupComplete = (g) => !!g && !!g.setup && typeof g.setup.initiatorCommit === 'string' && typeof g.setup.opponentContribution === 'string';
 const boardInfo = `(()=>{ const cells=[...document.querySelectorAll('[data-cell^="sc-"]')].filter(b=>/^sc-\\d+-\\d+$/.test(b.getAttribute('data-cell'))).length; const racks=[...document.querySelectorAll('[data-cell^="sc-rack-"]')].length; return {cells, racks}; })()`;
 
-/** Place two non-blank rack tiles across the centre + submit (move 0). */
-const PLAY_FIRST = `(async()=>{
+/** (1) Verify the dictionary GATE is wired: stage the first 2 rack tiles and
+ *  assert submit-disabled ⟺ an invalid-word hint is shown. (2) Find a real
+ *  2-letter word formable from the rack, place it across the centre, assert
+ *  submit is ENABLED (dictionary accepted it) + submit (move 0). */
+const PLAY_VALID = `(async()=>{
+  const COMMON = ['AT','TO','IN','ON','AN','OR','IT','IS','AS','HE','BE','GO','SO','NO','OF','UP','WE','DO','ME','MY','BY','HI','MA','PA','US','AM','AX','OX','EL','EN','ER','ET','OE','OD','UT','UN','HA','YE','LO','ID','OW','AW','OH','AH'];
   const letterOf = (b) => { const sp=b.querySelector('span span'); return sp ? (sp.textContent||'').trim() : ''; };
-  const rackEls = [...document.querySelectorAll('[data-cell^="sc-rack-"]')];
-  const letters = rackEls.map((b,i)=>({i, L: letterOf(b)})).filter(x=>/^[A-Z]$/.test(x.L));
-  if (letters.length < 2) return {err:'need 2 non-blank rack tiles, got '+letters.length};
-  const cells = [[7,7],[7,8]];
-  for (let k=0;k<2;k++){
-    const ri = letters[k].i;
-    const rb = document.querySelector('[data-cell="sc-rack-'+ri+'"]'); rb.click(); await __td.sleep(300);
-    const cb = document.querySelector('[data-cell="sc-'+cells[k][0]+'-'+cells[k][1]+'"]'); cb.click(); await __td.sleep(300);
-  }
+  const readRack = () => [...document.querySelectorAll('[data-cell^="sc-rack-"]')].map((b,i)=>({i, L: letterOf(b)})).filter(x=>/^[A-Z]$/.test(x.L));
+  const place = async (ri, r, c) => { document.querySelector('[data-cell="sc-rack-'+ri+'"]').click(); await __td.sleep(250); document.querySelector('[data-cell="sc-'+r+'-'+c+'"]').click(); await __td.sleep(250); };
+  await __td.sleep(2500); // let the word list load
+
+  // (1) gate-consistency on the first 2 tiles
+  const rack0 = readRack();
+  if (rack0.length < 2) return {err:'need 2 letter tiles'};
+  await place(rack0[0].i, 7, 7); await place(rack0[1].i, 7, 8);
+  const sub1 = document.querySelector('[data-cell="sc-submit"]');
+  const bad1 = !!document.querySelector('[data-cell="sc-badword"]');
+  const gateOk = !!sub1 && (sub1.disabled === bad1); // submit blocked exactly when a word is invalid
+  document.querySelector('[data-cell="sc-recall"]').click(); await __td.sleep(300);
+
+  // (2) find + play a real word
+  const rack = readRack();
+  let pick = null;
+  for (const w of COMMON) { if (w[0]===w[1]) continue;
+    const a = rack.find(x=>x.L===w[0]); const b = a ? rack.find(x=>x.L===w[1] && x.i!==a.i) : null;
+    if (a && b) { pick = {word:w, ia:a.i, ib:b.i}; break; } }
+  if (!pick) return {err:'no common word formable from rack ['+rack.map(x=>x.L).join('')+']', gateOk};
+  await place(pick.ia, 7, 7); await place(pick.ib, 7, 8);
   const sub = document.querySelector('[data-cell="sc-submit"]');
-  if (!sub) return {err:'no submit'};
-  if (sub.disabled) return {err:'submit disabled (placement rejected)'};
+  if (!sub || sub.disabled) return {err:'submit disabled for real word '+pick.word, gateOk};
   sub.click(); await __td.sleep(1000);
-  return {ok:true, word: letters.slice(0,2).map(x=>x.L).join('')};
+  return {ok:true, word: pick.word, gateOk, firstBlocked: bad1};
 })()`;
 
 (async () => {
@@ -85,10 +100,12 @@ const PLAY_FIRST = `(async()=>{
     assert.equal(aBoard.cells, 225, "A's board renders 225 squares");
     assert.equal(aBoard.racks, 7, "A sees its 7 opening tiles (dealt from the fair bag)");
     console.log('3. A board: 225 squares + 7-tile rack from the fair bag');
-    const play = await sA.eval(PLAY_FIRST);
+    const play = await sA.eval(PLAY_VALID);
     if (play.err) throw new Error('A first word: ' + play.err);
+    assert.ok(play.gateOk, 'the dictionary gate is wired (submit blocked exactly when a word is invalid)');
     assert.ok(await pollGame(sB, gameId, (g) => g.moves >= 1), 'A move 0 (' + play.word + ') reached B');
-    console.log('   A played the first word "' + play.word + '" → delivered to B');
+    console.log('   dictionary gate OK (first 2 tiles ' + (play.firstBlocked ? 'were gibberish → blocked' : 'happened to be a word') + ')');
+    console.log('   A played a VALID word "' + play.word + '" → accepted + delivered to B');
 
     // 4. B's board: the seed unlocked → B sees ITS rack + A's word → B takes a turn (pass).
     const bBoard = await sB.eval(boardInfo);
