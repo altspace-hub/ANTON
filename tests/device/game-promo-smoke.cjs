@@ -22,14 +22,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const s = new CdpSession(comm.wsUrl); await install(s);
   let failed = false;
   try {
+    // A reachable contact to play against (det-03 requires the peer be reachable).
+    const opp = await s.eval(`(async()=>{ const cs=await __td.readStore('anton-comm','contacts'); const c=(cs||[]).find(x=>x&&x.publicKeyHex&&!x.blocked); return c?c.contactHash:null; })()`);
+    if (!opp) throw new Error('no reachable contact to use as opponent');
     // 1. Inject the active near-promotion game (white pawn on b7, white to move).
-    await s.eval(`(async()=>{await new Promise((res,rej)=>{const req=indexedDB.open('anton-comm');req.onsuccess=()=>{const db=req.result;const tx=db.transaction('games','readwrite');
-      tx.objectStore('games').put({ id:'promo_test', gameId:'chess', role:'initiator', myColor:0, opponentHash:'ANTON-TEST-PROMO', opponentName:'Test', status:'active',
-        moves:[ {seq:0,player:0,move:{from:12,to:28}},{seq:1,player:1,move:{from:51,to:35}},{seq:2,player:0,move:{from:28,to:35}},{seq:3,player:1,move:{from:50,to:42}},
-                {seq:4,player:0,move:{from:35,to:42}},{seq:5,player:1,move:{from:62,to:45}},{seq:6,player:0,move:{from:42,to:49}},{seq:7,player:1,move:{from:52,to:44}} ],
-        createdAt:Date.now(), updatedAt:Date.now() });
-      tx.oncomplete=()=>{db.close();res();};tx.onerror=()=>{db.close();rej(tx.error);};};req.onerror=()=>rej(req.error);});return 1;})()`);
-    console.log('1. injected an active near-promotion chess game');
+    const game = { id: 'promo_test', gameId: 'chess', role: 'initiator', myColor: 0, opponentHash: opp, opponentName: 'Test', status: 'active',
+      moves: [ {seq:0,player:0,move:{from:12,to:28}},{seq:1,player:1,move:{from:51,to:35}},{seq:2,player:0,move:{from:28,to:35}},{seq:3,player:1,move:{from:50,to:42}},
+              {seq:4,player:0,move:{from:35,to:42}},{seq:5,player:1,move:{from:62,to:45}},{seq:6,player:0,move:{from:42,to:49}},{seq:7,player:1,move:{from:52,to:44}} ],
+      createdAt: 1, updatedAt: 1 };
+    await s.eval(`(async()=>{await new Promise((res,rej)=>{const req=indexedDB.open('anton-comm');req.onsuccess=()=>{const db=req.result;const tx=db.transaction('games','readwrite');tx.objectStore('games').put(${JSON.stringify(game)});tx.oncomplete=()=>{db.close();res();};tx.onerror=()=>{db.close();rej(tx.error);};};req.onerror=()=>rej(req.error);});return 1;})()`);
+    console.log('1. injected an active near-promotion chess game vs a reachable contact');
 
     // Reload so the ChatList re-reads + shows the "your move" banner.
     await s.eval(`(()=>{setTimeout(()=>location.reload(),100);return 1;})()`); s.close();
@@ -39,9 +41,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // 2. Tap the "🎮 … your move" banner → Games tray → the game row.
     const nav = await s2.eval(`(async()=>{
-      const ban=[...document.querySelectorAll('button')].find(b=>/your move/i.test(((b.innerText||b.textContent)||''))); if(!ban) return {err:'no your-move banner'};
+      const ban=[...document.querySelectorAll('button')].find(b=>/your move|din tur/i.test(((b.innerText||b.textContent)||''))); if(!ban) return {err:'no your-move banner'};
       ban.click(); await __td.sleep(1000);
-      const row=[...document.querySelectorAll('button')].find(b=>/Chess/i.test(((b.innerText||b.textContent)||''))); if(!row) return {err:'no game row in tray'};
+      const row=[...document.querySelectorAll('button')].find(b=>/Chess|Schack/i.test(((b.innerText||b.textContent)||''))); if(!row) return {err:'no game row in tray'};
       row.click(); await __td.sleep(1300);
       const glyphs=(document.body.textContent||'').match(/[\\u2654-\\u265F]/g)||[]; return {ok:true, glyphs:glyphs.length};
     })()`);
@@ -51,12 +53,12 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // 3. Play b7xa8 → the picker must appear.
     const step = await s2.eval(`(async()=>{
-      const b7=[...document.querySelectorAll('button[aria-label]')].find(x=>x.getAttribute('aria-label')==='b7'); if(!b7) return {err:'no b7'}; b7.click(); await __td.sleep(500);
-      const a8=[...document.querySelectorAll('button[aria-label]')].find(x=>x.getAttribute('aria-label')==='a8'); if(!a8) return {err:'no a8'};
+      const b7=document.querySelector('[data-cell="b7"]'); if(!b7) return {err:'no b7'}; b7.click(); await __td.sleep(500);
+      const a8=document.querySelector('[data-cell="a8"]'); if(!a8) return {err:'no a8'};
       if(a8.disabled) return {err:'a8 not a legal target'};
       a8.click(); await __td.sleep(600);
-      const pick=[...document.querySelectorAll('button[aria-label]')].find(x=>/Promote to n/i.test(x.getAttribute('aria-label')||'')); if(!pick) return {err:'no promotion picker'};
-      pick.click(); await __td.sleep(900);
+      const pick=document.querySelector('[data-promo="n"]'); if(!pick) return {err:'no promotion picker'};
+      pick.click(); await __td.sleep(1000);
       const rows=await __td.readStore('anton-comm','games'); const g=rows.find(r=>r&&r.id==='promo_test');
       const last=g&&g.moves[g.moves.length-1];
       return {ok:true, moves:g&&g.moves.length, promo:last&&last.move&&last.move.promo};

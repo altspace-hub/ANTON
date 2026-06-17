@@ -23,9 +23,9 @@ async function readGame(s, id) {
 async function pollGame(s, id, pred, tries = 12) {
   for (let i = 0; i < tries; i++) { await sleep(2500); const g = await readGame(s, id); if (g && pred(g)) return g; } return null;
 }
-/** Tap a board square by its algebraic aria-label (e.g. 'e2'). */
+/** Tap a board square by its stable data-cell (e.g. 'e2'). */
 async function tapSquare(s, label) {
-  return s.eval(`(async()=>{const b=[...document.querySelectorAll('button[aria-label]')].find(x=>x.getAttribute('aria-label')===${JSON.stringify(label)});if(!b)return{err:'no square ${label}'};b.click();await __td.sleep(700);return{ok:true};})()`);
+  return s.eval(`(async()=>{const b=document.querySelector(${JSON.stringify('[data-cell="' + label + '"]')});if(!b)return{err:'no square ${label}'};b.click();await __td.sleep(700);return{ok:true};})()`);
 }
 
 (async () => {
@@ -42,8 +42,8 @@ async function tapSquare(s, label) {
     await openPeerThread(sA, peer);
     const step1 = await sA.eval(`(async()=>{
       const att=[...document.querySelectorAll('button[aria-label]')].find(b=>/attach|bifoga|bilag/i.test(b.getAttribute('aria-label')||'')); if(!att)return{err:'no attach'}; att.click(); await __td.sleep(700);
-      const tile=[...document.querySelectorAll('button')].find(b=>/^\\s*Game\\s*$/.test(((b.innerText||b.textContent)||'').trim())); if(!tile||tile.disabled)return{err:'no Game tile'}; tile.click(); await __td.sleep(700);
-      const pick=[...document.querySelectorAll('button')].find(b=>/Chess/i.test(((b.innerText||b.textContent)||'').trim())); if(!pick)return{err:'no Chess in picker'}; pick.click(); await __td.sleep(1400);
+      const tile=[...document.querySelectorAll('button')].find(b=>/^\\s*(Game|Spel)\\s*$/.test(((b.innerText||b.textContent)||'').trim())); if(!tile||tile.disabled)return{err:'no Game tile'}; tile.click(); await __td.sleep(700);
+      const pick=[...document.querySelectorAll('button')].find(b=>/Chess|Schack/i.test(((b.innerText||b.textContent)||'').trim())); if(!pick)return{err:'no Chess in picker'}; pick.click(); await __td.sleep(1400);
       const rows=await __td.readStore('anton-comm','games'); const g=rows.find(r=>r&&r.gameId==='chess'&&r.role==='initiator'); return {ok:true,id:g&&g.id};
     })()`);
     if (step1.err) throw new Error('A invite: ' + step1.err);
@@ -53,13 +53,13 @@ async function tapSquare(s, label) {
 
     // 2. B accepts → both active; B is auto-navigated to the board.
     await openPeerThread(sB, 'Daniel');
-    await sB.eval(`(async()=>{const p=[...document.querySelectorAll('button')].find(b=>/^\\s*Play\\s*$/.test(((b.innerText||b.textContent)||'').trim()));if(p){p.click();await __td.sleep(1600);}})()`);
+    await sB.eval(`(async()=>{const p=[...document.querySelectorAll('button')].find(b=>/^\\s*(Play|Spela)\\s*$/.test(((b.innerText||b.textContent)||'').trim()));if(p){p.click();await __td.sleep(1600);}})()`);
     assert.ok(await pollGame(sA, gameId, (g) => g.status === 'active'), 'A sees active');
     console.log('2. B accepted → active');
 
     // A opens the board + confirm pieces render (32 glyphs on a fresh board).
     await openPeerThread(sA, peer);
-    await sA.eval(`(async()=>{const b=[...document.querySelectorAll('button')].find(x=>/Open board/i.test(((x.innerText||x.textContent)||'').trim()));if(b){b.click();await __td.sleep(1200);}})()`);
+    await sA.eval(`(async()=>{const b=[...document.querySelectorAll('button')].find(x=>/Open board|Öppna brädet/i.test(((x.innerText||x.textContent)||'').trim()));if(b){b.click();await __td.sleep(1200);}})()`);
     const glyphs = await sA.eval(`(()=>{const t=document.body.textContent||'';return (t.match(/[\\u2654-\\u265F]/g)||[]).length;})()`);
     assert.ok(glyphs >= 16, "A's chessboard renders pieces (found " + glyphs + " glyphs)");
     console.log('   A board renders pieces (' + glyphs + ' chess glyphs)');

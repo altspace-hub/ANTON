@@ -52,8 +52,9 @@ async function pollGame(s, id, pred, tries = 12) {
 
 /** Tap a board column (1-indexed) on the game-board screen. */
 async function tapColumn(s, n) {
+  // n is the 1-indexed visual column; cells carry a stable 0-indexed data-cell.
   return s.eval(`(async()=>{
-    const b=[...document.querySelectorAll('button[aria-label]')].find(x=>x.getAttribute('aria-label')===${JSON.stringify('Column ' + n)});
+    const b=document.querySelector(${JSON.stringify('[data-cell="col-' + (n - 1) + '"]')});
     if(!b) return {err:'no Column ${n} button'};
     if(b.disabled) return {err:'Column ${n} disabled (not my turn?)'};
     b.click(); await __td.sleep(1200);
@@ -81,11 +82,11 @@ async function tapColumn(s, n) {
       const attach=[...document.querySelectorAll('button[aria-label]')].find(b=>/attach|bifoga|bilag/i.test(b.getAttribute('aria-label')||''));
       if(!attach) return {err:'no attach button'};
       attach.click(); await __td.sleep(700);
-      const tile=[...document.querySelectorAll('button')].find(b=>/^\\s*Game\\s*$/.test(((b.innerText||b.textContent)||'').trim()));
+      const tile=[...document.querySelectorAll('button')].find(b=>/^\\s*(Game|Spel)\\s*$/.test(((b.innerText||b.textContent)||'').trim()));
       if(!tile) return {err:'no Game tile'};
       if(tile.disabled) return {err:'Game tile disabled'};
       tile.click(); await __td.sleep(700);
-      const pick=[...document.querySelectorAll('button')].find(b=>/Connect Four/i.test(((b.innerText||b.textContent)||'').trim()));
+      const pick=[...document.querySelectorAll('button')].find(b=>/Connect Four|Fyra i rad/i.test(((b.innerText||b.textContent)||'').trim()));
       if(!pick) return {err:'no Connect Four in picker'};
       pick.click(); await __td.sleep(1400);
       const rows=await __td.readStore('anton-comm','games');
@@ -104,7 +105,7 @@ async function tapColumn(s, n) {
     // ── 2. B accepts (the GameCard) → both active ────────────────────
     await openPeerThread(sB, 'Daniel');
     const step2 = await sB.eval(`(async()=>{
-      const play=[...document.querySelectorAll('button')].find(b=>/^\\s*Play\\s*$/.test(((b.innerText||b.textContent)||'').trim()));
+      const play=[...document.querySelectorAll('button')].find(b=>/^\\s*(Play|Spela)\\s*$/.test(((b.innerText||b.textContent)||'').trim()));
       if(!play) return {err:'no Play button on the card'};
       play.click(); await __td.sleep(1600);
       return {ok:true};
@@ -116,7 +117,7 @@ async function tapColumn(s, n) {
 
     // A opens the board (B was auto-navigated on accept).
     await openPeerThread(sA, peerName);
-    await sA.eval(`(async()=>{const b=[...document.querySelectorAll('button')].find(x=>/Open board/i.test(((x.innerText||x.textContent)||'').trim()));if(b){b.click();await __td.sleep(1200);}})()`);
+    await sA.eval(`(async()=>{const b=[...document.querySelectorAll('button')].find(x=>/Open board|Öppna brädet/i.test(((x.innerText||x.textContent)||'').trim()));if(b){b.click();await __td.sleep(1200);}})()`);
 
     // ── 3. Play to A's win: A col1 ×4, B col2 ×3 ─────────────────────
     // A is player 0 (moves first). Verify each move reaches the other side.
