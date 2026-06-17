@@ -52,8 +52,10 @@ export interface AntonRemittanceItem {
   /** Line total in SEK (qty * unitPriceSek). Cached for receiver
    *  convenience — receiver may verify by recomputing. */
   lineTotalSek?: number;
-  /** VAT rate percent (0 / 6 / 12 / 25 in Sweden). */
-  vatRate?: 0 | 6 | 12 | 25;
+  /** VAT/GST rate percent. Any rate — the merchant's country sets the bands
+   *  (Sweden 0/6/12/25, Germany 7/19, India 5/12/18/28, a US sales-tax rate, …).
+   *  Was a Sweden-only union; widened to support multi-country merchants. */
+  vatRate?: number;
   /** Optional SKU / stock code. */
   sku?: string;
 }
