@@ -30,6 +30,7 @@ import { PairingError } from './pairing.js';
 import type { ProposalStore } from './proposals.js';
 import { ProposalValidationError } from './proposals.js';
 import type { ModalPayload } from '../shared/ipc-types.js';
+import { agentDebtorName, resolveUbo } from './agent-identity.js';
 
 /** Default origin allowlist — what local development + Claude Desktop
  *  + most MCP-aware tools send. Production builds may tighten this. */
@@ -341,10 +342,17 @@ export async function runModalFlow(
   // and the actual fee comes from submitPayment.
   const estimatedFeeFtc = 0.001;
 
+  // The on-wire identity this payment goes out AS — the human approves
+  // knowing the Dbtr the recipient sees ("ANTON <addr6>") and the owner
+  // (UBO) disclosed alongside. Resolved here (not via deps) because both
+  // are pure/env reads with no SDK dependency.
+  const ubo = resolveUbo();
   const payload: ModalPayload = {
     proposalId,
     agentName,
     agentPairedAgo: humanAgo(now() - agentPairedAt),
+    payingAs: agentDebtorName(snap.walletAddress),
+    ...(ubo ? { uboName: ubo.name } : {}),
     to: proposal.to,
     ...(hint?.label ? { toLabel: hint.label } : {}),
     ...(hint?.seenTimes !== undefined ? { toSeenTimes: hint.seenTimes } : {}),

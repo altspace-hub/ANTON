@@ -156,6 +156,7 @@ export class WebConfirmModalDriver implements ModalDriver {
     this.log('');
     this.log('  ⚠  PAYMENT APPROVAL REQUIRED — an AI agent wants to send FTC');
     this.log(`     Agent:  ${p.agentName}  (paired ${p.agentPairedAgo})`);
+    if (p.payingAs) this.log(`     Paying as: ${p.payingAs}${p.uboName ? `  (you: ${p.uboName})` : ''}`);
     this.log(`     To:     ${p.to}`);
     this.log(`     Amount: ${p.amountFtc} FTC  (fee ~${p.feeFtc} FTC)`);
     this.log('     → Approve or reject in your browser:');
@@ -348,6 +349,7 @@ function renderConfirmPage(rec: PendingConfirm, secret: string): string {
     <div class="row"><span class="k">To</span><span class="v">${esc(p.to)}${label}</span></div>
     <div class="row"><span class="k">Balance after</span><span class="v">${esc(p.balanceAfterFtc)} FTC</span></div>
     <div class="row"><span class="k">Agent</span><span class="v">${esc(p.agentName)} <span class="k">(paired ${esc(p.agentPairedAgo)})</span></span></div>
+    ${p.payingAs ? `<div class="row"><span class="k">Paying as</span><span class="v">${esc(p.payingAs)}${p.uboName ? ` <span class="k">(you: ${esc(p.uboName)})</span>` : ''}</span></div>` : ''}
     ${note}
     <form method="post" action="${action}">
       <input type="hidden" name="pageNonce" value="${esc(rec.pageNonce)}">

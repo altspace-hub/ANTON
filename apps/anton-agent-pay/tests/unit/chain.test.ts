@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   getChainClient, _resetChainClient,
-  submitPayment, fetchRecentTransactions, type ChainConfig,
+  submitPayment, fetchRecentTransactions, agentDebtorName, type ChainConfig,
 } from '../../src/main/chain.js';
 import {
   Wallet, InMemoryStorageBackend,
@@ -164,6 +164,68 @@ describe('chain', () => {
       expect(tx.encrypted_data).toBeTruthy();
       const json = Buffer.from(tx.encrypted_data!).toString('utf8');
       expect(json).toContain('two espressos');
+
+      unlocked.zero();
+    });
+
+    it('pays as the "ANTON <addr6>" agent identity, not "Agent Pay user"', async () => {
+      const wallet = new Wallet(new InMemoryStorageBackend());
+      await wallet.create();
+      const unlocked = await wallet.unlock();
+
+      const { fn, calls } = stubFetch({
+        '/get_utxos': [
+          { tx_id: 'u1', output_index: 0, amount: 10_000_000_000,
+            address: unlocked.address, block_height: 805000 },
+        ],
+        '/submit_signed_transaction': (body: unknown) => ({
+          status: 'accepted', tx_id: (body as { id: string }).id,
+        }),
+      });
+
+      // No UBO override + no env → no UltmtDbtr, but the Dbtr is the agent id.
+      await submitPayment({ unlocked, to: RECIPIENT, amountFtc: 1.0, chainConfig: TEST_CONFIG(fn) });
+
+      const submitCall = calls.find(c => c.url.includes('/submit_signed_transaction'));
+      const tx = submitCall!.body as { encrypted_data: number[] | null };
+      const json = Buffer.from(tx.encrypted_data!).toString('utf8');
+      const expectedName = agentDebtorName(unlocked.address); // "ANTON <addr6>"
+      expect(json).toContain(expectedName);
+      expect(json).not.toContain('Agent Pay user'); // the old hardcoded placeholder is gone
+      expect(json).not.toContain('UltmtDbtr');       // no owner configured → no UBO disclosure
+
+      unlocked.zero();
+    });
+
+    it('discloses the human owner as the Ultimate Debtor (UBO) when configured', async () => {
+      const wallet = new Wallet(new InMemoryStorageBackend());
+      await wallet.create();
+      const unlocked = await wallet.unlock();
+
+      const { fn, calls } = stubFetch({
+        '/get_utxos': [
+          { tx_id: 'u1', output_index: 0, amount: 10_000_000_000,
+            address: unlocked.address, block_height: 805000 },
+        ],
+        '/submit_signed_transaction': (body: unknown) => ({
+          status: 'accepted', tx_id: (body as { id: string }).id,
+        }),
+      });
+
+      await submitPayment({
+        unlocked, to: RECIPIENT, amountFtc: 1.0,
+        ubo: { name: 'Daniel Bardun', countryOfResidence: 'SE' },
+        chainConfig: TEST_CONFIG(fn),
+      });
+
+      const submitCall = calls.find(c => c.url.includes('/submit_signed_transaction'));
+      const tx = submitCall!.body as { encrypted_data: number[] | null };
+      const json = Buffer.from(tx.encrypted_data!).toString('utf8');
+      // Dbtr stays the agent identity; the human is disclosed as UltmtDbtr.
+      expect(json).toContain(agentDebtorName(unlocked.address));
+      expect(json).toContain('UltmtDbtr');
+      expect(json).toContain('Daniel Bardun');
+      expect(json).toContain('"CtryOfRes":"SE"');
 
       unlocked.zero();
     });

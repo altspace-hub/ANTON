@@ -62,6 +62,12 @@ export interface ModalPayload {
   proposalId: string;
   agentName: string;
   agentPairedAgo: string; // human-readable e.g. "14h ago"
+  /** The pseudonymous on-wire identity this payment goes out AS — e.g.
+   *  "ANTON VWRf68" — so the human knows the Dbtr the recipient will see. */
+  payingAs?: string;
+  /** The configured human owner (Ultimate Debtor / UBO) disclosed on the
+   *  wire, e.g. "Daniel Bardun". Absent when no owner is configured. */
+  uboName?: string;
   to: string;
   toLabel?: string; // e.g. "Acme Corp coffee shop"
   toSeenTimes?: number; // counterparty history

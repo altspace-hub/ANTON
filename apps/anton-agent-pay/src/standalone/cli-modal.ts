@@ -91,6 +91,7 @@ export function renderPayload(p: ModalPayload): string {
   lines.push('│  ⚠  PAYMENT APPROVAL REQUIRED — an AI agent wants to send FTC │');
   lines.push('└─────────────────────────────────────────────────────────────┘');
   lines.push(`   Agent:        ${p.agentName}  (paired ${p.agentPairedAgo})`);
+  if (p.payingAs) lines.push(`   Paying as:    ${p.payingAs}${p.uboName ? `   (you: ${p.uboName})` : ''}`);
   lines.push(`   To:           ${p.to}${p.toLabel ? `  (${p.toLabel}${p.toSeenTimes !== undefined ? `, seen ${p.toSeenTimes}×` : ''})` : ''}`);
   lines.push(`   Amount:       ${p.amountFtc} FTC   (fee ~${p.feeFtc} FTC)`);
   lines.push(`   Balance after: ${p.balanceAfterFtc} FTC`);

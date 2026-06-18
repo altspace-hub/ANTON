@@ -28,6 +28,9 @@
 import { pacs008, rpc } from '@futurechain/sdk';
 type Transaction = pacs008.Transaction;
 import type { UnlockedWallet } from './wallet/index.js';
+import { agentDebtorName, resolveUbo, type AgentUbo } from './agent-identity.js';
+
+export { agentDebtorName, resolveUbo, type AgentUbo } from './agent-identity.js';
 
 /** Default FTC ↔ satoshi multiplier (8 decimals, matches the chain). */
 const SATOSHI_PER_FTC = 100_000_000;
@@ -135,6 +138,9 @@ export interface SubmitPaymentArgs {
   amountFtc: number;
   /** Optional payment reference. */
   reference?: string;
+  /** Optional UBO override (the human owner). Falls back to
+   *  AGENT_PAY_UBO_NAME / AGENT_PAY_UBO_COUNTRY env when omitted. */
+  ubo?: AgentUbo;
   /** Override chain config for tests. */
   chainConfig?: ChainConfig;
 }
@@ -166,16 +172,26 @@ export async function submitPayment(args: SubmitPaymentArgs): Promise<SubmitPaym
     );
   }
 
-  // 2. Build the PACS.008 message. Minimal shape — agent payments
-  //    rarely carry rich remittance; the agent's free-text reference
-  //    goes into the unstructured `Ustrd` field. Names are placeholder
-  //    "Agent Pay user" / "Recipient" because Agent Pay doesn't yet
-  //    have an address book (Phase 2c). `accountId` is the fc_ address
-  //    on both sides — that's what the chain UTXO model needs.
+  // 2. Build the PACS.008 message. The Dbtr is the pseudonymous agent
+  //    identity "ANTON <addr6>"; when an owner is configured the human is
+  //    disclosed as the Ultimate Debtor (UltmtDbtr / UBO) — mirroring the
+  //    Pay app's #88 agent wallets. The agent's free-text reference goes
+  //    into the unstructured `Ustrd` field. `accountId` is the fc_ address
+  //    on both sides (the owner owns the agent wallet) — that's what the
+  //    chain UTXO model needs. Creditor name is a placeholder "Recipient"
+  //    until Agent Pay grows an address book (Phase 2c).
+  const ubo = resolveUbo(args.ubo);
   const builder = new pacs008.Pacs008Builder()
-    .debtor({ name: 'Agent Pay user', accountId: args.unlocked.address })
+    .debtor({ name: agentDebtorName(args.unlocked.address), accountId: args.unlocked.address })
     .creditor({ name: 'Recipient', accountId: args.to })
     .amountFtc(args.amountFtc);
+  if (ubo) {
+    builder.ultimateDebtor({
+      name: ubo.name,
+      accountId: args.unlocked.address,
+      ...(ubo.countryOfResidence ? { countryOfResidence: ubo.countryOfResidence } : {}),
+    });
+  }
   if (args.reference) builder.remittance(args.reference);
   const message = builder.build();
 

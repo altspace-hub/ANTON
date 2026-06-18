@@ -20,6 +20,13 @@
     _payload = payload;
     $('agent-name').textContent = payload.agentName || '—';
     $('agent-paired-ago').textContent = payload.agentPairedAgo || '—';
+    // The on-wire identity this payment goes out AS ("ANTON <addr6>") +
+    // the human owner (UBO), so the approver sees what the recipient sees.
+    if (payload.payingAs) {
+      $('paying-as').textContent = payload.payingAs;
+      $('ubo-name').textContent = payload.uboName ? ` (you: ${payload.uboName})` : '';
+      $('paying-as-row').hidden = false;
+    }
     $('amount').textContent = formatFtc(payload.amountFtc) + ' FTC';
     $('to-address').textContent = payload.to || '—';
     const meta = composeAddressMeta(payload);
