@@ -26,6 +26,7 @@ import { verifyProposalPayload, verifyMessage } from './agreement-crypto.js';
 import { proposalSigningString, withdrawSigningString } from './agreement-core.js';
 import type { AgreementStore } from './agreement-store.js';
 import type { AgreementIdentity } from './agreement-identity.js';
+import { buildSettlementInstruction, type SettlementInstruction } from './settlement.js';
 import type { pacs008 } from '@futurechain/sdk';
 
 export interface ProposeInput {
@@ -301,6 +302,41 @@ export class AgreementEngine {
     if (p.proposalHash !== row.proposalHash) return null;
     if (row.status !== 'accepted') return null;
     return this.store.updateStatus(p.agreementId, { status: 'agreed' });
+  }
+
+  // ── SETTLE bridge (to/from Agent Pay) ────────────────────────────────────
+
+  /** Build the settlement instruction for an agreed agreement (READ-ONLY — the
+   *  SPEND happens in Agent Pay, which opens ITS human gate). The instruction's
+   *  remittance is stamped with proposalHash + agreementId so the payee can
+   *  reconcile the on-chain payment back to THIS agreement. */
+  async getSettlementInstruction(agreementId: string): Promise<SettlementInstruction> {
+    const a = await this.store.get(agreementId);
+    if (!a) throw new Error(`agreement ${agreementId} not found`);
+    return buildSettlementInstruction(a);
+  }
+
+  /** Payer side: record the on-chain txHash that settled THIS agreement, after
+   *  Agent Pay broadcast it. agreed/accepted → 'settled' + linkedTxHash.
+   *  Idempotent: a re-mark of an already-settled agreement keeps the first link. */
+  async markSettled(agreementId: string, txHash: string): Promise<Agreement | null> {
+    const a = await this.store.get(agreementId);
+    if (!a) return null;
+    if (a.status === 'settled') return a;
+    if (a.status !== 'agreed' && a.status !== 'accepted') return null;
+    return this.store.updateStatus(agreementId, { status: 'settled', linkedTxHash: txHash, respondedAt: this.now() });
+  }
+
+  /** Payee side: match an inbound on-chain payment (by the proposalHash carried
+   *  in the remittance meta) to an agreement, and link the txHash. agreed/
+   *  accepted → 'settled'. Returns null when no agreement matches the
+   *  proposalHash or it isn't settle-able. First link wins (double-settle safe). */
+  async reconcileInboundSettlement(input: { proposalHash: string; txHash: string }): Promise<Agreement | null> {
+    const a = await this.store.getByProposalHash(input.proposalHash);
+    if (!a) return null;
+    if (a.status === 'settled') return a;
+    if (a.status !== 'agreed' && a.status !== 'accepted') return null;
+    return this.store.updateStatus(a.id, { status: 'settled', linkedTxHash: input.txHash, respondedAt: this.now() });
   }
 }
 

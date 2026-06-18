@@ -178,6 +178,53 @@ describe('AGREE — full agent-callable round-trip (buyer ⇄ seller standalones
     expect(ingest2.body.result.agreement.proposalHash).toBe(proposePayload.proposalHash);
   });
 
+  it('settle bridge: agreed → buyer settles + seller reconciles, both linked to one txHash', async () => {
+    const buyer = buildHarness({ buyerContactHash: 'buyer-hash' });
+    const seller = buildHarness({ buyerContactHash: 'seller-hash' });
+
+    // Drive to 'agreed' on both sides.
+    buyer.modal.queueApprove();
+    const proposeRes = await buyer.call('proposeAgreement', {
+      decision: 'Air Jordans EU43 ×1', terms: 'ship to SE', amountMicroFtc: '1800000',
+      counterpartyAddress: 'fc_sellerADDR', counterpartyHash: 'seller-hash',
+    });
+    const proposePayload = (await settle(buyer, proposeRes.body.result.proposalId)).payload;
+    const ing1 = await seller.call('ingestAgreement', { type: 'propose', fromHash: 'buyer-hash', payload: proposePayload });
+    const agreementId = ing1.body.result.agreement.id;
+    seller.modal.queueApprove();
+    const acceptRes = await seller.call('acceptAgreement', { agreementId });
+    const acceptPayload = (await settle(seller, acceptRes.body.result.proposalId)).payload;
+    await buyer.call('ingestAgreement', { type: 'respond', fromHash: 'seller-hash', payload: acceptPayload });
+
+    // Buyer is the proposer — its local id differs from the seller's. Get the
+    // buyer-side agreement to drive settlement (the proposalHash is shared).
+    const buyerAgreementId = (await buyer.call('listAgreements')).body.result.agreements[0].id;
+    const proposalHash = proposePayload.proposalHash;
+
+    // Buyer builds the settlement instruction (the stamped remittance for Agent Pay).
+    const instrRes = await buyer.call('getSettlementInstruction', { agreementId: buyerAgreementId });
+    const instr = instrRes.body.result.instruction;
+    expect(instr.to).toBe('fc_sellerADDR');
+    expect(instr.amountFtc).toBe(1.8);
+    expect(instr.remittance.meta).toEqual({ agreementId: buyerAgreementId, proposalHash });
+
+    // ...the agent hands `instr` to Agent Pay → gets a txHash. Record it both sides.
+    const TX = 'fc_tx_deadbeef0001';
+    const buyerSettled = await buyer.call('markAgreementSettled', { agreementId: buyerAgreementId, txHash: TX });
+    expect(buyerSettled.body.result.agreement.status).toBe('settled');
+    expect(buyerSettled.body.result.agreement.linkedTxHash).toBe(TX);
+
+    // Seller observes the inbound payment + reconciles by proposalHash.
+    const sellerReco = await seller.call('reconcileSettlement', { proposalHash, txHash: TX });
+    expect(sellerReco.body.result.matched).toBe(true);
+    expect(sellerReco.body.result.agreement.status).toBe('settled');
+    expect(sellerReco.body.result.agreement.linkedTxHash).toBe(TX);
+
+    // A reconcile for an unknown proposalHash matches nothing.
+    const miss = await seller.call('reconcileSettlement', { proposalHash: 'f'.repeat(64), txHash: TX });
+    expect(miss.body.result.matched).toBe(false);
+  });
+
   it('declineAgreement produces a signed decline the proposer can ingest', async () => {
     const buyer = buildHarness({ buyerContactHash: 'buyer-hash' });
     const seller = buildHarness({ buyerContactHash: 'seller-hash' });

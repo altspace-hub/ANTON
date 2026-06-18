@@ -114,6 +114,34 @@ export const MCP_TOOLS = [
       properties: { agreementId: { type: 'string', maxLength: 128 } },
     },
   },
+  {
+    name: 'getSettlementInstruction',
+    description:
+      'For an AGREED agreement, get the instruction to settle it on FutureChain: the payee address, FTC amount, and '
+      + 'a remittance STAMPED with the proposalHash + agreementId. Hand this to Anton Agent Pay\'s proposePayment '
+      + '(the spend opens Agent Pay\'s own human approval). The stamp lets the payee reconcile the on-chain payment '
+      + 'to this exact agreement.',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 } },
+    },
+  },
+  {
+    name: 'markAgreementSettled',
+    description: 'Payer side: after Agent Pay broadcast the settlement, record the on-chain txHash against the agreement (→ status "settled").',
+    inputSchema: {
+      type: 'object', required: ['agreementId', 'txHash'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 }, txHash: { type: 'string', maxLength: 256 } },
+    },
+  },
+  {
+    name: 'reconcileSettlement',
+    description: 'Payee side: an inbound payment arrived carrying a proposalHash in its remittance meta — match it to your agreement + link the txHash (→ status "settled").',
+    inputSchema: {
+      type: 'object', required: ['proposalHash', 'txHash'], additionalProperties: false,
+      properties: { proposalHash: { type: 'string', maxLength: 128 }, txHash: { type: 'string', maxLength: 256 } },
+    },
+  },
 ] as const;
 
 export function buildMcpServer(deps: ServerDeps): Server {
@@ -235,6 +263,29 @@ async function dispatchMcpTool(
       const agreementId = String(args.agreementId ?? '');
       if (!agreementId) throw new Error('validation: agreementId is required');
       return engine.withdraw(agreementId);
+    }
+    case 'getSettlementInstruction': {
+      const engine = requireEngine(deps);
+      const agreementId = String(args.agreementId ?? '');
+      if (!agreementId) throw new Error('validation: agreementId is required');
+      return { instruction: await engine.getSettlementInstruction(agreementId) };
+    }
+    case 'markAgreementSettled': {
+      const engine = requireEngine(deps);
+      const agreementId = String(args.agreementId ?? '');
+      const txHash = String(args.txHash ?? '');
+      if (!agreementId || !txHash) throw new Error('validation: agreementId and txHash are required');
+      const a = await engine.markSettled(agreementId, txHash);
+      if (!a) throw new Error('agreement not found or not in an agreed/accepted state');
+      return { agreement: a };
+    }
+    case 'reconcileSettlement': {
+      const engine = requireEngine(deps);
+      const proposalHash = String(args.proposalHash ?? '');
+      const txHash = String(args.txHash ?? '');
+      if (!proposalHash || !txHash) throw new Error('validation: proposalHash and txHash are required');
+      const a = await engine.reconcileInboundSettlement({ proposalHash, txHash });
+      return { matched: a !== null, agreement: a };
     }
     default:
       throw new Error(`unknown tool: ${name}`);

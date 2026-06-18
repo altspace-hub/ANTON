@@ -60,6 +60,8 @@ export const COLLAB_VERBS = [
   // AGREE — non-committing / inbound / reads (ungated):
   'declineAgreement', 'withdrawAgreement', 'ingestAgreement',
   'getAgreement', 'listAgreements', 'getAgreementProposal', 'cancelAgreementProposal',
+  // SETTLE bridge (to/from Agent Pay) — the spend itself is gated in Agent Pay:
+  'getSettlementInstruction', 'markAgreementSettled', 'reconcileSettlement',
 ] as const;
 
 export interface ServerDeps {
@@ -146,6 +148,16 @@ export const IngestAgreementParams = z.object({
   type: z.enum(['propose', 'respond', 'withdraw', 'ack']),
   fromHash: z.string().min(1).max(256),
   payload: z.record(z.unknown()),
+});
+
+export const MarkSettledParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  txHash: z.string().min(1).max(256),
+});
+
+export const ReconcileSettlementParams = z.object({
+  proposalHash: z.string().min(1).max(128),
+  txHash: z.string().min(1).max(256),
 });
 
 export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): FastifyInstance {
@@ -362,6 +374,39 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
           const ok = deps.approvals.cancel(p.data.proposalId);
           if (!ok) return reply.send(jsonRpcError(ERR_NOT_FOUND, 'proposal not pending or unknown', id));
           return reply.send(jsonRpcResult(id, { state: 'cancelled' }));
+        }
+
+        // ── SETTLE bridge ────────────────────────────────────────────────────
+        case 'getSettlementInstruction': {
+          const engine = requireEngine(deps);
+          if (!engine) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'agreement engine not configured', id));
+          const p = AgreementIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          try {
+            const instruction = await engine.getSettlementInstruction(p.data.agreementId);
+            return reply.send(jsonRpcResult(id, { instruction }));
+          } catch (e) {
+            return reply.send(jsonRpcError(ERR_VALIDATION, msgOf(e), id));
+          }
+        }
+
+        case 'markAgreementSettled': {
+          const engine = requireEngine(deps);
+          if (!engine) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'agreement engine not configured', id));
+          const p = MarkSettledParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const a = await engine.markSettled(p.data.agreementId, p.data.txHash);
+          if (!a) return reply.send(jsonRpcError(ERR_VALIDATION, 'agreement not found or not in an agreed/accepted state', id));
+          return reply.send(jsonRpcResult(id, { agreement: a }));
+        }
+
+        case 'reconcileSettlement': {
+          const engine = requireEngine(deps);
+          if (!engine) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'agreement engine not configured', id));
+          const p = ReconcileSettlementParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const a = await engine.reconcileInboundSettlement({ proposalHash: p.data.proposalHash, txHash: p.data.txHash });
+          return reply.send(jsonRpcResult(id, { matched: a !== null, agreement: a }));
         }
 
         default:
