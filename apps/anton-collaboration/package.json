@@ -1,0 +1,28 @@
+{
+  "name": "@anton/collaboration",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Anton Collaboration — a local agent-callable (JSON-RPC + MCP) program that lets an AI agent DISCOVER a business's agent (searchable .anton registry), TALK + NEGOTIATE, and reach a signed agreement that SETTLES on FutureChain via Anton Agent Pay. See docs/AGENT_COLLABORATION_COMMERCE_PLAN.md.",
+  "type": "module",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "start:standalone": "tsx src/standalone/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@futurechain/sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@noble/ed25519": "^2.1.0",
+    "@noble/hashes": "^1.8.0",
+    "fastify": "^5.8.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.18"
+  }
+}
