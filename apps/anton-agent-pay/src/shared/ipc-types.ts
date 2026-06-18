@@ -4,6 +4,7 @@
  *
  * Spec: docs/ANTON_AGENT_PAY_SPEC.md
  */
+import type { AntonRemittance } from '@futurechain/sdk/pacs008';
 
 /** A payment proposal — created by an agent via `proposePayment`,
  *  shown in the confirmation modal, lives in the in-memory proposal
@@ -15,8 +16,12 @@ export interface PaymentProposal {
   to: string;
   /** Amount in FTC (decimal — not satoshi). */
   amountFtc: number;
-  /** Optional structured reference (ISO 20022 remittance, etc). */
+  /** Optional free-text reference (PACS.008 unstructured Ustrd). */
   reference?: string;
+  /** Optional structured remittance (invoice / agreement / info) the agent
+   *  attached — encoded into the PACS.008 RmtInf on submit, summarised in the
+   *  approval modal. Carried internally; not echoed back via getProposal. */
+  remittance?: AntonRemittance;
   /** Optional free-text note from the agent. Shown in the modal,
    *  clearly marked as agent-supplied. NOT chain-validated. */
   agentNote?: string;
@@ -74,6 +79,10 @@ export interface ModalPayload {
   amountFtc: number;
   feeFtc: number;
   agentNote?: string;
+  /** Human-readable lines summarising the structured remittance the agent
+   *  attached (invoice items, agreed terms, info message). Shown in the modal
+   *  so the human sees the contract / information that rides with the payment. */
+  remittanceSummary?: string[];
   balanceAfterFtc: number;
   walletHasPassphrase: boolean;
   expiresAtMs: number;

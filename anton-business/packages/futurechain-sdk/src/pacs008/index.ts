@@ -338,6 +338,9 @@ export class Pacs008Builder {
   amountFtc(v: number): this { this.partial.amountFtc = v; return this; }
   uetr(v: string): this { this.partial.uetr = v; return this; }
   remittance(v: string): this { this.partial.remittanceText = v; return this; }
+  /** Structured RmtInf block (Wave 10 — rich remittance). Build it with
+   *  `encodeRemittance()`. Wins over `remittance(text)` when both are set. */
+  remittanceInfo(v: NonNullable<Pacs008BuildInput['remittanceInfo']>): this { this.partial.remittanceInfo = v; return this; }
   bic(v: string): this { this.partial.bic = v; return this; }
   purpose(v: string): this { this.partial.purpose = v; return this; }
 

@@ -96,6 +96,10 @@ export function renderPayload(p: ModalPayload): string {
   lines.push(`   Amount:       ${p.amountFtc} FTC   (fee ~${p.feeFtc} FTC)`);
   lines.push(`   Balance after: ${p.balanceAfterFtc} FTC`);
   if (p.agentNote) lines.push(`   Agent note:   "${p.agentNote}"  (agent-supplied, not verified)`);
+  if (p.remittanceSummary && p.remittanceSummary.length > 0) {
+    lines.push('   Attached:');
+    for (const s of p.remittanceSummary) lines.push(`     ${s}`);
+  }
   lines.push('   ─────────────────────────────────────────────────────────────');
   lines.push('   Approve this payment?  type  y  + Enter   (anything else rejects)');
   lines.push('   > ');

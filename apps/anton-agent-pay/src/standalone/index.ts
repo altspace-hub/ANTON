@@ -110,6 +110,7 @@ async function buildWalletDeps(wallet: Wallet, ledger: TransactionLedger): Promi
           to: req.to,
           amountFtc: req.amountFtc,
           ...(req.reference !== undefined ? { reference: req.reference } : {}),
+          ...(req.remittance !== undefined ? { remittance: req.remittance } : {}),
         });
         // Persist the send so it survives restart + node outages. Best-effort
         // — a ledger write failure must never undo a broadcast payment.

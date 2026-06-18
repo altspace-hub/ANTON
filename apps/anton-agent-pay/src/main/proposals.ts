@@ -14,6 +14,7 @@
  * Spec: docs/ANTON_AGENT_PAY_SPEC.md §6.2, §7
  */
 import { randomBytes } from 'node:crypto';
+import type { AntonRemittance } from '@futurechain/sdk/pacs008';
 import type { PaymentProposal, ProposalState } from '../shared/ipc-types.js';
 
 /** Min modal lifetime — the user gets at least this much time to react. */
@@ -28,6 +29,10 @@ export interface ProposeArgs {
   to: string;
   amountFtc: number;
   reference?: string;
+  /** Structured remittance (invoice / agreement / info) the agent attached.
+   *  Validated by the server (via the SDK's encodeRemittance) before reaching
+   *  here; carried onto the proposal for the modal summary + the submit RmtInf. */
+  remittance?: AntonRemittance;
   agentNote?: string;
   /** Agent-requested modal lifetime in ms — clamped to
    *  [MIN_PROPOSAL_TTL_MS, MAX_PROPOSAL_TTL_MS]. */
@@ -122,6 +127,7 @@ export class ProposalStore {
       to: args.to,
       amountFtc: args.amountFtc,
       ...(args.reference !== undefined ? { reference: args.reference } : {}),
+      ...(args.remittance !== undefined ? { remittance: args.remittance } : {}),
       ...(args.agentNote !== undefined ? { agentNote: args.agentNote } : {}),
       agentName,
       createdAt: now,

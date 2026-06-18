@@ -41,6 +41,12 @@
       $('agent-note').textContent = payload.agentNote;
       $('note-block').hidden = false;
     }
+    // Structured remittance (invoice / agreement / info) the agent attached.
+    if (payload.remittanceSummary && payload.remittanceSummary.length) {
+      $('remittance-summary').textContent = payload.remittanceSummary.join('\n');
+      $('remittance-summary').style.whiteSpace = 'pre-wrap';
+      $('remittance-block').hidden = false;
+    }
     $('balance-after').textContent = formatFtc(payload.balanceAfterFtc) + ' FTC';
     if (payload.walletHasPassphrase) {
       $('passphrase-block').hidden = false;

@@ -30,7 +30,9 @@ import { PairingError } from './pairing.js';
 import type { ProposalStore } from './proposals.js';
 import { ProposalValidationError } from './proposals.js';
 import type { ModalPayload } from '../shared/ipc-types.js';
+import type { AntonRemittance } from '@futurechain/sdk/pacs008';
 import { agentDebtorName, resolveUbo } from './agent-identity.js';
+import { buildAntonRemittance, summarizeRemittance } from './agent-remittance.js';
 
 /** Default origin allowlist — what local development + Claude Desktop
  *  + most MCP-aware tools send. Production builds may tighten this. */
@@ -70,6 +72,7 @@ export interface ServerDeps {
     to: string;
     amountFtc: number;
     reference?: string;
+    remittance?: AntonRemittance;
     passphrase?: string;
   }) => Promise<{ txId: string; feeFtc: number }>;
   /** Returns recent transactions for the active wallet. */
@@ -107,10 +110,39 @@ export interface CounterpartyHint {
 
 // ── JSON-RPC param schemas ────────────────────────────────────────
 
+/** Structured remittance an agent may attach (invoice / agreement / info).
+ *  Caps bound it well under the SDK's hard size cap (the SDK still validates
+ *  the final encoded size at submit). */
+const RemittanceItemSchema = z.object({
+  name: z.string().max(200),
+  qty: z.number(),
+  unitPriceSek: z.number().optional(),
+  lineTotalSek: z.number().optional(),
+  vatRate: z.number().optional(),
+  sku: z.string().max(64).optional(),
+});
+export const RemittanceSchema = z.object({
+  kind: z.enum(['order', 'invoice', 'agreement', 'message']).optional(),
+  ref: z.string().max(140).optional(),
+  items: z.array(RemittanceItemSchema).max(50).optional(),
+  amountSek: z.number().optional(),
+  vatSek: z.number().optional(),
+  message: z.string().max(2000).optional(),
+  decision: z.string().max(2000).optional(),
+  terms: z.string().max(4000).optional(),
+  // Cap key COUNT + key/value length: with every other field bounded, this
+  // keeps a zod-valid remittance well under the SDK's 100 KB encode cap, so it
+  // can never throw at submit time (after the human already approved).
+  meta: z.record(z.string().max(64), z.string().max(500))
+    .refine((m) => Object.keys(m).length <= 24, { message: 'meta: at most 24 keys' })
+    .optional(),
+});
+
 const ProposePaymentParams = z.object({
   to: z.string(),
   amountFtc: z.number().positive(),
   reference: z.string().optional(),
+  remittance: RemittanceSchema.optional(),
   agentNote: z.string().max(280).optional(),
   ttlMs: z.number().int().positive().optional(),
 });
@@ -218,9 +250,16 @@ export function buildServer(
               ERR_VALIDATION, formatZodError(p.error), id,
             ));
           }
+          // Build the v=1 AntonRemittance from the agent's input (kind inferred
+          // when omitted). Final on-wire size is validated by the SDK at submit.
+          const { remittance: rmtInput, ...rest } = p.data;
+          const args = {
+            ...rest,
+            ...(rmtInput ? { remittance: buildAntonRemittance(rmtInput) } : {}),
+          };
           let proposal;
           try {
-            proposal = deps.proposals.propose(agent.name, p.data);
+            proposal = deps.proposals.propose(agent.name, args);
           } catch (e) {
             if (e instanceof ProposalValidationError) {
               return reply.send(jsonRpcError(ERR_VALIDATION, e.message, id));
@@ -359,6 +398,7 @@ export async function runModalFlow(
     amountFtc: proposal.amountFtc,
     feeFtc: estimatedFeeFtc,
     ...(proposal.agentNote ? { agentNote: proposal.agentNote } : {}),
+    ...(proposal.remittance ? { remittanceSummary: summarizeRemittance(proposal.remittance) } : {}),
     balanceAfterFtc: snap.balanceFtc - proposal.amountFtc - estimatedFeeFtc,
     walletHasPassphrase: hasPass,
     expiresAtMs: proposal.expiresAt,
@@ -392,6 +432,9 @@ export async function runModalFlow(
       amountFtc: proposal.amountFtc,
       ...(proposal.reference !== undefined
           ? { reference: proposal.reference }
+          : {}),
+      ...(proposal.remittance !== undefined
+          ? { remittance: proposal.remittance }
           : {}),
       ...(decision.passphrase !== undefined
           ? { passphrase: decision.passphrase }

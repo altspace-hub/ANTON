@@ -22,7 +22,8 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ServerDeps } from './server.js';
-import { runModalFlow } from './server.js';
+import { runModalFlow, RemittanceSchema } from './server.js';
+import { buildAntonRemittance } from './agent-remittance.js';
 import { ProposalValidationError } from './proposals.js';
 
 /** MCP tool definitions — identical method names to the JSON-RPC
@@ -69,12 +70,48 @@ export const MCP_TOOLS = [
         },
         reference: {
           type: 'string',
-          description: 'Optional structured payment reference (ISO 20022 remittance).',
+          description: 'Optional free-text payment reference (rides on-wire as the PACS.008 Ustrd).',
+        },
+        remittance: {
+          type: 'object',
+          description: 'Optional STRUCTURED remittance to carry with the payment — an invoice '
+            + '(kind:"invoice" + items), an agreement/contract (kind:"agreement" + decision + terms), '
+            + 'or free-text information (kind:"message" + message). Encoded into the PACS.008 RmtInf '
+            + 'and shown to the human in the approval modal. `kind` is inferred if omitted.',
+          additionalProperties: false,
+          properties: {
+            kind: { type: 'string', enum: ['order', 'invoice', 'agreement', 'message'] },
+            ref: { type: 'string', maxLength: 140, description: 'Your reference / document number.' },
+            message: { type: 'string', maxLength: 2000, description: 'Free-text information to convey.' },
+            decision: { type: 'string', maxLength: 2000, description: 'What the parties agreed (a contract).' },
+            terms: { type: 'string', maxLength: 4000, description: 'Terms / clauses of the agreement.' },
+            amountSek: { type: 'number' },
+            vatSek: { type: 'number' },
+            meta: {
+              type: 'object', maxProperties: 24,
+              propertyNames: { maxLength: 64 },
+              additionalProperties: { type: 'string', maxLength: 500 },
+            },
+            items: {
+              type: 'array', maxItems: 50,
+              items: {
+                type: 'object', required: ['name', 'qty'], additionalProperties: false,
+                properties: {
+                  name: { type: 'string', maxLength: 200 },
+                  qty: { type: 'number' },
+                  unitPriceSek: { type: 'number' },
+                  lineTotalSek: { type: 'number' },
+                  vatRate: { type: 'number' },
+                  sku: { type: 'string', maxLength: 64 },
+                },
+              },
+            },
+          },
         },
         agentNote: {
           type: 'string', maxLength: 280,
           description: 'Optional short note shown in the modal to give the human context. '
-            + 'Marked as agent-supplied (not chain-validated).',
+            + 'Marked as agent-supplied (not chain-validated). Display-only — not sent on-wire.',
         },
         ttlMs: {
           type: 'integer', minimum: 10000, maximum: 300000,
@@ -173,11 +210,20 @@ export async function dispatchMcpTool(
     case 'proposePayment': {
       const to = String(args.to ?? '');
       const amountFtc = Number(args.amountFtc);
+      // Validate + build the structured remittance with the SAME schema the
+      // JSON-RPC server uses (parity across transports).
+      let remittance;
+      if (args.remittance !== undefined) {
+        const parsed = RemittanceSchema.safeParse(args.remittance);
+        if (!parsed.success) throw new Error('validation: invalid remittance');
+        remittance = buildAntonRemittance(parsed.data);
+      }
       try {
         const proposal = deps.proposals.propose('mcp-stdio', {
           to,
           amountFtc,
           ...(typeof args.reference === 'string' ? { reference: args.reference } : {}),
+          ...(remittance ? { remittance } : {}),
           ...(typeof args.agentNote === 'string' ? { agentNote: args.agentNote } : {}),
           ...(typeof args.ttlMs === 'number' ? { ttlMs: args.ttlMs } : {}),
         });

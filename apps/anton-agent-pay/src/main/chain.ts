@@ -136,8 +136,11 @@ export interface SubmitPaymentArgs {
   to: string;
   /** Amount in FTC (decimal). */
   amountFtc: number;
-  /** Optional payment reference. */
+  /** Optional free-text payment reference (PACS.008 unstructured Ustrd). */
   reference?: string;
+  /** Optional structured remittance (invoice / agreement / info) — encoded
+   *  into the PACS.008 RmtInf. Wins over `reference` when both are set. */
+  remittance?: pacs008.AntonRemittance;
   /** Optional UBO override (the human owner). Falls back to
    *  AGENT_PAY_UBO_NAME / AGENT_PAY_UBO_COUNTRY env when omitted. */
   ubo?: AgentUbo;
@@ -192,7 +195,14 @@ export async function submitPayment(args: SubmitPaymentArgs): Promise<SubmitPaym
       ...(ubo.countryOfResidence ? { countryOfResidence: ubo.countryOfResidence } : {}),
     });
   }
-  if (args.reference) builder.remittance(args.reference);
+  // A structured remittance (invoice / agreement / free-text info) wins over
+  // the legacy single-line reference. Encoded via the SDK, which validates
+  // v=1 and enforces the size cap (throws → the modal flow rejects cleanly).
+  if (args.remittance) {
+    builder.remittanceInfo(pacs008.encodeRemittance(args.remittance).rmtInf);
+  } else if (args.reference) {
+    builder.remittance(args.reference);
+  }
   const message = builder.build();
 
   // 3. Build + sign the on-chain Transaction. Uses the in-JS signer

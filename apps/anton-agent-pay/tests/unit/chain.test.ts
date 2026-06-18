@@ -4,6 +4,7 @@
  * + UETR plumbing + Ed25519 signing.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { pacs008 } from '@futurechain/sdk';
 import {
   getChainClient, _resetChainClient,
   submitPayment, fetchRecentTransactions, agentDebtorName, type ChainConfig,
@@ -226,6 +227,45 @@ describe('chain', () => {
       expect(json).toContain('UltmtDbtr');
       expect(json).toContain('Daniel Bardun');
       expect(json).toContain('"CtryOfRes":"SE"');
+
+      unlocked.zero();
+    });
+
+    it('encodes a structured remittance into the PACS.008 RmtInf (decodes back)', async () => {
+      const wallet = new Wallet(new InMemoryStorageBackend());
+      await wallet.create();
+      const unlocked = await wallet.unlock();
+
+      const { fn, calls } = stubFetch({
+        '/get_utxos': [
+          { tx_id: 'u1', output_index: 0, amount: 10_000_000_000,
+            address: unlocked.address, block_height: 805000 },
+        ],
+        '/submit_signed_transaction': (body: unknown) => ({
+          status: 'accepted', tx_id: (body as { id: string }).id,
+        }),
+      });
+
+      await submitPayment({
+        unlocked, to: RECIPIENT, amountFtc: 1.0,
+        remittance: { v: 1, kind: 'invoice', ref: 'INV-9',
+          items: [{ name: 'Consulting', qty: 3, lineTotalSek: 300 }], message: 'thanks' },
+        chainConfig: TEST_CONFIG(fn),
+      });
+
+      const submitCall = calls.find((c) => c.url.includes('/submit_signed_transaction'));
+      const tx = submitCall!.body as { encrypted_data: number[] | null };
+      const json = Buffer.from(tx.encrypted_data!).toString('utf8');
+      // The structured remittance rode on-wire: the ANTON-V1 payload + an Strd
+      // block are present (not just a single-line Ustrd).
+      expect(json).toContain('ANTON-V1');
+      expect(json).toContain('Strd');
+      // The PACS.008 carries the encoded remittance — round-trip it back.
+      const msg = JSON.parse(json) as { document: { FIToFICstmrCdtTrf: { CdtTrfTxInf: Array<{ RmtInf: unknown }> } } };
+      const rmtInf = msg.document.FIToFICstmrCdtTrf.CdtTrfTxInf[0]!.RmtInf;
+      const decoded = pacs008.decodeRemittance(rmtInf);
+      expect(decoded).toMatchObject({ v: 1, kind: 'invoice', ref: 'INV-9', message: 'thanks' });
+      expect(decoded!.items?.[0]).toMatchObject({ name: 'Consulting', qty: 3 });
 
       unlocked.zero();
     });

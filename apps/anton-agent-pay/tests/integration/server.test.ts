@@ -8,7 +8,7 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
-import { buildServer, type ServerDeps } from '../../src/main/server.js';
+import { buildServer, ERR_VALIDATION, type ServerDeps } from '../../src/main/server.js';
 import { ProposalStore } from '../../src/main/proposals.js';
 import { PairingStore } from '../../src/main/pairing.js';
 import { StubModalDriver } from '../../src/main/modal.js';
@@ -20,7 +20,7 @@ interface Harness {
   pairings: PairingStore;
   proposals: ProposalStore;
   modal: StubModalDriver;
-  submitCalls: Array<{ to: string; amountFtc: number; reference?: string }>;
+  submitCalls: Array<{ to: string; amountFtc: number; reference?: string; remittance?: unknown }>;
   /** Inject a different "now" without mocking Date. */
   setNow: (fn: () => number) => void;
   /** Tick the chain — used to drive lastSeenBlock. */
@@ -52,6 +52,7 @@ function buildHarness(): Harness {
         to: req.to,
         amountFtc: req.amountFtc,
         ...(req.reference !== undefined ? { reference: req.reference } : {}),
+        ...(req.remittance !== undefined ? { remittance: req.remittance } : {}),
       });
       return { txId: `tx-${submitCalls.length}`, feeFtc: 0.001 };
     },
@@ -160,6 +161,50 @@ describe('JSON-RPC server (integration with stubs)', () => {
   });
 
   // ── proposePayment flow: APPROVE ────────────────────────────
+
+  it('proposePayment with a structured remittance → modal summary + submit carries it', async () => {
+    const { sessionToken } = await h.pair();
+    h.modal.queueDecision({ kind: 'approve' });
+
+    const propose = await h.call(sessionToken, 'proposePayment', {
+      to: TO, amountFtc: 3,
+      remittance: { kind: 'invoice', ref: 'INV-42', items: [{ name: 'Audit', qty: 1, lineTotalSek: 300 }], message: 'q3 work' },
+    });
+    expect(propose.status).toBe(200);
+    await flushAsync();
+
+    // The modal saw a human-readable summary of the remittance.
+    const inv = h.modal.invocations();
+    expect(inv).toHaveLength(1);
+    expect(inv[0]!.remittanceSummary).toBeTruthy();
+    expect(inv[0]!.remittanceSummary!.some((l: string) => /INV-42/.test(l))).toBe(true);
+    expect(inv[0]!.remittanceSummary!.some((l: string) => /Audit/.test(l))).toBe(true);
+
+    // The submit carried the built v=1 remittance (kind inferred 'invoice').
+    expect(h.submitCalls).toHaveLength(1);
+    const rmt = h.submitCalls[0]!.remittance as { v: number; kind: string; ref?: string } | undefined;
+    expect(rmt).toMatchObject({ v: 1, kind: 'invoice', ref: 'INV-42' });
+  });
+
+  it('rejects an over-long remittance field at propose time (-32004)', async () => {
+    const { sessionToken } = await h.pair();
+    const r = await h.call(sessionToken, 'proposePayment', {
+      to: TO, amountFtc: 1, remittance: { message: 'x'.repeat(5000) }, // > 2000 cap
+    });
+    const body = r.body as { error?: { code?: number } };
+    expect(body.error?.code).toBe(ERR_VALIDATION);
+  });
+
+  it('rejects a remittance with too many meta keys (keeps it under the SDK encode cap)', async () => {
+    const { sessionToken } = await h.pair();
+    const meta: Record<string, string> = {};
+    for (let i = 0; i < 100; i++) meta[`k${i}`] = 'v'; // > 24-key cap
+    const r = await h.call(sessionToken, 'proposePayment', {
+      to: TO, amountFtc: 1, remittance: { kind: 'message', message: 'hi', meta },
+    });
+    const body = r.body as { error?: { code?: number } };
+    expect(body.error?.code).toBe(ERR_VALIDATION);
+  });
 
   it('proposePayment + modal Approve → submit + state=sent', async () => {
     const { sessionToken } = await h.pair();

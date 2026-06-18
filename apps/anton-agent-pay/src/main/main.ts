@@ -169,6 +169,7 @@ async function buildDepsForBoot(
           to: req.to,
           amountFtc: req.amountFtc,
           ...(req.reference !== undefined ? { reference: req.reference } : {}),
+          ...(req.remittance !== undefined ? { remittance: req.remittance } : {}),
           ...(chainConfig ? { chainConfig } : {}),
         });
         // Persist the send to the durable ledger so it survives restart +
