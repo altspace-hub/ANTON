@@ -257,7 +257,13 @@ function coerceRecentTx(raw: unknown, address: string): RecentTxRow | null {
   if (!txId) return null;
   return {
     txId,
-    amount: Number(r.amount ?? 0),
+    // Normalise to FTC so the ledger is single-unit. The chain reports raw
+    // satoshi (1 FTC = 1e8 sat — same unit the send path + UTXOs use; cf.
+    // src/pay/services/received.ts). Prefer an explicit `amount_ftc` if the
+    // node ever provides one, else treat `amount` as satoshi.
+    amount: typeof r.amount_ftc === 'number'
+      ? r.amount_ftc
+      : Number(r.amount ?? 0) / SATOSHI_PER_FTC,
     direction: r.sender === address ? 'out' : 'in',
     counterparty: typeof r.sender === 'string' ? r.sender
       : typeof r.receiver === 'string' ? r.receiver : 'unknown',

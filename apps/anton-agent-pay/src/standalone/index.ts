@@ -44,6 +44,7 @@ import {
 import {
   getChainClient, submitPayment as chainSubmitPayment, fetchRecentTransactions,
 } from '../main/chain.js';
+import { TransactionLedger } from '../main/ledger.js';
 import { CliModalDriver } from './cli-modal.js';
 import { WebConfirmModalDriver } from './web-confirm.js';
 
@@ -53,7 +54,7 @@ function num(env: string | undefined): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
-async function buildWalletDeps(wallet: Wallet): Promise<Pick<ServerDeps,
+async function buildWalletDeps(wallet: Wallet, ledger: TransactionLedger): Promise<Pick<ServerDeps,
   'walletStatus' | 'walletHasPassphrase' | 'recentTransactions' | 'counterpartyHint' | 'submitPayment'>> {
   // Mirrors the (non-Electron) wiring in main.ts buildDepsForBoot — reuses
   // chain.ts (getChainClient / submitPayment / fetchRecentTransactions). No
@@ -83,10 +84,15 @@ async function buildWalletDeps(wallet: Wallet): Promise<Pick<ServerDeps,
       catch (e) { if (e instanceof NoWalletError) return false; throw e; }
     },
     recentTransactions: async (limit) => {
+      // Top up the durable ledger with best-effort fetched (received) rows,
+      // then return the merged sent+received history. Returns the persisted
+      // ledger even when the node is unreachable.
       try {
         const info = await wallet.publicInfo();
-        return await fetchRecentTransactions(info.address, limit);
-      } catch { return []; }
+        const rows = await fetchRecentTransactions(info.address, limit);
+        await ledger.mergeFetched(rows);
+      } catch { /* keep going — the ledger still has the sends */ }
+      return ledger.list(limit);
     },
     counterpartyHint: async () => null,
     submitPayment: async (req) => {
@@ -105,6 +111,13 @@ async function buildWalletDeps(wallet: Wallet): Promise<Pick<ServerDeps,
           amountFtc: req.amountFtc,
           ...(req.reference !== undefined ? { reference: req.reference } : {}),
         });
+        // Persist the send so it survives restart + node outages. Best-effort
+        // — a ledger write failure must never undo a broadcast payment.
+        await ledger.recordSent({
+          txId: result.txId, amount: req.amountFtc, counterparty: req.to,
+          feeFtc: result.feeFtc,
+          ...(req.reference !== undefined ? { reference: req.reference } : {}),
+        }).catch(() => { /* non-fatal */ });
         return { txId: result.txId, feeFtc: result.feeFtc };
       } finally {
         unlocked.zero();
@@ -136,7 +149,13 @@ async function main(): Promise<void> {
     : mcpStdio ? 'web' : 'terminal';
   const webAutoOpen = (process.env.AGENT_PAY_WEB_CONFIRM_AUTOOPEN ?? '').trim().toLowerCase() === 'true';
 
-  const wallet = new Wallet(new FileStorageBackend(walletDir));
+  // One storage backend shared by the wallet (wallet.* keys) and the
+  // durable transaction ledger (ledger.v1 key) — different namespaces.
+  const storage = new FileStorageBackend(walletDir);
+  const wallet = new Wallet(storage);
+  const ledger = new TransactionLedger(storage, async () => {
+    try { return (await wallet.publicInfo()).address; } catch { return null; }
+  });
 
   // First-run import from a mnemonic, but NEVER overwrite an existing wallet.
   let walletReady = false;
@@ -156,7 +175,7 @@ async function main(): Promise<void> {
     pairings: new PairingStore(),
     proposals: new ProposalStore(Date.now, limits),
     modal,
-    ...(await buildWalletDeps(wallet)),
+    ...(await buildWalletDeps(wallet, ledger)),
   };
   setActiveModalDriver(deps.modal);
 

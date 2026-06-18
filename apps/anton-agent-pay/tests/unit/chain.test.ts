@@ -292,13 +292,15 @@ describe('chain', () => {
   // ── fetchRecentTransactions ─────────────────────────────────────
 
   describe('fetchRecentTransactions', () => {
-    it('returns the mapped iso_received list', async () => {
+    it('returns the mapped iso_received list, amounts normalised to FTC', async () => {
       const ADDRESS = 'fc_TEST_ADDRESS';
       const { fn } = stubFetch({
         '/iso_received': [
-          { tx_id: 'tx-a', amount: 100, sender: 'fc_other',
+          // raw satoshi (1.5 FTC) → must come back as 1.5 FTC
+          { tx_id: 'tx-a', amount: 150_000_000, sender: 'fc_other',
             receiver: ADDRESS, timestamp: 1000, confirmed: true },
-          { tx_id: 'tx-b', amount: 50, sender: 'fc_another',
+          // an explicit amount_ftc field is preferred verbatim
+          { tx_id: 'tx-b', amount: 999, amount_ftc: 0.5, sender: 'fc_another',
             receiver: ADDRESS, timestamp: 1100, confirmed: false },
         ],
       });
@@ -308,7 +310,9 @@ describe('chain', () => {
       expect(rows[0]!.txId).toBe('tx-a');
       expect(rows[0]!.direction).toBe('in');
       expect(rows[0]!.counterparty).toBe('fc_other');
+      expect(rows[0]!.amount).toBe(1.5);   // 150_000_000 sat / 1e8
       expect(rows[0]!.confirmed).toBe(true);
+      expect(rows[1]!.amount).toBe(0.5);   // amount_ftc preferred over raw amount
       expect(rows[1]!.confirmed).toBe(false);
     });
 

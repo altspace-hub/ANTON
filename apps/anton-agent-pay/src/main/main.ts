@@ -35,6 +35,7 @@ import {
   submitPayment as chainSubmitPayment,
   fetchRecentTransactions, getChainClient,
 } from './chain.js';
+import { TransactionLedger } from './ledger.js';
 import { makeSettingsHandlers, registerSettingsIpc } from './settings-ipc.js';
 import { attestationChainConfig } from './attestation-config.js';
 
@@ -83,6 +84,12 @@ async function buildDepsForBoot(
   modal: ModalDriver, shared: SharedState,
 ): Promise<{ deps: ServerDeps }> {
   const { pairings, proposals, wallet, storage } = shared;
+  // Durable transaction ledger — same backend as the wallet, keyed per
+  // wallet address. Makes "see sent / incoming" survive restart + node
+  // outages without bleeding a prior wallet's history after a delete+reimport.
+  const ledger = new TransactionLedger(storage, async () => {
+    try { return (await wallet.publicInfo()).address; } catch { return null; }
+  });
 
   // Wallet info — uses the real wallet module + a single RpcClient
   // hop for live balance + tip. When no wallet has been created yet
@@ -131,14 +138,16 @@ async function buildDepsForBoot(
     },
 
     recentTransactions: async (limit) => {
+      // Fold any best-effort fetched (received) rows into the durable
+      // ledger, then return the merged sent+received history. Even when
+      // the node is unreachable, the agent still sees its persisted
+      // sends — the ledger is the source of truth, the fetch is a top-up.
       try {
         const info = await wallet.publicInfo();
         const rows = await fetchRecentTransactions(info.address, limit);
-        return rows.map(r => ({
-          txId: r.txId, amount: r.amount, direction: r.direction,
-          counterparty: r.counterparty, ts: r.ts, confirmed: r.confirmed,
-        }));
-      } catch { return []; }
+        await ledger.mergeFetched(rows);
+      } catch { /* keep going — return whatever the ledger already holds */ }
+      return ledger.list(limit);
     },
     // FIXME(phase2c): counterparty address book — surface a label +
     // a seen-count for the modal "Acme Corp — seen 4×" hint. Today
@@ -162,6 +171,14 @@ async function buildDepsForBoot(
           ...(req.reference !== undefined ? { reference: req.reference } : {}),
           ...(chainConfig ? { chainConfig } : {}),
         });
+        // Persist the send to the durable ledger so it survives restart +
+        // node outages. Best-effort: a ledger write failure must never undo
+        // a broadcast payment, so swallow (the chain is the real record).
+        await ledger.recordSent({
+          txId: result.txId, amount: req.amountFtc, counterparty: req.to,
+          feeFtc: result.feeFtc,
+          ...(req.reference !== undefined ? { reference: req.reference } : {}),
+        }).catch(() => { /* non-fatal */ });
         return { txId: result.txId, feeFtc: result.feeFtc };
       } finally {
         unlocked.zero();
