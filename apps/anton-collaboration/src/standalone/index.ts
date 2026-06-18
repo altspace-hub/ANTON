@@ -3,9 +3,10 @@
  *
  * A local, agent-callable program (JSON-RPC over 127.0.0.1 + optional MCP over
  * stdio) that lets an external AI agent DISCOVER businesses in the .anton
- * registry and resolve their commerce capabilities. The first leg of the
+ * registry, resolve their commerce capabilities, and TALK to them (inquire /
+ * order) directly against the seller's ANTON. The first two legs of the
  * agent-to-agent commerce loop (docs/AGENT_COLLABORATION_COMMERCE_PLAN.md);
- * TALK / NEGOTIATE / AGREE / SETTLE verbs arrive in later phases.
+ * NEGOTIATE / AGREE / SETTLE verbs arrive in later phases.
  *
  * Run:  pnpm --filter @anton/collaboration start:standalone [--mcp-stdio]
  * Env:  ANTON_COLLAB_PORT (default 49260) · ANTON_COLLAB_RELAY_BASE
@@ -31,9 +32,11 @@ async function main(): Promise<void> {
   const relayBase = process.env.ANTON_COLLAB_RELAY_BASE?.trim();
 
   const discovery: DiscoveryConfig | undefined = relayBase ? { base: relayBase } : undefined;
+  const buyerContactHash = process.env.ANTON_COLLAB_CONTACT_HASH?.trim();
   const deps: ServerDeps = {
     pairings: new PairingStore(),
     ...(discovery ? { discovery } : {}),
+    ...(buyerContactHash ? { buyerContactHash } : {}),
   };
 
   // MCP clients send no Origin; the in-process MCP path bypasses the HTTP origin
@@ -50,7 +53,8 @@ async function main(): Promise<void> {
   log(` Pair:       POST http://127.0.0.1:${port}/pair`);
   log(` Pair code:  ${code}    (valid 60s)`);
   log(` Registry:   ${discovery?.base ?? 'https://relay.futurechain.eu (default)'}`);
-  log(` Verbs:      getStatus · searchSellers · resolveSeller   (TALK/AGREE/SETTLE coming)`);
+  log(` Buyer hash: ${buyerContactHash ?? '(anonymous — set ANTON_COLLAB_CONTACT_HASH)'}`);
+  log(` Verbs:      getStatus · searchSellers · resolveSeller · inquireSeller   (AGREE/SETTLE coming)`);
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 

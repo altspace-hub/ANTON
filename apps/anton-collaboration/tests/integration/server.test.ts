@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import {
-  buildServer, ERR_AUTH_MISSING, ERR_AUTH_INVALID, ERR_VALIDATION, ERR_UPSTREAM,
+  buildServer, ERR_AUTH_MISSING, ERR_AUTH_INVALID, ERR_VALIDATION, ERR_UPSTREAM, ERR_NOT_FOUND,
   type ServerDeps,
 } from '../../src/main/server.js';
 import { PairingStore } from '../../src/main/pairing.js';
@@ -73,6 +73,7 @@ describe('collaboration JSON-RPC server', () => {
     h = buildHarness(stubDiscovery({
       '/v1/portals/search': { body: { results: [{ portalAddress: 'kicks.sthlm.portal', displayTitle: 'Kicks Stockholm', capabilityVerbs: ['inquire', 'order'] }], total: 1 } },
       '/v1/portals/resolve/': { body: SPORT_STORE },
+      '/capabilities/cap-inq/invoke': { body: { kind: 'invoke_accepted', responseId: 'resp_42', invocationId: 'resp_42', verb: 'inquire', output: { inStock: true, sizeEu: 43, priceFtc: 1.8 } } },
     }));
   });
 
@@ -97,6 +98,7 @@ describe('collaboration JSON-RPC server', () => {
     const r = await h.call(sessionToken, 'getStatus');
     expect(r.body.result.paired).toBe(true);
     expect(r.body.result.verbs).toContain('searchSellers');
+    expect(r.body.result.verbs).toContain('inquireSeller');
     expect(r.body.result.relayBase).toBe('http://relay.test');
   });
 
@@ -134,6 +136,78 @@ describe('collaboration JSON-RPC server', () => {
     const { sessionToken } = h2.pair();
     const r = await h2.call(sessionToken, 'searchSellers', { text: 'x' });
     expect(r.body.error.code).toBe(ERR_UPSTREAM);
+  });
+
+  it('inquireSeller resolves + invokes by verb and returns the seller quote', async () => {
+    const { sessionToken } = h.pair();
+    const r = await h.call(sessionToken, 'inquireSeller', {
+      address: 'kicks.sthlm.portal', verb: 'inquire', input: { question: 'Jordans size 43?' },
+    });
+    expect(r.body.result.kind).toBe('response');
+    expect(r.body.result.capabilityId).toBe('cap-inq');
+    expect(r.body.result.responseId).toBe('resp_42');
+    expect(r.body.result.output).toEqual({ inStock: true, sizeEu: 43, priceFtc: 1.8 });
+  });
+
+  it('inquireSeller accepts an explicit capabilityId (overriding verb resolution)', async () => {
+    const { sessionToken } = h.pair();
+    const r = await h.call(sessionToken, 'inquireSeller', { address: 'kicks.sthlm.portal', capabilityId: 'cap-inq', input: {} });
+    expect(r.body.result.kind).toBe('response');
+    expect(r.body.result.capabilityId).toBe('cap-inq');
+  });
+
+  it('inquireSeller requires either verb or capabilityId', async () => {
+    const { sessionToken } = h.pair();
+    const r = await h.call(sessionToken, 'inquireSeller', { address: 'kicks.sthlm.portal', input: {} });
+    expect(r.body.error.code).toBe(ERR_VALIDATION);
+  });
+
+  it('inquireSeller returns ERR_NOT_FOUND when the seller does not exist', async () => {
+    const h2 = buildHarness(stubDiscovery({})); // every URL 404s → resolve null
+    const { sessionToken } = h2.pair();
+    const r = await h2.call(sessionToken, 'inquireSeller', { address: 'ghost.nowhere.portal', verb: 'inquire' });
+    expect(r.body.error.code).toBe(ERR_NOT_FOUND);
+  });
+
+  it('inquireSeller returns ERR_NOT_FOUND when the seller has no such verb', async () => {
+    const { sessionToken } = h.pair();
+    const r = await h.call(sessionToken, 'inquireSeller', { address: 'kicks.sthlm.portal', verb: 'teleport' });
+    expect(r.body.error.code).toBe(ERR_NOT_FOUND);
+    expect(r.body.error.message).toContain('teleport');
+  });
+
+  it('inquireSeller surfaces an offline seller as a structured result (not an RPC error)', async () => {
+    const h2 = buildHarness(stubDiscovery({
+      '/v1/portals/resolve/': { body: SPORT_STORE },
+      '/capabilities/cap-inq/invoke': { status: 503, body: {} },
+    }));
+    const { sessionToken } = h2.pair();
+    const r = await h2.call(sessionToken, 'inquireSeller', { address: 'kicks.sthlm.portal', verb: 'inquire' });
+    expect(r.body.error).toBeUndefined();
+    expect(r.body.result.kind).toBe('seller_offline');
+  });
+
+  it('inquireSeller attributes the buyer contact hash to the seller', async () => {
+    const pairings = new PairingStore();
+    const bodies: unknown[] = [];
+    const fetchFn = (async (input: string | URL | Request, init?: RequestInit) => {
+      const u = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (u.includes('/v1/portals/resolve/')) return { ok: true, status: 200, json: async () => SPORT_STORE } as Response;
+      if (u.includes('/invoke')) {
+        bodies.push(init?.body ? JSON.parse(String(init.body)) : undefined);
+        return { ok: true, status: 200, json: async () => ({ kind: 'invoke_accepted', responseId: 'r', invocationId: 'r', verb: 'inquire', output: {} }) } as Response;
+      }
+      return { ok: false, status: 404, json: async () => ({ found: false }) } as Response;
+    }) as typeof fetch;
+    const app = buildServer({ pairings, discovery: { base: 'http://relay.test', fetch: fetchFn }, buyerContactHash: 'BUYER-XYZ' }, { bypassOriginCheck: true });
+    const code = pairings.newCode();
+    const { sessionToken } = pairings.redeemCode({ name: 'buyer', code });
+    await app.inject({
+      method: 'POST', url: '/rpc',
+      headers: { Authorization: `Bearer ${sessionToken}`, 'Content-Type': 'application/json' },
+      payload: JSON.stringify({ jsonrpc: '2.0', method: 'inquireSeller', params: { address: 'kicks.sthlm.portal', verb: 'inquire', input: { q: 1 } }, id: 1 }),
+    });
+    expect(bodies[0]).toEqual({ input: { q: 1 }, visitorContactHash: 'BUYER-XYZ' });
   });
 
   it('the /pair bootstrap issues a working bearer', async () => {

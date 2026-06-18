@@ -14,6 +14,7 @@ import {
 import type { ServerDeps } from './server.js';
 import { COLLAB_VERBS } from './server.js';
 import { searchPortals, resolvePortal, portalVerbs } from './discovery.js';
+import { invokeCapability, capabilityForVerb } from './talk.js';
 
 export const MCP_TOOLS = [
   {
@@ -48,6 +49,25 @@ export const MCP_TOOLS = [
       required: ['address'],
       additionalProperties: false,
       properties: { address: { type: 'string', maxLength: 256, description: 'e.g. "kicks.sthlm.portal".' } },
+    },
+  },
+  {
+    name: 'inquireSeller',
+    description:
+      "Ask a resolved seller a question by invoking one of its commerce capabilities — e.g. \"do you have Air "
+      + 'Jordans in size 43, and what do they cost?". Goes directly to the seller\'s ANTON (not the relay). Returns '
+      + 'the seller\'s structured response (a quote, availability, or a queued acknowledgement). This is TALK, the '
+      + 'step before negotiate/agree/settle — it commits to nothing.',
+    inputSchema: {
+      type: 'object',
+      required: ['address'],
+      additionalProperties: false,
+      properties: {
+        address: { type: 'string', maxLength: 256, description: 'Exact seller address, e.g. "kicks.sthlm.portal".' },
+        verb: { type: 'string', maxLength: 64, description: 'Capability verb to invoke, e.g. "inquire" or "order".' },
+        capabilityId: { type: 'string', maxLength: 128, description: 'Exact capability id (overrides verb).' },
+        input: { type: 'object', description: 'Structured question/payload matching the capability\'s input schema.' },
+      },
     },
   },
 ] as const;
@@ -109,6 +129,31 @@ async function dispatchMcpTool(
         verbs: portalVerbs(resolved),
         descriptor: resolved.descriptor,
       };
+    }
+    case 'inquireSeller': {
+      const address = String(args.address ?? '');
+      if (!address) throw new Error('validation: address is required');
+      const verb = typeof args.verb === 'string' ? args.verb : undefined;
+      const explicitCapId = typeof args.capabilityId === 'string' ? args.capabilityId : undefined;
+      if (!verb && !explicitCapId) throw new Error('validation: verb or capabilityId is required');
+      const input = (args.input && typeof args.input === 'object' ? args.input : {}) as Record<string, unknown>;
+
+      const resolved = await resolvePortal(address, deps.discovery);
+      if (!resolved) return { kind: 'capability_not_found', message: `seller not found: ${address}` };
+
+      let capabilityId = explicitCapId;
+      if (!capabilityId && verb) {
+        const cap = capabilityForVerb(resolved, verb);
+        if (!cap) return { kind: 'capability_not_found', message: `seller has no "${verb}" capability` };
+        capabilityId = cap.id;
+      }
+      if (!capabilityId) throw new Error('validation: verb or capabilityId is required');
+
+      const invokeOpts: { fetch?: typeof fetch; visitorContactHash?: string } = {};
+      if (deps.discovery?.fetch) invokeOpts.fetch = deps.discovery.fetch;
+      if (deps.buyerContactHash) invokeOpts.visitorContactHash = deps.buyerContactHash;
+      const result = await invokeCapability(resolved, capabilityId, input, invokeOpts);
+      return { capabilityId, ...result };
     }
     default:
       throw new Error(`unknown tool: ${name}`);

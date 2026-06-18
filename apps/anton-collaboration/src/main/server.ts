@@ -3,18 +3,21 @@
  *
  * Clones the agent-pay security shell (bound to 127.0.0.1, pairing-bearer auth,
  * origin allowlist) and exposes the COMMERCE-LOOP verbs to a paired external AI
- * agent. This phase (P1+P2) ships the read-only DISCOVER + IDENTIFY verbs:
+ * agent. Ships the DISCOVER + IDENTIFY + TALK verbs:
  *
  *   getStatus       — am I paired? which relay + verbs are available
  *   searchSellers   — find businesses in the .anton registry (text + verb + category)
  *   resolveSeller   — resolve an exact name.namespace → its signed descriptor +
  *                     commerce verbs + originEndpoint (where TALK/INQUIRE/INVOKE go)
+ *   inquireSeller   — TALK: invoke a seller capability (inquire/order) DIRECTLY on
+ *                     the seller's ANTON; ask "Jordans size 43? price?". Commits to
+ *                     nothing, so no human gate.
  *
- * Later phases add inquire/negotiate (TALK), proposeAgreement/acceptAgreement
- * (AGREE, behind the human-approval modal), and settle (bridge to Agent Pay).
+ * Later phases add negotiate, proposeAgreement/acceptAgreement (AGREE, behind the
+ * human-approval modal), and settle (bridge to Agent Pay).
  *
- * Discovery is read-only, so these verbs need NO human gate — the modal arrives
- * with the spend/commit verbs.
+ * Discovery + inquiry commit to nothing, so these verbs need NO human gate — the
+ * modal arrives with the spend/commit verbs.
  */
 import Fastify, { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -23,6 +26,7 @@ import { PairingError } from './pairing.js';
 import {
   searchPortals, resolvePortal, portalVerbs, type DiscoveryConfig,
 } from './discovery.js';
+import { invokeCapability, capabilityForVerb } from './talk.js';
 
 export const DEFAULT_ALLOWED_ORIGINS: ReadonlyArray<string | RegExp> = [
   'null',
@@ -38,12 +42,15 @@ export const ERR_NOT_FOUND = -32005;
 export const ERR_UPSTREAM = -32010;
 
 /** The verbs this program currently exposes (surfaced by getStatus + MCP). */
-export const COLLAB_VERBS = ['getStatus', 'searchSellers', 'resolveSeller'] as const;
+export const COLLAB_VERBS = ['getStatus', 'searchSellers', 'resolveSeller', 'inquireSeller'] as const;
 
 export interface ServerDeps {
   pairings: PairingStore;
   /** Discovery config (relay base + fetch). Injected so tests stub the relay. */
   discovery?: DiscoveryConfig;
+  /** The buyer's contact hash, attributed in the seller's inbox when inquiring.
+   *  Optional — when absent the seller sees an anonymous visitor. */
+  buyerContactHash?: string;
   now?: () => number;
 }
 
@@ -64,6 +71,18 @@ export const SearchSellersParams = z.object({
 
 export const ResolveSellerParams = z.object({
   address: z.string().min(1).max(256),
+});
+
+export const InquireSellerParams = z.object({
+  address: z.string().min(1).max(256),
+  /** Pick the capability by its commerce verb (e.g. 'inquire' / 'order')... */
+  verb: z.string().min(1).max(64).optional(),
+  /** ...or by its exact capability id (takes precedence over verb). */
+  capabilityId: z.string().min(1).max(128).optional(),
+  /** Structured question/payload for the seller's capability (its own schema). */
+  input: z.record(z.unknown()).default({}),
+}).refine((p) => Boolean(p.verb) || Boolean(p.capabilityId), {
+  message: 'one of "verb" or "capabilityId" is required',
 });
 
 export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): FastifyInstance {
@@ -134,6 +153,36 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
             verbs: portalVerbs(resolved),
             descriptor: resolved.descriptor,
           }));
+        }
+
+        case 'inquireSeller': {
+          const p = InquireSellerParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+
+          // 1. Resolve the seller (need the descriptor + originEndpoint to TALK).
+          let resolved;
+          try {
+            resolved = await resolvePortal(p.data.address, deps.discovery);
+          } catch (e) {
+            return reply.send(jsonRpcError(ERR_UPSTREAM, `registry resolve failed: ${msgOf(e)}`, id));
+          }
+          if (!resolved) return reply.send(jsonRpcError(ERR_NOT_FOUND, `seller not found: ${p.data.address}`, id));
+
+          // 2. Pick the capability — explicit id wins, else map the verb.
+          let capabilityId = p.data.capabilityId;
+          if (!capabilityId && p.data.verb) {
+            const cap = capabilityForVerb(resolved, p.data.verb);
+            if (!cap) return reply.send(jsonRpcError(ERR_NOT_FOUND, `seller has no "${p.data.verb}" capability`, id));
+            capabilityId = cap.id;
+          }
+          if (!capabilityId) return reply.send(jsonRpcError(ERR_VALIDATION, 'verb or capabilityId is required', id));
+
+          // 3. TALK — POST directly to the seller's originEndpoint (not the relay).
+          const invokeOpts: { fetch?: typeof fetch; visitorContactHash?: string } = {};
+          if (deps.discovery?.fetch) invokeOpts.fetch = deps.discovery.fetch;
+          if (deps.buyerContactHash) invokeOpts.visitorContactHash = deps.buyerContactHash;
+          const result = await invokeCapability(resolved, capabilityId, p.data.input, invokeOpts);
+          return reply.send(jsonRpcResult(id, { capabilityId, ...result }));
         }
 
         default:
