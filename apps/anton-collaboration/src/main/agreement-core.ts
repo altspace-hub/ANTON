@@ -42,6 +42,14 @@ export function isTerminal(s: AgreementStatus): boolean {
   return (TERMINAL_STATUSES as readonly string[]).includes(s);
 }
 
+/** True when it's MY turn to act: an open proposal/counter I'm the current
+ *  acceptor of, or an accept I couldn't deliver (needs re-send). Matches the
+ *  Comm copy's isActionable. */
+export function isActionable(a: { role: 'proposer' | 'acceptor'; status: AgreementStatus }): boolean {
+  return (a.role === 'acceptor' && (a.status === 'proposed' || a.status === 'countered'))
+    || a.status === 'accept_unconfirmed';
+}
+
 export type AgreementTrustTier = 'signed' | 'settlement';
 export type ResponseVerb = 'accept' | 'counter' | 'decline';
 
