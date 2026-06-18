@@ -70,6 +70,50 @@ export const MCP_TOOLS = [
       },
     },
   },
+  {
+    name: 'listAgreements',
+    description: 'List the signed two-party agreements this program holds (newest first), with their status (proposed / accepted / agreed / declined / withdrawn / settled).',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'getAgreement',
+    description: 'Fetch one agreement by id — its decision, terms, amount, counterparty, status, and the signed proposal hash.',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 } },
+    },
+  },
+  {
+    name: 'ingestAgreement',
+    description:
+      "Apply an inbound SIGNED agreement message from the counterparty (relayed by you): a propose / respond "
+      + '(accept|decline|counter) / withdraw / ack payload. Verifies the signature + records it. This is how the '
+      + 'seller receives the buyer\'s offer and the buyer receives the seller\'s accept.',
+    inputSchema: {
+      type: 'object', required: ['type', 'fromHash', 'payload'], additionalProperties: false,
+      properties: {
+        type: { type: 'string', enum: ['propose', 'respond', 'withdraw', 'ack'] },
+        fromHash: { type: 'string', maxLength: 256, description: 'The sender\'s contact hash (who relayed this).' },
+        payload: { type: 'object', description: 'The signed wire payload exactly as produced by the counterparty.' },
+      },
+    },
+  },
+  {
+    name: 'declineAgreement',
+    description: 'Decline an open agreement you are the acceptor of. Produces a SIGNED decline to relay back to the proposer. Commits to nothing, so no human gate.',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 } },
+    },
+  },
+  {
+    name: 'withdrawAgreement',
+    description: 'Withdraw an offer you proposed that has not yet been answered. Produces a SIGNED withdraw to relay to the counterparty. No human gate (retracting your own offer).',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 } },
+    },
+  },
 ] as const;
 
 export function buildMcpServer(deps: ServerDeps): Server {
@@ -155,7 +199,51 @@ async function dispatchMcpTool(
       const result = await invokeCapability(resolved, capabilityId, input, invokeOpts);
       return { capabilityId, ...result };
     }
+    case 'listAgreements': {
+      const engine = requireEngine(deps);
+      return { agreements: await engine.list() };
+    }
+    case 'getAgreement': {
+      const engine = requireEngine(deps);
+      const agreementId = String(args.agreementId ?? '');
+      if (!agreementId) throw new Error('validation: agreementId is required');
+      const a = await engine.get(agreementId);
+      return a ? { found: true, agreement: a } : { found: false };
+    }
+    case 'ingestAgreement': {
+      const engine = requireEngine(deps);
+      const type = String(args.type ?? '');
+      const fromHash = String(args.fromHash ?? '');
+      const payload = (args.payload && typeof args.payload === 'object' ? args.payload : null) as Record<string, unknown> | null;
+      if (!fromHash || !payload) throw new Error('validation: type, fromHash and payload are required');
+      let applied: unknown = null;
+      if (type === 'propose') applied = await engine.applyInboundPropose(payload as never, fromHash);
+      else if (type === 'respond') applied = await engine.applyInboundRespond(payload as never, fromHash);
+      else if (type === 'withdraw') applied = await engine.applyInboundWithdraw(payload as never, fromHash);
+      else if (type === 'ack') applied = await engine.applyInboundAck(payload as never, fromHash);
+      else throw new Error(`validation: unknown ingest type "${type}"`);
+      return { applied: applied !== null, agreement: applied };
+    }
+    case 'declineAgreement': {
+      const engine = requireEngine(deps);
+      const agreementId = String(args.agreementId ?? '');
+      if (!agreementId) throw new Error('validation: agreementId is required');
+      return engine.respond(agreementId, 'decline');
+    }
+    case 'withdrawAgreement': {
+      const engine = requireEngine(deps);
+      const agreementId = String(args.agreementId ?? '');
+      if (!agreementId) throw new Error('validation: agreementId is required');
+      return engine.withdraw(agreementId);
+    }
     default:
       throw new Error(`unknown tool: ${name}`);
   }
+}
+
+function requireEngine(deps: ServerDeps): NonNullable<ServerDeps['engine']> {
+  if (!deps.engine) {
+    throw new Error('agreement engine not configured (this MCP instance has no signing identity)');
+  }
+  return deps.engine;
 }
