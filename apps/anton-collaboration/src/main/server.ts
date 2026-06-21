@@ -33,6 +33,9 @@ import type { ModalDriver, CollabModalPayload, CollabModalKind } from './modal.j
 import type {
   AgreementProposePayload, AgreementRespondPayload, AgreementWithdrawPayload, AgreementAckPayload,
 } from './agreement-core.js';
+import type { NegotiationBrain, NegotiationGoal } from './negotiation-brain.js';
+import type { NegotiationStore } from './negotiation-store.js';
+import { runNegotiation, DEFAULT_NEGOTIATION_ROUNDS } from './negotiation-orchestrator.js';
 
 export const DEFAULT_ALLOWED_ORIGINS: ReadonlyArray<string | RegExp> = [
   'null',
@@ -62,6 +65,8 @@ export const COLLAB_VERBS = [
   'getAgreement', 'listAgreements', 'getAgreementProposal', 'cancelAgreementProposal',
   // SETTLE bridge (to/from Agent Pay) — the spend itself is gated in Agent Pay:
   'getSettlementInstruction', 'markAgreementSettled', 'reconcileSettlement',
+  // NEGOTIATE — autonomous LLM buyer loop (UNGATED talk; only PREPARES a proposal):
+  'negotiate', 'getNegotiation', 'cancelNegotiation',
 ] as const;
 
 export interface ServerDeps {
@@ -78,6 +83,12 @@ export interface ServerDeps {
   approvals?: AgreementProposalStore;
   /** Human-approval driver. Absent → committing verbs FAIL CLOSED (ERR_NO_APPROVAL). */
   modal?: ModalDriver;
+  /** The injectable LLM negotiation brain. Absent → `negotiate` is unavailable. */
+  brain?: NegotiationBrain;
+  /** Negotiation job lifecycle store. */
+  negotiations?: NegotiationStore;
+  /** Default TALK-round cap for a negotiation (clamped to MAX_NEGOTIATION_ROUNDS). */
+  negotiationMaxRounds?: number;
   now?: () => number;
 }
 
@@ -159,6 +170,31 @@ export const ReconcileSettlementParams = z.object({
   proposalHash: z.string().min(1).max(128),
   txHash: z.string().min(1).max(256),
 });
+
+// ── NEGOTIATE params ──────────────────────────────────────────────
+export const NegotiateParams = z.object({
+  /** The seller to negotiate with (name.namespace.portal). */
+  address: z.string().min(1).max(256),
+  /** Pick the seller capability by verb (e.g. 'inquire'/'order')... */
+  verb: z.string().min(1).max(64).optional(),
+  /** ...or by exact capability id (takes precedence over verb). */
+  capabilityId: z.string().min(1).max(128).optional(),
+  /** What the buyer wants, in plain language. */
+  objective: z.string().min(1).max(2000),
+  /** The opening structured question to the seller's capability. */
+  inquiryInput: z.record(z.unknown()).optional(),
+  /** HARD price ceiling in µFTC — the loop never proposes/counters above it. */
+  maxAmountMicroFtc: MicroFtc,
+  /** Advisory target the brain aims for. */
+  targetAmountMicroFtc: MicroFtc.optional(),
+  constraints: z.string().max(4000).optional(),
+  maxRounds: z.number().int().positive().max(8).optional(),
+  ttlMs: z.number().int().positive().optional(),
+}).refine((p) => Boolean(p.verb) || Boolean(p.capabilityId), {
+  message: 'one of "verb" or "capabilityId" is required',
+});
+
+export const NegotiationIdParams = z.object({ jobId: z.string().min(1).max(128) });
 
 export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): FastifyInstance {
   const app = Fastify({ logger: false, disableRequestLogging: true });
@@ -409,6 +445,37 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
           return reply.send(jsonRpcResult(id, { matched: a !== null, agreement: a }));
         }
 
+        // ── NEGOTIATE (autonomous LLM buyer loop — UNGATED talk) ─────────────
+        case 'negotiate': {
+          const p = NegotiateParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const r = await startNegotiation(deps, agent.name, p.data);
+          if (r.kind === 'err') return reply.send(jsonRpcError(r.code, r.message, id));
+          return reply.send(jsonRpcResult(id, { jobId: r.jobId, expiresAt: r.expiresAt }));
+        }
+
+        case 'getNegotiation': {
+          if (!deps.negotiations) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'negotiations not configured', id));
+          const p = NegotiationIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const job = deps.negotiations.get(p.data.jobId);
+          if (!job) return reply.send(jsonRpcError(ERR_NOT_FOUND, 'unknown negotiation', id));
+          return reply.send(jsonRpcResult(id, {
+            state: job.state, round: job.round, transcript: job.transcript,
+            ...(job.outcome !== undefined ? { outcome: job.outcome } : {}),
+            ...(job.rejectReason !== undefined ? { rejectReason: job.rejectReason } : {}),
+          }));
+        }
+
+        case 'cancelNegotiation': {
+          if (!deps.negotiations) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'negotiations not configured', id));
+          const p = NegotiationIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const ok = deps.negotiations.cancel(p.data.jobId);
+          if (!ok) return reply.send(jsonRpcError(ERR_NOT_FOUND, 'negotiation not active or unknown', id));
+          return reply.send(jsonRpcResult(id, { state: 'cancelled' }));
+        }
+
         default:
           return reply.send(jsonRpcError(-32601, `method not found: ${method}`, id));
       }
@@ -552,6 +619,62 @@ async function dispatchIngest(
     case 'withdraw': return engine.applyInboundWithdraw(payload as unknown as AgreementWithdrawPayload, fromHash);
     case 'ack': return engine.applyInboundAck(payload as unknown as AgreementAckPayload, fromHash);
   }
+}
+
+/** Shared by the JSON-RPC + MCP transports: resolve the seller, pick the
+ *  capability, create the job, and fire-and-forget the bounded loop. UNGATED —
+ *  negotiate is talk; its best terminal only PREPARES a proposeAgreement. */
+export type StartNegotiationResult =
+  | { kind: 'ok'; jobId: string; expiresAt: number }
+  | { kind: 'err'; code: number; message: string };
+
+export async function startNegotiation(
+  deps: ServerDeps, agentName: string, data: z.infer<typeof NegotiateParams>,
+): Promise<StartNegotiationResult> {
+  if (!deps.brain || !deps.negotiations) {
+    return { kind: 'err', code: ERR_NO_ENGINE, message: 'negotiation brain not configured (set ANTHROPIC_API_KEY)' };
+  }
+  let resolved;
+  try {
+    resolved = await resolvePortal(data.address, deps.discovery);
+  } catch (e) {
+    return { kind: 'err', code: ERR_UPSTREAM, message: `registry resolve failed: ${msgOf(e)}` };
+  }
+  if (!resolved) return { kind: 'err', code: ERR_NOT_FOUND, message: `seller not found: ${data.address}` };
+
+  let capabilityId = data.capabilityId;
+  if (!capabilityId && data.verb) {
+    const cap = capabilityForVerb(resolved, data.verb);
+    if (!cap) return { kind: 'err', code: ERR_NOT_FOUND, message: `seller has no "${data.verb}" capability` };
+    capabilityId = cap.id;
+  }
+  if (!capabilityId) return { kind: 'err', code: ERR_VALIDATION, message: 'verb or capabilityId is required' };
+
+  const goal: NegotiationGoal = {
+    objective: data.objective,
+    ...(data.verb !== undefined ? { verb: data.verb } : {}),
+    ...(data.capabilityId !== undefined ? { capabilityId: data.capabilityId } : {}),
+    ...(data.inquiryInput !== undefined ? { inquiryInput: data.inquiryInput } : {}),
+    maxAmountMicroFtc: data.maxAmountMicroFtc,
+    ...(data.targetAmountMicroFtc !== undefined ? { targetAmountMicroFtc: data.targetAmountMicroFtc } : {}),
+    ...(data.constraints !== undefined ? { constraints: data.constraints } : {}),
+  };
+  const job = deps.negotiations.create(agentName, goal, resolved.portalAddress, data.ttlMs);
+
+  // Bind the TALK call (fetch + buyer hash here; the loop stays HTTP-free).
+  const invokeOpts: { fetch?: typeof fetch; visitorContactHash?: string } = {};
+  if (deps.discovery?.fetch) invokeOpts.fetch = deps.discovery.fetch;
+  if (deps.buyerContactHash) invokeOpts.visitorContactHash = deps.buyerContactHash;
+  const resolvedSeller = resolved;
+  const invoke = (capId: string, input: Record<string, unknown>): Promise<import('./talk.js').InvokeResult> =>
+    invokeCapability(resolvedSeller, capId, input, invokeOpts);
+
+  const maxRounds = data.maxRounds ?? deps.negotiationMaxRounds ?? DEFAULT_NEGOTIATION_ROUNDS;
+  void runNegotiation({
+    job, goal, seller: resolved, capabilityId, invoke,
+    brain: deps.brain, store: deps.negotiations, maxRounds, now: nowOf(deps),
+  });
+  return { kind: 'ok', jobId: job.id, expiresAt: job.expiresAt };
 }
 
 function microToFtc(microFtc: string): number {

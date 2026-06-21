@@ -36,6 +36,8 @@ import { AgreementIdentity } from '../main/agreement-identity.js';
 import { AgreementEngine } from '../main/agreement-engine.js';
 import { AgreementProposalStore } from '../main/agreement-proposals.js';
 import { CliModalDriver } from '../main/modal.js';
+import { NegotiationStore } from '../main/negotiation-store.js';
+import { ClaudeNegotiationBrain, type NegotiationBrain } from '../main/negotiation-brain.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -68,12 +70,24 @@ async function main(): Promise<void> {
     modal = new CliModalDriver(rl);
   }
 
+  // The autonomous negotiation brain — only when an Anthropic key is present.
+  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const negModel = process.env.ANTON_COLLAB_NEG_MODEL?.trim();
+  const negotiations = new NegotiationStore();
+  const brain: NegotiationBrain | undefined = anthropicKey
+    ? new ClaudeNegotiationBrain({ apiKey: anthropicKey, ...(negModel ? { model: negModel } : {}) })
+    : undefined;
+  // Drop terminal negotiation jobs older than 30m every 10m (don't block exit).
+  const reaper = setInterval(() => negotiations.reap(30 * 60 * 1000), 10 * 60 * 1000);
+  reaper.unref();
+
   const deps: ServerDeps = {
     pairings: new PairingStore(),
-    engine, approvals,
+    engine, approvals, negotiations,
     ...(discovery ? { discovery } : {}),
     ...(buyerContactHash ? { buyerContactHash } : {}),
     ...(modal ? { modal } : {}),
+    ...(brain ? { brain } : {}),
   };
 
   // MCP clients send no Origin; the in-process MCP path bypasses the HTTP origin
@@ -95,7 +109,8 @@ async function main(): Promise<void> {
   log(` Sign key:   ${agreementPubkey.slice(0, 16)}…  (Ed25519 agreement identity)`);
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
-  log(' Verbs:      discover · talk · {propose,accept,counter,decline,withdraw}Agreement · ingest · settle(coming)');
+  log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
+  log(' Verbs:      discover · talk · negotiate · {propose,accept,counter,decline,withdraw}Agreement · ingest · settle');
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 

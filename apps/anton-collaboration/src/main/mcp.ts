@@ -12,7 +12,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ServerDeps } from './server.js';
-import { COLLAB_VERBS } from './server.js';
+import { COLLAB_VERBS, NegotiateParams, startNegotiation } from './server.js';
 import { searchPortals, resolvePortal, portalVerbs } from './discovery.js';
 import { invokeCapability, capabilityForVerb } from './talk.js';
 
@@ -140,6 +140,47 @@ export const MCP_TOOLS = [
     inputSchema: {
       type: 'object', required: ['proposalHash', 'txHash'], additionalProperties: false,
       properties: { proposalHash: { type: 'string', maxLength: 128 }, txHash: { type: 'string', maxLength: 256 } },
+    },
+  },
+  {
+    name: 'negotiate',
+    description:
+      'Autonomously negotiate with a seller toward a goal: I search/resolve the seller, inquire about price + '
+      + 'availability, and (within your HARD µFTC ceiling) counter or accept on your behalf — all over UNGATED TALK. '
+      + 'This NEVER signs or pays. Its best outcome PREPARES a proposeAgreement you must STILL run through the '
+      + 'human-gated proposeAgreement verb. Returns a jobId; poll getNegotiation for the transcript + outcome.',
+    inputSchema: {
+      type: 'object',
+      required: ['address', 'objective', 'maxAmountMicroFtc'],
+      additionalProperties: false,
+      properties: {
+        address: { type: 'string', maxLength: 256, description: 'Seller address, e.g. "kicks.sthlm.portal".' },
+        verb: { type: 'string', maxLength: 64, description: 'Seller capability verb, e.g. "inquire" or "order".' },
+        capabilityId: { type: 'string', maxLength: 128 },
+        objective: { type: 'string', maxLength: 2000, description: 'What you want, e.g. "Air Jordans EU43, 1 pair".' },
+        inquiryInput: { type: 'object', description: 'Opening structured question for the seller capability.' },
+        maxAmountMicroFtc: { type: 'string', description: 'HARD price ceiling in µFTC (base-10 integer). Never exceeded.' },
+        targetAmountMicroFtc: { type: 'string', description: 'Advisory target price the brain aims for.' },
+        constraints: { type: 'string', maxLength: 4000 },
+        maxRounds: { type: 'integer', minimum: 1, maximum: 8 },
+        ttlMs: { type: 'integer' },
+      },
+    },
+  },
+  {
+    name: 'getNegotiation',
+    description: 'Poll a negotiation job: its state, the round-by-round transcript, and on completion the outcome (propose_ready with prepared params / walked_away / no_agreement).',
+    inputSchema: {
+      type: 'object', required: ['jobId'], additionalProperties: false,
+      properties: { jobId: { type: 'string', maxLength: 128 } },
+    },
+  },
+  {
+    name: 'cancelNegotiation',
+    description: 'Cancel a pending/running negotiation job.',
+    inputSchema: {
+      type: 'object', required: ['jobId'], additionalProperties: false,
+      properties: { jobId: { type: 'string', maxLength: 128 } },
     },
   },
 ] as const;
@@ -286,6 +327,33 @@ async function dispatchMcpTool(
       if (!proposalHash || !txHash) throw new Error('validation: proposalHash and txHash are required');
       const a = await engine.reconcileInboundSettlement({ proposalHash, txHash });
       return { matched: a !== null, agreement: a };
+    }
+    case 'negotiate': {
+      const parsed = NegotiateParams.safeParse(args);
+      if (!parsed.success) throw new Error(`validation: ${parsed.error.issues.map((i) => i.message).join('; ')}`);
+      // MCP carries no per-agent identity beyond the in-process pairing; label it.
+      const r = await startNegotiation(deps, 'mcp-agent', parsed.data);
+      if (r.kind === 'err') throw new Error(r.message);
+      return { jobId: r.jobId, expiresAt: r.expiresAt };
+    }
+    case 'getNegotiation': {
+      if (!deps.negotiations) throw new Error('negotiations not configured');
+      const jobId = String(args.jobId ?? '');
+      if (!jobId) throw new Error('validation: jobId is required');
+      const job = deps.negotiations.get(jobId);
+      if (!job) throw new Error('unknown negotiation');
+      return {
+        state: job.state, round: job.round, transcript: job.transcript,
+        ...(job.outcome !== undefined ? { outcome: job.outcome } : {}),
+        ...(job.rejectReason !== undefined ? { rejectReason: job.rejectReason } : {}),
+      };
+    }
+    case 'cancelNegotiation': {
+      if (!deps.negotiations) throw new Error('negotiations not configured');
+      const jobId = String(args.jobId ?? '');
+      if (!jobId) throw new Error('validation: jobId is required');
+      if (!deps.negotiations.cancel(jobId)) throw new Error('negotiation not active or unknown');
+      return { state: 'cancelled' };
     }
     default:
       throw new Error(`unknown tool: ${name}`);
