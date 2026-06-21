@@ -30,6 +30,24 @@ ALTER TABLE student_growth_profiles ADD COLUMN IF NOT EXISTS last_active_date   
 ALTER TABLE teacher_assignments      ADD COLUMN IF NOT EXISTS is_template         INTEGER DEFAULT 0;
 
 -- ── student_class_enrollments — per-student-per-class teacher overrides ─
+-- This table was only ever ALTER'd (never CREATE'd) by the original SQLite-era
+-- inline IIFE in school.ts (the ALTER ran inside `try { … } catch {}`, so on a
+-- DB where the table did not exist the change was silently swallowed and the
+-- table simply never existed). On PostgreSQL the migration runner has no such
+-- catch, so the bare ALTER fails with "relation … does not exist" and blocks the
+-- whole run. Create it here first so the ADD COLUMNs become harmless no-ops.
+-- Shape mirrors the real enrollment table (class_enrollments) — class_id +
+-- student_user_id — which is exactly what school.ts joins on at runtime.
+CREATE TABLE IF NOT EXISTS student_class_enrollments (
+  id                     TEXT PRIMARY KEY,
+  class_id               TEXT NOT NULL,
+  student_user_id        TEXT NOT NULL,
+  teacher_level_override TEXT,
+  sen_override           TEXT,
+  enrolled_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  status                 TEXT DEFAULT 'active',
+  UNIQUE(class_id, student_user_id)
+);
 
 ALTER TABLE student_class_enrollments ADD COLUMN IF NOT EXISTS teacher_level_override TEXT;
 ALTER TABLE student_class_enrollments ADD COLUMN IF NOT EXISTS sen_override            TEXT;

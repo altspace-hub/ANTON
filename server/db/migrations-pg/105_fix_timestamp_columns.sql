@@ -25,8 +25,8 @@ SELECT
   prediction_type,
   COUNT(*) as total,
   SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct,
-  ROUND(AVG(CASE WHEN was_correct = 1 THEN 1.0 ELSE 0.0 END), 4) as accuracy,
-  ROUND(AVG(brier_score), 4) as avg_brier,
+  ROUND(AVG(CASE WHEN was_correct = 1 THEN 1.0 ELSE 0.0 END)::numeric, 4) as accuracy,
+  ROUND(AVG(brier_score)::numeric, 4) as avg_brier,
   MIN(validated_at) as first_validated,
   MAX(validated_at) as last_validated
 FROM market_predictions

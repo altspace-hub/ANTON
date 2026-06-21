@@ -184,12 +184,34 @@ END $$;
 -- ║ 2. GIN INDEXES on frequently queried JSONB columns                      ║
 -- ╚══════════════════════════════════════════════════════════════════════════╝
 
-CREATE INDEX IF NOT EXISTS idx_market_atoms_affected_symbols_gin ON market_atoms USING GIN(affected_symbols);
 CREATE INDEX IF NOT EXISTS idx_market_atoms_entities_gin ON market_atoms USING GIN(entities);
-CREATE INDEX IF NOT EXISTS idx_market_theses_evidence_atoms_gin ON market_theses USING GIN(evidence_atoms);
-CREATE INDEX IF NOT EXISTS idx_market_theses_affected_symbols_gin ON market_theses USING GIN(affected_symbols);
 CREATE INDEX IF NOT EXISTS idx_market_indexes_universe_gin ON market_indexes USING GIN(universe);
 CREATE INDEX IF NOT EXISTS idx_market_pattern_detections_affected_entities_gin ON market_pattern_detections USING GIN(affected_entities);
+
+-- The following GIN indexes target columns that do not exist until migration 065
+-- (market_atoms.affected_symbols, market_theses.evidence_atoms / affected_symbols).
+-- Guard each one so this migration succeeds on a fresh DB (where 065 has not yet
+-- run and these columns are absent). Migration 065 re-creates the same indexes
+-- idempotently, so a fresh DB ends up with them either way. On an existing DB
+-- where 065 already ran (columns present), the guard passes and the index is
+-- created if missing.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'market_atoms' AND column_name = 'affected_symbols') THEN
+    CREATE INDEX IF NOT EXISTS idx_market_atoms_affected_symbols_gin ON market_atoms USING GIN(affected_symbols);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'market_theses' AND column_name = 'evidence_atoms') THEN
+    CREATE INDEX IF NOT EXISTS idx_market_theses_evidence_atoms_gin ON market_theses USING GIN(evidence_atoms);
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'market_theses' AND column_name = 'affected_symbols') THEN
+    CREATE INDEX IF NOT EXISTS idx_market_theses_affected_symbols_gin ON market_theses USING GIN(affected_symbols);
+  END IF;
+END $$;
 
 -- ╔══════════════════════════════════════════════════════════════════════════╗
 -- ║ 3. NUMERIC CONVERSIONS for financial precision                          ║
@@ -267,8 +289,8 @@ SELECT
   prediction_type,
   COUNT(*) as total,
   SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct,
-  ROUND(AVG(CASE WHEN was_correct = 1 THEN 1.0 ELSE 0.0 END), 4) as accuracy,
-  ROUND(AVG(brier_score), 4) as avg_brier,
+  ROUND(AVG(CASE WHEN was_correct = 1 THEN 1.0 ELSE 0.0 END)::numeric, 4) as accuracy,
+  ROUND(AVG(brier_score)::numeric, 4) as avg_brier,
   MIN(validated_at) as first_validated,
   MAX(validated_at) as last_validated
 FROM market_predictions
