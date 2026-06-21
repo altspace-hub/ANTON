@@ -58,8 +58,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Use `pnpm exec` (the repo-pinned @playwright/test, currently 1.58.2), NOT
+      # `pnpm dlx` (which resolves the LATEST playwright from npm and installs
+      # browser builds whose version doesn't match the pinned test runner → the
+      # runner then fails with "browserType.launch: Executable doesn't exist").
       - name: Install Playwright browsers
-        run: pnpm dlx playwright install --with-deps ${{ matrix.project }}
+        run: pnpm exec playwright install --with-deps ${{ matrix.project }}
 
       - name: Build app
         run: pnpm run build
