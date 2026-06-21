@@ -40,6 +40,8 @@ import { NegotiationStore } from '../main/negotiation-store.js';
 import { ClaudeNegotiationBrain, type NegotiationBrain } from '../main/negotiation-brain.js';
 import { FulfilmentStore } from '../main/fulfilment-store.js';
 import { FulfilmentEngine } from '../main/fulfilment-engine.js';
+import { EscrowStore } from '../main/escrow-store.js';
+import { EscrowEngine } from '../main/escrow-engine.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -64,8 +66,11 @@ async function main(): Promise<void> {
   const agreementStore = new AgreementStore(storage);
   const engine = new AgreementEngine(agreementStore, identity);
   const approvals = new AgreementProposalStore();
-  // Fulfilment shares the SAME agreement store (so it can check agreed/settled).
-  const fulfilment = new FulfilmentEngine(agreementStore, identity, new FulfilmentStore(storage));
+  // Fulfilment + escrow share the SAME agreement store (agreed/settled checks)
+  // and the SAME fulfilment store (the escrow release policy reads delivery proof).
+  const fulfilmentStore = new FulfilmentStore(storage);
+  const fulfilment = new FulfilmentEngine(agreementStore, identity, fulfilmentStore);
+  const escrow = new EscrowEngine(agreementStore, identity, new EscrowStore(storage), fulfilmentStore);
 
   // The human-approval driver — terminal prompt in JSON-RPC mode only.
   let rl: readline.Interface | undefined;
@@ -88,7 +93,7 @@ async function main(): Promise<void> {
 
   const deps: ServerDeps = {
     pairings: new PairingStore(),
-    engine, approvals, negotiations, fulfilment,
+    engine, approvals, negotiations, fulfilment, escrow,
     ...(discovery ? { discovery } : {}),
     ...(buyerContactHash ? { buyerContactHash } : {}),
     ...(modal ? { modal } : {}),
@@ -115,7 +120,7 @@ async function main(): Promise<void> {
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
-  log(' Verbs:      discover · talk · negotiate · {propose,accept,counter,decline,withdraw}Agreement · ingest · settle · markShipped/confirmDelivery');
+  log(' Verbs:      discover · talk · negotiate · agreement · settle · fulfilment · escrow (custodial; spends gated in Agent Pay)');
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 

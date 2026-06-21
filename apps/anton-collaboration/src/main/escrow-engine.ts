@@ -17,6 +17,10 @@ import {
   computeDisputeDigest, disputeSigningString, isEscrowTerminal,
   type EscrowRecord, type EscrowOpenInput, type EscrowInstruction, type DisputePayload, type EscrowStatus,
 } from './escrow-core.js';
+import {
+  computeDeliveryDigest, deliverySigningString, computeShipmentDigest, shipmentSigningString,
+  type FulfilmentRecord,
+} from './fulfilment-core.js';
 import { verifyMessage } from './agreement-crypto.js';
 import { buyerPubkeyOf, sellerPubkeyOf } from './agreement-core.js';
 import type { AgreementStore } from './agreement-store.js';
@@ -26,10 +30,12 @@ import type { FulfilmentStore } from './fulfilment-store.js';
 import type { Agreement } from './agreement-core.js';
 
 export const DEFAULT_FUND_DEADLINE_MS = 7 * 24 * 60 * 60 * 1000;  // 7 days to fund
-export const DEFAULT_AUTO_RELEASE_MS = 14 * 24 * 60 * 60 * 1000;  // 14 days after fund
 export const DEFAULT_DISPUTE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // 14 days to resolve
 
-const FULFILLABLE = new Set<string>(['agreed', 'settled']);
+const MICRO_RE = /^\d{1,30}$/;
+// Escrow opens on an AGREED (not yet settled) agreement — escrow IS the
+// settlement path, so an already-settled deal must not be double-settled (H1).
+const FULFILLABLE = new Set<string>(['agreed']);
 
 export interface EscrowEngineOpts { now?: () => number }
 
@@ -67,6 +73,7 @@ export class EscrowEngine {
   async openEscrow(agreementId: string, input: EscrowOpenInput): Promise<EscrowRecord> {
     const a = await this.requireFulfillable(agreementId);
     if (a.sellerRole === undefined) throw new Error('agreement has no sellerRole — role-binding is required for escrow');
+    if (!MICRO_RE.test(a.amountMicroFtc) || a.amountMicroFtc === '0') throw new Error('agreement has no escrowable amount'); // M3
     const buyerPubkey = buyerPubkeyOf(a);
     const sellerPubkey = sellerPubkeyOf(a);
     if (!buyerPubkey || !sellerPubkey) throw new Error('agreement is missing a party pubkey (not fully agreed?)');
@@ -80,9 +87,10 @@ export class EscrowEngine {
       amountMicroFtc: a.amountMicroFtc, sellerRole: a.sellerRole, buyerPubkey, sellerPubkey, status: 'requested',
       fundDeadline: createdAt + (input.fundDeadlineMs ?? DEFAULT_FUND_DEADLINE_MS),
       createdAt,
-      // carried so markFunded can open the windows; recomputed there relative to funding.
-      ...(input.autoReleaseMs !== undefined ? { autoReleaseAt: input.autoReleaseMs } : {}),
-      ...(input.disputeWindowMs !== undefined ? { disputeWindowEndsAt: input.disputeWindowMs } : {}),
+      // Store CONFIG durations; markFunded resolves them to absolute deadlines.
+      // Auto-release stays OFF unless an explicit autoReleaseMs was given (H2).
+      ...(input.autoReleaseMs !== undefined ? { autoReleaseMs: input.autoReleaseMs } : {}),
+      ...(input.disputeWindowMs !== undefined ? { disputeWindowMs: input.disputeWindowMs } : {}),
     };
     await this.store.put(record);
     return record;
@@ -102,8 +110,10 @@ export class EscrowEngine {
     const fundedAt = this.now();
     const next: EscrowRecord = {
       ...r, status: 'funded', fundTxHash: txHash,
-      autoReleaseAt: fundedAt + (r.autoReleaseAt ?? DEFAULT_AUTO_RELEASE_MS),
-      disputeWindowEndsAt: fundedAt + (r.disputeWindowEndsAt ?? DEFAULT_DISPUTE_WINDOW_MS),
+      // Auto-release is OPT-IN: resolve it ONLY when autoReleaseMs was configured.
+      ...(r.autoReleaseMs !== undefined ? { autoReleaseAt: fundedAt + r.autoReleaseMs } : {}),
+      // The dispute window always has a backstop (default-to-buyer is reachable).
+      disputeWindowEndsAt: fundedAt + (r.disputeWindowMs ?? DEFAULT_DISPUTE_WINDOW_MS),
     };
     await this.store.put(next);
     return next;
@@ -115,13 +125,19 @@ export class EscrowEngine {
    *  policy holds (delivery confirmed / auto-release window) OR the arbiter
    *  overrides a dispute with 'release'. Flips to release_pending (one-shot). */
   async buildRelease(agreementId: string, opts: { arbiterOverride?: 'release' } = {}): Promise<EscrowInstruction> {
-    const r = await this.requireArbiter(agreementId);
-    const f = await this.fulfilment.get(agreementId);
-    const policy = releaseAllowed(r, f, this.now());
-    const overridden = r.status === 'disputed' && opts.arbiterOverride === 'release';
-    if (!policy.ok && !overridden) throw new Error(`release not allowed: ${policy.reason}`);
-    await this.store.put({ ...r, status: 'release_pending' });
-    return buildReleaseInstruction(r);
+    const me = await this.identity.pubkey();
+    // C1: the arbiter-check, the signature-verified policy, and the flip to
+    // release_pending all run ATOMICALLY in the store mutex — two concurrent
+    // builds can't both pass (the second sees release_pending and throws).
+    const updated = await this.store.compareAndSwap(agreementId, async (r) => {
+      this.arbiterGuard(r, me);
+      const f = await this.trustedFulfilment(r, await this.fulfilment.get(agreementId));
+      const overridden = r.status === 'disputed' && opts.arbiterOverride === 'release';
+      const policy = releaseAllowed(r, f, this.now());
+      if (!policy.ok && !overridden) throw new Error(`release not allowed: ${policy.reason}`);
+      return { ...r, status: 'release_pending' };
+    });
+    return buildReleaseInstruction(updated!);
   }
 
   async markReleased(agreementId: string, txHash: string): Promise<EscrowRecord | null> {
@@ -139,13 +155,16 @@ export class EscrowEngine {
   /** Build the REFUND leg (arbiter → buyer). Allowed by the deterministic policy
    *  OR an arbiter dispute override 'refund'. Flips to refund_pending (one-shot). */
   async buildRefund(agreementId: string, opts: { arbiterOverride?: 'refund' } = {}): Promise<EscrowInstruction> {
-    const r = await this.requireArbiter(agreementId);
-    const f = await this.fulfilment.get(agreementId);
-    const policy = refundAllowed(r, f, this.now());
-    const overridden = r.status === 'disputed' && opts.arbiterOverride === 'refund';
-    if (!policy.ok && !overridden) throw new Error(`refund not allowed: ${policy.reason}`);
-    await this.store.put({ ...r, status: 'refund_pending' });
-    return buildRefundInstruction(r);
+    const me = await this.identity.pubkey();
+    const updated = await this.store.compareAndSwap(agreementId, async (r) => {
+      this.arbiterGuard(r, me);
+      const f = await this.trustedFulfilment(r, await this.fulfilment.get(agreementId));
+      const overridden = r.status === 'disputed' && opts.arbiterOverride === 'refund';
+      const policy = refundAllowed(r, f, this.now());
+      if (!policy.ok && !overridden) throw new Error(`refund not allowed: ${policy.reason}`);
+      return { ...r, status: 'refund_pending' };
+    });
+    return buildRefundInstruction(updated!);
   }
 
   async markRefunded(agreementId: string, txHash: string): Promise<EscrowRecord | null> {
@@ -223,16 +242,39 @@ export class EscrowEngine {
     return r;
   }
 
-  /** Only the arbiter (the E keyholder named at open time) may build release/refund. */
-  private async requireArbiter(agreementId: string): Promise<EscrowRecord> {
-    const r = await this.store.get(agreementId);
-    if (!r) throw new Error(`no escrow for agreement ${agreementId}`);
+  /** Only the arbiter (the E keyholder named at open time) may build release/
+   *  refund, and only from a non-pending/non-terminal state. Runs INSIDE the
+   *  compareAndSwap mutator (asserts so the record narrows). */
+  private arbiterGuard(r: EscrowRecord | null, me: string): asserts r is EscrowRecord {
+    if (!r) throw new Error('no escrow for this agreement');
     if (isEscrowTerminal(r.status) || r.status === 'release_pending' || r.status === 'refund_pending') {
       throw new Error(`escrow is ${r.status} — no further release/refund`);
     }
-    const me = await this.identity.pubkey();
     if (me !== r.arbiterPubkey) throw new Error('only the arbiter may release or refund this escrow');
-    return r;
+  }
+
+  /** C2: a delivery/shipment proof may authorize a RELEASE of real funds ONLY if
+   *  its Ed25519 SIGNATURE verifies against the escrow's known buyer/seller key —
+   *  never trust the sibling fulfilment store's status alone. Returns the record
+   *  only when genuinely authenticated + bound to this proposalHash, else null. */
+  private async trustedFulfilment(r: EscrowRecord, f: FulfilmentRecord | null): Promise<FulfilmentRecord | null> {
+    if (!f || f.proposalHash !== r.proposalHash) return null;
+    if (f.status === 'delivered') {
+      if (f.confirmerPubkey !== r.buyerPubkey || !f.confirmerSig || f.confirmedAt === undefined) return null;
+      const digest = computeDeliveryDigest({ agreementId: r.agreementId, proposalHash: r.proposalHash, confirmedAt: f.confirmedAt });
+      return (await verifyMessage(deliverySigningString(digest), f.confirmerSig, f.confirmerPubkey)) ? f : null;
+    }
+    if (f.status === 'shipped') {
+      if (f.shipperPubkey !== r.sellerPubkey || !f.shipperSig || f.shippedAt === undefined || !f.carrier) return null;
+      const digest = computeShipmentDigest({
+        agreementId: r.agreementId, proposalHash: r.proposalHash, carrier: f.carrier,
+        ...(f.tracking !== undefined ? { tracking: f.tracking } : {}),
+        ...(f.eta !== undefined ? { eta: f.eta } : {}),
+        shippedAt: f.shippedAt,
+      });
+      return (await verifyMessage(shipmentSigningString(digest), f.shipperSig, f.shipperPubkey)) ? f : null;
+    }
+    return null;
   }
 
   /** A successful release means the seller received the FTC → mark the agreement

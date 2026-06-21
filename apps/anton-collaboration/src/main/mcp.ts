@@ -224,6 +224,33 @@ export const MCP_TOOLS = [
       properties: { agreementId: { type: 'string', maxLength: 128 } },
     },
   },
+  {
+    name: 'openEscrow',
+    description:
+      'Opt an agreed agreement into CUSTODIAL escrow (FutureChain has no native escrow): a third arbiter holds an '
+      + 'escrow address; the buyer funds it, and on a confirmed delivery the arbiter releases to the seller (or '
+      + 'refunds the buyer). Fixes the immutable escrow/release/refund addresses + arbiter. The SPENDS are gated in '
+      + 'Agent Pay. NOT trustless — the arbiter can never misdirect funds but is trusted to act.',
+    inputSchema: {
+      type: 'object', required: ['agreementId', 'escrowAddress', 'releaseTo', 'refundTo', 'arbiterPubkey'], additionalProperties: false,
+      properties: {
+        agreementId: { type: 'string', maxLength: 128 }, escrowAddress: { type: 'string', maxLength: 256 },
+        releaseTo: { type: 'string', maxLength: 256 }, refundTo: { type: 'string', maxLength: 256 },
+        arbiterPubkey: { type: 'string', maxLength: 128 }, escrowMode: { type: 'string', enum: ['notary'] },
+        fundDeadlineMs: { type: 'integer' }, autoReleaseMs: { type: 'integer' }, disputeWindowMs: { type: 'integer' },
+      },
+    },
+  },
+  { name: 'getEscrowFundInstruction', description: 'Buyer: the instruction (pay → escrow E) to hand to Agent Pay\'s proposePayment.', inputSchema: { type: 'object', required: ['agreementId'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 } } } },
+  { name: 'getEscrowReleaseInstruction', description: 'Arbiter: the instruction (E → seller) when the release policy allows it (delivery confirmed). arbiterOverride:"release" resolves a dispute.', inputSchema: { type: 'object', required: ['agreementId'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, arbiterOverride: { type: 'string', enum: ['release', 'refund'] } } } },
+  { name: 'getEscrowRefundInstruction', description: 'Arbiter: the instruction (E → buyer) when the refund policy allows it (never-shipped / dispute). arbiterOverride:"refund" resolves a dispute.', inputSchema: { type: 'object', required: ['agreementId'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, arbiterOverride: { type: 'string', enum: ['release', 'refund'] } } } },
+  { name: 'markEscrowFunded', description: 'Record the confirmed FUND tx (→ funded; opens the release/refund windows).', inputSchema: { type: 'object', required: ['agreementId', 'txHash'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, txHash: { type: 'string', maxLength: 256 } } } },
+  { name: 'markEscrowReleased', description: 'Record the confirmed RELEASE tx (→ released; settles the agreement).', inputSchema: { type: 'object', required: ['agreementId', 'txHash'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, txHash: { type: 'string', maxLength: 256 } } } },
+  { name: 'markEscrowRefunded', description: 'Record the confirmed REFUND tx (→ refunded).', inputSchema: { type: 'object', required: ['agreementId', 'txHash'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, txHash: { type: 'string', maxLength: 256 } } } },
+  { name: 'raiseDispute', description: 'Buyer: raise a SIGNED dispute against a funded escrow (→ disputed; routes to the human arbiter). Signed, ungated.', inputSchema: { type: 'object', required: ['agreementId', 'reason'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, reason: { type: 'string', maxLength: 2000 } } } },
+  { name: 'ingestDispute', description: 'Arbiter/seller: apply an inbound SIGNED dispute (verifies the buyer key + signature).', inputSchema: { type: 'object', required: ['payload'], additionalProperties: false, properties: { payload: { type: 'object' } } } },
+  { name: 'reconcileEscrow', description: 'Record an observed inbound escrow leg by kind (fund / release / refund) + txHash.', inputSchema: { type: 'object', required: ['agreementId', 'leg', 'txHash'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, leg: { type: 'string', enum: ['fund', 'release', 'refund'] }, txHash: { type: 'string', maxLength: 256 } } } },
+  { name: 'getEscrow', description: 'Read the escrow status: requested / funded / release_pending / released / refund_pending / refunded / disputed / expired.', inputSchema: { type: 'object', required: ['agreementId'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 } } } },
 ] as const;
 
 export function buildMcpServer(deps: ServerDeps): Server {
@@ -433,6 +460,61 @@ async function dispatchMcpTool(
       const record = await f.status(agreementId);
       return record ? { found: true, fulfilment: record } : { found: false };
     }
+    case 'openEscrow': {
+      const e = requireEscrow(deps);
+      const a = String(args.agreementId ?? '');
+      if (!a || !args.escrowAddress || !args.releaseTo || !args.refundTo || !args.arbiterPubkey) {
+        throw new Error('validation: agreementId, escrowAddress, releaseTo, refundTo, arbiterPubkey are required');
+      }
+      return { escrow: await e.openEscrow(a, {
+        escrowAddress: String(args.escrowAddress), releaseTo: String(args.releaseTo), refundTo: String(args.refundTo),
+        arbiterPubkey: String(args.arbiterPubkey),
+        ...(args.escrowMode === 'notary' ? { escrowMode: 'notary' as const } : {}),
+        ...(typeof args.fundDeadlineMs === 'number' ? { fundDeadlineMs: args.fundDeadlineMs } : {}),
+        ...(typeof args.autoReleaseMs === 'number' ? { autoReleaseMs: args.autoReleaseMs } : {}),
+        ...(typeof args.disputeWindowMs === 'number' ? { disputeWindowMs: args.disputeWindowMs } : {}),
+      }) };
+    }
+    case 'getEscrowFundInstruction': {
+      const e = requireEscrow(deps);
+      return { instruction: await e.getFundInstruction(reqId(args)) };
+    }
+    case 'getEscrowReleaseInstruction': {
+      const e = requireEscrow(deps);
+      return { instruction: await e.buildRelease(reqId(args), args.arbiterOverride === 'release' ? { arbiterOverride: 'release' } : {}) };
+    }
+    case 'getEscrowRefundInstruction': {
+      const e = requireEscrow(deps);
+      return { instruction: await e.buildRefund(reqId(args), args.arbiterOverride === 'refund' ? { arbiterOverride: 'refund' } : {}) };
+    }
+    case 'markEscrowFunded': return { escrow: await requireEscrow(deps).markFunded(reqId(args), reqTx(args)) };
+    case 'markEscrowReleased': return { escrow: await requireEscrow(deps).markReleased(reqId(args), reqTx(args)) };
+    case 'markEscrowRefunded': return { escrow: await requireEscrow(deps).markRefunded(reqId(args), reqTx(args)) };
+    case 'raiseDispute': {
+      const e = requireEscrow(deps);
+      const reason = String(args.reason ?? '');
+      if (!reason) throw new Error('validation: reason is required');
+      const { record, payload } = await e.raiseDispute(reqId(args), reason);
+      return { escrow: record, payload };
+    }
+    case 'ingestDispute': {
+      const e = requireEscrow(deps);
+      const payload = (args.payload && typeof args.payload === 'object' ? args.payload : null) as Record<string, unknown> | null;
+      if (!payload) throw new Error('validation: payload is required');
+      const escrow = await e.applyInboundDispute(payload as never);
+      return { applied: escrow !== null, escrow };
+    }
+    case 'reconcileEscrow': {
+      const e = requireEscrow(deps);
+      const leg = String(args.leg ?? '');
+      if (leg !== 'fund' && leg !== 'release' && leg !== 'refund') throw new Error('validation: leg must be fund/release/refund');
+      const escrow = await e.reconcile({ agreementId: reqId(args), leg, txHash: reqTx(args) });
+      return { reconciled: escrow !== null, escrow };
+    }
+    case 'getEscrow': {
+      const escrow = await requireEscrow(deps).get(reqId(args));
+      return escrow ? { found: true, escrow } : { found: false };
+    }
     default:
       throw new Error(`unknown tool: ${name}`);
   }
@@ -441,6 +523,23 @@ async function dispatchMcpTool(
 function requireFulfilment(deps: ServerDeps): NonNullable<ServerDeps['fulfilment']> {
   if (!deps.fulfilment) throw new Error('fulfilment engine not configured');
   return deps.fulfilment;
+}
+
+function requireEscrow(deps: ServerDeps): NonNullable<ServerDeps['escrow']> {
+  if (!deps.escrow) throw new Error('escrow engine not configured');
+  return deps.escrow;
+}
+
+function reqId(args: Record<string, unknown>): string {
+  const a = String(args.agreementId ?? '');
+  if (!a) throw new Error('validation: agreementId is required');
+  return a;
+}
+
+function reqTx(args: Record<string, unknown>): string {
+  const t = String(args.txHash ?? '');
+  if (!t) throw new Error('validation: txHash is required');
+  return t;
 }
 
 function requireEngine(deps: ServerDeps): NonNullable<ServerDeps['engine']> {

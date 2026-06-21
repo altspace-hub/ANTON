@@ -11,11 +11,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EscrowEngine, DEFAULT_FUND_DEADLINE_MS } from '../../src/main/escrow-engine.js';
 import { EscrowStore } from '../../src/main/escrow-store.js';
 import { FulfilmentStore } from '../../src/main/fulfilment-store.js';
+import { FulfilmentEngine } from '../../src/main/fulfilment-engine.js';
 import { AgreementStore } from '../../src/main/agreement-store.js';
 import { AgreementIdentity } from '../../src/main/agreement-identity.js';
 import { InMemoryStorageBackend } from '../../src/main/storage.js';
 import type { Agreement } from '../../src/main/agreement-core.js';
-import type { FulfilmentRecord } from '../../src/main/fulfilment-core.js';
 
 const ID = 'agr_1';
 const PHASH = 'a'.repeat(64);
@@ -27,6 +27,7 @@ interface Ctx {
   buyer: EscrowEngine;
   arbiter: EscrowEngine;
   fulStore: FulfilmentStore;
+  buyerFulfilment: FulfilmentEngine;
   agreements: AgreementStore;
   open: { escrowAddress: string; releaseTo: string; refundTo: string; arbiterPubkey: string };
   buyerPub: string;
@@ -57,8 +58,9 @@ async function setup(): Promise<Ctx> {
   // SEPARATE escrow stores per instance.
   const buyer = new EscrowEngine(agreements, buyerId, new EscrowStore(new InMemoryStorageBackend()), fulStore, { now });
   const arbiter = new EscrowEngine(agreements, arbiterId, new EscrowStore(new InMemoryStorageBackend()), fulStore, { now });
+  const buyerFulfilment = new FulfilmentEngine(agreements, buyerId, fulStore, { now });
   return {
-    now, advance, buyer, arbiter, fulStore, agreements, buyerPub,
+    now, advance, buyer, arbiter, fulStore, buyerFulfilment, agreements, buyerPub,
     open: { escrowAddress: 'fc_E', releaseTo: 'fc_seller', refundTo: 'fc_buyer', arbiterPubkey: arbiterPub },
   };
 }
@@ -69,9 +71,9 @@ async function openAndFund(ctx: Ctx, engine: EscrowEngine): Promise<void> {
   await engine.markFunded(ID, 'tx_fund');
 }
 
-async function seedDelivered(ctx: Ctx, status: 'shipped' | 'delivered' = 'delivered'): Promise<void> {
-  const rec: FulfilmentRecord = { agreementId: ID, proposalHash: PHASH, status, shippedAt: ctx.now() };
-  await ctx.fulStore.put(rec);
+/** The buyer SIGNS a delivery confirmation (what authorizes a release post-C2). */
+async function seedDelivered(ctx: Ctx): Promise<void> {
+  await ctx.buyerFulfilment.confirmDelivery(ID);
 }
 
 describe('escrow state machine', () => {
@@ -109,6 +111,21 @@ describe('escrow state machine', () => {
   it('RELEASE POLICY: cannot release without a delivery proof', async () => {
     await openAndFund(ctx, ctx.arbiter);
     await expect(ctx.arbiter.buildRelease(ID)).rejects.toThrow(/no delivery proof/);
+  });
+
+  it('C2: an UNSIGNED / forged delivered record does NOT authorize a release', async () => {
+    await openAndFund(ctx, ctx.arbiter);
+    // a forged 'delivered' row dropped straight into the store (no buyer signature)
+    await ctx.fulStore.put({ agreementId: ID, proposalHash: PHASH, status: 'delivered', confirmedAt: ctx.now() });
+    await expect(ctx.arbiter.buildRelease(ID)).rejects.toThrow(/no delivery proof/);
+  });
+
+  it('C1: two concurrent release builds — exactly ONE wins (atomic CAS lock)', async () => {
+    await openAndFund(ctx, ctx.arbiter);
+    await seedDelivered(ctx);
+    const results = await Promise.allSettled([ctx.arbiter.buildRelease(ID), ctx.arbiter.buildRelease(ID)]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1); // the 2nd hit release_pending
+    expect((await ctx.arbiter.get(ID))!.status).toBe('release_pending');
   });
 
   it('REFUND POLICY: seller never shipped + funding deadline elapsed → refund to buyer', async () => {

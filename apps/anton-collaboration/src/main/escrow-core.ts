@@ -78,6 +78,12 @@ export interface EscrowRecord {
   releaseTxHash?: string;
   refundTxHash?: string;
   fundDeadline?: number;
+  /** CONFIG durations (set at open). Auto-release is OPT-IN: absent → only a
+   *  buyer-confirmed delivery can release (never a seller self-attestation). */
+  autoReleaseMs?: number;
+  disputeWindowMs?: number;
+  /** RESOLVED absolute deadlines (set at markFunded from the config + fund time).
+   *  autoReleaseAt is only set when autoReleaseMs was given (opt-in). */
   autoReleaseAt?: number;
   disputeWindowEndsAt?: number;
   disputeReason?: string;

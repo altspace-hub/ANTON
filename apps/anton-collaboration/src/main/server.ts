@@ -38,6 +38,8 @@ import type { NegotiationStore } from './negotiation-store.js';
 import { runNegotiation, DEFAULT_NEGOTIATION_ROUNDS } from './negotiation-orchestrator.js';
 import type { FulfilmentEngine } from './fulfilment-engine.js';
 import type { ShipmentPayload, DeliveryPayload } from './fulfilment-core.js';
+import type { EscrowEngine } from './escrow-engine.js';
+import type { EscrowOpenInput, DisputePayload } from './escrow-core.js';
 
 export const DEFAULT_ALLOWED_ORIGINS: ReadonlyArray<string | RegExp> = [
   'null',
@@ -71,6 +73,11 @@ export const COLLAB_VERBS = [
   'negotiate', 'getNegotiation', 'cancelNegotiation',
   // FULFILMENT — post-settlement ship → deliver (signed, ungated — moves no FTC):
   'markShipped', 'confirmDelivery', 'ingestFulfilment', 'getFulfilment',
+  // ESCROW — custodial state machine (the SPENDS are gated in Agent Pay):
+  'openEscrow', 'getEscrowFundInstruction', 'markEscrowFunded',
+  'getEscrowReleaseInstruction', 'markEscrowReleased',
+  'getEscrowRefundInstruction', 'markEscrowRefunded',
+  'raiseDispute', 'ingestDispute', 'reconcileEscrow', 'getEscrow',
 ] as const;
 
 export interface ServerDeps {
@@ -95,6 +102,8 @@ export interface ServerDeps {
   negotiationMaxRounds?: number;
   /** The post-settlement ship → deliver engine. Absent → fulfilment verbs ERR. */
   fulfilment?: FulfilmentEngine;
+  /** The custodial escrow state machine. Absent → escrow verbs ERR. */
+  escrow?: EscrowEngine;
   now?: () => number;
 }
 
@@ -215,6 +224,42 @@ export const IngestFulfilmentParams = z.object({
   fromHash: z.string().min(1).max(256),
   payload: z.record(z.unknown()),
 });
+
+// ── ESCROW params ─────────────────────────────────────────────────
+export const OpenEscrowParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  escrowAddress: z.string().min(1).max(256),
+  releaseTo: z.string().min(1).max(256),
+  refundTo: z.string().min(1).max(256),
+  arbiterPubkey: z.string().min(1).max(128),
+  escrowMode: z.literal('notary').optional(),
+  fundDeadlineMs: z.number().int().positive().optional(),
+  autoReleaseMs: z.number().int().positive().optional(),
+  disputeWindowMs: z.number().int().positive().optional(),
+});
+
+export const EscrowTxParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  txHash: z.string().min(1).max(256),
+});
+
+export const EscrowArbiterParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  arbiterOverride: z.enum(['release', 'refund']).optional(),
+});
+
+export const RaiseDisputeParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  reason: z.string().min(1).max(2000),
+});
+
+export const ReconcileEscrowParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  leg: z.enum(['fund', 'release', 'refund']),
+  txHash: z.string().min(1).max(256),
+});
+
+export const IngestDisputeParams = z.object({ payload: z.record(z.unknown()) });
 
 export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): FastifyInstance {
   const app = Fastify({ logger: false, disableRequestLogging: true });
@@ -541,6 +586,93 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
           if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
           const record = await deps.fulfilment.status(p.data.agreementId);
           return reply.send(jsonRpcResult(id, record ? { found: true, fulfilment: record } : { found: false }));
+        }
+
+        // ── ESCROW (custodial; the SPENDS are gated in Agent Pay) ────────────
+        case 'openEscrow': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const p = OpenEscrowParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const input: EscrowOpenInput = {
+            escrowAddress: p.data.escrowAddress, releaseTo: p.data.releaseTo, refundTo: p.data.refundTo,
+            arbiterPubkey: p.data.arbiterPubkey,
+            ...(p.data.escrowMode !== undefined ? { escrowMode: p.data.escrowMode } : {}),
+            ...(p.data.fundDeadlineMs !== undefined ? { fundDeadlineMs: p.data.fundDeadlineMs } : {}),
+            ...(p.data.autoReleaseMs !== undefined ? { autoReleaseMs: p.data.autoReleaseMs } : {}),
+            ...(p.data.disputeWindowMs !== undefined ? { disputeWindowMs: p.data.disputeWindowMs } : {}),
+          };
+          try {
+            return reply.send(jsonRpcResult(id, { escrow: await deps.escrow.openEscrow(p.data.agreementId, input) }));
+          } catch (e) { return reply.send(jsonRpcError(ERR_VALIDATION, msgOf(e), id)); }
+        }
+
+        case 'getEscrowFundInstruction':
+        case 'getEscrowReleaseInstruction':
+        case 'getEscrowRefundInstruction': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const isFund = method === 'getEscrowFundInstruction';
+          const p = (isFund ? AgreementIdParams : EscrowArbiterParams).safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          try {
+            let instruction;
+            if (isFund) instruction = await deps.escrow.getFundInstruction(p.data.agreementId);
+            else if (method === 'getEscrowReleaseInstruction') {
+              const d = p.data as z.infer<typeof EscrowArbiterParams>;
+              instruction = await deps.escrow.buildRelease(d.agreementId, d.arbiterOverride === 'release' ? { arbiterOverride: 'release' } : {});
+            } else {
+              const d = p.data as z.infer<typeof EscrowArbiterParams>;
+              instruction = await deps.escrow.buildRefund(d.agreementId, d.arbiterOverride === 'refund' ? { arbiterOverride: 'refund' } : {});
+            }
+            return reply.send(jsonRpcResult(id, { instruction }));
+          } catch (e) { return reply.send(jsonRpcError(ERR_VALIDATION, msgOf(e), id)); }
+        }
+
+        case 'markEscrowFunded':
+        case 'markEscrowReleased':
+        case 'markEscrowRefunded': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const p = EscrowTxParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const fn = method === 'markEscrowFunded' ? deps.escrow.markFunded.bind(deps.escrow)
+            : method === 'markEscrowReleased' ? deps.escrow.markReleased.bind(deps.escrow)
+              : deps.escrow.markRefunded.bind(deps.escrow);
+          const escrow = await fn(p.data.agreementId, p.data.txHash);
+          if (!escrow) return reply.send(jsonRpcError(ERR_NOT_FOUND, `no escrow for ${p.data.agreementId}`, id));
+          return reply.send(jsonRpcResult(id, { escrow }));
+        }
+
+        case 'raiseDispute': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const p = RaiseDisputeParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          try {
+            const { record, payload } = await deps.escrow.raiseDispute(p.data.agreementId, p.data.reason);
+            return reply.send(jsonRpcResult(id, { escrow: record, payload }));
+          } catch (e) { return reply.send(jsonRpcError(ERR_VALIDATION, msgOf(e), id)); }
+        }
+
+        case 'ingestDispute': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const p = IngestDisputeParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const escrow = await deps.escrow.applyInboundDispute(p.data.payload as unknown as DisputePayload);
+          return reply.send(jsonRpcResult(id, { applied: escrow !== null, escrow }));
+        }
+
+        case 'reconcileEscrow': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const p = ReconcileEscrowParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const escrow = await deps.escrow.reconcile({ agreementId: p.data.agreementId, leg: p.data.leg, txHash: p.data.txHash });
+          return reply.send(jsonRpcResult(id, { reconciled: escrow !== null, escrow }));
+        }
+
+        case 'getEscrow': {
+          if (!deps.escrow) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'escrow engine not configured', id));
+          const p = AgreementIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const escrow = await deps.escrow.get(p.data.agreementId);
+          return reply.send(jsonRpcResult(id, escrow ? { found: true, escrow } : { found: false }));
         }
 
         default:

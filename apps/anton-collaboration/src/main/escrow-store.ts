@@ -49,6 +49,27 @@ export class EscrowStore {
     });
   }
 
+  /** ATOMIC load → mutate → persist inside the write-mutex (the TOCTOU guard for
+   *  the build→pending transition). `mutate` runs serialised against every other
+   *  store write; throwing aborts with no write; returning null leaves it
+   *  unchanged. This is what makes the funded→release_pending / →refund_pending
+   *  flip single-CAS so two concurrent builds can't both pass the policy check. */
+  compareAndSwap(
+    agreementId: string,
+    mutate: (current: EscrowRecord | null) => Promise<EscrowRecord | null>,
+  ): Promise<EscrowRecord | null> {
+    return this.enqueue(async () => {
+      const rows = await this.load();
+      const i = rows.findIndex((r) => r.agreementId === agreementId);
+      const current = i >= 0 ? rows[i]! : null;
+      const next = await mutate(current);
+      if (next === null) return current;
+      if (i >= 0) rows[i] = next; else rows.push(next);
+      await this.persist(rows);
+      return next;
+    });
+  }
+
   async list(): Promise<EscrowRecord[]> {
     return this.load();
   }
