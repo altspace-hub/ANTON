@@ -1,7 +1,7 @@
 # openEXPERT — Data, Privacy & Legal Notice
 
-**Version:** 0.2.0
-**Effective date:** 2025
+**Version:** 0.2.1
+**Effective date:** 2026 (reflects the PostgreSQL-only, local-first architecture)
 **Maintained by:** FutureChains / Anton
 
 ---
@@ -24,16 +24,18 @@ All of the following are stored **exclusively on the device or server where open
 
 | Data type | Storage location | Notes |
 |---|---|---|
-| Sessions and conversation history | `data/openexpert.db` (SQLite) | Never transmitted to FutureChains |
+| Sessions and conversation history | Local **PostgreSQL** database (the `anton` DB at your `DATABASE_URL`) | Never transmitted to FutureChains |
 | Uploaded documents | `uploads/` directory | PDF, DOCX, XLSX, etc. — local only |
 | Generated outputs | `outputs/` directory | DOCX, PDF, PPTX exports |
-| Vector embeddings | `data/chroma/` (ChromaDB) | Local semantic search index |
-| Workflow definitions and runs | SQLite database | All run history is local |
-| User accounts and credentials | SQLite — bcrypt-hashed passwords | Team mode only |
+| Vector embeddings & semantic index | Local PostgreSQL `embeddings` table (in-process cosine, or pgvector if enabled); an optional local ChromaDB index is used for knowledge-pack RAG search | Local semantic search index — stays on your machine |
+| Workflow definitions and runs | Local PostgreSQL database | All run history is local |
+| User accounts and credentials | Local PostgreSQL database — bcrypt-hashed passwords | Team mode only |
 | Project workspaces | `workspaces/` directory | Local file system |
-| Radar sources and regulatory items | SQLite database | All classifications are local |
-| Scheduled job history and notifications | SQLite database | Local only |
+| Radar sources and regulatory items | Local PostgreSQL database | All classifications are local |
+| Scheduled job history and notifications | Local PostgreSQL database | Local only |
 | Application logs | Console / Electron log window | Not transmitted |
+
+> **Database:** ANTON runs on **PostgreSQL only** (the legacy SQLite engine was removed). The database runs on your own machine or a server you control — set via the `DATABASE_URL` connection string. FutureChains has no access to it.
 
 **FutureChains/Anton does not collect, receive, or have access to any of the above data.**
 

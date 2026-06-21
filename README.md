@@ -203,7 +203,7 @@ ANTON/
 │   │       └── modules/[module-id]/
 │   │           ├── module.json
 │   │           └── system-prompt.md
-│   └── db/                    # SQLite schema & init
+│   └── db/                    # PostgreSQL schema & init
 ├── src/                       # React frontend (TypeScript + Tailwind)
 │   ├── components/            # UI components
 │   ├── pages/                 # Route pages
@@ -246,7 +246,7 @@ The area appears in the API (`GET /api/areas`) immediately.
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS + Zustand
 - **Backend:** Node.js + Express + TypeScript (tsx)
 - **AI:** Anthropic Claude API (`@anthropic-ai/sdk`) — streaming, adaptive thinking, web search
-- **Storage:** SQLite (`better-sqlite3`) — sessions, messages, folder registry
+- **Storage:** PostgreSQL 16+ (`pg`) — sessions, messages, workflows, and all application data (PostgreSQL-only; the legacy SQLite engine was removed)
 - **Exports:** DOCX (`docx`), XLSX (`exceljs`), PDF (`pdfkit`)
 
 ---
@@ -264,8 +264,9 @@ The area appears in the API (`GET /api/areas`) immediately.
 - Automated dependency vulnerability scanning
 - License compliance checking
 
-### Security Documentation
+### Data, Privacy & Security Documentation
 
+- [Data, Privacy & Legal Notice](docs/DATA-AND-LEGAL.md) — what's stored where (local PostgreSQL), what leaves your machine (only the AI-provider calls you configure), and the GDPR / data-classification posture
 - [Dependency Policy](docs/DEPENDENCY_POLICY.md) — Update schedules, license rules, approval process
 - [Security Audit Guide](docs/SECURITY_AUDIT.md) — Running audits, vulnerability response, CI/CD
 - [License Report](LICENSES.csv) — Generated via `pnpm run licenses:report`
