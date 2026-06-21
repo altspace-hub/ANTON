@@ -1087,7 +1087,13 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           -- cannot be matched") and the outer date comparison stays date-vs-date.
           SELECT COALESCE(MAX(price_date::date), '2020-01-01'::date) FROM market_historical_prices
         )
-        ON CONFLICT (symbol, price_date) DO UPDATE SET
+        -- market_historical_prices' only UNIQUE is (symbol, price_date, source)
+        -- — there is no unique on (symbol, price_date) alone (just a plain index),
+        -- so a 2-column ON CONFLICT raised "no unique or exclusion constraint
+        -- matching the ON CONFLICT specification" and the sync silently failed.
+        -- The INSERT omits source, so the rows take the column default ('fmp');
+        -- conflict-resolve on the full 3-column key.
+        ON CONFLICT (symbol, price_date, source) DO UPDATE SET
           close = EXCLUDED.close, high = EXCLUDED.high, low = EXCLUDED.low,
           open = EXCLUDED.open, volume = EXCLUDED.volume
       `);

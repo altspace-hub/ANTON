@@ -6,9 +6,9 @@ AI-powered expert workspace for professionals. Combines Claude's full capabiliti
 
 ## Before you start — read the whitepaper
 
-The whitepaper **"ANTON by openEXPERT"** is included in this folder as a PDF (`ANTON by openEXPERT whitepaper.pdf`). It explains the thinking behind ANTON, how AI and the platform work together, and lays the groundwork for understanding what you're setting up. If you're new to ANTON or AI tools in general, reading it first will make everything below make much more sense.
+The whitepaper **"ANTON by openEXPERT"** ships with this repository. The consolidated PDF is at [`public/ANTON by openEXPERT whitepaper.pdf`](public/ANTON%20by%20openEXPERT%20whitepaper.pdf), and the individual parts are in the repository root (the `ANTON by openEXPERT whitepaper part …` PDFs). It explains the thinking behind ANTON, how AI and the platform work together, and lays the groundwork for understanding what you're setting up. If you're new to ANTON or AI tools in general, reading it first will make everything below make much more sense.
 
-Once the app is running you can also open it at [http://localhost:3001/ANTON%20by%20openEXPERT%20whitepaper.pdf](http://localhost:3001/ANTON%20by%20openEXPERT%20whitepaper.pdf).
+Once the app is running you can also open the consolidated whitepaper at [http://localhost:3001/ANTON%20by%20openEXPERT%20whitepaper.pdf](http://localhost:3001/ANTON%20by%20openEXPERT%20whitepaper.pdf).
 
 ---
 

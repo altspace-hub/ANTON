@@ -232,6 +232,36 @@ if ($hasDbUrl) {
     }
 }
 
+# ── Step 4b: Instance encryption key ─────────────────────────────────────────
+# INSTANCE_KEY_ENCRYPTION_KEY encrypts secret material at rest — instance
+# Ed25519 identity + real-mode FutureChain wallet private keys (AES-256-GCM).
+# Without it, those are stored in PLAINTEXT (the server logs a one-time warning).
+# Generate a 32-byte (64 hex char) key once, on first setup, so production-bound
+# installs are encrypted-at-rest by default.
+
+Write-Blank
+Write-Step "4b" "Generating instance encryption key..."
+
+$envContent = if (Test-Path $envFile) { Get-Content -Path $envFile -Raw } else { '' }
+$hasInstanceKey = ($envContent -match '(?m)^\s*INSTANCE_KEY_ENCRYPTION_KEY\s*=\s*[0-9a-fA-F]{64}\s*$')
+if (-not $hasInstanceKey) {
+    $rng = [System.Security.Cryptography.RNGCryptoServiceProvider]::new()
+    $keyBytes = New-Object byte[] 32
+    $rng.GetBytes($keyBytes)
+    $rng.Dispose()
+    $instanceKey = ([System.BitConverter]::ToString($keyBytes) -replace '-', '').ToLower()
+    if ($envContent -match '(?m)^\s*#?\s*INSTANCE_KEY_ENCRYPTION_KEY\s*=.*$') {
+        $envContent = $envContent -replace '(?m)^\s*#?\s*INSTANCE_KEY_ENCRYPTION_KEY\s*=.*$', "INSTANCE_KEY_ENCRYPTION_KEY=$instanceKey"
+    } else {
+        $envContent += "`nINSTANCE_KEY_ENCRYPTION_KEY=$instanceKey`n"
+    }
+    Set-Content -Path $envFile -Value $envContent -NoNewline
+    Write-OK "Generated INSTANCE_KEY_ENCRYPTION_KEY (encrypts wallet keys + instance identity at rest)"
+    Write-Info "Keep .env safe and backed up - losing this key means losing access to encrypted secrets."
+} else {
+    Write-OK "INSTANCE_KEY_ENCRYPTION_KEY already set in .env"
+}
+
 # ── Step 5: Install dependencies ──────────────────────────────────────────────
 
 Write-Blank

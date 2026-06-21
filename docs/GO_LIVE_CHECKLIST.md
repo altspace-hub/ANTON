@@ -191,8 +191,8 @@ the heaviest hosted-relay obligations, but these are still required before launc
 - [ ] Counsel approves the **self-custody risk disclosure copy** (currently placeholder in
       `src/pay/components/RiskDisclosureSheet.tsx`) — bump `DISCLOSURE_VERSION` in
       `src/pay/services/disclosure.ts` when final copy lands so users re-accept.
-- [ ] Real, published **Terms of Service** + **Privacy Policy** URLs (the sheet has placeholders
-      `https://futurechain.eu/legal/{terms,privacy}`).
+- [ ] Real, published **Terms of Service** + **Privacy Policy** URLs (the sheet points at
+      `https://terms.futurechain.eu/{terms,privacy}` — publish those pages, see step 5 / `docs/LEGAL_PAGES_DEPLOY.md`).
 - [ ] Counsel sign-off on `docs/HOSTED_ANTON_COMPLIANCE_PLAN.md` (currently Draft v0.2).
 
 **Required before the HOSTED RELAY is ever enabled** (deferred with the relay, but long lead):
