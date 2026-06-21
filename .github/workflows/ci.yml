@@ -81,18 +81,14 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # The 4 companion apps run their own vitest suites (jsdom + fake-indexeddb /
-      # node). Previously these ran only locally, so the headline "CI-gated" number
-      # did NOT protect the apps (re-audit gap, PORTFOLIO_AUDIT_2026-05-31). Each is
-      # now a hard merge gate.
-      - name: Comm app tests
-        run: pnpm test:comm
-      - name: Business app tests
-        run: pnpm test:business
-      - name: Pay app tests
-        run: pnpm test:pay
+      # The in-repo standalone apps run their own vitest suites (node). Comm /
+      # Pay / Business app SOURCE ships via the App Store and is no longer in the
+      # public repo (gitignored; their suites run locally before release), so the
+      # CI gate now covers the standalones that remain in-repo.
       - name: Agent Pay (desktop) tests
         run: pnpm --filter @anton/agent-pay test
+      - name: Collaboration tests
+        run: pnpm --filter @anton/collaboration test
 
   security-audit:
     name: Security Audit

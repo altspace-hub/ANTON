@@ -114,3 +114,13 @@ data/test-corpus/*/docs/*
 
 # Local-only design docs / specs — kept out of the public repo.
 not_to_github/
+
+# Pay / Business / Comm app source — shipped via the App Store, kept OUT of the
+# public repo (still present + buildable locally; their vite/capacitor configs +
+# package.json scripts remain so local dev is unaffected).
+/src/comm/
+/src/pay/
+/src/business/
+/android-comm/
+/android-pay/
+/android-business/
