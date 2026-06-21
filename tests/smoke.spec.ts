@@ -30,11 +30,18 @@ test.describe('smoke', () => {
     const res = await page.goto('/', { waitUntil: 'domcontentloaded' });
     expect(res?.status() ?? 0, 'root document status').toBeLessThan(400);
     await expect(page).toHaveTitle(/ANTON by openEXPERT/);
-    // React mounts into <div id="root">. Wait for at least one child element to
-    // attach + become visible — this fails loudly on a white-screen / broken
-    // bundle regression instead of passing on an empty page.
-    const firstChild = page.locator('#root > *').first();
-    await firstChild.waitFor({ state: 'attached', timeout: 30_000 });
-    await expect(firstChild).toBeVisible();
+    // React mounts into <div id="root">. Assert the app rendered real text — a
+    // robust white-screen guard that fails loudly on a broken bundle / blank
+    // page, without depending on the first child element's box being "visible"
+    // (a context-provider wrapper can be attached-but-zero-size, which varies by
+    // engine and made an earlier `toBeVisible()` check flaky on WebKit).
+    await page.waitForFunction(
+      () => {
+        const root = document.getElementById('root');
+        return !!root && (root.innerText?.trim().length ?? 0) > 0;
+      },
+      undefined,
+      { timeout: 30_000 },
+    );
   });
 });
