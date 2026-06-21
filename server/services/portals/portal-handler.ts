@@ -25,6 +25,9 @@ import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
 import { assertSafeLanEgressUrl } from '../../lib/ssrf-guard.js';
 import { validateAgainstSchema } from '../capability-descriptor/validator.js';
+import { createSellerQuoter, type SellerQuoter } from './seller-quoter.js';
+import { makeQuoterDbDeps } from './auto-quote-config-service.js';
+import { createCallChatQuoteLLM } from './seller-quoter-llm.js';
 import { createAppCheckpointService } from '../app-checkpoint-service.js';
 import { createPortalDatabaseService, type PortalDatabaseService } from './portal-database-service.js';
 import { createPortalRenderer, type PortalRenderer } from './portal-renderer.js';
@@ -377,9 +380,17 @@ export interface PortalHandler {
   handleInvocationStatus(req: InvocationStatusRequest): Promise<InvocationStatusResponse>;
 }
 
-export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
+export function createPortalHandler(
+  db: DatabaseAdapter,
+  opts?: { quoter?: SellerQuoter },
+): PortalHandler {
   const dbSvc: PortalDatabaseService = createPortalDatabaseService(db);
   const renderer: PortalRenderer = createPortalRenderer(db);
+  // The seller auto-quote responder (commerce-loop P3). Opt-in per capability —
+  // with no config it returns {ok:false} and the human-inbox path is unchanged.
+  // Injectable so the handler integration test stubs it (no LLM/network).
+  const quoter: SellerQuoter = opts?.quoter
+    ?? createSellerQuoter({ ...makeQuoterDbDeps(db), llm: createCallChatQuoteLLM(db) });
 
   return {
     async handleFetch(req) {
@@ -501,16 +512,49 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
         }
       }
 
-      // Generate response_id + structured output, then insert into inbox.
+      // Generate response_id, then either AUTO-QUOTE (the seller-quoter answers
+      // a real priced quote synchronously) or fall back to today's human-inbox
+      // placeholder. The auto-quoter is opt-in per capability + fails closed:
+      // any disabled config / tripped guard returns {ok:false} and the unchanged
+      // 'pending' human path is taken. The quote is NON-BINDING (status:'quoted').
       const verb = cap.verb as string;
       const responseId = generateResponseId(verb);
-      const output = buildVerbOutput(verb, responseId, req.input);
+      let output: Record<string, unknown>;
+      let status: 'pending' | 'responded' = 'pending';
+      let respondedAt: Date | null = null;
+      let aq: Awaited<ReturnType<SellerQuoter['tryAutoQuote']>>;
+      try {
+        aq = await quoter.tryAutoQuote({
+          portalId: ctx.portalId,
+          capabilityId: req.capabilityId,
+          cap: cap as Record<string, unknown>,
+          verb,
+          responseId,
+          input: req.input,
+          ...(req.visitorContactHash !== undefined ? { visitorContactHash: req.visitorContactHash } : {}),
+        });
+      } catch (err) {
+        // Auto-quote is STRICTLY ADDITIVE: any failure (e.g. migration 243 not
+        // run, an LLM/DB error) degrades to today's human-inbox path. It must
+        // never break a portal invoke.
+        log.warn({ portalId: ctx.portalId, capabilityId: req.capabilityId, err: err instanceof Error ? err.message : String(err) },
+          'auto-quote failed; falling back to human inbox');
+        aq = { ok: false, reason: 'quoter_error' };
+      }
+      if (aq.ok) {
+        output = aq.output as unknown as Record<string, unknown>;
+        status = 'responded';   // fulfilled synchronously, no human leg
+        respondedAt = new Date();
+      } else {
+        output = buildVerbOutput(verb, responseId, req.input);
+      }
 
       const inserted = await db.get<{ id: string }>(
         `INSERT INTO portal_capability_invocations
            (portal_id, capability_id, capability_verb, aap_endpoint,
-            visitor_contact_hash, input, output, response_id, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+            visitor_contact_hash, input, output, response_id, status,
+            responded_at, metadata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          RETURNING id`,
         ctx.portalId,
         req.capabilityId,
@@ -520,6 +564,9 @@ export function createPortalHandler(db: DatabaseAdapter): PortalHandler {
         JSON.stringify(req.input),
         JSON.stringify(output),
         responseId,
+        status,
+        respondedAt,
+        JSON.stringify({ autoQuote: aq.ok, autoQuoteReason: aq.reason }),
       );
 
       log.info({
