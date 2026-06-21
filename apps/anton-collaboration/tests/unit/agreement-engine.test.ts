@@ -9,6 +9,7 @@ import { AgreementEngine } from '../../src/main/agreement-engine.js';
 import { AgreementStore } from '../../src/main/agreement-store.js';
 import { AgreementIdentity } from '../../src/main/agreement-identity.js';
 import { InMemoryStorageBackend } from '../../src/main/storage.js';
+import { sellerPubkeyOf } from '../../src/main/agreement-core.js';
 
 const BUYER_HASH = 'buyer-contact-hash';
 const SELLER_HASH = 'seller-contact-hash';
@@ -27,6 +28,46 @@ function makeEngine(tag: string): AgreementEngine {
     genNonce: () => `non_${tag}_${++n}`,
   });
 }
+
+describe('P8 sellerRole — invariant across counters', () => {
+  it('seller stays the seller through a counter; a seller-flipping counter is rejected', async () => {
+    const buyer = makeEngine('B');
+    const seller = makeEngine('S');
+    // Buyer proposes a PURCHASE → the counterparty (acceptor) is the seller.
+    const { agreement: offer, payload } = await buyer.propose({
+      decision: 'Jordans EU43', terms: 'ship to SE', amountMicroFtc: '1800000',
+      counterpartyAddress: SELLER_ADDR, counterpartyHash: SELLER_HASH, sellerRole: 'acceptor',
+    });
+    const sellerRow = await seller.applyInboundPropose(payload, BUYER_HASH);
+    expect(sellerRow!.sellerRole).toBe('acceptor'); // seller is the acceptor of head 0
+
+    // Seller counters → becomes the proposer of head 1; sellerRole flips to
+    // 'proposer' but the ABSOLUTE seller (its pubkey) is unchanged.
+    const { agreement: sellerCounter, payload: counterP } = await seller.respond(offer.id, 'counter', {
+      decision: 'Jordans EU43', terms: 'firm', amountMicroFtc: '2000000',
+    });
+    expect(sellerCounter.sellerRole).toBe('proposer');
+    expect(counterP.counterSellerRole).toBe('proposer');
+
+    const buyerCountered = await buyer.applyInboundRespond(counterP, SELLER_HASH);
+    expect(buyerCountered!.sellerRole).toBe('proposer');
+    // Both sides resolve the SAME absolute seller pubkey across the counter.
+    expect(sellerPubkeyOf(sellerCounter)).toBe(sellerPubkeyOf(buyerCountered!));
+    expect(sellerPubkeyOf(buyerCountered!)).toBe(counterP.responderPubkey); // = the seller
+
+    // A tampered counter that flips the seller fails the recompute guard.
+    const buyer2 = makeEngine('B2');
+    const seller2 = makeEngine('S2');
+    const p2 = (await buyer2.propose({
+      decision: 'd', terms: 't', amountMicroFtc: '100', counterpartyAddress: SELLER_ADDR,
+      counterpartyHash: SELLER_HASH, sellerRole: 'acceptor',
+    })).payload;
+    await seller2.applyInboundPropose(p2, BUYER_HASH);
+    const { payload: goodCounter } = await seller2.respond(p2.agreementId, 'counter', { decision: 'd', terms: 't', amountMicroFtc: '90' });
+    const tampered = { ...goodCounter, counterSellerRole: 'acceptor' as const }; // flip seller
+    expect(await buyer2.applyInboundRespond(tampered, SELLER_HASH)).toBeNull(); // recompute mismatch
+  });
+});
 
 describe('AgreementEngine — signed round-trip', () => {
   let buyer: AgreementEngine;

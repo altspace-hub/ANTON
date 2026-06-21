@@ -86,6 +86,7 @@ export async function verifyProposalPayload(p: AgreementProposePayload): Promise
     counterpartyAddress: p.counterpartyAddress,
     createdAt: p.createdAt,
     ...(p.parentProposalHash !== undefined ? { parentProposalHash: p.parentProposalHash } : {}),
+    ...(p.sellerRole !== undefined ? { sellerRole: p.sellerRole } : {}),
   });
   if (recomputed !== p.proposalHash) return false;
   return verifyMessage(proposalSigningString(p.proposalHash), p.proposerSig, p.proposerPubkey);

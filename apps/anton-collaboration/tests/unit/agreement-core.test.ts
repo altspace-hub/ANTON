@@ -77,6 +77,38 @@ describe('golden vectors (cross-app canonicalization lock)', () => {
   });
 });
 
+// P8 role-binding: an OPTIONAL sellerRole key, OMITTED when absent.
+const GOLDEN_ESCROW_PROPOSAL_HASH = 'eea4b10b6bd580022cba52b64ff14a32ee788c3e2f46221525433b1788fd82b8';
+
+describe('P8 sellerRole binding (byte-compat preserved)', () => {
+  it('a proposal WITHOUT sellerRole hashes to the UNCHANGED golden (the lock holds)', () => {
+    // The exact golden input — proves adding the optional digest field changed
+    // nothing for the direct path (the Comm/Pay/Business copies need no change).
+    expect(computeProposalHash({
+      agreementId: 'agr_golden_0001', seq: 0,
+      decision: 'Deliver 10 widgets by Friday', terms: 'Net 30, no returns on perishables',
+      amountMicroFtc: '1500000', counterpartyAddress: 'fc_GOLDENtestADDRESS000000', createdAt: 1700000000000,
+    })).toBe(GOLDEN_PROPOSAL_HASH);
+  });
+
+  it('binding sellerRole changes the hash (it IS in the signed digest)', () => {
+    const base = { agreementId: 'a1', seq: 0, decision: 'd', terms: 't', amountMicroFtc: '100', counterpartyAddress: 'fc_x', createdAt: 1 };
+    const h = computeProposalHash(base);
+    expect(computeProposalHash({ ...base, sellerRole: 'acceptor' })).not.toBe(h);
+    expect(computeProposalHash({ ...base, sellerRole: 'proposer' }))
+      .not.toBe(computeProposalHash({ ...base, sellerRole: 'acceptor' }));
+  });
+
+  it('the escrow proposal (sellerRole=acceptor) has its own stable golden', () => {
+    expect(computeProposalHash({
+      agreementId: 'agr_golden_0001', seq: 0,
+      decision: 'Deliver 10 widgets by Friday', terms: 'Net 30, no returns on perishables',
+      amountMicroFtc: '1500000', counterpartyAddress: 'fc_GOLDENtestADDRESS000000', createdAt: 1700000000000,
+      sellerRole: 'acceptor',
+    })).toBe(GOLDEN_ESCROW_PROPOSAL_HASH);
+  });
+});
+
 describe('lifecycle helpers', () => {
   it('classifies the terminal set', () => {
     for (const s of ['agreed', 'settled', 'declined', 'withdrawn', 'expired', 'accept_unconfirmed'] as const) {

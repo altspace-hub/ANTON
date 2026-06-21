@@ -24,6 +24,7 @@ import {
   type FulfilmentRecord, type ShipmentPayload, type DeliveryPayload,
 } from './fulfilment-core.js';
 import { verifyMessage } from './agreement-crypto.js';
+import { sellerPubkeyOf, buyerPubkeyOf } from './agreement-core.js';
 import type { AgreementStore } from './agreement-store.js';
 import type { AgreementIdentity } from './agreement-identity.js';
 import type { FulfilmentStore } from './fulfilment-store.js';
@@ -70,6 +71,11 @@ export class FulfilmentEngine {
 
   async markShipped(agreementId: string, input: ShipInput): Promise<{ record: FulfilmentRecord; payload: ShipmentPayload }> {
     const a = await this.requireFulfillable(agreementId);
+    // P8 role-binding: when sellerRole is bound, ONLY the seller may ship.
+    if (a.sellerRole !== undefined) {
+      const me = await this.identity.pubkey();
+      if (sellerPubkeyOf(a) !== me) throw new Error('only the seller may mark this agreement shipped');
+    }
     const shippedAt = this.now();
     const digest = computeShipmentDigest({
       agreementId, proposalHash: a.proposalHash, carrier: input.carrier,
@@ -104,12 +110,12 @@ export class FulfilmentEngine {
     if (fromHash !== a.counterpartyHash) return null;
     if (!FULFILLABLE.has(a.status)) return null;
     if (p.proposalHash !== a.proposalHash) return null;
-    // The shipper must be the COUNTERPARTY (a party to the agreement whose key is
-    // NOT mine — the cp===myPubkey guard rejects a degenerate equal-key agreement
-    // that would otherwise let me sign+ingest my own shipment as the counterparty).
+    // P8: when sellerRole is bound, the shipper MUST be the SELLER key; else fall
+    // back to "the counterparty" (legacy/non-escrow). Either way it must not be
+    // mine (the equal-key guard rejects a degenerate self-signed forgery).
     const myPubkey = await this.identity.pubkey();
-    const cp = this.counterpartyPubkey(a, myPubkey);
-    if (!cp || cp === myPubkey || p.shipperPubkey !== cp) return null;
+    const expected = a.sellerRole !== undefined ? sellerPubkeyOf(a) : this.counterpartyPubkey(a, myPubkey);
+    if (!expected || expected === myPubkey || p.shipperPubkey !== expected) return null;
 
     const digest = computeShipmentDigest({
       agreementId: p.agreementId, proposalHash: p.proposalHash, carrier: p.carrier,
@@ -143,6 +149,11 @@ export class FulfilmentEngine {
 
   async confirmDelivery(agreementId: string): Promise<{ record: FulfilmentRecord; payload: DeliveryPayload }> {
     const a = await this.requireFulfillable(agreementId);
+    // P8 role-binding: when bound, ONLY the buyer may confirm delivery.
+    if (a.sellerRole !== undefined) {
+      const me = await this.identity.pubkey();
+      if (buyerPubkeyOf(a) !== me) throw new Error('only the buyer may confirm delivery');
+    }
     const confirmedAt = this.now();
     const digest = computeDeliveryDigest({ agreementId, proposalHash: a.proposalHash, confirmedAt });
     const confirmerPubkey = await this.identity.pubkey();
@@ -164,9 +175,10 @@ export class FulfilmentEngine {
     if (fromHash !== a.counterpartyHash) return null;
     if (!FULFILLABLE.has(a.status)) return null;
     if (p.proposalHash !== a.proposalHash) return null;
+    // P8: when bound, the confirmer MUST be the BUYER key; else the counterparty.
     const myPubkey = await this.identity.pubkey();
-    const cp = this.counterpartyPubkey(a, myPubkey);
-    if (!cp || cp === myPubkey || p.confirmerPubkey !== cp) return null;
+    const expected = a.sellerRole !== undefined ? buyerPubkeyOf(a) : this.counterpartyPubkey(a, myPubkey);
+    if (!expected || expected === myPubkey || p.confirmerPubkey !== expected) return null;
 
     const digest = computeDeliveryDigest({ agreementId: p.agreementId, proposalHash: p.proposalHash, confirmedAt: p.confirmedAt });
     if (!(await verifyMessage(deliverySigningString(digest), p.confirmerSig, p.confirmerPubkey))) return null;

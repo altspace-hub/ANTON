@@ -58,6 +58,13 @@ export const AGREEMENT_SCHEMA_V = 1;
 /** Protocol cap on counter-offers (enforced in the protocol, not just the UI). */
 export const MAX_COUNTERS = 6;
 
+/** Which side of the CURRENT head is the SELLER (the party paid + who ships).
+ *  Frame-relative to a head's proposer/acceptor (both parties compute the same
+ *  for a given head); re-derived on each counter from the absolute seller key.
+ *  Bound into the signed proposal digest (P8 role-binding) — OMITTED when absent
+ *  so non-escrow proposals stay byte-identical to the Comm/Pay/Business copies. */
+export type SellerRole = 'proposer' | 'acceptor';
+
 export interface Agreement {
   id: string;
   schemaV: number;
@@ -85,6 +92,24 @@ export interface Agreement {
   respondedAt?: number;
   respondBy?: number;
   nonce: string;
+  /** P8 role-binding: which side of THIS head is the seller (signed into the
+   *  proposal digest). Absent on legacy/non-escrow agreements. */
+  sellerRole?: SellerRole;
+}
+
+/** The seller's absolute pubkey for a head (the party paid + who ships). Returns
+ *  undefined when sellerRole isn't bound (legacy/non-escrow). */
+export function sellerPubkeyOf(a: Pick<Agreement, 'sellerRole' | 'proposerPubkey' | 'acceptorPubkey'>): string | undefined {
+  if (a.sellerRole === 'proposer') return a.proposerPubkey;
+  if (a.sellerRole === 'acceptor') return a.acceptorPubkey;
+  return undefined;
+}
+
+/** The buyer's absolute pubkey for a head (the party who pays + confirms). */
+export function buyerPubkeyOf(a: Pick<Agreement, 'sellerRole' | 'proposerPubkey' | 'acceptorPubkey'>): string | undefined {
+  if (a.sellerRole === 'proposer') return a.acceptorPubkey;
+  if (a.sellerRole === 'acceptor') return a.proposerPubkey;
+  return undefined;
 }
 
 // ── Canonicalization — LOCKED, byte-identical across all copies ─────────────
@@ -110,6 +135,9 @@ export interface ProposalDigestFields {
   counterpartyAddress: string;
   createdAt: number;
   parentProposalHash?: string;
+  /** P8 role-binding. OMITTED from the digest when absent → a non-escrow proposal
+   *  serialises byte-identically to today (the cross-app golden lock is intact). */
+  sellerRole?: SellerRole;
 }
 
 /** The flat map that the proposalHash is computed over. */
@@ -125,6 +153,9 @@ export function proposalDigestMap(f: ProposalDigestFields): Record<string, strin
     counterpartyAddress: f.counterpartyAddress,
     createdAt: String(f.createdAt),
     parentProposalHash: f.parentProposalHash ?? '',
+    // OMIT when absent — canonicalFlat sorts keys, so a sellerRole-less map is
+    // byte-for-byte today's map (preserves GOLDEN_PROPOSAL_HASH + the 4-copy lock).
+    ...(f.sellerRole !== undefined ? { sellerRole: f.sellerRole } : {}),
   };
 }
 
@@ -210,6 +241,9 @@ export interface AgreementProposePayload {
   proposerPubkey: string;
   proposerSig: string;
   structured?: pacs008.AntonRemittance;
+  /** P8 role-binding — the receiver recomputes the hash WITH this, so a tampered
+   *  sellerRole fails verifyProposalPayload. Absent on non-escrow proposals. */
+  sellerRole?: SellerRole;
 }
 
 export interface AgreementRespondPayload {
@@ -227,6 +261,10 @@ export interface AgreementRespondPayload {
   counterCreatedAt?: number;
   counterProposalHash?: string;
   counterProposerSig?: string;
+  /** P8 role-binding: the new head's frame-relative sellerRole (the absolute
+   *  seller is invariant; this is recomputed per head). In the counter-head hash,
+   *  so a seller-flipping counter is rejected by the recompute guard. */
+  counterSellerRole?: SellerRole;
 }
 
 export interface AgreementWithdrawPayload {

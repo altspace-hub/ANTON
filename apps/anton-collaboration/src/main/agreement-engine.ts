@@ -18,7 +18,7 @@
 import { randomBytes } from 'node:crypto';
 import {
   computeProposalHash, computeResponseDigest, isTerminal, headBeats, MAX_COUNTERS, AGREEMENT_SCHEMA_V,
-  type Agreement, type ResponseVerb,
+  type Agreement, type ResponseVerb, type SellerRole,
   type AgreementProposePayload, type AgreementRespondPayload,
   type AgreementWithdrawPayload, type AgreementAckPayload,
 } from './agreement-core.js';
@@ -38,6 +38,10 @@ export interface ProposeInput {
   counterpartyHash?: string;
   respondBy?: number;
   structured?: pacs008.AntonRemittance;
+  /** P8 role-binding: which side of THIS (seq-0) head is the SELLER. A buyer
+   *  proposing a purchase sets 'acceptor' (the counterparty sells); a seller
+   *  proposing a sale sets 'proposer'. Absent → legacy non-escrow agreement. */
+  sellerRole?: SellerRole;
 }
 
 export interface CounterInput {
@@ -82,6 +86,7 @@ export class AgreementEngine {
     const proposalHash = computeProposalHash({
       agreementId, seq: 0, decision: input.decision, terms: input.terms,
       amountMicroFtc: input.amountMicroFtc, counterpartyAddress: input.counterpartyAddress, createdAt,
+      ...(input.sellerRole !== undefined ? { sellerRole: input.sellerRole } : {}),
     });
     const proposerPubkey = await this.identity.pubkey();
     const proposerSig = await this.identity.signProposalHash(proposalHash);
@@ -93,6 +98,7 @@ export class AgreementEngine {
       decision: input.decision, terms: input.terms, amountMicroFtc: input.amountMicroFtc,
       status: 'proposed', seq: 0, proposalHash, proposerPubkey, proposerSig,
       ...(input.structured !== undefined ? { structured: input.structured } : {}),
+      ...(input.sellerRole !== undefined ? { sellerRole: input.sellerRole } : {}),
       createdAt, ...(input.respondBy !== undefined ? { respondBy: input.respondBy } : {}), nonce: '',
     };
     await this.store.put(row);
@@ -104,6 +110,7 @@ export class AgreementEngine {
       ...(input.respondBy !== undefined ? { respondBy: input.respondBy } : {}),
       proposalHash, proposerPubkey, proposerSig,
       ...(input.structured !== undefined ? { structured: input.structured } : {}),
+      ...(input.sellerRole !== undefined ? { sellerRole: input.sellerRole } : {}),
     };
     return { agreement: row, payload };
   }
@@ -124,6 +131,7 @@ export class AgreementEngine {
       ...(p.parentProposalHash !== undefined ? { parentProposalHash: p.parentProposalHash } : {}),
       proposalHash: p.proposalHash, proposerPubkey: p.proposerPubkey, proposerSig: p.proposerSig,
       ...(p.structured !== undefined ? { structured: p.structured } : {}),
+      ...(p.sellerRole !== undefined ? { sellerRole: p.sellerRole } : {}),
       createdAt: p.createdAt, ...(p.respondBy !== undefined ? { respondBy: p.respondBy } : {}), nonce: '',
     };
     await this.store.put(row);
@@ -167,10 +175,20 @@ export class AgreementEngine {
     const counterSeq = row.seq + 1;
     if (counterSeq > MAX_COUNTERS) throw new Error(`counter cap (${MAX_COUNTERS}) reached`);
     const counterCreatedAt = this.now();
+    // P8 role-binding: the SELLER is INVARIANT across counters. On the current
+    // head I'm the acceptor, so the two parties are {row.proposerPubkey, me}; the
+    // absolute seller is whichever sellerRole names. On the NEW head I become the
+    // proposer, so the seller's frame-relative role is recomputed.
+    let counterSellerRole: SellerRole | undefined;
+    if (row.sellerRole !== undefined) {
+      const absoluteSeller = row.sellerRole === 'proposer' ? row.proposerPubkey : responderPubkey;
+      counterSellerRole = absoluteSeller === responderPubkey ? 'proposer' : 'acceptor';
+    }
     const counterProposalHash = computeProposalHash({
       agreementId, seq: counterSeq, decision: c.decision, terms: c.terms,
       amountMicroFtc: c.amountMicroFtc, counterpartyAddress: '', // fixed '' for counters (see Comm)
       createdAt: counterCreatedAt, parentProposalHash: row.proposalHash,
+      ...(counterSellerRole !== undefined ? { sellerRole: counterSellerRole } : {}),
     });
     // The counter head is signed by the SAME identity (signProposalHash signs the
     // proposal signing-string for counterProposalHash) — no seed ever leaks.
@@ -182,12 +200,13 @@ export class AgreementEngine {
     });
     const responderSig = await this.identity.signResponseDigest(digest);
 
-    // Roles swap: I am now the proposer of the new head.
+    // Roles swap: I am now the proposer of the new head (+ the new frame's sellerRole).
     const next: Agreement = {
       ...row, role: 'proposer', decision: c.decision, terms: c.terms, amountMicroFtc: c.amountMicroFtc,
       status: 'proposed', seq: counterSeq, parentProposalHash: row.proposalHash,
       proposalHash: counterProposalHash, proposerPubkey: responderPubkey, proposerSig: counterProposerSig,
       acceptorPubkey: undefined, acceptorSig: undefined, respondedAt: this.now(),
+      ...(counterSellerRole !== undefined ? { sellerRole: counterSellerRole } : {}),
     };
     await this.store.put(next);
 
@@ -196,6 +215,7 @@ export class AgreementEngine {
       responderPubkey, responderSig, nonce,
       counterDecision: c.decision, counterTerms: c.terms, counterAmountMicroFtc: c.amountMicroFtc,
       counterSeq, counterCreatedAt, counterProposalHash, counterProposerSig,
+      ...(counterSellerRole !== undefined ? { counterSellerRole } : {}),
     };
     return { agreement: next, payload };
   }
@@ -240,6 +260,9 @@ export class AgreementEngine {
       decision: p.counterDecision ?? '', terms: p.counterTerms ?? '',
       amountMicroFtc: p.counterAmountMicroFtc ?? '', counterpartyAddress: '',
       createdAt: p.counterCreatedAt, parentProposalHash: p.proposalHash,
+      // P8: bind the new head's sellerRole into the recompute — a seller-flipping
+      // counter yields a different hash and is rejected below (free tamper guard).
+      ...(p.counterSellerRole !== undefined ? { sellerRole: p.counterSellerRole } : {}),
     });
     if (recomputed !== p.counterProposalHash) return null;
     if (!(await verifyMessage(proposalSigningString(p.counterProposalHash), p.counterProposerSig, p.responderPubkey))) return null;
@@ -253,6 +276,7 @@ export class AgreementEngine {
       parentProposalHash: p.proposalHash, proposalHash: p.counterProposalHash,
       proposerPubkey: p.responderPubkey, proposerSig: p.counterProposerSig,
       acceptorPubkey: undefined, acceptorSig: undefined, respondedAt: this.now(),
+      ...(p.counterSellerRole !== undefined ? { sellerRole: p.counterSellerRole } : {}),
     };
     await this.store.put(next);
     return next;

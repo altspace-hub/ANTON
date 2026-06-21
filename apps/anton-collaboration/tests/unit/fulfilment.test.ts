@@ -153,3 +153,32 @@ describe('fulfilment — ship → deliver round-trip', () => {
     );
   });
 });
+
+describe('fulfilment — P8 role-binding (sellerRole bound)', () => {
+  let buyer: Party; let seller: Party;
+  beforeEach(() => { buyer = makeParty('B'); seller = makeParty('S'); });
+
+  async function toAgreedRole(): Promise<string> {
+    const { agreement: offer, payload } = await buyer.ag.propose({
+      decision: 'Jordans', terms: 't', amountMicroFtc: '1800000',
+      counterpartyAddress: SELLER_ADDR, counterpartyHash: SELLER_HASH, sellerRole: 'acceptor',
+    });
+    await seller.ag.applyInboundPropose(payload, BUYER_HASH);
+    const { payload: acceptP } = await seller.ag.respond(offer.id, 'accept');
+    await buyer.ag.applyInboundRespond(acceptP, SELLER_HASH);
+    await seller.ag.applyInboundAck(await buyer.ag.buildAck(offer.id), BUYER_HASH);
+    return offer.id;
+  }
+
+  it('only the seller may ship; only the buyer may confirm (role-bound)', async () => {
+    const id = await toAgreedRole();
+    // buyer (proposer = buyer) cannot ship; seller (acceptor = seller) can.
+    await expect(buyer.ful.markShipped(id, { carrier: 'X' })).rejects.toThrow(/only the seller/);
+    const { payload: ship } = await seller.ful.markShipped(id, { carrier: 'PostNord' });
+    expect((await buyer.ful.applyInboundShipment(ship, SELLER_HASH))!.status).toBe('shipped');
+    // seller cannot confirm delivery; buyer can.
+    await expect(seller.ful.confirmDelivery(id)).rejects.toThrow(/only the buyer/);
+    const { payload: deliv } = await buyer.ful.confirmDelivery(id);
+    expect((await seller.ful.applyInboundDelivery(deliv, BUYER_HASH))!.status).toBe('delivered');
+  });
+});
