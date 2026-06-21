@@ -4,7 +4,7 @@
  * Consumers (main.ts, server.ts) import from this module only.
  */
 export {
-  StorageBackend, InMemoryStorageBackend, FileStorageBackend,
+  type StorageBackend, InMemoryStorageBackend, FileStorageBackend,
 } from './storage.js';
 export {
   Wallet,
