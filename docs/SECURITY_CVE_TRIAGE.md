@@ -98,3 +98,28 @@ A **new** runtime high/critical CVE will now fail CI.
 | Build | `pnpm run build` | ✅ built, PWA generated, exit 0 |
 | Audit (root) | `pnpm audit --prod --audit-level=high` | ✅ exit 0 |
 | Audit (relay) | `pnpm audit --prod --audit-level=high --ignore-workspace` (in `relay/`) | ✅ exit 0 |
+
+---
+
+## Addendum — 2026-06-21 (3 new HIGH advisories)
+
+After 06-11 the gate went red again: **3 new high runtime advisories** published against
+modules already in the tree. The CI `security-audit` job (now blocking) failed on the next
+push. All three were patched the same way as before — direct bump where it's a direct dep,
+`pnpm.overrides` floor where it's transitive — with no breaking-major exception and nothing
+accepted-with-reason.
+
+| Package | Advisory | Was | Fix | Path |
+|---|---|---|---|---|
+| `nodemailer` | GHSA-p6gq-j5cr-w38f — `raw` option bypasses `disableFileAccess`/`disableUrlAccess` (arbitrary file read + SSRF), `<=9.0.0` | `^8.0.1` | **direct bump → `^9.0.1`** | `.>nodemailer` (server/services/email.ts; only `createTransport`/`sendMail`/`createTestAccount`/`getTestMessageUrl` used — API unchanged across 8→9, no `raw` usage) |
+| `ws` | GHSA-96hv-2xvq-fx4p — memory-exhaustion DoS from tiny fragments, `>=8.0.0 <8.21.0` | `^8.20.1` (direct) + transitive via `socket.io>engine.io>ws` | **direct bump → `^8.21.0`** + override `ws: >=8.21.0` (covers the engine.io transitive copy) | `.>ws`, `.>socket.io>engine.io>ws` |
+| `form-data` | GHSA-hmw2-7cc7-3qxx — CRLF injection via unescaped multipart field/file names, `>=4.0.0 <4.0.6` | transitive | **override → `form-data: >=4.0.6`** | `.>openai>@types/node-fetch>form-data` |
+
+**Result:** `pnpm audit --prod --audit-level=high` → **exit 0** (28 low/moderate remain,
+below the gate). Re-verified: `pnpm run typecheck` ✅ exit 0; `npx vitest run
+tests/services/coding/coding-workspace.test.ts` ✅ 85/85 (also fixed 2 cross-platform path
+tests that fail on the Linux runner — unrelated to the CVE work).
+
+> **Standing risk (from the go-live readiness review):** the runtime-CVE landscape moves —
+> re-run `pnpm audit --prod --audit-level=high` immediately before launch and keep the
+> override pins current.

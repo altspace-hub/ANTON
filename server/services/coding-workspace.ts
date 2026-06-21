@@ -577,7 +577,14 @@ export function validateTestArgv(input: unknown): ArgvValidation {
     if (/[\0\r\n]/.test(item)) return { ok: false, reason: 'control characters in argv' };
   }
   const argv = input as string[];
-  const cmdBase = path.basename(argv[0]).toLowerCase();
+  // Cross-platform basename: split on BOTH `/` and `\` (and strip any drive
+  // prefix) so a Windows shell path like `C:\Windows\System32\cmd.exe` is
+  // detected even on a POSIX host (path.basename is platform-specific and
+  // would treat the backslashes as filename chars on Linux). Defense in depth:
+  // argv runs via execFile with no shell, but argv[0] must never itself be a
+  // shell, regardless of the host OS the studio happens to run on.
+  const lastSeg = argv[0].split(/[\\/]/).pop() ?? argv[0];
+  const cmdBase = lastSeg.replace(/^[a-zA-Z]:/, '').toLowerCase();
   if (SHELL_BINARIES.has(cmdBase)) {
     return {
       ok: false,

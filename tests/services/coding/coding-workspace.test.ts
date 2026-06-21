@@ -193,7 +193,10 @@ describe('resolveTargetPath', () => {
 
 describe('validateWorkspacePath (ALLOWED_FOLDER_PATHS)', () => {
   it('refuses everything when ALLOWED_FOLDER_PATHS is not configured', async () => {
-    const r = await validateWorkspacePath('C:\\anywhere', { } as NodeJS.ProcessEnv);
+    // Use an OS-absolute path (`/anywhere` on POSIX, `C:\anywhere` on Windows)
+    // so this exercises the allowlist refusal on every host — a hard-coded
+    // `C:\…` is relative on Linux and would trip the absolute-path check first.
+    const r = await validateWorkspacePath(path.resolve('/anywhere'), { } as NodeJS.ProcessEnv);
     expect(r.ok).toBe(false);
     expect(r.error).toContain('ALLOWED_FOLDER_PATHS');
   });

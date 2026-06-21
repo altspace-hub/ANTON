@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Loader2, AlertCircle, CheckCircle2, X, Sparkles, Smartphone, Monitor } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
-import { wrapForSandbox } from '../../comm/lib/portal-sandbox';
+import { wrapForSandbox } from './portal-sandbox';
 import RegistryStatusBadge from '@/components/portals/RegistryStatusBadge';
 
 const PHASES = [
@@ -1036,7 +1036,8 @@ function PortalPreview({
   }, [sessionId, activePath]);
 
   // Mobile mode wraps the page body in the Comm App's mobile CSS reset
-  // (wrapForSandbox from src/comm/lib/portal-sandbox). The /preview endpoint
+  // (wrapForSandbox from ./portal-sandbox — the in-repo copy kept in sync
+  // with the Comm App's). The /preview endpoint
   // returns a full HTML document with desktop styling — we strip the body
   // out and re-wrap with the mobile reset to get an apples-to-apples view
   // of how the Comm App's PortalPageScreen will render this content.
