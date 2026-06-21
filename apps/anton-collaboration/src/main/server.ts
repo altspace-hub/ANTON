@@ -36,6 +36,8 @@ import type {
 import type { NegotiationBrain, NegotiationGoal } from './negotiation-brain.js';
 import type { NegotiationStore } from './negotiation-store.js';
 import { runNegotiation, DEFAULT_NEGOTIATION_ROUNDS } from './negotiation-orchestrator.js';
+import type { FulfilmentEngine } from './fulfilment-engine.js';
+import type { ShipmentPayload, DeliveryPayload } from './fulfilment-core.js';
 
 export const DEFAULT_ALLOWED_ORIGINS: ReadonlyArray<string | RegExp> = [
   'null',
@@ -67,6 +69,8 @@ export const COLLAB_VERBS = [
   'getSettlementInstruction', 'markAgreementSettled', 'reconcileSettlement',
   // NEGOTIATE — autonomous LLM buyer loop (UNGATED talk; only PREPARES a proposal):
   'negotiate', 'getNegotiation', 'cancelNegotiation',
+  // FULFILMENT — post-settlement ship → deliver (signed, ungated — moves no FTC):
+  'markShipped', 'confirmDelivery', 'ingestFulfilment', 'getFulfilment',
 ] as const;
 
 export interface ServerDeps {
@@ -89,6 +93,8 @@ export interface ServerDeps {
   negotiations?: NegotiationStore;
   /** Default TALK-round cap for a negotiation (clamped to MAX_NEGOTIATION_ROUNDS). */
   negotiationMaxRounds?: number;
+  /** The post-settlement ship → deliver engine. Absent → fulfilment verbs ERR. */
+  fulfilment?: FulfilmentEngine;
   now?: () => number;
 }
 
@@ -195,6 +201,20 @@ export const NegotiateParams = z.object({
 });
 
 export const NegotiationIdParams = z.object({ jobId: z.string().min(1).max(128) });
+
+// ── FULFILMENT params ─────────────────────────────────────────────
+export const MarkShippedParams = z.object({
+  agreementId: z.string().min(1).max(128),
+  carrier: z.string().min(1).max(200),
+  tracking: z.string().max(200).optional(),
+  eta: z.string().max(200).optional(),
+});
+
+export const IngestFulfilmentParams = z.object({
+  type: z.enum(['shipment', 'delivery']),
+  fromHash: z.string().min(1).max(256),
+  payload: z.record(z.unknown()),
+});
 
 export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): FastifyInstance {
   const app = Fastify({ logger: false, disableRequestLogging: true });
@@ -474,6 +494,53 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
           const ok = deps.negotiations.cancel(p.data.jobId);
           if (!ok) return reply.send(jsonRpcError(ERR_NOT_FOUND, 'negotiation not active or unknown', id));
           return reply.send(jsonRpcResult(id, { state: 'cancelled' }));
+        }
+
+        // ── FULFILMENT (post-settlement ship → deliver; signed, ungated) ─────
+        case 'markShipped': {
+          if (!deps.fulfilment) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'fulfilment engine not configured', id));
+          const p = MarkShippedParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          try {
+            const { record, payload } = await deps.fulfilment.markShipped(p.data.agreementId, {
+              carrier: p.data.carrier,
+              ...(p.data.tracking !== undefined ? { tracking: p.data.tracking } : {}),
+              ...(p.data.eta !== undefined ? { eta: p.data.eta } : {}),
+            });
+            return reply.send(jsonRpcResult(id, { record, payload }));
+          } catch (e) {
+            return reply.send(jsonRpcError(ERR_VALIDATION, msgOf(e), id));
+          }
+        }
+
+        case 'confirmDelivery': {
+          if (!deps.fulfilment) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'fulfilment engine not configured', id));
+          const p = AgreementIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          try {
+            const { record, payload } = await deps.fulfilment.confirmDelivery(p.data.agreementId);
+            return reply.send(jsonRpcResult(id, { record, payload }));
+          } catch (e) {
+            return reply.send(jsonRpcError(ERR_VALIDATION, msgOf(e), id));
+          }
+        }
+
+        case 'ingestFulfilment': {
+          if (!deps.fulfilment) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'fulfilment engine not configured', id));
+          const p = IngestFulfilmentParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const record = p.data.type === 'shipment'
+            ? await deps.fulfilment.applyInboundShipment(p.data.payload as unknown as ShipmentPayload, p.data.fromHash)
+            : await deps.fulfilment.applyInboundDelivery(p.data.payload as unknown as DeliveryPayload, p.data.fromHash);
+          return reply.send(jsonRpcResult(id, { applied: record !== null, record }));
+        }
+
+        case 'getFulfilment': {
+          if (!deps.fulfilment) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'fulfilment engine not configured', id));
+          const p = AgreementIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const record = await deps.fulfilment.status(p.data.agreementId);
+          return reply.send(jsonRpcResult(id, record ? { found: true, fulfilment: record } : { found: false }));
         }
 
         default:

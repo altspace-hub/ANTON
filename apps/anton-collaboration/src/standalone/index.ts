@@ -38,6 +38,8 @@ import { AgreementProposalStore } from '../main/agreement-proposals.js';
 import { CliModalDriver } from '../main/modal.js';
 import { NegotiationStore } from '../main/negotiation-store.js';
 import { ClaudeNegotiationBrain, type NegotiationBrain } from '../main/negotiation-brain.js';
+import { FulfilmentStore } from '../main/fulfilment-store.js';
+import { FulfilmentEngine } from '../main/fulfilment-engine.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -59,8 +61,11 @@ async function main(): Promise<void> {
     || path.join(os.homedir(), '.anton-collaboration', 'store');
   const storage = new FileStorageBackend(storeDir);
   const identity = new AgreementIdentity(storage);
-  const engine = new AgreementEngine(new AgreementStore(storage), identity);
+  const agreementStore = new AgreementStore(storage);
+  const engine = new AgreementEngine(agreementStore, identity);
   const approvals = new AgreementProposalStore();
+  // Fulfilment shares the SAME agreement store (so it can check agreed/settled).
+  const fulfilment = new FulfilmentEngine(agreementStore, identity, new FulfilmentStore(storage));
 
   // The human-approval driver — terminal prompt in JSON-RPC mode only.
   let rl: readline.Interface | undefined;
@@ -83,7 +88,7 @@ async function main(): Promise<void> {
 
   const deps: ServerDeps = {
     pairings: new PairingStore(),
-    engine, approvals, negotiations,
+    engine, approvals, negotiations, fulfilment,
     ...(discovery ? { discovery } : {}),
     ...(buyerContactHash ? { buyerContactHash } : {}),
     ...(modal ? { modal } : {}),
@@ -110,7 +115,7 @@ async function main(): Promise<void> {
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
-  log(' Verbs:      discover · talk · negotiate · {propose,accept,counter,decline,withdraw}Agreement · ingest · settle');
+  log(' Verbs:      discover · talk · negotiate · {propose,accept,counter,decline,withdraw}Agreement · ingest · settle · markShipped/confirmDelivery');
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 

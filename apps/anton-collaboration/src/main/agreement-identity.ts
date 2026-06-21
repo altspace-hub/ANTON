@@ -71,4 +71,10 @@ export class AgreementIdentity {
   async signWithdraw(proposalHash: string): Promise<string> {
     return signMessage(withdrawSigningString(proposalHash), (await this.loadOrCreate()).privHex);
   }
+
+  /** Sign an arbitrary domain-tagged message with the instance identity (used by
+   *  the fulfilment leg for shipment / delivery signing strings). */
+  async signString(message: string): Promise<string> {
+    return signMessage(message, (await this.loadOrCreate()).privHex);
+  }
 }

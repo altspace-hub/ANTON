@@ -183,6 +183,47 @@ export const MCP_TOOLS = [
       properties: { jobId: { type: 'string', maxLength: 128 } },
     },
   },
+  {
+    name: 'markShipped',
+    description: 'Seller side: after an agreed/settled agreement, sign + record a shipment (carrier + tracking). Returns a SIGNED shipment notice to relay to the buyer. Moves no FTC; no human gate.',
+    inputSchema: {
+      type: 'object', required: ['agreementId', 'carrier'], additionalProperties: false,
+      properties: {
+        agreementId: { type: 'string', maxLength: 128 },
+        carrier: { type: 'string', maxLength: 200 },
+        tracking: { type: 'string', maxLength: 200 },
+        eta: { type: 'string', maxLength: 200 },
+      },
+    },
+  },
+  {
+    name: 'confirmDelivery',
+    description: 'Buyer side: confirm receipt of an agreed/settled order. Returns a SIGNED delivery confirmation to relay to the seller (the trust signal for a future escrow release).',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 } },
+    },
+  },
+  {
+    name: 'ingestFulfilment',
+    description: 'Apply an inbound SIGNED fulfilment message from the counterparty: a shipment (seller→buyer) or delivery (buyer→seller). Verifies the signature came from the agreement\'s counterparty + records it.',
+    inputSchema: {
+      type: 'object', required: ['type', 'fromHash', 'payload'], additionalProperties: false,
+      properties: {
+        type: { type: 'string', enum: ['shipment', 'delivery'] },
+        fromHash: { type: 'string', maxLength: 256 },
+        payload: { type: 'object' },
+      },
+    },
+  },
+  {
+    name: 'getFulfilment',
+    description: 'Read the fulfilment status of an agreement: awaiting / shipped (carrier + tracking) / delivered.',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: { agreementId: { type: 'string', maxLength: 128 } },
+    },
+  },
 ] as const;
 
 export function buildMcpServer(deps: ServerDeps): Server {
@@ -355,9 +396,51 @@ async function dispatchMcpTool(
       if (!deps.negotiations.cancel(jobId)) throw new Error('negotiation not active or unknown');
       return { state: 'cancelled' };
     }
+    case 'markShipped': {
+      const f = requireFulfilment(deps);
+      const agreementId = String(args.agreementId ?? '');
+      const carrier = String(args.carrier ?? '');
+      if (!agreementId || !carrier) throw new Error('validation: agreementId and carrier are required');
+      return f.markShipped(agreementId, {
+        carrier,
+        ...(typeof args.tracking === 'string' ? { tracking: args.tracking } : {}),
+        ...(typeof args.eta === 'string' ? { eta: args.eta } : {}),
+      });
+    }
+    case 'confirmDelivery': {
+      const f = requireFulfilment(deps);
+      const agreementId = String(args.agreementId ?? '');
+      if (!agreementId) throw new Error('validation: agreementId is required');
+      return f.confirmDelivery(agreementId);
+    }
+    case 'ingestFulfilment': {
+      const f = requireFulfilment(deps);
+      const type = String(args.type ?? '');
+      const fromHash = String(args.fromHash ?? '');
+      const payload = (args.payload && typeof args.payload === 'object' ? args.payload : null) as Record<string, unknown> | null;
+      if (!fromHash || !payload) throw new Error('validation: type, fromHash and payload are required');
+      const record = type === 'shipment'
+        ? await f.applyInboundShipment(payload as never, fromHash)
+        : type === 'delivery'
+          ? await f.applyInboundDelivery(payload as never, fromHash)
+          : (() => { throw new Error(`validation: unknown fulfilment type "${type}"`); })();
+      return { applied: record !== null, record };
+    }
+    case 'getFulfilment': {
+      const f = requireFulfilment(deps);
+      const agreementId = String(args.agreementId ?? '');
+      if (!agreementId) throw new Error('validation: agreementId is required');
+      const record = await f.status(agreementId);
+      return record ? { found: true, fulfilment: record } : { found: false };
+    }
     default:
       throw new Error(`unknown tool: ${name}`);
   }
+}
+
+function requireFulfilment(deps: ServerDeps): NonNullable<ServerDeps['fulfilment']> {
+  if (!deps.fulfilment) throw new Error('fulfilment engine not configured');
+  return deps.fulfilment;
 }
 
 function requireEngine(deps: ServerDeps): NonNullable<ServerDeps['engine']> {
