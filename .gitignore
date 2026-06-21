@@ -111,3 +111,6 @@ data/test-corpus/*/docs/*
 
 # ANTON Studio scratch workspaces (dogfood runs)
 .studio-workspaces/
+
+# Local-only design docs / specs — kept out of the public repo.
+not_to_github/
