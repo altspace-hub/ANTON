@@ -22,7 +22,6 @@
  * stale sessions, not a UX cost.
  */
 import { Buffer } from 'node:buffer';
-import { randomBytes } from 'node:crypto';
 
 import { getCodeSignature, type CodeSignature } from './code-signature.js';
 import {
@@ -130,9 +129,16 @@ export async function attestForChainCall(
       'attestForChainCall: no fetch available — pass deps.fetch (Node <18 or restricted env)',
     );
   }
-  const nonce = (deps.nonce ?? defaultNonce)();
+  const endpointBase = deps.endpoint.replace(/\/+$/, '');
+  // v2 attestation: Bahnhof issues + tracks the nonce server-side and rejects a
+  // client-picked one with "unknown attestation nonce" (v1 had the client pick
+  // it). Fetch a server nonce from POST /attest/challenge (60s TTL) and attest
+  // with THAT. Tests pin deps.nonce to skip the extra round-trip.
+  const nonce = deps.nonce
+    ? deps.nonce()
+    : await _fetchServerNonce(fetchImpl, endpointBase, deps.apiKey);
   const { token } = await buildAttestationPacket(nonce, deps);
-  const url = `${deps.endpoint.replace(/\/+$/, '')}/attest`;
+  const url = `${endpointBase}/attest`;
   const r = await fetchImpl(url, {
     method: 'POST',
     headers: {
@@ -174,10 +180,30 @@ export function _resetSessionCache(): void {
 
 // ── internals ────────────────────────────────────────────────────
 
-function defaultNonce(): string {
-  // 16 random bytes hex-encoded → 32 chars, matches Bahnhof's
-  // AttestRequest.nonce min_length=16 / max_length=64.
-  return randomBytes(16).toString('hex');
+/** Fetch a server-issued attestation nonce from the relay's v2
+ *  POST /attest/challenge endpoint (60s TTL; tracked + invalidated by Bahnhof's
+ *  _verify_desktop_attestation_token). The install bearer authenticates it. */
+async function _fetchServerNonce(
+  fetchImpl: typeof fetch, endpointBase: string, apiKey: string,
+): Promise<string> {
+  const r = await fetchImpl(`${endpointBase}/attest/challenge`, {
+    method: 'POST',
+    headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+    body: '{}',
+  });
+  if (!r.ok) {
+    const detail = await safeReadText(r);
+    throw new Error(
+      `attestForChainCall: /attest/challenge returned ${r.status} ${r.statusText} — ${detail}`,
+    );
+  }
+  const body = await r.json() as { nonce?: string };
+  if (!body.nonce) {
+    throw new Error(
+      `attestForChainCall: /attest/challenge response missing nonce: ${JSON.stringify(body)}`,
+    );
+  }
+  return body.nonce;
 }
 
 function b64uNoPad(bytes: Uint8Array): string {

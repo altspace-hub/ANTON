@@ -47,6 +47,8 @@ import {
 import { TransactionLedger } from '../main/ledger.js';
 import { CliModalDriver } from './cli-modal.js';
 import { WebConfirmModalDriver } from './web-confirm.js';
+import { attestationChainConfig } from '../main/attestation-config.js';
+import { ensureEnrolled } from '../main/enrollment.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -54,7 +56,7 @@ function num(env: string | undefined): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined;
 }
 
-async function buildWalletDeps(wallet: Wallet, ledger: TransactionLedger): Promise<Pick<ServerDeps,
+async function buildWalletDeps(wallet: Wallet, ledger: TransactionLedger, storage: FileStorageBackend): Promise<Pick<ServerDeps,
   'walletStatus' | 'walletHasPassphrase' | 'recentTransactions' | 'counterpartyHint' | 'submitPayment'>> {
   // Mirrors the (non-Electron) wiring in main.ts buildDepsForBoot — reuses
   // chain.ts (getChainClient / submitPayment / fetchRecentTransactions). No
@@ -105,12 +107,19 @@ async function buildWalletDeps(wallet: Wallet, ledger: TransactionLedger): Promi
         throw e;
       }
       try {
+        // Attach the Bahnhof install bearer + a desktop device-attestation token
+        // (X-Attestation-Token) to the submit when AGENT_PAY_API_KEY is set —
+        // mirrors the Electron app (main.ts). Without it the relay's forward_auth
+        // gate on /submit_signed_transaction returns 401. Local dev nodes (no
+        // apiKey) submit unattested, which chain.ts explicitly supports.
+        const chainConfig = attestationChainConfig(storage);
         const result = await chainSubmitPayment({
           unlocked,
           to: req.to,
           amountFtc: req.amountFtc,
           ...(req.reference !== undefined ? { reference: req.reference } : {}),
           ...(req.remittance !== undefined ? { remittance: req.remittance } : {}),
+          ...(chainConfig ? { chainConfig } : {}),
         });
         // Persist the send so it survives restart + node outages. Best-effort
         // — a ledger write failure must never undo a broadcast payment.
@@ -169,6 +178,22 @@ async function main(): Promise<void> {
     }
   }
 
+  // Auto-enroll for the Bahnhof install bearer so ATTESTED submits work out of
+  // the box (the Electron app does this; the standalone previously did not, so a
+  // real submit 401'd). Skip when AGENT_PAY_API_KEY is already set or no wallet
+  // exists. Best-effort — a failure leaves the gateway able to READ the chain +
+  // receive; only outbound submits need the bearer + attestation.
+  if (walletReady && !process.env.AGENT_PAY_API_KEY?.trim()) {
+    try {
+      const endpoint = process.env.AGENT_PAY_NODE_URL ?? 'https://rpc.futurechain.eu';
+      const enr = await ensureEnrolled({ storage, endpoint });
+      process.env.AGENT_PAY_API_KEY = enr.bearerToken;
+      log(`Enrolled install ${enr.installId} for ${endpoint} — attested submits enabled.`);
+    } catch (e) {
+      log(`Enrollment failed — submits stay unattested (reads + receive still work): ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   const modal = approvalMode === 'web'
     ? new WebConfirmModalDriver({ port, now: Date.now, log, autoOpen: webAutoOpen })
     : new CliModalDriver();                      // approve in THIS terminal
@@ -176,7 +201,7 @@ async function main(): Promise<void> {
     pairings: new PairingStore(),
     proposals: new ProposalStore(Date.now, limits),
     modal,
-    ...(await buildWalletDeps(wallet, ledger)),
+    ...(await buildWalletDeps(wallet, ledger, storage)),
   };
   setActiveModalDriver(deps.modal);
 
