@@ -18,6 +18,8 @@ export interface TrustedSeller {
   status: TrustStatus;
   verificationMethod: string | null;
   descriptorSigVerified: boolean;
+  registryVerified: boolean;
+  registryKeyMismatch: boolean;
   verifiedAt: string | null;
   lastCheckedAt: string | null;
   keyChangedAt: string | null;
@@ -41,6 +43,7 @@ export interface ResolvePreview {
     displayTitle?: string;
     contactHash?: string;
     originEndpoint?: string;
+    registry: { verified: boolean; mismatch: boolean };
   } | null;
   integrity: { valid: boolean; reasons: string[] } | null;
   lookAlikeWarnings: LookAlikeWarning[];

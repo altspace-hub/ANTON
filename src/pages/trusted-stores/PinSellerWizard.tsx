@@ -105,10 +105,13 @@ export default function PinSellerWizard() {
             <div className="mt-3 flex items-center gap-2 text-xs text-adv-gray">
               <Fingerprint size={14} /><span className="font-mono break-all">{preview.resolved.signingKeyFingerprint}</span>
             </div>
-            <div className="mt-2 text-xs">
+            <div className="mt-2 space-y-1 text-xs">
+              {preview.resolved.registry?.verified
+                ? <p className="text-adv-green">✓ Verified against the ANTON registry — this is the signing key the registry independently accepted for this address.{preview.resolved.registry.mismatch ? <span className="text-adv-red"> ⚠ The cached descriptor carried a DIFFERENT key — the registry's authoritative key was used.</span> : null}</p>
+                : <p className="text-adv-gold">No registry record (relay unreachable or seller not registered) — trust-on-first-use only.</p>}
               {preview.integrity?.valid
-                ? <span className="text-adv-gray">Descriptor is self-consistently signed — this alone does <strong>not</strong> prove identity. Verify the store live below.</span>
-                : <span className="text-adv-gold">⚠ Descriptor signature {preview.integrity?.reasons.includes('no-signature-cached') ? 'unavailable (relay-only) — verify live below.' : `not verified: ${preview.integrity?.reasons.join(', ')}`}</span>}
+                ? <p className="text-adv-gray">Descriptor is self-consistently signed. The live handshake below is the real proof of control.</p>
+                : <p className="text-adv-gray">Descriptor signature {preview.integrity?.reasons.includes('no-signature-cached') ? 'not cached' : `not verified: ${preview.integrity?.reasons.join(', ')}`}.</p>}
             </div>
           </div>
 

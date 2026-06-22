@@ -33,6 +33,7 @@ function fakeDb(pinnedPubHex: string, pinnedNonce: string | null): DatabaseAdapt
     id: 'r1', portal_address: 'shop.global.portal', display_title: 'Shop', contact_hash: null,
     signing_pubkey_hex: pinnedPubHex, signing_key_fingerprint: 'fp', status: 'pinned',
     verification_method: 'descriptor-tofu', descriptor_sig_verified: false,
+    registry_verified: false, registry_key_mismatch: false,
     last_handshake_nonce: pinnedNonce, verified_at: null, last_checked_at: null,
     key_changed_at: null, previous_pubkey_hex: null, created_at: now, updated_at: now,
   };

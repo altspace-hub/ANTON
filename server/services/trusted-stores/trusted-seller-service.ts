@@ -28,6 +28,7 @@ import { verifyDescriptor, type SignedDescriptorEnvelope } from '../capability-d
 import { createDescriptorCache } from '../registry-client/cache.js';
 import { computeSkeleton } from '../registry-protocol/homoglyph.js';
 import { checkPinLookAlike, type LookAlikeWarning } from './look-alike.js';
+import { resolveViaRelay, toRawPubkeyHex, rawToSpkiHex } from './relay-resolve.js';
 
 const log = childLogger('trusted-stores');
 
@@ -48,6 +49,10 @@ export interface TrustedSeller {
   status: 'pending' | 'pinned' | 'trusted' | 'key_changed' | 'revoked';
   verificationMethod: string | null;
   descriptorSigVerified: boolean;
+  /** The relay registry independently confirmed this signing key for this address. */
+  registryVerified: boolean;
+  /** The cached descriptor's embedded key disagreed with the relay's (poisoning?). */
+  registryKeyMismatch: boolean;
   verifiedAt: string | null;
   lastCheckedAt: string | null;
   keyChangedAt: string | null;
@@ -58,6 +63,8 @@ export interface TrustedSeller {
 
 export interface ResolvedSellerKey {
   portalAddress: string;
+  /** The PINNED key (88-char SPKI hex): the relay-verified key when the registry
+   *  answered, else the descriptor's embedded key (TOFU). */
   signingPubkeyHex: string;
   signingKeyFingerprint: string;
   displayTitle?: string;
@@ -65,6 +72,10 @@ export interface ResolvedSellerKey {
   originEndpoint?: string;
   /** The signed descriptor envelope (when a detached signature is cached). */
   envelope: SignedDescriptorEnvelope | null;
+  /** Independent registry anchor: verified = the relay confirmed this key for this
+   *  address; mismatch = the cached descriptor's embedded key disagreed with the
+   *  relay's (possible cache poisoning — the relay's authoritative key was used). */
+  registry: { verified: boolean; mismatch: boolean };
 }
 
 export interface DescriptorIntegrity {
@@ -98,6 +109,8 @@ interface Row {
   status: TrustedSeller['status'];
   verification_method: string | null;
   descriptor_sig_verified: boolean;
+  registry_verified: boolean;
+  registry_key_mismatch: boolean;
   last_handshake_nonce: string | null;
   verified_at: string | null;
   last_checked_at: string | null;
@@ -118,6 +131,8 @@ function toModel(r: Row): TrustedSeller {
     status: r.status,
     verificationMethod: r.verification_method,
     descriptorSigVerified: r.descriptor_sig_verified,
+    registryVerified: r.registry_verified,
+    registryKeyMismatch: r.registry_key_mismatch,
     verifiedAt: r.verified_at ? new Date(r.verified_at).toISOString() : null,
     lastCheckedAt: r.last_checked_at ? new Date(r.last_checked_at).toISOString() : null,
     keyChangedAt: r.key_changed_at ? new Date(r.key_changed_at).toISOString() : null,
@@ -138,11 +153,21 @@ export async function resolveSellerKey(
   const cached = await createDescriptorCache(db).get(portalAddress);
   if (!cached) return null;
   const portal = (cached.descriptor as { portal?: Record<string, unknown> }).portal ?? {};
-  const wire = typeof portal.publicKey === 'string' ? portal.publicKey : undefined;
-  if (!wire) return null;
-  let signingPubkeyHex: string;
-  try { signingPubkeyHex = publicKeyWireToHex(wire); }
-  catch { return null; }
+  const embeddedKey = typeof portal.publicKey === 'string' ? portal.publicKey : undefined;
+  if (!embeddedKey) return null;
+  const embeddedRaw = toRawPubkeyHex(embeddedKey);
+  if (!embeddedRaw) return null;
+
+  // INDEPENDENT ANCHOR: ask the relay registry which key it verified for this
+  // address at KYC'd submit time. When it answers, pin the RELAY's key
+  // (authoritative) and flag a mismatch if the local cache disagreed (possible
+  // poisoning). When it doesn't, fall back to TOFU on the embedded key.
+  const relay = await resolveViaRelay(portalAddress).catch(() => null);
+  const anchorRaw = relay ? relay.signingPubkeyRawHex : embeddedRaw;
+  const signingPubkeyHex = rawToSpkiHex(anchorRaw); // 88-char SPKI hex (handshake-compatible)
+  const signingKeyFingerprint = await publicKeyFingerprint(signingPubkeyHex);
+  const registry = { verified: !!relay, mismatch: !!relay && embeddedRaw !== relay.signingPubkeyRawHex };
+
   const envelope: SignedDescriptorEnvelope | null = cached.signature
     ? {
         descriptor: cached.descriptor,
@@ -151,14 +176,16 @@ export async function resolveSellerKey(
         signingKeyFingerprint: cached.signingKeyFingerprint,
       }
     : null;
+  const displayTitle = typeof portal.displayTitle === 'string' ? portal.displayTitle : relay?.displayTitle;
   return {
     portalAddress,
     signingPubkeyHex,
-    signingKeyFingerprint: cached.signingKeyFingerprint,
-    ...(typeof portal.displayTitle === 'string' ? { displayTitle: portal.displayTitle } : {}),
+    signingKeyFingerprint,
+    ...(displayTitle ? { displayTitle } : {}),
     ...(typeof portal.contactHash === 'string' ? { contactHash: portal.contactHash } : {}),
     ...(typeof portal.originEndpoint === 'string' ? { originEndpoint: portal.originEndpoint } : {}),
     envelope,
+    registry,
   };
 }
 
@@ -236,16 +263,21 @@ export async function pinSeller(
   // key-change audit lives in the DO UPDATE: a changed key keeps the prior key,
   // stamps the change time, and drops to 'pinned' (never silently re-trusts);
   // an unchanged key preserves a prior 'trusted'. All RHS see the PRE-update row.
+  const verificationMethod = resolved.registry.verified ? 'registry-anchored' : 'descriptor-tofu';
   await db.run(
     `INSERT INTO trusted_sellers
        (owner_user_id, portal_address, display_title, contact_hash, signing_pubkey_hex,
-        signing_key_fingerprint, name_skeleton, status, verification_method, descriptor_sig_verified)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'pinned', 'descriptor-tofu', ?)
+        signing_key_fingerprint, name_skeleton, status, verification_method, descriptor_sig_verified,
+        registry_verified, registry_key_mismatch)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'pinned', ?, ?, ?, ?)
      ON CONFLICT (owner_user_id, portal_address) DO UPDATE SET
        display_title = EXCLUDED.display_title,
        contact_hash = EXCLUDED.contact_hash,
        name_skeleton = EXCLUDED.name_skeleton,
        descriptor_sig_verified = EXCLUDED.descriptor_sig_verified,
+       verification_method = EXCLUDED.verification_method,
+       registry_verified = EXCLUDED.registry_verified,
+       registry_key_mismatch = EXCLUDED.registry_key_mismatch,
        previous_pubkey_hex = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex
                                   THEN trusted_sellers.signing_pubkey_hex ELSE trusted_sellers.previous_pubkey_hex END,
        key_changed_at = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex
@@ -256,7 +288,8 @@ export async function pinSeller(
        signing_key_fingerprint = EXCLUDED.signing_key_fingerprint,
        updated_at = NOW()`,
     ownerId, portalAddress, resolved.displayTitle ?? null, resolved.contactHash ?? null,
-    resolved.signingPubkeyHex, resolved.signingKeyFingerprint, skeleton, integrity.valid,
+    resolved.signingPubkeyHex, resolved.signingKeyFingerprint, skeleton, verificationMethod, integrity.valid,
+    resolved.registry.verified, resolved.registry.mismatch,
   );
 
   const seller = await getTrustedSeller(db, ownerId, portalAddress);
