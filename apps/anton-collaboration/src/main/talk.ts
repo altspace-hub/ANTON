@@ -86,6 +86,11 @@ interface ServerAccepted {
 function fullPortalAddress(p: ResolvedPortal): string | null {
   const name = p.descriptor.portal.name?.trim();
   const ns = p.descriptor.portal.namespace?.trim();
+  // Some relay descriptors store `name` ALREADY as the full "x.y.portal" address
+  // (e.g. "sjsharks-celebrini.global.portal"); appending `.${ns}.portal` again
+  // double-stuffs it into "…portal.global.portal" and the seller's invoke-route
+  // regex rejects it. Use it as-is when it already carries the .portal suffix.
+  if (name && /\.portal$/.test(name)) return name;
   if (name && ns) return `${name}.${ns}.portal`;
   const addr = p.portalAddress?.trim();
   if (!addr) return null;

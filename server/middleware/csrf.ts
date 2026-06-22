@@ -65,6 +65,7 @@ const CSRF_EXEMPT_PREFIXES = [
   '/api/app/auth/',       // Companion app challenge-response auth
   '/api/app/join',        // Companion app org join
   '/api/agents/public/',   // Public agent storefront (external ANTON queries)
+  '/api/portals/visit/',   // Public portal capability invocation (AAP — external ANTON instances / agent gateways POST here; authenticated by the portal protocol + signed descriptor, not a browser session)
 ];
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
