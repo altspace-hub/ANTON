@@ -16,6 +16,7 @@ import { AgreementIdentity } from '../../src/main/agreement-identity.js';
 import { AgreementProposalStore } from '../../src/main/agreement-proposals.js';
 import { InMemoryStorageBackend } from '../../src/main/storage.js';
 import { StubModalDriver } from '../../src/main/modal.js';
+import { StubAgreementReviewer, type AgreementReviewer } from '../../src/main/agreement-reviewer.js';
 
 interface Harness {
   app: FastifyInstance;
@@ -24,8 +25,8 @@ interface Harness {
   call: (method: string, params?: unknown) => Promise<{ status: number; body: any }>;
 }
 
-function buildHarness(opts: { withEngine?: boolean; withModal?: boolean; buyerContactHash?: string } = {}): Harness {
-  const { withEngine = true, withModal = true, buyerContactHash } = opts;
+function buildHarness(opts: { withEngine?: boolean; withModal?: boolean; buyerContactHash?: string; reviewer?: AgreementReviewer; reviewStrict?: boolean } = {}): Harness {
+  const { withEngine = true, withModal = true, buyerContactHash, reviewer, reviewStrict } = opts;
   const pairings = new PairingStore();
   const modal = new StubModalDriver();
   const deps: ServerDeps = {
@@ -38,6 +39,8 @@ function buildHarness(opts: { withEngine?: boolean; withModal?: boolean; buyerCo
       : {}),
     ...(withModal ? { modal } : {}),
     ...(buyerContactHash ? { buyerContactHash } : {}),
+    ...(reviewer ? { reviewer } : {}),
+    ...(reviewStrict ? { reviewStrict } : {}),
   };
   const app = buildServer(deps, { bypassOriginCheck: true });
   const code = pairings.newCode();
@@ -138,6 +141,51 @@ describe('AGREE verbs — human gate', () => {
     const h = buildHarness();
     const r = await h.call('acceptAgreement', { agreementId: 'agr_nope' });
     expect(r.body.error.code).toBe(ERR_NOT_FOUND);
+  });
+});
+
+describe('AGREE — four-eyes independent review (optional second model)', () => {
+  const PROP = { decision: 'd', terms: 't', amountMicroFtc: '100', counterpartyAddress: 'fc_x', counterpartyHash: 'seller-hash' };
+
+  it('advisory (default): a RAISED verdict is surfaced in the modal; the human still decides', async () => {
+    const reviewer = new StubAgreementReviewer().queue1({ raise: true, severity: 'high', concerns: ['disallowed item'], reviewModel: 'mistral' });
+    const h = buildHarness({ reviewer });
+    h.modal.queueApprove(); // the human approves DESPITE the warning (advisory mode)
+    const r = await h.call('proposeAgreement', PROP);
+    const done = await settle(h, r.body.result.proposalId);
+    expect(done.state).toBe('done'); // human had the final say → agreement created
+    const inv = h.modal.invocations()[0]!;
+    expect(inv.review?.raise).toBe(true);
+    expect(inv.review?.concerns).toContain('disallowed item');
+  });
+
+  it('strict: a RAISED verdict AUTO-REJECTS before the human is even asked', async () => {
+    const reviewer = new StubAgreementReviewer().queue1({ raise: true, severity: 'high', concerns: ['no-go zone'], reviewModel: 'mistral' });
+    const h = buildHarness({ reviewer, reviewStrict: true });
+    const r = await h.call('proposeAgreement', PROP); // no modal queued — never reached
+    const done = await settle(h, r.body.result.proposalId);
+    expect(done.state).toBe('rejected');
+    expect(done.rejectReason).toMatch(/independent review/);
+    expect(h.modal.invocations()).toHaveLength(0); // the human gate is never opened
+  });
+
+  it('advisory ok: a passing verdict is surfaced and the flow proceeds', async () => {
+    const reviewer = new StubAgreementReviewer().queue1({ raise: false, severity: 'low', concerns: [], reviewModel: 'mistral' });
+    const h = buildHarness({ reviewer });
+    h.modal.queueApprove();
+    const r = await h.call('proposeAgreement', PROP);
+    const done = await settle(h, r.body.result.proposalId);
+    expect(done.state).toBe('done');
+    expect(h.modal.invocations()[0]!.review?.raise).toBe(false);
+  });
+
+  it('FAIL-CLOSED (strict): a reviewer that throws auto-rejects — never a silent pass', async () => {
+    const reviewer: AgreementReviewer = { review: async () => { throw new Error('reviewer down'); } };
+    const h = buildHarness({ reviewer, reviewStrict: true });
+    const r = await h.call('proposeAgreement', PROP);
+    const done = await settle(h, r.body.result.proposalId);
+    expect(done.state).toBe('rejected');
+    expect(done.rejectReason).toMatch(/independent review/);
   });
 });
 

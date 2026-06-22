@@ -30,6 +30,7 @@ import { invokeCapability, capabilityForVerb } from './talk.js';
 import type { AgreementEngine, ProposeInput, CounterInput } from './agreement-engine.js';
 import type { AgreementProposalStore, PendingAction } from './agreement-proposals.js';
 import type { ModalDriver, CollabModalPayload, CollabModalKind } from './modal.js';
+import type { AgreementReviewer, AgreementReviewVerdict } from './agreement-reviewer.js';
 import type {
   AgreementProposePayload, AgreementRespondPayload, AgreementWithdrawPayload, AgreementAckPayload,
 } from './agreement-core.js';
@@ -94,6 +95,13 @@ export interface ServerDeps {
   approvals?: AgreementProposalStore;
   /** Human-approval driver. Absent → committing verbs FAIL CLOSED (ERR_NO_APPROVAL). */
   modal?: ModalDriver;
+  /** OPTIONAL independent four-eyes reviewer for committing agreement verbs. Absent
+   *  ⇒ off. Present ⇒ a SECOND model reviews the agreement before the human gate and
+   *  its verdict is surfaced in the approval modal. */
+  reviewer?: AgreementReviewer;
+  /** When true, a reviewer 'raise' AUTO-REJECTS the proposal before the human is even
+   *  asked (strict mode). Default false = advisory (the human still decides). */
+  reviewStrict?: boolean;
   /** The injectable LLM negotiation brain. Absent → `negotiate` is unavailable. */
   brain?: NegotiationBrain;
   /** Negotiation job lifecycle store. */
@@ -710,12 +718,19 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
 // ── AGREE gate + modal flow ──────────────────────────────────────
 
 /** All three deps a committing verb needs, present. */
-interface Gate { engine: AgreementEngine; approvals: AgreementProposalStore; modal: ModalDriver; }
+interface Gate {
+  engine: AgreementEngine; approvals: AgreementProposalStore; modal: ModalDriver;
+  reviewer?: AgreementReviewer; reviewStrict?: boolean;
+}
 
 function requireGate(deps: ServerDeps): Gate | { err: number; message: string } {
   if (!deps.engine || !deps.approvals) return { err: ERR_NO_ENGINE, message: 'agreement engine not configured' };
   if (!deps.modal) return { err: ERR_NO_APPROVAL, message: 'human-approval driver not available (committing verbs fail closed)' };
-  return { engine: deps.engine, approvals: deps.approvals, modal: deps.modal };
+  return {
+    engine: deps.engine, approvals: deps.approvals, modal: deps.modal,
+    ...(deps.reviewer ? { reviewer: deps.reviewer } : {}),
+    ...(deps.reviewStrict ? { reviewStrict: deps.reviewStrict } : {}),
+  };
 }
 
 function requireEngine(deps: ServerDeps): AgreementEngine | null {
@@ -743,6 +758,18 @@ export async function runAgreementModalFlow(
   const payload = await buildModalPayload(gate, rec.action, approvalId, agentName, agent, now, agentNote);
   if (!payload) { gate.approvals.reject(approvalId, 'could not resolve agreement for approval'); return; }
 
+  // OPTIONAL four-eyes: an independent SECOND model reviews the agreement BEFORE
+  // the human gate. FAIL-CLOSED (a reviewer error raises). Advisory by default
+  // (the verdict is surfaced in the modal); strict mode auto-rejects a raise.
+  if (gate.reviewer) {
+    const verdict = await safeAgreementReview(gate.reviewer, payload);
+    payload.review = verdict;
+    if (verdict.raise && gate.reviewStrict) {
+      gate.approvals.reject(approvalId, `independent review raised: ${verdict.concerns.join('; ')}`);
+      return;
+    }
+  }
+
   let decision;
   try {
     decision = await gate.modal.promptForDecision(payload);
@@ -761,6 +788,23 @@ export async function runAgreementModalFlow(
     gate.approvals.markDone(approvalId, result.agreement.id, JSON.stringify(result.payload));
   } catch (e) {
     gate.approvals.reject(approvalId, `engine error: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+/** Run the independent reviewer, FAIL-CLOSED: any throw becomes a raise so the
+ *  human still sees a warning (never a silent pass). */
+async function safeAgreementReview(
+  reviewer: AgreementReviewer, payload: CollabModalPayload,
+): Promise<AgreementReviewVerdict> {
+  const action = payload.kind === 'agreement_propose' ? 'propose'
+    : payload.kind === 'agreement_accept' ? 'accept' : 'counter';
+  try {
+    return await reviewer.review({
+      action, decision: payload.decision, terms: payload.terms,
+      amountFtc: payload.amountFtc, counterparty: payload.counterparty,
+    });
+  } catch (e) {
+    return { raise: true, severity: 'high', concerns: [`reviewer threw: ${e instanceof Error ? e.message : String(e)}`] };
   }
 }
 

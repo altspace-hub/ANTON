@@ -13,6 +13,11 @@
  * Env:  ANTON_COLLAB_PORT (default 49260) · ANTON_COLLAB_RELAY_BASE
  *       ANTON_COLLAB_CONTACT_HASH · ANTON_COLLAB_STORE_DIR
  *       ANTON_COLLAB_ALLOW_INSECURE_ORIGIN (dev sellers over http)
+ *       ANTON_COLLAB_REVIEW_MODEL (optional four-eyes reviewer, off when blank —
+ *         use a DIFFERENT model/provider than the brain, e.g. mistral-large-latest;
+ *         needs that provider's key, e.g. MISTRAL_API_KEY) ·
+ *       ANTON_COLLAB_REVIEW_STRICT=1 (auto-reject a raised proposal) ·
+ *       ANTON_COLLAB_REVIEW_POLICY (extra no-go policy text)
  *
  * stdout is reserved for MCP; all logs go to stderr.
  *
@@ -38,6 +43,7 @@ import { AgreementProposalStore } from '../main/agreement-proposals.js';
 import { CliModalDriver } from '../main/modal.js';
 import { NegotiationStore } from '../main/negotiation-store.js';
 import { ClaudeNegotiationBrain, type NegotiationBrain } from '../main/negotiation-brain.js';
+import { createAgreementReviewer } from '../main/agreement-reviewer.js';
 import { FulfilmentStore } from '../main/fulfilment-store.js';
 import { FulfilmentEngine } from '../main/fulfilment-engine.js';
 import { EscrowStore } from '../main/escrow-store.js';
@@ -87,6 +93,22 @@ async function main(): Promise<void> {
   const brain: NegotiationBrain | undefined = anthropicKey
     ? new ClaudeNegotiationBrain({ apiKey: anthropicKey, ...(negModel ? { model: negModel } : {}) })
     : undefined;
+
+  // OPTIONAL independent four-eyes reviewer for committing agreement verbs. Off
+  // unless ANTON_COLLAB_REVIEW_MODEL is set. Use a DIFFERENT model/provider than
+  // the negotiation brain (e.g. mistral-large-latest) so one model can't rubber-
+  // stamp its own decision. Advisory by default; ANTON_COLLAB_REVIEW_STRICT=1
+  // auto-rejects a raised proposal before the human is asked.
+  const reviewModel = process.env.ANTON_COLLAB_REVIEW_MODEL?.trim();
+  const reviewStrict = /^(1|true)$/i.test((process.env.ANTON_COLLAB_REVIEW_STRICT ?? '').trim());
+  const mistralKey = process.env.MISTRAL_API_KEY?.trim();
+  const reviewPolicy = process.env.ANTON_COLLAB_REVIEW_POLICY?.trim();
+  const reviewer = reviewModel ? createAgreementReviewer({
+    model: reviewModel,
+    ...(mistralKey ? { mistralApiKey: mistralKey } : {}),
+    ...(anthropicKey ? { anthropicApiKey: anthropicKey } : {}),
+    ...(reviewPolicy ? { extraPolicy: reviewPolicy } : {}),
+  }) : undefined;
   // Drop terminal negotiation jobs older than 30m every 10m (don't block exit).
   const reaper = setInterval(() => negotiations.reap(30 * 60 * 1000), 10 * 60 * 1000);
   reaper.unref();
@@ -98,6 +120,8 @@ async function main(): Promise<void> {
     ...(buyerContactHash ? { buyerContactHash } : {}),
     ...(modal ? { modal } : {}),
     ...(brain ? { brain } : {}),
+    ...(reviewer ? { reviewer } : {}),
+    ...(reviewStrict ? { reviewStrict } : {}),
   };
 
   // MCP clients send no Origin; the in-process MCP path bypasses the HTTP origin
@@ -120,6 +144,7 @@ async function main(): Promise<void> {
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
+  log(` 4-eyes:     ${reviewer ? `ON (${reviewModel}, ${reviewStrict ? 'STRICT — auto-reject on raise' : 'advisory'})` : 'OFF — set ANTON_COLLAB_REVIEW_MODEL'}`);
   log(' Verbs:      discover · talk · negotiate · agreement · settle · fulfilment · escrow (custodial; spends gated in Agent Pay)');
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');

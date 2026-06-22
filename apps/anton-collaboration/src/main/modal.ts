@@ -15,6 +15,7 @@
  * human gate that isn't wired must never silently pass.
  */
 import type { Interface as ReadlineInterface } from 'node:readline';
+import type { AgreementReviewVerdict } from './agreement-reviewer.js';
 
 export type CollabModalKind = 'agreement_propose' | 'agreement_accept' | 'agreement_counter';
 
@@ -35,6 +36,9 @@ export interface CollabModalPayload {
   amountMicroFtc: string;
   agentNote?: string;
   expiresAtMs: number;
+  /** OPTIONAL independent four-eyes verdict (a SECOND model's opinion), surfaced
+   *  so the human approves with its concerns in view. Absent ⇒ no reviewer wired. */
+  review?: AgreementReviewVerdict;
 }
 
 export type ModalDecision =
@@ -99,6 +103,13 @@ export class CliModalDriver implements ModalDriver {
     this.out(` Terms:        ${payload.terms}\n`);
     this.out(` Amount:       ${payload.amountFtc} FTC (${payload.amountMicroFtc} µFTC)\n`);
     if (payload.agentNote) this.out(` Agent note:   ${payload.agentNote}\n`);
+    if (payload.review) {
+      const v = payload.review;
+      this.out('────────────────────────────────────────────────────────────────\n');
+      this.out(` ${v.raise ? '⚠ INDEPENDENT REVIEW RAISED A CONCERN' : '✓ independent review: ok'}`
+        + ` (${v.reviewModel ?? 'second model'}, severity ${v.severity})\n`);
+      for (const c of v.concerns) this.out(`     • ${c}\n`);
+    }
     this.out('────────────────────────────────────────────────────────────────\n');
 
     const remaining = payload.expiresAtMs - this.now();
