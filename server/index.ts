@@ -160,6 +160,7 @@ import { createGrowRoutes } from './routes/grow.js';
 import { createHardwareRoutes } from './routes/hardware.js';
 import { createPortalsRoutes } from './routes/portals.js';
 import { createPortalBookmarksRoutes } from './routes/portal-bookmarks.js';
+import { createTrustedStoreRoutes } from './routes/trusted-stores.js';
 import { createStarterPackRoutes } from './routes/starter-packs.js';
 import { createJobsRoutes } from './routes/jobs.js';
 import { createMarketplaceVisitorRoutes } from './routes/marketplace-visitor.js';
@@ -902,6 +903,8 @@ app.use('/api', createHardwareRoutes(db));
 // Portals (spec v0.2) — user-created ANTON-only web spaces with capability descriptors
 app.use('/api', createPortalsRoutes(db));
 app.use('/api', createPortalBookmarksRoutes(db));
+// Trusted Stores (P0) — pin + mutual key-anchored verification of favourite sellers
+app.use('/api', createTrustedStoreRoutes(db));
 app.use('/api', await createStarterPackRoutes(db));
 app.use('/api', createJobsRoutes(db));
 app.use('/api', createMarketplaceVisitorRoutes(db));
