@@ -187,6 +187,34 @@ describe('AGREE — four-eyes independent review (optional second model)', () =>
     expect(done.state).toBe('rejected');
     expect(done.rejectReason).toMatch(/independent review/);
   });
+
+  it('accept path: the reviewer runs with action "accept" (kind→action mapping)', async () => {
+    const reviewer = new StubAgreementReviewer().queue1({ raise: false, severity: 'low', concerns: [] });
+    const buyer = buildHarness({ buyerContactHash: 'buyer-hash' });
+    const seller = buildHarness({ buyerContactHash: 'seller-hash', reviewer });
+    buyer.modal.queueApprove();
+    const proposeRes = await buyer.call('proposeAgreement', { decision: 'd', terms: 't', amountMicroFtc: '100', counterpartyAddress: 'fc_s', counterpartyHash: 'seller-hash' });
+    const proposePayload = (await settle(buyer, proposeRes.body.result.proposalId)).payload;
+    const ing = await seller.call('ingestAgreement', { type: 'propose', fromHash: 'buyer-hash', payload: proposePayload });
+    seller.modal.queueApprove();
+    const acceptRes = await seller.call('acceptAgreement', { agreementId: ing.body.result.agreement.id });
+    await settle(seller, acceptRes.body.result.proposalId);
+    expect(reviewer.invocations()[0]!.action).toBe('accept');
+  });
+
+  it('counter path: the reviewer runs with action "counter" (kind→action mapping)', async () => {
+    const reviewer = new StubAgreementReviewer().queue1({ raise: false, severity: 'low', concerns: [] });
+    const buyer = buildHarness({ buyerContactHash: 'buyer-hash' });
+    const seller = buildHarness({ buyerContactHash: 'seller-hash', reviewer });
+    buyer.modal.queueApprove();
+    const proposeRes = await buyer.call('proposeAgreement', { decision: 'd', terms: 't', amountMicroFtc: '100', counterpartyAddress: 'fc_s', counterpartyHash: 'seller-hash' });
+    const proposePayload = (await settle(buyer, proposeRes.body.result.proposalId)).payload;
+    const ing = await seller.call('ingestAgreement', { type: 'propose', fromHash: 'buyer-hash', payload: proposePayload });
+    seller.modal.queueApprove();
+    const counterRes = await seller.call('counterAgreement', { agreementId: ing.body.result.agreement.id, decision: 'd2', terms: 't2', amountMicroFtc: '90' });
+    await settle(seller, counterRes.body.result.proposalId);
+    expect(reviewer.invocations()[0]!.action).toBe('counter');
+  });
 });
 
 describe('AGREE — full agent-callable round-trip (buyer ⇄ seller standalones)', () => {

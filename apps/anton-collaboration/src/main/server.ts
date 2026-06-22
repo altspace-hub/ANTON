@@ -792,7 +792,9 @@ export async function runAgreementModalFlow(
 }
 
 /** Run the independent reviewer, FAIL-CLOSED: any throw becomes a raise so the
- *  human still sees a warning (never a silent pass). */
+ *  human still sees a warning (never a silent pass). This is ONE extra LLM call
+ *  per committing verb; the throttle is the human gate on every such verb — the
+ *  buyer's agent cannot spam commits, each one opens a human approval. */
 async function safeAgreementReview(
   reviewer: AgreementReviewer, payload: CollabModalPayload,
 ): Promise<AgreementReviewVerdict> {
@@ -803,8 +805,8 @@ async function safeAgreementReview(
       action, decision: payload.decision, terms: payload.terms,
       amountFtc: payload.amountFtc, counterparty: payload.counterparty,
     });
-  } catch (e) {
-    return { raise: true, severity: 'high', concerns: [`reviewer threw: ${e instanceof Error ? e.message : String(e)}`] };
+  } catch {
+    return { raise: true, severity: 'high', concerns: ['independent reviewer errored — treated as a concern'] };
   }
 }
 

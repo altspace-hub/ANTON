@@ -53,4 +53,23 @@ describe('agreement four-eyes reviewer', () => {
     const r = createAgreementReviewer({ model: 'm', llm: llm('{"verdict":"maybe","severity":"low"}') });
     expect((await r.review(INPUT)).raise).toBe(true);
   });
+
+  it('FAILS CLOSED on a hung reviewer via the timeout → raise (never stalls the gate)', async () => {
+    const hanging: ReviewLLM = {
+      complete: (_s, _u, signal) => new Promise((_res, reject) => {
+        signal?.addEventListener('abort', () => reject(new Error('aborted')));
+      }),
+    };
+    const r = createAgreementReviewer({ model: 'm', llm: hanging, timeoutMs: 50 });
+    expect((await r.review(INPUT)).raise).toBe(true);
+  });
+
+  it('over-long terms are truncated WITH a red-flag marker (no silent split-view)', async () => {
+    let seenUser = '';
+    const capture: ReviewLLM = { complete: async (_s, u) => { seenUser = u; return '{"verdict":"ok","severity":"low","concerns":[]}'; } };
+    const r = createAgreementReviewer({ model: 'm', llm: capture });
+    await r.review({ ...INPUT, terms: 'x'.repeat(20000) });
+    expect(seenUser).toContain('TRUNCATED');
+    expect(seenUser).toContain('RED FLAG');
+  });
 });

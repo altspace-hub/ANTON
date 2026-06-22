@@ -109,6 +109,12 @@ async function main(): Promise<void> {
     ...(anthropicKey ? { anthropicApiKey: anthropicKey } : {}),
     ...(reviewPolicy ? { extraPolicy: reviewPolicy } : {}),
   }) : undefined;
+  if (reviewStrict && !reviewModel) {
+    log('  ⚠ ANTON_COLLAB_REVIEW_STRICT is set but ANTON_COLLAB_REVIEW_MODEL is blank — four-eyes is OFF, strict has no effect.');
+  }
+  if (reviewModel && /^claude/i.test(reviewModel)) {
+    log("  ⚠ four-eyes reviewer is a claude-* model — it shares the negotiation brain's provider/key; prefer a different provider (e.g. mistral-large-latest) for true independence.");
+  }
   // Drop terminal negotiation jobs older than 30m every 10m (don't block exit).
   const reaper = setInterval(() => negotiations.reap(30 * 60 * 1000), 10 * 60 * 1000);
   reaper.unref();
