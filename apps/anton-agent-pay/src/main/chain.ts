@@ -34,10 +34,6 @@ export { agentDebtorName, resolveUbo, type AgentUbo } from './agent-identity.js'
 
 /** Default FTC ↔ satoshi multiplier (8 decimals, matches the chain). */
 const SATOSHI_PER_FTC = 100_000_000;
-/** Default fee for a Pay submit. Matches src/pay/services/payment.ts
- *  default. ~0.001 FTC at SATOSHI_PER_FTC=1e8 + fee=100000. */
-const DEFAULT_FEE_SATOSHI = 100;
-const DEFAULT_FEE_FTC = DEFAULT_FEE_SATOSHI / SATOSHI_PER_FTC;
 
 /** Default endpoint — Bahnhof's public RPC. Override via
  *  AGENT_PAY_NODE_URL env var (e.g. http://127.0.0.1:8545 for dev). */
@@ -165,6 +161,11 @@ export async function submitPayment(args: SubmitPaymentArgs): Promise<SubmitPaym
   if (amountSatoshi <= 0) {
     throw new Error('submitPayment: amountFtc must be > 0');
   }
+  // Network fee = the SDK's amount-based schedule (0.1%, floor 250, cap 0.1 FTC) —
+  // IDENTICAL to the Pay/Comm/Business apps. The previous flat 100-satoshi fee was
+  // BELOW the network floor, so the node never mined the tx (it sat unconfirmed in
+  // the mempool indefinitely). Let the schedule decide; this is what settles.
+  const feeSatoshi = pacs008.computeNetworkFee(amountSatoshi);
 
   // 1. Fetch the wallet's spendable UTXOs.
   const utxos = await client.getUtxos(args.unlocked.address);
@@ -215,7 +216,7 @@ export async function submitPayment(args: SubmitPaymentArgs): Promise<SubmitPaym
     utxos,
     recipient: args.to,
     amountSatoshi,
-    feeSatoshi: DEFAULT_FEE_SATOSHI,
+    feeSatoshi,
     pacs008: message,
     uetr: extractUetr(message),
   });
@@ -225,7 +226,7 @@ export async function submitPayment(args: SubmitPaymentArgs): Promise<SubmitPaym
   //    the apiKey through automatically when isAuthRequired() matches.
   const raw = await client.submitSignedTransaction(tx);
   const txId = raw.tx_id ?? tx.id;
-  return { txId, feeFtc: DEFAULT_FEE_FTC, raw };
+  return { txId, feeFtc: feeSatoshi / SATOSHI_PER_FTC, raw };
 }
 
 // ── Recent transactions ──────────────────────────────────────────

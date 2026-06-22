@@ -91,7 +91,7 @@ describe('chain', () => {
 
       const { fn, calls } = stubFetch({
         '/get_utxos': [
-          // 5 FTC of UTXOs — plenty to cover a 1 FTC payment + 100 sat fee
+          // 5 FTC of UTXOs — plenty to cover a 1 FTC payment + the network fee
           { tx_id: 'utxo-1', output_index: 0, amount: 5 * 100_000_000,
             address: unlocked.address, block_height: 805000 },
         ],
@@ -110,7 +110,9 @@ describe('chain', () => {
       });
 
       expect(result.txId).toBeTruthy();
-      expect(result.feeFtc).toBe(0.000001); // 100 sat / 1e8
+      // Fee = computeNetworkFee(1 FTC) = 0.1% = 100,000 sat = 0.001 FTC (the real
+      // network schedule, not the old flat 100-sat fee that never got mined).
+      expect(result.feeFtc).toBe(0.001);
 
       // Verify the calls: /get_utxos then /submit_signed_transaction.
       const paths = calls.map(c => c.url);
