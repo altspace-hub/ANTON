@@ -91,6 +91,8 @@ const PortalManagePage = lazy(() => import('./pages/portals/PortalManagePage'));
 const PortalVisitorPage = lazy(() => import('./pages/portals/PortalVisitorPage'));
 // Portals Visitor Layer v0.8
 const PortalVisitorHomePage = lazy(() => import('./pages/portals/PortalVisitorHomePage'));
+const TrustedStoresPage = lazy(() => import('./pages/trusted-stores/TrustedStoresPage'));
+const PinSellerWizard = lazy(() => import('./pages/trusted-stores/PinSellerWizard'));
 const CategoryPage = lazy(() => import('./components/portals/CategoryPage'));
 const EvidencePackListPage = lazy(() => import('./pages/evidence-pack/EvidencePackListPage'));
 const EvidencePackBuilderPage = lazy(() => import('./pages/evidence-pack/EvidencePackBuilderPage'));
@@ -554,6 +556,8 @@ export default function App() {
           <Route path="/portals/build/:templateId" element={<PortalBuilderPage />} />
           <Route path="/portals/discovery" element={<PortalsDiscoveryPage />} />
           <Route path="/portals/inbox" element={<PortalsInboxPage />} />
+          <Route path="/trusted-stores" element={<TrustedStoresPage />} />
+          <Route path="/trusted-stores/pin" element={<PinSellerWizard />} />
           <Route path="/portals/:id/manage" element={<PortalManagePage />} />
           <Route path="/portals/p/:address" element={<PortalVisitorPage />} />
           <Route path="/evidence-packs" element={<EvidencePackListPage />} />

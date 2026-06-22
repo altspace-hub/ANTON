@@ -105,6 +105,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'compliance-posture', label: 'Compliance Posture', category: 'admin' },
   { id: 'risk-appetite', label: 'Risk Appetite Dashboard', category: 'admin' },
   { id: 'app-gateway', label: 'App Gateway', category: 'admin' },
+  { id: 'trusted-stores', label: 'Trusted Stores', category: 'tools' },
 ];
 
 // UX-01: Role-based nav presets — show only relevant items for each persona

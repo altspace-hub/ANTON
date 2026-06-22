@@ -1483,6 +1483,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 'travel': { to: '/travel', icon: Map, label: 'Travel' },
                 'community': { to: '/community', icon: MessageCircle, label: 'Community' },
                 'app-gateway': { to: '/app-gateway', icon: Smartphone, label: 'App Gateway' },
+                'trusted-stores': { to: '/trusted-stores', icon: ShieldCheck, label: 'Trusted Stores' },
               }[item.id];
 
               if (!navConfig) return null;
