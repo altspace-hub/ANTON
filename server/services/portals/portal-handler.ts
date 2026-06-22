@@ -396,6 +396,11 @@ export function createPortalHandler(
   // Off by default. Use a model from a DIFFERENT provider than ANTON_AUTOQUOTE_MODEL.
   const reviewModel = (process.env.ANTON_AUTOQUOTE_REVIEW_MODEL || '').trim();
   const reviewPolicy = (process.env.ANTON_AUTOQUOTE_REVIEW_POLICY || '').trim();
+  if (reviewModel && reviewModel === (process.env.ANTON_AUTOQUOTE_MODEL || 'claude-haiku-4-5-20251001').trim()) {
+    log.warn({ model: reviewModel },
+      'four-eyes reviewer uses the SAME model as the primary quoter — it cannot independently catch its own errors; '
+      + 'set ANTON_AUTOQUOTE_REVIEW_MODEL to a different model/provider');
+  }
   const reviewer = reviewModel
     ? createCallChatQuoteReviewer(db, reviewModel, reviewPolicy || undefined)
     : undefined;

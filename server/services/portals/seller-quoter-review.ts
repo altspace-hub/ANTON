@@ -25,11 +25,15 @@ export function createCallChatQuoteReviewer(
         model,
         taskDescription: `Auto-quote a price for a buyer's "${verb}" request and return it without a human in the loop.`,
         untrustedInput: inquiry,
+        // Send the DETERMINISTIC economics only. The LLM-authored `note` is
+        // deliberately EXCLUDED: it was produced from the untrusted inquiry, so
+        // forwarding it unfenced would be a second prompt-injection channel into
+        // the reviewer. The reviewer judges price/availability + the (separately
+        // fenced) inquiry — not the marketing prose.
         proposedOutput: JSON.stringify({
           priceFtc: quote.priceFtc,
           currency: quote.currency,
           available: quote.available,
-          ...(quote.note ? { note: quote.note } : {}),
         }),
         ...(policy ? { extraPolicy: policy } : {}),
         db,

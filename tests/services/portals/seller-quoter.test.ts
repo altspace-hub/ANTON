@@ -197,6 +197,16 @@ describe('seller auto-quoter — four-eyes review (optional second model)', () =
     expect(r.reason).toBe('four_eyes_raised');
   });
 
+  it('SPEND: the reviewer call counts against the daily cap; over budget → human', async () => {
+    let calls = 0;
+    const incrementUsage = async (): Promise<number> => { calls++; return calls === 1 ? 1 : 201; }; // primary ok, review over cap (200)
+    const r = await createSellerQuoter(deps({ reviewer: okReviewer, incrementUsage })).tryAutoQuote(INPUT());
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('four_eyes_raised');
+    expect(r.review?.concerns.join(' ')).toContain('budget');
+    expect(calls).toBe(2); // primary + review both counted
+  });
+
   it('REVIEWER SEES the buyer-facing quote + inquiry but NEVER the floor', async () => {
     let seen: Parameters<QuoteReviewer['review']>[0] | undefined;
     const reviewer: QuoteReviewer = {

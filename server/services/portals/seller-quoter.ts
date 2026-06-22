@@ -224,6 +224,14 @@ export function createSellerQuoter(deps: QuoterDeps): SellerQuoter {
       //     itself fails) routes the quote to a HUMAN — never silently auto-returned.
       //     Off entirely when no reviewer is injected (single-model behavior).
       if (deps.reviewer) {
+        // The review is a SECOND paid LLM call — count it against the same daily
+        // kill-switch so an opted-in portal can't be made to spend 2× silently.
+        // Over budget ⇒ fail-closed to a human (we can't run the independent check).
+        const reviewUsed = await deps.incrementUsage(input.portalId);
+        if (reviewUsed > cfg.dailyLlmCallCap) {
+          return { ok: false, reason: 'four_eyes_raised',
+            review: { raise: true, severity: 'high', concerns: ['review budget exhausted — escalated to a human'] } };
+        }
         let verdict: QuoteReviewVerdict;
         try {
           verdict = await deps.reviewer.review({
