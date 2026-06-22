@@ -28,6 +28,7 @@ import { validateAgainstSchema } from '../capability-descriptor/validator.js';
 import { createSellerQuoter, type SellerQuoter } from './seller-quoter.js';
 import { makeQuoterDbDeps } from './auto-quote-config-service.js';
 import { createCallChatQuoteLLM } from './seller-quoter-llm.js';
+import { createCallChatQuoteReviewer } from './seller-quoter-review.js';
 import { createAppCheckpointService } from '../app-checkpoint-service.js';
 import { createPortalDatabaseService, type PortalDatabaseService } from './portal-database-service.js';
 import { createPortalRenderer, type PortalRenderer } from './portal-renderer.js';
@@ -389,8 +390,21 @@ export function createPortalHandler(
   // The seller auto-quote responder (commerce-loop P3). Opt-in per capability —
   // with no config it returns {ok:false} and the human-inbox path is unchanged.
   // Injectable so the handler integration test stubs it (no LLM/network).
+  // OPTIONAL four-eyes review: when ANTON_AUTOQUOTE_REVIEW_MODEL is set, a SECOND,
+  // independent model scrutinises every auto-quote (and the untrusted inquiry) for
+  // no-go zones / manipulation / anomalies and routes flagged quotes to a human.
+  // Off by default. Use a model from a DIFFERENT provider than ANTON_AUTOQUOTE_MODEL.
+  const reviewModel = (process.env.ANTON_AUTOQUOTE_REVIEW_MODEL || '').trim();
+  const reviewPolicy = (process.env.ANTON_AUTOQUOTE_REVIEW_POLICY || '').trim();
+  const reviewer = reviewModel
+    ? createCallChatQuoteReviewer(db, reviewModel, reviewPolicy || undefined)
+    : undefined;
   const quoter: SellerQuoter = opts?.quoter
-    ?? createSellerQuoter({ ...makeQuoterDbDeps(db), llm: createCallChatQuoteLLM(db) });
+    ?? createSellerQuoter({
+      ...makeQuoterDbDeps(db),
+      llm: createCallChatQuoteLLM(db),
+      ...(reviewer ? { reviewer } : {}),
+    });
 
   return {
     async handleFetch(req) {
@@ -566,7 +580,7 @@ export function createPortalHandler(
         responseId,
         status,
         respondedAt,
-        JSON.stringify({ autoQuote: aq.ok, autoQuoteReason: aq.reason }),
+        JSON.stringify({ autoQuote: aq.ok, autoQuoteReason: aq.reason, ...(aq.review ? { fourEyes: aq.review } : {}) }),
       );
 
       log.info({

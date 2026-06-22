@@ -79,11 +79,36 @@ export type AutoQuoteReason =
   | 'auto_quote_disabled' | 'verb_not_supported' | 'identity_required'
   | 'spend_budget_exhausted' | 'sku_not_in_catalog' | 'bad_floor'
   | 'qty_exceeds_stock' | 'counter_below_floor' | 'over_auto_ceiling'
-  | 'llm_malformed' | 'quoter_error';
+  | 'llm_malformed' | 'quoter_error'
+  // The OPTIONAL four-eyes reviewer (a second, independent model) flagged the
+  // quote — it is routed to a human instead of auto-returned.
+  | 'four_eyes_raised';
+
+/** The verdict a four-eyes reviewer returns about a proposed quote. */
+export interface QuoteReviewVerdict {
+  raise: boolean;
+  severity: 'low' | 'medium' | 'high';
+  concerns: string[];
+  reviewModel?: string;
+}
+
+/** OPTIONAL independent second-model check (see four-eyes-review.ts). Injected so
+ *  the quoter core stays pure + unit-testable with a stub. Absent ⇒ no review. */
+export interface QuoteReviewer {
+  review(args: {
+    verb: string;
+    /** The untrusted buyer inquiry text the primary model saw. */
+    inquiry: string;
+    /** The assembled (floor-clamped) quote the buyer would receive. */
+    quote: StructuredQuote;
+    /** The seller's catalog/policy context (NEVER the floor). */
+    catalogText?: string;
+  }): Promise<QuoteReviewVerdict>;
+}
 
 export type AutoQuoteResult =
-  | { ok: true; output: StructuredQuote; reason: 'auto_quoted' }
-  | { ok: false; reason: Exclude<AutoQuoteReason, 'auto_quoted'> };
+  | { ok: true; output: StructuredQuote; reason: 'auto_quoted'; review?: QuoteReviewVerdict }
+  | { ok: false; reason: Exclude<AutoQuoteReason, 'auto_quoted'>; review?: QuoteReviewVerdict };
 
 /** The injectable LLM seam. The default impl wraps provider-router.callChat;
  *  tests pass a stub. It receives ONLY the fenced inquiry + the list price — never
@@ -100,6 +125,10 @@ export interface QuoterDeps {
    *  count. The quoter rejects when it exceeds the config cap (kill-switch). */
   incrementUsage: (portalId: string) => Promise<number>;
   llm: QuoteLLM;
+  /** OPTIONAL four-eyes reviewer (a second, independent model). Absent ⇒ off
+   *  (today's single-model behavior). Present ⇒ every successful quote is
+   *  independently reviewed; a raised concern routes the quote to a human. */
+  reviewer?: QuoteReviewer;
 }
 
 export interface SellerQuoter {
@@ -188,9 +217,37 @@ export function createSellerQuoter(deps: QuoterDeps): SellerQuoter {
         available, // deterministic
         ...(note ? { note } : {}),
       };
+
+      // 12. OPTIONAL four-eyes review — a SECOND, independent model scrutinises the
+      //     assembled quote + the untrusted inquiry for no-go zones, manipulation
+      //     (prompt injection), and anomalies. A raised concern (or a reviewer that
+      //     itself fails) routes the quote to a HUMAN — never silently auto-returned.
+      //     Off entirely when no reviewer is injected (single-model behavior).
+      if (deps.reviewer) {
+        let verdict: QuoteReviewVerdict;
+        try {
+          verdict = await deps.reviewer.review({
+            verb: input.verb,
+            inquiry: extractInquiry(input.input),
+            quote: output,
+            ...(cfg.catalogText ? { catalogText: cfg.catalogText } : {}),
+          });
+        } catch {
+          verdict = { raise: true, severity: 'high', concerns: ['four-eyes reviewer threw'] };
+        }
+        if (verdict.raise) return { ok: false, reason: 'four_eyes_raised', review: verdict };
+        return { ok: true, output, reason: 'auto_quoted', review: verdict };
+      }
       return { ok: true, output, reason: 'auto_quoted' };
     },
   };
+}
+
+/** The buyer inquiry text the LLM (and the four-eyes reviewer) sees. */
+function extractInquiry(input: Record<string, unknown>): string {
+  return typeof input.inquiry === 'string' ? input.inquiry
+    : typeof input.message === 'string' ? input.message
+      : JSON.stringify(input).slice(0, 2000);
 }
 
 function parseQty(q: unknown): number {
@@ -213,9 +270,7 @@ function buildSystemPrompt(cfg: AutoQuoteConfig, listPriceMicroFtc: string | und
 }
 
 function buildUserPrompt(input: AutoQuoteInput, qty: number, listPriceMicroFtc: string | undefined, counter: string | undefined): string {
-  const inquiry = typeof input.input.inquiry === 'string' ? input.input.inquiry
-    : typeof input.input.message === 'string' ? input.input.message
-      : JSON.stringify(input.input).slice(0, 2000);
+  const inquiry = extractInquiry(input.input);
   return [
     `Verb: ${input.verb}. Quantity: ${qty}.`,
     typeof input.input.sku === 'string' ? `SKU: ${input.input.sku}` : '',

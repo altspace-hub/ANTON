@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   createSellerQuoter, type AutoQuoteConfig, type SkuRecord, type AutoQuoteInput, type QuoterDeps,
+  type QuoteReviewer,
 } from '../../../server/services/portals/seller-quoter.js';
 
 const CONFIG = (over: Partial<AutoQuoteConfig> = {}): AutoQuoteConfig => ({
@@ -43,6 +44,7 @@ function deps(over: Partial<QuoterDeps> = {}, cfg = CONFIG()): RecordingDeps {
     lookupSku: over.lookupSku ?? (async (_p: string, sku: string) => (sku === 'AJ43' ? SKU : null)),
     incrementUsage: over.incrementUsage ?? (async () => 1),
     llm,
+    ...(over.reviewer ? { reviewer: over.reviewer } : {}),
     get lastArgs() { return rec.lastArgs; },
     get proposeCalls() { return rec.proposeCalls; },
   };
@@ -158,5 +160,51 @@ describe('seller auto-quoter', () => {
   it('NON-BINDING INVARIANT: the auto-quote never confirms/pays — status stays "quoted"', async () => {
     const r = await createSellerQuoter(deps()).tryAutoQuote(INPUT());
     expect(r.ok && r.output.status).toBe('quoted'); // never 'confirmed' / 'pending_payment'
+  });
+});
+
+describe('seller auto-quoter — four-eyes review (optional second model)', () => {
+  const okReviewer: QuoteReviewer = {
+    review: async () => ({ raise: false, severity: 'low', concerns: [], reviewModel: 'stub' }),
+  };
+
+  it('OFF by default: no reviewer → a quote with no review attached', async () => {
+    const r = await createSellerQuoter(deps()).tryAutoQuote(INPUT());
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.review).toBeUndefined();
+  });
+
+  it('REVIEWER OK: the quote ships unchanged with the verdict attached', async () => {
+    const r = await createSellerQuoter(deps({ reviewer: okReviewer })).tryAutoQuote(INPUT());
+    expect(r.ok).toBe(true);
+    if (r.ok) { expect(r.output.amountMicroFtc).toBe('1800000'); expect(r.review?.raise).toBe(false); }
+  });
+
+  it('REVIEWER RAISE: a flagged quote routes to a human (four_eyes_raised) with concerns', async () => {
+    const reviewer: QuoteReviewer = {
+      review: async () => ({ raise: true, severity: 'high', concerns: ['disallowed item'], reviewModel: 'stub' }),
+    };
+    const r = await createSellerQuoter(deps({ reviewer })).tryAutoQuote(INPUT());
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('four_eyes_raised');
+    expect(r.review?.concerns).toContain('disallowed item');
+  });
+
+  it('FAIL-CLOSED: a reviewer that throws still routes to a human (never auto-ships)', async () => {
+    const reviewer: QuoteReviewer = { review: async () => { throw new Error('reviewer down'); } };
+    const r = await createSellerQuoter(deps({ reviewer })).tryAutoQuote(INPUT());
+    expect(r.ok).toBe(false);
+    expect(r.reason).toBe('four_eyes_raised');
+  });
+
+  it('REVIEWER SEES the buyer-facing quote + inquiry but NEVER the floor', async () => {
+    let seen: Parameters<QuoteReviewer['review']>[0] | undefined;
+    const reviewer: QuoteReviewer = {
+      review: async (a) => { seen = a; return { raise: false, severity: 'low', concerns: [] }; },
+    };
+    await createSellerQuoter(deps({ reviewer })).tryAutoQuote(INPUT({}, { inquiry: 'Air Jordans EU43?' }));
+    expect(seen?.inquiry).toContain('Air Jordans');
+    expect(seen?.quote.amountMicroFtc).toBe('1800000');     // buyer-facing, clamped
+    expect(JSON.stringify(seen)).not.toContain('500000');   // the floor never reaches the reviewer
   });
 });
