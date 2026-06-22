@@ -107,7 +107,7 @@ export default function PinSellerWizard() {
             </div>
             <div className="mt-2 text-xs">
               {preview.integrity?.valid
-                ? <span className="text-adv-green">✓ Descriptor signature verified.</span>
+                ? <span className="text-adv-gray">Descriptor is self-consistently signed — this alone does <strong>not</strong> prove identity. Verify the store live below.</span>
                 : <span className="text-adv-gold">⚠ Descriptor signature {preview.integrity?.reasons.includes('no-signature-cached') ? 'unavailable (relay-only) — verify live below.' : `not verified: ${preview.integrity?.reasons.join(', ')}`}</span>}
             </div>
           </div>

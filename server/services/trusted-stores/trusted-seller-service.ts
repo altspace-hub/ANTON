@@ -31,6 +31,11 @@ import { checkPinLookAlike, type LookAlikeWarning } from './look-alike.js';
 
 const log = childLogger('trusted-stores');
 
+/** A handshake nonce is single-use AND short-lived. The buyer stamps the issue
+ *  time into the challenge (signedPayload.ts); a captured proof older than this
+ *  is rejected even if its nonce somehow matched. */
+const HANDSHAKE_TTL_MS = 10 * 60_000;
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface TrustedSeller {
@@ -157,9 +162,14 @@ export async function resolveSellerKey(
   };
 }
 
-/** Static descriptor-signature integrity (advisory). Honest gap: a portal
- *  discovered purely via the relay has no detached signature cached → unverifiable
- *  here; the LIVE mutual handshake is the stronger, signature-independent proof. */
+/** Descriptor SELF-CONSISTENCY check (advisory only).
+ *  IMPORTANT: this verifies the descriptor against the key embedded INSIDE that same
+ *  descriptor, so it only proves the descriptor is internally intact + self-signed —
+ *  NOT that the key is the authentic store's key. A forged self-signed descriptor
+ *  passes. Authenticity comes from (a) the LIVE mutual handshake (signature-
+ *  independent), and (b) — once wired — an INDEPENDENT registry-resolved key. The UI
+ *  must NOT claim "verified seller" from this alone. Honest gap: a relay-only
+ *  descriptor carries no cached signature → 'no-signature-cached'. */
 export function verifyDescriptorIntegrity(resolved: ResolvedSellerKey): DescriptorIntegrity {
   if (!resolved.envelope) {
     return { valid: false, reasons: ['no-signature-cached'] };
@@ -222,34 +232,32 @@ export async function pinSeller(
     .map((s) => ({ portalAddress: s.portalAddress, nameSkeleton: computeSkeleton(s.portalAddress) }));
   const lookAlikeWarnings = checkPinLookAlike(portalAddress, existingPins);
 
-  const existing = await getRow(db, ownerId, portalAddress);
-  const keyChanged = !!existing && existing.signing_pubkey_hex !== resolved.signingPubkeyHex;
-
-  if (!existing) {
-    await db.run(
-      `INSERT INTO trusted_sellers
-         (owner_user_id, portal_address, display_title, contact_hash, signing_pubkey_hex,
-          signing_key_fingerprint, name_skeleton, status, verification_method, descriptor_sig_verified)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pinned', 'descriptor-tofu', ?)`,
-      ownerId, portalAddress, resolved.displayTitle ?? null, resolved.contactHash ?? null,
-      resolved.signingPubkeyHex, resolved.signingKeyFingerprint, skeleton, integrity.valid,
-    );
-  } else {
-    // Keep 'trusted' only when the key is unchanged; a key change → audit + 'pinned'.
-    const nextStatus = keyChanged ? 'pinned' : (existing.status === 'trusted' ? 'trusted' : 'pinned');
-    await db.run(
-      `UPDATE trusted_sellers SET
-         display_title = ?, contact_hash = ?, signing_pubkey_hex = ?, signing_key_fingerprint = ?,
-         name_skeleton = ?, status = ?, descriptor_sig_verified = ?,
-         previous_pubkey_hex = CASE WHEN ? THEN signing_pubkey_hex ELSE previous_pubkey_hex END,
-         key_changed_at = CASE WHEN ? THEN NOW() ELSE key_changed_at END,
-         updated_at = NOW()
-       WHERE owner_user_id = ? AND portal_address = ?`,
-      resolved.displayTitle ?? null, resolved.contactHash ?? null, resolved.signingPubkeyHex,
-      resolved.signingKeyFingerprint, skeleton, nextStatus, integrity.valid,
-      keyChanged, keyChanged, ownerId, portalAddress,
-    );
-  }
+  // Atomic upsert — avoids a read-then-write race on concurrent first-pins. The
+  // key-change audit lives in the DO UPDATE: a changed key keeps the prior key,
+  // stamps the change time, and drops to 'pinned' (never silently re-trusts);
+  // an unchanged key preserves a prior 'trusted'. All RHS see the PRE-update row.
+  await db.run(
+    `INSERT INTO trusted_sellers
+       (owner_user_id, portal_address, display_title, contact_hash, signing_pubkey_hex,
+        signing_key_fingerprint, name_skeleton, status, verification_method, descriptor_sig_verified)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'pinned', 'descriptor-tofu', ?)
+     ON CONFLICT (owner_user_id, portal_address) DO UPDATE SET
+       display_title = EXCLUDED.display_title,
+       contact_hash = EXCLUDED.contact_hash,
+       name_skeleton = EXCLUDED.name_skeleton,
+       descriptor_sig_verified = EXCLUDED.descriptor_sig_verified,
+       previous_pubkey_hex = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex
+                                  THEN trusted_sellers.signing_pubkey_hex ELSE trusted_sellers.previous_pubkey_hex END,
+       key_changed_at = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex
+                             THEN NOW() ELSE trusted_sellers.key_changed_at END,
+       status = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex THEN 'pinned'
+                     WHEN trusted_sellers.status = 'trusted' THEN 'trusted' ELSE 'pinned' END,
+       signing_pubkey_hex = EXCLUDED.signing_pubkey_hex,
+       signing_key_fingerprint = EXCLUDED.signing_key_fingerprint,
+       updated_at = NOW()`,
+    ownerId, portalAddress, resolved.displayTitle ?? null, resolved.contactHash ?? null,
+    resolved.signingPubkeyHex, resolved.signingKeyFingerprint, skeleton, integrity.valid,
+  );
 
   const seller = await getTrustedSeller(db, ownerId, portalAddress);
   if (!seller) throw new Error('pinSeller: row missing after upsert');
@@ -274,13 +282,15 @@ export async function removeTrustedSeller(
  *  never silently re-trusts. The user must deliberately re-pin to accept it. */
 export async function reResolveAndCheckKey(
   db: DatabaseAdapter, ownerId: string, portalAddress: string,
-): Promise<{ found: boolean; rotated: boolean; oldFingerprint?: string; newFingerprint?: string }> {
+): Promise<{ found: boolean; resolvable: boolean; rotated: boolean; oldFingerprint?: string; newFingerprint?: string }> {
   const row = await getRow(db, ownerId, portalAddress);
-  if (!row) return { found: false, rotated: false };
+  if (!row) return { found: false, resolvable: false, rotated: false };
   const resolved = await resolveSellerKey(db, portalAddress);
   if (!resolved) {
     await db.run(`UPDATE trusted_sellers SET last_checked_at = NOW() WHERE id = ?`, row.id);
-    return { found: true, rotated: false };
+    // Could NOT re-resolve (descriptor expired / never cached) — this is NOT a clean
+    // check; the caller must say "could not re-check", never imply the key is unchanged.
+    return { found: true, resolvable: false, rotated: false };
   }
   const rotated = resolved.signingKeyFingerprint !== row.signing_key_fingerprint;
   if (rotated) {
@@ -295,7 +305,7 @@ export async function reResolveAndCheckKey(
     await db.run(`UPDATE trusted_sellers SET last_checked_at = NOW() WHERE id = ?`, row.id);
   }
   return {
-    found: true, rotated,
+    found: true, resolvable: true, rotated,
     oldFingerprint: row.signing_key_fingerprint, newFingerprint: resolved.signingKeyFingerprint,
   };
 }
@@ -339,9 +349,22 @@ export async function recordHandshakeResult(
   if (payloadKey !== pinned) reasons.push('payload-key-mismatch');
   const payloadNonce = typeof proof.signedPayload.nonce === 'string' ? proof.signedPayload.nonce : '';
   if (!row.last_handshake_nonce || payloadNonce !== row.last_handshake_nonce) reasons.push('nonce-mismatch');
+  // Bind the proof to THIS pin's address (defence-in-depth beyond the per-row nonce).
+  const payloadAddress = typeof proof.signedPayload.portalAddress === 'string' ? proof.signedPayload.portalAddress : '';
+  if (payloadAddress !== portalAddress) reasons.push('address-mismatch');
+  // TTL: reject a stale (replayed) challenge even if its nonce somehow matched.
+  const ts = typeof proof.signedPayload.ts === 'number' ? proof.signedPayload.ts : 0;
+  if (!ts || Date.now() - ts > HANDSHAKE_TTL_MS) reasons.push('expired');
   if (!verifyCanonical(proof.signedPayload, proof.signature, pinned)) reasons.push('signature-invalid');
 
   if (reasons.length > 0) {
+    // One live nonce, one shot: burn it on a FAILED proof too (no retries/grinding
+    // against a single live nonce). The buyer re-requests to try again.
+    await db.run(
+      `UPDATE trusted_sellers SET last_handshake_nonce = NULL, updated_at = NOW()
+       WHERE owner_user_id = ? AND portal_address = ?`,
+      ownerId, portalAddress,
+    );
     return { verified: false, reasons, seller: toModel(row) };
   }
 

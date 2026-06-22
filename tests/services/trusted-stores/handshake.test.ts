@@ -18,10 +18,11 @@ function genKeypair(): { pubHex: string; privPem: string } {
   return { pubHex: Buffer.from(publicKey).toString('hex'), privPem: privateKey as string };
 }
 
-function signedProof(pubHex: string, privPem: string, nonce: string) {
+function signedProof(pubHex: string, privPem: string, nonce: string, opts: { ts?: number; portalAddress?: string } = {}) {
   const signedPayload = {
-    kind: 'trust-handshake', nonce, buyerContactHash: 'buyer', portalAddress: 'shop.global.portal',
-    ts: 1_700_000_000_000, signingPubkeyHex: pubHex,
+    kind: 'trust-handshake', nonce, buyerContactHash: 'buyer',
+    portalAddress: opts.portalAddress ?? 'shop.global.portal',
+    ts: opts.ts ?? Date.now(), signingPubkeyHex: pubHex,
   };
   return { signature: signCanonical(signedPayload, privPem), signedPayload, signingPubkeyHex: pubHex };
 }
@@ -89,9 +90,26 @@ describe('recordHandshakeResult — composition (key + nonce + sig)', () => {
   it('rejects a forged/mismatched signature (tampered signed field, key+nonce still match)', async () => {
     const k = genKeypair();
     const proof = signedProof(k.pubHex, k.privPem, 'issued-nonce');
-    proof.signedPayload.ts = 1; // tamper a SIGNED field → the signature no longer matches the payload
+    proof.signedPayload.signingPubkeyHex = proof.signingPubkeyHex; // keep key check happy
+    proof.signedPayload.buyerContactHash = 'TAMPERED'; // tamper a SIGNED field → signature no longer matches
     const r = await recordHandshakeResult(fakeDb(k.pubHex, 'issued-nonce'), 'solo', 'shop.global.portal', proof);
     expect(r.verified).toBe(false);
     expect(r.reasons).toContain('signature-invalid');
+  });
+
+  it('rejects an EXPIRED challenge (stale ts beyond TTL) even with a matching nonce', async () => {
+    const k = genKeypair();
+    const proof = signedProof(k.pubHex, k.privPem, 'issued-nonce', { ts: Date.now() - 20 * 60_000 });
+    const r = await recordHandshakeResult(fakeDb(k.pubHex, 'issued-nonce'), 'solo', 'shop.global.portal', proof);
+    expect(r.verified).toBe(false);
+    expect(r.reasons).toContain('expired');
+  });
+
+  it('rejects a proof bound to a DIFFERENT portal address', async () => {
+    const k = genKeypair();
+    const proof = signedProof(k.pubHex, k.privPem, 'issued-nonce', { portalAddress: 'evil.global.portal' });
+    const r = await recordHandshakeResult(fakeDb(k.pubHex, 'issued-nonce'), 'solo', 'shop.global.portal', proof);
+    expect(r.verified).toBe(false);
+    expect(r.reasons).toContain('address-mismatch');
   });
 });

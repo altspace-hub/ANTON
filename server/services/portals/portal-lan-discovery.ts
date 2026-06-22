@@ -22,6 +22,8 @@ import type { DatabaseAdapter } from '../../db/database.js';
 import { childLogger } from '../../lib/logger.js';
 import { assertSafeLanEgressUrl } from '../../lib/ssrf-guard.js';
 import { createMdnsAdvertiser, type DiscoveredInstance } from '../mdns-advertiser.js';
+import { verifyDescriptor, type SignedDescriptorEnvelope } from '../capability-descriptor/signer.js';
+import { publicKeyWireToHex } from '../../lib/portal-crypto.js';
 
 const log = childLogger('portal-lan-discovery');
 
@@ -202,6 +204,35 @@ async function ingestPortal(
   // We only ingest into the descriptor cache — we never write into the local
   // `portals` table for remote portals. The proxy layer (W2) is what makes
   // the portal visit/invoke route to the remote ANTON.
+  //
+  // SECURITY: verify the peer-supplied descriptor is self-consistently signed
+  // before caching it (this cache is the trust root for Trusted-Stores pins). A
+  // tampered descriptor — signature/key/payload mismatch — is dropped, never
+  // cached. (This catches in-transit tampering of a legitimate peer's descriptor;
+  // it cannot vouch for a malicious peer's OWN self-signed descriptor — that is
+  // the registry/handshake's job.)
+  if (p.signature) {
+    const wire = (p.descriptor as { portal?: { publicKey?: unknown } })?.portal?.publicKey;
+    try {
+      if (typeof wire !== 'string') throw new Error('descriptor.portal.publicKey missing');
+      const envelope: SignedDescriptorEnvelope = {
+        descriptor: p.descriptor as Record<string, unknown>,
+        signature: p.signature,
+        signatureAlgorithm: 'Ed25519',
+        signingKeyFingerprint: p.signingKeyFingerprint,
+      };
+      const result = verifyDescriptor(envelope, { publicKey: publicKeyWireToHex(wire) });
+      if (!result.valid) {
+        log.warn({ portalAddress: p.portalAddress, endpoint, reasons: result.reasons },
+          'dropping LAN-ingested descriptor: signature did not verify');
+        return;
+      }
+    } catch (err) {
+      log.warn({ portalAddress: p.portalAddress, endpoint, err: err instanceof Error ? err.message : String(err) },
+        'dropping LAN-ingested descriptor: could not verify signature');
+      return;
+    }
+  }
   await db.run(
     `INSERT INTO portal_descriptor_cache
        (portal_address, descriptor_hash, descriptor, signature, signing_key_fingerprint,

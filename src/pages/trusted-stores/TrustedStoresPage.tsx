@@ -62,7 +62,9 @@ function SellerCard({ seller }: { seller: TrustedSeller }) {
             setBusy('check'); setNote(null);
             try {
               const r = await recheckKey(seller.portalAddress);
-              setNote(r.rotated ? 'Key ROTATED — flagged for re-verification.' : 'Key unchanged — still the same store.');
+              setNote(!r.resolvable
+                ? 'Could not re-check — re-visit/discover the store so its descriptor is cached again.'
+                : r.rotated ? 'Key ROTATED — flagged for re-verification.' : 'Key unchanged — still the same store.');
             } catch (e) { setNote(e instanceof Error ? e.message : String(e)); }
             finally { setBusy(null); }
           }}

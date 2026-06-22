@@ -67,7 +67,7 @@ interface State {
   requestHandshake: (portalAddress: string) => Promise<{ responseId: string; status: string }>;
   agree: (responseId: string) => Promise<void>;
   verifyHandshake: (portalAddress: string, responseId: string) => Promise<{ verified: boolean; pending?: boolean; reasons: string[] }>;
-  recheckKey: (portalAddress: string) => Promise<{ rotated: boolean; oldFingerprint?: string; newFingerprint?: string }>;
+  recheckKey: (portalAddress: string) => Promise<{ rotated: boolean; resolvable: boolean; oldFingerprint?: string; newFingerprint?: string }>;
   remove: (portalAddress: string) => Promise<void>;
 }
 
@@ -107,7 +107,7 @@ export const useTrustedStoresStore = create<State>((set, get) => ({
   },
 
   recheckKey: async (portalAddress) => {
-    const r = await post<{ rotated: boolean; oldFingerprint?: string; newFingerprint?: string }>('/trusted-stores/recheck-key', { portalAddress });
+    const r = await post<{ rotated: boolean; resolvable: boolean; oldFingerprint?: string; newFingerprint?: string }>('/trusted-stores/recheck-key', { portalAddress });
     await get().load();
     return r;
   },

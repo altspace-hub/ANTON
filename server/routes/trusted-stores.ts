@@ -37,15 +37,17 @@ import {
 
 const AddressBody = z.object({ portalAddress: z.string().min(3).max(256) });
 
-/** Split "name.namespace.portal" → { name, namespace }. */
+/** Validate + split "name.namespace.portal" → lowercased { name, namespace }, or
+ *  null when malformed. Portals store name/namespace lowercase, so we normalise
+ *  here to avoid a false 409 (and to reject garbage before the DB lookup). */
 function parseAddress(address: string): { name: string; namespace: string } | null {
-  const m = address.match(/^([a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*)\.([a-z][a-z0-9-]{2,31})\.portal$/i);
-  // Greedy first group can swallow the namespace; recover by taking the last two labels.
-  const parts = address.replace(/\.portal$/i, '').split('.');
+  const lower = address.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.[a-z][a-z0-9-]{2,31}\.portal$/.test(lower)) return null;
+  const parts = lower.replace(/\.portal$/, '').split('.');
   if (parts.length < 2) return null;
   const namespace = parts[parts.length - 1];
   const name = parts.slice(0, -1).join('.');
-  return m ? { name, namespace } : { name, namespace };
+  return { name, namespace };
 }
 
 export function createTrustedStoreRoutes(db: DatabaseAdapter): Router {
@@ -170,8 +172,11 @@ export function createTrustedStoreRoutes(db: DatabaseAdapter): Router {
       const portal = await db.get<{ metadata: { ownerId?: string } | null }>(
         `SELECT metadata FROM portals WHERE id = ?`, inv.portal_id,
       );
+      // Fail-CLOSED: only the stamped portal owner may trigger signing. Deny when
+      // ownerId is absent (legacy/imported portals) rather than letting any
+      // authenticated caller sign — matters in team mode; inert in solo (stamped).
       const portalOwner = portal?.metadata?.ownerId;
-      if (portalOwner && portalOwner !== ownerOf(req)) {
+      if (!portalOwner || portalOwner !== ownerOf(req)) {
         return res.status(403).json({ error: 'not the portal owner' });
       }
       const challenge = inv.input as unknown as HandshakeChallenge;
