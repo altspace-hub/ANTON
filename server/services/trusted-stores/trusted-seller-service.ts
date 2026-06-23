@@ -28,7 +28,9 @@ import { verifyDescriptor, type SignedDescriptorEnvelope } from '../capability-d
 import { createDescriptorCache } from '../registry-client/cache.js';
 import { computeSkeleton } from '../registry-protocol/homoglyph.js';
 import { checkPinLookAlike, type LookAlikeWarning } from './look-alike.js';
-import { resolveViaRelay, toRawPubkeyHex, rawToSpkiHex } from './relay-resolve.js';
+import { resolveViaRelay, toRawPubkeyHex, rawToSpkiHex, type RelayResolution } from './relay-resolve.js';
+import { leafHashFromEntry, sha256OfCanonical, verifyInclusion, verifyStsSignature } from '../registry-client/log-verifier.js';
+import { getTrustStore } from '../registry-client/trust-store.js';
 
 const log = childLogger('trusted-stores');
 
@@ -53,6 +55,10 @@ export interface TrustedSeller {
   registryVerified: boolean;
   /** The cached descriptor's embedded key disagreed with the relay's (poisoning?). */
   registryKeyMismatch: boolean;
+  /** Transparency-log proven: a signed tree head (operator key pinned client-side)
+   *  + an inclusion proof whose leaf we recomputed from the descriptor ourselves.
+   *  Strictly stronger than registryVerified — the relay cannot equivocate. */
+  logVerified: boolean;
   verifiedAt: string | null;
   lastCheckedAt: string | null;
   keyChangedAt: string | null;
@@ -76,6 +82,9 @@ export interface ResolvedSellerKey {
    *  address; mismatch = the cached descriptor's embedded key disagreed with the
    *  relay's (possible cache poisoning — the relay's authoritative key was used). */
   registry: { verified: boolean; mismatch: boolean };
+  /** Transparency-log anchor: verified = the relay PROVED this key via a signed
+   *  tree head + inclusion proof whose leaf we recomputed from the descriptor. */
+  log: { verified: boolean };
 }
 
 export interface DescriptorIntegrity {
@@ -111,6 +120,7 @@ interface Row {
   descriptor_sig_verified: boolean;
   registry_verified: boolean;
   registry_key_mismatch: boolean;
+  log_verified: boolean;
   last_handshake_nonce: string | null;
   verified_at: string | null;
   last_checked_at: string | null;
@@ -133,6 +143,7 @@ function toModel(r: Row): TrustedSeller {
     descriptorSigVerified: r.descriptor_sig_verified,
     registryVerified: r.registry_verified,
     registryKeyMismatch: r.registry_key_mismatch,
+    logVerified: r.log_verified,
     verifiedAt: r.verified_at ? new Date(r.verified_at).toISOString() : null,
     lastCheckedAt: r.last_checked_at ? new Date(r.last_checked_at).toISOString() : null,
     keyChangedAt: r.key_changed_at ? new Date(r.key_changed_at).toISOString() : null,
@@ -140,6 +151,48 @@ function toModel(r: Row): TrustedSeller {
     createdAt: new Date(r.created_at).toISOString(),
     updatedAt: new Date(r.updated_at).toISOString(),
   };
+}
+
+/**
+ * Verify a relay resolution's transparency-log proof, with ZERO trust in the
+ * relay's claimed leaf. We:
+ *   1. recompute the leaf entry from the RESOLVED descriptor + the relay-verified
+ *      key + the relay's address, exactly as the relay built it at approve time,
+ *      and require its hash to equal the proof's leafHash;
+ *   2. verify the STH was signed by the operator key we PIN client-side;
+ *   3. verify the recomputed/claimed leaf is included in the tree that STH commits
+ *      to (against sth.merkleRoot).
+ * All three must hold. Returns false (never throws) when the relay omitted the
+ * proof, the operator key isn't pinned yet (placeholder), or anything mismatches.
+ */
+export function verifyRelayLogProof(relay: RelayResolution): boolean {
+  const { inclusionProof, sth, sthSignature, portalAddress } = relay;
+  if (!inclusionProof || !sth || !sthSignature || typeof relay.leafIndex !== 'number') return false;
+  try {
+    // The leaf the relay hashed at approve: a flat 6-string entry. Rebuild it
+    // from data we can independently stand behind (the descriptor we resolved,
+    // the relay-verified raw key, the relay's authoritative address).
+    const leafEntry = {
+      schemaVersion: 'leaf-1.0.0' as const,
+      logId: String(inclusionProof.logId),
+      operationType: 'register' as const,
+      // The relay stores bare `name.namespace` (NO `.portal` suffix — that is an
+      // ANTON-Local display convention, never part of the registry address) and
+      // hashed `${name}.${namespace}`.toLowerCase() into the leaf. Mirror that
+      // EXACTLY: only lowercase. Do NOT strip `.portal` — `portal` is a valid
+      // namespace, so stripping it would corrupt the leaf for `*.portal` portals.
+      portalAddress: (portalAddress ?? '').toLowerCase(),
+      descriptorHash: sha256OfCanonical(relay.descriptor),
+      signingPubkeyHex: relay.signingPubkeyRawHex.toLowerCase(),
+    };
+    if (!leafEntry.portalAddress) return false;
+    if (leafHashFromEntry(leafEntry) !== inclusionProof.leafHash) return false; // relay lied about the leaf
+    if (!verifyStsSignature({ sth, signature: sthSignature }, getTrustStore())) return false; // STH not from the pinned operator
+    if (!verifyInclusion(inclusionProof, inclusionProof.logId, sth.merkleRoot)) return false; // leaf not in the committed tree
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ── Resolve + integrity ────────────────────────────────────────────────────
@@ -167,6 +220,10 @@ export async function resolveSellerKey(
   const signingPubkeyHex = rawToSpkiHex(anchorRaw); // 88-char SPKI hex (handshake-compatible)
   const signingKeyFingerprint = await publicKeyFingerprint(signingPubkeyHex);
   const registry = { verified: !!relay, mismatch: !!relay && embeddedRaw !== relay.signingPubkeyRawHex };
+  // Transparency-log proof (strictly stronger): only meaningful when the relay
+  // anchored the key — never claim log-verified without a registry resolve, and
+  // never when the relay's authoritative key disagreed with the cache.
+  const log = { verified: !!relay && !registry.mismatch && verifyRelayLogProof(relay) };
 
   const envelope: SignedDescriptorEnvelope | null = cached.signature
     ? {
@@ -186,6 +243,7 @@ export async function resolveSellerKey(
     ...(typeof portal.originEndpoint === 'string' ? { originEndpoint: portal.originEndpoint } : {}),
     envelope,
     registry,
+    log,
   };
 }
 
@@ -268,8 +326,8 @@ export async function pinSeller(
     `INSERT INTO trusted_sellers
        (owner_user_id, portal_address, display_title, contact_hash, signing_pubkey_hex,
         signing_key_fingerprint, name_skeleton, status, verification_method, descriptor_sig_verified,
-        registry_verified, registry_key_mismatch)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'pinned', ?, ?, ?, ?)
+        registry_verified, registry_key_mismatch, log_verified)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'pinned', ?, ?, ?, ?, ?)
      ON CONFLICT (owner_user_id, portal_address) DO UPDATE SET
        display_title = EXCLUDED.display_title,
        contact_hash = EXCLUDED.contact_hash,
@@ -278,6 +336,7 @@ export async function pinSeller(
        verification_method = EXCLUDED.verification_method,
        registry_verified = EXCLUDED.registry_verified,
        registry_key_mismatch = EXCLUDED.registry_key_mismatch,
+       log_verified = EXCLUDED.log_verified,
        previous_pubkey_hex = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex
                                   THEN trusted_sellers.signing_pubkey_hex ELSE trusted_sellers.previous_pubkey_hex END,
        key_changed_at = CASE WHEN trusted_sellers.signing_pubkey_hex <> EXCLUDED.signing_pubkey_hex
@@ -289,7 +348,7 @@ export async function pinSeller(
        updated_at = NOW()`,
     ownerId, portalAddress, resolved.displayTitle ?? null, resolved.contactHash ?? null,
     resolved.signingPubkeyHex, resolved.signingKeyFingerprint, skeleton, verificationMethod, integrity.valid,
-    resolved.registry.verified, resolved.registry.mismatch,
+    resolved.registry.verified, resolved.registry.mismatch, resolved.log.verified,
   );
 
   const seller = await getTrustedSeller(db, ownerId, portalAddress);

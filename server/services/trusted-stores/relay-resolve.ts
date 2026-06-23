@@ -22,6 +22,7 @@
  */
 import { spkiHexToRawPubkeyHex } from '../registry-client/relay-submit.js';
 import { publicKeyWireToHex } from '../../lib/portal-crypto.js';
+import type { InclusionProof, SignedTreeHead } from '../registry-client/types.js';
 
 /** Ed25519 SubjectPublicKeyInfo DER prefix (12 bytes) — the bytes before the raw
  *  32-byte public key in an SPKI-encoded Ed25519 key. */
@@ -54,9 +55,18 @@ export function rawToSpkiHex(rawHex: string): string {
 export interface RelayResolution {
   /** The relay-verified signing key, RAW 32-byte hex. */
   signingPubkeyRawHex: string;
+  /** The relay's authoritative `name.namespace` (used to rebuild the log leaf). */
+  portalAddress?: string;
   contactHash?: string;
   displayTitle?: string;
   descriptor: Record<string, unknown>;
+  /** Transparency-log proof bundle (present only when the relay runs the log).
+   *  All four arrive together or not at all; the caller recomputes the leaf from
+   *  `descriptor` and verifies inclusion + the STH signature. */
+  inclusionProof?: InclusionProof;
+  leafIndex?: number;
+  sth?: SignedTreeHead;
+  sthSignature?: string;
 }
 
 export async function resolveViaRelay(
@@ -72,17 +82,24 @@ export async function resolveViaRelay(
       { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
     const j = (await res.json()) as {
-      found?: boolean; signingPubkeyHex?: string; contactHash?: string; descriptor?: Record<string, unknown>;
+      found?: boolean; portalAddress?: string; signingPubkeyHex?: string; contactHash?: string;
+      descriptor?: Record<string, unknown>;
+      leafIndex?: number; inclusionProof?: InclusionProof; sth?: SignedTreeHead; sthSignature?: string;
     };
     if (!j.found || typeof j.signingPubkeyHex !== 'string' || !j.descriptor) return null;
     const raw = toRawPubkeyHex(j.signingPubkeyHex);
     if (!raw) return null;
     const portal = (j.descriptor as { portal?: { displayTitle?: unknown } }).portal;
+    // The proof bundle is only used when ALL four parts are present (a relay that
+    // hasn't enabled the log omits them → caller falls back to registry trust).
+    const hasProof = !!j.inclusionProof && typeof j.leafIndex === 'number' && !!j.sth && typeof j.sthSignature === 'string';
     return {
       signingPubkeyRawHex: raw,
+      ...(typeof j.portalAddress === 'string' ? { portalAddress: j.portalAddress } : {}),
       ...(typeof j.contactHash === 'string' ? { contactHash: j.contactHash } : {}),
       ...(typeof portal?.displayTitle === 'string' ? { displayTitle: portal.displayTitle } : {}),
       descriptor: j.descriptor,
+      ...(hasProof ? { inclusionProof: j.inclusionProof, leafIndex: j.leafIndex, sth: j.sth, sthSignature: j.sthSignature } : {}),
     };
   } catch {
     return null;

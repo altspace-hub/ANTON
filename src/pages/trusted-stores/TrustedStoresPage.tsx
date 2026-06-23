@@ -44,9 +44,11 @@ function SellerCard({ seller }: { seller: TrustedSeller }) {
           {seller.signingKeyFingerprint.slice(0, 24)}…
         </span>
       </div>
-      {seller.registryVerified && (
-        <p className="mt-1 text-xs text-adv-green">✓ Registry-verified key{seller.registryKeyMismatch ? <span className="text-adv-red"> · cache mismatch flagged</span> : null}</p>
-      )}
+      {seller.logVerified
+        ? <p className="mt-1 text-xs text-adv-green">🛡 Transparency-log verified — the registry proved this key; the relay can't equivocate.{seller.registryKeyMismatch ? <span className="text-adv-red"> · cache mismatch flagged</span> : null}</p>
+        : seller.registryVerified
+          ? <p className="mt-1 text-xs text-adv-green">✓ Registry-verified key{seller.registryKeyMismatch ? <span className="text-adv-red"> · cache mismatch flagged</span> : null}</p>
+          : null}
       {seller.status === 'trusted' && seller.verificationMethod === 'mutual-handshake' && (
         <p className="mt-1 text-xs text-adv-green">Live-verified: the seller signed your challenge with this key.</p>
       )}

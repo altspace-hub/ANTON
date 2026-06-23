@@ -20,6 +20,9 @@ export interface TrustedSeller {
   descriptorSigVerified: boolean;
   registryVerified: boolean;
   registryKeyMismatch: boolean;
+  /** The relay PROVED this key via a signed tree head + inclusion proof (the
+   *  operator key is pinned client-side). Strictly stronger than registryVerified. */
+  logVerified: boolean;
   verifiedAt: string | null;
   lastCheckedAt: string | null;
   keyChangedAt: string | null;
@@ -44,6 +47,7 @@ export interface ResolvePreview {
     contactHash?: string;
     originEndpoint?: string;
     registry: { verified: boolean; mismatch: boolean };
+    log: { verified: boolean };
   } | null;
   integrity: { valid: boolean; reasons: string[] } | null;
   lookAlikeWarnings: LookAlikeWarning[];

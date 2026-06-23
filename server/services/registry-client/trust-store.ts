@@ -25,13 +25,40 @@ import type { TrustBundle, TrustedOperator } from './types.js';
  */
 const PLACEHOLDER_FUTURECHAIN_PUBKEY_HEX = '__PENDING_FUTURECHAIN_OPERATOR_KEY__';
 
+/** Ed25519 SubjectPublicKeyInfo DER prefix — the 12 bytes before the raw 32-byte
+ *  public key. The trust store stores SPKI-DER hex (88 chars); verifyCanonical
+ *  expects that form. The relay publishes the RAW 32-byte key at
+ *  /v1/sth/operator-key, so we prepend this prefix. */
+const ED25519_SPKI_PREFIX = '302a300506032b6570032100';
+
+/**
+ * The FutureChain registry operator's STH public key, RAW 32-byte hex.
+ *
+ * This is the PUBLIC half of the relay's STH signing key (the private seed lives
+ * only in the relay's RELAY_STH_SIGNING_KEY_HEX env, never committed). Pinning it
+ * here is the whole point of the trust store — a client ships with the operator's
+ * key, exactly like a CT log's pinned key. Read from
+ * `GET https://relay.futurechain.eu/v1/sth/operator-key` and baked in below.
+ * Operators running their OWN relay override it with `ANTON_RELAY_STH_PUBKEY`.
+ * (Deployed 2026-06-23 against relay.futurechain.eu.)
+ */
+const FUTURECHAIN_OP_PUBKEY_RAW_HEX = '44549e9a688d1f10d5e752a8598e482e96fc85b8b8c83cb61698eacc9ce1bfc5';
+
+function futurechainOperatorKeyHex(): string {
+  const env = (process.env.ANTON_RELAY_STH_PUBKEY ?? '').trim().toLowerCase();
+  const raw = /^[0-9a-f]{64}$/.test(env)
+    ? env
+    : (/^[0-9a-f]{64}$/.test(FUTURECHAIN_OP_PUBKEY_RAW_HEX) ? FUTURECHAIN_OP_PUBKEY_RAW_HEX.toLowerCase() : '');
+  return raw ? ED25519_SPKI_PREFIX + raw : PLACEHOLDER_FUTURECHAIN_PUBKEY_HEX;
+}
+
 const DEFAULT_BUNDLE: TrustBundle = {
   trustStoreVersion: 1,
   registryOperators: [
     {
       operatorId: 'ANTON-REG-FUTURECHAIN-V1',
       namespaces: ['futurechain'],
-      publicKeyHex: PLACEHOLDER_FUTURECHAIN_PUBKEY_HEX,
+      publicKeyHex: futurechainOperatorKeyHex(),
       publicKeyFingerprint: '__PENDING_FINGERPRINT__',
       bundleDate: '2026-04-19',
       expiresAt: '2027-04-19',
