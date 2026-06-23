@@ -107,7 +107,7 @@ export default function PinSellerWizard() {
             </div>
             <div className="mt-2 space-y-1 text-xs">
               {preview.resolved.log?.verified
-                ? <p className="text-adv-green">🛡 Transparency-log verified — the registry cryptographically <em>proved</em> this signing key with a signed tree head + an inclusion proof we recomputed ourselves. Even a compromised relay can't equivocate.</p>
+                ? <p className="text-adv-green">🛡 Transparency-log verified — the registry cryptographically <em>proved</em> this signing key with a signed tree head + an inclusion proof we recomputed ourselves. Even a compromised relay can't equivocate.{preview.resolved.registry?.mismatch ? <span className="text-adv-gold"> Your cached descriptor carried a different (older) key — the proven key was pinned; re-visit the store to refresh its descriptor.</span> : null}</p>
                 : preview.resolved.registry?.verified
                   ? <p className="text-adv-green">✓ Verified against the ANTON registry — this is the signing key the registry independently accepted for this address.{preview.resolved.registry.mismatch ? <span className="text-adv-red"> ⚠ The cached descriptor carried a DIFFERENT key — the registry's authoritative key was used.</span> : null}</p>
                   : <p className="text-adv-gold">No registry record (relay unreachable or seller not registered) — trust-on-first-use only.</p>}

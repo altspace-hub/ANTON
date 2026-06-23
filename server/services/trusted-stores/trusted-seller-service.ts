@@ -220,10 +220,14 @@ export async function resolveSellerKey(
   const signingPubkeyHex = rawToSpkiHex(anchorRaw); // 88-char SPKI hex (handshake-compatible)
   const signingKeyFingerprint = await publicKeyFingerprint(signingPubkeyHex);
   const registry = { verified: !!relay, mismatch: !!relay && embeddedRaw !== relay.signingPubkeyRawHex };
-  // Transparency-log proof (strictly stronger): only meaningful when the relay
-  // anchored the key — never claim log-verified without a registry resolve, and
-  // never when the relay's authoritative key disagreed with the cache.
-  const log = { verified: !!relay && !registry.mismatch && verifyRelayLogProof(relay) };
+  // Transparency-log proof (strictly stronger): AUTHORITATIVE over the local
+  // cache — that is the whole point of the log. A valid proof stands even when
+  // the cached descriptor's key disagrees (registry.mismatch): the log proves
+  // the relay's key is operator-committed + non-equivocable, and that proven key
+  // is exactly what we pin, so a stale/poisoned cache must NOT void it. Requires
+  // a relay resolve (no proof without one). The mismatch is still surfaced
+  // separately (registry_key_mismatch) as an informational "your cache differed".
+  const log = { verified: !!relay && verifyRelayLogProof(relay) };
 
   const envelope: SignedDescriptorEnvelope | null = cached.signature
     ? {

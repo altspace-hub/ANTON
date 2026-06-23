@@ -45,7 +45,7 @@ function SellerCard({ seller }: { seller: TrustedSeller }) {
         </span>
       </div>
       {seller.logVerified
-        ? <p className="mt-1 text-xs text-adv-green">🛡 Transparency-log verified — the registry proved this key; the relay can't equivocate.{seller.registryKeyMismatch ? <span className="text-adv-red"> · cache mismatch flagged</span> : null}</p>
+        ? <p className="mt-1 text-xs text-adv-green">🛡 Transparency-log verified — the registry proved this key; the relay can't equivocate.{seller.registryKeyMismatch ? <span className="text-adv-gold"> · cached descriptor's key differed — proven key pinned; re-visit to refresh</span> : null}</p>
         : seller.registryVerified
           ? <p className="mt-1 text-xs text-adv-green">✓ Registry-verified key{seller.registryKeyMismatch ? <span className="text-adv-red"> · cache mismatch flagged</span> : null}</p>
           : null}

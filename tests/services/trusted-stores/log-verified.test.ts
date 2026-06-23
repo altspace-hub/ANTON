@@ -16,8 +16,9 @@ import {
 } from '../../../server/services/registry-client/log-verifier.js';
 import type { SignedTreeHead, TrustBundle } from '../../../server/services/registry-client/types.js';
 import { createTrustStore, setTrustStoreForTesting } from '../../../server/services/registry-client/trust-store.js';
-import { verifyRelayLogProof } from '../../../server/services/trusted-stores/trusted-seller-service.js';
+import { verifyRelayLogProof, resolveSellerKey } from '../../../server/services/trusted-stores/trusted-seller-service.js';
 import type { RelayResolution } from '../../../server/services/trusted-stores/relay-resolve.js';
+import type { DatabaseAdapter } from '../../../server/db/database.js';
 
 const OPERATOR_ID = 'ANTON-REG-FUTURECHAIN-V1';
 
@@ -140,5 +141,43 @@ describe('verifyRelayLogProof — the zero-trust-in-relay core', () => {
     const relay = makeResolution({ privPem: op.privPem, size: 4, leafIndex: 1, descriptor: DESCRIPTOR, signingPubkeyRawHex: RAW_KEY, portalAddress: 'sharks.global' });
     relay.signingPubkeyRawHex = 'b'.repeat(64); // changes the recomputed leaf
     expect(verifyRelayLogProof(relay)).toBe(false);
+  });
+});
+
+describe('resolveSellerKey — a valid log proof OVERRIDES a stale cache mismatch', () => {
+  let op: { spkiHex: string; privPem: string };
+  const realFetch = globalThis.fetch;
+  beforeEach(() => { op = genOperator(); pinOperator(op.spkiHex); });
+  afterEach(() => { globalThis.fetch = realFetch; });
+
+  it('registry.mismatch=true yet log.verified=true when the relay key is log-proven', async () => {
+    // The locally-cached descriptor embeds an OLD key; the relay (log-proven) has RAW_KEY.
+    const EMBEDDED_OLD = 'c'.repeat(64);
+    const descriptor = { portal: { displayTitle: 'Sharks', publicKey: EMBEDDED_OLD }, capabilities: [{ verb: 'order' }] };
+    const relay = makeResolution({ privPem: op.privPem, size: 3, leafIndex: 1, descriptor, signingPubkeyRawHex: RAW_KEY, portalAddress: 'sharks.global' });
+
+    // Stub the relay HTTP resolve with the proof bundle (relay key RAW_KEY != embedded key).
+    const wire = {
+      found: true, portalAddress: 'sharks.global', signingPubkeyHex: RAW_KEY,
+      descriptor, leafIndex: relay.leafIndex, inclusionProof: relay.inclusionProof,
+      sth: relay.sth, sthSignature: relay.sthSignature,
+    };
+    globalThis.fetch = (async () => ({ ok: true, json: async () => wire })) as unknown as typeof fetch;
+
+    // Fake DB: the descriptor cache returns the OLD descriptor (embedding EMBEDDED_OLD).
+    const now = new Date().toISOString();
+    const fakeDb = {
+      get: (async (sql: string) => sql.includes('portal_descriptor_cache')
+        ? { descriptor_hash: 'h', descriptor, signature: 'sig', signing_key_fingerprint: 'fp', valid_from: now, valid_until: new Date(Date.now() + 1e6).toISOString(), fetched_at: now }
+        : undefined) as DatabaseAdapter['get'],
+      all: (async () => []) as DatabaseAdapter['all'],
+      run: (async () => ({ changes: 1 })) as DatabaseAdapter['run'],
+    } as unknown as DatabaseAdapter;
+
+    const resolved = await resolveSellerKey(fakeDb, 'sharks.global.portal');
+    expect(resolved).not.toBeNull();
+    expect(resolved!.registry.mismatch).toBe(true);   // cache disagreed with the relay
+    expect(resolved!.registry.verified).toBe(true);
+    expect(resolved!.log.verified).toBe(true);         // ...but the log proof stands — it's authoritative
   });
 });
