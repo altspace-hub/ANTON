@@ -333,6 +333,8 @@ The transaction fee is a fixed `~0.001 FTC` (`DEFAULT_FEE_SATOSHI = 100` at `1 F
 
 There is a **separate standalone** — **ANTON Collaboration** (`@anton/collaboration`, `apps/anton-collaboration/`) — that runs the full agent-to-agent **commerce loop**: discover sellers in the `.anton` registry, talk to them, autonomously negotiate, reach an **Ed25519-signed two-party agreement** (human-gated), then **settle** by handing a payment instruction to *this* Agent Pay gateway, then track fulfilment and optional custodial escrow. It is **its own process, its own port, and its own pairing** — it never spends FTC itself; every actual spend is gated here in Agent Pay's `proposePayment`.
 
+**It also carries the human↔agent task inbox** — the owner gives the agent tasks from their phone (`postTask`), and the agent (you) polls them (`listTasks`), works them through the loop below, reports progress + results (`postMessage`), and closes them (`setTaskStatus`). That inbox + this payment gate are the two halves of *"give the agent a task → it finds + agrees the deal → you approve the spend here → it reports back."* The Collaboration gateway has its **own** canonical `apps/anton-collaboration/AGENTS.md` and per-model guides (`CLAUDE.md` / `OPENAI.md` / `MISTRAL.md` / `OLLAMA.md` / `GEMINI.md`) — start there to wire your model up as the brain.
+
 ### Transport, port, pairing (distinct from Agent Pay)
 
 - JSON-RPC 2.0 over `POST http://127.0.0.1:49260/rpc` — bound to `127.0.0.1` only; loopback-origin allowlist. Default port **49260** (`ANTON_COLLAB_PORT`). Every method needs `Authorization: Bearer <sessionToken>`.
