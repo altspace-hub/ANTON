@@ -17,6 +17,8 @@ import { createAppGatewayService, SUPPORTED_LANGUAGES } from '../services/app-ga
 import { createAppEnrollmentService } from '../services/app-enrollment-service.js';
 import { createAppPushService } from '../services/app-push-service.js';
 import { createAppCheckpointService } from '../services/app-checkpoint-service.js';
+import { createAgentService } from '../services/agent-service.js';
+import { createAgentProcessor } from '../services/agent-processor.js';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
 import { hybridSearch } from '../services/hybrid-search.js';
@@ -61,6 +63,11 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   const checkpoints = createAppCheckpointService(db);
   const radar = await createRegulatoryRadar(db);
   const mail = createAppMailService(db);
+  // Specialized Agents — exposed to the ANTON Agent phone app over the same
+  // app-session auth as the rest of the gateway (the desktop /api/agents mount
+  // uses the webgui's auth; phones authenticate with their device session).
+  const agentService = await createAgentService(db);
+  const agentProcessor = await createAgentProcessor(db);
 
   // Module catalog — loaded once at boot, then served from memory. Typed via
   // ModuleDefinition (static import is fine for type-only) but loaded via
@@ -312,6 +319,260 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     }
   });
 
+  // ── Specialized Agents (ANTON Agent app) ─────────────────────────────
+  // List this instance's agents so the phone can show + talk to them.
+  publicRouter.get('/agents', appAuth, async (_req, res) => {
+    try {
+      const agents = await agentService.listAgents({ status: 'active' });
+      // Lean projection — the phone needs identity + greeting, not the full
+      // system prompt / connector config.
+      res.json({
+        agents: agents.map((a) => ({
+          id: a.id,
+          slug: a.slug,
+          name: a.name,
+          role: a.role_description,
+          avatar: a.avatar,
+          greeting: a.greeting_message,
+          status: a.status,
+        })),
+      });
+    } catch {
+      res.status(500).json({ error: 'Failed to load agents' });
+    }
+  });
+
+  // Talk to an agent — the chat + task-delegation surface. Sync (mirrors the
+  // desktop /api/agents/:id/query); the /stream variant below is preferred.
+  publicRouter.post('/agents/:id/query', appAuth, async (req, res) => {
+    try {
+      const { message, conversationId } = req.body as { message?: string; conversationId?: string };
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'message required' });
+      }
+      const result = await agentProcessor.processQuery(String(req.params.id), message, {
+        conversationId,
+        source: 'app_gateway',
+      });
+      res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Streaming chat — SSE `text_delta` events as the agent answers, then a
+  // `complete` event ({ conversationId, tokens }). The phone renders tokens live.
+  publicRouter.post('/agents/:id/query/stream', appAuth, async (req, res) => {
+    const { message, conversationId } = req.body as { message?: string; conversationId?: string };
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'message required' });
+    }
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    try {
+      await agentProcessor.processQueryStream(String(req.params.id), message, {
+        conversationId, source: 'app_gateway',
+      }, res);
+    } catch {
+      // processQueryStream handles its own errors + res.end(); this only fires
+      // if it threw before writing — surface as an SSE error so the client knows.
+      if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: 'stream failed' })}\n\n`);
+        res.end();
+      }
+    }
+  });
+
+  // Activity feed — what the agent has been doing: a flat, newest-first timeline
+  // of the messages across its conversations (your asks, its answers, and the
+  // tools it ran). The "see what they're doing" surface.
+  publicRouter.get('/agents/:id/activity', appAuth, async (req, res) => {
+    try {
+      const agentId = String(req.params.id);
+      const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? '40'), 10) || 40));
+      const rows = await db.all<{
+        id: string; role: string; content: string; created_at: string;
+        conversation_id: string; source: string | null;
+      }>(
+        `SELECT m.id, m.role, m.content, m.created_at, m.conversation_id, c.source
+           FROM agent_messages m
+           JOIN agent_conversations c ON m.conversation_id = c.id
+          WHERE c.agent_id = ?
+          ORDER BY m.created_at DESC
+          LIMIT ?`,
+        agentId, limit,
+      );
+      const activity = rows.map((r) => {
+        let toolSummary: string | null = null;
+        if (r.role === 'tool') {
+          try {
+            const t = JSON.parse(r.content) as { tool?: string; action?: string; success?: boolean };
+            toolSummary = `${t.tool ?? 'tool'}${t.action ? '.' + t.action : ''}${t.success === false ? ' — failed' : ''}`;
+          } catch { /* keep raw */ }
+        }
+        return {
+          id: r.id,
+          role: r.role, // user | assistant | tool
+          text: toolSummary ?? String(r.content ?? '').slice(0, 280),
+          at: r.created_at,
+          conversationId: r.conversation_id,
+          source: r.source,
+        };
+      });
+      res.json({ activity });
+    } catch {
+      res.status(500).json({ error: 'Failed to load activity' });
+    }
+  });
+
+  // ── Agent wallet (W1 — the agent-pay standalone bridge) ───────────────
+  // The agent's FutureChain wallet lives in the agent-pay standalone on the
+  // owner's computer. The phone reads it THROUGH this instance: the instance
+  // holds the /pair bearer (admin-configured via /api/admin/app/agent-pay/*),
+  // the phone uses its app-session. Instance-level (one agent-pay standalone
+  // per instance) — the `agentId` query param is reserved for a future
+  // per-agent-standalone model and is currently ignored.
+  publicRouter.get('/agent/wallet', appAuth, async (_req, res) => {
+    try {
+      const { getAgentPayConfig } = await import('../services/agent-pay-config-service.js');
+      const cfg = await getAgentPayConfig(db);
+      if (!cfg) return res.json({ configured: false });
+      const { getWalletStatus } = await import('../services/agent-pay-client.js');
+      try {
+        const s = await getWalletStatus(cfg);
+        res.json({
+          configured: true,
+          reachable: true,
+          address: s.walletAddress,
+          balanceFtc: s.balanceFtc,
+          lastSeenBlock: s.lastSeenBlock ?? null,
+        });
+      } catch (err) {
+        // Standalone configured but down — tell the phone so it can show a
+        // gentle "not reachable" state rather than an empty wallet.
+        res.json({ configured: true, reachable: false, error: err instanceof Error ? err.message : 'agent-pay unavailable' });
+      }
+    } catch {
+      res.status(500).json({ error: 'Failed to read agent wallet' });
+    }
+  });
+
+  // Transaction ledger — newest-first, what the agent has bought/received.
+  // This is the "see the transaction" surface.
+  publicRouter.get('/agent/wallet/transactions', appAuth, async (req, res) => {
+    try {
+      const { getAgentPayConfig } = await import('../services/agent-pay-config-service.js');
+      const cfg = await getAgentPayConfig(db);
+      if (!cfg) return res.json({ configured: false, transactions: [] });
+      const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit ?? '25'), 10) || 25));
+      const { listTransactions } = await import('../services/agent-pay-client.js');
+      try {
+        const transactions = await listTransactions(cfg, limit);
+        res.json({ configured: true, reachable: true, transactions });
+      } catch (err) {
+        res.json({ configured: true, reachable: false, transactions: [], error: err instanceof Error ? err.message : 'agent-pay unavailable' });
+      }
+    } catch {
+      res.status(500).json({ error: 'Failed to read agent transactions' });
+    }
+  });
+
+  // ── Agent tasks (W2 — the talk rail / collaboration task inbox) ───────
+  // The phone gives the agent a task + reads its replies THROUGH this instance:
+  // the instance holds the collaboration /pair bearer (admin-configured via
+  // /api/admin/app/agent-collab/*), the phone uses its app-session. The phone
+  // is ALWAYS the human side — it posts role:'human'; the person's brain (a
+  // separate client of the same standalone) polls + replies role:'agent'.
+
+  // Give a task → returns the new taskId.
+  publicRouter.post('/agent/task', appAuth, async (req, res) => {
+    try {
+      const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+      if (!text || text.length > 8000) return res.status(400).json({ error: 'text must be 1–8000 characters' });
+      const { getCollabConfig } = await import('../services/collab-config-service.js');
+      const cfg = await getCollabConfig(db);
+      if (!cfg) return res.status(409).json({ configured: false, error: 'No collaboration tool configured' });
+      const { postTask } = await import('../services/collab-client.js');
+      try {
+        const r = await postTask(cfg, text);
+        res.json({ configured: true, reachable: true, ...r });
+      } catch (err) {
+        res.status(502).json({ configured: true, reachable: false, error: err instanceof Error ? err.message : 'collaboration unavailable' });
+      }
+    } catch {
+      res.status(500).json({ error: 'Failed to post task' });
+    }
+  });
+
+  // The list of tasks (threads), newest-updated first — the "what I asked"
+  // surface. ?since=<ms> returns only what changed.
+  publicRouter.get('/agent/tasks', appAuth, async (req, res) => {
+    try {
+      const { getCollabConfig } = await import('../services/collab-config-service.js');
+      const cfg = await getCollabConfig(db);
+      if (!cfg) return res.json({ configured: false, tasks: [] });
+      const since = req.query.since ? parseInt(String(req.query.since), 10) : undefined;
+      const { listTasks } = await import('../services/collab-client.js');
+      try {
+        const tasks = await listTasks(cfg, Number.isFinite(since) ? { since } : {});
+        res.json({ configured: true, reachable: true, tasks });
+      } catch (err) {
+        res.json({ configured: true, reachable: false, tasks: [], error: err instanceof Error ? err.message : 'collaboration unavailable' });
+      }
+    } catch {
+      res.status(500).json({ error: 'Failed to load tasks' });
+    }
+  });
+
+  // One task's thread (human + agent messages) — the app polls this.
+  publicRouter.get('/agent/task/:id/messages', appAuth, async (req, res) => {
+    try {
+      const { getCollabConfig } = await import('../services/collab-config-service.js');
+      const cfg = await getCollabConfig(db);
+      if (!cfg) return res.json({ configured: false, messages: [] });
+      const { listMessages } = await import('../services/collab-client.js');
+      try {
+        const thread = await listMessages(cfg, String(req.params.id));
+        res.json({ configured: true, reachable: true, ...thread });
+      } catch (err) {
+        if (err && typeof err === 'object' && (err as { code?: number }).code === -32005) {
+          return res.status(404).json({ configured: true, reachable: true, messages: [], error: 'Task not found' });
+        }
+        res.json({ configured: true, reachable: false, messages: [], error: err instanceof Error ? err.message : 'collaboration unavailable' });
+      }
+    } catch {
+      res.status(500).json({ error: 'Failed to load task' });
+    }
+  });
+
+  // A human follow-up message in a thread (role is always 'human' here).
+  publicRouter.post('/agent/task/:id/message', appAuth, async (req, res) => {
+    try {
+      const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+      if (!text || text.length > 8000) return res.status(400).json({ error: 'text must be 1–8000 characters' });
+      const { getCollabConfig } = await import('../services/collab-config-service.js');
+      const cfg = await getCollabConfig(db);
+      if (!cfg) return res.status(409).json({ configured: false, error: 'No collaboration tool configured' });
+      const { postHumanMessage } = await import('../services/collab-client.js');
+      try {
+        const r = await postHumanMessage(cfg, String(req.params.id), text);
+        res.json({ configured: true, reachable: true, ...r });
+      } catch (err) {
+        // -32005 = task not found (a real 404) vs the standalone being down (502).
+        if (err && typeof err === 'object' && (err as { code?: number }).code === -32005) {
+          return res.status(404).json({ configured: true, reachable: true, error: 'Task not found' });
+        }
+        res.status(502).json({ configured: true, reachable: false, error: err instanceof Error ? err.message : 'collaboration unavailable' });
+      }
+    } catch {
+      res.status(500).json({ error: 'Failed to post message' });
+    }
+  });
+
   // Non-streaming query — returns JSON directly (works through any proxy)
   publicRouter.post('/org/:orgId/query-sync', appAuth, orgMember, async (req, res) => {
     try {
@@ -458,6 +719,150 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       res.json(cfg);
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Agent-Pay standalone bridge config (W1) ────────────────────────────
+  // Point this instance at the owner's agent-pay standalone (the agent's
+  // FutureChain wallet, a loopback JSON-RPC server). The phone then reads the
+  // wallet through /api/app/agent/wallet. Two ways to set the bearer: paste an
+  // existing one, OR send the 6-digit code the standalone prints on boot and
+  // we pair headlessly (long TTL so the bridge survives). The bearer is stored
+  // AES-256-GCM-encrypted (when INSTANCE_KEY_ENCRYPTION_KEY is set) and is
+  // NEVER returned to any client.
+  adminRouter.get('/agent-pay/config', async (_req, res) => {
+    try {
+      const { getAgentPayConfigPublic } = await import('../services/agent-pay-config-service.js');
+      res.json(await getAgentPayConfigPublic(db));
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  adminRouter.put('/agent-pay/config', async (req, res) => {
+    try {
+      const body = req.body ?? {};
+      const url = typeof body.url === 'string' ? body.url.trim() : '';
+      if (!url) return res.status(400).json({ error: 'url is required' });
+      let bearer: string | undefined =
+        typeof body.bearer === 'string' && body.bearer ? body.bearer : undefined;
+      if (!bearer && typeof body.code === 'string' && body.code) {
+        // Headless pairing: exchange the standalone's boot code for a
+        // long-lived bearer (30d — the standalone clamps to its max).
+        const { pairWithCode } = await import('../services/agent-pay-client.js');
+        const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+        const paired = await pairWithCode(url, 'anton-instance', String(body.code).trim(), THIRTY_DAYS);
+        bearer = paired.sessionToken;
+      }
+      if (!bearer) {
+        return res.status(400).json({ error: 'provide either bearer or a 6-digit pairing code' });
+      }
+      const { setAgentPayConfig, getAgentPayConfigPublic } = await import('../services/agent-pay-config-service.js');
+      await setAgentPayConfig(db, { url, bearer });
+      res.json({ ...(await getAgentPayConfigPublic(db)), paired: true });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  adminRouter.delete('/agent-pay/config', async (_req, res) => {
+    try {
+      const { clearAgentPayConfig } = await import('../services/agent-pay-config-service.js');
+      await clearAgentPayConfig(db);
+      res.json({ configured: false, url: null });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Live probe — verify pairing actually works (reads getStatus off the
+  // standalone). Lets the operator confirm the wiring before the phone tries.
+  adminRouter.get('/agent-pay/status', async (_req, res) => {
+    try {
+      const { getAgentPayConfig } = await import('../services/agent-pay-config-service.js');
+      const cfg = await getAgentPayConfig(db);
+      if (!cfg) return res.json({ configured: false, reachable: false });
+      const { getWalletStatus } = await import('../services/agent-pay-client.js');
+      try {
+        const s = await getWalletStatus(cfg);
+        res.json({
+          configured: true,
+          reachable: true,
+          url: cfg.url,
+          walletAddress: s.walletAddress,
+          balanceFtc: s.balanceFtc,
+          paired: s.paired,
+        });
+      } catch (err) {
+        res.json({ configured: true, reachable: false, url: cfg.url, error: err instanceof Error ? err.message : 'agent-pay unavailable' });
+      }
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Agent-Collaboration standalone bridge config (W2 talk rail) ────────
+  // Point this instance at the owner's anton-collaboration standalone (the
+  // agent's task inbox). Same shape as the agent-pay config: paste a bearer OR
+  // send the 6-digit boot code for headless pairing. Bearer stored encrypted,
+  // never returned.
+  adminRouter.get('/agent-collab/config', async (_req, res) => {
+    try {
+      const { getCollabConfigPublic } = await import('../services/collab-config-service.js');
+      res.json(await getCollabConfigPublic(db));
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  adminRouter.put('/agent-collab/config', async (req, res) => {
+    try {
+      const body = req.body ?? {};
+      const url = typeof body.url === 'string' ? body.url.trim() : '';
+      if (!url) return res.status(400).json({ error: 'url is required' });
+      let bearer: string | undefined =
+        typeof body.bearer === 'string' && body.bearer ? body.bearer : undefined;
+      if (!bearer && typeof body.code === 'string' && body.code) {
+        const { pairWithCode } = await import('../services/collab-client.js');
+        const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+        const paired = await pairWithCode(url, 'anton-instance', String(body.code).trim(), THIRTY_DAYS);
+        bearer = paired.sessionToken;
+      }
+      if (!bearer) {
+        return res.status(400).json({ error: 'provide either bearer or a 6-digit pairing code' });
+      }
+      const { setCollabConfig, getCollabConfigPublic } = await import('../services/collab-config-service.js');
+      await setCollabConfig(db, { url, bearer });
+      res.json({ ...(await getCollabConfigPublic(db)), paired: true });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  adminRouter.delete('/agent-collab/config', async (_req, res) => {
+    try {
+      const { clearCollabConfig } = await import('../services/collab-config-service.js');
+      await clearCollabConfig(db);
+      res.json({ configured: false, url: null });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  adminRouter.get('/agent-collab/status', async (_req, res) => {
+    try {
+      const { getCollabConfig } = await import('../services/collab-config-service.js');
+      const cfg = await getCollabConfig(db);
+      if (!cfg) return res.json({ configured: false, reachable: false });
+      const { getStatus } = await import('../services/collab-client.js');
+      try {
+        const s = await getStatus(cfg);
+        res.json({ configured: true, reachable: true, url: cfg.url, agentName: s.agentName, paired: s.paired });
+      } catch (err) {
+        res.json({ configured: true, reachable: false, url: cfg.url, error: err instanceof Error ? err.message : 'collaboration unavailable' });
+      }
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

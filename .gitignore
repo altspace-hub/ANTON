@@ -125,6 +125,16 @@ not_to_github/
 /android-pay/
 /android-business/
 
+# ANTON Agent app (WIP) — kept fully OUT of the public repo for now: source,
+# native project, AND its build configs (unlike the older apps whose configs
+# stayed tracked). Buildable locally; nothing leaks until it's ready.
+/src/agent/
+/android-agent/
+/vite.config.agent.ts
+/vitest.config.agent.ts
+/capacitor.config.agent.ts
+/dist/agent/
+
 # Internal design/session docs — kept local only. The core dev docs
 # (docs/architecture/, docs/anton-format/, docs/help/, ARCHITECTURE.md,
 # API_REFERENCE.md, deployment.md, etc.) STAY tracked. gitignore '*' doesn't

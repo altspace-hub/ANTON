@@ -41,6 +41,8 @@ import type { FulfilmentEngine } from './fulfilment-engine.js';
 import type { ShipmentPayload, DeliveryPayload } from './fulfilment-core.js';
 import type { EscrowEngine } from './escrow-engine.js';
 import type { EscrowOpenInput, DisputePayload } from './escrow-core.js';
+import type { TaskStore } from './task-store.js';
+import { TaskNotFoundError } from './task-store.js';
 
 export const DEFAULT_ALLOWED_ORIGINS: ReadonlyArray<string | RegExp> = [
   'null',
@@ -59,6 +61,14 @@ export const ERR_UPSTREAM = -32010;
 export const ERR_NO_APPROVAL = -32011;
 /** AGREE verbs called but the agreement engine isn't configured. */
 export const ERR_NO_ENGINE = -32012;
+
+/** The reserved pairing name the ANTON instance bridge uses (app-gateway's
+ *  pairWithCode). ONLY a bearer paired under this name is treated as the
+ *  human/phone side and may post task messages as role:'human'; every other
+ *  paired caller (the agent's brain) is forced to role:'agent' so it cannot
+ *  fabricate human-attributed messages. v1 single-trusted-brain; full
+ *  per-agent authz is a v2 hardening. MUST match app-gateway + collab-client. */
+export const INSTANCE_AGENT_NAME = 'anton-instance';
 
 /** The verbs this program currently exposes (surfaced by getStatus + MCP). */
 export const COLLAB_VERBS = [
@@ -79,6 +89,9 @@ export const COLLAB_VERBS = [
   'getEscrowReleaseInstruction', 'markEscrowReleased',
   'getEscrowRefundInstruction', 'markEscrowRefunded',
   'raiseDispute', 'ingestDispute', 'reconcileEscrow', 'getEscrow',
+  // TASKS — human↔agent task inbox (the W2 talk rail; ungated). The phone posts
+  // a task; the person's brain polls listTasks + replies with postMessage.
+  'postTask', 'listTasks', 'postMessage', 'listMessages', 'setTaskStatus',
 ] as const;
 
 export interface ServerDeps {
@@ -112,6 +125,8 @@ export interface ServerDeps {
   fulfilment?: FulfilmentEngine;
   /** The custodial escrow state machine. Absent → escrow verbs ERR. */
   escrow?: EscrowEngine;
+  /** The human↔agent task inbox (W2 talk rail). Absent → task verbs ERR. */
+  tasks?: TaskStore;
   now?: () => number;
 }
 
@@ -144,6 +159,35 @@ export const InquireSellerParams = z.object({
   input: z.record(z.unknown()).default({}),
 }).refine((p) => Boolean(p.verb) || Boolean(p.capabilityId), {
   message: 'one of "verb" or "capabilityId" is required',
+});
+
+// ── TASKS params (human↔agent task inbox) ─────────────────────────
+const TaskStatusEnum = z.enum(['open', 'working', 'done', 'cancelled']);
+
+export const PostTaskParams = z.object({
+  text: z.string().min(1).max(8000),
+});
+
+export const ListTasksParams = z.object({
+  since: z.number().int().nonnegative().optional(),
+  status: TaskStatusEnum.optional(),
+  limit: z.number().int().positive().max(200).optional(),
+}).optional();
+
+export const PostMessageParams = z.object({
+  taskId: z.string().min(1).max(128),
+  text: z.string().min(1).max(8000),
+  /** 'agent' = the brain's reply (default); 'human' = a follow-up ask. */
+  role: z.enum(['human', 'agent']).default('agent'),
+});
+
+export const TaskIdParams = z.object({
+  taskId: z.string().min(1).max(128),
+});
+
+export const SetTaskStatusParams = z.object({
+  taskId: z.string().min(1).max(128),
+  status: TaskStatusEnum,
 });
 
 // ── AGREE params ──────────────────────────────────────────────────
@@ -681,6 +725,65 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
           if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
           const escrow = await deps.escrow.get(p.data.agreementId);
           return reply.send(jsonRpcResult(id, escrow ? { found: true, escrow } : { found: false }));
+        }
+
+        // ── TASKS — human↔agent task inbox (the W2 talk rail; all ungated) ──
+        case 'postTask': {
+          if (!deps.tasks) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'task inbox not configured', id));
+          const p = PostTaskParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const t = await deps.tasks.createTask(p.data.text);
+          return reply.send(jsonRpcResult(id, { taskId: t.id, status: t.status, createdAt: t.createdAt }));
+        }
+
+        case 'listTasks': {
+          if (!deps.tasks) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'task inbox not configured', id));
+          const p = ListTasksParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const tasks = await deps.tasks.listTasks(p.data ?? {});
+          return reply.send(jsonRpcResult(id, { tasks }));
+        }
+
+        case 'postMessage': {
+          if (!deps.tasks) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'task inbox not configured', id));
+          const p = PostMessageParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          // Role integrity: only the instance/human-side bearer may post
+          // role:'human'. Any other paired caller (the brain) is the agent
+          // side — force 'agent' so it can't fake human-attributed messages.
+          const msgRole = agent.name === INSTANCE_AGENT_NAME ? p.data.role : 'agent';
+          try {
+            const t = await deps.tasks.appendMessage(p.data.taskId, msgRole, p.data.text);
+            return reply.send(jsonRpcResult(id, { taskId: t.id, status: t.status, updatedAt: t.updatedAt, messageCount: t.messages.length }));
+          } catch (e) {
+            if (e instanceof TaskNotFoundError) return reply.send(jsonRpcError(ERR_NOT_FOUND, e.message, id));
+            throw e;
+          }
+        }
+
+        case 'listMessages': {
+          if (!deps.tasks) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'task inbox not configured', id));
+          const p = TaskIdParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          const t = await deps.tasks.getTask(p.data.taskId);
+          if (!t) return reply.send(jsonRpcError(ERR_NOT_FOUND, `task not found: ${p.data.taskId}`, id));
+          return reply.send(jsonRpcResult(id, {
+            taskId: t.id, title: t.title, status: t.status,
+            createdAt: t.createdAt, updatedAt: t.updatedAt, messages: t.messages,
+          }));
+        }
+
+        case 'setTaskStatus': {
+          if (!deps.tasks) return reply.send(jsonRpcError(ERR_NO_ENGINE, 'task inbox not configured', id));
+          const p = SetTaskStatusParams.safeParse(params);
+          if (!p.success) return reply.send(jsonRpcError(ERR_VALIDATION, formatZodError(p.error), id));
+          try {
+            const t = await deps.tasks.setStatus(p.data.taskId, p.data.status);
+            return reply.send(jsonRpcResult(id, { taskId: t.id, status: t.status }));
+          } catch (e) {
+            if (e instanceof TaskNotFoundError) return reply.send(jsonRpcError(ERR_NOT_FOUND, e.message, id));
+            throw e;
+          }
         }
 
         default:

@@ -6,14 +6,101 @@
  * conversation tracking, and knowledge retrieval.
  */
 
+import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { callChat } from './provider-router.js';
+import { callChat, streamChat } from './provider-router.js';
 import { createAgentService } from './agent-service.js';
 
 export async function createAgentProcessor(db: DatabaseAdapter) {
   const agentService = await createAgentService(db);
   const { createConnectorExecutor } = await import('./agent-connector-executor.js');
   const connectorExec = await createConnectorExecutor(db);
+
+  type AgentRow = NonNullable<Awaited<ReturnType<typeof agentService.getAgent>>>;
+
+  /**
+   * Build the LLM context for an agent turn — RAG + knowledge atoms + the
+   * connector tool descriptions + the persona system prompt + the message list.
+   * Shared by the sync (processQuery) and streaming (processQueryStream) paths so
+   * they stay identical. Best-effort knowledge lookups never throw.
+   */
+  async function buildContext(
+    agent: AgentRow,
+    userMessage: string,
+    conversationHistory: Array<{ role: string; content: string }>,
+  ): Promise<{
+    systemPrompt: string;
+    messages: Array<{ role: string; content: string }>;
+    connectors: Awaited<ReturnType<typeof connectorExec.getAgentConnectors>>;
+  }> {
+    let knowledgeContext = '';
+
+    // RAG search from linked collections
+    if (agent.rag_search_enabled) {
+      try {
+        const collectionIds = typeof agent.knowledge_collection_ids === 'string'
+          ? JSON.parse(agent.knowledge_collection_ids) : agent.knowledge_collection_ids;
+        if (Array.isArray(collectionIds) && collectionIds.length > 0) {
+          const placeholders = collectionIds.map(() => '?').join(',');
+          const chunks = await db.all<{ content: string; metadata: string }>(
+            `SELECT rc.content, rc.metadata FROM rag_chunks rc
+             JOIN rag_documents rd ON rc.document_id = rd.id
+             WHERE rd.collection_id IN (${placeholders})
+             AND rc.content ILIKE ?
+             ORDER BY LENGTH(rc.content) DESC LIMIT 5`,
+            ...collectionIds, `%${userMessage.split(/\s+/).slice(0, 3).join('%')}%`
+          );
+          if (chunks.length > 0) {
+            knowledgeContext += '\n\nRELEVANT DOCUMENTS:\n' +
+              chunks.map(c => c.content.slice(0, 500)).join('\n---\n');
+          }
+        }
+      } catch { /* RAG search is best-effort */ }
+    }
+
+    // Knowledge atoms from scoped areas
+    try {
+      const scopes = typeof agent.knowledge_atom_scopes === 'string'
+        ? JSON.parse(agent.knowledge_atom_scopes) : agent.knowledge_atom_scopes;
+      let atomQuery = `SELECT content, atom_type, confidence FROM knowledge_atoms WHERE confidence >= 0.5`;
+      const atomArgs: unknown[] = [];
+      if (Array.isArray(scopes) && scopes.length > 0) {
+        atomQuery += ` AND category IN (${scopes.map(() => '?').join(',')})`;
+        atomArgs.push(...scopes);
+      }
+      atomQuery += ` AND content ILIKE ? ORDER BY confidence DESC LIMIT 8`;
+      atomArgs.push(`%${userMessage.split(/\s+/).slice(0, 3).join('%')}%`);
+      const atoms = await db.all<{ content: string; atom_type: string; confidence: number }>(atomQuery, ...atomArgs);
+      if (atoms.length > 0) {
+        knowledgeContext += '\n\nKNOWLEDGE BASE:\n' +
+          atoms.map(a => `[${a.atom_type}|${a.confidence}] ${a.content}`).join('\n');
+      }
+    } catch { /* atom search is best-effort */ }
+
+    const connectors = await connectorExec.getAgentConnectors(agent.id);
+    const toolDescriptions = connectorExec.buildToolDescriptions(connectors);
+
+    const systemPrompt = `${agent.system_prompt}
+
+${agent.greeting_message && conversationHistory.length === 0 ? `Your greeting when starting a new conversation: "${agent.greeting_message}"` : ''}
+
+IMPORTANT BEHAVIOR RULES:
+- You are "${agent.name}" — ${agent.role_description}
+- Stay in character and within your domain expertise
+- If a question is outside your scope, say so clearly and suggest who might help
+- Use markdown formatting for readability
+- Be professional, helpful, and concise
+${agent.escalation_policy === 'human_only' ? '- For anything requiring professional advice (legal, medical, financial), always recommend consulting a qualified professional' : ''}
+${knowledgeContext}
+${toolDescriptions}`;
+
+    const messages = [
+      ...conversationHistory,
+      { role: 'user', content: userMessage },
+    ];
+
+    return { systemPrompt, messages, connectors };
+  }
 
   /**
    * Process a query through a specialized agent.
@@ -76,75 +163,8 @@ export async function createAgentProcessor(db: DatabaseAdapter) {
     // Save user message
     await agentService.addMessage(conversationId, 'user', userMessage);
 
-    // ── Build knowledge context ──────────────────────────────────────
-    let knowledgeContext = '';
-
-    // RAG search from linked collections
-    if (agent.rag_search_enabled) {
-      try {
-        const collectionIds = typeof agent.knowledge_collection_ids === 'string'
-          ? JSON.parse(agent.knowledge_collection_ids) : agent.knowledge_collection_ids;
-        if (Array.isArray(collectionIds) && collectionIds.length > 0) {
-          const placeholders = collectionIds.map(() => '?').join(',');
-          const chunks = await db.all<{ content: string; metadata: string }>(
-            `SELECT rc.content, rc.metadata FROM rag_chunks rc
-             JOIN rag_documents rd ON rc.document_id = rd.id
-             WHERE rd.collection_id IN (${placeholders})
-             AND rc.content ILIKE ?
-             ORDER BY LENGTH(rc.content) DESC LIMIT 5`,
-            ...collectionIds, `%${userMessage.split(/\s+/).slice(0, 3).join('%')}%`
-          );
-          if (chunks.length > 0) {
-            knowledgeContext += '\n\nRELEVANT DOCUMENTS:\n' +
-              chunks.map(c => c.content.slice(0, 500)).join('\n---\n');
-          }
-        }
-      } catch { /* RAG search is best-effort */ }
-    }
-
-    // Knowledge atoms from scoped areas
-    try {
-      const scopes = typeof agent.knowledge_atom_scopes === 'string'
-        ? JSON.parse(agent.knowledge_atom_scopes) : agent.knowledge_atom_scopes;
-      let atomQuery = `SELECT content, atom_type, confidence FROM knowledge_atoms WHERE confidence >= 0.5`;
-      const atomArgs: unknown[] = [];
-      if (Array.isArray(scopes) && scopes.length > 0) {
-        atomQuery += ` AND category IN (${scopes.map(() => '?').join(',')})`;
-        atomArgs.push(...scopes);
-      }
-      atomQuery += ` AND content ILIKE ? ORDER BY confidence DESC LIMIT 8`;
-      atomArgs.push(`%${userMessage.split(/\s+/).slice(0, 3).join('%')}%`);
-      const atoms = await db.all<{ content: string; atom_type: string; confidence: number }>(atomQuery, ...atomArgs);
-      if (atoms.length > 0) {
-        knowledgeContext += '\n\nKNOWLEDGE BASE:\n' +
-          atoms.map(a => `[${a.atom_type}|${a.confidence}] ${a.content}`).join('\n');
-      }
-    } catch { /* atom search is best-effort */ }
-
-    // ── Build tool descriptions from connectors ───────────────────────
-    const connectors = await connectorExec.getAgentConnectors(agent.id);
-    const toolDescriptions = connectorExec.buildToolDescriptions(connectors);
-
-    // ── Build system prompt with agent identity ──────────────────────
-    const systemPrompt = `${agent.system_prompt}
-
-${agent.greeting_message && conversationHistory.length === 0 ? `Your greeting when starting a new conversation: "${agent.greeting_message}"` : ''}
-
-IMPORTANT BEHAVIOR RULES:
-- You are "${agent.name}" — ${agent.role_description}
-- Stay in character and within your domain expertise
-- If a question is outside your scope, say so clearly and suggest who might help
-- Use markdown formatting for readability
-- Be professional, helpful, and concise
-${agent.escalation_policy === 'human_only' ? '- For anything requiring professional advice (legal, medical, financial), always recommend consulting a qualified professional' : ''}
-${knowledgeContext}
-${toolDescriptions}`;
-
-    // ── Build messages ───────────────────────────────────────────────
-    const messages = [
-      ...conversationHistory,
-      { role: 'user', content: userMessage },
-    ];
+    // ── Build context (knowledge + tools + persona) ──────────────────
+    const { systemPrompt, messages, connectors } = await buildContext(agent, userMessage, conversationHistory);
 
     // ── Call LLM ─────────────────────────────────────────────────────
     const result = await callChat({
@@ -216,6 +236,80 @@ ${toolDescriptions}`;
   }
 
   /**
+   * Streaming variant of processQuery — emits SSE `text_delta` events as the
+   * answer is generated, a `conversation` event with the id, then a `complete`
+   * event with token usage. The caller sets the SSE headers + owns the Response.
+   *
+   * Tool-capable agents (connectors > 0) can't stream cleanly through the
+   * tool-call loop, so they fall back to the full sync flow and emit the final
+   * answer as a single chunk. No-connector agents (the common case) stream
+   * token-by-token via streamChat().
+   */
+  async function processQueryStream(
+    agentId: string,
+    userMessage: string,
+    options: {
+      conversationId?: string; source?: string; sourceRef?: string;
+      requesterHash?: string; requesterName?: string;
+    } | undefined,
+    res: Response,
+  ): Promise<void> {
+    const sse = (o: unknown) => res.write(`data: ${JSON.stringify(o)}\n\n`);
+    try {
+      const agent = await agentService.getAgent(agentId);
+      if (!agent) { sse({ type: 'error', error: 'Agent not found' }); res.end(); return; }
+      if (agent.status !== 'active') { sse({ type: 'error', error: `Agent "${agent.name}" is not active` }); res.end(); return; }
+
+      const connectors = await connectorExec.getAgentConnectors(agent.id);
+      if (connectors.length > 0) {
+        // Tool loop — run the full sync flow, then emit the answer as one chunk.
+        const r = await processQuery(agentId, userMessage, options);
+        sse({ type: 'text_delta', content: r.response });
+        sse({ type: 'complete', conversationId: r.conversationId, escalated: r.escalated, inputTokens: r.inputTokens, outputTokens: r.outputTokens });
+        res.end();
+        return;
+      }
+
+      // No connectors → true token streaming.
+      let conversationId = options?.conversationId;
+      let conversationHistory: Array<{ role: string; content: string }> = [];
+      if (conversationId) {
+        const conv = await agentService.getConversation(conversationId);
+        if (conv) {
+          conversationHistory = conv.messages
+            .filter(m => (m as { role: string }).role !== 'system')
+            .map(m => ({ role: (m as { role: string }).role, content: (m as { content: string }).content }));
+        }
+      }
+      if (!conversationId) {
+        conversationId = await agentService.createConversation(
+          agentId, options?.source ?? 'app_gateway', options?.sourceRef,
+          options?.requesterHash, options?.requesterName);
+      }
+      await agentService.addMessage(conversationId, 'user', userMessage);
+      sse({ type: 'conversation', conversationId });
+
+      const { systemPrompt, messages } = await buildContext(agent, userMessage, conversationHistory);
+      const result = await streamChat({
+        model: agent.default_model ?? undefined,
+        tier: agent.default_model ? undefined : 'medium',
+        system: systemPrompt,
+        messages,
+        maxTokens: agent.max_tokens,
+        db,
+      }, res);
+
+      await agentService.addMessage(conversationId, 'assistant', result.text, result.thinking, result.inputTokens, result.outputTokens);
+      await db.run('UPDATE agent_profiles SET total_messages_handled = total_messages_handled + 1, updated_at = NOW() WHERE id = ?', agentId);
+      sse({ type: 'complete', conversationId, escalated: false, inputTokens: result.inputTokens, outputTokens: result.outputTokens });
+      res.end();
+    } catch (err) {
+      sse({ type: 'error', error: err instanceof Error ? err.message : 'stream failed' });
+      try { res.end(); } catch { /* already ended */ }
+    }
+  }
+
+  /**
    * Process a P2P task through a specialized agent.
    * Used when task delegation routes a task to a specific agent.
    */
@@ -266,7 +360,7 @@ ${toolDescriptions}`;
     return bestMatch;
   }
 
-  return { processQuery, processAgentTask, routeQuery };
+  return { processQuery, processQueryStream, processAgentTask, routeQuery };
 }
 
 export type AgentProcessor = Awaited<ReturnType<typeof createAgentProcessor>>;

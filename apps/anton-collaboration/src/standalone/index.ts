@@ -48,6 +48,7 @@ import { FulfilmentStore } from '../main/fulfilment-store.js';
 import { FulfilmentEngine } from '../main/fulfilment-engine.js';
 import { EscrowStore } from '../main/escrow-store.js';
 import { EscrowEngine } from '../main/escrow-engine.js';
+import { TaskStore } from '../main/task-store.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -77,6 +78,8 @@ async function main(): Promise<void> {
   const fulfilmentStore = new FulfilmentStore(storage);
   const fulfilment = new FulfilmentEngine(agreementStore, identity, fulfilmentStore);
   const escrow = new EscrowEngine(agreementStore, identity, new EscrowStore(storage), fulfilmentStore);
+  // The human↔agent task inbox (W2 talk rail) — durable, always present.
+  const tasks = new TaskStore(storage);
 
   // The human-approval driver — terminal prompt in JSON-RPC mode only.
   let rl: readline.Interface | undefined;
@@ -121,7 +124,7 @@ async function main(): Promise<void> {
 
   const deps: ServerDeps = {
     pairings: new PairingStore(),
-    engine, approvals, negotiations, fulfilment, escrow,
+    engine, approvals, negotiations, fulfilment, escrow, tasks,
     ...(discovery ? { discovery } : {}),
     ...(buyerContactHash ? { buyerContactHash } : {}),
     ...(modal ? { modal } : {}),
@@ -152,6 +155,7 @@ async function main(): Promise<void> {
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
   log(` 4-eyes:     ${reviewer ? `ON (${reviewModel}, ${reviewStrict ? 'STRICT — auto-reject on raise' : 'advisory'})` : 'OFF — set ANTON_COLLAB_REVIEW_MODEL'}`);
   log(' Verbs:      discover · talk · negotiate · agreement · settle · fulfilment · escrow (custodial; spends gated in Agent Pay)');
+  log(' Tasks:      human↔agent inbox ON — poll listTasks, reply with postMessage(role:agent), setTaskStatus done');
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 

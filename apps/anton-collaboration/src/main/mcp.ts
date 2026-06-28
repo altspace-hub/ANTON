@@ -15,6 +15,7 @@ import type { ServerDeps } from './server.js';
 import { COLLAB_VERBS, NegotiateParams, startNegotiation } from './server.js';
 import { searchPortals, resolvePortal, portalVerbs } from './discovery.js';
 import { invokeCapability, capabilityForVerb } from './talk.js';
+import { TaskNotFoundError } from './task-store.js';
 
 export const MCP_TOOLS = [
   {
@@ -251,6 +252,12 @@ export const MCP_TOOLS = [
   { name: 'ingestDispute', description: 'Arbiter/seller: apply an inbound SIGNED dispute (verifies the buyer key + signature).', inputSchema: { type: 'object', required: ['payload'], additionalProperties: false, properties: { payload: { type: 'object' } } } },
   { name: 'reconcileEscrow', description: 'Record an observed inbound escrow leg by kind (fund / release / refund) + txHash.', inputSchema: { type: 'object', required: ['agreementId', 'leg', 'txHash'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 }, leg: { type: 'string', enum: ['fund', 'release', 'refund'] }, txHash: { type: 'string', maxLength: 256 } } } },
   { name: 'getEscrow', description: 'Read the escrow status: requested / funded / release_pending / released / refund_pending / refunded / disputed / expired.', inputSchema: { type: 'object', required: ['agreementId'], additionalProperties: false, properties: { agreementId: { type: 'string', maxLength: 128 } } } },
+  // ── TASKS — human↔agent task inbox (the W2 talk rail) ──────────────
+  { name: 'listTasks', description: 'Poll the human→agent task inbox: tasks the owner gave you (newest first). Pass since (epoch ms) to fetch only what changed since your last poll. THIS is how you discover new work to do.', inputSchema: { type: 'object', additionalProperties: false, properties: { since: { type: 'integer', minimum: 0 }, status: { type: 'string', enum: ['open', 'working', 'done', 'cancelled'] }, limit: { type: 'integer', minimum: 1, maximum: 200 } } } },
+  { name: 'listMessages', description: 'Read one task thread — the owner\'s ask plus your replies, in order.', inputSchema: { type: 'object', required: ['taskId'], additionalProperties: false, properties: { taskId: { type: 'string', maxLength: 128 } } } },
+  { name: 'postMessage', description: 'Reply in a task thread so the owner sees it in their app (always posted as the AGENT — the human side is the owner\'s phone). The first reply moves the task to "working".', inputSchema: { type: 'object', required: ['taskId', 'text'], additionalProperties: false, properties: { taskId: { type: 'string', maxLength: 128 }, text: { type: 'string', minLength: 1, maxLength: 8000 } } } },
+  { name: 'setTaskStatus', description: 'Set a task\'s status — mark it "done" when finished (or "cancelled").', inputSchema: { type: 'object', required: ['taskId', 'status'], additionalProperties: false, properties: { taskId: { type: 'string', maxLength: 128 }, status: { type: 'string', enum: ['open', 'working', 'done', 'cancelled'] } } } },
+  { name: 'postTask', description: 'Create a new task in the inbox (role:human). Normally the owner does this from their phone; included for completeness.', inputSchema: { type: 'object', required: ['text'], additionalProperties: false, properties: { text: { type: 'string', minLength: 1, maxLength: 8000 } } } },
 ] as const;
 
 export function buildMcpServer(deps: ServerDeps): Server {
@@ -515,9 +522,67 @@ async function dispatchMcpTool(
       const escrow = await requireEscrow(deps).get(reqId(args));
       return escrow ? { found: true, escrow } : { found: false };
     }
+
+    // ── TASKS — human↔agent task inbox ────────────────────────────────
+    case 'listTasks': {
+      const opts = {
+        ...(typeof args.since === 'number' ? { since: args.since } : {}),
+        ...(typeof args.status === 'string' ? { status: args.status as 'open' | 'working' | 'done' | 'cancelled' } : {}),
+        ...(typeof args.limit === 'number' ? { limit: args.limit } : {}),
+      };
+      return { tasks: await requireTasks(deps).listTasks(opts) };
+    }
+    case 'listMessages': {
+      const taskId = String(args.taskId ?? '');
+      if (!taskId) throw new Error('validation: taskId is required');
+      const t = await requireTasks(deps).getTask(taskId);
+      if (!t) throw new Error(`task not found: ${taskId}`);
+      return { taskId: t.id, title: t.title, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt, messages: t.messages };
+    }
+    case 'postMessage': {
+      const taskId = String(args.taskId ?? '');
+      const text = String(args.text ?? '');
+      if (!taskId || !text) throw new Error('validation: taskId and text are required');
+      // MCP callers are the agent's brain (the human side is the phone via the
+      // instance bridge over JSON-RPC) — always post as 'agent', never human.
+      const role = 'agent';
+      try {
+        const t = await requireTasks(deps).appendMessage(taskId, role, text);
+        return { taskId: t.id, status: t.status, updatedAt: t.updatedAt, messageCount: t.messages.length };
+      } catch (e) {
+        if (e instanceof TaskNotFoundError) throw new Error(e.message);
+        throw e;
+      }
+    }
+    case 'setTaskStatus': {
+      const taskId = String(args.taskId ?? '');
+      const status = String(args.status ?? '');
+      if (status !== 'open' && status !== 'working' && status !== 'done' && status !== 'cancelled') {
+        throw new Error('validation: status must be open/working/done/cancelled');
+      }
+      try {
+        const t = await requireTasks(deps).setStatus(taskId, status);
+        return { taskId: t.id, status: t.status };
+      } catch (e) {
+        if (e instanceof TaskNotFoundError) throw new Error(e.message);
+        throw e;
+      }
+    }
+    case 'postTask': {
+      const text = String(args.text ?? '');
+      if (!text) throw new Error('validation: text is required');
+      const t = await requireTasks(deps).createTask(text);
+      return { taskId: t.id, status: t.status, createdAt: t.createdAt };
+    }
+
     default:
       throw new Error(`unknown tool: ${name}`);
   }
+}
+
+function requireTasks(deps: ServerDeps): NonNullable<ServerDeps['tasks']> {
+  if (!deps.tasks) throw new Error('task inbox not configured');
+  return deps.tasks;
 }
 
 function requireFulfilment(deps: ServerDeps): NonNullable<ServerDeps['fulfilment']> {
