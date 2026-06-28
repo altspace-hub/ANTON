@@ -50,8 +50,9 @@ import { EscrowStore } from '../main/escrow-store.js';
 import { EscrowEngine } from '../main/escrow-engine.js';
 import { TaskStore } from '../main/task-store.js';
 import { loadRelayIdentity } from '../main/relay/identity.js';
-import { RelayPeer, defaultRouter } from '../main/relay/peer.js';
+import { RelayPeer } from '../main/relay/peer.js';
 import { HttpMailbox } from '../main/relay/mailbox-client.js';
+import { taskRouter } from '../main/relay/task-router.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -159,7 +160,9 @@ async function main(): Promise<void> {
       ...(process.env.ANTON_COLLAB_RELAY_API_KEY ? { apiKey: process.env.ANTON_COLLAB_RELAY_API_KEY } : {}),
       ...(process.env.ANTON_COLLAB_RELAY_HMAC_SECRET ? { hmacSecret: process.env.ANTON_COLLAB_RELAY_HMAC_SECRET } : {}),
     });
-    relayPeer = new RelayPeer(relayId, mailbox, storage, defaultRouter());
+    // The phone channel serves the human↔agent TASK INBOX (not the agent↔agent
+    // commerce verbs — those stay on the local JSON-RPC for the agent's brain).
+    relayPeer = new RelayPeer(relayId, mailbox, storage, taskRouter(tasks));
     relayPeer.start(Number(process.env.ANTON_COLLAB_PHONE_POLL_MS) || 4000);
   }
 
