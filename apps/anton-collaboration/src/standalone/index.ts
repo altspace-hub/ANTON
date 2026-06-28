@@ -49,6 +49,9 @@ import { FulfilmentEngine } from '../main/fulfilment-engine.js';
 import { EscrowStore } from '../main/escrow-store.js';
 import { EscrowEngine } from '../main/escrow-engine.js';
 import { TaskStore } from '../main/task-store.js';
+import { loadRelayIdentity } from '../main/relay/identity.js';
+import { RelayPeer, defaultRouter } from '../main/relay/peer.js';
+import { HttpMailbox } from '../main/relay/mailbox-client.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -141,6 +144,25 @@ async function main(): Promise<void> {
   const code = deps.pairings.newCode();
   const agreementPubkey = await identity.pubkey();
 
+  // ── Phone↔agent relay channel (Comm-style mailbox) ─────────────────────
+  // The phone pairs to this agent by its contact hash / QR and chats + views
+  // the wallet THROUGH the relay (no ANTON-instance bridge). Opt-in: ON when a
+  // phone relay base is set, or ANTON_COLLAB_PHONE_CHANNEL=on. The agent's
+  // agreement key IS its relay identity (one identity).
+  const relayId = await loadRelayIdentity(storage);
+  const explicitPhoneRelay = process.env.ANTON_COLLAB_PHONE_RELAY?.trim();
+  const phoneRelayBase = explicitPhoneRelay || relayBase || 'https://relay.futurechain.eu';
+  const phoneChannelOn = process.env.ANTON_COLLAB_PHONE_CHANNEL === 'on' || Boolean(explicitPhoneRelay);
+  let relayPeer: RelayPeer | undefined;
+  if (phoneChannelOn) {
+    const mailbox = new HttpMailbox(phoneRelayBase, {
+      ...(process.env.ANTON_COLLAB_RELAY_API_KEY ? { apiKey: process.env.ANTON_COLLAB_RELAY_API_KEY } : {}),
+      ...(process.env.ANTON_COLLAB_RELAY_HMAC_SECRET ? { hmacSecret: process.env.ANTON_COLLAB_RELAY_HMAC_SECRET } : {}),
+    });
+    relayPeer = new RelayPeer(relayId, mailbox, storage, defaultRouter());
+    relayPeer.start(Number(process.env.ANTON_COLLAB_PHONE_POLL_MS) || 4000);
+  }
+
   log('════════════════════════════════════════════════════════════════');
   log(' Anton Collaboration — agent discovery · talk · sign agreements');
   log('════════════════════════════════════════════════════════════════');
@@ -150,6 +172,9 @@ async function main(): Promise<void> {
   log(` Registry:   ${discovery?.base ?? 'https://relay.futurechain.eu (default)'}`);
   log(` Buyer hash: ${buyerContactHash ?? '(anonymous — set ANTON_COLLAB_CONTACT_HASH)'}`);
   log(` Sign key:   ${agreementPubkey.slice(0, 16)}…  (Ed25519 agreement identity)`);
+  log(` Agent addr: ${relayId.contactHash}   ← a phone pairs to THIS (scan the QR / paste the pub)`);
+  log(` Pair code:  antonagent:pair?pub=${relayId.edPubHex}&relay=${encodeURIComponent(phoneRelayBase)}`);
+  log(` Phone chan: ${phoneChannelOn ? `ON — polling ${phoneRelayBase}` : 'OFF (set ANTON_COLLAB_PHONE_RELAY or ANTON_COLLAB_PHONE_CHANNEL=on)'}`);
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
