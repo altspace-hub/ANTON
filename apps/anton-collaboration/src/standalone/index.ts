@@ -45,7 +45,9 @@ import { AgreementStore } from '../main/agreement-store.js';
 import { AgreementIdentity } from '../main/agreement-identity.js';
 import { AgreementEngine } from '../main/agreement-engine.js';
 import { AgreementProposalStore } from '../main/agreement-proposals.js';
-import { CliModalDriver } from '../main/modal.js';
+import { CliModalDriver, type ModalDriver } from '../main/modal.js';
+import { CollabWebConfirmModalDriver } from './web-confirm.js';
+import { registerCollabDashboard } from './dashboard.js';
 import { NegotiationStore } from '../main/negotiation-store.js';
 import { ClaudeNegotiationBrain, type NegotiationBrain } from '../main/negotiation-brain.js';
 import { createAgreementReviewer } from '../main/agreement-reviewer.js';
@@ -89,14 +91,28 @@ async function main(): Promise<void> {
   // and the SAME fulfilment store (the escrow release policy reads delivery proof).
   const fulfilmentStore = new FulfilmentStore(storage);
   const fulfilment = new FulfilmentEngine(agreementStore, identity, fulfilmentStore);
-  const escrow = new EscrowEngine(agreementStore, identity, new EscrowStore(storage), fulfilmentStore);
+  const escrowStore = new EscrowStore(storage);
+  const escrow = new EscrowEngine(agreementStore, identity, escrowStore, fulfilmentStore);
   // The human↔agent task inbox (W2 talk rail) — durable, always present.
   const tasks = new TaskStore(storage);
 
-  // The human-approval driver — terminal prompt in JSON-RPC mode only.
+  // The human-approval driver. Terminal y/N when stdin is free; a one-time
+  // BROWSER confirm URL under --mcp-stdio (MCP owns stdin) — so the committing
+  // AGREE verbs no longer fail closed there. ANTON_COLLAB_APPROVAL=web|terminal
+  // forces either explicitly.
+  const approvalEnv = (process.env.ANTON_COLLAB_APPROVAL ?? '').trim().toLowerCase();
+  const approvalMode: 'terminal' | 'web' =
+    approvalEnv === 'web' ? 'web'
+    : approvalEnv === 'terminal' ? 'terminal'
+    : mcpStdio ? 'web' : 'terminal';
+  const webAutoOpen = (process.env.ANTON_COLLAB_WEB_CONFIRM_AUTOOPEN ?? '').trim().toLowerCase() === 'true';
   let rl: readline.Interface | undefined;
-  let modal: CliModalDriver | undefined;
-  if (!mcpStdio) {
+  let modal: ModalDriver | undefined;
+  let webModal: CollabWebConfirmModalDriver | undefined;
+  if (approvalMode === 'web') {
+    webModal = new CollabWebConfirmModalDriver({ port, now: Date.now, log, autoOpen: webAutoOpen });
+    modal = webModal;
+  } else {
     rl = readline.createInterface({ input: process.stdin, output: process.stderr });
     modal = new CliModalDriver(rl);
   }
@@ -145,19 +161,10 @@ async function main(): Promise<void> {
     ...(reviewStrict ? { reviewStrict } : {}),
   };
 
-  // MCP clients send no Origin; the in-process MCP path bypasses the HTTP origin
-  // check entirely. The HTTP server keeps the loopback origin allowlist.
-  const opts: BuildServerOptions = {};
-  const app = buildServer(deps, opts);
-  await app.listen({ host: '127.0.0.1', port });
-  const code = deps.pairings.newCode();
+  // Resolve identity + channel config BEFORE building the server, so the
+  // browser-approval routes AND the dashboard can mount on the app before listen()
+  // (Fastify routes must be registered pre-listen).
   const agreementPubkey = await identity.pubkey();
-
-  // ── Phone↔agent relay channel (Comm-style mailbox) ─────────────────────
-  // The phone pairs to this agent by its contact hash / QR and chats + views
-  // the wallet THROUGH the relay (no ANTON-instance bridge). Opt-in: ON when a
-  // phone relay base is set, or ANTON_COLLAB_PHONE_CHANNEL=on. The agent's
-  // agreement key IS its relay identity (one identity).
   const relayId = await loadRelayIdentity(storage);
   const explicitPhoneRelay = process.env.ANTON_COLLAB_PHONE_RELAY?.trim();
   const phoneRelayBase = explicitPhoneRelay || relayBase || 'https://relay.futurechain.eu';
@@ -173,6 +180,40 @@ async function main(): Promise<void> {
   const payBearer = process.env.ANTON_COLLAB_AGENT_PAY_BEARER?.trim();
   const payClient = payBearer ? new AgentPayClient({ url: payUrl, bearer: payBearer }) : undefined;
 
+  // MCP clients send no Origin; the in-process MCP path bypasses the HTTP origin
+  // check entirely. The HTTP server keeps the loopback origin allowlist.
+  const opts: BuildServerOptions = {};
+  const app = buildServer(deps, opts);
+  // The browser-approval driver mounts its /agreement-confirm routes on the SAME
+  // app before listen() (mirrors Agent Pay's web-confirm wiring).
+  if (webModal) webModal.registerRoutes(app);
+  // Local read-only settings + history dashboard at GET / (same loopback port).
+  const dashboardOn = (process.env.ANTON_COLLAB_DASHBOARD ?? 'on').trim().toLowerCase() !== 'off';
+  if (dashboardOn) registerCollabDashboard(app, {
+    port,
+    settings: {
+      signingPubkey: agreementPubkey,
+      contactHash: relayId.contactHash,
+      relayBase: phoneRelayBase,
+      registryBase: discovery?.base ?? 'https://relay.futurechain.eu (default)',
+      approvalMode,
+      ...(reviewModel ? { reviewModel } : {}),
+      phoneChannel: phoneChannelOn,
+      walletView: Boolean(payBearer),
+      storeDir,
+    },
+    agreements: () => agreementStore.list(),
+    tasks: () => tasks.listTasks({ limit: 50 }),
+    fulfilments: () => fulfilmentStore.list(),
+    escrows: () => escrowStore.list(),
+  });
+  await app.listen({ host: '127.0.0.1', port });
+  const code = deps.pairings.newCode();
+
+  // ── Phone↔agent relay channel (Comm-style mailbox) ─────────────────────
+  // The phone pairs to this agent by its contact hash / QR and chats + views the
+  // wallet THROUGH the relay (no ANTON-instance bridge). The relayPeer poll loop
+  // is not a Fastify route, so it starts after listen().
   let relayPeer: RelayPeer | undefined;
   if (phoneChannelOn) {
     const mailbox = new HttpMailbox(phoneRelayBase, {
@@ -201,7 +242,8 @@ async function main(): Promise<void> {
   log(` Phone chan: ${phoneChannelOn ? `ON — polling ${phoneRelayBase}` : 'OFF (set ANTON_COLLAB_PHONE_RELAY or ANTON_COLLAB_PHONE_CHANNEL=on)'}`);
   log(` Wallet view:${payBearer ? ` ON — proxying ${payUrl} (read-only; spends stay gated in Agent Pay)` : ' OFF (set ANTON_COLLAB_AGENT_PAY_BEARER to let the phone view the wallet)'}`);
   log(` Store:      ${storeDir}`);
-  log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
+  log(` Approval:   ${approvalMode === 'web' ? `BROWSER — each committing verb prints a one-time confirm URL to THIS terminal${webAutoOpen ? ' (auto-open)' : ''}` : 'terminal y/N prompt'}`);
+  log(` Dashboard:  ${dashboardOn ? `http://127.0.0.1:${port}/   (settings + history, read-only)` : 'off'}`);
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
   log(` 4-eyes:     ${reviewer ? `ON (${reviewModel}, ${reviewStrict ? 'STRICT — auto-reject on raise' : 'advisory'})` : 'OFF — set ANTON_COLLAB_REVIEW_MODEL'}`);
   log(' Verbs:      discover · talk · negotiate · agreement · settle · fulfilment · escrow (custodial; spends gated in Agent Pay)');

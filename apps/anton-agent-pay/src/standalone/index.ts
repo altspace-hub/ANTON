@@ -47,6 +47,7 @@ import {
 import { TransactionLedger } from '../main/ledger.js';
 import { CliModalDriver } from './cli-modal.js';
 import { WebConfirmModalDriver } from './web-confirm.js';
+import { registerAgentPayDashboard } from './dashboard.js';
 import { attestationChainConfig } from '../main/attestation-config.js';
 import { ensureEnrolled } from '../main/enrollment.js';
 
@@ -208,6 +209,22 @@ async function main(): Promise<void> {
   const app = buildServer(deps);
   // The web driver mounts its /confirm routes on the SAME app before listen().
   if (modal instanceof WebConfirmModalDriver) modal.registerRoutes(app);
+  // Local read-only settings + history dashboard at GET / (same loopback port).
+  const dashboardOn = (process.env.AGENT_PAY_DASHBOARD ?? 'on').trim().toLowerCase() !== 'off';
+  if (dashboardOn) registerAgentPayDashboard(app, {
+    port,
+    config: {
+      walletReady,
+      ...(limits.maxPerPaymentFtc !== undefined ? { perPaymentCap: limits.maxPerPaymentFtc } : {}),
+      ...(limits.maxDailyFtc !== undefined ? { dailyCap: limits.maxDailyFtc } : {}),
+      ...(process.env.AGENT_PAY_UBO_NAME?.trim() ? { uboName: process.env.AGENT_PAY_UBO_NAME.trim() } : {}),
+      ...(process.env.AGENT_PAY_UBO_COUNTRY?.trim() ? { uboCountry: process.env.AGENT_PAY_UBO_COUNTRY.trim() } : {}),
+      approvalMode,
+      rpcEndpoint: process.env.AGENT_PAY_NODE_URL ?? 'https://rpc.futurechain.eu',
+    },
+    walletStatus: () => deps.walletStatus(),
+    transactions: (limit) => deps.recentTransactions(limit),
+  });
   await app.listen({ host: '127.0.0.1', port });
   const code = deps.pairings.newCode();
 
@@ -226,6 +243,7 @@ async function main(): Promise<void> {
   } else {
     log(' Approval:   every payment needs a typed "y" in THIS terminal — no bypass');
   }
+  log(` Dashboard:  ${dashboardOn ? `http://127.0.0.1:${port}/   (settings + history, read-only)` : 'off'}`);
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 
