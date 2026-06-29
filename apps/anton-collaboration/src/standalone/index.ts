@@ -17,7 +17,12 @@
  *         use a DIFFERENT model/provider than the brain, e.g. mistral-large-latest;
  *         needs that provider's key, e.g. MISTRAL_API_KEY) ·
  *       ANTON_COLLAB_REVIEW_STRICT=1 (auto-reject a raised proposal) ·
- *       ANTON_COLLAB_REVIEW_POLICY (extra no-go policy text)
+ *       ANTON_COLLAB_REVIEW_POLICY (extra no-go policy text) ·
+ *       ANTON_COLLAB_PHONE_RELAY / ANTON_COLLAB_PHONE_CHANNEL=on (phone↔agent relay
+ *         channel: task inbox + read-only wallet view) ·
+ *       ANTON_COLLAB_AGENT_PAY_URL (default http://127.0.0.1:49250/rpc) ·
+ *       ANTON_COLLAB_AGENT_PAY_BEARER (agent-pay /pair sk_… → enables the phone's
+ *         read-only wallet view; spends stay gated in Agent Pay)
  *
  * stdout is reserved for MCP; all logs go to stderr.
  *
@@ -53,6 +58,9 @@ import { loadRelayIdentity } from '../main/relay/identity.js';
 import { RelayPeer } from '../main/relay/peer.js';
 import { HttpMailbox } from '../main/relay/mailbox-client.js';
 import { taskRouter } from '../main/relay/task-router.js';
+import { walletRouter } from '../main/relay/wallet-router.js';
+import { composeRouters } from '../main/relay/compose-router.js';
+import { AgentPayClient } from '../main/relay/agent-pay-client.js';
 
 function num(env: string | undefined): number | undefined {
   if (env === undefined || env.trim() === '') return undefined;
@@ -154,15 +162,28 @@ async function main(): Promise<void> {
   const explicitPhoneRelay = process.env.ANTON_COLLAB_PHONE_RELAY?.trim();
   const phoneRelayBase = explicitPhoneRelay || relayBase || 'https://relay.futurechain.eu';
   const phoneChannelOn = process.env.ANTON_COLLAB_PHONE_CHANNEL === 'on' || Boolean(explicitPhoneRelay);
+
+  // Read-only WALLET VIEW: the phone VIEWS the agent's Agent Pay wallet over the
+  // relay (balance + transactions). Real spends are NEVER proxied — proposePayment
+  // stays gated inside the separate Agent Pay gateway's human approval. Enable by
+  // pasting the bearer from agent-pay's /pair into ANTON_COLLAB_AGENT_PAY_BEARER
+  // (use ttlMs:2592000000 at pair time for a 30-day token); without it the phone
+  // sees a "no wallet wired" state.
+  const payUrl = process.env.ANTON_COLLAB_AGENT_PAY_URL?.trim() || 'http://127.0.0.1:49250/rpc';
+  const payBearer = process.env.ANTON_COLLAB_AGENT_PAY_BEARER?.trim();
+  const payClient = payBearer ? new AgentPayClient({ url: payUrl, bearer: payBearer }) : undefined;
+
   let relayPeer: RelayPeer | undefined;
   if (phoneChannelOn) {
     const mailbox = new HttpMailbox(phoneRelayBase, {
       ...(process.env.ANTON_COLLAB_RELAY_API_KEY ? { apiKey: process.env.ANTON_COLLAB_RELAY_API_KEY } : {}),
       ...(process.env.ANTON_COLLAB_RELAY_HMAC_SECRET ? { hmacSecret: process.env.ANTON_COLLAB_RELAY_HMAC_SECRET } : {}),
     });
-    // The phone channel serves the human↔agent TASK INBOX (not the agent↔agent
-    // commerce verbs — those stay on the local JSON-RPC for the agent's brain).
-    relayPeer = new RelayPeer(relayId, mailbox, storage, taskRouter(tasks));
+    // The phone channel serves the human↔agent TASK INBOX + the read-only WALLET
+    // VIEW — NOT the agent↔agent commerce verbs (those stay on the local JSON-RPC
+    // for the agent's brain). taskRouter first so it answers ping.
+    const router = composeRouters(taskRouter(tasks), walletRouter(() => payClient));
+    relayPeer = new RelayPeer(relayId, mailbox, storage, router);
     relayPeer.start(Number(process.env.ANTON_COLLAB_PHONE_POLL_MS) || 4000);
   }
 
@@ -178,6 +199,7 @@ async function main(): Promise<void> {
   log(` Agent addr: ${relayId.contactHash}   ← a phone pairs to THIS (scan the QR / paste the pub)`);
   log(` Pair code:  antonagent:pair?pub=${relayId.edPubHex}&relay=${encodeURIComponent(phoneRelayBase)}`);
   log(` Phone chan: ${phoneChannelOn ? `ON — polling ${phoneRelayBase}` : 'OFF (set ANTON_COLLAB_PHONE_RELAY or ANTON_COLLAB_PHONE_CHANNEL=on)'}`);
+  log(` Wallet view:${payBearer ? ` ON — proxying ${payUrl} (read-only; spends stay gated in Agent Pay)` : ' OFF (set ANTON_COLLAB_AGENT_PAY_BEARER to let the phone view the wallet)'}`);
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${modal ? 'terminal y/N prompt' : 'NONE — committing verbs fail closed under --mcp-stdio'}`);
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
