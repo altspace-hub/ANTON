@@ -48,6 +48,8 @@ import { AgreementProposalStore } from '../main/agreement-proposals.js';
 import { CliModalDriver, type ModalDriver } from '../main/modal.js';
 import { CollabWebConfirmModalDriver } from './web-confirm.js';
 import { registerCollabDashboard } from './dashboard.js';
+import { DashboardActions } from './dashboard-actions.js';
+import { randomBytes } from 'node:crypto';
 import { NegotiationStore } from '../main/negotiation-store.js';
 import { ClaudeNegotiationBrain, type NegotiationBrain } from '../main/negotiation-brain.js';
 import { createAgreementReviewer } from '../main/agreement-reviewer.js';
@@ -188,9 +190,33 @@ async function main(): Promise<void> {
   // app before listen() (mirrors Agent Pay's web-confirm wiring).
   if (webModal) webModal.registerRoutes(app);
   // Local read-only settings + history dashboard at GET / (same loopback port).
+  // OPTIONAL operator-gated dashboard actions (approve/reject/cancel from the
+  // browser). Off unless ANTON_COLLAB_DASHBOARD_ACTIONS=on, and only meaningful
+  // with browser approval (drives the web-confirm pending records). The 256-bit
+  // dashboard key prints to stderr only — never returned by /rpc — so the AI agent
+  // (which holds only the /rpc bearer) can never reach the action routes.
+  const dashActionsOn = (process.env.ANTON_COLLAB_DASHBOARD_ACTIONS ?? '').trim().toLowerCase() === 'on';
+  let dashActions: DashboardActions | undefined;
+  if (dashActionsOn && webModal) {
+    const wm = webModal;
+    dashActions = new DashboardActions({
+      port, log,
+      dashboardKey: randomBytes(32).toString('base64url'),
+      handlers: {
+        approve: (id) => wm.operatorApprove(id),
+        reject: (id) => wm.operatorReject(id),
+        'cancel-agreement-proposal': (id) => { const c = approvals.cancel(id); wm.operatorReject(id); return c; },
+        'cancel-negotiation': (id) => negotiations.cancel(id),
+      },
+    });
+  } else if (dashActionsOn) {
+    log('  ⚠ ANTON_COLLAB_DASHBOARD_ACTIONS=on needs browser approval (ANTON_COLLAB_APPROVAL=web) — dashboard actions are OFF.');
+  }
+
   const dashboardOn = (process.env.ANTON_COLLAB_DASHBOARD ?? 'on').trim().toLowerCase() !== 'off';
   if (dashboardOn) registerCollabDashboard(app, {
     port,
+    ...(dashActions ? { actions: dashActions } : {}),
     settings: {
       signingPubkey: agreementPubkey,
       contactHash: relayId.contactHash,
@@ -248,6 +274,10 @@ async function main(): Promise<void> {
   log(` Store:      ${storeDir}`);
   log(` Approval:   ${approvalMode === 'web' ? `BROWSER — each committing verb prints a one-time confirm URL to THIS terminal${webAutoOpen ? ' (auto-open)' : ''}` : 'terminal y/N prompt'}`);
   log(` Dashboard:  ${dashboardOn ? `http://127.0.0.1:${port}/   (settings + history, read-only)` : 'off'}`);
+  if (dashActions) {
+    log(' Dash actions: ON — unlock the operator approve/reject console ONCE from THIS terminal:');
+    log(`   ${dashActions.unlockUrl()}`);
+  }
   log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
   log(` 4-eyes:     ${reviewer ? `ON (${reviewModel}, ${reviewStrict ? 'STRICT — auto-reject on raise' : 'advisory'})` : 'OFF — set ANTON_COLLAB_REVIEW_MODEL'}`);
   log(' Verbs:      discover · talk · negotiate · agreement · settle · fulfilment · escrow (custodial; spends gated in Agent Pay)');

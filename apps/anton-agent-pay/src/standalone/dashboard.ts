@@ -1,20 +1,20 @@
 /**
- * dashboard.ts — a LOCAL, read-only settings + history view for the Agent Pay
- * standalone, served at GET / on the same loopback port as /rpc. The operator
- * opens http://127.0.0.1:<port>/ to see the wallet, spend caps, pending
- * approvals, the in-flight proposal lifecycle, and the durable transaction
- * ledger.
+ * dashboard.ts — a LOCAL operator dashboard for the Agent Pay standalone, served
+ * at GET / on the same loopback port as /rpc. Shows the wallet, spend caps,
+ * pending approvals, the in-flight proposal lifecycle, and the durable ledger.
  *
- * Server-rendered, JS-free, CSP-locked, loopback-Host-walled, and strictly
- * READ-ONLY: it renders snapshots and has NO form that posts anywhere. There is
- * NO send/pay/approve control here — every payment still requires the separate
- * one-time confirm (terminal or /confirm browser URL). Money cannot move from
- * this page. Secrets (confirmSecret, pageNonce, private keys, bearers) are never
- * in scope of the renderer.
+ * Read-only by default (no form, JS-free, CSP-locked, loopback-Host-walled; no
+ * secret ever in the HTML). When the OPTIONAL action layer is enabled
+ * (AGENT_PAY_DASHBOARD_ACTIONS=on → an `actions` DashboardActions is passed),
+ * and the operator has unlocked it via the stderr-printed key, pending rows gain
+ * Approve / Reject / Cancel forms. Approvals route through the driver's
+ * operatorApprove BY proposalId — the dashboard never sees confirmSecret, and the
+ * action routes reject bearers, so the AI agent can never self-approve.
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { LedgerEntry } from '../main/ledger.js';
 import type { PaymentProposal } from '../shared/ipc-types.js';
+import type { DashboardActions } from './dashboard-actions.js';
 
 export interface AgentPayDashboardConfig {
   walletReady: boolean;
@@ -40,15 +40,15 @@ export interface AgentPayDashboardOptions {
   config: AgentPayDashboardConfig;
   walletStatus: () => Promise<{ walletAddress: string; balanceFtc: number; lastSeenBlock: number }>;
   transactions: (limit: number) => Promise<LedgerEntry[]>;
-  /** Snapshot of the in-memory proposal store (pending + terminal). */
   proposals?: () => PaymentProposal[];
-  /** Secret-free count of outstanding browser-confirm prompts. */
   pendingConfirms?: () => { count: number; soonestExpiryMs: number | null };
-  /** FTC sent-or-in-flight in the trailing 24h (the daily-cap basis). */
   committed24hFtc?: () => number;
-  /** Wallet pubkeys + passphrase flag (no private key). */
   walletDetail?: () => Promise<WalletDetail | null>;
+  /** OPTIONAL operator-gated action layer (approve/reject/cancel). Off when absent. */
+  actions?: DashboardActions;
 }
+
+interface Auth { mode: 'off' | 'locked' | 'unlocked'; dnonce?: string }
 
 export function registerAgentPayDashboard(app: FastifyInstance, opts: AgentPayDashboardOptions): void {
   const host = opts.host ?? '127.0.0.1';
@@ -59,12 +59,14 @@ export function registerAgentPayDashboard(app: FastifyInstance, opts: AgentPayDa
   const send = (reply: FastifyReply, status: number, html: string): FastifyReply =>
     reply.status(status)
       .header('content-type', 'text/html; charset=utf-8')
-      .header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'")
+      .header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
       .header('x-frame-options', 'DENY').header('referrer-policy', 'no-referrer')
       .header('cache-control', 'no-store').header('x-content-type-options', 'nosniff')
       .send(html);
 
-  const render = async (reply: FastifyReply): Promise<FastifyReply> => {
+  if (opts.actions) opts.actions.registerRoutes(app);
+
+  const render = async (req: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> => {
     const [status, txs, detail] = await Promise.all([
       opts.walletStatus().catch(() => ({ walletAddress: '—', balanceFtc: NaN, lastSeenBlock: 0 })),
       opts.transactions(100).catch(() => [] as LedgerEntry[]),
@@ -73,11 +75,14 @@ export function registerAgentPayDashboard(app: FastifyInstance, opts: AgentPayDa
     const proposals = opts.proposals ? safe(opts.proposals, [] as PaymentProposal[]) : [];
     const pending = opts.pendingConfirms ? safe(opts.pendingConfirms, { count: 0, soonestExpiryMs: null }) : { count: 0, soonestExpiryMs: null };
     const committed24h = opts.committed24hFtc ? safe(opts.committed24hFtc, NaN) : NaN;
-    return send(reply, 200, page(opts.config, status, detail, txs, proposals, pending, committed24h));
+    const auth: Auth = !opts.actions ? { mode: 'off' }
+      : opts.actions.isAuthed(req) ? { mode: 'unlocked', dnonce: opts.actions.mintNonce() }
+      : { mode: 'locked' };
+    return send(reply, 200, page(opts.config, status, detail, txs, proposals, pending, committed24h, auth));
   };
 
-  app.get('/', async (req, reply) => hostOk(req) ? render(reply) : send(reply, 403, simple('Blocked', 'bad host')));
-  app.get('/dashboard', async (req, reply) => hostOk(req) ? render(reply) : send(reply, 403, simple('Blocked', 'bad host')));
+  app.get('/', async (req, reply) => hostOk(req) ? render(req, reply) : send(reply, 403, simple('Blocked', 'bad host')));
+  app.get('/dashboard', async (req, reply) => hostOk(req) ? render(req, reply) : send(reply, 403, simple('Blocked', 'bad host')));
 }
 
 function safe<T>(fn: () => T, fallback: T): T { try { return fn(); } catch { return fallback; } }
@@ -94,8 +99,11 @@ function page(
   proposals: PaymentProposal[],
   pending: { count: number; soonestExpiryMs: number | null },
   committed24h: number,
+  auth: Auth,
 ): string {
   const now = Date.now();
+  const acting = auth.mode === 'unlocked' && Boolean(auth.dnonce);
+  const needsPass = Boolean(detail?.hasPassphrase);
   const bal = Number.isFinite(status.balanceFtc) ? `${status.balanceFtc.toLocaleString('en-US', { maximumFractionDigits: 6 })} FTC` : '—';
   const usage = Number.isFinite(committed24h)
     ? `${committed24h.toLocaleString('en-US', { maximumFractionDigits: 4 })}${c.dailyCap !== undefined ? ` / ${c.dailyCap}` : ''} FTC (sent + in-flight)`
@@ -120,16 +128,18 @@ function page(
     ['FutureChain RPC', c.rpcEndpoint],
   ]));
 
-  // Pending approvals — proposals awaiting a human decision.
-  const pendingRows = proposals.filter((p) => PENDING_STATES.has(p.state)).map((p) => row([
-    pill(p.state), `${p.amountFtc.toLocaleString('en-US', { maximumFractionDigits: 6 })} FTC`,
-    esc(short(p.to, 14)), p.agentNote ? trunc(p.agentNote, 36) : '—', esc(p.agentName), expiresIn(p.expiresAt, now),
-  ]));
+  // Pending approvals — proposals awaiting a human decision; action forms when unlocked.
+  const headers = ['State', 'Amount', 'To', 'Agent note', 'Agent', 'Expires', ...(acting ? ['Actions'] : [])];
+  const pendingRows = proposals.filter((p) => PENDING_STATES.has(p.state)).map((p) => {
+    const cells = [pill(p.state), `${p.amountFtc.toLocaleString('en-US', { maximumFractionDigits: 6 })} FTC`,
+      esc(short(p.to, 14)), p.agentNote ? trunc(p.agentNote, 36) : '—', esc(p.agentName), expiresIn(p.expiresAt, now)];
+    if (acting) cells.push(actionForms(p.id, auth.dnonce as string, needsPass));
+    return row(cells);
+  });
   const pendingPanel = section(`Pending approvals (${pendingRows.length})`,
-    pendingRows.length ? table(['State', 'Amount', 'To', 'Agent note', 'Agent', 'Expires'], pendingRows)
-      : empty(pending.count > 0 ? 'A browser confirm is open — check the gateway terminal for the link.' : 'No payments awaiting approval.'));
+    authBanner(auth) + (pendingRows.length ? table(headers, pendingRows)
+      : empty(pending.count > 0 ? 'A browser confirm is open — check the gateway terminal for the link.' : 'No payments awaiting approval.')));
 
-  // Durable transaction ledger (sent + received).
   const txRows = txs.map((t) => row([
     `<span class="dir ${t.direction === 'out' ? 'out' : 'in'}">${t.direction === 'out' ? '− out' : '+ in'}</span>`,
     `${t.amount.toLocaleString('en-US', { maximumFractionDigits: 6 })} FTC`,
@@ -139,24 +149,39 @@ function page(
   const txPanel = section(`Transactions (${txs.length})`,
     txs.length ? table(['Dir', 'Amount', 'Counterparty', 'Reference', 'Fee', 'Status', 'When'], txRows) : empty('No transactions yet.'));
 
-  // In-flight proposal lifecycle — terminal outcomes from this session (in-memory).
   const histRows = proposals.filter((p) => !PENDING_STATES.has(p.state)).map((p) => row([
-    pill(p.state), `${p.amountFtc.toLocaleString('en-US', { maximumFractionDigits: 6 })} FTC`,
-    esc(short(p.to, 14)),
-    p.state === 'sent' && p.txId ? short(p.txId, 10) : p.rejectReason ? trunc(p.rejectReason, 36) : '—',
-    when(p.createdAt),
+    pill(p.state), `${p.amountFtc.toLocaleString('en-US', { maximumFractionDigits: 6 })} FTC`, esc(short(p.to, 14)),
+    p.state === 'sent' && p.txId ? short(p.txId, 10) : p.rejectReason ? trunc(p.rejectReason, 36) : '—', when(p.createdAt),
   ]));
   const histPanel = histRows.length
     ? section(`Proposal lifecycle (${histRows.length})`, table(['Outcome', 'Amount', 'To', 'Result', 'Proposed'], histRows))
     : '';
 
   return shell('ANTON Agent Pay — dashboard', `
-    <h1>ANTON Agent Pay <span class="tag">read-only</span></h1>
+    <h1>ANTON Agent Pay <span class="tag">${auth.mode === 'unlocked' ? 'operator' : 'read-only'}</span>${auth.mode === 'unlocked' ? ' <a class="lock" href="/dashboard/logout">Lock</a>' : ''}</h1>
     ${settings}${pendingPanel}${txPanel}${histPanel}
-    <p class="foot">Read-only. Every payment requires the separate one-time confirm (terminal or browser); there is no send or approve control on this page.</p>`);
+    <p class="foot">${auth.mode === 'unlocked'
+      ? 'Operator console unlocked — Approve sends the real payment (gated by your key + a single-use form token). The AI agent cannot reach these actions.'
+      : 'Read-only. Every payment requires a one-time confirm (terminal/browser); there is no send control on this page.'}</p>`);
 }
 
-// ── HTML helpers (JS-free, CSP-locked) ───────────────────────────────────────
+function authBanner(auth: Auth): string {
+  if (auth.mode === 'locked') return `<p class="locked">🔒 Action console locked. To approve/reject from here, open the unlock link printed in the gateway terminal.</p>`;
+  return '';
+}
+function actionForms(id: string, dnonce: string, needsPass: boolean): string {
+  const pass = needsPass ? `<input class="pp" type="password" name="passphrase" placeholder="passphrase" autocomplete="off">` : '';
+  return `<div class="acts">`
+    + `<form method="post" action="/dashboard/approve">${hid(id, dnonce)}${pass}<button class="approve">Approve</button></form>`
+    + `<form method="post" action="/dashboard/reject">${hid(id, dnonce)}<button class="reject">Reject</button></form>`
+    + `<form method="post" action="/dashboard/cancel-proposal">${hid(id, dnonce)}<button class="cancel">Cancel</button></form>`
+    + `</div>`;
+}
+function hid(id: string, dnonce: string): string {
+  return `<input type="hidden" name="id" value="${esc(id)}"><input type="hidden" name="dnonce" value="${esc(dnonce)}">`;
+}
+
+// ── HTML helpers (CSP-locked) ────────────────────────────────────────────────
 
 function esc(s: unknown): string {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
@@ -187,14 +212,15 @@ function table(headers: string[], rows: string[]): string {
 }
 function row(cells: string[]): string { return `<tr>${cells.map((c) => `<td>${c}</td>`).join('')}</tr>`; }
 function section(title: string, inner: string): string { return `<section><h2>${esc(title)}</h2>${inner}</section>`; }
-function empty(msg: string): string { return `<p class="empty">${esc(msg)}</p>`; }
+function empty(msg2: string): string { return `<p class="empty">${esc(msg2)}</p>`; }
 
 const CSS = `
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 14px/1.5 -apple-system, system-ui, Segoe UI, Roboto, sans-serif; background: #f4f6f8; color: #16202e; padding: 24px; }
   h1 { font-size: 22px; margin: 0 0 18px; } .tag { font-size: 12px; font-weight: 600; color: #5b6b7d; background: #e9eef3; border-radius: 6px; padding: 2px 8px; vertical-align: middle; }
-  section { background: #fff; border: 1px solid #dfe6ee; border-radius: 12px; padding: 16px 18px; margin: 0 0 16px; max-width: 980px; }
+  a.lock { font-size: 12px; font-weight: 600; color: #b25e00; margin-left: 8px; }
+  section { background: #fff; border: 1px solid #dfe6ee; border-radius: 12px; padding: 16px 18px; margin: 0 0 16px; max-width: 1040px; }
   h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .03em; color: #5b6b7d; margin: 0 0 10px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .scroll { overflow-x: auto; }
@@ -203,7 +229,12 @@ const CSS = `
   table.kv td.k { color: #5b6b7d; width: 220px; } table.kv td.v { font-family: ui-monospace, Menlo, Consolas, monospace; }
   .dir { font-weight: 700; } .dir.out { color: #16202e; } .dir.in { color: #15803D; }
   .pill { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; background: #e9eef3; color: #44566a; border-radius: 999px; padding: 2px 8px; }
-  .empty { color: #8a98a6; margin: 0; } .foot { color: #8a98a6; font-size: 12px; max-width: 980px; }
+  .empty { color: #8a98a6; margin: 0; } .foot { color: #8a98a6; font-size: 12px; max-width: 1040px; }
+  .locked { background: #fff8ec; border: 1px solid #f3e2c0; border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; font-size: 13px; }
+  .acts { display: flex; gap: 6px; align-items: center; } .acts form { margin: 0; display: inline; }
+  .acts button { font-size: 12px; font-weight: 700; border-radius: 7px; border: 1px solid transparent; padding: 5px 10px; cursor: pointer; }
+  .acts .approve { background: #0D7D6C; color: #fff; } .acts .reject { background: #fff; color: #16202e; border-color: #cfdae6; } .acts .cancel { background: #fff; color: #8a98a6; border-color: #e3e9ef; }
+  .acts .pp { width: 96px; padding: 4px 6px; border: 1px solid #cfdae6; border-radius: 6px; font-size: 12px; }
 `;
 function shell(title: string, inner: string): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${CSS}</style></head><body>${inner}</body></html>`;

@@ -139,6 +139,33 @@ export class CollabWebConfirmModalDriver implements ModalDriver {
     return { count, soonestExpiryMs: soonest };
   }
 
+  /** Operator-side approve/reject BY proposalId — the dashboard drives this and
+   *  NEVER sees confirmSecret. Finds the live pending record (respecting expiry)
+   *  and routes it through the SAME settle() sink as the /agreement-confirm POST.
+   *  Returns false if there is no live record. Idempotent. */
+  operatorApprove(proposalId: string): boolean {
+    const rec = this.findLive(proposalId);
+    if (!rec) return false;
+    this.settle(rec, { kind: 'approve' });
+    return true;
+  }
+
+  operatorReject(proposalId: string): boolean {
+    const rec = this.findLive(proposalId);
+    if (!rec) return false;
+    this.settle(rec, { kind: 'reject', reason: 'rejected from dashboard' });
+    return true;
+  }
+
+  private findLive(proposalId: string): PendingConfirm | null {
+    const now = this.now();
+    for (const rec of this.records.values()) {
+      if (rec.settled || now >= rec.expiresAtMs) continue;
+      if (rec.proposalId === proposalId) return rec;
+    }
+    return null;
+  }
+
   private printPrompt(p: CollabModalPayload, url: string): void {
     const verb = p.kind === 'agreement_propose' ? 'PROPOSE' : p.kind === 'agreement_accept' ? 'ACCEPT' : 'COUNTER';
     this.log('');

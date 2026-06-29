@@ -32,6 +32,7 @@
  */
 import os from 'node:os';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { setActiveModalDriver } from '../main/modal.js';
 import { PairingStore } from '../main/pairing.js';
@@ -48,6 +49,7 @@ import { TransactionLedger } from '../main/ledger.js';
 import { CliModalDriver } from './cli-modal.js';
 import { WebConfirmModalDriver } from './web-confirm.js';
 import { registerAgentPayDashboard } from './dashboard.js';
+import { DashboardActions } from './dashboard-actions.js';
 import { attestationChainConfig } from '../main/attestation-config.js';
 import { ensureEnrolled } from '../main/enrollment.js';
 
@@ -209,10 +211,34 @@ async function main(): Promise<void> {
   const app = buildServer(deps);
   // The web driver mounts its /confirm routes on the SAME app before listen().
   if (modal instanceof WebConfirmModalDriver) modal.registerRoutes(app);
-  // Local read-only settings + history dashboard at GET / (same loopback port).
+  // OPTIONAL operator-gated dashboard actions (approve/reject/cancel from the
+  // browser). Off unless AGENT_PAY_DASHBOARD_ACTIONS=on, and only meaningful with
+  // browser approval (the actions drive the web-confirm pending records). The
+  // 256-bit dashboard key prints to stderr only — never returned by /rpc — so the
+  // AI agent (which holds only the /rpc bearer) can never reach the action routes.
+  const actionsOn = (process.env.AGENT_PAY_DASHBOARD_ACTIONS ?? '').trim().toLowerCase() === 'on';
+  let dashActions: DashboardActions | undefined;
+  if (actionsOn && modal instanceof WebConfirmModalDriver) {
+    const webModal = modal;
+    dashActions = new DashboardActions({
+      port, log,
+      dashboardKey: randomBytes(32).toString('base64url'),
+      handlers: {
+        approve: (id, body) => webModal.operatorApprove(id, body.passphrase || undefined),
+        reject: (id) => webModal.operatorReject(id),
+        'cancel-proposal': (id) => { const c = deps.proposals.cancel(id); webModal.operatorReject(id); return Boolean(c); },
+      },
+    });
+  } else if (actionsOn) {
+    log('  ⚠ AGENT_PAY_DASHBOARD_ACTIONS=on needs browser approval (AGENT_PAY_APPROVAL=web) — dashboard actions are OFF.');
+  }
+
+  // Local settings + history dashboard at GET / (same loopback port). Read-only
+  // unless dashActions is set + the operator unlocks it with the stderr key.
   const dashboardOn = (process.env.AGENT_PAY_DASHBOARD ?? 'on').trim().toLowerCase() !== 'off';
   if (dashboardOn) registerAgentPayDashboard(app, {
     port,
+    ...(dashActions ? { actions: dashActions } : {}),
     config: {
       walletReady,
       ...(limits.maxPerPaymentFtc !== undefined ? { perPaymentCap: limits.maxPerPaymentFtc } : {}),
@@ -256,6 +282,10 @@ async function main(): Promise<void> {
     log(' Approval:   every payment needs a typed "y" in THIS terminal — no bypass');
   }
   log(` Dashboard:  ${dashboardOn ? `http://127.0.0.1:${port}/   (settings + history, read-only)` : 'off'}`);
+  if (dashActions) {
+    log(' Dash actions: ON — unlock the operator approve/reject console ONCE from THIS terminal:');
+    log(`   ${dashActions.unlockUrl()}`);
+  }
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');
 

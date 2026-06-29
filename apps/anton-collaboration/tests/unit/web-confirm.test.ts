@@ -176,4 +176,16 @@ describe('collab web-confirm — browser agreement approval', () => {
     await expect(h.driver.promptForDecision(payload({ proposalId: 'p_over' }))).resolves.toEqual({ kind: 'reject', reason: 'too many pending confirmations' });
     void pending; // leave the 32 pending; afterEach closes the app
   });
+
+  it('operatorApprove/operatorReject drive the prompt by proposalId (dashboard bridge)', async () => {
+    const h = await makeHarness();
+    const p = h.driver.promptForDecision(payload({ proposalId: 'p_op' }));
+    expect(h.driver.operatorApprove('p_op')).toBe(true);
+    await expect(p).resolves.toEqual({ kind: 'approve' });
+    expect(h.driver.operatorApprove('p_op')).toBe(false); // already settled — idempotent
+    const p2 = h.driver.promptForDecision(payload({ proposalId: 'p_rej' }));
+    expect(h.driver.operatorReject('p_rej')).toBe(true);
+    await expect(p2).resolves.toEqual({ kind: 'reject', reason: 'rejected from dashboard' });
+    expect(h.driver.operatorReject('unknown')).toBe(false); // unknown id
+  });
 });

@@ -296,6 +296,18 @@ describe('WebConfirmModalDriver — TTL, concurrency, auto-open', () => {
     const throwing = makeHarness({ autoOpen: true, openThrows: true });
     expect(() => throwing.driver.promptForDecision(payload())).not.toThrow(); // non-fatal
   });
+
+  it('operatorApprove/operatorReject drive the prompt by proposalId (dashboard bridge)', async () => {
+    const { driver } = makeHarness();
+    const p = driver.promptForDecision(payload({ proposalId: 'p_op' }));
+    expect(driver.operatorApprove('p_op')).toBe(true);
+    await expect(p).resolves.toEqual({ kind: 'approve' });
+    expect(driver.operatorApprove('p_op')).toBe(false); // already settled — idempotent
+    const p2 = driver.promptForDecision(payload({ proposalId: 'p_rej' }));
+    expect(driver.operatorReject('p_rej')).toBe(true);
+    await expect(p2).resolves.toEqual({ kind: 'reject', reason: 'rejected from dashboard' });
+    expect(driver.operatorReject('unknown')).toBe(false); // unknown id
+  });
 });
 
 describe('WebConfirmModalDriver — full /rpc propose → browser approve → sent', () => {
