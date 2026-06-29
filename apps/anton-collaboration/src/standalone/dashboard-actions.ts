@@ -79,11 +79,11 @@ export class DashboardActions {
       const tok = randomBytes(32).toString('base64url');
       this.sessions.add(sha(tok));
       this.log('[dashboard] operator unlocked the action console');
-      return reply.header('set-cookie', `${COOKIE}=${tok}; HttpOnly; SameSite=Strict; Path=/`).redirect('/');
+      return reply.header('set-cookie', `${COOKIE}=${tok}; HttpOnly; SameSite=Lax; Path=/`).redirect('/');
     });
 
     app.get('/dashboard/logout', async (_req, reply) =>
-      reply.header('set-cookie', `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`).redirect('/'));
+      reply.header('set-cookie', `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`).redirect('/'));
 
     app.post('/dashboard/:action', async (req, reply) => {
       if (!this.hostOk(req)) return this.deny(reply, 'bad host');
