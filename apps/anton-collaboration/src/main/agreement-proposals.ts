@@ -75,6 +75,12 @@ export class AgreementProposalStore {
     return a ? this.touch(a) : null;
   }
 
+  /** Read-only snapshot of ALL approval tickets (pending + terminal), lazily
+   *  expiring any past their deadline. For the operator dashboard. Newest first. */
+  list(): AgreementApproval[] {
+    return [...this.byId.values()].map((a) => this.touch(a)).sort((x, y) => y.createdAt - x.createdAt);
+  }
+
   /** Move pending → approved. Returns the record only if the flip landed (still
    *  pending + not expired/cancelled). The modal flow MUST check this before
    *  running the engine action — a cancel/expire between modal-open and approve

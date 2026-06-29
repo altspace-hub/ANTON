@@ -198,6 +198,7 @@ async function main(): Promise<void> {
       registryBase: discovery?.base ?? 'https://relay.futurechain.eu (default)',
       approvalMode,
       ...(reviewModel ? { reviewModel } : {}),
+      reviewStrict,
       phoneChannel: phoneChannelOn,
       walletView: Boolean(payBearer),
       storeDir,
@@ -206,6 +207,9 @@ async function main(): Promise<void> {
     tasks: () => tasks.listTasks({ limit: 50 }),
     fulfilments: () => fulfilmentStore.list(),
     escrows: () => escrowStore.list(),
+    agreementApprovals: () => approvals.list(),
+    negotiations: () => negotiations.list(),
+    pendingConfirms: () => (webModal ? webModal.pendingSummary() : { count: 0, soonestExpiryMs: null }),
   });
   await app.listen({ host: '127.0.0.1', port });
   const code = deps.pairings.newCode();

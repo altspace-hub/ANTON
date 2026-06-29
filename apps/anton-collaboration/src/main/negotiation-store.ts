@@ -86,6 +86,12 @@ export class NegotiationStore {
     return j ? this.touch(j) : null;
   }
 
+  /** Read-only snapshot of ALL negotiation jobs, lazily expiring any past their
+   *  deadline. For the operator dashboard. Newest first. */
+  list(): NegotiationJob[] {
+    return [...this.byId.values()].map((j) => this.touch(j)).sort((x, y) => y.createdAt - x.createdAt);
+  }
+
   /** pending → running. Returns the job only if the flip landed (still pending,
    *  not cancelled/expired). */
   markRunning(id: string): NegotiationJob | null {

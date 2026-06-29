@@ -219,6 +219,23 @@ export class ProposalStore {
   size(): number {
     return this.byId.size;
   }
+
+  /** Read-only snapshot of ALL proposals (pending + terminal), lazily expiring
+   *  any pending past its deadline. For the operator dashboard. Newest first.
+   *  Do not mutate the returned rows. */
+  list(): PaymentProposal[] {
+    const now = this.nowFn();
+    for (const p of this.byId.values()) {
+      if (p.state === 'pending' && now >= p.expiresAt) { p.state = 'expired'; p.rejectReason = 'expired'; }
+    }
+    return [...this.byId.values()].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  /** FTC sent-or-in-flight in the trailing 24h (the daily-cap basis) — exposed
+   *  read-only for the dashboard's usage row. */
+  committedLast24hPublic(): number {
+    return this.committedLast24h();
+  }
 }
 
 export class ProposalValidationError extends Error {

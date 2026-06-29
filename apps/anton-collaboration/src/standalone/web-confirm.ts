@@ -124,6 +124,21 @@ export class CollabWebConfirmModalDriver implements ModalDriver {
     return rec;
   }
 
+  /** Secret-free summary of outstanding browser-confirm prompts, for the operator
+   *  dashboard. NEVER exposes confirmSecret or the payload — only the count + the
+   *  soonest expiry (ms from now). */
+  pendingSummary(): { count: number; soonestExpiryMs: number | null } {
+    const now = this.now();
+    let count = 0; let soonest: number | null = null;
+    for (const rec of this.records.values()) {
+      if (rec.settled || now >= rec.expiresAtMs) continue;
+      count += 1;
+      const ms = rec.expiresAtMs - now;
+      if (soonest === null || ms < soonest) soonest = ms;
+    }
+    return { count, soonestExpiryMs: soonest };
+  }
+
   private printPrompt(p: CollabModalPayload, url: string): void {
     const verb = p.kind === 'agreement_propose' ? 'PROPOSE' : p.kind === 'agreement_accept' ? 'ACCEPT' : 'COUNTER';
     this.log('');

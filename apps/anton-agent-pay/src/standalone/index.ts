@@ -221,9 +221,21 @@ async function main(): Promise<void> {
       ...(process.env.AGENT_PAY_UBO_COUNTRY?.trim() ? { uboCountry: process.env.AGENT_PAY_UBO_COUNTRY.trim() } : {}),
       approvalMode,
       rpcEndpoint: process.env.AGENT_PAY_NODE_URL ?? 'https://rpc.futurechain.eu',
+      attested: Boolean(process.env.AGENT_PAY_API_KEY),
+      mcpStdio,
     },
     walletStatus: () => deps.walletStatus(),
     transactions: (limit) => deps.recentTransactions(limit),
+    proposals: () => deps.proposals.list(),
+    pendingConfirms: () => (modal instanceof WebConfirmModalDriver ? modal.pendingSummary() : { count: 0, soonestExpiryMs: null }),
+    committed24hFtc: () => deps.proposals.committedLast24hPublic(),
+    walletDetail: async () => {
+      try {
+        const i = await wallet.publicInfo();
+        const hasPassphrase = await wallet.hasPassphrase().catch(() => false);
+        return { pubHex: i.pubHex, falconPubHex: i.falconPubHex, hasPassphrase };
+      } catch { return null; }
+    },
   });
   await app.listen({ host: '127.0.0.1', port });
   const code = deps.pairings.newCode();
