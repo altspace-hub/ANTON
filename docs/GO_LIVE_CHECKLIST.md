@@ -165,10 +165,35 @@ on the build machine**. Lose one and you can never publish an update to that app
 
 ### 4.2 FutureChain mainnet
 
-- [ ] Mainnet node behind `rpc.futurechain.eu` (Bahnhof) is up and producing blocks.
+- [x] Mainnet node behind `rpc.futurechain.eu` (Bahnhof) is up and producing blocks. *(chain height ~972k, 2026-07-04.)*
 - [ ] Server `stub_mode→false` cutover verified (apps + ANTON Local switch from demo to real wallets).
-- [ ] Small live on-chain payment confirmed on **Pay**, **Business**, **Comm**.
+- [x] Small live on-chain payment confirmed on **Pay** *(2026-07-04 — see note below)* · [ ] **Business** · [ ] **Comm**.
 - [ ] Device-attestation tokens accepted by Bahnhof for `/submit_signed_transaction`.
+
+> **⏱ 2026-07-04 live E2E verification (real mainnet, not stub).** A **small live on-chain payment on Pay is
+> CONFIRMED**: 0.05 FTC from a funded phone wallet (`fc_VQjZM7…`), PIN-gated, settled as **tx `5b39f15d`
+> (block 972033)**, `metadata.transaction_type = ISO20022_PACS008`, fully compliance-signed (Falcon + Ed25519).
+> This ticks the Pay leg of the "small live payment" gate and proves the Pay app is on real mainnet, not stub.
+> (Business + Comm legs still to do.)
+>
+> **NEW LAUNCH FINDING — receipt-identity ("who paid?") is currently INERT on the serving node (server-side, not
+> an app bug).** `GET /info` → `storage_info.iso_storage_enabled: false`; the node validates the PACS.008
+> (compliance hash) then **strips the body** — on-chain `encrypted_data` is length 0 — so `GET /iso_received/{address}`
+> returns `count: 0` for **every** recipient. Proven with **two independent authorized read paths** against an address
+> that really received a named payment: self-register (`/register_address`, the Option-B path) **and** reader-delegation
+> (`/authorize_reader`, the Option-C path) — **both 200-but-empty** ⇒ the cause is the node, not the client, not delegation.
+> Consequence: the whole received-sender-name feature line — #158/#159 (Option B keypair wallet) **and** #160 (Option C
+> watch-only till) — **cannot be demoed end-to-end** until the node change ships. The **Option-A amount-only floor is
+> unaffected** (payments settle + confirm fine; only the payer *name* is missing). Public `/transaction` returns
+> `encrypted_data: null` — **no PII leak** (privacy posture is good). Full evidence + the precise 3-step server fix:
+> `not_to_github/WATCHONLY_READER_DELEGATION_HUB_HANDOFF.md` §10. **Zero further ANTON client work is needed** once the
+> node retains + serves the ISO body.
+>
+> - [ ] `[OPS/HUB — separate FutureChain/Bahnhof repo]` Enable ISO storage on the serving node (or route the PACS.008
+>       body to Bahnhof's ISO store) so `/iso_received` is populated from confirmed `ISO20022_PACS008` txs and served to
+>       self-bound (`register_address`) OR granted (`authorize_reader`) installs — the read-auth is already correct. Keep
+>       the body **out** of the public `/transaction` + `/block` serializers (the two-tier split the node already
+>       advertises via `two_tier_storage:true`). This is the last mile for receipt-identity across Pay/Comm/Business.
 
 ### 4.3 Accounts, secrets, store config
 
