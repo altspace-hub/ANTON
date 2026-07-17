@@ -53,8 +53,8 @@ export const PE_VC_MODULES: ModuleDefinition[] = [
     },
   },
   {
-    id: 'financial-analysis',
-    label: 'Financial Analysis & Modelling',
+    id: 'financial-analysis-pe',
+    label: 'Financial Analysis & Modelling (PE/VC)',
     shortLabel: 'Financial Analysis',
     icon: 'Calculator',
     description: 'Analyse financial statements, build model narratives, stress-test assumptions, and identify value drivers. Covers VC unit economics, PE quality of earnings, LBO, and DCF.',

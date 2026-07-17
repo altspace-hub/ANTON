@@ -155,6 +155,7 @@ import { createTemporalReasoningRoutes } from './routes/temporal-reasoning.js';
 import { createOpenApiRouter } from './routes/openapi.js';
 import { createAzureOpenAIRoutes } from './routes/azure-openai.js';
 import { createProcureRoutes } from './routes/procure.js';
+import { createProcureExtendedRoutes } from './routes/procure-extended.js';
 import { createCivicRoutes } from './routes/civic.js';
 import { createGrowRoutes } from './routes/grow.js';
 import { createHardwareRoutes } from './routes/hardware.js';
@@ -900,6 +901,9 @@ app.use('/api', await createAzureOpenAIRoutes(db));
 
 // Procure Pillar — phased procurement pipeline
 app.use('/api', await createProcureRoutes(db));
+// Phase-B.2 extension (vendors directory / benchmarks / RFQ templates) — was
+// never mounted, leaving 3 fully-built pages fetching 404s (fixed 2026-07-17).
+app.use('/api/procure', createProcureExtendedRoutes(db));
 
 // Civic Pillar — government & public institution navigator
 app.use('/api', await createCivicRoutes(db));
@@ -943,6 +947,13 @@ app.use('/app', express.static(appDist));
 app.get('/app/*', (_req, res) => {
   res.sendFile(path.join(appDist, 'index.html'));
 });
+
+// Serve the static Help & Knowledge Base at /help (docs/help/, 24 pages,
+// v0.7.5). Mounted 2026-07-17 — the site was fully built but unreachable from
+// the product (no route). Must precede the SPA catch-all below.
+const helpDist = path.join(__dirname, '..', 'docs', 'help');
+app.use('/help', express.static(helpDist));
+app.get('/help', (_req, res) => res.sendFile(path.join(helpDist, 'index.html')));
 
 // Serve static React build in production
 const clientDist = path.join(__dirname, '..', 'dist', 'client');

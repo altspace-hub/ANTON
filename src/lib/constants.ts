@@ -2658,7 +2658,7 @@ export const AREAS = [
       'sar-quality-check', 'mis-report-generator', 'regulatory-change-scanner',
       'training-needs-assessment',
       // Consultant modules (Batch 1):
-      'amla-data-readiness', 'regulatory-exam-prep', 'tech-selection-support',
+      'amla-data-readiness', 'regulatory-exam-prep-fcp', 'tech-selection-support',
       // Surfaced server modules (June 2026, plan 1.5):
       'cash-intensive-business-risk', 'correspondent-banking-dd', 'de-risking-impact-assessment',
       'hawala-ivts-risk-assessment', 'informal-remittance-corridor-analysis', 'ivts-detection-investigation',
@@ -2922,7 +2922,7 @@ export const AREAS = [
       'ifrs-gaap-analysis', 'management-reporting', 'tax-planning', 'financial-analysis', 'transfer-pricing',
       // Batch 1 (D):
       'receipt-processor', 'vat-return-preparer', 'month-end-checklist',
-      'budget-variance-analyzer', 'ifrs-implementation-advisor', 'transfer-pricing-documentation',
+      'budget-variance-analyzer', 'ifrs-implementation-advisor', 'transfer-pricing-documentation-accounting',
       'financial-statement-drafter', 'expense-policy-checker',
       // Surfaced server modules (June 2026, plan 1.5):
       'aaoifi-compliance', 'internal-controls-sox', 'treasury-cash-management',
@@ -2974,7 +2974,7 @@ export const AREAS = [
     moduleIds: [
       'deal-review', 'pipeline-analysis', 'pricing-strategy', 'proposal-writing', 'win-loss-analysis',
       // Batch 1 (C):
-      'lead-qualification-scorer', 'proposal-generator', 'win-loss-report',
+      'lead-qualification-scorer', 'proposal-generator-sales', 'win-loss-report',
       'customer-health-score', 'renewal-risk-assessor', 'sales-call-prep',
       'competitive-win-loss-analyzer',
     ],
@@ -3394,7 +3394,7 @@ export const AREAS = [
     color: 'adv-blue',
     moduleIds: [
       'deal-screening', 'market-intelligence', 'due-diligence',
-      'financial-analysis', 'valuation-framework', 'ic-memo',
+      'financial-analysis-pe', 'valuation-framework', 'ic-memo',
       'portfolio-monitoring', 'value-creation', 'exit-planning',
       'fund-reporting', 'deal-structure', 'team-assessment',
       // Tier-C backlog (2026-06-14 audit plan):

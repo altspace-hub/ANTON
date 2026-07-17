@@ -1,7 +1,7 @@
 {
   "formatVersion": "1.0",
-  "id": "regulatory-exam-prep",
-  "label": "Regulatory Examination Preparation",
+  "id": "regulatory-exam-prep-fcp",
+  "label": "Regulatory Examination Preparation (FCP)",
   "shortLabel": "Exam Preparation",
   "description": "Prepares institutions for regulatory examinations (FI, BaFin, FCA, AMLA). Conducts pre-exam gap assessment, document readiness review, and staff preparation briefings.",
   "perspective": "consultant",

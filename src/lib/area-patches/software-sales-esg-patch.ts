@@ -206,7 +206,7 @@ export const SALES_NEW_MODULES: ModuleDefinition[] = [
     },
   },
   {
-    id: 'proposal-generator',
+    id: 'proposal-generator-sales',
     label: 'Sales Proposal Generator',
     shortLabel: 'Proposal',
     icon: 'FilePen',
@@ -498,7 +498,7 @@ export const SOFTWARE_ENG_AREA_NEW_MODULE_IDS = [
 
 export const SALES_AREA_NEW_MODULE_IDS = [
   'lead-qualification-scorer',
-  'proposal-generator',
+  'proposal-generator-sales',
   'win-loss-report',
   'customer-health-score',
   'renewal-risk-assessor',

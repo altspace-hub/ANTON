@@ -12,10 +12,18 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { ServerDeps } from './server.js';
-import { COLLAB_VERBS, NegotiateParams, startNegotiation } from './server.js';
+import {
+  COLLAB_VERBS, NegotiateParams, startNegotiation,
+  requireGate, nowOf, runAgreementModalFlow,
+  ProposeAgreementParams, AcceptAgreementParams, CounterAgreementParams, ProposalIdParams,
+} from './server.js';
+import type { ProposeInput, CounterInput } from './agreement-engine.js';
 import { searchPortals, resolvePortal, portalVerbs } from './discovery.js';
 import { invokeCapability, capabilityForVerb } from './talk.js';
 import { TaskNotFoundError } from './task-store.js';
+
+/** Identity label for MCP-originated approvals (the built-in stdio client). */
+const MCP_AGENT_NAME = 'mcp-agent';
 
 export const MCP_TOOLS = [
   {
@@ -69,6 +77,81 @@ export const MCP_TOOLS = [
         capabilityId: { type: 'string', maxLength: 128, description: 'Exact capability id (overrides verb).' },
         input: { type: 'object', description: 'Structured question/payload matching the capability\'s input schema.' },
       },
+    },
+  },
+  // ── AGREE: the committing verbs (HUMAN-GATED) ────────────────────────
+  {
+    name: 'proposeAgreement',
+    description:
+      'Propose a SIGNED two-party agreement to a counterparty (decision + terms + amount). HUMAN-GATED: this opens '
+      + 'an approval the owner must confirm in their browser (the web-confirm driver under --mcp-stdio) — it returns a '
+      + 'proposalId immediately (fire-and-forget); poll getAgreementProposal for the outcome. Fails closed with an '
+      + 'error if no approval driver is wired. This is the ONLY way to originate a signed agreement.',
+    inputSchema: {
+      type: 'object',
+      required: ['decision', 'terms', 'amountMicroFtc', 'counterpartyAddress'],
+      additionalProperties: false,
+      properties: {
+        decision: { type: 'string', maxLength: 2000, description: 'The commitment being made, e.g. "buy 1 pair Air Jordans EU43".' },
+        terms: { type: 'string', maxLength: 8000, description: 'Full agreement terms.' },
+        amountMicroFtc: { type: 'string', description: 'Amount in µFTC (base-10 integer string).' },
+        counterpartyAddress: { type: 'string', maxLength: 256, description: 'Seller portal address, e.g. "kicks.sthlm.portal".' },
+        counterpartyHash: { type: 'string', maxLength: 256, description: 'Optional counterparty contact hash.' },
+        agentNote: { type: 'string', maxLength: 2000, description: 'Optional note surfaced to the owner in the approval.' },
+        ttlMs: { type: 'integer', description: 'Approval TTL in ms (clamped 10s–5min).' },
+      },
+    },
+  },
+  {
+    name: 'acceptAgreement',
+    description:
+      'Accept an open agreement you are the acceptor of (the seller accepting the buyer\'s offer, or vice versa). '
+      + 'HUMAN-GATED (browser approval under --mcp-stdio). Returns a proposalId; poll getAgreementProposal. Produces '
+      + 'the SIGNED accept once the owner confirms.',
+    inputSchema: {
+      type: 'object', required: ['agreementId'], additionalProperties: false,
+      properties: {
+        agreementId: { type: 'string', maxLength: 128 },
+        ttlMs: { type: 'integer' },
+      },
+    },
+  },
+  {
+    name: 'counterAgreement',
+    description:
+      'Counter an open agreement with revised terms (decision + terms + amount). HUMAN-GATED (browser approval under '
+      + '--mcp-stdio). Returns a proposalId; poll getAgreementProposal. Produces a SIGNED counter once confirmed.',
+    inputSchema: {
+      type: 'object',
+      required: ['agreementId', 'decision', 'terms', 'amountMicroFtc'],
+      additionalProperties: false,
+      properties: {
+        agreementId: { type: 'string', maxLength: 128 },
+        decision: { type: 'string', maxLength: 2000 },
+        terms: { type: 'string', maxLength: 8000 },
+        amountMicroFtc: { type: 'string', description: 'Revised amount in µFTC (base-10 integer string).' },
+        agentNote: { type: 'string', maxLength: 2000 },
+        ttlMs: { type: 'integer' },
+      },
+    },
+  },
+  {
+    name: 'getAgreementProposal',
+    description:
+      'Poll a committing-verb approval by its proposalId: state (pending / approved / done / rejected / expired / '
+      + 'cancelled), and — once done — the resulting agreementId + signed payload. This is how you learn whether the '
+      + 'owner approved your proposeAgreement / acceptAgreement / counterAgreement.',
+    inputSchema: {
+      type: 'object', required: ['proposalId'], additionalProperties: false,
+      properties: { proposalId: { type: 'string', maxLength: 128 } },
+    },
+  },
+  {
+    name: 'cancelAgreementProposal',
+    description: 'Cancel a still-pending committing-verb approval (before the owner acts on it).',
+    inputSchema: {
+      type: 'object', required: ['proposalId'], additionalProperties: false,
+      properties: { proposalId: { type: 'string', maxLength: 128 } },
     },
   },
   {
@@ -284,7 +367,7 @@ export function buildMcpServer(deps: ServerDeps): Server {
   return server;
 }
 
-async function dispatchMcpTool(
+export async function dispatchMcpTool(
   deps: ServerDeps, name: string, args: Record<string, unknown>,
 ): Promise<unknown> {
   switch (name) {
@@ -342,6 +425,68 @@ async function dispatchMcpTool(
       if (deps.buyerContactHash) invokeOpts.visitorContactHash = deps.buyerContactHash;
       const result = await invokeCapability(resolved, capabilityId, input, invokeOpts);
       return { capabilityId, ...result };
+    }
+    // ── AGREE: committing verbs (human-gated) — mirror the JSON-RPC path ──
+    // Routes through the SAME requireGate + approvals.create +
+    // runAgreementModalFlow (web-confirm/terminal + optional four-eyes review)
+    // as server.ts, so an agreement can never be signed without the owner's
+    // browser approval. Fails closed (throws) if no approval driver is wired.
+    case 'proposeAgreement': {
+      const gate = requireGate(deps);
+      if ('err' in gate) throw new Error(gate.message);
+      const p = ProposeAgreementParams.safeParse(args);
+      if (!p.success) throw new Error(`validation: ${p.error.issues.map((i) => i.message).join('; ')}`);
+      const input: ProposeInput = {
+        decision: p.data.decision, terms: p.data.terms, amountMicroFtc: p.data.amountMicroFtc,
+        counterpartyAddress: p.data.counterpartyAddress,
+        ...(p.data.counterpartyHash !== undefined ? { counterpartyHash: p.data.counterpartyHash } : {}),
+      };
+      const rec = gate.approvals.create(MCP_AGENT_NAME, { kind: 'propose', input }, p.data.ttlMs);
+      void runAgreementModalFlow(gate, MCP_AGENT_NAME, { pairedAt: nowOf(deps)() }, rec.id, nowOf(deps), p.data.agentNote);
+      return { proposalId: rec.id, expiresAt: rec.expiresAt };
+    }
+    case 'acceptAgreement': {
+      const gate = requireGate(deps);
+      if ('err' in gate) throw new Error(gate.message);
+      const p = AcceptAgreementParams.safeParse(args);
+      if (!p.success) throw new Error(`validation: ${p.error.issues.map((i) => i.message).join('; ')}`);
+      const existing = await gate.engine.get(p.data.agreementId);
+      if (!existing) throw new Error(`unknown agreement: ${p.data.agreementId}`);
+      const rec = gate.approvals.create(MCP_AGENT_NAME, { kind: 'accept', agreementId: p.data.agreementId }, p.data.ttlMs);
+      void runAgreementModalFlow(gate, MCP_AGENT_NAME, { pairedAt: nowOf(deps)() }, rec.id, nowOf(deps));
+      return { proposalId: rec.id, expiresAt: rec.expiresAt };
+    }
+    case 'counterAgreement': {
+      const gate = requireGate(deps);
+      if ('err' in gate) throw new Error(gate.message);
+      const p = CounterAgreementParams.safeParse(args);
+      if (!p.success) throw new Error(`validation: ${p.error.issues.map((i) => i.message).join('; ')}`);
+      const existing = await gate.engine.get(p.data.agreementId);
+      if (!existing) throw new Error(`unknown agreement: ${p.data.agreementId}`);
+      const counter: CounterInput = { decision: p.data.decision, terms: p.data.terms, amountMicroFtc: p.data.amountMicroFtc };
+      const rec = gate.approvals.create(MCP_AGENT_NAME, { kind: 'counter', agreementId: p.data.agreementId, counter }, p.data.ttlMs);
+      void runAgreementModalFlow(gate, MCP_AGENT_NAME, { pairedAt: nowOf(deps)() }, rec.id, nowOf(deps), p.data.agentNote);
+      return { proposalId: rec.id, expiresAt: rec.expiresAt };
+    }
+    case 'getAgreementProposal': {
+      if (!deps.approvals) throw new Error('approvals not configured');
+      const p = ProposalIdParams.safeParse(args);
+      if (!p.success) throw new Error(`validation: ${p.error.issues.map((i) => i.message).join('; ')}`);
+      const rec = deps.approvals.get(p.data.proposalId);
+      if (!rec) throw new Error('unknown proposal');
+      return {
+        state: rec.state,
+        ...(rec.agreementId !== undefined ? { agreementId: rec.agreementId } : {}),
+        ...(rec.payloadJson !== undefined ? { payload: JSON.parse(rec.payloadJson) } : {}),
+        ...(rec.rejectReason !== undefined ? { rejectReason: rec.rejectReason } : {}),
+      };
+    }
+    case 'cancelAgreementProposal': {
+      if (!deps.approvals) throw new Error('approvals not configured');
+      const p = ProposalIdParams.safeParse(args);
+      if (!p.success) throw new Error(`validation: ${p.error.issues.map((i) => i.message).join('; ')}`);
+      if (!deps.approvals.cancel(p.data.proposalId)) throw new Error('proposal not pending or unknown');
+      return { state: 'cancelled' };
     }
     case 'listAgreements': {
       const engine = requireEngine(deps);

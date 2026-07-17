@@ -821,12 +821,12 @@ export function buildServer(deps: ServerDeps, opts: BuildServerOptions = {}): Fa
 // ── AGREE gate + modal flow ──────────────────────────────────────
 
 /** All three deps a committing verb needs, present. */
-interface Gate {
+export interface Gate {
   engine: AgreementEngine; approvals: AgreementProposalStore; modal: ModalDriver;
   reviewer?: AgreementReviewer; reviewStrict?: boolean;
 }
 
-function requireGate(deps: ServerDeps): Gate | { err: number; message: string } {
+export function requireGate(deps: ServerDeps): Gate | { err: number; message: string } {
   if (!deps.engine || !deps.approvals) return { err: ERR_NO_ENGINE, message: 'agreement engine not configured' };
   if (!deps.modal) return { err: ERR_NO_APPROVAL, message: 'human-approval driver not available (committing verbs fail closed)' };
   return {
@@ -840,7 +840,7 @@ function requireEngine(deps: ServerDeps): AgreementEngine | null {
   return deps.engine ?? null;
 }
 
-function nowOf(deps: ServerDeps): () => number {
+export function nowOf(deps: ServerDeps): () => number {
   return deps.now ?? (() => Date.now());
 }
 

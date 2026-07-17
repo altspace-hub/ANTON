@@ -1,7 +1,7 @@
 {
   "formatVersion": "1.0",
-  "id": "transfer-pricing-documentation",
-  "label": "Transfer Pricing Documentation",
+  "id": "transfer-pricing-documentation-accounting",
+  "label": "Transfer Pricing Documentation (Accounting)",
   "shortLabel": "TP Documentation",
   "description": "Structures transfer pricing documentation for intra-group transactions. Covers functional analysis, comparability analysis, method selection, and documentation to OECD/BEPS standards.",
   "perspective": "consultant",

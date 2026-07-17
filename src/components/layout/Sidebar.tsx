@@ -43,6 +43,8 @@ import {
   Rss,
   // Mission Inbox
   Inbox,
+  // Help & Knowledge Base
+  HelpCircle,
   // Portals sub-nav
   Plus,
   // Visitor Layer sidebar
@@ -2792,10 +2794,32 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         >
           {mini ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
-        {!sidebarCollapsed && (
-          <div className="px-4 pb-3 text-xs text-adv-gray">
-            Anton v0.7.5
+        {!sidebarCollapsed ? (
+          <div className="px-4 pb-3 text-xs text-adv-gray flex items-center justify-between">
+            <span>Anton v0.7.5</span>
+            {/* Static Help & Knowledge Base served by Express at /help — opens in
+                a new tab (it is not a React route). Wired 2026-07-17. */}
+            <a
+              href="/help/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-adv-gray hover:text-adv-teal transition-colors"
+              title="Help & Knowledge Base"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+              Help
+            </a>
           </div>
+        ) : (
+          <a
+            href="/help/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center pb-3 text-adv-gray hover:text-adv-teal transition-colors"
+            title="Help & Knowledge Base"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </a>
         )}
       </div>
     </aside>

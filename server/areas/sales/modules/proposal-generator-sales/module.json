@@ -1,6 +1,6 @@
 {
   "formatVersion": "1.0",
-  "id": "proposal-generator",
+  "id": "proposal-generator-sales",
   "label": "Sales Proposal Generator",
   "shortLabel": "Proposal",
   "description": "Creates tailored sales proposals from opportunity data, customer context, and solution capabilities. Structures value proposition, approach, timeline, and commercial terms.",

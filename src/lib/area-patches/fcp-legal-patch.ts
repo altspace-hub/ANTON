@@ -173,8 +173,8 @@ export const NEW_FCP_MODULES: ModuleDefinition[] = [
     },
   },
   {
-    id: 'regulatory-exam-prep',
-    label: 'Regulatory Examination Preparation',
+    id: 'regulatory-exam-prep-fcp',
+    label: 'Regulatory Examination Preparation (FCP)',
     shortLabel: 'Exam Preparation',
     icon: 'ClipboardCheck',
     description: 'Prepares institutions for regulatory examinations (FI, BaFin, FCA, AMLA). Conducts pre-exam gap assessment, document readiness review, and staff preparation briefings.',

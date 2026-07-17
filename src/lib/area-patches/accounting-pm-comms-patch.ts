@@ -153,6 +153,34 @@ export const ACCOUNTING_NEW_MODULES: ModuleDefinition[] = [
     },
   },
   {
+    // The accounting-flavoured variant. Until 2026-07-17 both the accounting and
+    // tax-transfer-pricing areas shared one id, and the server module loader
+    // silently served whichever area sorted later — the accounting prompt was
+    // unreachable. Distinct id restores it (matches
+    // server/areas/accounting/modules/transfer-pricing-documentation-accounting).
+    id: 'transfer-pricing-documentation-accounting',
+    label: 'Transfer Pricing Documentation (Accounting)',
+    shortLabel: 'TP Documentation',
+    icon: 'FileSearch',
+    description:
+      'Structures transfer pricing documentation from the group-accounting side: intra-group transaction mapping, functional analysis, and OECD/BEPS-compliant documentation aligned with statutory reporting.',
+    color: 'adv-gold',
+    defaults: {
+      thinking: 'investigate',
+      creativity: 'strict',
+      outputFormats: ['detailed-findings', 'policy-document'],
+      knowledgeSources: {
+        claudeKnowledge: {
+          enabled: true,
+          webSearchEnabled: true,
+          description:
+            'OECD Transfer Pricing Guidelines 2022, BEPS Actions 8-10 and 13, EU JTPF guidelines, Nordic transfer pricing rules and case law',
+        },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
+      },
+    },
+  },
+  {
     id: 'financial-statement-drafter',
     label: 'Financial Statement Narrative Drafter',
     shortLabel: 'FS Narrative',

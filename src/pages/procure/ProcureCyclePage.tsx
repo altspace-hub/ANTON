@@ -300,7 +300,9 @@ export default function ProcureCyclePage() {
 
   async function removeRequirement(reqId: string) {
     if (!cycleId) return;
-    await fetchWithAuth(`/api/procure/cycles/${cycleId}/requirements/${reqId}`, { method: 'DELETE' });
+    // Server registers DELETE /procure/requirements/:id (flat, not nested under
+    // the cycle) — the old nested URL 404'd silently (fixed 2026-07-17).
+    await fetchWithAuth(`/api/procure/requirements/${reqId}`, { method: 'DELETE' });
     loadRequirements();
   }
 

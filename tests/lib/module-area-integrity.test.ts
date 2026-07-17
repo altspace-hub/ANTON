@@ -80,4 +80,36 @@ describe('module / area id integrity', () => {
     }
     expect(promptless).toEqual([]);
   });
+
+  it('no module.json id appears under two different server areas', () => {
+    // 2026-07-17: the server module loader flattens all areas into one Map keyed
+    // by module id (module-loader.ts), so a duplicated id makes the
+    // alphabetically-later area silently WIN and the other area serve the wrong
+    // prompt. Found live four times (financial-analysis, proposal-generator,
+    // regulatory-exam-prep, transfer-pricing-documentation) — all renamed to
+    // area-distinct ids. This pins the invariant.
+    const repoRoot = path.resolve(__dirname, '..', '..');
+    const areasDir = path.join(repoRoot, 'server', 'areas');
+    const seen = new Map<string, string>(); // id -> first area
+    const duplicated: string[] = [];
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        if (!fs.existsSync(configPath)) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string };
+        if (!config.id) continue;
+        const firstArea = seen.get(config.id);
+        if (firstArea && firstArea !== areaEntry.name) {
+          duplicated.push(`${config.id} (${firstArea} + ${areaEntry.name})`);
+        } else {
+          seen.set(config.id, areaEntry.name);
+        }
+      }
+    }
+    expect(duplicated).toEqual([]);
+  });
 });
