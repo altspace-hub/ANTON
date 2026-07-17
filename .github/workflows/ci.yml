@@ -41,10 +41,38 @@ jobs:
         run: pnpm run typecheck
       - name: TypeScript check (FutureChain SDK)
         run: pnpm --filter @futurechain/sdk typecheck
+      # 2026-07-17: the root `tsc -b` project references cover server + main src
+      # but NOT the standalone apps (their own tsconfigs), so a type regression in
+      # apps/ passed CI despite "green tsc is the floor". Gate them explicitly.
+      - name: TypeScript check (standalone apps)
+        run: |
+          pnpm --filter @anton/agent-pay typecheck
+          pnpm --filter @anton/collaboration typecheck
 
   test:
-    name: Unit Tests
+    name: Unit + Integration Tests
     runs-on: ubuntu-latest
+    # 2026-07-17: provide a real PostgreSQL + a running server so the DB-backed
+    # integration tier actually runs. ~34 route/integration test files gated on
+    # DATABASE_URL used to describe.skip in CI (green-by-skipping); 3 of them also
+    # need a live server at localhost:3001. Mirrors the proven e2e.yml recipe.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: anton
+          POSTGRES_PASSWORD: anton
+          POSTGRES_DB: anton
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U anton -d anton"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://anton:anton@localhost:5432/anton
+      TEST_SERVER_URL: http://localhost:3001
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -55,18 +83,34 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # Unit + integration vitest suite (`vitest run`). Runs with no DB and no
-      # API keys — the DB is mocked and LLM calls degrade gracefully.
+      - name: Initialize PostgreSQL schema
+        run: pnpm run db:init
+      - name: Run PostgreSQL migrations
+        run: pnpm run db:migrate:pg
+      # Start the server (tsx from source — no frontend build needed for the API
+      # route tests) so the 3 server-dependent route tests can reach it. The
+      # loopback bind (2026-07-17) serves localhost:3001 fine. Health endpoint is
+      # a guaranteed 200 (the SPA catch-all would 404 without a build).
+      - name: Start server (background)
+        run: |
+          ANTHROPIC_API_KEY=sk-ant-placeholder PORT=3001 DEPLOYMENT_MODE=solo \
+            JWT_SECRET=ci-test-secret-not-real pnpm tsx server/index.ts &
+          echo $! > /tmp/anton-server.pid
+          npx wait-on http://localhost:3001/api/health --timeout 45000
+      # Unit + integration vitest suite. With DATABASE_URL + a live server set,
+      # the previously-skipped DB-backed tier now runs for real.
       #
       # Hardening (2026-05-30): this suite was previously NOT run in CI at all,
-      # so 10 failing tests accumulated on main unnoticed (a broken SQL
-      # translator + an ISO-week bug). Green main is now a hard merge gate.
+      # so 10 failing tests accumulated on main unnoticed. Green main is a hard
+      # merge gate. (2026-07-17: DB + server added so the integration tier runs.)
       #
       # TODO (roadmap Phase 1): once the ~338 eslint errors are burned down,
-      # add `pnpm lint` as a gate here too. (The 4 companion-app suites —
-      # comm/business/pay/agent-pay — are now gated in the `app-tests` job below.)
-      - name: Unit tests
+      # add `pnpm lint` as a gate here too.
+      - name: Unit + integration tests
         run: pnpm test
+      - name: Stop server
+        if: always()
+        run: kill "$(cat /tmp/anton-server.pid)" || true
 
   app-tests:
     name: App Tests
@@ -89,6 +133,19 @@ jobs:
         run: pnpm --filter @anton/agent-pay test
       - name: Collaboration tests
         run: pnpm --filter @anton/collaboration test
+      # 2026-07-17: the FutureChain SDK carries the real-money wallet / tax / ISO
+      # / fx logic shared by every payment app + standalone. CI typechecked it but
+      # never ran its suite, so a signing/tax regression would pass. Gate it.
+      - name: FutureChain SDK tests
+        run: pnpm --filter @futurechain/sdk test
+      # The deployed Bahnhof relay (registry, transparency log, terminal certs) is
+      # production infra other people's phones depend on. It is tracked in-repo but
+      # OUTSIDE the pnpm workspace, so it needs its own install before its suite.
+      - name: Relay tests
+        run: |
+          cd relay
+          pnpm install --frozen-lockfile
+          pnpm test
 
   security-audit:
     name: Security Audit
