@@ -123,8 +123,16 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   });
 
   // ── Registration (no auth) ─────────────────────────────────────────────
+  // 2026-07-17 hardening: open self-registration mints a session for ANYONE who can
+  // reach the port, and a session unlocks LLM-spending appAuth routes. Default OFF —
+  // devices onboard via the admin-issued enrollment QR (/api/admin/app/enrollment/start).
+  // Set APP_GATEWAY_OPEN_REGISTRATION=true to restore walk-up registration.
+  const openRegistrationEnabled = () => process.env.APP_GATEWAY_OPEN_REGISTRATION === 'true';
+  const OPEN_REG_DISABLED = 'Self-registration is disabled on this instance — pair via the "Connect a device" QR (admin enrollment), or the operator can set APP_GATEWAY_OPEN_REGISTRATION=true';
+
   publicRouter.post('/register', async (req, res) => {
     try {
+      if (!openRegistrationEnabled()) return res.status(403).json({ error: OPEN_REG_DISABLED });
       const { publicKey, displayName, preferredLanguage } = req.body;
       if (!publicKey) return res.status(400).json({ error: 'publicKey is required' });
       const result = await svc.registerUser(publicKey, displayName, preferredLanguage);
@@ -137,6 +145,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // ── Simple registration (no Ed25519 — for HTTP/LAN where crypto.subtle is unavailable) ──
   publicRouter.post('/register-simple', async (req, res) => {
     try {
+      if (!openRegistrationEnabled()) return res.status(403).json({ error: OPEN_REG_DISABLED });
       const { displayName, preferredLanguage } = req.body;
       if (!displayName?.trim()) return res.status(400).json({ error: 'displayName is required' });
       const result = await svc.registerSimple(displayName.trim(), preferredLanguage || 'en');

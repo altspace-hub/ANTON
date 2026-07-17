@@ -11,7 +11,10 @@ if (!JWT_SECRET) {
     'and add it to your .env file.'
   );
 }
-const IS_TEAM_MODE = process.env.DEPLOYMENT_MODE === 'team';
+// Read lazily: this module is imported (and would otherwise snapshot the env) BEFORE
+// index.ts's module body finishes resolving DEPLOYMENT_MODE, so a module-scope const
+// here silently disables team-mode auth enforcement (the 2026-07-17 split-brain bug).
+const isTeamMode = () => process.env.DEPLOYMENT_MODE === 'team';
 
 export interface AuthUser {
   id: string;
@@ -32,7 +35,7 @@ declare global {
 export async function createAuthMiddleware(db: DatabaseAdapter) {
   return async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     // Solo mode: no auth required
-    if (!IS_TEAM_MODE) {
+    if (!isTeamMode()) {
       req.user = { id: 'solo', username: 'solo', role: 'admin' };
       return next();
     }
@@ -123,7 +126,7 @@ export function requireAdminOrSolo(req: Request, res: Response, next: NextFuncti
   }
 
   const isAdmin = req.user.role === 'admin';
-  const isSoloMode = !IS_TEAM_MODE;
+  const isSoloMode = !isTeamMode();
 
   if (isAdmin || isSoloMode) {
     next();

@@ -190,16 +190,15 @@ if (!process.env.ANTHROPIC_API_KEY) {
   logger.warn('ANTHROPIC_API_KEY is not set — Claude API calls will fail');
 }
 
-// SCALE-02: Auto-detect deployment mode from environment signals.
-// If DATABASE_URL (PostgreSQL) is present and DEPLOYMENT_MODE is not explicitly set → team mode.
-// Otherwise default to solo (SQLite local mode).
+// Deployment mode: solo (default, no auth) or team (explicit opt-in, JWT auth).
+// The old SCALE-02 auto-detect ("DATABASE_URL=postgres → team") is retired: ANTON is
+// PostgreSQL-only now, so every install has DATABASE_URL and the signal is meaningless.
+// Worse, modules that snapshot DEPLOYMENT_MODE at import time evaluated before this
+// block, so auto-detected "team" REPORTED team everywhere while auth silently ran the
+// solo branch. Team mode must be set explicitly in .env; auth reads the env lazily.
 if (!process.env.DEPLOYMENT_MODE) {
-  if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres')) {
-    process.env.DEPLOYMENT_MODE = 'team';
-    logger.info('[deploy] Auto-detected team mode (DATABASE_URL is set)');
-  } else {
-    process.env.DEPLOYMENT_MODE = 'solo';
-  }
+  process.env.DEPLOYMENT_MODE = 'solo';
+  logger.info('[deploy] DEPLOYMENT_MODE not set — defaulting to solo (set DEPLOYMENT_MODE=team in .env for multi-user JWT auth)');
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -389,16 +388,27 @@ setTimeout(async () => {
   }
 }, 30000);
 
-// MCP authentication guard - team mode only
-if (process.env.DEPLOYMENT_MODE === 'team' && process.env.MCP_SECRET) {
-  app.use('/mcp', (req, res, next) => {
+// MCP authentication guard (any deployment mode — was team-only, which left the full
+// unauthenticated tool surface reachable from the LAN on solo installs).
+// - MCP_SECRET set → require Authorization: Bearer <MCP_SECRET>.
+// - MCP_SECRET unset → loopback clients only: local MCP clients (Cursor, Claude Code)
+//   keep working with zero config, but network clients are refused.
+app.use('/mcp', (req, res, next) => {
+  const secret = process.env.MCP_SECRET;
+  if (secret) {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    if (token !== process.env.MCP_SECRET) {
+    if (token !== secret) {
       return res.status(401).json({ error: 'MCP access requires Authorization: Bearer <MCP_SECRET>' });
     }
-    next();
-  });
-}
+    return next();
+  }
+  const ip = req.socket.remoteAddress ?? '';
+  const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  if (!isLoopback) {
+    return res.status(401).json({ error: 'MCP over the network requires MCP_SECRET (send Authorization: Bearer <MCP_SECRET>)' });
+  }
+  next();
+});
 
 // MCP endpoint — mounted at /mcp, outside /api and outside auth middleware
 // MCP clients (Cursor, Claude Code) do not perform browser auth
@@ -1052,11 +1062,29 @@ let pgNotifyService: Awaited<ReturnType<typeof createPgNotifyService>> | null = 
 httpServer.timeout = 0;              // No socket timeout
 httpServer.keepAliveTimeout = 620_000; // 10 min + 20s buffer
 
-// Bind to 0.0.0.0 so phones on the same LAN can reach the server via the
-// laptop's IPv4 address (e.g. http://192.168.1.134:5183). Without this Node
-// can default to IPv6 loopback only on Windows, which makes LAN-IP pairing
-// silently fail. Mesh pairing routes through the relay regardless.
-httpServer.listen(Number(PORT), '0.0.0.0', async () => {
+// Bind address. In solo mode every /api request is auto-admin, so exposing the port
+// to the LAN hands the full admin surface to any device on the network — default to
+// loopback and widen only on explicit LAN intent:
+//   - ANTON_LAN_BIND=true|false  → explicit override in either direction;
+//   - otherwise, any of APP_GATEWAY_PUBLIC_URL / APP_GATEWAY_MDNS=true /
+//     APP_GATEWAY_LAN_BROWSE=true (documented network-facing opt-ins for phone
+//     pairing) implies LAN intent → 0.0.0.0.
+// LAN binding uses 0.0.0.0 (not the Node default) because Windows can otherwise pick
+// IPv6-loopback-only, making LAN-IP phone pairing silently fail. USB phone workflows
+// (adb reverse) and mesh/relay pairing work fine on loopback.
+const lanIntent =
+  process.env.ANTON_LAN_BIND != null
+    ? process.env.ANTON_LAN_BIND === 'true'
+    : Boolean(
+        process.env.APP_GATEWAY_PUBLIC_URL ||
+        process.env.APP_GATEWAY_MDNS === 'true' ||
+        process.env.APP_GATEWAY_LAN_BROWSE === 'true'
+      );
+const BIND_ADDR = lanIntent ? '0.0.0.0' : '127.0.0.1';
+if (!lanIntent) {
+  logger.info('[bind] Listening on 127.0.0.1 only — set ANTON_LAN_BIND=true (or configure the app gateway) for LAN phone pairing');
+}
+httpServer.listen(Number(PORT), BIND_ADDR, async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
 
   // mDNS advertising for companion app LAN discovery

@@ -36,13 +36,14 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 },
 });
 
-const IS_TEAM = process.env.DEPLOYMENT_MODE === 'team';
+// Lazy read — module-scope snapshot would evaluate before index.ts resolves DEPLOYMENT_MODE.
+const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
 
 function getUserId(req: Request): string { return (req as unknown as { user?: { id?: string } }).user?.id ?? 'solo'; }
 function getUserRole(req: Request): string { return (req as unknown as { user?: { role?: string } }).user?.role ?? 'admin'; }
 
 async function canView(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> {
-  if (!IS_TEAM || userRole === 'admin') return true;
+  if (!IS_TEAM() || userRole === 'admin') return true;
   const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
   if (!e) return false;
   if (e.user_id === userId) return true;
@@ -54,7 +55,7 @@ async function canView(db: DatabaseAdapter, engagementId: string, userId: string
 }
 
 async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string, userRole: string): Promise<boolean> {
-  if (!IS_TEAM || userRole === 'admin') return true;
+  if (!IS_TEAM() || userRole === 'admin') return true;
   const e = await db.get('SELECT user_id, project_id FROM engagements WHERE id = ?', engagementId) as { user_id: string; project_id: string | null } | undefined;
   if (!e) return false;
   if (e.user_id === userId) return true;
@@ -96,7 +97,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   // GET /api/engagements — list all engagements
   router.get('/', async (req: Request, res: Response) => {
     try {
-      if (IS_TEAM && getUserRole(req) !== 'admin') {
+      if (IS_TEAM() && getUserRole(req) !== 'admin') {
         const userId = getUserId(req);
         const engagements = await db.all(`
           SELECT e.*,
@@ -270,7 +271,7 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       // Only engagement owner or admin can link/unlink
       const existing = await db.get('SELECT user_id FROM engagements WHERE id = ?', String(req.params.id)) as { user_id: string } | undefined;
       if (!existing) return res.status(404).json({ error: 'Not found' });
-      if (IS_TEAM && userRole !== 'admin' && existing.user_id !== userId)
+      if (IS_TEAM() && userRole !== 'admin' && existing.user_id !== userId)
         return res.status(403).json({ error: 'Only the engagement owner can link to a project' });
       const { project_id } = req.body as { project_id: string | null };
       // Validate project exists if provided
