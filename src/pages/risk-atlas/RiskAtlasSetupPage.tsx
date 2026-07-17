@@ -62,6 +62,18 @@ export default function RiskAtlasSetupPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      // Seed the atlas's Stage 1-3 causal chain from the chosen industry pack
+      // (2026-07-17). Best-effort: if it fails, the atlas still exists and the
+      // user can build it manually — never strand them on a seeding hiccup.
+      if (packId) {
+        try {
+          await fetchWithAuth(`/api/atlas/${data.atlas.id}/seed-from-pack`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+            body: JSON.stringify({ packId }),
+          });
+        } catch { /* non-fatal — atlas is created; seed can be retried in the workspace */ }
+      }
       navigate(`/atlas/${data.atlas.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

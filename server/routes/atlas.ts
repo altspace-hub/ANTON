@@ -66,6 +66,7 @@ import { createAtlasService } from '../services/risk-atlas/atlas-service.js';
 import { importAtlasBundle } from '../services/risk-atlas/atlas-importer.js';
 import { createAtlasEventLogger } from '../services/risk-atlas/atlas-event-logger.js';
 import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.js';
+import { seedAtlasFromProposal } from '../services/risk-atlas/atlas-pack-seeder.js';
 import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
 import { createAtlasIntegrityRunner, listIntegrityRules } from '../services/risk-atlas/atlas-integrity-rules.js';
 import { createAtlasFcpScopeService } from '../services/risk-atlas/atlas-fcp-scope-service.js';
@@ -141,6 +142,31 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       if (!userId) { res.status(401).json({ error: 'Authentication required' }); return; }
       const atlas = await service.createAtlas(parsed.data, userId);
       res.status(201).json({ success: true, atlas });
+    } catch (err) { res.status(400).json({ error: safeError(err) }); }
+  });
+
+  // Seed a fresh Atlas's Stage 1-3 causal chain (exposures / threat-paths /
+  // vulnerabilities) from an industry pack (2026-07-17). Turns the 33 packs from
+  // decorative labels into a real starting point. Refuses to double-seed. Only
+  // creates rows — no scoring, so the deterministic residual calculator is
+  // untouched (inherent/residual stay unset until the user assigns them).
+  router.post('/atlas/:id/seed-from-pack', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const packId = String(req.body?.packId ?? '');
+      if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(packId)) { res.status(400).json({ error: 'Invalid or missing packId' }); return; }
+      const [existingExposures, existingPaths] = await Promise.all([
+        service.listExposures(id), service.listThreatPaths(id),
+      ]);
+      if (existingExposures.length > 0 || existingPaths.length > 0) {
+        res.status(409).json({ error: 'Atlas already has content — seed only a fresh atlas' });
+        return;
+      }
+      const proposal = await packs.proposeFromPack(packId);
+      if (!proposal) { res.status(404).json({ error: 'Pack not found' }); return; }
+      const seeded = await seedAtlasFromProposal(id, proposal, service, (req as AuthedRequest).user!.id);
+      res.json({ success: true, seeded });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
   });
 
