@@ -13,7 +13,8 @@
     "./rpc": "./src/rpc/index.ts",
     "./reference": "./src/reference/index.ts",
     "./tax": "./src/tax/index.ts",
-    "./fraud": "./src/fraud/index.ts"
+    "./fraud": "./src/fraud/index.ts",
+    "./travel-rule": "./src/travel-rule/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
