@@ -10,6 +10,12 @@ The Orchestrator is ANTON's autonomy progression engine. Code labels the phases 
 
 **Scope caveat (post-second-take):** the brief asks for `(userId, scope)` per-tenant gating. The underlying `orchestrator_stage` table is still single-row (`id='default'`) — the gate functions accept an optional `GateScope { userId?, scope? }` parameter and surface it in the rationale, but evaluation is single-scope until a follow-up migration moves `orchestrator_stage` to a per-`(user_id, scope_id)` shape. Marked as a known follow-up rather than a hidden gap.
 
+**2026-07-06 correction (code wins over docs) — read before trusting the ✅ marks below.** The "Phase status (post-C.1)" table marks Phases 2–4 ✅ *on the basis that the gate **decision** function `applyOrchestratorAction()` is coded* — it does **not** mean autonomous execution happens. Two verified findings qualify every ✅ for Phases 2–4:
+1. **`applyOrchestratorAction()` is consulted by exactly one caller** — the `/api/orchestrator-gate/apply` REST endpoint — and by **zero real execution paths**. It is a decision oracle that nothing obeys.
+2. **The Stage-3+ "auto-execution" path fabricates its own audit record.** At `orchestrator-engine.ts:1567-1604`, for each pattern it `SELECT`s `suggested_action` (line 1568) and **never runs it**, then INSERTs an `orchestrator_executions` row with `outcome='auto_executed'` and increments the counter. It records that it acted without acting. (It also cannot currently fire: the pattern engine hardcodes `auto_execute:false` for all four pattern types, so `WHERE auto_execute=1` is always empty.)
+
+Honest phase status: **Phase 1 Observer is in production; Phases 2–4 are gate-decision logic only, with execution unwired** — 🟢/📋, not ✅. This defect must be fixed or removed before any "trustworthiness by architecture" claim is made externally.
+
 ## Diagram
 
 ```mermaid
@@ -54,8 +60,8 @@ stateDiagram-v2
 |---|---|---|---|
 | 1 | `Observer` | ✅ | Briefings + proposals at `orchestrator-engine.ts:652+`; `applyOrchestratorAction` returns `block` for any action. |
 | 2 | `Guided` (brief calls it "Proposal Manager") | ✅ | Promotion gate at `engine:847–866`; named wrapper `canPromoteToGuided` in `orchestrator-gate.ts`; `applyOrchestratorAction` returns `require_confirm` regardless of tier. |
-| 3 | `Supervised` | ✅ | Promotion gate at `engine:870–890`; `canPromoteToSupervised` wrapper; `applyOrchestratorAction` returns `auto_execute` for low-tier, `require_confirm` for medium, `require_confirm` for high. |
-| 4 | `Autonomous` | ✅ | Promotion gate at `engine:894–913`; `canPromoteToAutonomous` wrapper; `applyOrchestratorAction` returns `auto_execute` for low + medium, `require_confirm` for high (always). |
+| 3 | `Supervised` | 🟢 | Gate **decision** at `engine:870–890`; `canPromoteToSupervised` wrapper; `applyOrchestratorAction` returns `auto_execute` for low-tier. **Decision only — no execution path obeys it; see the 2026-07-06 correction above.** |
+| 4 | `Autonomous` | 🟢 | Gate **decision** at `engine:894–913`; `canPromoteToAutonomous` wrapper; `applyOrchestratorAction` returns `auto_execute` for low + medium. **Decision only — the one "auto-execute" loop fabricates its audit record without executing; see the 2026-07-06 correction above.** |
 | Demotion | `demoteOnIncident()` | ✅ | One-step demotion on incident with reason logged into `stage_history`. |
 
 ## Promotion mechanics (from code)

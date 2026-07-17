@@ -6,6 +6,8 @@
 
 The audit substrate. Every reasoning step that ANTON takes — IRE revelations, orchestrator decisions, signed deliveries — leaves a row here.
 
+**2026-07-06 correction (code wins over docs).** The `revelation_chains` / `revelation_steps` blocks below were rewritten to match the actual schema (`server/db/schema.postgresql.sql:2707-2735`). The previous diagram listed columns that **do not exist** (`model_id`, `status`, `started_at`, `finished_at`, `synthesis_text`, `order_idx`, `tool_calls`, `emitted_at`). Two things a regulator/evaluator must know: (1) `synthesis_quality_score` is declared but **never assigned** in `iterative-reasoning.ts` — it is always NULL; (2) a trail stores **no `model_id`, seed, temperature, system prompt, or user-message text** — only a `message_id` pointer, phase content, tokens and timing. So a revelation trail is **after-the-fact logging, not a replayable/re-runnable reasoning artifact** (and the hardcoded adaptive-thinking Opus model has no seed parameter, so determinism is not achievable without a schema + engine change).
+
 ## Diagram
 
 ```mermaid
@@ -20,28 +22,32 @@ erDiagram
 
   revelation_chains {
     text id PK
-    text session_id FK
+    text session_id
+    text message_id
     text thinking_level "think_hard·investigate·plan_first·deep_investigate"
-    text model_id
-    text status "running·complete·aborted"
+    int phase_count
     int total_input_tokens
     int total_output_tokens
-    timestamptz started_at
-    timestamptz finished_at
-    text synthesis_text
+    int total_duration_ms
+    float synthesis_quality_score "declared but never assigned — always NULL"
+    timestamptz created_at
   }
 
   revelation_steps {
     text id PK
     text chain_id FK
-    int order_idx
-    text phase "analyse·deepen·tool_pass_1·tool_pass_2·synthesise"
-    text content
-    text thinking
+    text session_id
+    int phase_index
+    text phase_name "analyse·reflect·deepen·synthesise"
+    text thinking_content
+    text output_content
+    float confidence_score
+    int revision_needed
+    text next_action
     int input_tokens
     int output_tokens
-    json tool_calls
-    timestamptz emitted_at
+    int duration_ms
+    timestamptz created_at
   }
 
   output_versions {

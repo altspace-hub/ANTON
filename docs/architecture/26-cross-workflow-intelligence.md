@@ -9,7 +9,9 @@
 - consumes pattern-detection methods that return arrays directly (`x.length`, not `x.patternsDetected`);
 - requires `userId` in `FunnelInput` and forwards it to `apprentice.recordSession()` (Layer 5).
 
-Layer 2 (graph-update) is intentionally orchestrated by Layer 1's internal `detectRelationships()` — there is no separate `addEntitiesFromContent` entry-point in `knowledge-graph.ts`, and the funnel reflects that honestly rather than pretending. Subsystem promoted from 🟢 → ✅ for the orchestration layer; individual layers retain their existing status. Caller invokes `runCrossWorkflowFunnelInBackground(db, input)` from the `onComplete` hook in `routes/claude.ts`.
+Layer 2 (graph-update) is intentionally orchestrated by Layer 1's internal `detectRelationships()` — there is no separate `addEntitiesFromContent` entry-point in `knowledge-graph.ts`, and the funnel reflects that honestly rather than pretending. Subsystem status: **🟢 wired-but-unused**.
+
+**2026-07-06 correction (code wins over docs):** the earlier claim that the funnel is invoked was wrong. `runCrossWorkflowFunnel` / `runCrossWorkflowFunnelInBackground` have **zero callers** anywhere in the codebase (verified by grep, 2026-07-06) — the funnel orchestrator is dead code that has never executed. What actually runs in `routes/claude.ts` `onComplete` are the individual stages, inlined separately: quality scoring (`claude.ts:895`) and apprentice promotion (`claude.ts:942`, via raw SQL, not the service). The unifying "5-layer funnel" described below is aspirational, not wired.
 
 The 5-layer funnel from CLAUDE.md / brief: **Knowledge Graph → Pattern Detection → Institutional Memory → Quality Ratchet → Apprentice Model**. These services exist in code (per audit) but there is no single orchestrating "funnel" file — they're called by emitters across pillars, and aggregate state is read by the Orchestrator. Marked 🟢 because of the missing orchestration layer.
 
