@@ -66,8 +66,8 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
     try {
       const perm = await svc.checkPermission('balance_check', (req as unknown as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
       if (!perm.allowed) return res.status(403).json({ error: perm.reason });
-      const { createFCWalletService } = await import('../services/fc-wallet-service.js');
-      const walletService = await createFCWalletService(db);
+      const { createRealModeFCServices } = await import('../services/fc-real-mode.js');
+      const { fcWallet: walletService } = await createRealModeFCServices(db);
       const wallets = await walletService.getWallets();
       await svc.logAction('balance_check', req.ip, null, 'success');
       res.json(wallets.map((w) => ({ name: w.name, type: w.wallet_type, address: w.address, balance_ftc: w.balance_ftc })));
@@ -107,8 +107,8 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
     try {
       const perm = await svc.checkPermission('balance_check', (req as unknown as Record<string, unknown>).gatewayConfig as Record<string, unknown>);
       if (!perm.allowed) return res.status(403).json({ error: perm.reason });
-      const { createFCTransactionService } = await import('../services/fc-transaction-service.js');
-      const txService = await createFCTransactionService(db);
+      const { createRealModeFCServices } = await import('../services/fc-real-mode.js');
+      const { fcTx: txService } = await createRealModeFCServices(db);
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
       const txs = await txService.listTransactions({ limit });
       await svc.logAction('list_transactions', req.ip, null, 'success');

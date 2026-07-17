@@ -103,15 +103,12 @@ export async function createFCGatewayService(db: DatabaseAdapter) {
     }
     if (!toAddress) throw new Error('No recipient address');
 
-    // ── Get agent wallet ──
-    const { createFCWalletService } = await import('./fc-wallet-service.js');
-    const walletService = await createFCWalletService(db);
+    // ── Get agent wallet + tx service WITH real-mode deps (2026-07-17: the
+    // bare constructors hard-return stub, making stub_mode=false a no-op here) ──
+    const { createRealModeFCServices } = await import('./fc-real-mode.js');
+    const { fcWallet: walletService, fcTx: txService } = await createRealModeFCServices(db);
     const agentWallet = await walletService.getAgentWallet();
     if (!agentWallet) throw new Error('No agent wallet configured');
-
-    // ── Build full PACS.008 transaction with ISO 20022 fields ──
-    const { createFCTransactionService } = await import('./fc-transaction-service.js');
-    const txService = await createFCTransactionService(db);
 
     // Build remittance with purpose/nature/goal
     const remittance = txService.buildRemittance(

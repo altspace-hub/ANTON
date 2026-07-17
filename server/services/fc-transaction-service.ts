@@ -377,9 +377,22 @@ export async function createFCTransactionService(
   // ─── Utilities ────────────────────────────────────────────────────
 
   async function markStatus(txId: string, status: string, reason: string): Promise<void> {
+    // Keep pacs008_fields VALID JSON (2026-07-17): the old string-append
+    // ('\n[fail-reason] …') made the column unparseable, so a failed row could
+    // never be re-submitted (submitTransactionReal JSON.parses it and threw).
+    const row = await db.get<{ pacs008_fields: string | null }>(
+      'SELECT pacs008_fields FROM fc_transactions WHERE id = ?', txId,
+    );
+    let fields: Record<string, unknown> = {};
+    if (row?.pacs008_fields) {
+      try { fields = JSON.parse(row.pacs008_fields) as Record<string, unknown>; }
+      catch { fields = { _unparseable_previous: row.pacs008_fields }; }
+    }
+    fields['fail_reason'] = reason;
+    fields['failed_at'] = new Date().toISOString();
     await db.run(
-      'UPDATE fc_transactions SET status = ?, pacs008_fields = COALESCE(pacs008_fields, \'\') || ? WHERE id = ?',
-      status, `\n[fail-reason] ${reason}`, txId,
+      'UPDATE fc_transactions SET status = ?, pacs008_fields = ? WHERE id = ?',
+      status, JSON.stringify(fields), txId,
     );
   }
 

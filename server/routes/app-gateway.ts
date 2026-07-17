@@ -2423,10 +2423,10 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // GET /api/app/org/:orgId/wallet — bundles wallets + recent transactions
   publicRouter.get('/org/:orgId/wallet', appAuth, orgMember, async (req, res) => {
     try {
-      const { createFCWalletService } = await import('../services/fc-wallet-service.js');
-      const { createFCTransactionService } = await import('../services/fc-transaction-service.js');
-      const wsvc = await createFCWalletService(db);
-      const tsvc = await createFCTransactionService(db);
+      // 2026-07-17: real-mode deps wired — bare constructors returned stub
+      // wallets (fc_STUB_ balances) no matter what stub_mode said.
+      const { createRealModeFCServices } = await import('../services/fc-real-mode.js');
+      const { fcWallet: wsvc, fcTx: tsvc } = await createRealModeFCServices(db);
       const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
       const [wallets, transactions] = await Promise.all([
         wsvc.getWallets(),

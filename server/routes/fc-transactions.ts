@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { assertSigningSession, SigningSessionError } from '../services/fc-signing-session.js';
 
 export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
-  const { createFCTransactionService } = await import('../services/fc-transaction-service.js');
-  const svc = await createFCTransactionService(db);
+  // 2026-07-17: construct WITH real-mode deps — the bare constructor hard-returns
+  // stub behavior, which made stub_mode=false a no-op on this route.
+  const { createRealModeFCServices } = await import('../services/fc-real-mode.js');
+  const { fcTx: svc, isRealMode } = await createRealModeFCServices(db);
 
   router.post('/futurechain/transactions/build', async (req, res) => {
     try {
@@ -36,6 +39,29 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
 
   router.post('/futurechain/transactions/:id/submit', async (req, res) => {
     try {
+      // Signing-session enforcement (LOCAL_PAYMENTS_PLAN Phase 0, wired
+      // 2026-07-17): in REAL mode a spend must be an explicit, time-boxed
+      // action — the browser first unlocks the wallet
+      // (POST /futurechain/wallets/:id/unlock) and presents the minted token
+      // here. Stub mode stays tokenless (nothing real moves). Mission payments
+      // use the service directly under their own approval gates.
+      if (await isRealMode()) {
+        const tx = await svc.getTransaction(req.params.id) as { from_address?: string } | undefined;
+        if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+        const wallet = await db.get<{ id: string }>(
+          'SELECT id FROM fc_wallets WHERE address = ? AND is_active = TRUE', tx.from_address,
+        );
+        if (!wallet) return res.status(400).json({ error: 'Sender wallet not found' });
+        const token = String(req.headers['x-signing-session'] ?? req.body?.signingSession ?? '');
+        try {
+          assertSigningSession(token, wallet.id);
+        } catch (e) {
+          if (e instanceof SigningSessionError) {
+            return res.status(401).json({ error: 'Signing session missing, expired, or for a different wallet — unlock the wallet and retry' });
+          }
+          throw e;
+        }
+      }
       const result = await svc.submitTransaction(req.params.id);
       res.json(result);
     } catch (err) { res.status(500).json({ error: 'Failed to submit transaction' }); }

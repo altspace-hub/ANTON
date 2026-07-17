@@ -25,7 +25,14 @@ export async function createFCConnectionService(db: DatabaseAdapter) {
   }
 
   async function healthCheck() {
+    // 2026-07-17: healthCheck no longer writes stub_mode. Operator INTENT
+    // (stub vs real) and observed LIVENESS (connected) are separate facts:
+    // the old behavior silently flipped stub_mode=TRUE on any fetch failure,
+    // after which submits fake-confirmed with STUB_TX_ ids — a network blip
+    // could turn real payments into silent no-ops. In real mode a dead node
+    // now fails closed (submit errors) instead of stub-confirming.
     const config = await getConfig();
+    const operatorStub = (config as Record<string, unknown>)?.stub_mode !== false;
     try {
       const nodeUrl = (config as Record<string, unknown>)?.node_url as string | undefined;
       if (!nodeUrl) throw new Error('No node URL configured');
@@ -33,12 +40,12 @@ export async function createFCConnectionService(db: DatabaseAdapter) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json() as Record<string, unknown>;
       await db.run(`UPDATE fc_connection_config SET connected = TRUE, last_health_check = NOW(),
-        node_version = ?, pacs008_support = ?, two_tier_storage = ?, stub_mode = FALSE WHERE id = 'default'`,
+        node_version = ?, pacs008_support = ?, two_tier_storage = ? WHERE id = 'default'`,
         data.version ?? null, data.compliance_gateway ?? false, data.two_tier_storage ?? false);
-      return { connected: true, version: data.version, stubMode: false };
+      return { connected: true, version: data.version, stubMode: operatorStub };
     } catch {
-      await db.run("UPDATE fc_connection_config SET connected = FALSE, last_health_check = NOW(), stub_mode = TRUE WHERE id = 'default'");
-      return { connected: false, version: null, stubMode: true };
+      await db.run("UPDATE fc_connection_config SET connected = FALSE, last_health_check = NOW() WHERE id = 'default'");
+      return { connected: false, version: null, stubMode: operatorStub };
     }
   }
 
