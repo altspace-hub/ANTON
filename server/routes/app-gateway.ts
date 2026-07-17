@@ -50,6 +50,42 @@ function createOrgMembershipCheck(db: DatabaseAdapter) {
   };
 }
 
+/**
+ * requireApprovedUser (2026-07-17 defense-in-depth) — gate the org-less but
+ * sensitive routes (LLM-spending agent queries, agent data, markets, radar) to
+ * OPERATOR-APPROVED users only. A session alone is not enough: a user is
+ * approved iff they either (a) paired through the admin "Connect a device"
+ * enrollment ritual (→ a row in app_devices) or (b) hold an active membership
+ * in some org. Users who obtained a session via open self-registration
+ * (POST /register[-simple]) have neither and are refused these routes.
+ *
+ * When open registration is OFF (the default since the Tier-1a hardening), every
+ * session came through enrollment, so this is a pass-through and breaks nothing.
+ * It only bites when an operator has opted into open registration — exactly the
+ * case where walk-up users should NOT be able to spend LLM tokens.
+ */
+export function createApprovedUserCheck(db: DatabaseAdapter) {
+  return async (req: Request, res: Response, next: () => void) => {
+    // Escape hatch (default-secure): an operator whose devices onboarded in an
+    // unusual way (e.g. registerSimple with no later device pairing) can set
+    // APP_GATEWAY_REQUIRE_APPROVAL=false to turn this gate into a pass-through.
+    if (process.env.APP_GATEWAY_REQUIRE_APPROVAL === 'false') return next();
+    const userId = req.appUser?.id;
+    if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    const device = await db.get<{ x: number }>(
+      'SELECT 1 AS x FROM app_devices WHERE connected_user_id = $1 LIMIT 1', userId,
+    );
+    if (device) return next();
+    const org = await db.get<{ x: number }>(
+      "SELECT 1 AS x FROM connected_user_orgs WHERE connected_user_id = $1 AND status = 'active' LIMIT 1", userId,
+    );
+    if (org) return next();
+    return res.status(403).json({
+      error: 'This device is not approved for this feature — pair via "Connect a device" (admin enrollment) or join an organisation',
+    });
+  };
+}
+
 type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
 
 export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?: RadarFetcher) {
@@ -58,6 +94,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   const svc = await createAppGatewayService(db);
   const appAuth = createAppAuthMiddleware(db);
   const orgMember = createOrgMembershipCheck(db);
+  const requireApproved = createApprovedUserCheck(db);
   const enrollment = createAppEnrollmentService(db);
   const push = createAppPushService(db);
   const checkpoints = createAppCheckpointService(db);
@@ -330,7 +367,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // ── Specialized Agents (ANTON Agent app) ─────────────────────────────
   // List this instance's agents so the phone can show + talk to them.
-  publicRouter.get('/agents', appAuth, async (_req, res) => {
+  publicRouter.get('/agents', appAuth, requireApproved, async (_req, res) => {
     try {
       const agents = await agentService.listAgents({ status: 'active' });
       // Lean projection — the phone needs identity + greeting, not the full
@@ -353,7 +390,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // Talk to an agent — the chat + task-delegation surface. Sync (mirrors the
   // desktop /api/agents/:id/query); the /stream variant below is preferred.
-  publicRouter.post('/agents/:id/query', appAuth, async (req, res) => {
+  publicRouter.post('/agents/:id/query', appAuth, requireApproved, async (req, res) => {
     try {
       const { message, conversationId } = req.body as { message?: string; conversationId?: string };
       if (!message || typeof message !== 'string') {
@@ -371,7 +408,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // Streaming chat — SSE `text_delta` events as the agent answers, then a
   // `complete` event ({ conversationId, tokens }). The phone renders tokens live.
-  publicRouter.post('/agents/:id/query/stream', appAuth, async (req, res) => {
+  publicRouter.post('/agents/:id/query/stream', appAuth, requireApproved, async (req, res) => {
     const { message, conversationId } = req.body as { message?: string; conversationId?: string };
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'message required' });
@@ -399,7 +436,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // Activity feed — what the agent has been doing: a flat, newest-first timeline
   // of the messages across its conversations (your asks, its answers, and the
   // tools it ran). The "see what they're doing" surface.
-  publicRouter.get('/agents/:id/activity', appAuth, async (req, res) => {
+  publicRouter.get('/agents/:id/activity', appAuth, requireApproved, async (req, res) => {
     try {
       const agentId = String(req.params.id);
       const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? '40'), 10) || 40));
@@ -445,7 +482,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // the phone uses its app-session. Instance-level (one agent-pay standalone
   // per instance) — the `agentId` query param is reserved for a future
   // per-agent-standalone model and is currently ignored.
-  publicRouter.get('/agent/wallet', appAuth, async (_req, res) => {
+  publicRouter.get('/agent/wallet', appAuth, requireApproved, async (_req, res) => {
     try {
       const { getAgentPayConfig } = await import('../services/agent-pay-config-service.js');
       const cfg = await getAgentPayConfig(db);
@@ -472,7 +509,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // Transaction ledger — newest-first, what the agent has bought/received.
   // This is the "see the transaction" surface.
-  publicRouter.get('/agent/wallet/transactions', appAuth, async (req, res) => {
+  publicRouter.get('/agent/wallet/transactions', appAuth, requireApproved, async (req, res) => {
     try {
       const { getAgentPayConfig } = await import('../services/agent-pay-config-service.js');
       const cfg = await getAgentPayConfig(db);
@@ -498,7 +535,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // separate client of the same standalone) polls + replies role:'agent'.
 
   // Give a task → returns the new taskId.
-  publicRouter.post('/agent/task', appAuth, async (req, res) => {
+  publicRouter.post('/agent/task', appAuth, requireApproved, async (req, res) => {
     try {
       const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
       if (!text || text.length > 8000) return res.status(400).json({ error: 'text must be 1–8000 characters' });
@@ -519,7 +556,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // The list of tasks (threads), newest-updated first — the "what I asked"
   // surface. ?since=<ms> returns only what changed.
-  publicRouter.get('/agent/tasks', appAuth, async (req, res) => {
+  publicRouter.get('/agent/tasks', appAuth, requireApproved, async (req, res) => {
     try {
       const { getCollabConfig } = await import('../services/collab-config-service.js');
       const cfg = await getCollabConfig(db);
@@ -538,7 +575,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   });
 
   // One task's thread (human + agent messages) — the app polls this.
-  publicRouter.get('/agent/task/:id/messages', appAuth, async (req, res) => {
+  publicRouter.get('/agent/task/:id/messages', appAuth, requireApproved, async (req, res) => {
     try {
       const { getCollabConfig } = await import('../services/collab-config-service.js');
       const cfg = await getCollabConfig(db);
@@ -559,7 +596,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   });
 
   // A human follow-up message in a thread (role is always 'human' here).
-  publicRouter.post('/agent/task/:id/message', appAuth, async (req, res) => {
+  publicRouter.post('/agent/task/:id/message', appAuth, requireApproved, async (req, res) => {
     try {
       const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
       if (!text || text.length > 8000) return res.status(400).json({ error: 'text must be 1–8000 characters' });
@@ -2001,7 +2038,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   // GET /api/app/markets/briefing — single morning brief from the
   // strongest active narrative, with citation/portfolio/flag counts so
   // the design's pill row can render without extra calls.
-  publicRouter.get('/markets/briefing', appAuth, async (_req, res) => {
+  publicRouter.get('/markets/briefing', appAuth, requireApproved, async (_req, res) => {
     try {
       const narrative = await db.get<{
         id: string; title: string; description: string;
@@ -2057,7 +2094,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // GET /api/app/markets/tape — top holdings across active indexes with
   // their current prices + a small sparkline derived from raw price data.
-  publicRouter.get('/markets/tape', appAuth, async (req, res) => {
+  publicRouter.get('/markets/tape', appAuth, requireApproved, async (req, res) => {
     try {
       const limit = req.query.limit ? Math.min(20, parseInt(String(req.query.limit), 10) || 8) : 8;
 
@@ -2121,7 +2158,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
 
   // GET /api/app/markets/prediction — most recent active prediction,
   // expressed as a 3-bucket Monte-Carlo-style distribution for the design.
-  publicRouter.get('/markets/prediction', appAuth, async (_req, res) => {
+  publicRouter.get('/markets/prediction', appAuth, requireApproved, async (_req, res) => {
     try {
       const p = await db.get<{
         id: string; title: string; description: string;
@@ -2256,7 +2293,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   }
 
   // GET /api/app/radar/summary — 3-up dashboard numbers + scanned-today count
-  publicRouter.get('/radar/summary', appAuth, async (_req, res) => {
+  publicRouter.get('/radar/summary', appAuth, requireApproved, async (_req, res) => {
     try {
       const summary = await radar.getRadarSummary();
       // Items fetched in the last 24h — proxy for "scanned today"
@@ -2284,7 +2321,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   });
 
   // GET /api/app/radar/items?category=...&limit=...
-  publicRouter.get('/radar/items', appAuth, async (req, res) => {
+  publicRouter.get('/radar/items', appAuth, requireApproved, async (req, res) => {
     try {
       const category = typeof req.query.category === 'string' ? req.query.category : undefined;
       const limit = req.query.limit ? Math.min(100, parseInt(String(req.query.limit), 10) || 30) : 30;
@@ -2301,7 +2338,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   });
 
   // GET /api/app/radar/sources — active source pills for the footer strip
-  publicRouter.get('/radar/sources', appAuth, async (_req, res) => {
+  publicRouter.get('/radar/sources', appAuth, requireApproved, async (_req, res) => {
     try {
       const rows = await radar.getSources(true) as Array<{
         id: string; display_name: string; source_type: string; category: string;
@@ -2321,7 +2358,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   });
 
   // POST /api/app/radar/scan — trigger a scan; respects RADAR_AUTOMATION_DISABLED
-  publicRouter.post('/radar/scan', appAuth, async (req, res) => {
+  publicRouter.post('/radar/scan', appAuth, requireApproved, async (req, res) => {
     if (!radarFetcher) {
       return res.status(503).json({ error: 'Radar fetcher not initialized on this instance.' });
     }
