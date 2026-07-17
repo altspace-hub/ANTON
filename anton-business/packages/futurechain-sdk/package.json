@@ -12,7 +12,8 @@
     "./wallet": "./src/wallet/index.ts",
     "./rpc": "./src/rpc/index.ts",
     "./reference": "./src/reference/index.ts",
-    "./tax": "./src/tax/index.ts"
+    "./tax": "./src/tax/index.ts",
+    "./fraud": "./src/fraud/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
