@@ -41,6 +41,7 @@
     "db:migrate:pg": "tsx scripts/db-migrate-pg.ts",
     "atom-ab:report": "tsx scripts/atom-ab-report.ts",
     "check:bundle-drift": "node scripts/check-bundle-drift.mjs",
+    "check:app-drift": "node scripts/check-app-drift.mjs",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint src server --ext .ts,.tsx --max-warnings 100",
     "lint:fix": "eslint src server --ext .ts,.tsx --fix",
