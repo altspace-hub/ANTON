@@ -83,6 +83,9 @@ The one idiom: tool names map 1:1 to RPC methods, so the handler is a single `rp
 
 This is how the owner gives you work and how you report back. A **task** is a thread of messages tagged `human` or `agent`.
 
+**Ready-made brain:** [`examples/task-brain.mjs`](./examples/task-brain.mjs) is a ~130-line, dependency-free reference brain — it pairs, polls the inbox, answers each task with an LLM (Anthropic by default, Mistral via `MISTRAL_API_KEY`), and closes it. Run it to make the ANTON Agent phone app usable end-to-end today:
+`COLLAB_PAIR_CODE=<boot code> ANTHROPIC_API_KEY=sk-ant-... node examples/task-brain.mjs`. It answers-only (no commerce); extend it with the discover→agree→settle loop below for tasks that need a purchase.
+
 **The loop you run:**
 
 ```
