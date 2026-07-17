@@ -404,6 +404,15 @@ export async function runIterativeReasoning(
         totalInputTokens += result.inputTokens;
         totalOutputTokens += result.outputTokens;
 
+        // 2026-07-17: carry the chain's synthesis_quality_score from the model's
+        // own reflect-phase confidence (the last phase to report one — typically
+        // the final REFLECT before synthesis). Previously this column was declared
+        // and written but NEVER assigned, so it was always NULL. This is a real
+        // self-assessed signal, not a fabricated score.
+        if (typeof result.confidenceScore === 'number') {
+          synthesisQualityScore = result.confidenceScore;
+        }
+
         // Store the step
         try {
           await db.run(

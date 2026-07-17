@@ -5,7 +5,6 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
 import { runIterativeReasoning, getRevelationChain } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
-import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
@@ -55,13 +54,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   const ratchet = await createQualityRatchet(db);
   const temporalReasoning = await createTemporalReasoningService(db);
 
-  // Lazy knowledge pipeline instances — shared across requests, initialised on first use
-  let _atomExtractor: Awaited<ReturnType<typeof createAtomExtractor>> | null = null;
+  // Lazy knowledge pipeline instances — shared across requests, initialised on first use.
+  // (getAtomExtractor removed 2026-07-17 — atom extraction is driven solely by
+  // output-store's summary→extraction pipeline; see storeOutput call below.)
   let _outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
-  async function getAtomExtractor() {
-    if (!_atomExtractor) _atomExtractor = await createAtomExtractor(db, getClient());
-    return _atomExtractor;
-  }
   async function getSessionOutputStore() {
     if (!_outputStore) _outputStore = await createOutputStore(db);
     return _outputStore;
@@ -1000,8 +996,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                   stepName: 'Claude Response',
                   userId: req.user?.id || 'default',
                 });
-                const extractor = await getAtomExtractor();
-                extractor.extractAtoms(outputId).catch(() => {});
+                // 2026-07-17: do NOT extract atoms here. storeOutput already runs
+                // the summary→extraction pipeline (output-store.ts
+                // queueSummaryGeneration → triggerAtomExtraction), so a second
+                // extractAtoms(outputId) call here double-spent the utility LLM on
+                // every persisted run AND produced duplicate atoms (extractAtoms
+                // is not idempotent per outputId). The single path is output-store.
+                void outputId;
               } catch { /* non-fatal */ }
             }
           }

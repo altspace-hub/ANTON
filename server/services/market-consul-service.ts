@@ -109,9 +109,13 @@ export async function runDeliberation(
       messages: [{ role: 'user', content: userMsg }],
     });
     const durationMs = Date.now() - startedAt;
-    // Persist as a revelation_step.
+    // Persist as a revelation_step. 2026-07-17: the table columns are
+    // phase_index / output_content (NOT step_index / content) — the old names
+    // don't exist, so every member insert threw AFTER its LLM call, Promise
+    // .allSettled dropped them all, contributions.length===0, and the whole
+    // paid deliberation 500'd. thinking_content defaults to '' (omitted).
     await db.run(
-      `INSERT INTO revelation_steps (id, chain_id, step_index, phase_name, content, input_tokens, output_tokens, duration_ms, created_at)
+      `INSERT INTO revelation_steps (id, chain_id, phase_index, phase_name, output_content, input_tokens, output_tokens, duration_ms, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       randomUUID(), chainId, idx, member.id,
       result.text, result.inputTokens, result.outputTokens, durationMs
@@ -165,7 +169,7 @@ export async function runDeliberation(
   totalOut += synthesisResult.outputTokens;
 
   await db.run(
-    `INSERT INTO revelation_steps (id, chain_id, step_index, phase_name, content, input_tokens, output_tokens, duration_ms, created_at)
+    `INSERT INTO revelation_steps (id, chain_id, phase_index, phase_name, output_content, input_tokens, output_tokens, duration_ms, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
     randomUUID(), chainId, members.length, 'synthesis',
     synthesisResult.text, synthesisResult.inputTokens, synthesisResult.outputTokens, synthDuration

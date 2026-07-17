@@ -369,15 +369,16 @@ async function readApprenticeSignals(db: DatabaseAdapter, since: Date): Promise<
 /** Read Knowledge Graph signals — high-frequency entities with recent activity */
 async function readKnowledgeGraphSignals(db: DatabaseAdapter): Promise<PlatformSignal[]> {
   try {
-    // Use UNION instead of OR on JOIN to allow SQLite to use indexes on from_id and to_id
+    // 2026-07-17: entity_relationships uses source_id/target_id (NOT from_id/to_id),
+    // and they reference entity_nodes.entity_id (NOT .id). The previous query named
+    // nonexistent columns, correlated on the wrong key, AND used an unaliased
+    // derived table (a Postgres syntax error) — so it silently returned zero
+    // signals on every heartbeat. This counts relationships touching the entity.
     const rows = await db.all(`
       SELECT en.entity_type, en.canonical_name, en.interaction_count,
              en.last_seen,
-             (SELECT COUNT(*) FROM (
-               SELECT from_id as node_id FROM entity_relationships WHERE from_id = en.id
-               UNION
-               SELECT to_id as node_id FROM entity_relationships WHERE to_id = en.id
-             )) as relationship_count
+             (SELECT COUNT(*) FROM entity_relationships er
+              WHERE er.source_id = en.entity_id OR er.target_id = en.entity_id) as relationship_count
       FROM entity_nodes en
       WHERE en.interaction_count >= 5
         AND en.last_seen >= NOW() - INTERVAL '7 days'
@@ -1552,7 +1553,7 @@ export async function runHeartbeatCycle(
   // Pattern detection + auto-execution (non-blocking, runs after briefing)
   if (action === 'briefing_generated' || action === 'none') {
     try {
-      const { detectPatterns, recordPatternDetection, shouldAutoPause, isAutoExecutionAllowed } = await import('./orchestrator-pattern-engine.js');
+      const { detectPatterns, recordPatternDetection, shouldAutoPause } = await import('./orchestrator-pattern-engine.js');
       const patterns = await detectPatterns(db);
       if (patterns.length > 0) {
         for (const pat of patterns.slice(0, 3)) { // max 3 pattern proposals per cycle
@@ -1561,48 +1562,17 @@ export async function runHeartbeatCycle(
         console.log(`[orchestrator] Pattern engine: ${patterns.length} patterns detected, ${Math.min(patterns.length, 3)} recorded`);
       }
 
-      // Stage 3+ auto-execution: run patterns with auto_execute=1
-      const currentStage = (await db.get('SELECT current_stage FROM orchestrator_stage WHERE id = ?', 'default') as { current_stage: number } | undefined)?.current_stage ?? 1;
-      if (currentStage >= 3 && await isAutoExecutionAllowed(db)) {
-        const autoPatterns = await db.all(`
-          SELECT id, pattern_type, name, suggested_action
-          FROM orchestrator_patterns
-          WHERE auto_execute = 1 AND status = 'active'
-        `) as Array<{ id: string; pattern_type: string; name: string; suggested_action: string }>;
-
-        for (const ap of autoPatterns) {
-          if (!await isAutoExecutionAllowed(db)) break; // re-check limit each iteration
-
-          const execId = randomUUID();
-          try {
-            // Create execution record for audit trail
-            await db.run(`
-              INSERT INTO orchestrator_executions
-                (id, proposal_id, status, outcome, started_at)
-              VALUES (?, ?, 'completed', 'auto_executed', NOW())
-            `, execId, ap.id);
-
-            // Mark detection as auto-executed
-            await db.run(`
-              UPDATE orchestrator_pattern_detections SET auto_executed = 1
-              WHERE pattern_id = ? AND auto_executed = 0
-                AND detected_at >= NOW() - INTERVAL '1 day'
-            `, ap.id);
-
-            // Increment auto_executions counter
-            await db.run(`
-              UPDATE orchestrator_stage SET
-                auto_executions = auto_executions + 1,
-                updated_at = NOW()
-              WHERE id = 'default'
-            `);
-
-            console.log(`[orchestrator] Auto-executed pattern: ${ap.name} (${ap.pattern_type})`);
-          } catch (autoErr) {
-            console.warn(`[orchestrator] Auto-execution failed for ${ap.name}:`, autoErr);
-          }
-        }
-      }
+      // NOTE (2026-07-17): the former "Stage 3+ auto-execution" block was REMOVED.
+      // It SELECTed suggested_action and never ran it, then INSERTed an
+      // orchestrator_executions row with outcome='auto_executed' — a record of
+      // action WITHOUT action. It was also dead + broken three ways (the pattern
+      // engine hardcodes auto_execute=false so the WHERE was always empty; and
+      // the INSERT named columns status/started_at that don't exist and an
+      // outcome value that violates the CHECK constraint, so it would throw if
+      // reached). The orchestrator is honestly a Stage 1-2 OBSERVER: it briefs +
+      // proposes; nothing here executes. When a real executor exists, wire it
+      // here and record a truthful outcome — do not resurrect a fabricated one.
+      // See docs/architecture/21-orchestrator-trust-phases.md.
 
       // Auto-pause check
       const { pause, reason } = await shouldAutoPause(db);

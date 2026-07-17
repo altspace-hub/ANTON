@@ -451,11 +451,17 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   router.post('/orchestrator/proposals/:id/reject', requireAuth, async (req: Request, res: Response) => {
     try {
       const proposal = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id) as
-        | { id: string; status: string } | undefined;
+        | { id: string; status: string; human_rating: string | null } | undefined;
       if (!proposal) return res.status(404).json({ error: 'Proposal not found' });
 
       const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
       const { reason } = req.body as { reason?: string };
+
+      // Capture whether this proposal was already rated BEFORE the update.
+      // 2026-07-17: the old code set human_rating='wrong' and THEN re-read it to
+      // decide whether to bump the stage counter — the re-read always saw the
+      // just-written value, so proposals_rated/irrelevant_or_wrong never grew.
+      const wasUnrated = !proposal.human_rating;
 
       await db.run(`
         UPDATE orchestrator_proposals SET
@@ -465,8 +471,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       `, reason ?? null, user, proposal.id);
 
       // Update stage metrics (rejection = negative signal)
-      const existing = await db.get('SELECT human_rating FROM orchestrator_proposals WHERE id = ?', proposal.id) as { human_rating: string | null } | undefined;
-      if (!existing?.human_rating) {
+      if (wasUnrated) {
         await db.run(`
           UPDATE orchestrator_stage SET
             proposals_rated = proposals_rated + 1,
