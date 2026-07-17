@@ -7,6 +7,16 @@ that work**.
 User-facing guide: `docs/help/anton-to-anton.html`.
 This document is the engineering plan: where things stand and what is left.
 
+> **2026-07-17 correction (code wins over docs).** The "2026-05" status below and
+> the "Phase D — BLOCKED on the FutureChain Rust core" heading are stale. Phase D
+> is no longer blocked: `server/services/fc-wallet-service.ts` imports `RpcClient`
+> from `@futurechain/sdk/rpc` and calls `client.getBalance()`; the Rust core binary
+> was vendored 2026-06-05 (`runtimes-source/futurechain/futurechain.exe`); a real
+> agent-to-agent on-chain FTC settlement ran 2026-06-22; and a live mainnet Pay
+> payment confirmed 2026-07-04 (tx `5b39f15d`, block 972033). What remains for A2A
+> payments is the delegated-brief settlement wiring, not the chain. Read the code /
+> GO_LIVE_CHECKLIST.md for current truth; the phase tables below are historical.
+
 ---
 
 ## Where it stands today (2026-05)

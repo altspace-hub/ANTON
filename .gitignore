@@ -149,3 +149,6 @@ docs/*READINESS*.md
 docs/*SWEEP*.md
 docs/PORTFOLIO_*.md
 docs/HANDOFF_*.md
+# Session handovers map keystore locations + credential paths — local-only ops docs
+# (the *HANDOVER* variant the HANDOFF_ pattern above missed).
+docs/*HANDOVER*.md

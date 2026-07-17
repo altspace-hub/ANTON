@@ -144,10 +144,10 @@ pnpm run build && pnpm run start
 
 | File | Purpose |
 |---|---|
-| `src/lib/constants.ts` | All 150+ module definitions — IDs, labels, defaults, area groupings |
+| `src/lib/constants.ts` | All 550+ module definitions — IDs, labels, defaults, area groupings |
 | `src/lib/types.ts` | All shared TypeScript types |
 | `src/lib/output-format-definitions.ts` | 40+ output format configs with prompt instructions |
-| `server/db/schema.postgresql.sql` | Full database schema — source of truth for all tables |
+| `server/db/schema.postgresql.sql` | Baseline schema (~188 tables), run first at every boot. NOT a full snapshot — ~370 later tables (agents, atlas, app_*, markets, portals, missions, etc.) exist ONLY in `migrations-pg/`. To find a table's definition, grep `migrations-pg/` too, not just this file. |
 | `server/db/init-postgresql.ts` | Database initialization + migration runner |
 | `server/index.ts` | Express entry — all routes mounted, middleware, SSE streaming |
 | `server/services/claude-client.ts` | Claude API wrapper — streaming, thinking, web search |
@@ -223,12 +223,20 @@ For `claude-opus-4-8`, always use `thinking: { type: 'adaptive' }` with `output_
 
 ### 1. SQL: Parameterized Queries Only
 
+The DB adapter is **async PostgreSQL** — always `await` a `db.get` / `db.all` /
+`db.run` (a missing `await` was the root cause of the SQLite→PG migration bugs).
+The old synchronous `db.prepare().get()` (better-sqlite3) API is retired; the only
+`.prepare(` calls left are inside the multi-DB connector driver.
+
 ```typescript
-// Correct
-db.prepare('SELECT * FROM sessions WHERE id = ?').get(sessionId);
+// Correct — async, parameterized, awaited
+const session = await db.get('SELECT * FROM sessions WHERE id = ?', sessionId);
+await db.run('UPDATE sessions SET title = ? WHERE id = ?', title, sessionId);
 
 // NEVER — SQL injection risk
-db.prepare(`SELECT * FROM sessions WHERE id = '${sessionId}'`).get();
+await db.get(`SELECT * FROM sessions WHERE id = '${sessionId}'`);
+// NEVER — a missing await returns a Promise, not rows (the PG-migration bug class)
+db.get('SELECT * FROM sessions WHERE id = ?', sessionId);
 ```
 
 ### 2. State: Zustand Stores
@@ -263,12 +271,14 @@ export function createMyRoutes(db: Database): Router {
 
 ### 5. Errors: safeError()
 
+`safeError(err: unknown): string` returns a scrubbed message string (generic in
+production, the real message in dev). Pick the HTTP status yourself.
+
 ```typescript
 import { safeError } from '../lib/error-response.js';
 
 catch (err) {
-  const { status, message } = safeError(err);
-  res.status(status).json({ error: message });
+  res.status(500).json({ error: safeError(err) });
 }
 ```
 
@@ -342,16 +352,16 @@ ANTON is organised into **top-level pillars**, each representing a different mod
 
 | Pillar | Purpose | Key Files |
 |---|---|---|
-| **Work** | Default — 150+ expert modules for professional domains | `src/lib/constants.ts` (modules), `src/pages/ModulePage.tsx` |
+| **Work** | Default — 550+ expert modules for professional domains | `src/lib/constants.ts` (modules), `src/pages/ModulePage.tsx` |
 | **School** | Educational interface with teacher oversight | `src/pages/school/`, `school-pages` chunk |
-| **Life** | Personal-life modules (microfinance, BoP finance, consumer protection) | `src/pages/life/` |
+| **Life** | Personal-life modules (microfinance, BoP finance, consumer protection) | `src/pages/LifePage.tsx` + `src/pages/{news,finance,travel}/` |
 | **Pathfinder** | Mode-aware research assistant ("smart action bar") | `src/pages/pathfinder/`, `server/services/pathfinder-engine.ts` |
 | **Markets** | Financial intelligence, instrumented for learning — 14 migrations, 21 services, 39 Python computation templates, ANTON 100 indexes, predictions, calibration | `server/services/market-*.ts`, `server/db/migrations-pg/049–062`, `src/pages/markets/` |
 | **Community** | E2E-encrypted ANTON-to-ANTON messaging, contact hashes, trust scoring | `server/services/community-*.ts`, `src/pages/community/` |
 | **Procure** | Procurement cycles, vendor evaluation, criteria scoring, contract tracking | `server/services/procure-service.ts`, migration `091_procure_pillar.sql` |
 | **Civic** | Civic engagements, eligibility checks, document submissions, knowledge packs | `server/services/civic-service.ts`, migration `092_civic_pillar.sql` |
 | **Grow** | CRM-style: contacts, pipeline stages, opportunities, signals, briefings | `server/services/grow-service.ts`, migration `093_grow_pillar.sql` |
-| **Payments** | FutureChain wallet & marketplace integration | `src/pages/payments/`, `server/routes/fc-marketplace.ts` |
+| **Payments** | FutureChain wallet & marketplace integration | `src/pages/futurechain/`, `server/routes/fc-marketplace.ts` |
 | **Portals** | User-created ANTON-only web spaces with capability descriptors. 8-phase walkthrough builder, 7 starter templates, 12-verb capability taxonomy, registry protocol with transparency log, `anton-portal` Pathfinder mode. Full e2e: build → publish → visit → invoke. | `server/services/portals/*`, `server/services/registry-protocol/*`, `server/services/registry-client/*`, `server/services/capability-descriptor/*`, `server/routes/portals.ts`, `src/pages/portals/`, migrations `145–148` |
 | **Missions** | Multi-step automation jobs (research / outreach / monitoring) with credential vault + service packs + inbox | `src/pages/missions/`, `server/routes/mission-*.ts` |
 
@@ -369,7 +379,7 @@ The Risk Atlas generalises the CASP BWRA threat-path methodology into a universa
 
 **Data model.** Migrations `125_risk_atlas_foundation.sql` → `129_risk_atlas_addendum_review_fixes.sql` define 18 tables: `risk_atlases`, `atlas_threat_paths`, `atlas_exposure_points`, `atlas_vulnerabilities`, `atlas_controls`, `atlas_inherent_scores`, `atlas_residual_scores`, `atlas_appetite_statements`, `atlas_escalation_triggers`, `atlas_review_cycles`, `atlas_industry_packs`, `atlas_events`, `atlas_fcp_scope`, `atlas_cross_domain_path_bundles` and members.
 
-**Industry packs (25).** Composable `.anton` overlays under `data/risk-atlas/packs/` with three `pack_kind` types: `industry` (sme-general, fcp-bank, fcp-casp, sector-*, etc.), `fcp-domain` (fcp-domain-amlcft / sanctions / fraud / abc / market-abuse / tax-evasion-facilitation / export-controls), `overlay` (universal-fcp-core). Inheritance via `parent_pack_id` with cycle protection in `getPackContent`.
+**Industry packs (33).** Composable `.anton` overlays under `data/risk-atlas/packs/` with three `pack_kind` types: `industry` (sme-general, fcp-bank, fcp-casp, sector-*, etc.), `fcp-domain` (fcp-domain-amlcft / sanctions / fraud / abc / market-abuse / tax-evasion-facilitation / export-controls), `overlay` (universal-fcp-core). Inheritance via `parent_pack_id` with cycle protection in `getPackContent`.
 
 **FCP Addendum.** `atlas_fcp_scope` carries which FCP domains are active per Atlas. `atlas_cross_domain_path_bundles` groups paths from multiple domains into a single causal "story" for the board pack. Stage 7b company-wide appetite via `computeCompanyAppetite()` — deterministic worst-of rollup per FCP domain.
 
@@ -490,7 +500,7 @@ When adding features, ask: *which layer does this serve, and does it make the ne
 - **Knowledge Packs** — Importable regulatory knowledge bundles (.anton format)
 - **Engagement Workspace** — Full engagement lifecycle management
 - **Data Partnerships** — Roaring (Nordic entity data) + Dow Jones (screening) integrations
-- **150+ Expert Modules** — Across FCP, legal, healthcare, finance, PE/VC, education, NGO, creative
+- **550+ Expert Modules** — Across FCP, legal, healthcare, finance, PE/VC, education, NGO, creative
 - **School Mode** — Educational interface with teacher oversight
 - **Multi-format Export** — Every output exportable to md/docx/xlsx/pdf/pptx
 - **Output Transformation System** (Phase 1) — Post-hoc renderer registry + Transform Panel. Every module run produces Markdown + a structured JSON payload (via Haiku-based extractor, cached by content hash); renderers are declared in `server/services/renderer-registry.builtin.ts` and filtered per-session by content type + required fields. Built-in renderers: the 5 existing exports + Mermaid flowchart / Gantt / sequence / mindmap, SVG risk heatmap, executive one-pager, plain-language, board deck, standalone HTML, devil's advocate + regulator's-eye reviews. Adding a new format = a single file in `server/services/renderers/` + a registry entry.
