@@ -35,6 +35,10 @@ interface ExpiredPrediction {
 export const MAX_VERIFICATION_ATTEMPTS = 3;
 /** Gap between retries once a prediction has been tried at least once. */
 const RETRY_BACKOFF_DAYS = 7;
+/** Max age (days) a price row may be relative to the requested date before it's
+ *  considered too stale to grade a prediction against (≈5 trading days). Guards
+ *  against validating predictions with a feed frozen by MARKETS_FETCH_DISABLED. */
+export const PRICE_STALENESS_DAYS = 7;
 
 interface VerificationResult {
   predictionId: string;
@@ -110,16 +114,32 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   }
 
   /**
-   * Get price at a specific date (or closest available).
+   * Get price at a specific date (or the closest earlier available price),
+   * subject to a staleness bound.
+   *
+   * 2026-07-17: the old version returned the latest price with price_date <=
+   * date and NO staleness check. While MARKETS_FETCH_DISABLED freezes the feed
+   * (prices stuck at 2026-05-01), any prediction whose deadline falls AFTER the
+   * freeze got that frozen price stamped as its "end price" and was validated
+   * with a Brier score anyway — silently corrupting the very accuracy/calibration
+   * record the pillar exists to produce. Now, if the best available price is
+   * more than PRICE_STALENESS_DAYS older than the requested date, we return null.
+   * The caller treats null as unverifiable → the prediction stays 'expired'
+   * (retriable) instead of being graded against stale data.
    */
-  async function getPriceAtDate(symbol: string, date: string): Promise<number | null> {
-    const row = await db.get<{ close: number }>(
-      `SELECT close FROM market_price_normalized
+  async function getPriceAtDate(
+    symbol: string, date: string, maxStalenessDays = PRICE_STALENESS_DAYS,
+  ): Promise<number | null> {
+    const row = await db.get<{ close: number; price_date: string }>(
+      `SELECT close, price_date FROM market_price_normalized
        WHERE symbol = $1 AND price_date <= $2
        ORDER BY price_date DESC LIMIT 1`,
       symbol, date
     );
-    return row?.close ?? null;
+    if (!row) return null;
+    const gapMs = new Date(date).getTime() - new Date(row.price_date).getTime();
+    if (Number.isFinite(gapMs) && gapMs > maxStalenessDays * 86_400_000) return null;
+    return row.close;
   }
 
   /**

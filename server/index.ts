@@ -1499,12 +1499,17 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch { /* silent */ }
     });
 
-    // Daily pattern → signal-weight feedback (03:00 CET). Reads unapplied
-    // entries from market_pattern_detections and adjusts market_signal_weights
-    // with bounded multipliers. Pure arithmetic (no LLM) so runs even when
-    // MARKETS_THINKING_DISABLED is set — this is the loop the April audit
-    // flagged as the biggest closed-loop gap (M1 of effectiveness plan).
-    cron.schedule('0 3 * * *', async () => {
+    // ── Free (no-LLM, no-fetch) repair sweeps M1-M3/M5-M7 ────────────────
+    // Extracted into named functions (2026-07-17) so the same idempotent bodies
+    // run BOTH on their early-morning cron AND from the startup/07:30 catch-up.
+    // Previously these were inline crons at 03:00-06:30 CET with no catch-up —
+    // on a workstation that sleeps overnight (the actual deployment) they
+    // effectively never fired: 52k+ unprocessed rows sat stale, theses never
+    // closed. They are all idempotent, so an extra catch-up run is safe.
+
+    // M1: pattern → signal-weight feedback. Reads unapplied
+    // market_pattern_detections, adjusts market_signal_weights (bounded). No LLM.
+    async function sweepPatternWeightFeedback(): Promise<void> {
       try {
         const { createMarketPatternWeightFeedbackService } =
           await import('./services/market-pattern-weight-feedback-service.js');
@@ -1516,14 +1521,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) {
         console.error('[markets-feedback] pattern feedback error:', err instanceof Error ? err.message : err);
       }
-    }, MARKET_TZ);
+    }
 
-    // Daily prediction-attribution PnL compute (04:00 CET). Walks matured
-    // attributions (horizon elapsed or prediction validated), pulls historical
-    // prices at rebalance date + horizon date, fills subsequent_return and
-    // attribution_pnl. Pure DB + arithmetic — runs under every pause flag.
-    // M2 of the Markets effectiveness plan.
-    cron.schedule('0 4 * * *', async () => {
+    // M2: prediction-attribution PnL. Walks matured attributions, fills
+    // subsequent_return + attribution_pnl. Pure DB + arithmetic.
+    async function sweepAttributionPnL(): Promise<void> {
       try {
         const { createMarketPredictionAttributionService } =
           await import('./services/market-prediction-attribution-service.js');
@@ -1535,14 +1537,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) {
         console.error('[markets-attribution] pnl compute error:', err instanceof Error ? err.message : err);
       }
-    }, MARKET_TZ);
+    }
 
-    // Daily thesis lifecycle sweep (05:00 CET). Closes theses whose child
-    // predictions have all resolved (→ validated / invalidated), archives
-    // stale theses past 2× their horizon, and archives redundant theses that
-    // never gained atoms or predictions. Deterministic rules, no LLM — runs
-    // under MARKETS_THINKING_DISABLED. M3 of the effectiveness plan.
-    cron.schedule('0 5 * * *', async () => {
+    // M3: thesis lifecycle. Closes theses whose predictions all resolved,
+    // archives stale/redundant theses. Deterministic, no LLM.
+    async function sweepThesisLifecycle(): Promise<void> {
       try {
         const { createMarketThesisLifecycleService } =
           await import('./services/market-thesis-lifecycle-service.js');
@@ -1554,14 +1553,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) {
         console.error('[markets-thesis-lifecycle] sweep error:', err instanceof Error ? err.message : err);
       }
-    }, MARKET_TZ);
+    }
 
-    // Daily investigation lifecycle sweep (05:30 CET). Closes investigations
-    // whose linked why-chain has resolved to root cause, abandons older
-    // investigations superseded by a newer one on the same trigger, and
-    // abandons stale open ones past 90 days with no recorded progress.
-    // Deterministic rules, no LLM. M5 of the effectiveness plan.
-    cron.schedule('30 5 * * *', async () => {
+    // M5: investigation lifecycle. Closes resolved why-chains, abandons
+    // superseded/stale investigations. Deterministic, no LLM.
+    async function sweepInvestigationLifecycle(): Promise<void> {
       try {
         const { createMarketInvestigationLifecycleService } =
           await import('./services/market-investigation-lifecycle-service.js');
@@ -1573,19 +1569,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) {
         console.error('[markets-investigation-lifecycle] sweep error:', err instanceof Error ? err.message : err);
       }
-    }, MARKET_TZ);
+    }
 
-    // Daily scheduled rebalance sweep (06:00 CET). Previously runScheduledRebalances
-    // was exposed by the service but never called — only the prediction-driven
-    // path in workflow-orchestrator could trigger a rebalance, and that path
-    // is LLM-gated AND requires strong signals that the current prediction
-    // pool (21% accuracy) doesn't produce. The April audit found 1 rebalance
-    // ever across 5 active indexes as a result. This cron drives the time-
-    // based path (deterministic, no LLM) so indexes with 'weekly'/'monthly'/
-    // 'quarterly' frequencies actually run on schedule. Gate via
-    // MARKETS_AUTOREBALANCE_DISABLED for environments that want manual-only
-    // control. M6 of the effectiveness plan.
-    cron.schedule('0 6 * * *', async () => {
+    // M6: time-based scheduled rebalance sweep. Deterministic (no LLM); gated by
+    // MARKETS_AUTOREBALANCE_DISABLED for manual-only environments.
+    async function sweepScheduledRebalance(): Promise<void> {
       if (marketsAutorebalanceDisabled) return;
       try {
         const { createMarketIndexRebalanceService } =
@@ -1598,15 +1586,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) {
         console.error('[markets-rebalance-schedule] sweep error:', err instanceof Error ? err.message : err);
       }
-    }, MARKET_TZ);
+    }
 
-    // Daily market-data backlog triage (06:30 CET). Marks clearly-worthless
-    // unprocessed news items as is_processed=1 without LLM spend: stale
-    // (>30d), empty/short content, same-source duplicates within a day.
-    // Lets the backlog drain even under MARKETS_THINKING_DISABLED and keeps
-    // the extractor focused on recent, extractable items when thinking
-    // resumes. M7 of the effectiveness plan.
-    cron.schedule('30 6 * * *', async () => {
+    // M7: market-data backlog triage. Marks clearly-worthless unprocessed news
+    // (stale >30d / empty / short / same-source dup) is_processed=1. No LLM.
+    async function sweepBacklogTriage(): Promise<void> {
       try {
         const { createMarketDataBacklogTriageService } =
           await import('./services/market-data-backlog-triage-service.js');
@@ -1618,7 +1602,33 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) {
         console.error('[markets-backlog-triage] sweep error:', err instanceof Error ? err.message : err);
       }
-    }, MARKET_TZ);
+    }
+
+    // Run every free sweep once (catch-up entrypoint). Each has its own
+    // try/catch so one failure never blocks the rest.
+    async function runMarketsFreeSweeps(trigger: string): Promise<void> {
+      console.log(`[markets-free-sweeps] running M1-M7 (trigger: ${trigger})`);
+      await sweepPatternWeightFeedback();
+      await sweepAttributionPnL();
+      await sweepThesisLifecycle();
+      await sweepInvestigationLifecycle();
+      await sweepScheduledRebalance();
+      await sweepBacklogTriage();
+    }
+
+    // Primary early-morning cron schedule (fires on always-on hosts).
+    cron.schedule('0 3 * * *', () => { void sweepPatternWeightFeedback(); }, MARKET_TZ);
+    cron.schedule('0 4 * * *', () => { void sweepAttributionPnL(); }, MARKET_TZ);
+    cron.schedule('0 5 * * *', () => { void sweepThesisLifecycle(); }, MARKET_TZ);
+    cron.schedule('30 5 * * *', () => { void sweepInvestigationLifecycle(); }, MARKET_TZ);
+    cron.schedule('0 6 * * *', () => { void sweepScheduledRebalance(); }, MARKET_TZ);
+    cron.schedule('30 6 * * *', () => { void sweepBacklogTriage(); }, MARKET_TZ);
+
+    // Catch-up: also run all free sweeps at 12:00 CET (a time the workstation is
+    // provably up) and ~2min after boot, so a machine asleep 03:00-06:30 still
+    // gets them. Idempotent, so double-running on an always-on host is harmless.
+    cron.schedule('0 12 * * *', () => { void runMarketsFreeSweeps('1200-catchup'); }, MARKET_TZ);
+    setTimeout(() => { void runMarketsFreeSweeps('startup-catchup'); }, 120_000).unref();
 
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00 — external fetch (opt-in)
     scheduleSpending('0 8,15,21 * * 1-5', async () => {
