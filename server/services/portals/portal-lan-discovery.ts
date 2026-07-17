@@ -205,13 +205,21 @@ async function ingestPortal(
   // `portals` table for remote portals. The proxy layer (W2) is what makes
   // the portal visit/invoke route to the remote ANTON.
   //
-  // SECURITY: verify the peer-supplied descriptor is self-consistently signed
-  // before caching it (this cache is the trust root for Trusted-Stores pins). A
-  // tampered descriptor — signature/key/payload mismatch — is dropped, never
-  // cached. (This catches in-transit tampering of a legitimate peer's descriptor;
-  // it cannot vouch for a malicious peer's OWN self-signed descriptor — that is
-  // the registry/handshake's job.)
-  if (p.signature) {
+  // SECURITY (2026-07-17 hardening — this cache is the trust root for visits
+  // and Trusted-Stores pins, and the upsert used to be unconditional):
+  // (1) UNSIGNED descriptors are dropped. Previously `if (p.signature)` meant a
+  //     peer could skip verification entirely by omitting the signature and
+  //     still poison the cache for any address.
+  if (!p.signature) {
+    log.warn({ portalAddress: p.portalAddress, endpoint },
+      'dropping LAN-ingested descriptor: unsigned');
+    return;
+  }
+  // Verify the peer-supplied descriptor is self-consistently signed. A tampered
+  // descriptor — signature/key/payload mismatch — is dropped, never cached.
+  // (Self-consistency can't vouch for a malicious peer's OWN self-signed
+  // descriptor — the checks below + registry/handshake carry that.)
+  {
     const wire = (p.descriptor as { portal?: { publicKey?: unknown } })?.portal?.publicKey;
     try {
       if (typeof wire !== 'string') throw new Error('descriptor.portal.publicKey missing');
@@ -232,6 +240,33 @@ async function ingestPortal(
         'dropping LAN-ingested descriptor: could not verify signature');
       return;
     }
+  }
+  // (2) Never let a LAN peer claim an address WE own — a poisoned cache row
+  //     would redirect visits/pins for the operator's own portal to the peer.
+  const locallyOwned = await db.get<{ id: string }>(
+    `SELECT id FROM portals WHERE (name || '.' || namespace || '.portal') = ?`,
+    p.portalAddress,
+  );
+  if (locallyOwned) {
+    log.warn({ portalAddress: p.portalAddress, endpoint },
+      'dropping LAN-ingested descriptor: address is locally owned');
+    return;
+  }
+  // (3) Key continuity: refuse a silent signing-key change for a cached address.
+  //     A legitimate rotation needs the operator to clear the cache row (or the
+  //     registry/trusted-stores path, which verifies against the pinned key).
+  const cached = await db.get<{ signing_key_fingerprint: string | null; origin_endpoint: string | null }>(
+    `SELECT signing_key_fingerprint, origin_endpoint FROM portal_descriptor_cache WHERE portal_address = ?`,
+    p.portalAddress,
+  );
+  if (cached?.signing_key_fingerprint && p.signingKeyFingerprint
+      && cached.signing_key_fingerprint !== p.signingKeyFingerprint) {
+    log.warn({
+      portalAddress: p.portalAddress, endpoint,
+      cachedFingerprint: cached.signing_key_fingerprint, offeredFingerprint: p.signingKeyFingerprint,
+      cachedOrigin: cached.origin_endpoint,
+    }, 'dropping LAN-ingested descriptor: signing key differs from cached (possible address hijack; clear the cache row to accept a legitimate rotation)');
+    return;
   }
   await db.run(
     `INSERT INTO portal_descriptor_cache

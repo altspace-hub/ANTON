@@ -362,10 +362,18 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
   // ── Stage 4 — inherent scoring (deterministic) ─────────────────
 
   async function scoreInherent(
+    atlasId: string,
     threatPathId: string,
     scores: { exposure: Score1to5; threat: Score1to5; vulnerability: Score1to5; rationale?: string },
     actorUserId: string,
   ): Promise<{ inherent: AtlasInherentScoreRow; residual: AtlasResidualScoreRow | null }> {
+    // Tenancy scoping (2026-07-17): the route verifies access to atlasId, so the
+    // threat path MUST belong to that atlas — otherwise any authenticated caller
+    // could write scores into other users' atlases by guessing tpIds.
+    const owned = await db.get<{ id: string }>(
+      `SELECT id FROM atlas_threat_paths WHERE id = ? AND atlas_id = ?`, threatPathId, atlasId,
+    );
+    if (!owned) throw new Error('Threat path not found in this atlas');
     const inherent = calculateInherent(scores.exposure, scores.threat, scores.vulnerability);
     const id = `is_${randomUUID().slice(0, 12)}`;
     await db.run(
@@ -457,7 +465,15 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Stage 6 — residual recalculation (deterministic) ──────────
 
-  async function recalculateResidualForPath(threatPathId: string, actorUserId: string): Promise<AtlasResidualScoreRow | null> {
+  async function recalculateResidualForPath(threatPathId: string, actorUserId: string, expectedAtlasId?: string): Promise<AtlasResidualScoreRow | null> {
+    // expectedAtlasId is passed by route-level callers (tenancy scoping); internal
+    // callers reach here via mutations that already verified atlas ownership.
+    if (expectedAtlasId) {
+      const owned = await db.get<{ id: string }>(
+        `SELECT id FROM atlas_threat_paths WHERE id = ? AND atlas_id = ?`, threatPathId, expectedAtlasId,
+      );
+      if (!owned) throw new Error('Threat path not found in this atlas');
+    }
     const inherent = await db.get<{ inherent_score: Score1to5 }>(
       `SELECT inherent_score FROM atlas_inherent_scores WHERE threat_path_id = ?`,
       threatPathId,
@@ -546,13 +562,16 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     return row;
   }
 
-  async function approveAppetite(appetiteId: string, actorUserId: string): Promise<AtlasAppetiteStatementRow> {
+  async function approveAppetite(atlasId: string, appetiteId: string, actorUserId: string): Promise<AtlasAppetiteStatementRow> {
+    // Tenancy scoping (2026-07-17): approve only within the access-checked atlas.
     await db.run(
-      `UPDATE atlas_appetite_statements SET approved_by = ?, approved_at = NOW(), updated_at = NOW() WHERE id = ?`,
-      actorUserId, appetiteId,
+      `UPDATE atlas_appetite_statements SET approved_by = ?, approved_at = NOW(), updated_at = NOW() WHERE id = ? AND atlas_id = ?`,
+      actorUserId, appetiteId, atlasId,
     );
-    const row = await db.get<AtlasAppetiteStatementRow>(`SELECT * FROM atlas_appetite_statements WHERE id = ?`, appetiteId);
-    if (!row) throw new Error('Appetite not found');
+    const row = await db.get<AtlasAppetiteStatementRow>(
+      `SELECT * FROM atlas_appetite_statements WHERE id = ? AND atlas_id = ?`, appetiteId, atlasId,
+    );
+    if (!row) throw new Error('Appetite not found in this atlas');
     await events.logEvent({
       atlasId: row.atlas_id, event: 'appetite_approved', userId: actorUserId, subResourceId: appetiteId,
     });
@@ -619,9 +638,12 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Read helpers — full hydrated views ─────────────────────────
 
-  async function getThreatPathFull(threatPathId: string): Promise<ThreatPathFull | null> {
+  async function getThreatPathFull(threatPathId: string, expectedAtlasId?: string): Promise<ThreatPathFull | null> {
     const path = await db.get<AtlasThreatPathRow>(`SELECT * FROM atlas_threat_paths WHERE id = ?`, threatPathId);
     if (!path) return null;
+    // Tenancy scoping (2026-07-17): route callers pass the access-checked atlas id
+    // so a guessed tpId can't read another user's fully-hydrated path.
+    if (expectedAtlasId && path.atlas_id !== expectedAtlasId) return null;
     const exposures = await db.all<AtlasExposurePointRow>(
       `SELECT e.* FROM atlas_exposure_points e
        JOIN atlas_threat_path_exposures tpe ON tpe.exposure_point_id = e.id

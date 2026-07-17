@@ -147,6 +147,11 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
           method,
           headers,
           signal: AbortSignal.timeout(Number(config.timeout_ms ?? 10_000)),
+          // SSRF: never follow redirects — an allowed host could 302 to
+          // 169.254.169.254 or a private address, defeating assertSafeEgressUrl
+          // (which only validates the INITIAL url). Same pattern as
+          // mission-delivery.ts.
+          redirect: 'manual',
         };
         if (['POST', 'PUT', 'PATCH'].includes(method) && toolCall.params.body) {
           fetchOpts.body = JSON.stringify(toolCall.params.body);
@@ -154,6 +159,13 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
 
         await assertSafeEgressUrl(fullUrl); // SSRF guard — block private/link-local/metadata targets
         const response = await fetch(fullUrl, fetchOpts);
+        if (response.status >= 300 && response.status < 400) {
+          return {
+            success: false, connectorName: connector.name,
+            data: null, error: `Redirect (HTTP ${response.status}) not followed — SSRF guard; configure the final URL directly`,
+            durationMs: Date.now() - startTime,
+          };
+        }
         const contentType = response.headers.get('content-type') ?? '';
 
         if (contentType.includes('json')) {
@@ -243,7 +255,15 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
           headers,
           body: JSON.stringify({ action: toolCall.action, params: toolCall.params, timestamp: Date.now() }),
           signal: AbortSignal.timeout(Number(config.timeout_ms ?? 10_000)),
+          redirect: 'manual', // SSRF: don't follow a redirect to a private target
         });
+        if (response.status >= 300 && response.status < 400) {
+          return {
+            success: false, connectorName: connector.name,
+            data: null, error: `Redirect (HTTP ${response.status}) not followed — SSRF guard; configure the final URL directly`,
+            durationMs: Date.now() - startTime,
+          };
+        }
 
         result = response.headers.get('content-type')?.includes('json')
           ? await response.json() : await response.text();
@@ -258,10 +278,14 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
         };
       }
 
-      // Truncate result if too large
+      // Truncate result if too large. NOTE: never JSON.parse a sliced blob —
+      // slicing serialized JSON at an arbitrary offset is invalid JSON, so the
+      // old `JSON.parse(slice + '..."')` threw for essentially every >8KB
+      // response and turned it into success:false (2026-07-17 fix). Return a
+      // marked preview instead so the agent still sees the leading content.
       const resultStr = JSON.stringify(result);
       const truncated = resultStr.length > MAX_RESULT_LENGTH
-        ? JSON.parse(resultStr.slice(0, MAX_RESULT_LENGTH) + '..."')
+        ? { _truncated: true, totalLength: resultStr.length, preview: resultStr.slice(0, MAX_RESULT_LENGTH) }
         : result;
 
       // Update last_used_at

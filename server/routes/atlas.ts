@@ -272,7 +272,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
     try {
       const id = String(req.params.id);
       if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
-      const threatPath = await service.getThreatPathFull(String(req.params.tpId));
+      const threatPath = await service.getThreatPathFull(String(req.params.tpId), id);
       if (!threatPath) { res.status(404).json({ error: 'Threat path not found' }); return; }
       res.json({ success: true, threatPath });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
@@ -340,7 +340,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       }).strict();
       const parsed = schema.safeParse(req.body);
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed' }); return; }
-      const result = await service.scoreInherent(String(req.params.tpId), parsed.data as never, (req as AuthedRequest).user!.id);
+      const result = await service.scoreInherent(id, String(req.params.tpId), parsed.data as never, (req as AuthedRequest).user!.id);
       res.json({ success: true, ...result });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
   });
@@ -397,7 +397,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
     try {
       const id = String(req.params.id);
       if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
-      const residual = await service.recalculateResidualForPath(String(req.params.tpId), (req as AuthedRequest).user!.id);
+      const residual = await service.recalculateResidualForPath(String(req.params.tpId), (req as AuthedRequest).user!.id, id);
       res.json({ success: true, residual });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
   });
@@ -435,7 +435,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
     try {
       const id = String(req.params.id);
       if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
-      const appetite = await service.approveAppetite(String(req.params.appetiteId), (req as AuthedRequest).user!.id);
+      const appetite = await service.approveAppetite(id, String(req.params.appetiteId), (req as AuthedRequest).user!.id);
       res.json({ success: true, appetite });
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
   });

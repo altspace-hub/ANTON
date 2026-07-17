@@ -329,7 +329,7 @@ export async function importAtlasBundle(
     if (!p.inherent) continue;
     const tpId = pathIdByCode.get(p.path_code);
     if (!tpId) continue;
-    await service.scoreInherent(tpId, {
+    await service.scoreInherent(atlas.id, tpId, {
       exposure: p.inherent.exposure_score as Score1to5,
       threat: p.inherent.threat_score as Score1to5,
       vulnerability: p.inherent.vulnerability_score as Score1to5,

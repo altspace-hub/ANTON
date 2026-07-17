@@ -145,7 +145,11 @@ export async function executeApiCall(
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let res: Response;
   try {
-    res = await fetch(url.toString(), { method, headers, body, signal: ctrl.signal });
+    // SSRF: redirect:'manual' — the egress guard validates only the INITIAL
+    // url; a compromised allowed host could 302 to a private/metadata address
+    // and the default 'follow' would take us there (mission-delivery.ts is the
+    // reference pattern).
+    res = await fetch(url.toString(), { method, headers, body, signal: ctrl.signal, redirect: 'manual' });
   } catch (err) {
     clearTimeout(timer);
     const msg = err instanceof Error ? err.message : String(err);
@@ -153,6 +157,10 @@ export async function executeApiCall(
     return failure(startedAt, `Transport error: ${msg}`);
   }
   clearTimeout(timer);
+  if (res.status >= 300 && res.status < 400) {
+    log.warn({ missionId: mission.id, taskId: task.id, url: redactedUrl, status: res.status }, 'api_call_redirect_blocked');
+    return failure(startedAt, `Redirect (HTTP ${res.status}) not followed — SSRF guard; configure the final URL directly`);
+  }
 
   // ── Read response with byte cap ─────────────────────────────────────────
   const reader = res.body?.getReader();
