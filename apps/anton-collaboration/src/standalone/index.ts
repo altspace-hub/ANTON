@@ -64,6 +64,8 @@ import { HttpMailbox } from '../main/relay/mailbox-client.js';
 import { taskRouter } from '../main/relay/task-router.js';
 import { walletRouter } from '../main/relay/wallet-router.js';
 import { composeRouters } from '../main/relay/compose-router.js';
+import { OwnerRegistry, loadOrMintPairingSecret, ownerGate } from '../main/relay/owner-gate.js';
+import { EncryptedKeyStorage, parseKeyEncryptionKey } from '../main/encrypted-storage.js';
 import { AgentPayClient } from '../main/relay/agent-pay-client.js';
 
 function num(env: string | undefined): number | undefined {
@@ -81,10 +83,14 @@ async function main(): Promise<void> {
   const discovery: DiscoveryConfig | undefined = relayBase ? { base: relayBase } : undefined;
   const buyerContactHash = process.env.ANTON_COLLAB_CONTACT_HASH?.trim();
 
-  // Durable store for the signing identity + the agreement rows.
+  // Durable store for the signing identity + the agreement rows. The signing
+  // identity + phone pairing secret are AES-256-GCM-wrapped at rest when
+  // ANTON_COLLAB_KEY_ENCRYPTION_KEY (64 hex chars) is set — legacy plaintext
+  // rows migrate on first read; without the key a one-time warning is logged.
   const storeDir = process.env.ANTON_COLLAB_STORE_DIR?.trim()
     || path.join(os.homedir(), '.anton-collaboration', 'store');
-  const storage = new FileStorageBackend(storeDir);
+  const keyEncKey = parseKeyEncryptionKey(process.env.ANTON_COLLAB_KEY_ENCRYPTION_KEY);
+  const storage = new EncryptedKeyStorage(new FileStorageBackend(storeDir), keyEncKey, log);
   const identity = new AgreementIdentity(storage);
   const agreementStore = new AgreementStore(storage);
   const engine = new AgreementEngine(agreementStore, identity);
@@ -245,6 +251,14 @@ async function main(): Promise<void> {
   // wallet THROUGH the relay (no ANTON-instance bridge). The relayPeer poll loop
   // is not a Fastify route, so it starts after listen().
   let relayPeer: RelayPeer | undefined;
+  // Owner gating (2026-07-17): the pair code carries a persistent secret; only
+  // phones that claimed it may use the task inbox / wallet view. Every commerce
+  // counterparty necessarily holds the agent's pubkey, so pubkey-binding alone
+  // must never authorize the phone channel. ANTON_COLLAB_PHONE_OPEN=true
+  // restores the old open behavior (fixtures/tests only).
+  const phoneOwners = new OwnerRegistry(storage);
+  const pairSecret = await loadOrMintPairingSecret(storage);
+  const phoneOpen = process.env.ANTON_COLLAB_PHONE_OPEN === 'true';
   if (phoneChannelOn) {
     const mailbox = new HttpMailbox(phoneRelayBase, {
       ...(process.env.ANTON_COLLAB_RELAY_API_KEY ? { apiKey: process.env.ANTON_COLLAB_RELAY_API_KEY } : {}),
@@ -253,7 +267,8 @@ async function main(): Promise<void> {
     // The phone channel serves the human↔agent TASK INBOX + the read-only WALLET
     // VIEW — NOT the agent↔agent commerce verbs (those stay on the local JSON-RPC
     // for the agent's brain). taskRouter first so it answers ping.
-    const router = composeRouters(taskRouter(tasks), walletRouter(() => payClient));
+    const inner = composeRouters(taskRouter(tasks), walletRouter(() => payClient));
+    const router = phoneOpen ? inner : ownerGate(phoneOwners, () => pairSecret, inner);
     relayPeer = new RelayPeer(relayId, mailbox, storage, router);
     relayPeer.start(Number(process.env.ANTON_COLLAB_PHONE_POLL_MS) || 4000);
   }
@@ -268,10 +283,12 @@ async function main(): Promise<void> {
   log(` Buyer hash: ${buyerContactHash ?? '(anonymous — set ANTON_COLLAB_CONTACT_HASH)'}`);
   log(` Sign key:   ${agreementPubkey.slice(0, 16)}…  (Ed25519 agreement identity)`);
   log(` Agent addr: ${relayId.contactHash}   ← a phone pairs to THIS (scan the QR / paste the pub)`);
-  log(` Pair code:  antonagent:pair?pub=${relayId.edPubHex}&relay=${encodeURIComponent(phoneRelayBase)}`);
+  log(` Pair code:  antonagent:pair?pub=${relayId.edPubHex}&relay=${encodeURIComponent(phoneRelayBase)}&s=${pairSecret}`);
   log(` Phone chan: ${phoneChannelOn ? `ON — polling ${phoneRelayBase}` : 'OFF (set ANTON_COLLAB_PHONE_RELAY or ANTON_COLLAB_PHONE_CHANNEL=on)'}`);
+  log(` Phone auth: ${phoneOpen ? 'OPEN (ANTON_COLLAB_PHONE_OPEN=true — no owner gate; fixtures only)' : `owner-gated — ${(await phoneOwners.list()).length} paired phone(s); new phones must scan the CURRENT pair code (it carries the pairing secret)`}`);
   log(` Wallet view:${payBearer ? ` ON — proxying ${payUrl} (read-only; spends stay gated in Agent Pay)` : ' OFF (set ANTON_COLLAB_AGENT_PAY_BEARER to let the phone view the wallet)'}`);
   log(` Store:      ${storeDir}`);
+  log(` Key at rest:${keyEncKey ? ' AES-256-GCM (ANTON_COLLAB_KEY_ENCRYPTION_KEY)' : ' PLAINTEXT — set ANTON_COLLAB_KEY_ENCRYPTION_KEY (64 hex chars) to encrypt the signing identity'}`);
   log(` Approval:   ${approvalMode === 'web' ? `BROWSER — each committing verb prints a one-time confirm URL to THIS terminal${webAutoOpen ? ' (auto-open)' : ''}` : 'terminal y/N prompt'}`);
   log(` Dashboard:  ${dashboardOn ? `http://127.0.0.1:${port}/   (settings + history, read-only)` : 'off'}`);
   if (dashActions) {
