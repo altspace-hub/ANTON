@@ -24,6 +24,7 @@ import { Mistral } from '@mistralai/mistralai';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
+import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
 import type { CustomModelConfig } from '../routes/settings.js';
 import { AzureOpenAIAdapter, type AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
@@ -89,17 +90,10 @@ abstract class BaseAdapter {
    * Claude: budget_tokens, GPT: model variant, Gemini: mode toggle, etc.
    */
   protected mapThinkingBudget(thinking: ThinkingLevel): number {
-    // For older models (Sonnet 4.5, Haiku) that use budget_tokens approach.
-    // Sonnet 4.6 now uses adaptive thinking instead (see AnthropicAdapter below).
-    const budgets: Record<ThinkingLevel, number> = {
-      quick: 0,
-      think: 4096,
-      think_hard: 16384,
-      investigate: 32768,
-      plan_first: 32768,
-      deep_investigate: 32768,
-    };
-    return budgets[thinking];
+    // Older Anthropic models (Sonnet 4.5, Haiku, Opus 4.6/4.7) use budget_tokens.
+    // Adaptive models are handled separately (see AnthropicAdapter). Budgets come
+    // from the single-source thinking-map.ts; null (quick = off) → 0 so callers skip.
+    return anthropicBudgetTokens(thinking) ?? 0;
   }
 }
 
@@ -129,20 +123,17 @@ class AnthropicAdapter extends BaseAdapter {
       temperature: this.mapTemperature(creativity, 1.0),
     };
 
-    // Claude 4.6 models: adaptive thinking with effort levels (no budget_tokens)
-    if (isOpus || isSonnet46) {
-      const effortMap: Record<string, string> = {
-        quick: 'low', think: 'medium', think_hard: 'high',
-        investigate: 'max', plan_first: 'max', deep_investigate: 'max',
-      };
-      const effort = effortMap[thinking] ?? 'medium';
+    // Anthropic thinking (single-source thinking-map.ts): adaptive effort for
+    // Fable 5 / Opus 4.8 / Sonnet 4.6; budget_tokens (capped below max_tokens) for
+    // all other Claude models (Sonnet 4.5, Haiku, Opus 4.6/4.7).
+    if (anthropicUsesAdaptive(req.model)) {
       (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
-      (params as unknown as Record<string, unknown>).output_config = { effort };
-    } else if (req.model.includes('sonnet') || req.model.includes('haiku')) {
-      // Sonnet 4.5, Haiku: budget_tokens approach
+      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking) };
+    } else {
       const budget = this.mapThinkingBudget(thinking);
       if (budget > 0) {
-        params.thinking = { type: 'enabled', budget_tokens: budget };
+        const capped = Math.min(budget, params.max_tokens - 4096);
+        if (capped >= 1024) params.thinking = { type: 'enabled', budget_tokens: capped };
       }
     }
 
@@ -188,19 +179,15 @@ class AnthropicAdapter extends BaseAdapter {
       stream: true,
     };
 
-    // Claude 4.6 models: adaptive thinking with effort levels
-    if (isOpusStream || isSonnet46Stream) {
-      const effortMap: Record<string, string> = {
-        quick: 'low', think: 'medium', think_hard: 'high',
-        investigate: 'max', plan_first: 'max', deep_investigate: 'max',
-      };
-      const effort = effortMap[thinking] ?? 'medium';
+    // Anthropic thinking (single-source thinking-map.ts) — see sendRequest above.
+    if (anthropicUsesAdaptive(req.model)) {
       (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
-      (params as unknown as Record<string, unknown>).output_config = { effort };
-    } else if (req.model.includes('sonnet') || req.model.includes('haiku')) {
+      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking) };
+    } else {
       const budget = this.mapThinkingBudget(thinking);
       if (budget > 0) {
-        params.thinking = { type: 'enabled', budget_tokens: budget };
+        const capped = Math.min(budget, params.max_tokens - 4096);
+        if (capped >= 1024) params.thinking = { type: 'enabled', budget_tokens: capped };
       }
     }
 

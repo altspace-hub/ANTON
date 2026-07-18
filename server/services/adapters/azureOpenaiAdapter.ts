@@ -9,6 +9,7 @@ import { AzureOpenAI } from 'openai';
 import type OpenAI from 'openai';
 import type { Response } from 'express';
 import type { ThinkingLevel } from '../../../src/lib/types.js';
+import { azureReasoningEffort } from '../thinking-map.js';
 import type { UnifiedLLMRequest, UnifiedLLMResponse } from '../model-adapter.js';
 
 // ── Configuration ──────────────────────────────────────────
@@ -37,16 +38,8 @@ export interface AzureOpenAIStreamParams {
   };
 }
 
-// ── Reasoning Effort Mapping ───────────────────────────────
-
-const REASONING_EFFORT_MAP: Record<ThinkingLevel, 'low' | 'medium' | 'high'> = {
-  quick: 'low',
-  think: 'medium',
-  think_hard: 'high',
-  investigate: 'high',
-  plan_first: 'high',
-  deep_investigate: 'high',
-};
+// Reasoning-effort mapping lives in the single-source thinking-map.ts
+// (azureReasoningEffort) — shared with the other providers' thinking logic.
 
 // ── Temperature Mapping ────────────────────────────────────
 
@@ -105,7 +98,7 @@ export async function streamAzureOpenAI(
 
   // Reasoning models: use reasoning_effort, no temperature
   if (isReasoning) {
-    const effort = REASONING_EFFORT_MAP[params.thinkingLevel || 'think'];
+    const effort = azureReasoningEffort(params.thinkingLevel || 'think');
     body.reasoning_effort = effort;
   } else {
     body.temperature = params.temperature;
@@ -254,7 +247,7 @@ export class AzureOpenAIAdapter {
 
     // Reasoning models: reasoning_effort instead of temperature
     if (this.isReasoningModel) {
-      const effort = REASONING_EFFORT_MAP[req.thinking || 'think'];
+      const effort = azureReasoningEffort(req.thinking || 'think');
       body.reasoning_effort = effort;
     } else {
       body.temperature = mapTemperature(creativity, 2.0);
@@ -350,7 +343,7 @@ export class AzureOpenAIAdapter {
 
     // Reasoning models: reasoning_effort instead of temperature
     if (this.isReasoningModel) {
-      const effort = REASONING_EFFORT_MAP[req.thinking || 'think'];
+      const effort = azureReasoningEffort(req.thinking || 'think');
       params.reasoning_effort = effort;
     } else {
       params.temperature = mapTemperature(creativity, 2.0);

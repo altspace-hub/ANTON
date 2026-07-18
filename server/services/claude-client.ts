@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { Response } from 'express';
+import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -137,32 +138,17 @@ function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
   // budget_tokens is DEPRECATED on Opus 4.8 and unnecessary on Sonnet 4.6 when using adaptive.
   // Fable 5 additionally 400s on an explicit thinking {type:'disabled'} — we never send it
   // (the non-adaptive fallback below returns {} which omits the param entirely).
-  if (model === 'claude-fable-5' || model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6') {
-    const effortMap: Record<ThinkingLevel, string> = {
-      quick: 'low',
-      think: 'medium',
-      think_hard: 'high',
-      investigate: 'max',
-      plan_first: 'max',
-      deep_investigate: 'max',
-    };
-    const effort = effortMap[level];
+  // The (model→adaptive?) test and the effort/budget maps are the single-source
+  // thinking-map.ts (shared with model-adapter.ts) — see that file for the drift fix.
+  if (anthropicUsesAdaptive(model)) {
     return {
       thinking: { type: 'adaptive' as const },
-      output_config: { effort: effort as 'low' | 'medium' | 'high' | 'max' },
+      output_config: { effort: anthropicEffort(level) },
     };
   }
 
   // Sonnet 4.5 / Haiku: budget_tokens approach
-  const budgetMap: Record<ThinkingLevel, number | null> = {
-    quick: null,
-    think: 4096,
-    think_hard: 10000,
-    investigate: 32768,
-    plan_first: 32768,
-    deep_investigate: 32768,
-  };
-  const budget = budgetMap[level];
+  const budget = anthropicBudgetTokens(level);
   if (budget === null) return {};
   // Safety: budget_tokens must be < max_tokens.  Cap to leave 4096 headroom for text output.
   const ceiling = getOutputCeiling(model);
@@ -214,7 +200,7 @@ export async function streamToResponse(
 ): Promise<void> {
   const anthropic = getClient();
   const thinkingConfig = config.nativeReasoningEnabled
-    ? ((config.model === 'claude-fable-5' || config.model === 'claude-opus-4-8' || config.model === 'claude-sonnet-4-6')
+    ? (anthropicUsesAdaptive(config.model)
         ? { thinking: { type: 'adaptive' as const }, output_config: { effort: 'max' as const } }
         : { thinking: { type: 'enabled' as const, budget_tokens: 32768 } })
     : getThinkingConfig(config.thinking, config.model);

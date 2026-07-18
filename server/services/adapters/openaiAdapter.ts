@@ -3,6 +3,8 @@
 // ═══════════════════════════════════════════════════════════
 
 import type { Response } from 'express';
+import type { ThinkingLevel } from '../../../src/lib/types.js';
+import { isOpenAIReasoningModel, openaiReasoningEffort } from '../thinking-map.js';
 
 export interface OpenAIStreamParams {
   model: string;
@@ -11,6 +13,8 @@ export interface OpenAIStreamParams {
   temperature: number;
   maxTokens?: number;
   nativeReasoningEnabled?: boolean;
+  /** ANTON thinking level — maps to reasoning_effort on o-series reasoning models. */
+  thinkingLevel?: ThinkingLevel;
   seed?: number;
 }
 
@@ -21,23 +25,27 @@ export async function streamOpenAI(
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
 
-  // Switch to thinking model variant when native reasoning is enabled
-  let modelToUse = params.model;
-  if (params.nativeReasoningEnabled && !params.model.includes('-thinking')) {
-    modelToUse = `${params.model}-thinking`;
-  }
-
   const body: Record<string, unknown> = {
-    model: modelToUse,
+    model: params.model,
     messages: [
       { role: 'system', content: params.system },
       ...params.messages,
     ],
-    temperature: params.temperature,
-    max_tokens: params.maxTokens || 8192,
     stream: true,
     stream_options: { include_usage: true },
   };
+
+  // o-series reasoning models take reasoning_effort, reject temperature, and use
+  // max_completion_tokens. Everything else is a standard chat completion. (The old
+  // code appended a "-thinking" suffix to the model id, which is not a valid OpenAI
+  // model and 404'd whenever native reasoning was enabled.)
+  if (isOpenAIReasoningModel(params.model)) {
+    body.reasoning_effort = openaiReasoningEffort(params.thinkingLevel ?? 'think');
+    body.max_completion_tokens = params.maxTokens || 8192;
+  } else {
+    body.temperature = params.temperature;
+    body.max_tokens = params.maxTokens || 8192;
+  }
 
   // Add seed if provided for reproducible outputs
   if (params.seed !== undefined) {

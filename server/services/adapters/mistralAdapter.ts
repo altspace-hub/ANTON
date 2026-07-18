@@ -11,6 +11,7 @@ import {
   JSON_ONLY_NUDGE,
   type ClaudeToolLike,
 } from './provider-extras.js';
+import { mistralUsesReasoning } from '../thinking-map.js';
 
 export interface MistralStreamParams {
   model: string;
@@ -51,16 +52,14 @@ function resolveModel(model: string, thinkingLevel?: string, nativeReasoningEnab
   }
 
   // Thinking level escalation — only switch to Magistral for investigate+ levels
-  // think_hard stays on the same model (Mistral Large/Medium/Small are already capable)
-  if (thinkingLevel) {
-    const reasoningLevels = ['investigate', 'plan_first', 'deep_investigate'];
-    if (reasoningLevels.includes(thinkingLevel)) {
-      if (model === 'mistral-large-latest' || model === 'mistral-medium-latest') {
-        return { model: 'magistral-medium-latest', useReasoning: true };
-      }
-      if (model === 'mistral-small-latest') {
-        return { model: 'magistral-small-latest', useReasoning: true };
-      }
+  // (mistralUsesReasoning, single-source thinking-map.ts). think_hard stays on the
+  // same model (Mistral Large/Medium/Small are already capable).
+  if (thinkingLevel && mistralUsesReasoning(thinkingLevel)) {
+    if (model === 'mistral-large-latest' || model === 'mistral-medium-latest') {
+      return { model: 'magistral-medium-latest', useReasoning: true };
+    }
+    if (model === 'mistral-small-latest') {
+      return { model: 'magistral-small-latest', useReasoning: true };
     }
   }
 
