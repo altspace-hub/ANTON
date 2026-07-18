@@ -29,6 +29,7 @@ import { createSellerQuoter, type SellerQuoter } from './seller-quoter.js';
 import { makeQuoterDbDeps } from './auto-quote-config-service.js';
 import { createCallChatQuoteLLM } from './seller-quoter-llm.js';
 import { createCallChatQuoteReviewer } from './seller-quoter-review.js';
+import { isDoubleCheckEnabledSync, getRoutedVerifierModelSync } from '../verifier-model.js';
 import { createAppCheckpointService } from '../app-checkpoint-service.js';
 import { createPortalDatabaseService, type PortalDatabaseService } from './portal-database-service.js';
 import { createPortalRenderer, type PortalRenderer } from './portal-renderer.js';
@@ -394,7 +395,13 @@ export function createPortalHandler(
   // independent model scrutinises every auto-quote (and the untrusted inquiry) for
   // no-go zones / manipulation / anomalies and routes flagged quotes to a human.
   // Off by default. Use a model from a DIFFERENT provider than ANTON_AUTOQUOTE_MODEL.
-  const reviewModel = (process.env.ANTON_AUTOQUOTE_REVIEW_MODEL || '').trim();
+  // Reviewer model resolution, in precedence order:
+  //   1. Settings toggle (Settings → Double-check): double_check_enabled + verifier_model
+  //      — the UI-configurable path (default OFF, verifier defaults to Haiku).
+  //   2. Legacy ANTON_AUTOQUOTE_REVIEW_MODEL env var — kept for backwards-compat.
+  // Off when neither is set.
+  const settingModel = isDoubleCheckEnabledSync() ? getRoutedVerifierModelSync() : '';
+  const reviewModel = settingModel || (process.env.ANTON_AUTOQUOTE_REVIEW_MODEL || '').trim();
   const reviewPolicy = (process.env.ANTON_AUTOQUOTE_REVIEW_POLICY || '').trim();
   if (reviewModel && reviewModel === (process.env.ANTON_AUTOQUOTE_MODEL || 'claude-haiku-4-5-20251001').trim()) {
     log.warn({ model: reviewModel },
