@@ -709,7 +709,7 @@ export default function ModulePage() {
           )}
 
           {/* AI Controls */}
-          <ThinkingControls value={thinking} onChange={setThinking} />
+          <ThinkingControls value={thinking} onChange={setThinking} model={model} />
           <ModelSelector value={model} onChange={setModel} />
 
           {/* Model recommendation (Wave 3.7) — provider-aware suggestion with apply-on-click */}

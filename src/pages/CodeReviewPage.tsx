@@ -426,6 +426,7 @@ export default function CodeReviewPage() {
               <ThinkingControls
                 value={thinking}
                 onChange={(v: ThinkingLevel) => setThinking(v)}
+                model={model}
               />
             </div>
 

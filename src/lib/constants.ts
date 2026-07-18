@@ -3764,6 +3764,37 @@ export const MODELS: ModelInfo[] = [
 ];
 
 /**
+ * How finely a model's provider honours the six thinking levels — mirrors the
+ * backend thinking-map.ts classifier so the UI can tell the truth about levels a
+ * model won't fully honour. Frontend-only display concern (not fetched).
+ *   full     — every level maps to a distinct setting (Anthropic).
+ *   effort3  — three reasoning-effort buckets (Azure reasoning / OpenAI o-series).
+ *   threshold— reasoning engages above a threshold level (Mistral → Magistral).
+ *   binary   — reasoning is on/off only (OpenAI/Gemini native toggle).
+ *   none     — thinking level has no effect (Ollama, generic compat endpoints).
+ */
+export type ThinkingGranularity = 'full' | 'effort3' | 'threshold' | 'binary' | 'none';
+
+/** Resolve a model id (built-in, or an ollama:/compat:/azure: prefix) to its provider. */
+export function providerForModelId(modelId: string): string {
+  if (modelId.startsWith('ollama:')) return 'ollama';
+  if (modelId.startsWith('compat:')) return 'compat';
+  if (modelId.startsWith('azure:')) return 'azure';
+  return MODELS.find((m) => m.id === modelId)?.provider ?? 'unknown';
+}
+
+export function thinkingGranularity(provider?: string): ThinkingGranularity {
+  switch (provider) {
+    case 'anthropic': return 'full';
+    case 'azure': return 'effort3';
+    case 'mistral': return 'threshold';
+    case 'openai':
+    case 'google': return 'binary';
+    default: return 'none';
+  }
+}
+
+/**
  * Per-million input/output pricing for a model id, from the MODELS source of
  * truth — so frontend cost displays never drift from the model catalogue.
  * Falls back to Opus 4.8 pricing for an unknown id (matches prior behaviour).

@@ -58,7 +58,7 @@ export default function EngagementExecution({ onInputChange }: Props) {
       <div className="flex items-start gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal-soft p-2.5">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-adv-teal" />
         <p className="text-[11px] leading-relaxed text-adv-gray">
-          Upload the engagement letter as a document. Claude will parse it into scope items and analyze each systematically.
+          Upload the engagement letter as a document. The AI will parse it into scope items and analyze each systematically.
         </p>
       </div>
 

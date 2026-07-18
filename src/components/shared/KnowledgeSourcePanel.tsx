@@ -52,15 +52,15 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         <span className="text-sm font-medium text-adv-off-white">Knowledge Sources</span>
         <HelpTooltip
           wide
-          text={"Controls where Claude gets its reference material.\n\n• Claude's knowledge — built-in training data + optional live web search for the latest regulatory publications.\n• Online links — paste URLs to specific regulations; Claude reads them directly.\n• Local folders — point to folders on your computer containing client documents, regulation texts, or policy files.\n• Combined mode — use local documents alongside Claude's knowledge. Best for gap analysis: compare client docs against regulatory requirements.\n\nYou can enable multiple sources at once. Token usage is shown below."}
+          text={"Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data + optional live web search for the latest regulatory publications.\n• Online links — paste URLs to specific regulations; the model reads them directly.\n• Local folders — point to folders on your computer containing client documents, regulation texts, or policy files.\n• Combined mode — use local documents alongside the model's knowledge. Best for gap analysis: compare client docs against regulatory requirements.\n\nYou can enable multiple sources at once. Token usage is shown below."}
         />
       </div>
 
-      {/* Mode 1: Claude Knowledge */}
+      {/* Mode 1: Model Knowledge (config key stays `claudeKnowledge`) */}
       <SourceCard
         icon={<Brain className="h-4 w-4" />}
-        title="Claude's Own Knowledge"
-        description="Claude uses its built-in knowledge of regulations, guidelines, and legal frameworks."
+        title="The Model's Own Knowledge"
+        description="The model uses its built-in knowledge of regulations, guidelines, and legal frameworks."
         enabled={claudeKnowledge.enabled}
         onToggle={(v) => update('modes.claudeKnowledge.enabled', v)}
       >
@@ -72,7 +72,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
             className="rounded border-adv-gray-med accent-adv-teal"
           />
           <Globe className="h-3 w-3" />
-          Enable web search (Claude searches the internet for latest publications)
+          Enable web search (the model searches the internet for latest publications)
         </label>
         <div className="mt-2">
           <label className="text-[11px] text-adv-gray">Focus area (optional):</label>
@@ -335,7 +335,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
       <SourceCard
         icon={<Combine className="h-4 w-4" />}
         title="Combined: Search + Local Documents"
-        description="Claude uses its knowledge AND your local documents. Best for comparing client docs against regulations."
+        description="The model uses its knowledge AND your local documents. Best for comparing client docs against regulations."
         enabled={combinedMode.enabled}
         onToggle={(v) => update('modes.combinedMode.enabled', v)}
       >
@@ -348,7 +348,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
                 onChange={() => update('modes.combinedMode.priority', p)}
                 className="accent-adv-teal"
               />
-              {p === 'local_first' ? 'Local docs first' : p === 'merged' ? 'Merged' : 'Claude first'}
+              {p === 'local_first' ? 'Local docs first' : p === 'merged' ? 'Merged' : 'Model first'}
             </label>
           ))}
         </div>

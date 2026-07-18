@@ -510,7 +510,7 @@ export default function CodingLargeArchitecturePage() {
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-adv-gray">
               Analysis Depth
             </h3>
-            <ThinkingControls value={thinking} onChange={setThinking} />
+            <ThinkingControls value={thinking} onChange={setThinking} model={model} />
           </div>
 
           {/* Advanced Settings (collapsible) */}

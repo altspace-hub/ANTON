@@ -1,7 +1,17 @@
 import { memo } from 'react';
 import { Zap, Brain, Microscope, SearchCode, ListChecks, FlaskConical } from 'lucide-react';
-import type { ThinkingLevel } from '@/lib/types';
+import type { ThinkingLevel, ModelId } from '@/lib/types';
+import { providerForModelId, thinkingGranularity, type ThinkingGranularity } from '@/lib/constants';
 import HelpTooltip from './HelpTooltip';
+
+// Honest note about how the selected model's provider honours thinking levels
+// (mirrors the backend thinking-map granularity). 'full' (Anthropic) needs none.
+const GRANULARITY_NOTE: Partial<Record<ThinkingGranularity, string>> = {
+  effort3: 'This model maps thinking to three reasoning-effort levels — finer levels merge.',
+  threshold: 'On this model, deeper reasoning engages at Investigate and above.',
+  binary: 'This model reasons on or off — levels above Think Hard behave similarly.',
+  none: "This model doesn't use thinking levels — they won't change its output.",
+};
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Zap,
@@ -36,18 +46,22 @@ const levels: Array<{
 interface ThinkingControlsProps {
   value: ThinkingLevel;
   onChange: (value: ThinkingLevel) => void;
+  /** Optional selected model — enables an honest note about how it honours levels. */
+  model?: ModelId;
 }
 
-function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
+function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
+  const granularity = model ? thinkingGranularity(providerForModelId(model)) : 'full';
+  const note = granularity !== 'full' ? GRANULARITY_NOTE[granularity] : undefined;
   return (
     <div>
       <div className="mb-2 flex items-center gap-1.5">
         <label className="text-sm font-medium text-adv-off-white">
-          How deeply should Claude analyze?
+          How deeply should the model analyze?
         </label>
         <HelpTooltip
           wide
-          text={"Controls Claude's reasoning depth, time, and cost.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic. Uses iterative phases.\n• Investigate — thorough multi-phase investigation. Ideal for gap analysis and legal research.\n• Plan First — Claude outlines its approach before writing. Best for complex multi-deliverable work.\n• Deep — 6-phase iterative loop (Analyse → Reflect → Deepen → Explore → Validate → Synthesise). Best possible quality for the most complex regulatory and legal analysis. Significantly higher cost and time."}
+          text={"Controls the model's reasoning depth, time, and cost. Support varies by provider — some models honour every level, others map to a coarser setting.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic. Uses iterative phases.\n• Investigate — thorough multi-phase investigation. Ideal for gap analysis and legal research.\n• Plan First — the model outlines its approach before writing. Best for complex multi-deliverable work.\n• Deep — 6-phase iterative loop (Analyse → Reflect → Deepen → Explore → Validate → Synthesise). Best possible quality for the most complex regulatory and legal analysis. Significantly higher cost and time."}
         />
       </div>
       <div className="grid grid-cols-6 gap-1.5">
@@ -80,6 +94,11 @@ function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
           );
         })}
       </div>
+      {note && (
+        <p className="mt-2 rounded-md border border-adv-blue/20 bg-adv-blue/5 px-3 py-2 text-xs text-adv-blue">
+          {note}
+        </p>
+      )}
       {value === 'deep_investigate' && (
         <p className="mt-2 rounded-md border border-adv-gold/20 bg-adv-gold/5 px-3 py-2 text-xs text-adv-gold">
           Deep mode uses the Iterative Reasoning Engine — 6 reasoning phases before synthesising. Expect 3–5× longer processing time and higher token cost. Best for critical regulatory analysis, gap assessments, and high-stakes legal research.

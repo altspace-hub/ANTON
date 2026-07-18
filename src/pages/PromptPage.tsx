@@ -492,7 +492,7 @@ export default function PromptPage() {
       {showConfig && (
         <div className="mb-4 grid grid-cols-2 gap-4 rounded-xl border border-border bg-adv-card p-4">
           <div className="space-y-4">
-            <ThinkingControls value={thinking} onChange={setThinking} />
+            <ThinkingControls value={thinking} onChange={setThinking} model={model} />
             <ModelSelector value={model} onChange={setModel} />
             <WritingStylePanel
               creativity={creativity}
