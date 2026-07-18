@@ -75,6 +75,35 @@ export function azureReasoningEffort(level: ThinkingLevel): 'low' | 'medium' | '
   return AZURE_REASONING_EFFORT[level];
 }
 
+// ── OpenAI (o-series reasoning models) ────────────────────────────────────────
+
+const OPENAI_REASONING_EFFORT: Record<ThinkingLevel, 'low' | 'medium' | 'high'> = {
+  quick: 'low',
+  think: 'medium',
+  think_hard: 'high',
+  investigate: 'high',
+  plan_first: 'high',
+  deep_investigate: 'high',
+};
+
+/** reasoning_effort for an OpenAI reasoning (o-series) model. */
+export function openaiReasoningEffort(level: ThinkingLevel): 'low' | 'medium' | 'high' {
+  return OPENAI_REASONING_EFFORT[level];
+}
+
+/**
+ * True for OpenAI reasoning models (o1/o3/o4/o5 …). These accept `reasoning_effort`,
+ * REJECT `temperature`, and use `max_completion_tokens` instead of `max_tokens`.
+ * Non-reasoning models (gpt-4o, gpt-4o-mini, …) do none of that — sending them
+ * reasoning_effort would error, so the detection is deliberately narrow (a model we
+ * are unsure about is treated as non-reasoning, which is the safe default: a normal
+ * chat call rather than a rejected one). Replaces the old, invalid `-thinking`
+ * model-id suffix.
+ */
+export function isOpenAIReasoningModel(model: string): boolean {
+  return /^o[1-9]/i.test(model);
+}
+
 // ── Mistral (switch to a Magistral reasoning model) ───────────────────────────
 
 const MISTRAL_REASONING_LEVELS: ReadonlySet<string> = new Set([

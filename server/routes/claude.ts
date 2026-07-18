@@ -1293,6 +1293,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               temperature,
               maxTokens,
               nativeReasoningEnabled: !!nativeReasoningEnabled,
+              thinkingLevel: thinking as import('../../src/lib/types.js').ThinkingLevel | undefined,
               seed: seed !== undefined ? seed : undefined,
             }, res);
           } else if (provider === 'google') {

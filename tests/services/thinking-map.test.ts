@@ -11,6 +11,8 @@ import {
   anthropicBudgetTokens,
   azureReasoningEffort,
   mistralUsesReasoning,
+  openaiReasoningEffort,
+  isOpenAIReasoningModel,
   thinkingGranularity,
 } from '../../server/services/thinking-map.js';
 
@@ -54,6 +56,26 @@ describe('thinking-map — Azure reasoning deployments', () => {
     expect(azureReasoningEffort('investigate')).toBe('high');
     expect(azureReasoningEffort('plan_first')).toBe('high');
     expect(azureReasoningEffort('deep_investigate')).toBe('high');
+  });
+});
+
+describe('thinking-map — OpenAI (o-series reasoning)', () => {
+  it('detects o-series reasoning models only (safe: unsure → non-reasoning)', () => {
+    expect(isOpenAIReasoningModel('o1')).toBe(true);
+    expect(isOpenAIReasoningModel('o3-mini')).toBe(true);
+    expect(isOpenAIReasoningModel('o4-mini')).toBe(true);
+    // Non-reasoning models must NOT be flagged — sending them reasoning_effort errors.
+    expect(isOpenAIReasoningModel('gpt-4o')).toBe(false);
+    expect(isOpenAIReasoningModel('gpt-4o-mini')).toBe(false);
+    expect(isOpenAIReasoningModel('gpt-5.4')).toBe(false);
+  });
+
+  it('maps reasoning_effort into three buckets', () => {
+    expect(openaiReasoningEffort('quick')).toBe('low');
+    expect(openaiReasoningEffort('think')).toBe('medium');
+    expect(openaiReasoningEffort('think_hard')).toBe('high');
+    expect(openaiReasoningEffort('investigate')).toBe('high');
+    expect(openaiReasoningEffort('deep_investigate')).toBe('high');
   });
 });
 
