@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { MODELS } from '@/lib/constants';
 import type { ModelId, ModelInfo } from '@/lib/types';
 import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle, Cloud, Zap } from 'lucide-react';
@@ -60,6 +60,17 @@ interface CompatEndpoint {
   availableModels: string[];
   enabled: boolean;
 }
+
+// Built-in cloud models grouped by AI company (display order). The company label
+// is derived from each model's technical `provider` field — no per-model field to
+// keep in sync. Ollama-provider entries are intentionally omitted here: the live
+// "Local (Ollama)" section below reflects the actually-installed models.
+const COMPANY_SECTIONS: { provider: string; label: string }[] = [
+  { provider: 'anthropic', label: 'Claude' },
+  { provider: 'openai', label: 'ChatGPT (OpenAI)' },
+  { provider: 'google', label: 'Gemini (Google)' },
+  { provider: 'mistral', label: 'Mistral' },
+];
 
 export default function ModelSelector({ value, onChange, variant = 'dropdown' }: ModelSelectorProps) {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
@@ -218,47 +229,58 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
 
         {open && (
           <div className="absolute z-50 mt-1 w-full max-h-80 overflow-y-auto rounded-lg border border-border bg-adv-card shadow-xl">
-            {/* Cloud models */}
-            {MODELS.map((model) => {
-              const isActive = value === model.id;
+            {/* Built-in models, grouped by AI company */}
+            {COMPANY_SECTIONS.map(({ provider, label }, gi) => {
+              const models = MODELS.filter((m) => m.provider === provider);
+              if (models.length === 0) return null;
               return (
-                <button
-                  key={model.id}
-                  onClick={() => { onChange(model.id); setOpen(false); }}
-                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-                    isActive
-                      ? 'bg-adv-teal-dim text-adv-teal'
-                      : 'hover:bg-adv-dark text-adv-off-white'
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-medium truncate ${isActive ? 'text-adv-teal' : ''}`}>
-                        {model.label}
-                      </span>
-                      {model.recommended && (
-                        <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
-                          <Star className="h-2.5 w-2.5" />
-                          Rec
-                        </span>
-                      )}
-                      {model.eolDate && (() => {
-                        const days = daysUntilEol(model.eolDate);
-                        if (days > 90) return null;
-                        return (
-                          <span className="flex shrink-0 items-center gap-1 rounded bg-adv-gold/10 px-1.5 py-0.5 text-xs font-medium text-adv-gold">
-                            <AlertTriangle className="h-2.5 w-2.5" />
-                            {days <= 0 ? 'Retired' : `EOL ${days}d`}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    <p className="text-xs text-adv-gray truncate">
-                      ${model.inputCostPer1M}/M in · ${model.outputCostPer1M}/M out
-                    </p>
+                <div key={provider}>
+                  <div className={`flex items-center gap-2 px-3 py-2 ${gi === 0 ? '' : 'border-t border-border'}`}>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">{label}</span>
                   </div>
-                  {isActive && <Check className="h-4 w-4 shrink-0 text-adv-teal" />}
-                </button>
+                  {models.map((model) => {
+                    const isActive = value === model.id;
+                    return (
+                      <button
+                        key={model.id}
+                        onClick={() => { onChange(model.id); setOpen(false); }}
+                        className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                          isActive
+                            ? 'bg-adv-teal-dim text-adv-teal'
+                            : 'hover:bg-adv-dark text-adv-off-white'
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-medium truncate ${isActive ? 'text-adv-teal' : ''}`}>
+                              {model.label}
+                            </span>
+                            {model.recommended && (
+                              <span className="flex shrink-0 items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
+                                <Star className="h-2.5 w-2.5" />
+                                Rec
+                              </span>
+                            )}
+                            {model.eolDate && (() => {
+                              const days = daysUntilEol(model.eolDate);
+                              if (days > 90) return null;
+                              return (
+                                <span className="flex shrink-0 items-center gap-1 rounded bg-adv-gold/10 px-1.5 py-0.5 text-xs font-medium text-adv-gold">
+                                  <AlertTriangle className="h-2.5 w-2.5" />
+                                  {days <= 0 ? 'Retired' : `EOL ${days}d`}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                          <p className="text-xs text-adv-gray truncate">
+                            ${model.inputCostPer1M}/M in · ${model.outputCostPer1M}/M out
+                          </p>
+                        </div>
+                        {isActive && <Check className="h-4 w-4 shrink-0 text-adv-teal" />}
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
 
@@ -435,43 +457,55 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
     <div>
       <label className="mb-2 block text-sm font-medium text-adv-off-white">Model</label>
       <div className="space-y-2">
-        {MODELS.map((model) => {
-          const isActive = value === model.id;
+        {/* Built-in models, grouped by AI company */}
+        {COMPANY_SECTIONS.map(({ provider, label }) => {
+          const models = MODELS.filter((m) => m.provider === provider);
+          if (models.length === 0) return null;
           return (
-            <button
-              key={model.id}
-              onClick={() => onChange(model.id)}
-              className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all ${
-                isActive
-                  ? 'border-adv-teal bg-adv-teal-dim'
-                  : 'border-border bg-adv-card hover:border-adv-gray-med'
-              }`}
-            >
-              <div
-                className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center ${
-                  isActive ? 'border-adv-teal' : 'border-adv-gray-med'
-                }`}
-              >
-                {isActive && <div className="h-2 w-2 rounded-full bg-adv-teal" />}
+            <Fragment key={provider}>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray">{label}</span>
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
-                    {model.label}
-                  </span>
-                  {model.recommended && (
-                    <span className="flex items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
-                      <Star className="h-2.5 w-2.5" />
-                      Recommended
-                    </span>
-                  )}
-                </div>
-                <p className="mt-0.5 text-xs text-adv-gray">{model.description}</p>
-                <p className="mt-1 text-xs text-adv-gray">
-                  ${model.inputCostPer1M}/M input · ${model.outputCostPer1M}/M output
-                </p>
-              </div>
-            </button>
+              {models.map((model) => {
+                const isActive = value === model.id;
+                return (
+                  <button
+                    key={model.id}
+                    onClick={() => onChange(model.id)}
+                    className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                      isActive
+                        ? 'border-adv-teal bg-adv-teal-dim'
+                        : 'border-border bg-adv-card hover:border-adv-gray-med'
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center ${
+                        isActive ? 'border-adv-teal' : 'border-adv-gray-med'
+                      }`}
+                    >
+                      {isActive && <div className="h-2 w-2 rounded-full bg-adv-teal" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                          {model.label}
+                        </span>
+                        {model.recommended && (
+                          <span className="flex items-center gap-1 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
+                            <Star className="h-2.5 w-2.5" />
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-adv-gray">{model.description}</p>
+                      <p className="mt-1 text-xs text-adv-gray">
+                        ${model.inputCostPer1M}/M input · ${model.outputCostPer1M}/M output
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </Fragment>
           );
         })}
 

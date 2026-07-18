@@ -43,11 +43,11 @@ function ThinkingControls({ value, onChange }: ThinkingControlsProps) {
     <div>
       <div className="mb-2 flex items-center gap-1.5">
         <label className="text-sm font-medium text-adv-off-white">
-          How deeply should Claude analyze?
+          How deeply should the model analyze?
         </label>
         <HelpTooltip
           wide
-          text={"Controls Claude's reasoning depth, time, and cost.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic. Uses iterative phases.\n• Investigate — thorough multi-phase investigation. Ideal for gap analysis and legal research.\n• Plan First — Claude outlines its approach before writing. Best for complex multi-deliverable work.\n• Deep — 6-phase iterative loop (Analyse → Reflect → Deepen → Explore → Validate → Synthesise). Best possible quality for the most complex regulatory and legal analysis. Significantly higher cost and time."}
+          text={"Controls the model's reasoning depth, time, and cost. Support varies by provider — some models honour every level, others map to a coarser setting.\n\n• Quick — instant, minimal reasoning. Good for simple questions.\n• Think — standard analysis. Suits most compliance tasks.\n• Think Hard — deep reasoning with careful multi-step logic. Uses iterative phases.\n• Investigate — thorough multi-phase investigation. Ideal for gap analysis and legal research.\n• Plan First — the model outlines its approach before writing. Best for complex multi-deliverable work.\n• Deep — 6-phase iterative loop (Analyse → Reflect → Deepen → Explore → Validate → Synthesise). Best possible quality for the most complex regulatory and legal analysis. Significantly higher cost and time."}
         />
       </div>
       <div className="grid grid-cols-6 gap-1.5">
