@@ -17,6 +17,15 @@ import {
   setUtilityModel,
   isValidUtilityModelId,
 } from '../services/utility-model.js';
+import {
+  DEFAULT_VERIFIER_MODEL,
+  initVerifierStore,
+  isDoubleCheckEnabledSync,
+  getVerifierModelSync,
+  setDoubleCheckEnabled,
+  setVerifierModel,
+  isValidVerifierModelId,
+} from '../services/verifier-model.js';
 import { getParseStats } from '../services/parse-telemetry.js';
 
 // Model-id prefixes accepted as a server-side default. Anything else must
@@ -54,6 +63,8 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // the sync resolvers never miss on first call.
   initDefaultModelStore(db);
   initUtilityModelStore(db);
+  // Prime the double-check (four-eyes) settings cache at boot.
+  initVerifierStore(db);
   // ANTON Studio P0: prime the per-area default + coding role-strategy caches.
   initAreaDefaultModelStore(db);
   initCodingModelStrategy(db);
@@ -148,6 +159,62 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
     await setUtilityModel(db, model);
     console.log(`[settings] Set utility model: ${model}`);
     res.json({ ok: true, model, isDefault: model === DEFAULT_UTILITY_MODEL });
+  });
+
+  // GET /api/settings/double-check — the optional "four-eyes" secondary review.
+  // OFF by default. When enabled, a second (verifier) model scrutinises a primary
+  // AI output and can escalate to a human (see four-eyes-review.ts). Currently
+  // wired to the seller auto-quote path; extensible to other surfaces.
+  router.get('/settings/double-check', async (_req, res) => {
+    const model = getVerifierModelSync();
+    res.json({
+      enabled: isDoubleCheckEnabledSync(),
+      model,
+      isDefault: model === DEFAULT_VERIFIER_MODEL,
+      default: DEFAULT_VERIFIER_MODEL,
+    });
+  });
+
+  // POST /api/settings/double-check — persist the toggle and/or the verifier model.
+  // Body: { enabled?: boolean, model?: string | null }. Empty/null model clears the
+  // row (default Haiku applies). Model id validated like the utility model.
+  router.post('/settings/double-check', async (req, res) => {
+    const { enabled, model } = req.body as { enabled?: unknown; model?: string | null };
+
+    if (enabled !== undefined) {
+      if (typeof enabled !== 'boolean') {
+        res.status(400).json({ error: 'enabled must be a boolean' });
+        return;
+      }
+      await setDoubleCheckEnabled(db, enabled);
+    }
+
+    if (model !== undefined) {
+      if (model === null || model === '') {
+        await setVerifierModel(db, null);
+      } else if (typeof model !== 'string' || model.length > 200) {
+        res.status(400).json({ error: 'model must be a string of at most 200 characters' });
+        return;
+      } else {
+        if (!isValidVerifierModelId(model)) {
+          const customModels = await getCustomModelConfigs(db);
+          if (!customModels.some((m) => m.modelId === model)) {
+            res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure: id, or a configured custom model` });
+            return;
+          }
+        }
+        await setVerifierModel(db, model);
+      }
+    }
+
+    const finalModel = getVerifierModelSync();
+    console.log(`[settings] double-check enabled=${isDoubleCheckEnabledSync()} model=${finalModel}`);
+    res.json({
+      ok: true,
+      enabled: isDoubleCheckEnabledSync(),
+      model: finalModel,
+      isDefault: finalModel === DEFAULT_VERIFIER_MODEL,
+    });
   });
 
   // GET /api/settings/parse-stats — JSON-parse success/failure counters per

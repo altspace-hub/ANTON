@@ -37,6 +37,7 @@ import { createCivicExtendedRoutes } from './routes/civic-extended.js';
 import { createExchangeRoutes } from './routes/exchange.js';
 import { createSettingsRoutes } from './routes/settings.js';
 import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoints.js';
+import { seedApeApiEndpoint } from './services/apeapi-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
 import { createAuthMiddleware } from './middleware/auth.js';
@@ -594,6 +595,8 @@ app.use('/api/civic', createCivicExtendedRoutes(db));
 app.use('/api', await createExchangeRoutes(db));
 app.use('/api', await createSettingsRoutes(db));
 app.use('/api', createCustomModelEndpointsRoutes(db));
+// Auto-register ApeAPI (compat: bundle) from APEAPI_API_KEY if set — one-step onboarding.
+await seedApeApiEndpoint(db);
 app.use('/api', await createRagRoutes(db));
 app.use('/api', await createKnowledgeLibraryRoutes(db));
 app.use('/api', await createEurLexRoutes(db, anthropic));

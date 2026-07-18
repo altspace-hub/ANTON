@@ -427,6 +427,9 @@ export default function Settings() {
   // Wave 3.8: utility model for background tasks (extraction, scoring,
   // naming). Server-persisted only (app_settings 'utility_model').
   const [utilityModel, setUtilityModel] = useState<string>('claude-haiku-4-5-20251001');
+  // Double-check (four-eyes) — optional second-model review. Off by default.
+  const [doubleCheckEnabled, setDoubleCheckEnabled] = useState<boolean>(false);
+  const [verifierModel, setVerifierModel] = useState<string>('claude-haiku-4-5-20251001');
 
   // Wave 3.9: honest background-intelligence status (red/amber/green strip)
   const intelHealth = useIntelligenceHealth();
@@ -585,6 +588,7 @@ export default function Settings() {
     loadBrandConfig();
     loadCustomModels();
     loadUtilityModel();
+    loadDoubleCheck();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
 
@@ -631,6 +635,38 @@ export default function Settings() {
     }).catch(() => {
       // Non-fatal — server keeps its previous value; UI refetches on next visit
     });
+    flash();
+  }
+
+  // Double-check (four-eyes) — optional second-model review of primary output.
+  async function loadDoubleCheck() {
+    try {
+      const res = await fetchWithAuth('/api/settings/double-check');
+      if (res.ok) {
+        const data = await res.json() as { enabled?: boolean; model?: string };
+        setDoubleCheckEnabled(!!data.enabled);
+        if (data.model) setVerifierModel(data.model);
+      }
+    } catch { /* defaults (off, Haiku) stand */ }
+  }
+
+  function handleToggleDoubleCheck(enabled: boolean) {
+    setDoubleCheckEnabled(enabled);
+    fetchWithAuth('/api/settings/double-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    }).catch(() => { /* non-fatal — refetches on next visit */ });
+    flash();
+  }
+
+  function handleSetVerifierModel(model: string) {
+    setVerifierModel(model);
+    fetchWithAuth('/api/settings/double-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    }).catch(() => { /* non-fatal */ });
     flash();
   }
 
@@ -1669,6 +1705,56 @@ export default function Settings() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Double-check (four-eyes review) — optional second-model verification */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-adv-gray">{t('settings.doubleCheck', 'Double-check (four-eyes review)')}</span>
+              <button
+                onClick={() => handleToggleDoubleCheck(!doubleCheckEnabled)}
+                role="switch"
+                aria-checked={doubleCheckEnabled}
+                className={`${CHIP_BASE} ${doubleCheckEnabled ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+              >
+                {doubleCheckEnabled ? t('common.on', 'On') : t('common.off', 'Off')}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.doubleCheckDesc', 'When on, a second (verifier) model independently reviews AI output for no-go items, prompt-injection and anomalies, and escalates to a human if it raises a concern. Off by default — use a different provider than the primary model. Applies to seller auto-quotes today.')}
+            </p>
+            {doubleCheckEnabled && (
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', disabled: false },
+                  { value: 'gpt-4o-mini', label: 'GPT-4o Mini', disabled: !providerStatus.OPENAI_API_KEY },
+                  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', disabled: !providerStatus.GOOGLE_API_KEY },
+                  { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
+                  ...(ecoOllama.available && ecoOllama.models.length > 0
+                    ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
+                    : []),
+                  ...ecoEndpoints.filter((e) => e.defaultModel).map((e) => ({
+                    value: `compat:${e.slug}:${e.defaultModel}`, label: `${e.displayName} (${e.defaultModel})`, disabled: false,
+                  })),
+                  ...(customSlot1.enabled && customSlot1.modelId
+                    ? [{ value: customSlot1.modelId, label: customSlot1.displayName || 'Custom 1', disabled: false }]
+                    : []),
+                  ...(customSlot2.enabled && customSlot2.modelId
+                    ? [{ value: customSlot2.modelId, label: customSlot2.displayName || 'Custom 2', disabled: false }]
+                    : []),
+                ] as { value: string; label: string; disabled: boolean }[]).map(({ value, label, disabled }) => (
+                  <button
+                    key={value}
+                    onClick={() => { if (!disabled) handleSetVerifierModel(value); }}
+                    disabled={disabled}
+                    title={disabled ? t('settings.notConfigured') : undefined}
+                    className={`${CHIP_BASE} ${verifierModel === value ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Default Thinking */}
