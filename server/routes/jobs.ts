@@ -38,23 +38,28 @@ export function createJobsRoutes(db: DatabaseAdapter): Router {
     try {
       const q = typeof req.query.q === 'string' ? req.query.q : '';
       const location = typeof req.query.location === 'string' ? req.query.location : '';
+      // A campaign is publicly listed once its ad is live and until it closes.
+      // Column names are aliased to the candidate-facing shape (the real
+      // talent_campaigns columns are salary_range_min/max, remote_policy, etc.;
+      // there is no organisation column, so it is surfaced as null).
       const rows = await db.all<{
         id: string; title: string; organisation: string | null;
         location: string | null; salary_min: number | string | null;
         salary_max: number | string | null; salary_currency: string | null;
         remote_mode: string | null; created_at: string;
       }>(
-        `SELECT id, title, organisation, location,
-                salary_min, salary_max, salary_currency, remote_mode, created_at
+        `SELECT id, title, NULL::text AS organisation, location,
+                salary_range_min AS salary_min, salary_range_max AS salary_max,
+                salary_currency, remote_policy AS remote_mode, created_at
          FROM talent_campaigns
-         WHERE status IN ('active', 'published')
-           ${q ? "AND (title ILIKE ? OR organisation ILIKE ?)" : ''}
+         WHERE status IN ('ad_live', 'screening', 'shortlist', 'interview', 'offer')
+           ${q ? "AND (title ILIKE ? OR department ILIKE ?)" : ''}
            ${location ? "AND location ILIKE ?" : ''}
          ORDER BY created_at DESC
          LIMIT 100`,
         ...(q ? [`%${q}%`, `%${q}%`] : []),
         ...(location ? [`%${location}%`] : []),
-      ).catch(() => []);
+      );
       res.json({ jobs: rows.map(r => ({
         ...r,
         salary_min: r.salary_min == null ? null : Number(r.salary_min),
@@ -69,9 +74,12 @@ export function createJobsRoutes(db: DatabaseAdapter): Router {
   router.get('/jobs/:id', async (req: Request, res: Response) => {
     try {
       const row = await db.get<Record<string, unknown>>(
-        `SELECT id, title, description, organisation, location, salary_min, salary_max,
-                salary_currency, remote_mode, assessment_framework, questions, created_at
-         FROM talent_campaigns WHERE id = ? AND status IN ('active', 'published')`,
+        `SELECT id, title, ad_content AS description, NULL::text AS organisation, location,
+                salary_range_min AS salary_min, salary_range_max AS salary_max,
+                salary_currency, remote_policy AS remote_mode,
+                scoring_framework AS assessment_framework, ad_questions AS questions, created_at
+         FROM talent_campaigns
+         WHERE id = ? AND status IN ('ad_live', 'screening', 'shortlist', 'interview', 'offer')`,
         req.params.id,
       );
       if (!row) { res.status(404).json({ error: 'Job not found' }); return; }

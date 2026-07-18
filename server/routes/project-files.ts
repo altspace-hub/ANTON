@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import multer from 'multer';
 import path from 'path';
@@ -8,6 +8,25 @@ import { getProjectWorkspace } from '../services/workspace.js';
 
 export async function createProjectFilesRoutes(db: DatabaseAdapter) {
   const router = Router();
+  const IS_TEAM_MODE = process.env.DEPLOYMENT_MODE === 'team';
+
+  // ── Team-mode membership gate ──────────────────────────────────────────────────
+  // Project files are addressed by :id (the project). Require membership here so
+  // files can't be listed / uploaded / downloaded / deleted cross-tenant by UUID
+  // (round-2 finding #21). No-op in solo mode / for admins.
+  router.param('id', async (req: Request, res: Response, next: NextFunction, id: string) => {
+    try {
+      const user = (req as { user?: { id?: string; role?: string } }).user;
+      if (!IS_TEAM_MODE || user?.role === 'admin') return next();
+      const member = await db.get(
+        'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', String(id), user?.id ?? 'solo',
+      );
+      if (!member) { res.status(403).json({ error: 'Forbidden' }); return; }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // Configure multer for project-scoped uploads
   const storage = multer.diskStorage({

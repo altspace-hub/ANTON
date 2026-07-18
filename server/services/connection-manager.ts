@@ -307,12 +307,12 @@ export async function createConnectionManager(db: DatabaseAdapter) {
     // ── Scripts ────────────────────────────────────────────────
 
     async listScripts(): Promise<Script[]> {
-      const rows = await db.all('SELECT * FROM connection_scripts ORDER BY display_name') as RawScriptRow[];
+      const rows = await db.all('SELECT * FROM scripts ORDER BY display_name') as RawScriptRow[];
       return rows.map(parseScript);
     },
 
     async getScript(id: string): Promise<Script | null> {
-      const row = await db.get('SELECT * FROM connection_scripts WHERE id = ?', id) as RawScriptRow | undefined;
+      const row = await db.get('SELECT * FROM scripts WHERE id = ?', id) as RawScriptRow | undefined;
       return row ? parseScript(row) : null;
     },
 

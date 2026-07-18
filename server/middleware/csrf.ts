@@ -70,6 +70,29 @@ const CSRF_EXEMPT_PREFIXES = [
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+/**
+ * True if the Origin/Referer host matches a host this instance is actually served on.
+ * A cross-site attacker cannot forge the Origin/Referer header, so a same-origin
+ * mutating request is safe from CSRF regardless of whether it carries a token.
+ * Behind a reverse proxy the browser's Origin reflects the public host, which the
+ * proxy normally preserves in Host or forwards in X-Forwarded-Host — accept either.
+ */
+function isSameOrigin(originOrReferer: string, req: Request): boolean {
+  if (!originOrReferer) return false;
+  let originHost: string;
+  try {
+    originHost = new URL(originOrReferer).host.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (!originHost) return false;
+  const forwardedHost = (req.headers['x-forwarded-host'] as string | undefined)?.split(',')[0]?.trim();
+  const serverHosts = [req.headers.host, forwardedHost]
+    .filter((h): h is string => !!h)
+    .map(h => h.toLowerCase());
+  return serverHosts.includes(originHost);
+}
+
 export function csrfProtection(req: Request, res: Response, next: NextFunction): void {
   // Skip safe methods
   if (SAFE_METHODS.has(req.method)) {
@@ -84,7 +107,15 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   // OWASP: Origin/Referer-based validation — same-origin requests are safe from CSRF.
   // This covers raw fetch() calls that don't go through fetchWithAuth().
   const origin = (req.headers.origin || req.headers.referer || '') as string;
+  // localhost (any port): the dev proxy (Vite :5173 → Express :3001) crosses ports,
+  // so the origin host won't equal the server host — waive by hostname instead.
   if (/^https?:\/\/localhost(:\d+)?(\/|$)/.test(origin)) {
+    return next();
+  }
+  // Any other host: waive when the request is genuinely same-origin (Origin/Referer
+  // host === the host the instance is served on). Fixes every non-localhost deployment
+  // — LAN IP, reverse-proxy hostname — where raw fetch() previously 403'd.
+  if (isSameOrigin(origin, req)) {
     return next();
   }
 

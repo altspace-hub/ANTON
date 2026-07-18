@@ -208,10 +208,24 @@ Return ONLY the JSON array.`,
     if (dimensions.length === 0) throw new Error('No scoring dimensions defined. Create a scoring framework first.');
 
     const systemPrompt = readPrompt('talent-assessment');
-    const cvData = typeof candidate.cv_structured === 'string'
-      ? candidate.cv_structured : JSON.stringify(candidate.cv_structured);
+    // The CV lives in cv_text (raw) and/or cv_structured (parsed JSONB, which
+    // DEFAULTS to '{}'). Only cv_structured used to be read, so an un-parsed
+    // candidate was assessed against an empty '{}' — the LLM never saw the CV.
+    // Prefer structured data when it actually holds something, else the raw text.
+    const structuredStr = typeof candidate.cv_structured === 'string'
+      ? candidate.cv_structured : JSON.stringify(candidate.cv_structured ?? {});
+    const structuredTrimmed = (structuredStr ?? '').trim();
+    const hasStructured = structuredTrimmed !== '' && structuredTrimmed !== '{}' && structuredTrimmed !== 'null';
+    const cvText = (candidate.cv_text ?? '').toString().trim();
+    const cvData = hasStructured ? structuredStr : cvText;
     const qResponses = typeof candidate.question_responses === 'string'
       ? candidate.question_responses : JSON.stringify(candidate.question_responses);
+    const qTrimmed = (qResponses ?? '').trim();
+    const hasResponses = qTrimmed !== '' && qTrimmed !== '[]' && qTrimmed !== 'null';
+
+    if (!cvData.trim() && !hasResponses) {
+      throw new Error('Candidate has no CV (cv_text or cv_structured) or question responses to assess — attach a CV first.');
+    }
     const capMap = typeof campaign.capability_map === 'string'
       ? campaign.capability_map : JSON.stringify(campaign.capability_map);
 

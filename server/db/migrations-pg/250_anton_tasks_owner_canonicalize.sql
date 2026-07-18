@@ -1,0 +1,12 @@
+-- Migration 250: canonicalise anton_tasks ownership to the solo owner id.
+--
+-- The webhook intake (routes/task-agent.ts) and the companion-app gateway
+-- (routes/app-gateway.ts) used to write anton_tasks.user_id = 'default', while the
+-- desktop Task Agent (and authMiddleware) key the single-operator owner as 'solo'.
+-- anton_tasks IS owner-scoped (lists filter WHERE user_id = ...), so those externally
+-- created tasks were invisible to the desktop owner. The code now writes SOLO_USER_ID
+-- ('solo') everywhere; this backfills any pre-existing 'default' rows so they surface.
+--
+-- Only run this in single-operator (solo) deployments. In a team deployment 'default'
+-- was never a real user, so converting it to the solo owner is still correct.
+UPDATE anton_tasks SET user_id = 'solo' WHERE user_id = 'default';

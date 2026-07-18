@@ -256,12 +256,13 @@ Format your response as:
         const verdictMatch = result.text.match(/## Verdict:\s*(endorse|flag|dissent)/i);
         const verdict = verdictMatch ? verdictMatch[1].toLowerCase() : 'flag';
 
-        // Save to coding_reviews table
-        await db.run(`INSERT INTO coding_reviews (id, coding_project_id, reviewer_persona_id, review_type, verdict, findings, recommendations, status, review_completed_at)
+        // Save to the Instruction Builder's own review table (NOT coding_reviews,
+        // whose coding_project_id FK to coding_projects an IB project can't satisfy).
+        await db.run(`INSERT INTO instruction_builder_reviews (id, project_id, reviewer_persona_id, review_type, verdict, findings, recommendations, status, review_completed_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', NOW())`
-        , 
+        ,
           reviewId,
-          project.coding_project_id || project.id,
+          project.id,
           member.id,
           member.type,
           verdict,
@@ -312,10 +313,10 @@ Format your response as:
       const architecture = project.architecture_proposal || '';
       const structureTemplate = safeJsonParse(profile.structure_template, {});
 
-      // Fetch expert reviews
-      const reviews = await db.get(
-        'SELECT * FROM coding_reviews WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 10'
-      , project.coding_project_id || project.id) as any[];
+      // Fetch expert reviews (from the IB-specific table)
+      const reviews = await db.all(
+        'SELECT * FROM instruction_builder_reviews WHERE project_id = ? ORDER BY created_at DESC LIMIT 10'
+      , project.id) as any[];
 
       const reviewSummary = reviews.map((r: any) => `${r.reviewer_persona_id}: ${r.verdict} — ${(r.findings || '').substring(0, 500)}`).join('\n');
 

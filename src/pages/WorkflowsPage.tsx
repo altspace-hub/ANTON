@@ -86,10 +86,12 @@ function isValidCron(expr: string): boolean {
 function ScheduleModal({
   workflowId,
   workflowLabel,
+  workflowDefinition,
   onClose,
 }: {
   workflowId: string;
   workflowLabel: string;
+  workflowDefinition: WorkflowDefinition;
   onClose: () => void;
 }) {
   const [schedules, setSchedules] = useState<WorkflowSchedule[]>([]);
@@ -125,7 +127,9 @@ function ScheduleModal({
       const res = await fetch(`/api/workflows/${encodeURIComponent(workflowId)}/schedules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cron_expression: activeCronExpr }),
+        // Snapshot the full definition so the scheduler can run this built-in
+        // workflow headlessly even if the registry later changes.
+        body: JSON.stringify({ cron_expression: activeCronExpr, workflow_definition: workflowDefinition }),
       });
       if (!res.ok) {
         const data = await res.json() as { error?: string };
@@ -550,6 +554,7 @@ export default function WorkflowsPage() {
         <ScheduleModal
           workflowId={schedulingWorkflow.id}
           workflowLabel={schedulingWorkflow.label}
+          workflowDefinition={schedulingWorkflow}
           onClose={() => setSchedulingWorkflow(null)}
         />
       )}

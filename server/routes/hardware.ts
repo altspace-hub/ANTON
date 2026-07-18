@@ -431,6 +431,50 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const reviewQueue = createReviewQueueService(db);
   const extend = createExtendDeviceService(db);
 
+  const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
+
+  // ── Team-mode project ownership gate ──────────────────────────────────────────
+  // Every route under /hardware/projects/:id (and its sub-resources: quality runs,
+  // patch plans, fleet devices, diagnostics, regulatory artefacts) is bound to one
+  // project. Mutations already re-check ownership at the service layer, but the READS
+  // (getProjectDetail / getProject / quality-runs / bundle downloads) did not — any
+  // authenticated user could read another owner's project by UUID (round-2 finding
+  // #17). Enforce ownership once here. No-op in solo mode / for admins.
+  router.use('/hardware/projects/:id', async (
+    req: import('express').Request,
+    res: import('express').Response,
+    next: import('express').NextFunction,
+  ) => {
+    try {
+      const role = (req as { user?: { role?: string } }).user?.role;
+      if (!IS_TEAM() || role === 'admin') return next();
+      const project = await projects.getProject(String(req.params.id));
+      if (!project) { res.status(404).json({ error: 'Project not found' }); return; }
+      if (project.owner_id !== getOwnerId(req)) { res.status(403).json({ error: 'Forbidden' }); return; }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Regulatory / capacity-transfer artefacts are addressed by :artefactId (not a
+  // project path), so the gate above doesn't cover them. They can be read, edited,
+  // signed off and withdrawn — all of which were unauthorized (actor_id was recorded
+  // for audit but never checked). Resolve artefact → project → owner and enforce.
+  // No-op in solo mode / for admins. Returns false and sends 403/404 when blocked.
+  async function assertArtefactOwner(
+    req: import('express').Request,
+    res: import('express').Response,
+    projectId: string | null | undefined,
+  ): Promise<boolean> {
+    const role = (req as { user?: { role?: string } }).user?.role;
+    if (!IS_TEAM() || role === 'admin') return true;
+    if (!projectId) { res.status(404).json({ error: 'Artefact not found' }); return false; }
+    const project = await projects.getProject(String(projectId));
+    if (!project || project.owner_id !== getOwnerId(req)) { res.status(403).json({ error: 'Forbidden' }); return false; }
+    return true;
+  }
+
   // ── Family registry (read-only) ───────────────────────────────────────────
 
   router.get('/hardware/families', (_req, res) => {
@@ -1201,6 +1245,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
     try {
       const artefact = await regulatory.getArtefact(req.params.artefactId);
       if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
+      if (!(await assertArtefactOwner(req, res, artefact.project_id))) return;
       const history = await regulatory.listSignoffs(req.params.artefactId);
       res.json({ success: true, artefact, history });
     } catch (err) {
@@ -1215,6 +1260,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
         return;
       }
+      if (!(await assertArtefactOwner(req, res, (await regulatory.getArtefact(req.params.artefactId))?.project_id))) return;
       const artefact = await regulatory.updateContent({
         artefact_id: req.params.artefactId,
         actor_id: getOwnerId(req),
@@ -1234,6 +1280,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
         return;
       }
+      if (!(await assertArtefactOwner(req, res, (await regulatory.getArtefact(req.params.artefactId))?.project_id))) return;
       const artefact = await regulatory.signOff({
         artefact_id: req.params.artefactId,
         actor_id: getOwnerId(req),
@@ -1252,6 +1299,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
         return;
       }
+      if (!(await assertArtefactOwner(req, res, (await regulatory.getArtefact(req.params.artefactId))?.project_id))) return;
       const artefact = await regulatory.withdraw({
         artefact_id: req.params.artefactId,
         actor_id: getOwnerId(req),
@@ -1333,6 +1381,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
     try {
       const artefact = await humanitarian.getArtefact(req.params.artefactId);
       if (!artefact) { res.status(404).json({ error: 'Artefact not found' }); return; }
+      if (!(await assertArtefactOwner(req, res, artefact.project_id))) return;
       const history = await humanitarian.listSignoffs(req.params.artefactId);
       res.json({ success: true, artefact, history });
     } catch (err) {
@@ -1347,6 +1396,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
         return;
       }
+      if (!(await assertArtefactOwner(req, res, (await humanitarian.getArtefact(req.params.artefactId))?.project_id))) return;
       const artefact = await humanitarian.updateContent({
         artefact_id: req.params.artefactId,
         actor_id: getOwnerId(req),
@@ -1366,6 +1416,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
         return;
       }
+      if (!(await assertArtefactOwner(req, res, (await humanitarian.getArtefact(req.params.artefactId))?.project_id))) return;
       const artefact = await humanitarian.signOff({
         artefact_id: req.params.artefactId,
         actor_id: getOwnerId(req),
@@ -1380,6 +1431,7 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   router.post('/hardware/capacity-transfer-artefacts/:artefactId/withdraw', async (req, res) => {
     try {
       const reason = typeof req.body?.reason === 'string' ? req.body.reason : undefined;
+      if (!(await assertArtefactOwner(req, res, (await humanitarian.getArtefact(req.params.artefactId))?.project_id))) return;
       const artefact = await humanitarian.withdraw({
         artefact_id: req.params.artefactId,
         actor_id: getOwnerId(req),

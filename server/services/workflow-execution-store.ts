@@ -292,13 +292,26 @@ export interface ExecutionSummary {
 }
 
 /** Recent executions (durable list — survives restarts). */
-export async function listExecutionSummaries(db: DatabaseAdapter, limit = 50): Promise<ExecutionSummary[]> {
-  const rows = await db.all<WorkflowExecutionRow>(
-    `SELECT * FROM workflow_executions
-     WHERE mode IS NOT NULL
-     ORDER BY started_at DESC
-     LIMIT ?`, limit
-  );
+export async function listExecutionSummaries(
+  db: DatabaseAdapter,
+  limit = 50,
+  ownerId?: string | null,
+): Promise<ExecutionSummary[]> {
+  // ownerId scopes the list to a specific user (team mode, non-admin). When omitted
+  // (solo mode / admin) all executions are returned.
+  const rows = ownerId
+    ? await db.all<WorkflowExecutionRow>(
+        `SELECT * FROM workflow_executions
+         WHERE mode IS NOT NULL AND (user_id = ? OR created_by = ?)
+         ORDER BY started_at DESC
+         LIMIT ?`, ownerId, ownerId, limit
+      )
+    : await db.all<WorkflowExecutionRow>(
+        `SELECT * FROM workflow_executions
+         WHERE mode IS NOT NULL
+         ORDER BY started_at DESC
+         LIMIT ?`, limit
+      );
   return rows.map((row) => {
     const definition = parseJsonish<WorkflowDefinition>(row.workflow_definition);
     return {

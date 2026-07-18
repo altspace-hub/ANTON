@@ -823,8 +823,8 @@ app.use('/api', await createMarketplaceRoutes(db));
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton
 app.use('/api', await createTriggersRoutes(db));           // RBAC-protected trigger management
-app.use('/api/webhooks', webhookLimiter);             // Rate limit public webhook endpoint (SEC-19)
-app.use('/', await createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth)
+app.use('/webhooks', webhookLimiter);                 // Rate limit public webhook endpoint (SEC-19) — matches the root mount below
+app.use('/', await createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth) — POST /webhooks/inbound/:id
 app.use('/api', await createSessionResumeRoutes(db));      // Session Resume (snapshots)
 app.use('/api', await createInsightsRoutes(db));           // Proactive Intelligence
 app.use('/api', await createOrgContextRoutes(db));         // Org Context Layer (prompt layer 2a)

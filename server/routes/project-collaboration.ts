@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID, randomBytes } from 'crypto';
 import { sendProjectInvitationEmail } from '../services/email.js';
@@ -15,6 +15,44 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
       role: r.user?.role,
     };
   }
+
+  async function projectRoleOf(projectId: string, userId: string): Promise<string | null> {
+    const row = await db.get(
+      'SELECT role FROM project_members WHERE project_id = ? AND user_id = ?', projectId, userId,
+    ) as { role?: string } | undefined;
+    return row?.role ?? null;
+  }
+
+  // Only the project owner (or a global admin) may manage members / invitations.
+  // No-op in solo mode. Returns false and sends 403 when blocked.
+  async function requireProjectOwner(req: Request, res: Response): Promise<boolean> {
+    const user = getUserFromReq(req);
+    if (!IS_TEAM_MODE || user.role === 'admin') return true;
+    if ((await projectRoleOf(String(req.params.id), user.id)) !== 'owner') {
+      res.status(403).json({ error: 'Only the project owner can manage members' });
+      return false;
+    }
+    return true;
+  }
+
+  // ── Team-mode membership gate ──────────────────────────────────────────────────
+  // Every route addressed to a project carries it as :id. Require membership here —
+  // once — so no route can be reached cross-tenant by project UUID (round-2 finding
+  // #21). No-op in solo mode / for admins, so the default deployment is unaffected.
+  // (The invitation-accept route has no :id, so it is intentionally not gated.)
+  router.param('id', async (req: Request, res: Response, next: NextFunction, id: string) => {
+    try {
+      const user = getUserFromReq(req);
+      if (!IS_TEAM_MODE || user.role === 'admin') return next();
+      if (!(await projectRoleOf(String(id), user.id))) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // ── Members ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +77,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // POST /api/projects/:id/members — add existing user by user_id
   router.post('/projects/:id/members', async (req, res) => {
     try {
+      if (!(await requireProjectOwner(req, res))) return;
       const { userId, role } = req.body as { userId: string; role?: string };
       if (!userId) return res.status(400).json({ error: 'userId is required' });
 
@@ -64,6 +103,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // PATCH /api/projects/:id/members/:memberId — update member role
   router.patch('/projects/:id/members/:memberId', async (req, res) => {
     try {
+      if (!(await requireProjectOwner(req, res))) return;
       const { role } = req.body as { role: string };
       if (!role) return res.status(400).json({ error: 'role is required' });
 
@@ -81,6 +121,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // DELETE /api/projects/:id/members/:memberId — remove member
   router.delete('/projects/:id/members/:memberId', async (req, res) => {
     try {
+      if (!(await requireProjectOwner(req, res))) return;
       await db.run(
         'DELETE FROM project_members WHERE id = ? AND project_id = ?'
       , req.params.memberId, req.params.id);
@@ -99,6 +140,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
       return res.status(400).json({ error: 'Invitations are only available in team mode' });
     }
     try {
+      if (!(await requireProjectOwner(req, res))) return;
       const { email, role } = req.body as { email: string; role?: string };
       if (!email) return res.status(400).json({ error: 'email is required' });
 
@@ -199,6 +241,7 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
   // DELETE /api/projects/:id/invitations/:invitationId — revoke invitation
   router.delete('/projects/:id/invitations/:invitationId', async (req, res) => {
     try {
+      if (!(await requireProjectOwner(req, res))) return;
       await db.run(
         "UPDATE project_invitations SET status = 'revoked' WHERE id = ? AND project_id = ?"
       , req.params.invitationId, req.params.id);

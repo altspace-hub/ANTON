@@ -1,7 +1,7 @@
 /**
  * webhooks.ts
  * Public-facing inbound webhook endpoint.
- * POST /api/webhooks/inbound/:trigger_id
+ * POST /webhooks/inbound/:trigger_id  (mounted at root, outside the /api auth+CSRF stack)
  *
  * This endpoint does NOT require ANTON session auth — it uses trigger-specific
  * authentication (HMAC, Slack signing secret, Bearer token).
@@ -29,7 +29,7 @@ export async function createWebhooksPublicRoutes(db: DatabaseAdapter): Promise<R
   });
 
   /**
-   * POST /api/webhooks/inbound/:trigger_id
+   * POST /webhooks/inbound/:trigger_id
    * Public webhook receiver. Authenticated per trigger configuration.
    */
   router.post('/webhooks/inbound/:trigger_id', async (req: Request, res: Response) => {

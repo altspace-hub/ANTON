@@ -10,7 +10,13 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// ESM: `__dirname` is undefined under tsx/ESM — derive it (sibling pattern,
+// e.g. gap-assessment-engine.ts). Without this the 'llm' step crashed at runtime.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import type { WorkflowDefinition, WorkflowStep } from '../../src/lib/workflow-definitions.js';
+import { getWorkflowById } from '../../src/lib/workflow-definitions.js';
 import { resolveTemplate } from '../routes/workflows.js';
 import { createConnectionManager } from './connection-manager.js';
 import pkg from 'pg';
@@ -74,7 +80,11 @@ async function loadWorkflowDefinitionForRun(
       return { id: workflowId, label: config.label || workflowId, shortLabel: '', icon: 'ClipboardList', description: '', category: 'custom', estimatedTime: '', steps, tags: [] };
     }
   } catch { /* not found */ }
-  return undefined;
+
+  // Final fallback: the built-in workflow registry (WORKFLOWS). Schedules/triggers
+  // store only a workflow_id for built-in workflows, so without this a scheduled or
+  // event-triggered built-in run failed with "definition not found".
+  return getWorkflowById(workflowId);
 }
 
 /**
@@ -760,7 +770,8 @@ async function executeHeadlessStep(
         try {
           const response = await fetch(url, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            // Same-origin loopback call — set Origin so CSRF middleware waives the token.
+            headers: { 'Content-Type': 'application/json', 'Origin': `http://localhost:${port}` },
             body: method !== 'GET' ? JSON.stringify(cfg.body || {}) : undefined,
             signal: controller.signal,
           });

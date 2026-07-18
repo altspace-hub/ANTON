@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import type { DatabaseAdapter } from '../db/database.js';
+import { SOLO_USER_ID } from './user-constants.js';
+
+// Re-export so existing `import { SOLO_USER_ID } from '../middleware/auth.js'` keeps
+// working; the value itself lives in the side-effect-free user-constants module.
+export { SOLO_USER_ID };
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -36,7 +41,7 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
   return async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     // Solo mode: no auth required
     if (!isTeamMode()) {
-      req.user = { id: 'solo', username: 'solo', role: 'admin' };
+      req.user = { id: SOLO_USER_ID, username: 'solo', role: 'admin' };
       return next();
     }
 

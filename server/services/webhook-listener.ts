@@ -130,7 +130,10 @@ export async function createWebhookListener(db: DatabaseAdapter) {
     user_id?: string;
   }): Promise<WebhookTrigger> {
     const id = randomUUID();
-    const endpoint_path = `/api/webhooks/inbound/${id}`;
+    // Served at the root by createWebhooksPublicRoutes (mounted at '/', outside the
+    // /api auth+CSRF stack so external providers can POST unauthenticated). The path
+    // MUST match the actual mount — advertising /api/... produced a 404.
+    const endpoint_path = `/webhooks/inbound/${id}`;
     const now = new Date().toISOString();
 
     // Encrypt secret before storing
@@ -501,18 +504,15 @@ export async function createWebhookListener(db: DatabaseAdapter) {
       return { status: 'filtered_out', event_id: '', error: 'trigger is paused' };
     }
 
-    // Log received
-    const eventId = await logEvent(triggerId, 'received', parsedPayload);
-
-    // Step 2: Authenticate
+    // Step 2: Authenticate BEFORE logging. Logging first let an unauthenticated
+    // (forged) caller amplify the webhook_events table with 'received' rows.
     const authResult = authenticateRequest(trigger, rawBody, headers);
     if (!authResult.valid) {
-      await updateEventStatus(eventId, 'failed', {
-        errorMessage: authResult.reason,
-        processingMs: Date.now() - start,
-      });
-      return { status: 'failed', event_id: eventId, error: authResult.reason };
+      return { status: 'failed', event_id: '', error: authResult.reason };
     }
+
+    // Log received (now that the caller is authenticated)
+    const eventId = await logEvent(triggerId, 'received', parsedPayload);
     await updateEventStatus(eventId, 'validated');
 
     // Step 3: Filter

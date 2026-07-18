@@ -13,6 +13,7 @@ import { validate } from '../lib/validate.js';
 import { TaskCreateSchema, TaskMessageSchema, TaskSelectApproachSchema, TaskIngestSchema } from '../lib/schemas.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
+import { SOLO_USER_ID } from '../middleware/user-constants.js';
 import { randomUUID } from 'crypto';
 import type Anthropic from '@anthropic-ai/sdk';
 import AnthropicSDK from '@anthropic-ai/sdk';
@@ -135,7 +136,7 @@ interface ApproachRow {
 }
 
 function getUserId(req: Request): string {
-  return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
+  return (req as unknown as { user?: { id?: string } }).user?.id ?? SOLO_USER_ID;
 }
 
 function parseJson<T>(raw: string | null | undefined, fallback: T): T {
@@ -1334,7 +1335,9 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     };
 
     const id = randomUUID();
-    const userId = 'default'; // External tasks start as default user
+    // External tasks belong to the instance owner so they surface in the desktop
+    // Task Agent (keyed by req.user.id = SOLO_USER_ID), not a phantom 'default' user.
+    const userId = SOLO_USER_ID;
 
     // Extract tags from Jira labels or Slack hashtags
     let tags: string[] = [];

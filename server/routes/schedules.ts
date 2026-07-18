@@ -17,6 +17,18 @@ interface ScheduleRow {
 export async function createScheduleRoutes(db: DatabaseAdapter) {
   const router = Router();
 
+  // Scheduling a workflow to run automatically is a privileged operation and
+  // workflow_schedules has no owner column, so in team mode restrict mutations to
+  // admins (round-2 medium finding). No-op in solo mode / for admins. Returns false
+  // and sends 403 when blocked.
+  const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
+  function requireScheduleAdmin(req: unknown, res: { status: (n: number) => { json: (b: unknown) => void } }): boolean {
+    const role = (req as { user?: { role?: string } }).user?.role;
+    if (!IS_TEAM() || role === 'admin') return true;
+    res.status(403).json({ error: 'Only an admin can manage workflow schedules' });
+    return false;
+  }
+
   // GET /api/workflows/:workflowId/schedules — list schedules for a workflow
   router.get('/workflows/:workflowId/schedules', async (req, res) => {
     try {
@@ -32,6 +44,7 @@ export async function createScheduleRoutes(db: DatabaseAdapter) {
   // POST /api/workflows/:workflowId/schedules — create a schedule
   router.post('/workflows/:workflowId/schedules', async (req, res) => {
     try {
+      if (!requireScheduleAdmin(req, res)) return;
       const { cron_expression, workflow_definition } = req.body as { cron_expression: string; workflow_definition?: unknown };
       if (!cron_expression?.trim()) {
         res.status(400).json({ error: 'cron_expression is required' });
@@ -67,6 +80,7 @@ export async function createScheduleRoutes(db: DatabaseAdapter) {
   // PATCH /api/workflows/:workflowId/schedules/:id — update (toggle active, change cron)
   router.patch('/workflows/:workflowId/schedules/:id', async (req, res) => {
     try {
+      if (!requireScheduleAdmin(req, res)) return;
       const scheduleId = parseInt(req.params.id, 10);
       const existing = await db.get(
         'SELECT * FROM workflow_schedules WHERE id = ? AND workflow_id = ?'
@@ -111,6 +125,7 @@ export async function createScheduleRoutes(db: DatabaseAdapter) {
   // DELETE /api/workflows/:workflowId/schedules/:id — delete a schedule
   router.delete('/workflows/:workflowId/schedules/:id', async (req, res) => {
     try {
+      if (!requireScheduleAdmin(req, res)) return;
       const scheduleId = parseInt(req.params.id, 10);
       const existing = await db.get(
         'SELECT * FROM workflow_schedules WHERE id = ? AND workflow_id = ?'

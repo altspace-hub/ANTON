@@ -6,7 +6,7 @@
  */
 
 import { safeError } from '../lib/error-response.js';
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { randomUUID } from 'crypto';
@@ -70,6 +70,28 @@ async function canEdit(db: DatabaseAdapter, engagementId: string, userId: string
 
 export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
+
+  // ── Team-mode authorization gate ──────────────────────────────────────────────
+  // Every route addressed to a specific engagement carries it as :id. Enforcing
+  // access here — once — means no individual route can forget it (round-2 finding
+  // #6: ~33 of 37 routes skipped canView/canEdit, allowing cross-tenant read/write/
+  // execute by UUID in team mode). No-op in solo mode / for admins: canView/canEdit
+  // short-circuit to true, so the default local-first deployment is unaffected.
+  // Safe methods need view access; any mutation needs edit access.
+  router.param('id', async (req: Request, res: Response, next: NextFunction, id: string) => {
+    try {
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+      const safe = req.method === 'GET' || req.method === 'HEAD';
+      const ok = safe
+        ? await canView(db, String(id), userId, userRole)
+        : await canEdit(db, String(id), userId, userRole);
+      if (!ok) { res.status(403).json({ error: 'Forbidden' }); return; }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // ── Helper ──────────────────────────────────────────────────────────────────
 
@@ -1029,7 +1051,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
       const { lens = 'scope', custom_instruction = '' } = req.body as { lens?: string; custom_instruction?: string };
 
-      const engagement = await db.get('SELECT * FROM engagement_tasks WHERE id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
       const scope_items = await db.all('SELECT * FROM engagement_scope_items WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Record<string, unknown>[];
       const resources = await db.all('SELECT id, category, title, extracted_content FROM engagement_resources WHERE engagement_id = ? LIMIT 500', String(req.params.id)) as Record<string, unknown>[];
 

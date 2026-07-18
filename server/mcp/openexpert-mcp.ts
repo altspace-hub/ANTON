@@ -45,7 +45,9 @@ async function apiGet(path: string): Promise<unknown> {
 async function apiPost(path: string, body: unknown): Promise<unknown> {
   const res = await fetch(`${OPENEXPERT_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // Origin = the instance we're calling, so the CSRF middleware treats these
+    // MCP-tool POSTs as same-origin and waives the browser CSRF token.
+    headers: { 'Content-Type': 'application/json', 'Origin': OPENEXPERT_URL },
     body: JSON.stringify(body),
   });
   if (!res.ok) {

@@ -89,7 +89,7 @@ export async function createRoaringRoutes(db: DatabaseAdapter): Promise<Router> 
       // Check DB cache (24h TTL)
       const cached = await db.get(`
         SELECT result FROM entity_screens
-        WHERE org_number=? AND connector='roaring' AND cached_until > NOW()
+        WHERE org_number=? AND connector='roaring' AND cached_until::timestamptz > NOW()
         ORDER BY screened_at DESC LIMIT 1
       `, orgNumber) as { result: string } | undefined;
 

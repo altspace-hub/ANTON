@@ -11,6 +11,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../src/lib/workflow-definitions.js';
+import { WORKFLOWS } from '../../src/lib/workflow-definitions.js';
 import { createConnectionManager } from '../services/connection-manager.js';
 import { resolveExplicitDbDriver } from '../services/workflow-step-registry.js';
 import pkg from 'pg';
@@ -18,9 +19,10 @@ import { safeError } from '../lib/error-response.js';
 const { Client: PgClient } = pkg;
 import mysql from 'mysql2/promise';
 import sql from 'mssql';
-import { importData, exportData } from '../services/data-importer.js';
-import { applyTransformations, TransformOperation } from '../services/data-transformer.js';
-import { mergeDatasets, deduplicateDataset, MergeConfig } from '../services/data-merger.js';
+import { importData, exportData, getSampleRows, type ExportConfig } from '../services/data-importer.js';
+import { applyTransformations, validateOperation, TransformOperation } from '../services/data-transformer.js';
+import { mergeDatasets, deduplicateDataset, validateMergeConfig, MergeConfig } from '../services/data-merger.js';
+import { getDatasetCache } from './data.js';
 import {
   persistExecution, loadExecution, listExecutionSummaries,
   listPendingApprovals, recordClientRun,
@@ -593,6 +595,11 @@ async function executeStep(
       };
 
       const dataset = await importData(importConfig as any);
+      // Register in the shared dataset cache so downstream data_transform / merge /
+      // export steps can find it by id. The import step used to skip this (the
+      // /api/data/import route cached, but this direct call didn't), so any
+      // import → transform pipeline broke at the transform's cache lookup.
+      getDatasetCache().set(dataset.id, dataset);
       const outputVar = step.config.outputVariable || 'dataset';
 
       return {
@@ -625,38 +632,34 @@ async function executeStep(
         throw new Error(`Dataset not found: ${inputDatasetId}`);
       }
 
-      // Fetch full dataset from cache (via data API)
-      const cacheResponse = await fetch(`http://localhost:${process.env.PORT || 3001}/api/data/cache/${datasetObj.id}`);
-      if (!cacheResponse.ok) {
+      // Operate in-process against the shared dataset cache (the same Map the
+      // /api/data routes use). The previous self-HTTP round-trip is now blocked by
+      // CSRF and needlessly re-serialised the whole dataset over the loopback.
+      const cache = getDatasetCache();
+      const cachedDataset = cache.get(datasetObj.id);
+      if (!cachedDataset) {
         throw new Error(`Failed to fetch dataset from cache: ${datasetObj.id}`);
       }
-      const cachedDataset = await cacheResponse.json();
 
-      // Apply transformations
+      // Apply transformations (validate each op first, mirroring /api/data/transform)
       const operations = (step.config.transformOperations || []) as TransformOperation[];
-      const transformResponse = await fetch(`http://localhost:${process.env.PORT || 3001}/api/data/transform`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          datasetId: datasetObj.id,
-          operations,
-        }),
-      });
-
-      if (!transformResponse.ok) {
-        throw new Error('Data transformation failed');
+      for (const operation of operations) {
+        const validation = validateOperation(cachedDataset, operation);
+        if (!validation.valid) {
+          throw new Error(`Invalid transform operation ${operation.type}: ${validation.error}`);
+        }
       }
+      const transformed = applyTransformations(cachedDataset, operations);
+      cache.set(transformed.id, transformed);
 
-      const transformResult = await transformResponse.json();
       const outputVar = step.config.outputVariable || 'transformed_dataset';
-
       return {
         output: {
           [outputVar]: {
-            id: transformResult.datasetId,
-            columns: transformResult.columns,
-            rowCount: transformResult.rowCount,
-            preview: transformResult.preview,
+            id: transformed.id,
+            columns: transformed.columns,
+            rowCount: transformed.metadata.rowCount,
+            preview: getSampleRows(transformed, 10),
           },
         },
       };
@@ -696,31 +699,31 @@ async function executeStep(
         deduplicateStrategy: step.config.deduplicateStrategy,
       };
 
-      // Call merge API
-      const mergeResponse = await fetch(`http://localhost:${process.env.PORT || 3001}/api/data/merge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leftId: leftDataset.id,
-          rightId: rightDataset.id,
-          config: mergeConfig,
-        }),
-      });
-
-      if (!mergeResponse.ok) {
-        throw new Error('Data merge failed');
+      // Merge in-process against the shared dataset cache (see data_transform note).
+      const cache = getDatasetCache();
+      const left = cache.get(leftDataset.id);
+      const right = cache.get(rightDataset.id);
+      if (!left || !right) {
+        throw new Error('Datasets not found in cache');
       }
+      const mergeValidation = validateMergeConfig(left, right, mergeConfig);
+      if (!mergeValidation.valid) {
+        throw new Error(`Invalid merge configuration: ${mergeValidation.error}`);
+      }
+      let merged = mergeDatasets(left, right, mergeConfig);
+      if (mergeConfig.deduplicateBy && mergeConfig.deduplicateStrategy) {
+        merged = deduplicateDataset(merged, mergeConfig.deduplicateBy, mergeConfig.deduplicateStrategy);
+      }
+      cache.set(merged.id, merged);
 
-      const mergeResult = await mergeResponse.json();
       const outputVar = step.config.outputVariable || 'merged_dataset';
-
       return {
         output: {
           [outputVar]: {
-            id: mergeResult.datasetId,
-            columns: mergeResult.columns,
-            rowCount: mergeResult.rowCount,
-            preview: mergeResult.preview,
+            id: merged.id,
+            columns: merged.columns,
+            rowCount: merged.metadata.rowCount,
+            preview: getSampleRows(merged, 10),
           },
         },
       };
@@ -755,29 +758,21 @@ async function executeStep(
         db: step.config.exportDestination === 'database' ? db : undefined,
       };
 
-      // Call export API
-      const exportResponse = await fetch(`http://localhost:${process.env.PORT || 3001}/api/data/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          datasetId: datasetObj.id,
-          config: exportConfig,
-        }),
-      });
-
-      if (!exportResponse.ok) {
-        throw new Error('Data export failed');
+      // Export in-process against the shared dataset cache (see data_transform note).
+      const cache = getDatasetCache();
+      const exportDataset = cache.get(datasetObj.id);
+      if (!exportDataset) {
+        throw new Error(`Dataset not found: ${datasetId}`);
       }
+      const exportResultValue = await exportData(exportDataset, exportConfig as ExportConfig);
 
-      const exportResult = await exportResponse.json();
       const outputVar = step.config.outputVariable || 'export_result';
-
       return {
         output: {
           [outputVar]: {
             success: true,
             destination: exportConfig.destination,
-            result: exportResult.result,
+            result: exportResultValue,
           },
         },
       };
@@ -1040,6 +1035,24 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   // blocks route construction.
   void reconcileOrphanedRunning(db);
 
+  // ── GET /api/workflows — list the built-in workflow definitions.
+  // Populates the workflow pickers in the trigger / schedule / automation UIs
+  // (EventTriggersPage, WorkflowsPage). These are the same definitions
+  // getWorkflowById() resolves at execution time, so every id here is runnable.
+  router.get('/', (_req, res) => {
+    res.json({
+      workflows: WORKFLOWS.map((w) => ({
+        id: w.id,
+        name: w.label,
+        shortLabel: w.shortLabel,
+        description: w.description,
+        category: w.category,
+        estimatedTime: w.estimatedTime,
+        tags: w.tags,
+      })),
+    });
+  });
+
   // ── POST /api/workflows/executions — start a new execution
   router.post('/executions', async (req, res) => {
     const { workflow, mode = 'guided', input = {} } = req.body as {
@@ -1226,12 +1239,16 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
   // ── GET /api/workflows/executions — list recent executions
   // Reads the durable PostgreSQL store (survives restarts); falls back to the
   // in-memory map if the table/columns are unavailable (pre-migration deploy).
-  router.get('/executions', async (_req, res) => {
+  router.get('/executions', async (req, res) => {
+    // Team-mode non-admins see only their own executions (round-2 medium finding).
+    const { userId, isAdmin } = reqUser(req);
+    const ownerFilter = isAdmin ? undefined : userId;
     try {
-      const list = await listExecutionSummaries(db, 50);
+      const list = await listExecutionSummaries(db, 50, ownerFilter);
       res.json(list);
     } catch {
       const list = Array.from(executions.values())
+        .filter((e) => !ownerFilter || e.userId === ownerFilter || e.createdBy === ownerFilter)
         .map((e) => ({
           id: e.id,
           workflowId: e.workflowId,

@@ -6,7 +6,7 @@
  * EU AI Act + Pay Transparency Directive compliance enforced.
  */
 
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createTalentService } from '../services/talent-service.js';
@@ -74,6 +74,11 @@ const updateCandidateSchema = z.object({
   status: z.enum(['new', 'screening', 'assessed', 'followup_sent', 'followup_received',
                    'shortlisted', 'interview', 'offer', 'hired', 'rejected', 'withdrawn']).optional(),
   notes: z.string().optional(),
+  // Allow attaching / correcting the CV after creation (snake_case keys match the
+  // updateCandidate() column whitelist). Without this the assessment could never
+  // see a CV that wasn't supplied at creation time.
+  cv_text: z.string().optional(),
+  cv_structured: z.record(z.string(), z.unknown()).optional(),
   question_responses: z.array(z.record(z.string(), z.unknown())).optional(),
   followup_responses: z.array(z.record(z.string(), z.unknown())).optional(),
 });
@@ -122,6 +127,26 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const service = await createTalentService(db);
   const aiService = await createTalentAIService(db);
+
+  const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
+  const getUserId = (req: unknown): string =>
+    (req as { user?: { id?: string } }).user?.id ?? 'solo';
+  const getUserRole = (req: unknown): string =>
+    (req as { user?: { role?: string } }).user?.role ?? 'admin';
+
+  // Aspiration profiles are employee self-service PII — the documented "manager-blind"
+  // model means only the owning employee (or a solo/admin operator) may read/modify a
+  // raw per-employee profile (round-2 finding #20). No-op in solo mode / for admins.
+  // Returns false and sends 403/404 when the caller is not the owner.
+  async function requireProfileOwner(req: unknown, res: Response, profileId: string): Promise<boolean> {
+    if (!IS_TEAM() || getUserRole(req) === 'admin') return true;
+    const row = await db.get(
+      'SELECT employee_id FROM talent_aspiration_profiles WHERE id = ?', profileId,
+    ) as { employee_id?: string } | undefined;
+    if (!row) { res.status(404).json({ error: 'Profile not found' }); return false; }
+    if (row.employee_id !== getUserId(req)) { res.status(403).json({ error: 'Forbidden' }); return false; }
+    return true;
+  }
 
   // ── Campaigns ──────────────────────────────────────────────────────────
 
@@ -558,7 +583,12 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
       const result = await aiService.assessCandidate(req.params.id);
       res.json({ success: true, ...result });
     } catch (err) {
-      res.status(500).json({ error: safeError(err) });
+      // Distinguish client-fixable preconditions from server faults.
+      const msg = err instanceof Error ? err.message : '';
+      const status = /not found/i.test(msg) ? 404
+        : /(has no CV|scoring dimensions)/i.test(msg) ? 400
+        : 500;
+      res.status(status).json({ error: safeError(err) });
     }
   });
 
@@ -603,7 +633,10 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
   // Create aspiration profile
   router.post('/talent/aspiration-profiles', async (req, res) => {
     try {
-      const { employeeId, currentRole, currentDepartment } = req.body;
+      let { employeeId } = req.body;
+      const { currentRole, currentDepartment } = req.body;
+      // In team mode a non-admin may only create their own profile.
+      if (IS_TEAM() && getUserRole(req) !== 'admin') employeeId = getUserId(req);
       if (!employeeId) { res.status(400).json({ error: 'employeeId required' }); return; }
       const id = `tasp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await db.run(`
@@ -619,6 +652,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
   // Get own aspiration profile
   router.get('/talent/aspiration-profiles/:id', async (req, res) => {
     try {
+      if (!(await requireProfileOwner(req, res, String(req.params.id)))) return;
       const profile = await db.get('SELECT * FROM talent_aspiration_profiles WHERE id = ?', req.params.id);
       if (!profile) { res.status(404).json({ error: 'Profile not found' }); return; }
       res.json({ success: true, profile });
@@ -630,6 +664,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
   // Update aspiration profile
   router.put('/talent/aspiration-profiles/:id', async (req, res) => {
     try {
+      if (!(await requireProfileOwner(req, res, String(req.params.id)))) return;
       const allowed = [
         'status', 'onboarding_conversation_completed', 'cv_content',
         'current_skills', 'unused_skills', 'developing_skills', 'role_satisfaction',
@@ -659,6 +694,7 @@ export async function createTalentRoutes(db: DatabaseAdapter): Promise<Router> {
   // Hard delete aspiration profile content (GDPR right to delete)
   router.delete('/talent/aspiration-profiles/:id/content', async (req, res) => {
     try {
+      if (!(await requireProfileOwner(req, res, String(req.params.id)))) return;
       await db.run(`
         UPDATE talent_aspiration_profiles SET
           cv_content = NULL, current_skills = '[]', unused_skills = '[]',

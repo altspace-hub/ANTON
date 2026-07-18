@@ -13,6 +13,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createAppAuthMiddleware } from '../middleware/app-auth.js';
+import { SOLO_USER_ID } from '../middleware/user-constants.js';
 import { createAppGatewayService, SUPPORTED_LANGUAGES } from '../services/app-gateway.js';
 import { createAppEnrollmentService } from '../services/app-enrollment-service.js';
 import { createAppPushService } from '../services/app-push-service.js';
@@ -2388,7 +2389,8 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const offset = Math.max(parseInt(String(req.query.offset ?? '0'), 10) || 0, 0);
 
       const where = status ? 'WHERE user_id = $1 AND status = $2' : 'WHERE user_id = $1';
-      const params: unknown[] = status ? ['default', status] : ['default'];
+      // Single-operator instance: companion + desktop share the owner's task list.
+      const params: unknown[] = status ? [SOLO_USER_ID, status] : [SOLO_USER_ID];
       const tasks = await db.all(
         `SELECT id, title, description, status, source, source_ref, priority, tags, due_date,
                 created_at, updated_at, chosen_approach_id, completed_at
@@ -2431,7 +2433,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       await db.run(
         `INSERT INTO anton_tasks (id, user_id, title, description, status, source, priority, tags, due_date, created_at, updated_at)
          VALUES ($1, $2, $3, $4, 'intake', 'companion', $5, $6, $7, NOW(), NOW())`,
-        id, 'default', trimmedTitle, desc, priority, '[]', due_date ?? null
+        id, SOLO_USER_ID, trimmedTitle, desc, priority, '[]', due_date ?? null
       );
       const task = await db.get(
         `SELECT id, title, description, status, source, priority, tags, due_date, created_at, updated_at FROM anton_tasks WHERE id = $1`,
@@ -2449,7 +2451,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     try {
       const { createTimeIntelligence } = await import('../services/time-intelligence.js');
       const ti = await createTimeIntelligence(db);
-      const brief = await ti.getMorningBrief('default');
+      const brief = await ti.getMorningBrief(SOLO_USER_ID);
       res.json(brief);
     } catch (err) {
       console.error('[app-gateway] morning-brief error:', err);
@@ -2629,8 +2631,8 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       const id = randomUUID();
       await db.run(
         `INSERT INTO deadlines (id, title, description, due_date, source_type, priority, owner_id, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, 'manual', $5, 'default', NOW(), NOW())`,
-        id, title.trim(), description?.trim() || null, due_date, priority || 'medium'
+         VALUES ($1, $2, $3, $4, 'manual', $5, $6, NOW(), NOW())`,
+        id, title.trim(), description?.trim() || null, due_date, priority || 'medium', SOLO_USER_ID
       );
       const row = await db.get(
         `SELECT id, title, description, due_date, priority, status, created_at FROM deadlines WHERE id = $1`,
@@ -2674,8 +2676,8 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       sets.push(`updated_at = NOW()`);
       params.push(req.params.id);
       await db.run(
-        `UPDATE anton_tasks SET ${sets.join(', ')} WHERE id = $${params.length} AND user_id = 'default'`,
-        ...params
+        `UPDATE anton_tasks SET ${sets.join(', ')} WHERE id = $${params.length} AND user_id = $${params.length + 1}`,
+        ...params, SOLO_USER_ID
       );
       const task = await db.get(
         `SELECT id, title, description, status, priority, due_date, created_at, updated_at, completed_at
