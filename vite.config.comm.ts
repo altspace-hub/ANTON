@@ -24,6 +24,18 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: { enabled: false },
       includeAssets: ['anton-icon.svg'],
+      // C — the boot chunk is a genuine ~3.4 MB of eager vendor code (react +
+      // @noble crypto + @scure + @futurechain/sdk + dexie + Falcon-512 + the
+      // docx/export libs pulled by the tax/export paths). Workbox's 2 MiB default
+      // aborted precache generation, so `build:comm` (the WEB PWA) failed. Raise
+      // the ceiling so it precaches. Tradeoff is a larger first-install download
+      // for the PWA — acceptable for this secondary deployment. This is web-PWA
+      // ONLY: VitePWA is gated off for the Capacitor build above, so `build:comm:cap`
+      // (the phones) is untouched. A proper vendor split / lazy-loading the export
+      // libs is the higher-quality follow-up, but it's a bigger, riskier refactor.
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+      },
       manifest: {
         name: 'ANTON Communication',
         short_name: 'ANTON',
