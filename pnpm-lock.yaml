@@ -51,9 +51,6 @@ importers:
       '@capacitor/camera':
         specifier: ^8.0.2
         version: 8.0.2(@capacitor/core@8.3.1)
-      '@capacitor/cli':
-        specifier: ^8.3.0
-        version: 8.3.1
       '@capacitor/core':
         specifier: ^8.3.0
         version: 8.3.1
@@ -373,6 +370,9 @@ importers:
         specifier: ^5.0.3
         version: 5.0.11(@types/react@18.3.28)(immer@11.1.4)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
+      '@capacitor/cli':
+        specifier: ^8.3.0
+        version: 8.3.1
       '@electron/rebuild':
         specifier: ^3.6.0
         version: 3.7.2
