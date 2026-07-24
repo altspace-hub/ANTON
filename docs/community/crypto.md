@@ -39,13 +39,24 @@ The same envelope format is used by:
 
 For E2E messaging (and AAP session-level bundle bodies):
 
-1. Each peer generates an ephemeral X25519 keypair for the session.
-2. Ephemeral pubkeys exchanged in HELLO/WELCOME.
-3. Shared secret derived: `X25519(ephemeralPriv, peerEphemeralPub)`.
-4. Symmetric key derived via HKDF-SHA-256.
+1. Each peer holds ONE long-term X25519 keypair, generated per identity and stored
+   (`community_identity.x25519_public_key` / `x25519_private_key_encrypted`, vault-encrypted).
+2. The peer's public key is read from `community_connections.x25519_public_key`.
+3. Shared secret derived: `X25519(myLongTermPriv, peerLongTermPub)` — see
+   `community-e2e.ts` `deriveSharedSecret`.
+4. Per-message key derived via HKDF-SHA-256 over that secret plus a fresh random salt,
+   where the salt travels in the envelope.
 5. Bundle bodies / message contents encrypted with AES-256-GCM (12-byte IV per message, 16-byte auth tag).
 
-Per-session ephemeral keys provide forward secrecy: long-term Ed25519 compromise doesn't decrypt past sessions.
+**This is per-message key SEPARATION, not forward secrecy.** The DH secret is static
+(both inputs long-term) and the salt is transmitted, so an attacker who later obtains a
+long-term X25519 private key can re-derive every past message key. Forward secrecy needs
+an ephemeral handshake and is not implemented on this path — the AAP transport's
+`ephemeral_pubkey` field is still a placeholder (`aap-transport-server.ts:273`,
+`aap-transport-client.ts:104`). Do not claim forward secrecy for this layer.
+
+(The mesh relay's Noise IK handshake in `server/services/mesh/noise.ts` is a separate
+mechanism and does provide forward secrecy — don't conflate the two.)
 
 Per-conversation key state persisted in `e2e_keys` (mig 102) — enables resuming a long-lived conversation across instance restarts.
 

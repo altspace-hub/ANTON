@@ -142,7 +142,7 @@ flowchart LR
 - **Discovery mechanism** — LAN mDNS works for the Companion App; cross-network discovery uses out-of-band contact-hash exchange. Centralised registry is partial. A DHT or DNS-based decentralised discovery would close this gap (referenced in `project_vision_gaps.md`).
 - **Capability negotiation** — capability descriptors travel in HELLO/WELCOME, but the negotiation mechanics (which capabilities a peer agrees to expose) need verification.
 - **Bundle-size limits** — large signed bundles (e.g. risk-atlas-export with attachments) need chunking.
-- **Forward secrecy** — ephemeral X25519 per session provides per-session forward secrecy; long-term Ed25519 compromise still leaks past sessions if attacker has historical traffic.
+- **Forward secrecy** — NOT implemented. The `ephemeral_pubkey` field is a placeholder string on both sides (`aap-transport-server.ts:273`, `aap-transport-client.ts:104`); session encryption actually runs on the long-term X25519 keys (`community-e2e.ts` `deriveSharedSecret`), so a long-term key compromise decrypts all past sessions an attacker has captured. Wiring a real ephemeral handshake is open work.
 
 ## Related diagrams
 
