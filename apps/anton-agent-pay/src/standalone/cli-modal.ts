@@ -22,6 +22,7 @@
  */
 import type { ModalDriver } from '../main/modal.js';
 import type { ModalDecision, ModalPayload } from '../shared/ipc-types.js';
+import { stripControlChars } from './terminal-channel.js';
 
 export interface CliModalOptions {
   /** Where the confirmation prompt is written. Default: process.stderr. */
@@ -83,22 +84,31 @@ export class CliModalDriver implements ModalDriver {
   }
 }
 
-/** Render the human-facing confirmation block. */
+/** Render the human-facing confirmation block.
+ *
+ *  THIS IS THE TEXT THE HUMAN AUTHORISES, and almost every field in it was
+ *  chosen by the AGENT (`agentNote`, `to`, `agentName`, `remittanceSummary`,
+ *  `toLabel`). Without sanitisation a proposal can embed ANSI escapes that move
+ *  the cursor up and repaint the Amount and To lines after they are drawn — the
+ *  operator then types `y` to a payment that is not the one displayed. Every
+ *  interpolation therefore goes through stripControlChars (see
+ *  terminal-channel.ts); the fixed box-drawing frame is ours and is safe. */
 export function renderPayload(p: ModalPayload): string {
+  const s = stripControlChars;
   const lines: string[] = [];
   lines.push('');
   lines.push('┌─────────────────────────────────────────────────────────────┐');
   lines.push('│  ⚠  PAYMENT APPROVAL REQUIRED — an AI agent wants to send FTC │');
   lines.push('└─────────────────────────────────────────────────────────────┘');
-  lines.push(`   Agent:        ${p.agentName}  (paired ${p.agentPairedAgo})`);
-  if (p.payingAs) lines.push(`   Paying as:    ${p.payingAs}${p.uboName ? `   (you: ${p.uboName})` : ''}`);
-  lines.push(`   To:           ${p.to}${p.toLabel ? `  (${p.toLabel}${p.toSeenTimes !== undefined ? `, seen ${p.toSeenTimes}×` : ''})` : ''}`);
-  lines.push(`   Amount:       ${p.amountFtc} FTC   (fee ~${p.feeFtc} FTC)`);
-  lines.push(`   Balance after: ${p.balanceAfterFtc} FTC`);
-  if (p.agentNote) lines.push(`   Agent note:   "${p.agentNote}"  (agent-supplied, not verified)`);
+  lines.push(`   Agent:        ${s(p.agentName)}  (paired ${s(p.agentPairedAgo)})`);
+  if (p.payingAs) lines.push(`   Paying as:    ${s(p.payingAs)}${p.uboName ? `   (you: ${s(p.uboName)})` : ''}`);
+  lines.push(`   To:           ${s(p.to)}${p.toLabel ? `  (${s(p.toLabel)}${p.toSeenTimes !== undefined ? `, seen ${s(p.toSeenTimes)}×` : ''})` : ''}`);
+  lines.push(`   Amount:       ${s(p.amountFtc)} FTC   (fee ~${s(p.feeFtc)} FTC)`);
+  lines.push(`   Balance after: ${s(p.balanceAfterFtc)} FTC`);
+  if (p.agentNote) lines.push(`   Agent note:   "${s(p.agentNote)}"  (agent-supplied, not verified)`);
   if (p.remittanceSummary && p.remittanceSummary.length > 0) {
     lines.push('   Attached:');
-    for (const s of p.remittanceSummary) lines.push(`     ${s}`);
+    for (const line of p.remittanceSummary) lines.push(`     ${s(line)}`);
   }
   lines.push('   ─────────────────────────────────────────────────────────────');
   lines.push('   Approve this payment?  type  y  + Enter   (anything else rejects)');
