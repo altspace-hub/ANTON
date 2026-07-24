@@ -559,6 +559,12 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
+      '@noble/curves':
+        specifier: ^1.9.7
+        version: 1.9.7
+      '@noble/ed25519':
+        specifier: ^2.1.0
+        version: 2.3.0
       '@noble/post-quantum':
         specifier: ^0.6.1
         version: 0.6.1
