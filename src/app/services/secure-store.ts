@@ -4,21 +4,49 @@
  * Mirrors identity.ts's three-tier strategy (native / IDB / memory) so any
  * client module can persist a small secret without re-implementing the
  * detection ladder.
+ *
+ * NOTE — the 'web' tier here stores values in IndexedDB **unwrapped**. The
+ * Comm app's secure-store wraps its web tier under a non-extractable
+ * WebCrypto key (src/comm/services/secure-store.ts); porting that here is a
+ * tracked follow-up. Until then, treat browser-tier secrets as readable by
+ * same-origin script.
  */
+import { Capacitor } from '@capacitor/core';
+
+export class SecureStoreUnavailableError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'SecureStoreUnavailableError';
+  }
+}
 
 let tier: 'native' | 'web' | 'memory' | null = null;
 
 async function detect(): Promise<'native' | 'web' | 'memory'> {
   if (tier) return tier;
+  // Platform gate FIRST — a successful probe does NOT prove a real Keystore.
+  // @aparajita/capacitor-secure-storage registers a WEB implementation whose
+  // internalGetItem/internalSetItem are literal localStorage calls, so in a
+  // browser (this app is also served as a PWA at /app/) the probe below
+  // succeeds and we would mislabel the tier 'native' and hand the device
+  // identity key to cleartext localStorage.
+  if (!Capacitor.isNativePlatform()) {
+    tier = (typeof window !== 'undefined' && 'indexedDB' in window) ? 'web' : 'memory';
+    return tier;
+  }
   try {
     const mod = await import('@aparajita/capacitor-secure-storage');
     await mod.SecureStorage.set('__anton_secure_probe__', '1');
     await mod.SecureStorage.remove('__anton_secure_probe__');
     tier = 'native';
-  } catch {
-    tier = (typeof window !== 'undefined' && 'indexedDB' in window) ? 'web' : 'memory';
+    return tier;
+  } catch (e) {
+    // Fail-closed on a real device, matching the Comm/Pay/Business stores.
+    throw new SecureStoreUnavailableError(
+      'native secure storage is unavailable on this device — refusing to downgrade to a less-secure tier',
+      e,
+    );
   }
-  return tier;
 }
 
 const memoryStore = new Map<string, string>();
