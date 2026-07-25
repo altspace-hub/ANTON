@@ -160,6 +160,15 @@ export class FulfilmentEngine {
     const confirmerSig = await this.identity.signString(deliverySigningString(digest));
 
     const prev = await this.store.get(agreementId);
+    // A delivery cannot precede a shipment. Without this, `confirmDelivery` on a
+    // role-bound agreement mints a signed "I received the goods" for an order
+    // that was never sent — and escrow's releaseAllowed() treats exactly that
+    // signature as the buyer's authorisation to pay out (escrow-core:
+    // "buyer confirmed delivery"). Scoped to role-bound agreements so legacy and
+    // non-escrow fulfilment flows are untouched.
+    if (a.sellerRole !== undefined && prev?.status !== 'shipped') {
+      throw new Error('cannot confirm delivery before a shipment is recorded');
+    }
     const record: FulfilmentRecord = {
       ...(prev ?? { agreementId, proposalHash: a.proposalHash }),
       agreementId, proposalHash: a.proposalHash, status: 'delivered',
