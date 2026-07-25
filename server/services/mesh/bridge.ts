@@ -194,6 +194,41 @@ function handleInbound(
   }
 }
 
+/**
+ * THE mesh attack surface, as an explicit fail-closed allowlist.
+ *
+ * bootstrap.ts hands this bridge the WHOLE Express app, so without this every
+ * inbound RPC frame could reach every one of the ~200 routers mounted under
+ * /api — plus /mcp and /metrics, which grant access on a loopback origin alone
+ * and which the synthetic socket used to satisfy. A completed Noise handshake
+ * proves only that a peer chose to talk to this instance (IK authenticates the
+ * RESPONDER to the initiator, not the reverse), and dialer.ts holds no database
+ * handle, so it cannot check the peer against app_devices even in principle.
+ * Authorization therefore has to happen here, at dispatch.
+ *
+ * The real surface is provably tiny, which is what makes an allowlist safe:
+ *   - the Companion app sends `'/api/app' + suffix` for EVERY call
+ *     (src/app/services/api.ts:104) including enrollment
+ *     (src/app/services/enrollment.ts:148)
+ *   - instance-to-instance A2A sends exactly one path,
+ *     `/api/p2p/receive` (server/services/message-queue-service.ts:90)
+ *
+ * Anything else is answered 404 without ever entering Express — 404 rather than
+ * 403 so a probing peer learns nothing about what exists.
+ */
+const MESH_ALLOWED_PREFIXES = ['/api/app/'] as const;
+const MESH_ALLOWED_EXACT = ['/api/app', '/api/p2p/receive'] as const;
+
+export function isMeshAllowedPath(rawPath: string): boolean {
+  // Compare on the path only, and reject traversal/encoding tricks outright:
+  // a peer must not reach /api/admin/app via /api/app/../admin/app.
+  const path = (rawPath.split('?')[0] ?? '').split('#')[0] ?? '';
+  if (path.includes('..') || path.includes('\\') || path.includes('%2e') || path.includes('%2E')) return false;
+  if (path.includes('//')) return false;
+  if (MESH_ALLOWED_EXACT.includes(path as (typeof MESH_ALLOWED_EXACT)[number])) return true;
+  return MESH_ALLOWED_PREFIXES.some((p) => path.startsWith(p));
+}
+
 async function dispatchRequest(
   state: SessionState,
   req: RpcRequest,
@@ -205,6 +240,13 @@ async function dispatchRequest(
   if (state.inFlight.has(req.seq)) {
     sendErrorFrame(state, req.seq, 0x0202, 'seq duplicate');
     state.ctx.close('seq_duplicate');
+    return;
+  }
+
+  // Authorization gate — BEFORE Express sees anything.
+  if (!isMeshAllowedPath(req.path)) {
+    sendResponseFrame(state, req.seq, 404, [{ name: 'content-type', value: 'text/plain' }],
+      new TextEncoder().encode('not found'));
     return;
   }
 
@@ -288,11 +330,42 @@ function makeSyntheticRequest(
     },
   });
 
-  // Build headers map. Express looks at .headers (lowercased keys).
+  // Build the header map from an explicit ALLOWLIST, not by copying the peer's
+  // bag verbatim. A denylist is the wrong shape here: the dangerous headers are
+  // the ones that impersonate infrastructure, and that set grows over time.
+  //
+  // What a verbatim copy handed a peer:
+  //   origin / referer — csrf.ts:112 waives CSRF outright for
+  //     `Origin: http://localhost`, and isSameOrigin() compares Origin against
+  //     the peer-supplied host. Either one is a complete CSRF bypass.
+  //   host / x-forwarded-host — auth.ts:178 builds password-reset links as
+  //     `${req.protocol}://${req.get('host')}`, i.e. host-header injection into
+  //     an emailed link.
+  //   x-forwarded-for / x-real-ip / forwarded — inert today (`trust proxy` is
+  //     unset, so req.ip comes from the socket) but audit.ts:26-31 already
+  //     prefers the raw x-forwarded-for header, and the day anyone adds
+  //     `trust proxy` for a reverse proxy this silently becomes req.ip.
+  //   content-encoding / transfer-encoding — neither mesh client sends them;
+  //     both invite body-parser desync.
+  //   cookie — mesh has no browser and no cookie session; accepting one only
+  //     offers a way to ride an unrelated session.
+  //   x-mesh-* — reserved for the bridge's own trusted headers below.
+  //
+  // The two real clients need almost nothing: the phone sends Content-Type plus
+  // x-app-session (src/app/services/api.ts:60,63) and A2A sends content-type
+  // alone (peer-transport-service.ts:182).
+  const MESH_ALLOWED_HEADERS = new Set([
+    'content-type', 'content-length', 'accept', 'accept-language', 'x-app-session',
+  ]);
   const headers: Record<string, string> = {};
   for (const h of req.headers) {
-    headers[h.name.toLowerCase()] = h.value;
+    const name = h.name.toLowerCase();
+    if (MESH_ALLOWED_HEADERS.has(name)) headers[name] = h.value;
   }
+  // Pin Host to a name this instance is never served on, so the same-origin and
+  // localhost CSRF waivers can never match a mesh request, and so any URL built
+  // from req.get('host') is obviously synthetic rather than attacker-chosen.
+  headers['host'] = 'mesh.invalid';
   // Always attach the body length so Express's body parser doesn't hang.
   if (req.body.length > 0 && !headers['content-length']) {
     headers['content-length'] = String(req.body.length);
@@ -325,11 +398,27 @@ function makeSyntheticRequest(
     setTimeout(): void { /* noop */ },
     ref(): void { /* noop */ },
     unref(): void { /* noop */ },
-    remoteAddress: '127.0.0.1',
+    // NOT loopback. This used to claim 127.0.0.1, which silently satisfied every
+    // "is the caller local, therefore trusted" check in the app — and three of
+    // those are real gates: /mcp (server/index.ts:407-413, the full tool-calling
+    // interface, open on loopback alone whenever MCP_SECRET is unset — the
+    // default), /metrics (routes/metrics.ts:45-46) and /api/relay
+    // (middleware/relay-auth.ts:84-89). A mesh peer is REMOTE by definition, so
+    // it must present as remote and every such check must fail closed.
+    //
+    // 192.0.2.1 is RFC 5737 TEST-NET-1 — a valid IPv4 reserved for documentation
+    // that can never be a real client, so anything parsing or logging it behaves
+    // normally while nothing mistakes it for local. (Side benefit: mesh traffic
+    // no longer shares the operator's 127.0.0.1 rate-limit bucket, so a hostile
+    // peer can't lock the local user out of /api/app/auth or /api/auth/login.)
+    remoteAddress: '192.0.2.1',
     remotePort: 0,
-    localAddress: '127.0.0.1',
+    localAddress: '192.0.2.1',
     localPort: 0,
-    encrypted: true, // mesh = E2E encrypted, treat as TLS-equivalent
+    // Kept: mesh really is E2E-encrypted (Noise IK), and nothing in server/
+    // branches on req.secure — the session-cookie Secure flag comes from
+    // NODE_ENV/HTTPS env, and helmet's HSTS is unconditional.
+    encrypted: true,
   };
 
   const reqObj = readable as Readable & {

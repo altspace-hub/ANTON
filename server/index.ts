@@ -40,7 +40,7 @@ import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoint
 import { seedApeApiEndpoint } from './services/apeapi-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
-import { createAuthMiddleware } from './middleware/auth.js';
+import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createCompliancePolicyRoutes } from './routes/compliance-policy.js';
@@ -807,7 +807,12 @@ const { createFCBudgetRoutes } = await import('./routes/fc-budget.js');
 app.use('/api', await createFCBudgetRoutes(db));
 const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js');
 app.use('/api', await createFCMarketplaceRoutes(db));
-// FutureChain Payment Gateway — admin routes (session-protected)
+// FutureChain Payment Gateway — admin routes (session-protected + admin-gated).
+// All 5 routes live under /futurechain/gateway/ (config read/write, API-key
+// regeneration, audit log, stats), so the guard is scoped to that exact prefix
+// rather than to the '/api' mount — a middleware on '/api' here would run for
+// every route mounted BELOW this line and 403 non-admins across the app.
+app.use('/api/futurechain/gateway', requireAdminOrSolo);
 app.use('/api', gwAdmin);
 // P2P message transport — public endpoint for ANTON-to-ANTON delivery (rate-limited)
 const { createP2PRoutes } = await import('./routes/p2p.js');
@@ -941,7 +946,20 @@ app.use('/api', await createAgentRoutes(db));
 // Companion App Gateway — admin routes (session-protected)
 if (APP_GATEWAY_ENABLED) {
   const appAdminRouter = (app as unknown as Record<string, unknown>)._appAdminRouter as import('express').Router;
-  app.use('/api/admin/app', appAdminRouter);
+  // Admin-gated: these 33 routes mint enrollment packages for arbitrary users,
+  // do org CRUD, repoint the mesh relay and inject checkpoints. They sit behind
+  // authMiddleware, but that only proves SOME user — in team mode a viewer
+  // reached them. Applied at the mount rather than inside app-gateway.ts on
+  // purpose: importing middleware/auth.js there would pull its module-level
+  // JWT_SECRET throw into the import graph of tests that construct the router
+  // directly (app-gateway.ts deliberately imports SOLO_USER_ID from the
+  // side-effect-free user-constants.js for the same reason).
+  //
+  // NOTE this is NOT what keeps a mesh peer out — solo mode is the default and
+  // stamps every request role:'admin', so requireAdminOrSolo passes for mesh
+  // traffic too. The mesh path is bounded by the allowlist in
+  // services/mesh/bridge.ts, which never dispatches /api/admin/* at all.
+  app.use('/api/admin/app', requireAdminOrSolo, appAdminRouter);
 }
 
 // Serve companion app PWA at /app (if built)

@@ -97,8 +97,15 @@ describe('Bridge — request → Express → response round-trip', () => {
     }));
 
     await waitFor(() => sess.outbound.length > 0, 1000);
-    expect(capturedHeaders.authorization).toBe('Bearer abc');
+    // The bridge forwards an ALLOWLIST, not the peer's whole header bag — see
+    // mesh-bridge-authz.test.ts for why (origin/host alone are a CSRF bypass and
+    // a password-reset link injection). x-app-session is what the Companion app
+    // actually authenticates with (src/app/services/api.ts:63) and is forwarded.
     expect(capturedHeaders['x-app-session']).toBe('session-token');
+    // `authorization` is NOT forwarded: neither mesh-reachable route consumes it
+    // (/api/app/* uses x-app-session; /api/p2p/receive authenticates by contact
+    // list), so carrying it would only widen the surface for no client benefit.
+    expect(capturedHeaders.authorization).toBeUndefined();
   });
 
   it('passes the request body through to the handler', async () => {
