@@ -73,8 +73,12 @@ export function createApprovedUserCheck(db: DatabaseAdapter) {
     if (process.env.APP_GATEWAY_REQUIRE_APPROVAL === 'false') return next();
     const userId = req.appUser?.id;
     if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    // `revoked_at IS NULL` is load-bearing: without it an unpaired device still
+    // satisfied this gate, so revoking a stolen phone left it approved for the
+    // agent + wallet routes this check exists to protect. The same predicate is
+    // already used on the device-detail query further down this file.
     const device = await db.get<{ x: number }>(
-      'SELECT 1 AS x FROM app_devices WHERE connected_user_id = $1 LIMIT 1', userId,
+      'SELECT 1 AS x FROM app_devices WHERE connected_user_id = $1 AND revoked_at IS NULL LIMIT 1', userId,
     );
     if (device) return next();
     const org = await db.get<{ x: number }>(
