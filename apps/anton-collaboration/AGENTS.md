@@ -186,6 +186,7 @@ else:
 | Variable | Default | Purpose |
 |---|---|---|
 | `ANTON_COLLAB_PORT` | `49260` | HTTP port (bound to `127.0.0.1` only). |
+| `ANTON_COLLAB_KEY_ENCRYPTION_KEY` | — | 32-byte hex. Encrypts the Ed25519 **agreement signing identity** and the relay identity at rest (AES-256-GCM). **Unset = those keys are stored in PLAINTEXT.** Once set, keep it: the gateway now REFUSES to start rather than mint a replacement identity if the key is missing or wrong, because minting would invalidate every already-signed agreement and change this agent's contactHash. Back it up wherever you back up the wallet directory. |
 | `ANTON_COLLAB_RELAY_BASE` | `https://relay.futurechain.eu` | The `.anton` registry the discovery verbs query. |
 | `ANTON_COLLAB_CONTACT_HASH` | — | Your buyer contact hash, attributed in a seller's inbox + bound into agreements. |
 | `ANTON_COLLAB_STORE_DIR` | `~/.anton-collaboration/store` | Durable store: signing identity + agreements + fulfilment + escrow + the **task inbox**. |

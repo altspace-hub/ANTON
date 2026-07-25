@@ -32,18 +32,59 @@ export class AgreementIdentity {
   private async loadOrCreate(): Promise<AgreementKeypair> {
     if (this.cached) return this.cached;
     this.cached = (async () => {
-      const raw = await this.storage.get(KEY).catch(() => null);
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw) as Partial<AgreementKeypair>;
-          if (typeof parsed.privHex === 'string' && /^[0-9a-f]{64}$/.test(parsed.privHex)) {
-            // Re-derive the pub from the seed so a tampered/missing pubHex can't
-            // make us sign under a key that doesn't match what we publish.
-            const pubHex = await publicKeyOf(parsed.privHex);
-            return { privHex: parsed.privHex, pubHex };
-          }
-        } catch { /* fall through to regenerate */ }
+      // "Cannot read the row" and "there is no row" are NOT the same thing, and
+      // conflating them here destroys keys.
+      //
+      // EncryptedKeyStorage.get() deliberately THROWS when a row is sealed and
+      // ANTON_COLLAB_KEY_ENCRYPTION_KEY is absent or wrong (there is a test named
+      // "refuses to serve an encrypted row without the key (no silent
+      // lockout-bypass)"). Swallowing that with `.catch(() => null)` fell straight
+      // through to generate() + set() — and with no key held, set() writes
+      // PLAINTEXT OVER THE CIPHERTEXT. One boot from the wrong shell, a roamed
+      // profile, or an unsynced key file would therefore: permanently destroy the
+      // signing identity, orphan every already-signed agreement (their
+      // proposerPubkey/acceptorPubkey no longer match), change the agent's
+      // contactHash so the paired phone can never reach it again, and silently
+      // downgrade the store to plaintext. Loudly refusing is the only safe
+      // response — a human can restore a backup or fix the env var, but nobody
+      // can recover a key that was overwritten.
+      let raw: string | null;
+      try {
+        raw = await this.storage.get(KEY);
+      } catch (e) {
+        throw new Error(
+          'agreement identity exists but could not be read — refusing to mint a new one. '
+          + 'Minting would overwrite the stored key, invalidating every signed agreement and '
+          + 'changing this agent\'s contactHash. Check ANTON_COLLAB_KEY_ENCRYPTION_KEY '
+          + `(or restore the wallet directory from backup). Cause: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
+
+      if (raw) {
+        // A row that exists but does not parse is corruption, not absence — same
+        // reasoning as above, so surface it instead of overwriting.
+        let parsed: Partial<AgreementKeypair>;
+        try {
+          parsed = JSON.parse(raw) as Partial<AgreementKeypair>;
+        } catch (e) {
+          throw new Error(
+            'agreement identity row is present but unparseable — refusing to overwrite it. '
+            + `Back it up and remove it deliberately if you intend to re-key. Cause: ${e instanceof Error ? e.message : String(e)}`,
+          );
+        }
+        if (typeof parsed.privHex === 'string' && /^[0-9a-f]{64}$/.test(parsed.privHex)) {
+          // Re-derive the pub from the seed so a tampered/missing pubHex can't
+          // make us sign under a key that doesn't match what we publish.
+          const pubHex = await publicKeyOf(parsed.privHex);
+          return { privHex: parsed.privHex, pubHex };
+        }
+        throw new Error(
+          'agreement identity row is malformed (no valid privHex) — refusing to overwrite it. '
+          + 'Back it up and remove it deliberately if you intend to re-key.',
+        );
+      }
+
+      // Genuinely absent — first run. This is the ONLY path that may mint.
       const kp = await this.generate();
       await this.storage.set(KEY, JSON.stringify(kp));
       return kp;
