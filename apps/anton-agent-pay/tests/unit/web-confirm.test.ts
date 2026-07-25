@@ -45,15 +45,27 @@ interface Harness {
   openCalls: string[];
 }
 
-function makeHarness(opts: { walletHasPassphrase?: boolean; autoOpen?: boolean; openThrows?: boolean } = {}): Harness {
+function makeHarness(opts: {
+  walletHasPassphrase?: boolean; autoOpen?: boolean; openThrows?: boolean;
+  /** Default TRUE: most cases here exercise the operator-terminal path, where the
+   *  confirm URL is printed and lastSecret() can read it back. The withholding
+   *  behaviour when this is false has its own describe block below. Note the
+   *  production default is isTrustedTerminal(), which is FALSE under vitest — so
+   *  this must stay explicit rather than relying on the constructor default. */
+  capabilityChannelTrusted?: boolean;
+} = {}): Harness {
   let clock = 1_000;
   const logs: string[] = [];
   const openCalls: string[] = [];
+  const trusted = opts.capabilityChannelTrusted ?? true;
   const driver = new WebConfirmModalDriver({
     port: PORT,
     now: () => clock,
     log: (line) => { logs.push(line); },
-    autoOpen: opts.autoOpen ?? false,
+    capabilityChannelTrusted: trusted,
+    // Mirror the driver's own default (off on a terminal, on when untrusted)
+    // rather than hardcoding false, so the harness can't mask a regression in it.
+    autoOpen: opts.autoOpen ?? !trusted,
     openImpl: (url) => { openCalls.push(url); if (opts.openThrows) throw new Error('no browser'); },
   });
   // All stores share the driver's injected clock so the e2e path's
@@ -355,5 +367,84 @@ describe('WebConfirmModalDriver — full /rpc propose → browser approve → se
     });
     expect(got.body).not.toContain(secret);
     expect(got.body).not.toContain(nonce);
+  });
+});
+
+describe('WebConfirmModalDriver — the capability channel', () => {
+  // The confirm URL IS the approval capability. The original model said it was
+  // "printed ONLY to stderr", which is safe on a terminal but not under
+  // --mcp-stdio, where the MCP host captures stderr into a log file the agent's
+  // own host writes. These tests pin the rule: never print a capability to a
+  // stream that is not a terminal.
+
+  it('prints the confirm URL when stderr IS the operator terminal', () => {
+    const h = makeHarness({ capabilityChannelTrusted: true });
+    void h.driver.promptForDecision(payload());
+    expect(h.logs.join('\n')).toMatch(/\/confirm\/[A-Za-z0-9_-]+/);
+  });
+
+  it('WITHHOLDS the confirm URL when the log channel is not a terminal', () => {
+    const h = makeHarness({ capabilityChannelTrusted: false });
+    void h.driver.promptForDecision(payload());
+    const out = h.logs.join('\n');
+    expect(out).not.toMatch(/\/confirm\//);   // the capability never hits the log
+    expect(out).not.toContain('127.0.0.1');
+    // ...but the operator is still told a payment is waiting, and why.
+    expect(out).toContain('PAYMENT APPROVAL REQUIRED');
+    expect(out).toMatch(/not printed here|not a terminal/i);
+  });
+
+  it('still shows the payment FACTS when withholding — only the secret is hidden', () => {
+    const h = makeHarness({ capabilityChannelTrusted: false });
+    void h.driver.promptForDecision(payload({ amountFtc: 12.5, to: TO }));
+    const out = h.logs.join('\n');
+    expect(out).toContain('12.5');
+    expect(out).toContain(TO);
+  });
+
+  it('auto-opens by DEFAULT when the channel is untrusted (the only delivery path)', () => {
+    const h = makeHarness({ capabilityChannelTrusted: false, autoOpen: undefined });
+    void h.driver.promptForDecision(payload());
+    expect(h.openCalls).toHaveLength(1);
+    expect(h.openCalls[0]).toMatch(/\/confirm\/[A-Za-z0-9_-]+/);
+  });
+
+  it('does NOT auto-open by default on a real terminal (URL is already visible)', () => {
+    const h = makeHarness({ capabilityChannelTrusted: true, autoOpen: undefined });
+    void h.driver.promptForDecision(payload());
+    expect(h.openCalls).toHaveLength(0);
+  });
+
+  it('warns that approval is impossible when untrusted AND auto-open is off', () => {
+    const h = makeHarness({ capabilityChannelTrusted: false, autoOpen: false });
+    void h.driver.promptForDecision(payload());
+    const out = h.logs.join('\n');
+    expect(out).not.toMatch(/\/confirm\//);      // still withheld — fail closed, not open
+    expect(out).toMatch(/AUTO-OPEN IS OFF|cannot approve/i);
+  });
+
+  it('the withheld secret still works — the URL is delivered, not revoked', async () => {
+    const h = makeHarness({ capabilityChannelTrusted: false });
+    const decision = h.driver.promptForDecision(payload());
+    const url = h.openCalls[0]!;
+    const secret = url.match(/\/confirm\/([A-Za-z0-9_-]+)/)![1]!;
+    const page = await getPage(h.app, secret);
+    expect(page.statusCode).toBe(200);
+    const res = await postDecide(h.app, secret, { decision: 'approve', pageNonce: nonceFrom(page.body) });
+    expect(res.statusCode).toBe(200);
+    await expect(decision).resolves.toMatchObject({ kind: 'approve' });
+  });
+
+  it('sanitises agent-supplied text before it reaches the terminal', () => {
+    const ESC = String.fromCharCode(0x1b);
+    const h = makeHarness({ capabilityChannelTrusted: true });
+    void h.driver.promptForDecision(payload({
+      agentName: 'evil' + ESC + '[2A' + ESC + '[2K   Amount: 9999 FTC',
+      to: 'fc_abc' + String.fromCharCode(0x202e) + 'def',
+      remittanceSummary: ['note' + ESC + '[1;31m'],
+    }));
+    const out = h.logs.join('\n');
+    expect(out).not.toContain(ESC);
+    expect(out).not.toContain(String.fromCharCode(0x202e));
   });
 });

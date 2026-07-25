@@ -3,16 +3,27 @@
  *
  * The terminal driver (cli-modal.ts) can't read keystrokes in `--mcp-stdio`
  * mode because the MCP transport owns stdin. This driver replaces it: every
- * proposed payment prints a one-time URL to the operator's terminal (stderr);
- * the operator opens it in a browser, sees the payment, and clicks Approve /
- * Reject (typing the wallet passphrase when the wallet is protected).
+ * proposed payment mints a one-time URL which the operator opens in a browser,
+ * sees the payment, and clicks Approve / Reject (typing the wallet passphrase
+ * when the wallet is protected).
+ *
+ * HOW THE URL REACHES THE OPERATOR depends on whether stderr is a real terminal:
+ * on a TTY it is printed; otherwise it is WITHHELD and the browser is opened
+ * directly, because a non-TTY stderr is a log the AI agent's own host may read.
  *
  * THE SAFETY MODEL (two independent secrets, both fail-closed):
  *   • confirmSecret — a 256-bit value in the URL PATH. It is the capability:
- *     it is minted per-proposal, printed ONLY to stderr (never stdout — MCP owns
- *     stdout — never to any logger), and never returned by any /rpc method. So
- *     the AI agent (which only holds the JSON-RPC bearer) cannot reach a decision,
- *     and neither can another local process that can't read the operator's terminal.
+ *     it is minted per-proposal, never returned by any /rpc method, and printed
+ *     ONLY to a stderr that is a REAL TERMINAL. So the AI agent (which only holds
+ *     the JSON-RPC bearer) cannot reach a decision, and neither can another local
+ *     process that can't read the operator's terminal.
+ *
+ *     The terminal qualifier is load-bearing and was originally missing. Under
+ *     `--mcp-stdio` — the headline Claude Desktop path — the MCP host spawns this
+ *     process and captures stderr into its own log file, so "printed only to
+ *     stderr" published the capability to the agent's own host. When stderr is not
+ *     a TTY we now WITHHOLD the URL and deliver it by auto-opening the browser
+ *     (process -> OS -> browser, never a readable stream). See terminal-channel.ts.
  *   • pageNonce — a second 256-bit value embedded in the served confirm page and
  *     echoed back on POST. It proves the POST came from OUR page (a blind cross-
  *     origin attacker can't read it back out of an opaque response), so the model
@@ -26,7 +37,9 @@
  *
  * Loopback (127.0.0.1) is the trust boundary; an attacker who can already read the
  * operator's terminal/TTY defeats this AND the terminal driver alike — that's the
- * same load-bearing assumption, not a regression.
+ * same load-bearing assumption, not a regression. What is NOT acceptable, and is
+ * what the TTY gate fixes, is that assumption silently failing on the headline
+ * path because "the terminal" was in fact a log file written by the agent's host.
  *
  * Routes are registered on the EXISTING Fastify buildServer app (same 127.0.0.1
  * port as /rpc) via registerRoutes(app), before app.listen().
@@ -37,6 +50,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ModalDriver } from '../main/modal.js';
 import type { ModalDecision, ModalPayload } from '../shared/ipc-types.js';
 import { coerceDecision } from '../main/coerce-decision.js';
+import { isTrustedTerminal, stripControlChars } from './terminal-channel.js';
 
 /** Bound on simultaneously-outstanding confirm URLs. Unlike the OS-window
  *  drivers this driver does NOT serialise (each proposal gets its own URL so
@@ -56,10 +70,25 @@ export interface WebConfirmOptions {
   now?: () => number;
   /** Where the URL prompt is written. Default: process.stderr. */
   log?: (line: string) => void;
-  /** Best-effort auto-open the browser to the confirm URL (default off). */
+  /** Best-effort auto-open the browser to the confirm URL.
+   *  Default: OFF on a real terminal (the operator can see and click the printed
+   *  URL), ON when the log channel is untrusted — there it is the only way the
+   *  capability reaches the human without transiting a readable stream. */
   autoOpen?: boolean;
   /** Injectable opener for tests. */
   openImpl?: (url: string) => void;
+  /**
+   * Is `log` actually the OPERATOR's terminal?
+   *
+   * The two-secret model above assumes the confirm URL lands somewhere only the
+   * human can see. Under `--mcp-stdio` that assumption breaks: the MCP host
+   * spawns this process and captures stderr into its own log file, so printing
+   * the URL there publishes a live payment capability to the agent's own host.
+   *
+   * When false we WITHHOLD the URL and rely on auto-open (process -> OS ->
+   * browser, never a readable stream). Defaults to isTrustedTerminal().
+   */
+  capabilityChannelTrusted?: boolean;
 }
 
 interface PendingConfirm {
@@ -85,12 +114,17 @@ export class WebConfirmModalDriver implements ModalDriver {
   private readonly autoOpen: boolean;
   private readonly openImpl: (url: string) => void;
 
+  private readonly capabilityChannelTrusted: boolean;
+
   constructor(opts: WebConfirmOptions) {
     this.port = opts.port;
     this.host = opts.host ?? '127.0.0.1';
     this.now = opts.now ?? Date.now;
     this.log = opts.log ?? ((line) => { process.stderr.write(line + '\n'); });
-    this.autoOpen = opts.autoOpen ?? false;
+    this.capabilityChannelTrusted = opts.capabilityChannelTrusted ?? isTrustedTerminal();
+    // Auto-open is best-effort decoration on a real terminal, but it is the ONLY
+    // delivery path when the log channel is untrusted — so default it ON there.
+    this.autoOpen = opts.autoOpen ?? !this.capabilityChannelTrusted;
     this.openImpl = opts.openImpl ?? defaultOpenUrl;
   }
 
@@ -196,18 +230,37 @@ export class WebConfirmModalDriver implements ModalDriver {
   }
 
   private printPrompt(p: ModalPayload, url: string): void {
+    // Every interpolated field below is agent-chosen, so each goes through
+    // stripControlChars: an unsanitised ANSI sequence in agentNote or `to` can
+    // scroll back and repaint the Amount/To lines the operator is authorising.
+    const s = stripControlChars;
     this.log('');
     this.log('  ⚠  PAYMENT APPROVAL REQUIRED — an AI agent wants to send FTC');
-    this.log(`     Agent:  ${p.agentName}  (paired ${p.agentPairedAgo})`);
-    if (p.payingAs) this.log(`     Paying as: ${p.payingAs}${p.uboName ? `  (you: ${p.uboName})` : ''}`);
-    this.log(`     To:     ${p.to}`);
-    this.log(`     Amount: ${p.amountFtc} FTC  (fee ~${p.feeFtc} FTC)`);
+    this.log(`     Agent:  ${s(p.agentName)}  (paired ${s(p.agentPairedAgo)})`);
+    if (p.payingAs) this.log(`     Paying as: ${s(p.payingAs)}${p.uboName ? `  (you: ${s(p.uboName)})` : ''}`);
+    this.log(`     To:     ${s(p.to)}`);
+    this.log(`     Amount: ${s(p.amountFtc)} FTC  (fee ~${s(p.feeFtc)} FTC)`);
     if (p.remittanceSummary && p.remittanceSummary.length > 0) {
       this.log('     Attached:');
-      for (const s of p.remittanceSummary) this.log(`       ${s}`);
+      for (const line of p.remittanceSummary) this.log(`       ${s(line)}`);
     }
-    this.log('     → Approve or reject in your browser:');
-    this.log(`       ${url}`);
+    if (this.capabilityChannelTrusted) {
+      this.log('     → Approve or reject in your browser:');
+      this.log(`       ${url}`);
+    } else {
+      // The URL is the capability. This stream is a pipe/file (MCP host log,
+      // redirect, journal) — printing it here would hand a live payment approval
+      // to whatever can read those logs, including the agent's own host. Say
+      // that plainly instead, and let auto-open deliver it out-of-band.
+      this.log('     → Approve or reject in your browser.');
+      this.log('       The one-time approval link is deliberately NOT printed here:');
+      this.log('       this output is not a terminal, so it may be captured to a log');
+      this.log('       your AI agent can read. Opening it in your browser instead.');
+      if (!this.autoOpen) {
+        this.log('       AUTO-OPEN IS OFF — you cannot approve. Run the gateway from a');
+        this.log('       terminal, or unset AGENT_PAY_WEB_CONFIRM_AUTOOPEN=false.');
+      }
+    }
     this.log('');
   }
 
