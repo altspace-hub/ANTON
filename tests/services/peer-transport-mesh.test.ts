@@ -131,21 +131,26 @@ async function waitFor(cond: () => boolean, timeoutMs: number): Promise<void> {
 
 describe('peer-transport mesh leg — instance-to-instance RPC over the real relay', () => {
   it('round-trips a POST and propagates the real status; failures no longer report delivered', async () => {
-    // Stub Express handler on the responder side:
-    //   /api/p2p/receive → 200 echo
-    //   /api/p2p/fail    → 500
-    //   /api/p2p/hang    → never responds (bridge soft-timeout → 504)
+    // Stub Express handler on the responder side. All three cases now ride the
+    // PRODUCTION path /api/p2p/receive and are selected by the request BODY,
+    // because the mesh bridge's path allowlist (services/mesh/bridge.ts) only
+    // dispatches the paths real clients use — a test-only /api/p2p/fail would be
+    // 404'd by the bridge before Express, which would silently turn this into a
+    // test of the allowlist rather than of status propagation.
+    //   body {"mode":"fail"} → 500
+    //   body {"mode":"hang"} → never responds (bridge soft-timeout → 504)
+    //   anything else        → 200 echo
     const expressHandler = (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse): void => {
       const chunks: Buffer[] = [];
       req.on('data', (c) => chunks.push(c));
       req.on('end', () => {
         const bodyIn = Buffer.concat(chunks).toString('utf8');
-        if (req.url === '/api/p2p/fail') {
+        if (bodyIn.includes('"mode":"fail"')) {
           res.writeHead(500, { 'content-type': 'application/json' });
           res.end(JSON.stringify({ error: 'peer exploded' }));
           return;
         }
-        if (req.url === '/api/p2p/hang') {
+        if (bodyIn.includes('"mode":"hang"')) {
           return; // never call res.end() — bridge soft-timeout takes over
         }
         res.writeHead(200, { 'content-type': 'application/json' });
@@ -187,7 +192,7 @@ describe('peer-transport mesh leg — instance-to-instance RPC over the real rel
       // 2) Peer-side failure is reported as a failure with the REAL status —
       //    this is the regression the old raw-text framing masked.
       const failOutcome = await sendMeshRpcRequest(
-        initiatorDialer, peerEdHex, '/api/p2p/fail', '{"hello":"peer"}', 8_000,
+        initiatorDialer, peerEdHex, '/api/p2p/receive', '{"mode":"fail"}', 8_000,
       );
       expect(failOutcome.ok).toBe(false);
       expect(failOutcome.httpStatus).toBe(500);
@@ -196,7 +201,7 @@ describe('peer-transport mesh leg — instance-to-instance RPC over the real rel
       // 3) A peer that never answers must not be marked delivered. The
       //    bridge's soft-timeout converts it to a 504 RESPONSE frame.
       const hangOutcome = await sendMeshRpcRequest(
-        initiatorDialer, peerEdHex, '/api/p2p/hang', '{"hello":"peer"}', 8_000,
+        initiatorDialer, peerEdHex, '/api/p2p/receive', '{"mode":"hang"}', 8_000,
       );
       expect(hangOutcome.ok).toBe(false);
       expect(hangOutcome.httpStatus).toBe(504);
