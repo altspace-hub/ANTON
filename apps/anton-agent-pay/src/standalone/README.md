@@ -78,7 +78,7 @@ Type `y` → it submits on-chain. Anything else (or no answer before the proposa
 | Variable | Default | Purpose |
 |---|---|---|
 | `AGENT_PAY_PORT` | `49250` | HTTP port (bound to `127.0.0.1` only) |
-| `AGENT_PAY_WALLET_DIR` | `~/.anton-fc-standalone` | Where the encrypted wallet file lives |
+| `AGENT_PAY_WALLET_DIR` | `~/.anton-fc-standalone` | Where the wallet file lives. **Not encrypted on this path** — the passphrase envelope exists but is only wired to the Electron app, so the standalone CLI stores the spend key in plaintext (mode 0600). Protect the directory accordingly. |
 | `AGENT_PAY_MNEMONIC` | — | BIP-39 mnemonic to import **on first run only** (never overwrites) |
 | `AGENT_PAY_MAX_PER_PAYMENT_FTC` | ∞ | Reject any single payment above this |
 | `AGENT_PAY_MAX_DAILY_FTC` | ∞ | Reject when (sent **or in-flight** in the last 24h) + this payment would exceed it — counts pending/approved value so a burst can't be approved past the ceiling |
