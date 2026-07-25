@@ -5,11 +5,39 @@
  * as tools during conversation. The AI decides when a connector is needed,
  * returns a structured tool call, and this executor runs it and returns the result.
  *
- * Security:
+ * SECURITY MODEL — READ THIS BEFORE RELAXING ANYTHING HERE.
+ *
+ * The `toolCall` reaching executeCall() is parsed out of the MODEL'S FREE TEXT
+ * (see parseToolCalls). That text is influenced by whatever the agent read — an
+ * inbound /agents/public/query message, a delegated peer task, a fetched
+ * document. So every field of a tool call must be treated as ATTACKER-CONTROLLED
+ * input, not as an instruction the model chose. The connector's declared surface
+ * (config.endpoints / config.tables) is the operator's intent; the tool call is
+ * merely a request against it, and this file is where the two are reconciled.
+ *
+ * That reconciliation used not to happen. buildToolDescriptions() rendered
+ * config.endpoints into the system prompt as an advisory list, and executeCall()
+ * never consulted it — method, path and body all came straight from the model
+ * and were dispatched with the operator's vault-decrypted credentials. The SQL
+ * branch took the query verbatim and ran it unparameterised on ANTON's own
+ * database.
+ *
+ * Enforced now:
  * - Credentials encrypted at rest via credential-vault
- * - SQL queries are read-only (SELECT only) by default
- * - API calls have configurable timeout (default 10s)
- * - Results are truncated to prevent context overflow
+ * - REST: (method, path) MUST match an endpoint the operator declared;
+ *   write verbs require an explicit per-connector opt-in
+ * - SQL: SELECT-only, no statement separators or comments (so a second
+ *   statement is structurally impossible), and every referenced table must be
+ *   in an allowlist that FAILS CLOSED when empty
+ * - Webhook: the HMAC covers the exact bytes transmitted
+ * - SSRF guard + no redirect following on every egress
+ * - Results truncated to prevent context overflow
+ *
+ * STILL OPEN (architectural, tracked separately): the tool-call channel itself.
+ * A ```tool_call fence matched by regex means any text the model can be induced
+ * to emit is a command. The durable fix is the provider's native structured
+ * tool-use API, so only a schema-validated tool_use block can dispatch. Until
+ * then the controls in this file are what bound the damage.
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
@@ -35,6 +63,165 @@ export interface ConnectorCallResult {
 }
 
 const MAX_RESULT_LENGTH = 8000; // Truncate results to prevent context overflow
+
+/** HTTP verbs a REST connector may use without an explicit write opt-in. */
+const READ_ONLY_METHODS = new Set(['GET', 'HEAD']);
+
+export interface DeclaredEndpoint { method: string; path: string; description?: string; params?: string[] }
+
+/**
+ * Does the model's requested (method, path) match something the OPERATOR declared?
+ *
+ * config.endpoints was previously advisory — rendered into the system prompt and
+ * never checked — so a connector advertising only `GET /contacts` would happily
+ * dispatch `DELETE /v2/contacts/all` with the operator's Bearer token attached.
+ *
+ * Matching is exact on method, and on path allows a declared `:id` / `{id}`
+ * segment to match exactly one non-empty, non-slash segment. Deliberately NOT a
+ * prefix or wildcard match: `/admin/users` must not be reachable because
+ * `/admin` was declared.
+ *
+ * Fails CLOSED — an empty or malformed `endpoints` list permits nothing. A
+ * connector with no declared surface is not a connector with an open surface.
+ */
+export function matchesDeclaredEndpoint(
+  method: string,
+  path: string,
+  endpoints: DeclaredEndpoint[],
+): boolean {
+  if (!Array.isArray(endpoints) || endpoints.length === 0) return false;
+  const wantMethod = String(method || '').toUpperCase();
+  // Compare path only — a query string is carried separately and must not let
+  // `/contacts?x=1` masquerade as the declared `/contacts`.
+  const wantPath = normalisePath(String(path || '').split('?')[0]?.split('#')[0] ?? '');
+  if (!wantPath) return false;
+  // `..` can never appear in a legitimately declared path and is the obvious way
+  // to climb out of a declared prefix once the URL is joined to base_url.
+  if (wantPath.includes('..')) return false;
+
+  return endpoints.some((e) => {
+    if (!e || typeof e.method !== 'string' || typeof e.path !== 'string') return false;
+    if (e.method.toUpperCase() !== wantMethod) return false;
+    const declared = normalisePath(e.path).split('/');
+    const actual = wantPath.split('/');
+    if (declared.length !== actual.length) return false;
+    return declared.every((seg, i) => {
+      const isParam = (seg.startsWith(':') && seg.length > 1)
+        || (seg.startsWith('{') && seg.endsWith('}') && seg.length > 2);
+      if (isParam) return actual[i]!.length > 0;
+      return seg.toLowerCase() === actual[i]!.toLowerCase();
+    });
+  });
+}
+
+function normalisePath(p: string): string {
+  const t = p.trim();
+  const withSlash = t.startsWith('/') ? t : '/' + t;
+  // Drop a trailing slash so `/contacts` and `/contacts/` are the same path,
+  // but keep the root as '/'.
+  return withSlash.length > 1 ? withSlash.replace(/\/+$/, '') : withSlash;
+}
+
+/** Strip string literals and comments so table extraction can't be fooled by them. */
+function stripLiteralsAndComments(sql: string): string {
+  return sql
+    .replace(/'(?:[^']|'')*'/g, "''")     // single-quoted literals
+    .replace(/"(?:[^"]|"")*"/g, '""')     // quoted identifiers
+    .replace(/--[^\n]*/g, ' ')            // line comments
+    .replace(/\/\*[\s\S]*?\*\//g, ' ');   // block comments
+}
+
+/**
+ * Tables a SELECT actually reads, taken from FROM/JOIN clauses.
+ *
+ * The previous check was `allowedTables.some(t => query.toUpperCase().includes(t))`
+ * — a substring test over the whole query, satisfied by putting an allowed table
+ * name in a trailing comment while selecting from something else entirely.
+ * Extracting the real FROM/JOIN targets and requiring EVERY one to be allowed is
+ * what makes the allowlist mean anything.
+ *
+ * This is a heuristic, not a parser; it is the second line of defence behind
+ * SELECT-only and the no-separator rule, not a substitute for either. A genuine
+ * SQL parser (or better, operator-defined parameterised templates) is the
+ * durable answer.
+ */
+export function referencedTables(sql: string): string[] {
+  const stripped = stripLiteralsAndComments(sql);
+
+  // CTE names are query-local aliases, not tables — `WITH x AS (...) SELECT * FROM x`
+  // reads no relation called `x`. Collect them so they aren't demanded of the
+  // allowlist. This cannot be used to launder access: the CTE's own body is still
+  // scanned, so `WITH orders AS (SELECT * FROM user_sessions) SELECT * FROM orders`
+  // still surfaces `user_sessions` and is still rejected.
+  const cteNames = new Set<string>();
+  const cteRe = /(?:\bWITH\s+(?:RECURSIVE\s+)?|,\s*)([A-Za-z_][A-Za-z0-9_$]*)\s+AS\s*\(/gi;
+  let c: RegExpExecArray | null;
+  while ((c = cteRe.exec(stripped)) !== null) cteNames.add(c[1]!.toLowerCase());
+
+  const out: string[] = [];
+  const re = /\b(?:FROM|JOIN)\s+([A-Za-z_][A-Za-z0-9_$]*(?:\.[A-Za-z_][A-Za-z0-9_$]*)?)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(stripped)) !== null) {
+    const name = m[1]!;
+    if (!cteNames.has(name.toLowerCase())) out.push(name);
+  }
+  return out;
+}
+
+export interface SqlGuardResult { ok: boolean; error?: string }
+
+/**
+ * Gate a model-authored query before it touches ANTON's own database.
+ *
+ * The load-bearing rule is the separator ban. `db.all(sql)` passes no values, so
+ * pg's requiresPreparation() is false (values.length > 0) and it dispatches via
+ * connection.query(text) — the SIMPLE protocol, which executes MULTIPLE
+ * statements in one round trip. That is how `SELECT 1;/**\/DO $$ ... $$;--` became
+ * arbitrary PL/pgSQL despite a SELECT-only check: the old blocklist matched only
+ * `;\s*(DROP|DELETE|...)`, missing DO/GRANT/COPY/CALL/SET and defeated by any
+ * comment between the semicolon and the keyword.
+ *
+ * Rather than extend a keyword blocklist — which cannot be made complete —
+ * forbid the separator and comments outright. A single SELECT needs neither, so
+ * a second statement becomes structurally impossible instead of merely
+ * unrecognised. The cost is that a literal containing ';' or '--' is rejected;
+ * that is the right trade for model-authored SQL.
+ */
+export function guardLocalSelect(rawQuery: string, allowedTables: string[]): SqlGuardResult {
+  const query = String(rawQuery ?? '').trim();
+  if (!query) return { ok: false, error: 'Empty query' };
+
+  if (!/^SELECT\s/i.test(query) && !/^WITH\s/i.test(query)) {
+    return { ok: false, error: 'Only SELECT queries are allowed (read-only)' };
+  }
+  if (query.includes(';')) {
+    return { ok: false, error: 'Statement separators are not allowed — send exactly one SELECT' };
+  }
+  if (query.includes('--') || query.includes('/*')) {
+    return { ok: false, error: 'SQL comments are not allowed' };
+  }
+
+  // Fail CLOSED. Previously an empty allowlist SKIPPED the check entirely, so a
+  // connector configured without `tables` could read every table in the database
+  // — credentials, sessions, engagement content, community identities.
+  if (!Array.isArray(allowedTables) || allowedTables.length === 0) {
+    return { ok: false, error: 'This connector declares no readable tables — configure config.tables' };
+  }
+
+  const allowed = new Set(allowedTables.map(t => String(t).toLowerCase()));
+  const referenced = referencedTables(query);
+  if (referenced.length === 0) {
+    return { ok: false, error: 'Query must read from a declared table' };
+  }
+  for (const t of referenced) {
+    // Accept either a bare name or a schema-qualified one whose table part is allowed.
+    const bare = t.includes('.') ? t.split('.').pop()! : t;
+    if (!allowed.has(t.toLowerCase()) && !allowed.has(bare.toLowerCase())) {
+      return { ok: false, error: `Query must reference only: ${allowedTables.join(', ')}` };
+    }
+  }
+  return { ok: true };
+}
 
 export async function createConnectorExecutor(db: DatabaseAdapter) {
 
@@ -129,6 +316,28 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
 
         const method = (toolCall.action ?? 'GET').toUpperCase();
         const path = (toolCall.params.path ?? toolCall.params.endpoint ?? '') as string;
+
+        // The model asked for this (method, path); the OPERATOR declared what is
+        // callable. Reconcile the two before any credential is attached.
+        const declared = (config.endpoints ?? []) as DeclaredEndpoint[];
+        if (!matchesDeclaredEndpoint(method, path, declared)) {
+          return {
+            success: false, connectorName: connector.name, data: null,
+            error: `Not a declared endpoint for this connector: ${method} ${path}`,
+            durationMs: Date.now() - startTime,
+          };
+        }
+        // Write verbs need an explicit per-connector opt-in even when declared —
+        // an operator who lists a POST endpoint for their own use should not
+        // thereby make it reachable by whatever text the agent happens to read.
+        if (!READ_ONLY_METHODS.has(method) && config.allow_write_methods !== true) {
+          return {
+            success: false, connectorName: connector.name, data: null,
+            error: `${method} requires config.allow_write_methods = true on this connector`,
+            durationMs: Date.now() - startTime,
+          };
+        }
+
         const url = `${baseUrl.replace(/\/+$/, '')}${path.startsWith('/') ? path : '/' + path}`;
 
         // Build headers
@@ -187,27 +396,21 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
       else if (connector.connector_type === 'database') {
         const query = (toolCall.action ?? toolCall.params.query ?? '') as string;
 
-        // Security: only allow SELECT statements
-        const normalizedQuery = query.trim().toUpperCase();
-        if (!normalizedQuery.startsWith('SELECT')) {
-          return {
-            success: false, connectorName: connector.name,
-            data: null, error: 'Only SELECT queries are allowed (read-only)',
-            durationMs: Date.now() - startTime,
-          };
-        }
-
-        // Disallow dangerous patterns
-        if (/;\s*(DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE)/i.test(query)) {
-          return {
-            success: false, connectorName: connector.name,
-            data: null, error: 'Query contains disallowed statements',
-            durationMs: Date.now() - startTime,
-          };
-        }
-
         // Use a separate connection if external DB is configured, otherwise use local
         const connString = (credentials.connection_string ?? config.connection_string) as string | undefined;
+        // Both branches run model-authored SQL, so both take the same gate. The
+        // external branch was already marginally safer (it passes a values array,
+        // which puts pg on the extended protocol) but nothing stopped a
+        // separator there either, and it reaches a database the operator owns.
+        const guard = guardLocalSelect(query, (config.tables ?? []) as string[]);
+        if (!guard.ok) {
+          return {
+            success: false, connectorName: connector.name,
+            data: null, error: guard.error ?? 'Query rejected',
+            durationMs: Date.now() - startTime,
+          };
+        }
+
         if (connString) {
           // External database — use pg directly
           const { default: pg } = await import('pg');
@@ -220,18 +423,9 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
             await client.end();
           }
         } else {
-          // Local database (read-only query on ANTON's own DB)
-          const allowedTables = (config.tables ?? []) as string[];
-          if (allowedTables.length > 0) {
-            const hasAllowedTable = allowedTables.some(t => normalizedQuery.includes(t.toUpperCase()));
-            if (!hasAllowedTable) {
-              return {
-                success: false, connectorName: connector.name,
-                data: null, error: `Query must reference one of: ${allowedTables.join(', ')}`,
-                durationMs: Date.now() - startTime,
-              };
-            }
-          }
+          // Local database — ANTON's OWN db, full privileges. guardLocalSelect
+          // above has already required SELECT-only, no separators, no comments,
+          // and a non-empty table allowlist that every FROM/JOIN target satisfies.
           const rows = await db.all(query);
           result = { rows: (rows as unknown[]).slice(0, 100), rowCount: (rows as unknown[]).length };
         }
@@ -242,18 +436,27 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
         const webhookUrl = (config.url ?? config.webhook_url) as string;
         if (!webhookUrl) throw new Error('No webhook URL configured');
 
+        // Sign the EXACT bytes we transmit. This previously HMAC'd
+        // JSON.stringify(toolCall.params) while sending {action, params,
+        // timestamp} — so the signature did not cover the payload at all: a
+        // receiver verifying over the received body got a mismatch, and one
+        // verifying over `params` alone left `action` and `timestamp` unsigned
+        // and mutable in transit. Serialise once, sign that, send that.
+        const webhookBody = JSON.stringify({
+          action: toolCall.action, params: toolCall.params, timestamp: Date.now(),
+        });
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (credentials.secret) {
           const { createHmac } = await import('crypto');
-          const body = JSON.stringify(toolCall.params);
-          headers['X-Webhook-Signature'] = createHmac('sha256', credentials.secret as string).update(body).digest('hex');
+          headers['X-Webhook-Signature'] = createHmac('sha256', credentials.secret as string)
+            .update(webhookBody).digest('hex');
         }
 
         await assertSafeEgressUrl(webhookUrl); // SSRF guard — block private/link-local/metadata targets
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ action: toolCall.action, params: toolCall.params, timestamp: Date.now() }),
+          body: webhookBody,
           signal: AbortSignal.timeout(Number(config.timeout_ms ?? 10_000)),
           redirect: 'manual', // SSRF: don't follow a redirect to a private target
         });
