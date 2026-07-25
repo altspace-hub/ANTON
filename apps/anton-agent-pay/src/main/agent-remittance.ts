@@ -81,6 +81,18 @@ export function summarizeRemittance(r: AntonRemittance): string[] {
   if (r.decision) lines.push(`Agreed: ${truncate(r.decision, 200)}`);
   if (r.terms) lines.push(`Terms: ${truncate(r.terms, 200)}`);
   if (r.message) lines.push(`Message: ${truncate(r.message, 200)}`);
+  // Escrow legs must be legible AT THE MONEY GATE. The collaboration gateway
+  // stamps meta.escrow on fund/release/refund instructions, but the human
+  // approving the spend previously saw only "an agreement payment" — with no
+  // indication that this was, say, a RELEASE paying out custodial funds rather
+  // than the original purchase. Surfacing it costs nothing: it rides the
+  // existing remittanceSummary array, which both approval drivers already
+  // render and control-strip.
+  const m = r.meta as Record<string, unknown> | undefined;
+  if (m?.escrow) {
+    lines.push(`ESCROW ${String(m.escrow).toUpperCase()} leg`);
+    if (m.escrowAddress) lines.push(`Escrow address: ${truncate(String(m.escrowAddress), 80)}`);
+  }
   return lines;
 }
 
