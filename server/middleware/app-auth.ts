@@ -84,8 +84,8 @@ export function createAppAuthMiddleware(db: DatabaseAdapter) {
     try {
       // SEC: Hash the incoming token and look up by hash — no timing side-channel
       const tokenHash = hashSessionToken(sessionToken);
-      const tokenRow = await db.get<{ connected_user_id: string; expires_at: string }>(
-        'SELECT connected_user_id, expires_at FROM app_session_tokens WHERE token = $1',
+      const tokenRow = await db.get<{ connected_user_id: string; expires_at: string; device_id: string | null }>(
+        'SELECT connected_user_id, expires_at, device_id FROM app_session_tokens WHERE token = $1',
         tokenHash
       );
 
@@ -95,6 +95,23 @@ export function createAppAuthMiddleware(db: DatabaseAdapter) {
 
       if (new Date(tokenRow.expires_at) < new Date()) {
         return res.status(401).json({ error: 'Invalid or expired session' });
+      }
+
+      // Refuse a session whose device has been unpaired. revokeDevice() deletes
+      // these rows outright, so reaching here means something went wrong — a
+      // partially-applied revoke, a restored DB dump, a row re-inserted by an
+      // older build. This is the defence-in-depth layer that makes "unpair"
+      // hold even then, and it is deliberately a separate check rather than a
+      // JOIN so a NULL device_id (pre-migration-251 session) still authenticates
+      // normally instead of being silently dropped.
+      if (tokenRow.device_id) {
+        const device = await db.get<{ revoked_at: string | null }>(
+          'SELECT revoked_at FROM app_devices WHERE id = $1',
+          tokenRow.device_id
+        );
+        if (!device || device.revoked_at !== null) {
+          return res.status(401).json({ error: 'Invalid or expired session' });
+        }
       }
 
       // Load user
