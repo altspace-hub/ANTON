@@ -60,11 +60,15 @@ cannot patch both. They are scoped by direct parent (`express@4>...` and `router
 
 ### Accepted-with-reason
 
-**None.** Every high/critical runtime advisory was patched. No breaking-major exception
-was required, so no `pnpm audit` ignore/allowlist entry was added. (Should a future
-advisory prove unfixable without a breaking major, the cleanest mechanism is
-`auditConfig.ignoreCves` in `package.json` with a dated reason, keeping the gate blocking
-for everything else.)
+**None as of 2026-06-21** — every high/critical runtime advisory was patched, and no
+`pnpm audit` ignore/allowlist entry was added. (Should a future advisory prove unfixable
+without a breaking major, the cleanest mechanism is `auditConfig.ignoreCves` in
+`package.json` with a dated reason, keeping the gate blocking for everything else.)
+
+> **Superseded 2026-07-25.** That mechanism is now in use: exactly one advisory
+> (`GHSA-mh99-v99m-4gvg`, brace-expansion) is accepted, via
+> `pnpm.auditConfig.ignoreGhsas`. See the 2026-07-25 addendum for the rationale and its
+> review trigger.
 
 ---
 
@@ -123,3 +127,97 @@ tests that fail on the Linux runner — unrelated to the CVE work).
 > **Standing risk (from the go-live readiness review):** the runtime-CVE landscape moves —
 > re-run `pnpm audit --prod --audit-level=high` immediately before launch and keep the
 > override pins current.
+
+---
+
+## Addendum — 2026-07-25 (12 blocking advisories after a 4-week gate outage)
+
+**Root cause was process, not code.** CI died at the install step on **2026-06-28**
+(`ERR_PNPM_OUTDATED_LOCKFILE` — `apps/anton-agent-pay/package.json` declared two `@noble`
+packages the lockfile never listed, and all eight install steps use `--frozen-lockfile`).
+Every job, including `security-audit`, failed in ~40s *before running anything*. `main` had
+no branch protection, so PRs #7/#8/#9 merged fully red.
+
+For ~4 weeks the gate was dead and silent. When the lockfile was repaired on 2026-07-24 the
+audit ran again and reported **12 blocking advisories (1 critical + 11 high) across 7
+modules**. None is a code regression — they simply accumulated unobserved. The lesson is
+the one this doc's own standing risk note anticipated: *a gate that cannot run is
+indistinguishable from a gate that passes.*
+
+| Package | Advisory | Was | Fix | Path |
+|---|---|---|---|---|
+| `adm-zip` | GHSA-xcpc-8h2w-3j85 — crafted ZIP triggers ~4GB allocation, `<0.6.0` | `^0.5.16` (direct) | **direct bump → `^0.6.0`** (+ dropped `@types/adm-zip`, now bundled) | `.>adm-zip` |
+| `tar` | **CRITICAL** decompression/parse DoS + negative-entry infinite loop, `<=7.5.18` | transitive | **scoped override → `@capacitor/cli>tar: >=7.5.19`** | `.>@capacitor/cli>tar` |
+| `fast-uri` | 2× host confusion, `>=4.0.0 <=4.1.0` | override `>=3.1.1` (unbounded) | **corrected override → `>=3.1.4 <4.0.0`** (a *downgrade*) | `.>ajv>fast-uri` |
+| `engine.io` | GHSA — polling-transport connection exhaustion, `>=4.1.0 <6.6.7` | transitive | **override → `>=6.6.7 <6.7.0`** | `.>socket.io>engine.io` |
+| `find-my-way` | DDoS with HTTP/2, `<=9.6.0` | transitive | **override → `>=9.7.0`** | `apps__anton-agent-pay>fastify>find-my-way` |
+| `@opentelemetry/propagator-jaeger` | DoS in `JaegerPropagator`, `<2.9.0` | transitive | **override → `>=2.9.0 <3.0.0`** | `.>@opentelemetry/sdk-node>...` |
+| `brace-expansion` ×4 | GHSA-3jxr-9vmj-r5cp (exponential expansion) + GHSA-mh99-v99m-4gvg (unbounded expansion → OOM) | transitive | **three major-scoped pins** `@1: >=1.1.16 <2.0.0`, `@2: >=2.1.2 <3.0.0`, `@5: >=5.0.8 <6.0.0`; mh99 **accepted** on the 1.x/2.x lines | via `exceljs>archiver>…>minimatch` (×2) and `@capacitor/cli>rimraf>glob>minimatch` |
+
+**Result:** `pnpm audit --prod --audit-level=high` → **exit 0**, 0 unignored high/critical
+(was 1 critical + 13 high by path count). Residual: 6 low / 30 moderate, below the gate.
+
+### Three things worth carrying forward
+
+**1. `fast-uri` was a DOWNGRADE, and that is the interesting failure.** The pre-existing
+override `">=3.1.1"` had no upper bound, so it hoisted `fast-uri@4.0.0` — a major that
+**neither parent declares** (`ajv@8.18.0` wants `^3.0.1`; `fast-json-stringify` wants
+`^3.0.0`). The override had been silently violating semver since 4.0.0 published, and 4.0.0
+then picked up its own advisories. Bounding it back into the declared line (`>=3.1.4
+<4.0.0`) fixes both problems at once.
+
+This is the **second** time an unbounded override has bitten (`path-to-regexp` was the
+first — see the note above about two incompatible majors). **Ten of the thirteen
+pre-existing overrides are still bare `>=` floors.** Each can silently hoist an undeclared
+major. Bounding them to the major their parents actually declare is a tracked follow-up.
+
+**2. Two overrides must stay scoped.** `tar` is pinned as `@capacitor/cli>tar`, not
+globally: a bare `"tar": ">=7.5.19"` would drag the dev tree's `tar@6.2.1` across a major
+under `@electron/rebuild`, `node-gyp` and `cacache`, putting `pnpm run electron:build` at
+risk. `brace-expansion` needs three separate major-scoped pins because `minimatch@3/5/9`
+provably cannot consume the 5.x line. Verify with `pnpm why tar` / `pnpm why
+brace-expansion` after any dependency change.
+
+Related footgun: **`pnpm.overrides` is read only from the workspace-root manifest.** An
+overrides block added to `apps/*/package.json` is silently ignored — `find-my-way` is the
+first entry here driven by a workspace app, and it is pinned at the root.
+
+**3. `@capacitor/cli` moved `dependencies` → `devDependencies`.** It is a build tool (only
+`npx cap …` in scripts; zero runtime imports), and that misclassification was the sole
+reason its transitive `tar` put the batch's only CRITICAL into a `--prod` audit. The scoped
+override is deliberately kept as well, so the pin survives if the move is reverted.
+
+### Accepted-with-reason — GHSA-mh99-v99m-4gvg (brace-expansion)
+
+**Unfixable on the 1.x and 2.x lines.** The unbounded-expansion cap shipped only in
+**5.0.8** and was never backported: 1.x ends at 1.1.16, 2.x ends at 2.1.2. No reachable
+graph puts all three copies at `>=5.0.8` — `minimatch@3/5/9` cannot consume 5.x; `exceljs`
+is end-of-line at 4.4.0 and pins `archiver ^5`; even `archiver@7` stays on the 2.x line via
+`archiver-utils@5 > glob ^10 > minimatch@9`.
+
+**Safe by construction:** after the 5.x pin, the advisory has no remaining *executed* path.
+`exceljs` never calls archiver's `.glob()` or `.directory()` — the only two entry points
+that load `minimatch` at all. Every glob pattern on these paths is developer-authored
+inside the dependencies themselves; no ANTON code passes a user-controlled glob to
+`exceljs`, `archiver` or `rimraf`.
+
+Suppressed via `pnpm.auditConfig.ignoreGhsas`, which names that single advisory ID and so
+cannot mask anything else. The gate stays blocking for everything.
+
+> **Review trigger (dated).** Revisit when **either**: `exceljs` ships a release off
+> `archiver@5`, **or** a `1.1.17` / `2.1.3` backport of the 5.0.8 cap appears. Re-check at
+> the next quarterly dependency sweep regardless. An ignore with no expiry is how a gate
+> rots — this one has an owner and a condition.
+
+### Verification gates (all green, 2026-07-25)
+
+| Gate | Command | Result |
+|---|---|---|
+| Audit (THE gate) | `pnpm audit --prod --audit-level=high` | ✅ exit 0, 0 unignored high/critical |
+| Typecheck | `npx tsc -b --noEmit` | ✅ exit 0 |
+| Zip/ajv regression | 9 bundle + capability-descriptor suites | ✅ 155 passed |
+| Root | `pnpm run test` | ✅ 2196 passed, 16 skipped |
+| Comm / Business / Pay / Companion | `pnpm run test:{comm,business,pay,app}` | ✅ 825 / 366 / 311 / 11 |
+| Agent Pay | `npx vitest run` (in `apps/anton-agent-pay/`) | ✅ 237 passed |
+| Capacitor CLI still usable | `npx cap --version` | ✅ 8.3.1 from devDependencies |
+| Electron chain intact | `pnpm why tar` | ✅ `tar@6.2.1` still under `@electron/rebuild` |

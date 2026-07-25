@@ -427,7 +427,7 @@ Chat with friends. Social events (dinners, parties, birthdays). Portals visitor 
 **13-item feature roadmap (R1–R13) all shipped**:
 R1 Reply · R2 React · R3 Wassup (closed-graph status feed) · R4 Voice notes · R5 Disappearing · R6 View-once · R7 Polls · R8 Forward / Edit / Delete · R9 Read receipts + typing · R10 Scheduled · R11 Event reminders · R12 Stickers · R13 Location.
 
-**E2E crypto**: X25519 keypair derived from device Ed25519 → AES-256-GCM via WebCrypto with per-message HKDF salt for forward secrecy → AAD binds `(fromHash, toHash)` into auth tag. Messages travel as encrypted envelopes over the relay protocol; the relay sees routing IDs, not content.
+**E2E crypto**: X25519 keypair derived from device Ed25519 → AES-256-GCM via WebCrypto with per-message HKDF salt for per-message key separation → AAD binds `(fromHash, toHash)` into auth tag. Messages travel as encrypted envelopes over the relay protocol; the relay sees routing IDs, not content.
 
 **5 tabs**: Chat · Wassup · Events · Portals · Wallet.
 
