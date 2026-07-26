@@ -140,7 +140,9 @@ function b64ToBytes(s: string): Uint8Array {
 
 async function wrap(plaintext: string, key: CryptoKey): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ctBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+  const ctBuf = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv as BufferSource }, key, enc.encode(plaintext) as BufferSource,
+  );
   const env: WrappedEnvelope = { v: 1, iv: bytesToB64(iv), ct: bytesToB64(new Uint8Array(ctBuf)) };
   return JSON.stringify(env);
 }
@@ -153,7 +155,12 @@ async function unwrap(stored: string, key: CryptoKey): Promise<string | null> {
   if (!env || env.v !== 1 || typeof env.iv !== 'string' || typeof env.ct !== 'string') return null;
   try {
     const plain = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: b64ToBytes(env.iv) }, key, b64ToBytes(env.ct),
+      // The `as BufferSource` casts are load-bearing under `tsc -b`: lib.dom now
+      // types BufferSource as ArrayBufferView<ArrayBuffer>, and a plain
+      // Uint8Array is Uint8Array<ArrayBufferLike>, which admits SharedArrayBuffer.
+      // Same treatment as the ratchet's AEAD helpers.
+      { name: 'AES-GCM', iv: b64ToBytes(env.iv) as BufferSource }, key,
+      b64ToBytes(env.ct) as BufferSource,
     );
     return dec.decode(plain);
   } catch {
