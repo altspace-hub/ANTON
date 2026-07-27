@@ -3496,6 +3496,7 @@ export const MODELS: ModelInfo[] = [
   // ── Anthropic ─────────────────────────────────────────────
   {
     id: 'claude-opus-5',
+    recommended: true,
     label: 'Claude Opus 5',
     description: 'Claude 5 flagship. 1M context, 128k output. Best for complex reasoning, agentic coding, and high-stakes compliance work. Adaptive thinking, on by default. Same price as Opus 4.8.',
     inputCostPer1M: 5,
@@ -3507,6 +3508,7 @@ export const MODELS: ModelInfo[] = [
   },
   {
     id: 'claude-sonnet-5',
+    recommended: true,
     label: 'Claude Sonnet 5',
     // PRICING CHANGES 2026-08-31: introductory $2/$10 reverts to $3/$15. Update
     // these numbers and the server capability row together — cost displays and the
@@ -3537,7 +3539,6 @@ export const MODELS: ModelInfo[] = [
     inputCostPer1M: 5,
     outputCostPer1M: 25,
     maxOutput: 128000,
-    recommended: true,
     provider: 'anthropic',
     contextWindow: 1000000,
     costTier: 3,
@@ -3571,7 +3572,6 @@ export const MODELS: ModelInfo[] = [
     inputCostPer1M: 3,
     outputCostPer1M: 15,
     maxOutput: 64000,
-    recommended: true,
     provider: 'anthropic',
     contextWindow: 1000000,
     costTier: 2,
@@ -3614,6 +3614,7 @@ export const MODELS: ModelInfo[] = [
   },
   {
     id: 'gpt-5.6-terra',
+    recommended: true,
     label: 'GPT-5.6 Terra',
     description: 'Balanced GPT-5.6 — intelligence against cost. 1M context, full reasoning-effort range. The sensible default of the family.',
     inputCostPer1M: 2.5,
@@ -3645,7 +3646,6 @@ export const MODELS: ModelInfo[] = [
     contextWindow: 256000,
     costTier: 3,
     supportsSeed: true,
-    recommended: true,
   },
   {
     id: 'gpt-4o',

@@ -137,7 +137,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         (model as string) ||
         getAreaDefaultModelSync(areaId as string | null | undefined) ||
         getEffectiveDefaultModel() ||
-        'claude-opus-4-8';
+        'claude-opus-5';
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
