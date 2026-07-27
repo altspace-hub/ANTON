@@ -7,6 +7,8 @@
 export type ModelId =
   // Anthropic Claude — latest first
   | 'claude-fable-5'               // 2026-06-10 — top tier above Opus, adaptive only
+  | 'claude-opus-5'                // 2026-07-24 — Claude 5 Opus, adaptive only
+  | 'claude-sonnet-5'              // 2026-07-24 — Claude 5 Sonnet, adaptive only
   | 'claude-opus-4-8'              // 2026-05-30 — current default
   | 'claude-opus-4-7'              // 2026-04-16 — legacy
   | 'claude-opus-4-6'              // legacy — adaptive + extended thinking
@@ -14,6 +16,9 @@ export type ModelId =
   | 'claude-sonnet-4-5-20250929'
   | 'claude-haiku-4-5-20251001'
   // OpenAI
+  | 'gpt-5.6-sol'                  // 2026-07-09 — frontier tier
+  | 'gpt-5.6-terra'                // 2026-07-09 — balanced
+  | 'gpt-5.6-luna'                 // 2026-07-09 — high-volume
   | 'gpt-5.4'
   | 'gpt-4.1'
   | 'gpt-4o'

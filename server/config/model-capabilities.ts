@@ -85,6 +85,43 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 // can't import server config; would need a frontend snapshot/endpoint).
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // ─── Anthropic Claude ──────────────────────────────────────────
+  'claude-opus-5': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: false,   // Adaptive only, thinking on by default
+    pricing: {
+      inputPerMillion: 5,
+      outputPerMillion: 25,
+      cachedInputPerMillion: 0.50,     // 90% discount
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
+  'claude-sonnet-5': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: false,   // Adaptive only
+    pricing: {
+      // INTRODUCTORY through 2026-08-31, then $3/$15. Keep in lockstep with the
+      // MODELS entry in src/lib/constants.ts — the two registries are read by
+      // different layers and a stale rate here under-reports actual spend.
+      inputPerMillion: 2,
+      outputPerMillion: 10,
+      cachedInputPerMillion: 0.20,     // 90% discount
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
   'claude-fable-5': {
     maxContextWindow: 1_000_000,
     maxOutputTokens: 128_000,
@@ -218,6 +255,57 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // GPT-5.4 — user-selectable (frontend MODELS[] / ModelValue union). Added here
   // 2026-05-31 so cost estimation + context budgeting work for it (previously it
   // existed only in modelAdapter.ts MODEL_REGISTRY, so estimateCost returned 0).
+  'gpt-5.6-sol': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 5,
+      outputPerMillion: 30,
+      cachedInputPerMillion: 0.5,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
+  'gpt-5.6-terra': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 2.5,
+      outputPerMillion: 15,
+      cachedInputPerMillion: 0.25,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
+  'gpt-5.6-luna': {
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 1,
+      outputPerMillion: 6,
+      cachedInputPerMillion: 0.1,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
   'gpt-5.4': {
     maxContextWindow: 256_000,
     maxOutputTokens: 32_768,
@@ -614,12 +702,15 @@ export function getThinkingConfig(
     return { thinkingType: 'none', maxTokens: 4096, requiresInterleavedThinkingBeta: false };
   }
 
-  // ─── Fable 5 + Opus 4.8: Adaptive thinking (effort parameter) ──
-  // Same effort mapping as 4.7 for consistency with users' learned
-  // baseline. Per Anthropic docs, the API default for `effort` is `high`
-  // when unset — we set it explicitly per ANTON thinking level below.
-  // Fable 5 shares Opus 4.8's request surface (adaptive only).
-  if (modelId === 'claude-fable-5' || modelId === 'claude-opus-4-8') {
+  // ─── Adaptive-thinking models (effort parameter) ──
+  // Fable 5, Opus 5, Sonnet 5, Opus 4.8 — same effort mapping as 4.7 for
+  // consistency with users' learned baseline. Per Anthropic docs the API default
+  // for `effort` is `high` when unset; we set it explicitly per ANTON level below.
+  //
+  // Derived from the capability table rather than a hardcoded id list: this file
+  // already declares supportsAdaptiveThinking per model, and a second list of the
+  // same fact is exactly how Opus 4.8 and 4.7 drifted apart before.
+  if (caps.supportsAdaptiveThinking && !caps.supportsExtendedThinking) {
     const mapping: Record<string, ThinkingConfig> = {
       'quick':            { thinkingType: 'adaptive', effort: 'low',    maxTokens: 16_384,  requiresInterleavedThinkingBeta: false },
       'think':            { thinkingType: 'adaptive', effort: 'medium', maxTokens: 32_768,  requiresInterleavedThinkingBeta: false },

@@ -38,6 +38,7 @@ import { createExchangeRoutes } from './routes/exchange.js';
 import { createSettingsRoutes } from './routes/settings.js';
 import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoints.js';
 import { seedApeApiEndpoint } from './services/apeapi-seed.js';
+import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
 import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
@@ -200,7 +201,17 @@ if (!process.env.ANTHROPIC_API_KEY) {
 // solo branch. Team mode must be set explicitly in .env; auth reads the env lazily.
 if (!process.env.DEPLOYMENT_MODE) {
   process.env.DEPLOYMENT_MODE = 'solo';
-  logger.info('[deploy] DEPLOYMENT_MODE not set — defaulting to solo (set DEPLOYMENT_MODE=team in .env for multi-user JWT auth)');
+  // WARN, not info. Defaulting to solo means every request is served as an admin
+  // with no authentication — correct on a laptop, a data breach on a shared host.
+  // .env.example previously implied DATABASE_URL turned team mode on by itself, so
+  // operators have followed that guidance and shipped an open instance believing it
+  // was authenticated. The default stays solo (right for the common case); the log
+  // now states the consequence rather than just the fact.
+  logger.warn(
+    '[deploy] DEPLOYMENT_MODE not set — defaulting to SOLO: authentication is OFF and '
+    + 'every request is served as an admin. This is correct for a single-user machine. '
+    + 'If anyone else can reach this server, stop and set DEPLOYMENT_MODE=team (plus JWT_SECRET) in .env.',
+  );
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -597,6 +608,9 @@ app.use('/api', await createSettingsRoutes(db));
 app.use('/api', createCustomModelEndpointsRoutes(db));
 // Auto-register ApeAPI (compat: bundle) from APEAPI_API_KEY if set — one-step onboarding.
 await seedApeApiEndpoint(db);
+// Same for Moonshot AI (Kimi) from MOONSHOT_API_KEY — also OpenAI-compatible, so it
+// needs no adapter of its own; models become addressable as compat:kimi:<model>.
+await seedMoonshotEndpoint(db);
 app.use('/api', await createRagRoutes(db));
 app.use('/api', await createKnowledgeLibraryRoutes(db));
 app.use('/api', await createEurLexRoutes(db, anthropic));

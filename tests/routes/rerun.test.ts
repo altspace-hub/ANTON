@@ -144,6 +144,15 @@ describeOrSkip('POST /api/rerun (Rerun with… — Wave 2.3)', () => {
 
     const app = express();
     app.use(express.json());
+    // Stand in for authMiddleware, which is mounted app-wide at server/index.ts:555 —
+    // ahead of every router these tests exercise. Solo mode stamps exactly this shape
+    // (a synthetic admin), so a bare router without it was modelling a request state
+    // that cannot occur in production, and the ownership guard correctly rejects it.
+    app.use((req, _res, next) => {
+      (req as unknown as { user: { id: string; username: string; role: string } }).user =
+        { id: 'solo', username: 'solo', role: 'admin' };
+      next();
+    });
     app.use('/api', createRerunRoutes(db, createFakeClaudeRouter()));
     await new Promise<void>(resolve => {
       server = app.listen(0, '127.0.0.1', () => resolve());

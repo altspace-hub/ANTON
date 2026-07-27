@@ -81,61 +81,16 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
   };
 }
 
-export function requireRole(role: 'admin' | 'analyst' | 'viewer') {
-  const ROLE_LEVELS: Record<string, number> = { viewer: 0, analyst: 1, admin: 2 };
-  return function (req: Request, res: Response, next: NextFunction) {
-    if (!req.user) { res.status(401).json({ error: 'Not authenticated' }); return; }
-    if (ROLE_LEVELS[req.user.role] < ROLE_LEVELS[role]) {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
-    next();
-  };
-}
+// The role guards live in role-guards.ts — they need no JWT, and keeping them here
+// meant any module enforcing authorisation also inherited this file's module-load
+// JWT_SECRET throw. Re-exported so existing import sites are unaffected.
+export {
+  requireRole, requireAuth, requireAdmin, requireAdminOrSolo,
+} from './role-guards.js';
 
 export function generateToken(user: AuthUser): string {
   return jwt.sign(user, JWT_SECRET!, { expiresIn: '7d' });
 }
 
-// Convenience middleware — requires authentication (any role)
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  next();
-}
-
-// Convenience middleware — requires admin role
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  if (req.user.role !== 'admin') {
-    res.status(403).json({ error: 'Admin access required' });
-    return;
-  }
-  next();
-}
-
-/**
- * Middleware: Require admin role OR solo user mode.
- * Used for features that should be admin-only in team mode,
- * but accessible to everyone in solo/single-user mode.
- */
-export function requireAdminOrSolo(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-
-  const isAdmin = req.user.role === 'admin';
-  const isSoloMode = !isTeamMode();
-
-  if (isAdmin || isSoloMode) {
-    next();
-  } else {
-    res.status(403).json({ error: 'Admin access required' });
-  }
-}
+// requireAuth / requireAdmin / requireAdminOrSolo now live in role-guards.ts and are
+// re-exported above — one definition, importable without this file's JWT_SECRET throw.

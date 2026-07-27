@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -40,6 +41,27 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
     } catch (err: unknown) {
       res.status(500).json({ error: errMsg(err) });
     }
+  });
+
+  /**
+   * SECURITY (2026-07-27 survey): the twelve /discovery/sessions/:id routes below —
+   * read state, patch status, delete, respond, generate, export, start — all keyed off
+   * the id alone, so any authenticated user on a shared instance could read and mutate
+   * another tenant's discovery session, including their stated pain points and business
+   * case.
+   *
+   * Guarded ONCE here rather than per-route. Twelve individual checks is how the
+   * thirteenth route ships without one; a router.use over the id prefix cannot be
+   * forgotten by a later handler. Note this does not match the bare
+   * `/discovery/sessions` list (no id segment), which already scopes via
+   * engine.listSessions(userId).
+   */
+  router.use('/discovery/sessions/:id', async (req, res, next) => {
+    if (!(await assertOwned(db, req as OwnedRequest, res, {
+      table: 'discovery_sessions', ownerColumn: 'user_id', id: req.params.id,
+      notFoundMessage: 'Discovery session not found',
+    }))) return;
+    next();
   });
 
   // GET /discovery/sessions/:id — Get session state
@@ -174,13 +196,20 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
   // GET /discovery/followups/pending — Get pending follow-ups
   router.get('/discovery/followups/pending', async (req, res) => {
     try {
+      // SECURITY: this returned every tenant's pending follow-ups — the join exposes
+      // ds.tier/state alongside another org's follow-up content. Scoped through the
+      // joined session's owner.
+      // NOTE: db.get returns ONE row for what the client treats as a list. Left as-is
+      // deliberately — changing it to db.all alters the response shape and belongs in
+      // its own change, not smuggled into a security fix.
+      const scope = ownerFilter(req as OwnedRequest, 'ds.user_id');
       const rows = await db.get(`
         SELECT f.*, ds.tier, ds.state
         FROM discovery_followups f
         JOIN discovery_sessions ds ON f.session_id = ds.id
-        WHERE f.status = 'pending'
+        WHERE f.status = 'pending'${scope.sql}
         ORDER BY f.scheduled_date ASC
-      `);
+      `, ...scope.params);
       res.json(rows);
     } catch (err: unknown) {
       res.status(500).json({ error: errMsg(err) });

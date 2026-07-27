@@ -24,7 +24,11 @@ export type AnthropicEffort = 'low' | 'medium' | 'high' | 'max';
  *  Everything else uses the budget_tokens mechanism below. Keep in sync with the
  *  Anthropic model catalogue — budget_tokens is deprecated on these. */
 export function anthropicUsesAdaptive(model: string): boolean {
-  return model === 'claude-fable-5' || model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6';
+  return model === 'claude-fable-5'
+    || model === 'claude-opus-5'
+    || model === 'claude-sonnet-5'
+    || model === 'claude-opus-4-8'
+    || model === 'claude-sonnet-4-6';
 }
 
 const ANTHROPIC_EFFORT: Record<ThinkingLevel, AnthropicEffort> = {
@@ -75,9 +79,29 @@ export function azureReasoningEffort(level: ThinkingLevel): 'low' | 'medium' | '
   return AZURE_REASONING_EFFORT[level];
 }
 
-// ── OpenAI (o-series reasoning models) ────────────────────────────────────────
+// ── OpenAI reasoning models ──────────────────────────────────────────────────
 
-const OPENAI_REASONING_EFFORT: Record<ThinkingLevel, 'low' | 'medium' | 'high'> = {
+export type OpenAIEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
+/**
+ * The GPT-5.x ladder. These models accept none/low/medium/high/xhigh/max, which is
+ * a genuine 1:1 with ANTON's six levels — so the top levels no longer collapse.
+ *
+ * Note OpenAI treats reasoning_effort as a CEILING, not a floor: on a prompt the
+ * model judges easy it may spend zero reasoning tokens even at `max`. So a higher
+ * level raises the allowance, it does not force deliberation.
+ */
+const OPENAI_EFFORT_FULL: Record<ThinkingLevel, OpenAIEffort> = {
+  quick: 'low',
+  think: 'medium',
+  think_hard: 'high',
+  investigate: 'xhigh',
+  plan_first: 'xhigh',
+  deep_investigate: 'max',
+};
+
+/** o-series (o1/o3/o4…) accepts only low/medium/high — fold the top three down. */
+const OPENAI_EFFORT_O_SERIES: Record<ThinkingLevel, 'low' | 'medium' | 'high'> = {
   quick: 'low',
   think: 'medium',
   think_hard: 'high',
@@ -86,22 +110,33 @@ const OPENAI_REASONING_EFFORT: Record<ThinkingLevel, 'low' | 'medium' | 'high'> 
   deep_investigate: 'high',
 };
 
-/** reasoning_effort for an OpenAI reasoning (o-series) model. */
-export function openaiReasoningEffort(level: ThinkingLevel): 'low' | 'medium' | 'high' {
-  return OPENAI_REASONING_EFFORT[level];
+/** True for GPT-5.x, which support the extended xhigh/max efforts. */
+export function openaiSupportsExtendedEffort(model: string): boolean {
+  return /^gpt-5\./i.test(model);
+}
+
+/** reasoning_effort for an OpenAI reasoning model, clamped to what it accepts.
+ *  Passing `xhigh` to an o-series deployment is a 400, so the model matters. */
+export function openaiReasoningEffort(level: ThinkingLevel, model?: string): OpenAIEffort {
+  if (model && openaiSupportsExtendedEffort(model)) return OPENAI_EFFORT_FULL[level];
+  return OPENAI_EFFORT_O_SERIES[level];
 }
 
 /**
- * True for OpenAI reasoning models (o1/o3/o4/o5 …). These accept `reasoning_effort`,
- * REJECT `temperature`, and use `max_completion_tokens` instead of `max_tokens`.
- * Non-reasoning models (gpt-4o, gpt-4o-mini, …) do none of that — sending them
- * reasoning_effort would error, so the detection is deliberately narrow (a model we
- * are unsure about is treated as non-reasoning, which is the safe default: a normal
- * chat call rather than a rejected one). Replaces the old, invalid `-thinking`
- * model-id suffix.
+ * True for OpenAI models that accept `reasoning_effort`, REJECT `temperature`, and
+ * use `max_completion_tokens` instead of `max_tokens`.
+ *
+ * Covers the o-series (o1/o3/o4…) AND the GPT-5.x family. The GPT-5.x half was
+ * missing, which meant every gpt-5.* model was treated as a plain chat model: the
+ * thinking level was silently dropped on the floor and the UI's claim that these
+ * models "reason on or off" was describing a request we never actually sent.
+ *
+ * Detection stays deliberately narrow — a model we are unsure about is treated as
+ * non-reasoning, which is the safe default (a normal chat call rather than a
+ * rejected one). gpt-4o and friends take none of these parameters.
  */
 export function isOpenAIReasoningModel(model: string): boolean {
-  return /^o[1-9]/i.test(model);
+  return /^o[1-9]/i.test(model) || /^gpt-5\./i.test(model);
 }
 
 // ── Mistral (switch to a Magistral reasoning model) ───────────────────────────

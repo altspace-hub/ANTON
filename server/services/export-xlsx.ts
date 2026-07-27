@@ -519,11 +519,43 @@ export async function generateXlsx(
   // If there are tables, each section with a table gets its own sheet
   let hasSheets = false;
 
-  for (const section of sections) {
-    if (section.tables.length === 0) continue;
+  // Excel worksheet names must be UNIQUE. Two sections called "Findings" — or any two
+  // headings sharing a 31-char prefix — made addWorksheet throw "Worksheet name already
+  // exists", which surfaced as a 500 the client swallowed: the Export-to-Excel button
+  // simply appeared to do nothing. Repeated headings are the normal shape of ANTON
+  // output, so this was the common case rather than an edge case.
+  const usedSheetNames = new Set<string>();
+  const uniqueSheetName = (heading: string): string => {
+    const base = (heading.replace(/[\\/*?[\]:]/g, '').slice(0, 31).trim()) || 'Sheet';
+    if (!usedSheetNames.has(base.toLowerCase())) {
+      usedSheetNames.add(base.toLowerCase());
+      return base;
+    }
+    // Suffix " (2)", " (3)" … trimming the stem so the result stays within 31 chars.
+    for (let n = 2; n < 1000; n++) {
+      const suffix = ` (${n})`;
+      const candidate = base.slice(0, 31 - suffix.length) + suffix;
+      if (!usedSheetNames.has(candidate.toLowerCase())) {
+        usedSheetNames.add(candidate.toLowerCase());
+        return candidate;
+      }
+    }
+    return base.slice(0, 27) + ` (${Date.now() % 1000})`;
+  };
 
-    // Sanitise sheet name (Excel limit: 31 chars, no special chars)
-    const sheetName = section.heading.replace(/[\\/*?[\]:]/g, '').slice(0, 31) || 'Sheet';
+  // Prose-only sections were dropped by a bare `continue`, so an executive summary or
+  // a caveats section could vanish from the client's copy with no warning. Collected
+  // here and written to a single Narrative sheet below — one sheet rather than one per
+  // section, so the tab bar stays usable.
+  const proseOnly: Section[] = [];
+
+  for (const section of sections) {
+    if (section.tables.length === 0) {
+      if (section.text.some((t) => t.trim().length > 0)) proseOnly.push(section);
+      continue;
+    }
+
+    const sheetName = uniqueSheetName(section.heading);
     const ws = workbook.addWorksheet(sheetName, {
       pageSetup: { fitToPage: true, fitToWidth: 1 },
       views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }],
@@ -579,6 +611,30 @@ export async function generateXlsx(
     }
 
     hasSheets = true;
+  }
+
+  // Prose-only sections, preserved rather than silently dropped.
+  if (hasSheets && proseOnly.length > 0) {
+    const ws = workbook.addWorksheet(uniqueSheetName('Narrative'), {
+      pageSetup: { fitToPage: true, fitToWidth: 1 },
+    });
+    ws.properties.tabColor = { argb: `FF${style.accent}` };
+    ws.columns = [{ width: 110 }];
+    let nrow = 1;
+    for (const section of proseOnly) {
+      const head = ws.getCell(nrow, 1);
+      head.value = section.heading;
+      head.font = { bold: true, size: 12, color: { argb: `FF${style.accent}` } };
+      nrow += 1;
+      for (const line of section.text) {
+        if (!line.trim()) { nrow += 1; continue; }
+        const cell = ws.getCell(nrow, 1);
+        cell.value = line;
+        cell.alignment = { wrapText: true, vertical: 'top' };
+        nrow += 1;
+      }
+      nrow += 1; // blank row between sections
+    }
   }
 
   // If no tables found, create a single text sheet

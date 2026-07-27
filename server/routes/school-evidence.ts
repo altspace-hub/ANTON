@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 export function createSchoolEvidenceRoutes(db: DatabaseAdapter): Router {
   const router = Router();
@@ -14,7 +15,34 @@ export function createSchoolEvidenceRoutes(db: DatabaseAdapter): Router {
   // ── Evidence log ───────────────────────────────────────────────────
   router.get('/evidence', async (req, res) => {
     try {
-      const studentId = typeof req.query.studentId === 'string' ? req.query.studentId : null;
+      const requested = typeof req.query.studentId === 'string' ? req.query.studentId : null;
+
+      /**
+       * SECURITY (2026-07-27 survey): this returned EVERY pupil's rows when
+       * `studentId` was omitted — AI assessment summaries and teacher notes for the
+       * whole school, to any authenticated caller. These are children's records, so
+       * the failure is a safeguarding one, not merely a permissions one.
+       *
+       * On a shared instance a non-admin may only read their OWN evidence: an
+       * explicit studentId is honoured only when it is theirs, and an omitted one
+       * resolves to themselves rather than to everybody. Solo and admin are
+       * unscoped, matching every other ownership check in the codebase.
+       *
+       * NOTE for whoever builds teacher oversight: there is deliberately no
+       * teacher-sees-their-class path here, because no adult role exists in the
+       * schema yet to authorise one. Scoping to self is the safe interim; widening
+       * it needs a real guardian/teacher relation, not a role string.
+       */
+      const scoped = scopesToOwner(req as OwnedRequest);
+      const selfId = (req as OwnedRequest).user?.id ?? null;
+      const studentId = scoped ? selfId : requested;
+
+      if (scoped && requested && requested !== selfId) {
+        // Same shape as "no rows" — do not confirm another pupil exists.
+        res.json({ entries: [] });
+        return;
+      }
+
       const where = studentId ? 'WHERE student_user_id = $1 AND deleted_at IS NULL' : 'WHERE deleted_at IS NULL';
       const args = studentId ? [studentId] : [];
       const rows = await db.all(
@@ -40,6 +68,20 @@ export function createSchoolEvidenceRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'student_user_id and evidence_type required' });
         return;
       }
+
+      // The write-side mirror of the read fix above: student_user_id came straight
+      // from the request body, so any authenticated pupil could fabricate assessment
+      // records — including teacher_notes — against another pupil's name. On a shared
+      // instance a non-admin may only write evidence for themselves. Solo and admin
+      // are unrestricted (imports and seeding legitimately write for others).
+      if (scopesToOwner(req as OwnedRequest)) {
+        const selfId = (req as OwnedRequest).user?.id;
+        if (!selfId || b.student_user_id !== selfId) {
+          res.status(403).json({ error: 'Cannot record evidence for another student' });
+          return;
+        }
+      }
+
       const id = randomUUID();
       await db.run(
         `INSERT INTO learning_evidence_log (

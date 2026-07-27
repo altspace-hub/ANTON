@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -136,7 +137,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         (model as string) ||
         getAreaDefaultModelSync(areaId as string | null | undefined) ||
         getEffectiveDefaultModel() ||
-        'claude-opus-4-8';
+        'claude-opus-5';
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
@@ -352,7 +353,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // (unchanged), ~104k for Mistral Large, the trained window for
       // ollama:* (via /api/show), the per-endpoint setting for compat:*.
       // Previously every non-1M model silently got the ~892k default.
-      const is1MModel = model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6';
+      // Derived from the capability table, not a hardcoded id list — every new
+      // 1M-context model would otherwise silently be treated as short-context and
+      // pick up a long-context beta header it does not need (see line ~1120).
+      const is1MModel = (MODEL_CAPABILITIES[model]?.maxContextWindow ?? 0) >= 1_000_000;
       const knowledgeBudget = await resolveContextBudget(model, db as DatabaseAdapter);
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
@@ -664,7 +668,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Use the split composer for Anthropic models (supports caching); plain for others.
       const isCachingModel =
         provider === 'anthropic' &&
-        (selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
+        (selectedModel === 'claude-opus-5' || selectedModel === 'claude-sonnet-5'
+          || selectedModel === 'claude-fable-5'
+          || selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6'
+          || selectedModel === 'claude-sonnet-4-5-20250929');
 
       let composedPrompt: string;
       let staticSystemPrompt: string | undefined;
