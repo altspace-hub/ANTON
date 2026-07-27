@@ -18,6 +18,11 @@ export async function sendQueryREST(
   callbacks: StreamCallbacks,
   options?: { sessionId?: string; outputLanguage?: string; moduleId?: string; model?: string }
 ): Promise<void> {
+  // Hydrate first. getSessionToken() is synchronous and returns null until the
+  // token is loaded from the secure store, so reading it straight away would
+  // report "Not authenticated" on a cold start to a user who IS authenticated.
+  const { ensureSession: ensure } = await import('./api');
+  await ensure();
   const token = getSessionToken();
   if (!token) { callbacks.onError?.('Not authenticated'); return; }
 
