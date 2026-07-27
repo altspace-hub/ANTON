@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
@@ -13,8 +14,24 @@ fs.ensureDirSync(UPLOAD_DIR);
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
   filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
+    // NOT AUTHORISATION — read this before assuming these files are protected.
+    //
+    // GET /files/:id serves any id that exists on disk: there is no ownership record
+    // for uploads, so nothing distinguishes your file from someone else's. The id is
+    // therefore the only thing standing between another user and the contents, i.e. a
+    // capability URL.
+    //
+    // It previously was `Date.now()-Math.round(Math.random()*1e9)-originalname`, which
+    // is a poor one: the timestamp is predictable, Math.random() is not cryptographically
+    // random (V8's xorshift is recoverable from observed outputs) and spans only ~1e9,
+    // and the original filename is frequently guessable. randomUUID() gives 122 bits
+    // from a CSPRNG, which makes guessing infeasible.
+    //
+    // The REAL fix is an ownership record for uploads plus a check here — that needs a
+    // new table and a migration, so it is deliberately not smuggled into this change.
+    // Existing files keep resolving: the route only joins the id it was given.
+    const unique = randomUUID();
+    cb(null, `${unique}-${file.originalname}`);
   },
 });
 

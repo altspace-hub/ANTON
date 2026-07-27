@@ -5,6 +5,7 @@
 
 import { safeError } from '../lib/error-response.js';
 import express from 'express';
+import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
 import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs-extra';
@@ -192,6 +193,14 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.post('/documents/:id/reindex', async (req, res) => {
     try {
       const { id } = req.params;
+
+      // SECURITY (2026-07-27 survey): keyed off the document id alone, so on a shared
+      // instance any user could read or destroy another user's uploaded document —
+      // including its full extracted text. Checked before the row is loaded.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'rag_documents', ownerColumn: 'uploaded_by', id,
+        notFoundMessage: 'Document not found',
+      }))) return;
       const { collectionId, chunkSize, overlapSize } = req.body;
 
       if (!collectionId) {
@@ -228,6 +237,14 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
     try {
       const { id } = req.params;
 
+      // SECURITY (2026-07-27 survey): keyed off the document id alone, so on a shared
+      // instance any user could read or destroy another user's uploaded document —
+      // including its full extracted text. Checked before the row is loaded.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'rag_documents', ownerColumn: 'uploaded_by', id,
+        notFoundMessage: 'Document not found',
+      }))) return;
+
       // Get document to find collection
       const doc = await db.get('SELECT collection_id FROM rag_documents WHERE id = ?', id) as any;
 
@@ -255,6 +272,14 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.get('/documents/:id', async (req, res) => {
     try {
       const { id } = req.params;
+
+      // SECURITY (2026-07-27 survey): keyed off the document id alone, so on a shared
+      // instance any user could read or destroy another user's uploaded document —
+      // including its full extracted text. Checked before the row is loaded.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'rag_documents', ownerColumn: 'uploaded_by', id,
+        notFoundMessage: 'Document not found',
+      }))) return;
 
       const document = await db.get('SELECT * FROM rag_documents WHERE id = ?', id);
 

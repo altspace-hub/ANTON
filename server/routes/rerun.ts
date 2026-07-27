@@ -31,6 +31,7 @@
  */
 
 import { Router } from 'express';
+import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
 import type { Request, Response, NextFunction } from 'express';
 import { EventEmitter } from 'node:events';
 import crypto from 'node:crypto';
@@ -388,6 +389,16 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
       if (typeof newModelId !== 'string' || !newModelId || newModelId.length > 100) {
         return res.status(400).json({ error: 'newModelId is required' });
       }
+
+      // SECURITY (2026-07-27 survey): this loaded any session by id, then reran it and
+      // DELETED its messages — so on a shared instance one user could destroy another's
+      // conversation history and re-run their prompts (billing the instance's keys) with
+      // nothing but a session id. Checked before the row is loaded, so another tenant's
+      // config never reaches memory.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'sessions', ownerColumn: 'user_id', id: sessionId,
+        notFoundMessage: 'Session not found',
+      }))) return;
 
       const session = await db.get<SessionRow>(
         'SELECT id, module_id, config FROM sessions WHERE id = ?', sessionId);
