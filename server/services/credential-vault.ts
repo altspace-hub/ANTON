@@ -112,17 +112,22 @@ export function decrypt(encrypted: string): string {
  * Automatically encrypt sensitive fields in a connection config.
  * Adds _encrypted flag for each encrypted field.
  */
-export function encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
-  const SENSITIVE_FIELDS = [
-    'password',
-    'auth_value',
-    'api_key',
-    'token',
-    'secret',
-    'client_secret',
-    'bearer_token',
-  ];
+/**
+ * Config keys treated as secrets. Shared by encryptConfig and redactConfig so the two
+ * cannot drift — a field that is encrypted at rest but missing from the redaction list
+ * would be decrypted at the data layer and then sent to a client in the clear.
+ */
+export const SENSITIVE_FIELDS = [
+  'password',
+  'auth_value',
+  'api_key',
+  'token',
+  'secret',
+  'client_secret',
+  'bearer_token',
+] as const;
 
+export function encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
   const result = { ...config };
 
   for (const key of SENSITIVE_FIELDS) {
@@ -162,4 +167,55 @@ export function decryptConfig(config: Record<string, unknown>): Record<string, u
  */
 export function generateEncryptionKey(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Strip secrets from a config before it leaves the server.
+ *
+ * connections routes return the whole Connection — config included — to the client.
+ * That was already exposing stored values, and becomes a plaintext credential leak the
+ * moment the data layer decrypts (which it must, so that consumers can actually use the
+ * credential). Redaction is therefore the transport-layer half of the same fix: decrypt
+ * at point of use, never serialise the result to a caller.
+ *
+ * A present secret becomes `true` under `${key}_set` rather than a masked string, so the
+ * UI can still show "configured" without ever receiving the value, and nobody can
+ * accidentally round-trip a mask like '********' back in as the real password.
+ */
+export function redactConfig(config: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...config };
+  for (const key of SENSITIVE_FIELDS) {
+    if (result[key] !== undefined && result[key] !== null && result[key] !== '') {
+      delete result[key];
+      result[`${key}_set`] = true;
+    }
+    delete result[`${key}_encrypted`];   // an at-rest detail, not the client's business
+  }
+  return result;
+}
+
+/**
+ * Fold an incoming config over the stored one, treating an ABSENT secret as "unchanged".
+ *
+ * This is the other half of redactConfig. Once a GET stops returning the password, the
+ * natural client flow — fetch, edit a field, PUT the whole object back — no longer
+ * carries the secret, so a plain overwrite would silently destroy a working credential
+ * on an unrelated edit. That failure is invisible until the next workflow run.
+ *
+ * Absent means absent: an explicit empty string still clears the field, so a credential
+ * can be deliberately removed. `${key}_set` is dropped on the way in — it is a display
+ * marker the client got from us, never an input.
+ */
+export function mergeSecrets(
+  incoming: Record<string, unknown>,
+  stored: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = { ...incoming };
+  for (const key of SENSITIVE_FIELDS) {
+    delete result[`${key}_set`];
+    if (result[key] === undefined && stored[key] !== undefined) {
+      result[key] = stored[key];
+    }
+  }
+  return result;
 }

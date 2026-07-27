@@ -5,7 +5,7 @@
 
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import { encryptConfig, decryptConfig } from './credential-vault.js';
+import { encryptConfig, decryptConfig, mergeSecrets } from './credential-vault.js';
 import { getDriver } from './db-drivers/driver-registry.js';
 
 export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library' | 'messaging';
@@ -134,12 +134,35 @@ export async function createConnectionManager(db: DatabaseAdapter) {
         ) as RawConnectionRow[];
       }
       void userId;
-      return rows.map(parseConnection);
+      // Same contract as get(): decrypted for use, never serialised raw to a client.
+      return rows.map(parseConnection).map((c) => ({
+        ...c, config: decryptConfig(c.config as Record<string, unknown>),
+      }));
     },
 
+    /**
+     * Returns the connection with its config DECRYPTED and ready to use.
+     *
+     * It previously returned the stored (encrypted) config, and every consumer was
+     * expected to remember decryptConfig. Nine did not — the adapters, workflows.ts and
+     * workflow-executor all passed AES ciphertext straight in as the host and password.
+     * That is why a connection could Test green (test() decrypted) and then fail on
+     * every workflow run, with the only workaround being to store the password in
+     * cleartext.
+     *
+     * Decrypting here rather than at nine call sites means a tenth consumer cannot get
+     * it wrong. The corresponding duty is that config must NEVER be serialised to a
+     * client — see redactConfig, applied in routes/connections.ts.
+     *
+     * Safe for both row populations: decryptConfig only acts where an `_encrypted`
+     * marker is present, so rows written in plaintext by the old update() pass through
+     * untouched.
+     */
     async get(id: string): Promise<Connection | null> {
       const row = await db.get('SELECT * FROM connections WHERE id = ?', id) as RawConnectionRow | undefined;
-      return row ? parseConnection(row) : null;
+      if (!row) return null;
+      const conn = parseConnection(row);
+      return { ...conn, config: decryptConfig(conn.config as Record<string, unknown>) };
     },
 
     async create(
@@ -178,7 +201,18 @@ export async function createConnectionManager(db: DatabaseAdapter) {
 
       const now = new Date().toISOString();
       const display_name = data.display_name ?? existing.display_name;
-      const config = JSON.stringify(data.config ?? existing.config);
+      // Encrypt on the way in. update() previously stored data.config verbatim — the
+      // edit form's PLAINTEXT values — so editing a connection silently downgraded its
+      // credentials to cleartext at rest, undoing what create() had done. encryptConfig
+      // is idempotent (it skips values already in ciphertext form), so re-encrypting the
+      // existing config on a display-name-only edit is a no-op.
+      // ...and merge over the stored config first, so an edit that omits the password
+      // (which is now every edit, since GET redacts it) keeps the existing credential
+      // instead of wiping it.
+      const config = JSON.stringify(encryptConfig(mergeSecrets(
+        (data.config ?? existing.config) as Record<string, unknown>,
+        existing.config as Record<string, unknown>,
+      )));
       const permissions = JSON.stringify(data.permissions ?? existing.permissions);
       const status = data.status ?? existing.status;
 
@@ -214,8 +248,10 @@ export async function createConnectionManager(db: DatabaseAdapter) {
 
       let result: { ok: boolean; message: string };
 
-      // Decrypt config before testing
-      const cfg = decryptConfig(conn.config) as Record<string, unknown>;
+      // Already decrypted by get() — decrypting again would be a no-op today (the
+      // marker is gone) but would silently start corrupting values if the vault ever
+      // changed shape. One decrypt, at one boundary.
+      const cfg = conn.config as Record<string, unknown>;
 
       try {
         if (conn.type === 'database') {
