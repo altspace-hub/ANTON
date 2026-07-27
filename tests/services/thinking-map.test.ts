@@ -59,22 +59,37 @@ describe('thinking-map — Azure reasoning deployments', () => {
   });
 });
 
-describe('thinking-map — OpenAI (o-series reasoning)', () => {
-  it('detects o-series reasoning models only (safe: unsure → non-reasoning)', () => {
+describe('thinking-map — OpenAI reasoning', () => {
+  it('detects BOTH the o-series and gpt-5.x (safe: unsure → non-reasoning)', () => {
     expect(isOpenAIReasoningModel('o1')).toBe(true);
     expect(isOpenAIReasoningModel('o3-mini')).toBe(true);
     expect(isOpenAIReasoningModel('o4-mini')).toBe(true);
-    // Non-reasoning models must NOT be flagged — sending them reasoning_effort errors.
+    // gpt-5.x accepts reasoning_effort too. This previously asserted `false`,
+    // which encoded a LIMITATION rather than a truth: the thinking level was
+    // being silently dropped for every gpt-5 model, while the UI still claimed
+    // those models "reason on or off".
+    expect(isOpenAIReasoningModel('gpt-5.4')).toBe(true);
+    expect(isOpenAIReasoningModel('gpt-5.6-sol')).toBe(true);
+    expect(isOpenAIReasoningModel('gpt-5.6-luna')).toBe(true);
+    // Older chat models must NOT be flagged — reasoning_effort errors on them.
     expect(isOpenAIReasoningModel('gpt-4o')).toBe(false);
     expect(isOpenAIReasoningModel('gpt-4o-mini')).toBe(false);
-    expect(isOpenAIReasoningModel('gpt-5.4')).toBe(false);
+    expect(isOpenAIReasoningModel('some-unknown-model')).toBe(false);
   });
 
-  it('maps reasoning_effort into three buckets', () => {
-    expect(openaiReasoningEffort('quick')).toBe('low');
-    expect(openaiReasoningEffort('think')).toBe('medium');
-    expect(openaiReasoningEffort('think_hard')).toBe('high');
-    expect(openaiReasoningEffort('investigate')).toBe('high');
+  it('gives gpt-5.x the full ladder — the top levels no longer collapse', () => {
+    expect(openaiReasoningEffort('quick', 'gpt-5.6-sol')).toBe('low');
+    expect(openaiReasoningEffort('think', 'gpt-5.6-sol')).toBe('medium');
+    expect(openaiReasoningEffort('think_hard', 'gpt-5.6-sol')).toBe('high');
+    expect(openaiReasoningEffort('investigate', 'gpt-5.6-sol')).toBe('xhigh');
+    expect(openaiReasoningEffort('deep_investigate', 'gpt-5.6-sol')).toBe('max');
+  });
+
+  it('clamps the o-series to low/medium/high — xhigh/max would 400 there', () => {
+    expect(openaiReasoningEffort('investigate', 'o3-mini')).toBe('high');
+    expect(openaiReasoningEffort('deep_investigate', 'o3-mini')).toBe('high');
+    // No model given: assume the narrow set, since sending xhigh to a model that
+    // rejects it is a hard failure while sending high is merely conservative.
     expect(openaiReasoningEffort('deep_investigate')).toBe('high');
   });
 });

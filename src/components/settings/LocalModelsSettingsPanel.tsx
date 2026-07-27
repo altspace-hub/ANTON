@@ -483,7 +483,7 @@ export default function LocalModelsSettingsPanel() {
         {/* Recommended models */}
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-adv-gray mb-2">Recommended models</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
             {OLLAMA_RECOMMENDED.map((m) => (
               <div key={m.pullCommand} className="rounded-lg border border-border bg-adv-dark/30 p-3">
                 <div className="flex items-start justify-between gap-2 mb-1">
@@ -536,7 +536,7 @@ export default function LocalModelsSettingsPanel() {
         {!showAddForm && (
           <div className="mb-4">
             <p className="text-xs font-medium uppercase tracking-wide text-adv-gray mb-2">Quick-add presets</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
               {PRESETS.map((p) => {
                 const alreadyAdded = endpoints.some((e) => e.slug === p.slug);
                 return (
@@ -584,7 +584,7 @@ export default function LocalModelsSettingsPanel() {
               {editingSlug ? `Edit "${editingSlug}"` : 'New OpenAI-compatible endpoint'}
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               <Field
                 label="Slug"
                 hint="lowercase, a-z, 0-9, dashes — used in model IDs"

@@ -38,6 +38,7 @@ import { createExchangeRoutes } from './routes/exchange.js';
 import { createSettingsRoutes } from './routes/settings.js';
 import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoints.js';
 import { seedApeApiEndpoint } from './services/apeapi-seed.js';
+import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
 import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
@@ -597,6 +598,9 @@ app.use('/api', await createSettingsRoutes(db));
 app.use('/api', createCustomModelEndpointsRoutes(db));
 // Auto-register ApeAPI (compat: bundle) from APEAPI_API_KEY if set — one-step onboarding.
 await seedApeApiEndpoint(db);
+// Same for Moonshot AI (Kimi) from MOONSHOT_API_KEY — also OpenAI-compatible, so it
+// needs no adapter of its own; models become addressable as compat:kimi:<model>.
+await seedMoonshotEndpoint(db);
 app.use('/api', await createRagRoutes(db));
 app.use('/api', await createKnowledgeLibraryRoutes(db));
 app.use('/api', await createEurLexRoutes(db, anthropic));
