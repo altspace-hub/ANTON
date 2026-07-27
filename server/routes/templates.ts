@@ -19,13 +19,23 @@ const upload = multer({
   },
 });
 
+import { ownerFilter, assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+
 export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
-  // GET /api/templates — list all templates
-  router.get('/templates', async (_req, res) => {
+  // GET /api/templates — list templates the caller may see
+  router.get('/templates', async (req, res) => {
     try {
-      const templates = await db.all('SELECT * FROM brand_templates ORDER BY created_at DESC');
+      // SECURITY (2026-07-27 survey): this listed EVERY user's templates. The table
+      // has carried a user_id column since it was created — the routes simply never
+      // wrote or filtered on it, so the schema anticipated ownership that the code
+      // never enforced. `WHERE 1=1` so the scope fragment can append unconditionally.
+      const scope = ownerFilter(req as OwnedRequest, 'user_id');
+      const templates = await db.all(
+        `SELECT * FROM brand_templates WHERE 1=1${scope.sql} ORDER BY created_at DESC`,
+        ...scope.params,
+      );
       res.json(templates);
     } catch (err) {
       const message = safeError(err);
@@ -55,8 +65,10 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
 
     try {
       await db.run(
-        'INSERT INTO brand_templates (id, name, type, file_path, file_size) VALUES (?, ?, ?, ?, ?)'
-      , id, name, ext, finalPath, req.file.size);
+        'INSERT INTO brand_templates (id, name, type, file_path, file_size, user_id) VALUES (?, ?, ?, ?, ?, ?)'
+      // Attribute on write. Without this the ownership filter above would hide every
+      // newly-uploaded template from the person who just uploaded it.
+      , id, name, ext, finalPath, req.file.size, (req as OwnedRequest).user?.id ?? null);
 
       res.json({ id, name, type: ext });
     } catch (err) {
@@ -70,6 +82,15 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
   // DELETE /api/templates/:id — delete a template
   router.delete('/templates/:id', async (req, res) => {
     try {
+      // SECURITY (2026-07-27 survey): this deleted by id alone — the row AND the file
+      // on disk — so any user on a shared instance could permanently destroy another
+      // user's branded template. assertOwned 404s rather than 403s on someone else's
+      // id, so the endpoint cannot be used to probe which templates exist.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'brand_templates', ownerColumn: 'user_id', id: req.params.id,
+        notFoundMessage: 'Template not found',
+      }))) return;
+
       const tpl = await db.get('SELECT * FROM brand_templates WHERE id = ?', req.params.id) as
         | { id: string; name: string; type: string; file_path: string; file_size: number }
         | undefined;
