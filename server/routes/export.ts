@@ -65,7 +65,29 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
         ? String(metadata.moduleId).replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase()
         : null;
       const autoBasename = moduleSlug ? `${moduleSlug}_${datestamp}` : `openexpert_${datestamp}`;
-      const basename  = (metadata?.filename  as string) || autoBasename;
+      // SECURITY (2026-07-27 survey): metadata.filename is user-supplied and was
+      // validated only as z.string().max(200), then interpolated into
+      // path.join(OUTPUT_DIR, `${basename}.docx`) — so "../../../x" wrote
+      // attacker-controlled bytes outside the outputs directory. Reachable by any
+      // authenticated user in team mode.
+      //
+      // It also lands in a Content-Disposition header, where a quote or CRLF is
+      // header injection, so the same sanitising closes both. Whitelist rather than
+      // blacklist: strip everything that is not a safe filename character, which
+      // removes separators, traversal, NULs and control characters by construction.
+      // Falls back to the (already-sanitised) auto name if nothing survives.
+      const sanitiseBasename = (raw: unknown): string | null => {
+        if (typeof raw !== 'string') return null;
+        const cleaned = raw
+          .normalize('NFKD')
+          .replace(/[^a-zA-Z0-9 _.-]/g, '-')  // whitelist
+          .replace(/\.{2,}/g, '.')            // no ".." runs
+          .replace(/^[.\-\s]+/, '')           // no leading dot/dash/space
+          .trim()
+          .slice(0, 120);
+        return cleaned.length > 0 ? cleaned : null;
+      };
+      const basename  = sanitiseBasename(metadata?.filename) || autoBasename;
       const title     = (metadata?.title     as string) || basename;
       const author    = (metadata?.author    as string) || 'ANTON by openEXPERT';
       // GOV-04 + ATTR-02: provenance fields passed through to export footers

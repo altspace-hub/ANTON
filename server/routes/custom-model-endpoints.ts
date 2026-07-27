@@ -8,6 +8,7 @@
 // ═══════════════════════════════════════════════════════════
 
 import { Router } from 'express';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { encrypt, decrypt } from '../services/credential-vault.js';
 import {
@@ -83,7 +84,11 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Create ─────────────────────────────────────────────────
-  router.post('/settings/model-endpoints', async (req, res) => {
+  // SECURITY (2026-07-27 survey): creating or repointing a compat endpoint is the
+  // other half of the settings exfiltration path — the base URL is validated only as
+  // /^https?:\/\//i, so an ungated POST here lets any team-mode user stand up an
+  // attacker-controlled model backend. Admin-only in team mode; no-op in solo.
+  router.post('/settings/model-endpoints', requireAdminOrSolo, async (req, res) => {
     const body = req.body as {
       slug?: string;
       displayName?: string;
@@ -147,7 +152,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Update ─────────────────────────────────────────────────
-  router.patch('/settings/model-endpoints/:slug', async (req, res) => {
+  router.patch('/settings/model-endpoints/:slug', requireAdminOrSolo, async (req, res) => {
     const { slug } = req.params;
     const body = req.body as {
       displayName?: string;
@@ -217,7 +222,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Delete ─────────────────────────────────────────────────
-  router.delete('/settings/model-endpoints/:slug', async (req, res) => {
+  router.delete('/settings/model-endpoints/:slug', requireAdminOrSolo, async (req, res) => {
     try {
       const result = await db.run(
         'DELETE FROM custom_model_endpoints WHERE slug = ?',
@@ -232,7 +237,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Health check + remote model list refresh ───────────────
-  router.post('/settings/model-endpoints/:slug/health', async (req, res) => {
+  router.post('/settings/model-endpoints/:slug/health', requireAdminOrSolo, async (req, res) => {
     try {
       const row = (await db.get(
         'SELECT * FROM custom_model_endpoints WHERE slug = ?',

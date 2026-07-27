@@ -201,7 +201,17 @@ if (!process.env.ANTHROPIC_API_KEY) {
 // solo branch. Team mode must be set explicitly in .env; auth reads the env lazily.
 if (!process.env.DEPLOYMENT_MODE) {
   process.env.DEPLOYMENT_MODE = 'solo';
-  logger.info('[deploy] DEPLOYMENT_MODE not set — defaulting to solo (set DEPLOYMENT_MODE=team in .env for multi-user JWT auth)');
+  // WARN, not info. Defaulting to solo means every request is served as an admin
+  // with no authentication — correct on a laptop, a data breach on a shared host.
+  // .env.example previously implied DATABASE_URL turned team mode on by itself, so
+  // operators have followed that guidance and shipped an open instance believing it
+  // was authenticated. The default stays solo (right for the common case); the log
+  // now states the consequence rather than just the fact.
+  logger.warn(
+    '[deploy] DEPLOYMENT_MODE not set — defaulting to SOLO: authentication is OFF and '
+    + 'every request is served as an admin. This is correct for a single-user machine. '
+    + 'If anyone else can reach this server, stop and set DEPLOYMENT_MODE=team (plus JWT_SECRET) in .env.',
+  );
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

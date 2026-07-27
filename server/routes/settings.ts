@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { PERSISTABLE_ENV_KEYS, persistEnvKey } from '../services/env-keys-store.js';
 import { resetClient as resetAnthropicClient } from '../services/claude-client.js';
@@ -85,7 +86,15 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // secret). This is what makes the Settings picker govern missions /
   // agents / renderers / extractor — not just module runs. Empty/null
   // clears the row (env DEFAULT_MODEL applies again).
-  router.post('/settings/default-model', async (req, res) => {
+  // SECURITY (2026-07-27 survey): every MUTATING route here is instance-wide config.
+  // They were completely ungated, so in DEPLOYMENT_MODE=team any authenticated user —
+  // including a `viewer` — could overwrite the org's provider API keys or repoint the
+  // default model. Combined with creating a compat endpoint, that routes EVERY user's
+  // module runs (client documents, legal analysis) to an attacker-controlled URL.
+  // requireAdminOrSolo is a no-op in solo mode (authMiddleware stamps role:'admin'),
+  // so single-user installs are unaffected. GET routes stay open — the app needs them
+  // to render, and they expose names/booleans, never key values.
+  router.post('/settings/default-model', requireAdminOrSolo, async (req, res) => {
     const { model } = req.body as { model?: string | null };
 
     if (model === null || model === undefined || model === '') {
@@ -132,7 +141,7 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // null clears the row (default Haiku applies again). Validated against
   // the model registry; dynamic ollama:/compat:/azure: ids and configured
   // custom-slot models are accepted.
-  router.post('/settings/utility-model', async (req, res) => {
+  router.post('/settings/utility-model', requireAdminOrSolo, async (req, res) => {
     const { model } = req.body as { model?: string | null };
 
     if (model === null || model === undefined || model === '') {
@@ -178,7 +187,7 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // POST /api/settings/double-check — persist the toggle and/or the verifier model.
   // Body: { enabled?: boolean, model?: string | null }. Empty/null model clears the
   // row (default Haiku applies). Model id validated like the utility model.
-  router.post('/settings/double-check', async (req, res) => {
+  router.post('/settings/double-check', requireAdminOrSolo, async (req, res) => {
     const { enabled, model } = req.body as { enabled?: unknown; model?: string | null };
 
     if (enabled !== undefined) {
@@ -228,7 +237,7 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // (process.env + cached-client invalidation) AND persists to app_settings
   // so the key survives restarts (restored at boot by env-keys-store.ts).
   // SECURITY: never log or echo key values — names + booleans only.
-  router.post('/settings/set-env', async (req, res) => {
+  router.post('/settings/set-env', requireAdminOrSolo, async (req, res) => {
     const { key, value } = req.body as { key?: string; value?: string };
 
     if (!key || typeof key !== 'string') {
@@ -296,7 +305,7 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/settings/custom-models — save a custom model config for a slot
-  router.post('/settings/custom-models', async (req, res) => {
+  router.post('/settings/custom-models', requireAdminOrSolo, async (req, res) => {
     const { slot, config } = req.body as { slot?: number; config?: CustomModelConfig | null };
 
     if (slot !== 1 && slot !== 2) {
