@@ -5,7 +5,7 @@
 
 import { safeError } from '../lib/error-response.js';
 import express from 'express';
-import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs-extra';
@@ -54,7 +54,10 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
 
     try {
       const { collectionId, metadata, chunkSize, overlapSize } = req.body;
-      const userId = (req as any).userId || 'system';
+      // req.userId is never set — the auth middleware stamps req.user.id. Reading the
+      // wrong property meant every document was attributed to the literal 'system',
+      // which silently disabled the ownership checks on reindex/delete/get below.
+      const userId = req.user?.id ?? null;
 
       if (!collectionId) {
         return res.status(400).json({ error: 'collectionId is required' });
@@ -106,7 +109,10 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
 
     try {
       const { collectionId, metadata, chunkSize, overlapSize } = req.body;
-      const userId = (req as any).userId || 'system';
+      // req.userId is never set — the auth middleware stamps req.user.id. Reading the
+      // wrong property meant every document was attributed to the literal 'system',
+      // which silently disabled the ownership checks on reindex/delete/get below.
+      const userId = req.user?.id ?? null;
 
       if (!collectionId) {
         return res.status(400).json({ error: 'collectionId is required' });
@@ -163,7 +169,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.get('/documents/collection/:collectionId', async (req, res) => {
     try {
       const { collectionId } = req.params;
-      const documents = await getCollectionDocuments(db, collectionId);
+      const documents = await getCollectionDocuments(db, collectionId, ownerFilter(req, 'uploaded_by'));
       res.json({ documents });
     } catch (error) {
       console.error('[documents] List error:', error);

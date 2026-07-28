@@ -24,7 +24,7 @@ export interface RAGDocument {
   file_size: number;
   chunk_count: number;
   metadata: string;
-  uploaded_by: string;
+  uploaded_by: string | null;
   uploaded_at: string;
   indexed_at: string | null;
   index_status: 'pending' | 'indexing' | 'indexed' | 'failed';
@@ -180,8 +180,21 @@ export async function updateRAGDocument(db: DatabaseAdapter, id: string, updates
 /**
  * Get RAG documents for a collection
  */
-export async function getCollectionDocuments(db: DatabaseAdapter, collectionId: string): Promise<RAGDocument[]> {
-  return await db.all<RAGDocument>('SELECT * FROM rag_documents WHERE collection_id = ? ORDER BY uploaded_at DESC', collectionId);
+export async function getCollectionDocuments(
+  db: DatabaseAdapter,
+  collectionId: string,
+  /**
+   * Owner scope from `ownerFilter(req, 'uploaded_by')`. Omitted means unscoped, which
+   * is correct for solo mode and for admins; on a shared instance a non-admin would
+   * otherwise see the filename and size of every other user's uploads in the
+   * collection, and could then read each one by id.
+   */
+  scope: { sql: string; params: string[] } = { sql: '', params: [] },
+): Promise<RAGDocument[]> {
+  return await db.all<RAGDocument>(
+    `SELECT * FROM rag_documents WHERE collection_id = ?${scope.sql} ORDER BY uploaded_at DESC`,
+    collectionId, ...scope.params,
+  );
 }
 
 /**
