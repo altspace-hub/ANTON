@@ -218,11 +218,50 @@ const GENERIC_FALLBACK: Helpline[] = [
   { name: 'Talk to an adult you trust', contact: 'a parent, carer, teacher or school counsellor' },
 ];
 
+/**
+ * Country NAMES to ISO codes.
+ *
+ * `user_profiles.jurisdiction` is a free-text field. Live testing against a real profile
+ * found it holding "Sweden", not "SE" — so an ISO-only lookup silently fell through to
+ * the generic fallback, and a Swedish pupil in crisis would not have been shown BRIS.
+ * Every unit test passed, because every unit test used the code.
+ *
+ * Native spellings are included because the field is typed by a human in their own
+ * country, which is exactly the case that matters here.
+ */
+const NAME_TO_ISO: Record<string, string> = {
+  SWEDEN: 'SE', SVERIGE: 'SE',
+  'UNITED KINGDOM': 'GB', UK: 'GB', BRITAIN: 'GB', 'GREAT BRITAIN': 'GB',
+  ENGLAND: 'GB', SCOTLAND: 'GB', WALES: 'GB', 'NORTHERN IRELAND': 'GB',
+  'UNITED STATES': 'US', 'UNITED STATES OF AMERICA': 'US', USA: 'US', AMERICA: 'US',
+  GERMANY: 'DE', DEUTSCHLAND: 'DE',
+  FRANCE: 'FR', SPAIN: 'ES', 'ESPAÑA': 'ES', ITALY: 'IT', ITALIA: 'IT',
+  NETHERLANDS: 'NL', NEDERLAND: 'NL', BELGIUM: 'BE', BELGIE: 'BE',
+  NORWAY: 'NO', NORGE: 'NO', DENMARK: 'DK', DANMARK: 'DK',
+  FINLAND: 'FI', SUOMI: 'FI', ICELAND: 'IS', ISLAND: 'IS',
+  IRELAND: 'IE', EIRE: 'IE', POLAND: 'PL', POLSKA: 'PL',
+  PORTUGAL: 'PT', AUSTRIA: 'AT', OESTERREICH: 'AT', SWITZERLAND: 'CH',
+  CZECHIA: 'CZ', 'CZECH REPUBLIC': 'CZ', GREECE: 'GR', HUNGARY: 'HU',
+  ROMANIA: 'RO', BULGARIA: 'BG', CROATIA: 'HR', SLOVAKIA: 'SK',
+  SLOVENIA: 'SI', ESTONIA: 'EE', LATVIA: 'LV', LITHUANIA: 'LT',
+  LUXEMBOURG: 'LU', MALTA: 'MT', CYPRUS: 'CY',
+};
+
+/** Countries where 116 111 is the published child helpline. */
+const EU_116111 = new Set([
+  'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
+  'LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','NO','IS','CH',
+]);
+
 export function helplinesFor(jurisdiction?: string | null): Helpline[] {
-  const key = (jurisdiction ?? '').trim().toUpperCase();
+  const raw = (jurisdiction ?? '').trim().toUpperCase();
+  if (!raw) return GENERIC_FALLBACK;
+
+  // A 2-letter value is an ISO code; anything longer is a name we try to resolve.
+  const key = raw.length === 2 ? raw : (NAME_TO_ISO[raw] ?? raw);
+
   if (HELPLINES[key]) return HELPLINES[key];
   // Only claim the European number for a jurisdiction we recognise as European.
-  const EU = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','NO','IS','CH']);
-  if (EU.has(key)) return EU_FALLBACK;
+  if (EU_116111.has(key)) return EU_FALLBACK;
   return GENERIC_FALLBACK;
 }

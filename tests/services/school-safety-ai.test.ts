@@ -19,8 +19,20 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { parseAiScreenReply, aiScreenStudentMessage } from '../../server/services/school-safety-ai.js';
 
-const AI = readFileSync(join(process.cwd(), 'server/services/school-safety-ai.ts'), 'utf8');
-const SCHOOL = readFileSync(join(process.cwd(), 'server/routes/school.ts'), 'utf8');
+/**
+ * Line endings normalised.
+ *
+ * Git rewrites these files with CRLF on checkout, and the slice-based assertions below
+ * locate a block end by searching for a closing brace followed by a newline. Against
+ * CRLF that search returns -1, `slice(0, -1)` then swallows the rest of the file, and the
+ * assertion fails for a reason with nothing to do with the code. Cost one confusing red
+ * build to find, and it would have been intermittent — passing on a freshly-written file
+ * and failing after a checkout.
+ */
+const read = (p: string) =>
+  readFileSync(join(process.cwd(), p), 'utf8').replace(/\r\n/g, '\n');
+const AI = read('server/services/school-safety-ai.ts');
+const SCHOOL = read('server/routes/school.ts');
 
 describe('parsing the classifier reply', () => {
   it.each([
