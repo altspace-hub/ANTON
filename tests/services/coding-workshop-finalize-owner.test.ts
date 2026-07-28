@@ -93,10 +93,19 @@ describe('finalize stamps an owner on the seeded parent project', () => {
     expect(insert.params).not.toContain('default');
   });
 
-  it('prefers the CALLER over the session creator (finalize can be a later request)', async () => {
+  it('prefers the SESSION CREATOR over whoever finalises it', async () => {
+    // Reversed after review. The two only differ when they are different people, and
+    // routes/coding-workshop.ts loadOwned() explicitly lets ANY admin act on ANY user's
+    // session. Preferring the caller therefore meant a support admin finishing a user's
+    // workshop took ownership of the project — and the user who actually did the
+    // workshop was 404'd out of their own work by the very owner filter this branch
+    // added. That is the bug this file exists to prevent, arriving through the other door.
+    //
+    // In the ordinary case caller === creator and the ordering is unobservable, so
+    // nothing is traded away: this is strictly the safer resolution.
     const insert = await seedAndFinalize('user-alice', 'user-bob');
-    expect(insert.params).toContain('user-bob');
-    expect(insert.params).not.toContain('user-alice');
+    expect(insert.params).toContain('user-alice');
+    expect(insert.params).not.toContain('user-bob');
   });
 
   it('falls back to the session owner when the caller is anonymous', async () => {

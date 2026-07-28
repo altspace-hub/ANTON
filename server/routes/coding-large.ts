@@ -1902,17 +1902,26 @@ export async function createCodingLargeRoutes(
       let parentProjectId = project_id;
       if (!parentProjectId) {
         parentProjectId = randomUUID();
+        // user_id is REQUIRED here, not optional hygiene. `projects.user_id` is
+        // NOT NULL DEFAULT 'default', and the reads below are now scoped by it — so
+        // omitting it writes a row owned by a user who does not exist, and the creator
+        // is immediately 404'd out of the project they just made. Scoping the reads
+        // without attributing the write turns a leak into data loss.
         await db.run(`
-          INSERT INTO projects (id, name, description, status, created_at, updated_at)
-          VALUES (?, ?, ?, 'active', NOW(), NOW())
-        `, parentProjectId, name, description || '');
+          INSERT INTO projects (id, name, description, status, user_id, created_at, updated_at)
+          VALUES (?, ?, ?, 'active', ?, NOW(), NOW())
+        // 'default' rather than null: the column is NOT NULL DEFAULT 'default', so an
+        // explicit null would 500 on insert. authMiddleware always stamps req.user, so
+        // the fallback is unreachable in practice — it exists to keep the column's own
+        // semantics rather than to be relied on.
+        `, parentProjectId, name, description || '', req.user?.id ?? 'default');
       }
 
       const id = randomUUID();
       await db.run(`
         INSERT INTO coding_projects (id, project_id, name, description, tier, directory_path, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-      `, id, parentProjectId, name, description || '', tier, directory_path || null, (req as any).userId || 'system');
+      `, id, parentProjectId, name, description || '', tier, directory_path || null, req.user?.id ?? null);
 
       res.json({ id, project_id: parentProjectId, name, tier, status: 'discovery' });
     } catch (error) {
@@ -1959,9 +1968,15 @@ export async function createCodingLargeRoutes(
 
   // GET /api/coding/projects/:id — Get project with full state
   //
-  // SECURITY: same leak as the list, by id — plus releases, tasks, reviews and tech
-  // debt. Scoped with assertOwned so a foreign id 404s exactly like a missing one
-  // (a 403 would confirm the project exists and turn ids into an enumeration oracle).
+  // SECURITY: same leak as the list, by id. Scoped with assertOwned so a foreign id 404s
+  // exactly like a missing one (a 403 would confirm the project exists and turn ids into
+  // an enumeration oracle).
+  //
+  // SCOPE, stated plainly so nobody reads more assurance into this than it carries: this
+  // guards THIS aggregate read only. The ~54 sibling routes under /coding/projects/:id —
+  // PATCH, releases, tasks, reviews, tech-debt, DELETE — are still unscoped, so a
+  // determined caller can reach much of the same data through them. Closing those is a
+  // separate pass; do not treat the workshop charter as protected until it is done.
   router.get('/coding/projects/:id', async (req, res) => {
     try {
       if (!(await assertOwned(db, req as OwnedRequest, res, {

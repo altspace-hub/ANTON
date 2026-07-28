@@ -16,6 +16,8 @@
  * the fix does not blind a laptop owner to their own projects.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import type { Server } from 'http';
@@ -187,5 +189,70 @@ describe('coding project reads are owner-scoped', () => {
       expect(probe.sql).not.toContain('user_id');
       expect(probe.params).toEqual([BOB_PROJECT]);
     });
+  });
+});
+
+/**
+ * ── Found by adversarial review: scoping the reads without attributing the writes ──
+ *
+ * The guards above were added to GET /coding/projects and /:id. But POST
+ * /api/coding/projects — the endpoint the Studio UI calls to create a project — still
+ * inserted into `projects` WITHOUT user_id, and `projects.user_id` is
+ * NOT NULL DEFAULT 'default'.
+ *
+ * The two halves combine into something worse than the leak they were fixing: every new
+ * project is owned by a user who does not exist, and the owner filter then hides it from
+ * the person who just created it. A user watches the UI navigate into a project and gets
+ * a 404. Scoping reads without attributing writes converts a confidentiality bug into
+ * data loss, which is the one outcome a security fix must never produce.
+ */
+describe('the project WRITER attributes an owner', () => {
+  const SRC = readFileSync(join(process.cwd(), 'server/routes/coding-large.ts'), 'utf8');
+
+  it('inserts user_id when creating the parent project', () => {
+    const insert = SRC.slice(SRC.indexOf('INSERT INTO projects'));
+    expect(insert.slice(0, insert.indexOf('`'))).toContain('user_id');
+  });
+
+  it('uses the authenticated caller, not the always-undefined req.userId', () => {
+    // `(req as any).userId` is never set anywhere — authMiddleware stamps req.user.id.
+    // Reading the wrong property is how coding_projects.created_by came to be the
+    // literal string 'system' on every row.
+    const create = SRC.slice(SRC.indexOf('INSERT INTO projects'), SRC.indexOf('res.json({ id, project_id'));
+    expect(create).toContain('req.user?.id');
+    expect(create).not.toContain('(req as any).userId');
+  });
+
+  it('falls back per COLUMN, because the two owner columns differ', () => {
+    // projects.user_id is NOT NULL DEFAULT 'default' — an explicit null still violates
+    // the constraint, so the fallback there must be 'default', not null.
+    // coding_projects.created_by is nullable with no default, so null is the honest
+    // value for "unattributed" and is strictly better than the literal 'system' this
+    // code used to write (a sentinel that looks like a real account and matches nobody).
+    const projectsInsert = SRC.slice(SRC.indexOf('INSERT INTO projects'), SRC.indexOf('INSERT INTO coding_projects'));
+    expect(projectsInsert).toMatch(/req\.user\?\.id \?\? 'default'/);
+    expect(projectsInsert).not.toMatch(/req\.user\?\.id \?\? null/);
+
+    const codingInsert = SRC.slice(SRC.indexOf('INSERT INTO coding_projects'), SRC.indexOf('res.json({ id, project_id'));
+    expect(codingInsert).toMatch(/req\.user\?\.id \?\? null/);
+    expect(codingInsert).not.toContain("'system'");
+  });
+
+  it('does not overstate what the by-id guard covers', () => {
+    // The sibling routes under /coding/projects/:id are still unscoped. A comment that
+    // claims otherwise is worse than no comment — it stops the next reader looking.
+    const guard = SRC.slice(SRC.indexOf('// GET /api/coding/projects/:id'), SRC.indexOf("router.get('/coding/projects/:id'"));
+    expect(guard).toMatch(/still unscoped|separate pass/i);
+  });
+});
+
+describe('the workshop attributes the project to its author', () => {
+  const ENGINE = readFileSync(join(process.cwd(), 'server/services/coding-workshop-engine.ts'), 'utf8');
+
+  it('prefers the session creator over whoever finalises it', () => {
+    // loadOwned lets an admin act on any user's session, so preferring the caller would
+    // hand a support admin the project and 404 the user out of their own work.
+    expect(ENGINE).toContain("session.userId ?? userId ?? 'default'");
+    expect(ENGINE).not.toContain("userId ?? session.userId ?? 'default'");
   });
 });

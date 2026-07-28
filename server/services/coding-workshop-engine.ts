@@ -1018,7 +1018,11 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
     // Solo only escaped because the solo user is an admin. Same resolution order the
     // coding_projects.created_by insert below uses; the last resort is the column's
     // own default rather than 'system' so an unattributed row keeps table semantics.
-    const ownerUserId = userId ?? session.userId ?? 'default';
+    // The session's CREATOR owns the project, not whoever finalises it. loadOwned in
+    // routes/coding-workshop.ts lets any admin act on any user's session, so preferring
+    // the caller would hand a support admin's account the project the user just built —
+    // and 404 the user out of their own work, which is the exact bug this block fixes.
+    const ownerUserId = session.userId ?? userId ?? 'default';
 
     await db.transaction(async (tx) => {
       await tx.run(
