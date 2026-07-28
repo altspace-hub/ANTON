@@ -41,6 +41,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
 
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
@@ -631,12 +632,24 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
       const onComplete = async (data: { text: string; outputTokens: number }) => {
         try {
           if (sessionId) {
-            await db.run(
-              `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
-               VALUES (?, ?, 'assistant', ?, ?, ?)`
-            , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
-            await db.run('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?',
-              new Date().toISOString(), sessionId as string, userId);
+            // Ownership is checked BEFORE the insert. The sessionId arrives in the
+            // request body, and this INSERT trusted it — while the UPDATE immediately
+            // below already scoped by user_id, which is what makes the omission plain.
+            // An attacker could plant arbitrary AI-attributed text into another child's
+            // transcript: the message is stored with role 'assistant', so it reads to
+            // the pupil, a teacher or a guardian as something ANTON said.
+            const owned = await db.get(
+              'SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?',
+              sessionId as string, userId,
+            );
+            if (owned) {
+              await db.run(
+                `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
+                 VALUES (?, ?, 'assistant', ?, ?, ?)`
+              , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+              await db.run('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?',
+                new Date().toISOString(), sessionId as string, userId);
+            }
           }
           await updateGrowthProfile(db, userId);
           if (resolvedClassId) await updateStudentProgress(db, userId, resolvedClassId, resolvedSubjectId, resolvedTaskType);
@@ -740,10 +753,19 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
               await db.run('UPDATE laxhjalp_sessions SET resolved = 1, status = ?, updated_at = ? WHERE id = ?',
                 'resolved', new Date().toISOString(), laxhjalpId);
               if (sessionId) {
-                await db.run(
-                  `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
-                   VALUES (?, ?, 'assistant', ?, ?, ?)`
-                , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+                // Same body-supplied sessionId, same check as /school/chat above: an
+                // assistant-attributed message must not land in a session the caller
+                // does not own.
+                const owned = await db.get(
+                  'SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?',
+                  sessionId as string, userId,
+                );
+                if (owned) {
+                  await db.run(
+                    `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
+                     VALUES (?, ?, 'assistant', ?, ?, ?)`
+                  , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+                }
               }
             } catch (e) {
               console.warn('[school/laxhjalp] onComplete error (non-fatal):', e);
@@ -995,6 +1017,16 @@ Provide a structured evaluation with these exact sections:
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
+      // Creating a class makes you its teacher_user_id, which is what every
+      // teacher-scoped query in this file keys off. With no role check any pupil could
+      // mint a class, hand out its join code, and hold the teacher role over whoever
+      // enrolled. Only meaningful now that school_role is actually populated (#33);
+      // before that this check would have locked everyone out.
+      const schoolRole = req.user?.school_role;
+      if (schoolRole !== 'teacher' && schoolRole !== 'school_admin') {
+        return res.status(403).json({ error: 'Only teachers can create classes' });
+      }
+
       const {
         name, subject = 'mathematics', educationTier = 'T2',
         curriculumId = 'lgr22', defaultAssistanceLevel = 'L2',
@@ -1119,6 +1151,19 @@ Provide a structured evaluation with these exact sections:
       , req.params.id) as { leaderboard_enabled: number } | null;
 
       if (!classRow) return res.status(404).json({ error: 'Class not found' });
+
+      // Membership was never checked — only that the class existed and had the
+      // leaderboard switched on. Any authenticated user could read any class id and get
+      // back every pupil's name and XP. Teacher-of-the-class or enrolled-student only.
+      const member = await db.get(
+        `SELECT 1 AS ok FROM school_classes c
+          WHERE c.id = ? AND (c.teacher_user_id = ?
+                OR EXISTS (SELECT 1 FROM class_enrollments e
+                            WHERE e.class_id = c.id AND e.student_user_id = ?))`,
+        req.params.id, userId, userId,
+      );
+      if (!member) return res.status(404).json({ error: 'Class not found' });
+
       if (!classRow.leaderboard_enabled) return res.json({ enabled: false, entries: [] });
 
       const rows = await db.all(
@@ -2657,9 +2702,21 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
     const { teacherLevelOverride, senOverride } = req.body as Record<string, string>;
 
-    // Verify teacher owns this class
-    const cls = await db.all(`SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`, req.params.classId, teacherId);
-    if (!cls) return res.status(403).json({ error: 'Forbidden' });
+    // Verify teacher owns this class.
+    //
+    // This was `db.all(...)` tested with `if (!cls)`. db.all returns an ARRAY, and an
+    // empty array is truthy — so the guard never fired and ANY authenticated user could
+    // set teacher_level_override and sen_override (a Special Educational Needs
+    // designation) on any pupil in any class. The check reads as present, which is why
+    // it survived: only the return type gives it away.
+    //
+    // 404 rather than 403, matching middleware/ownership.ts — a 403 confirms the class
+    // exists and turns ids into an enumeration oracle.
+    const cls = await db.get(
+      `SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`,
+      req.params.classId, teacherId,
+    );
+    if (!cls) return res.status(404).json({ error: 'Class not found' });
 
     // Columns added by mig 204 (teacher_level_override, sen_override).
     await db.run(`UPDATE student_class_enrollments SET teacher_level_override = ?, sen_override = ? WHERE class_id = ? AND student_user_id = ?`, teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
@@ -2989,6 +3046,14 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
          WHERE r.id = ?`
       , req.params.id) as Record<string, unknown> | undefined;
       if (!room) return res.status(404).json({ error: 'Room not found' });
+
+      // `SELECT r.*` returned join_code to anyone who knew a room id — including for
+      // private rooms — which hands out the credential the join endpoint accepts. The
+      // host keeps it (they need it to invite people); nobody else is given it back.
+      // Codes are generated with Math.random(), not a CSPRNG, so they are guessable
+      // enough that handing them out on request is the whole ballgame.
+      if (room.host_user_id !== req.user?.id) delete room.join_code;
+
       return res.json(room);
     } catch (err) {
       console.error('[school/study-rooms GET/:id]', err);
@@ -3100,6 +3165,13 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   // PATCH /api/school/lessons/:id
   router.patch('/school/lessons/:id', async (req, res) => {
     try {
+      // Had NO authorization of any kind — it never read req.user. Any authenticated
+      // pupil could rewrite the content_blocks of any lesson, i.e. inject arbitrary
+      // material into what children are taught, or flip `published`.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'school_lessons', ownerColumn: 'created_by', id: req.params.id,
+        notFoundMessage: 'Lesson not found',
+      }))) return;
       const body = req.body as Record<string, unknown>;
       const fields: string[] = [];
       const values: unknown[] = [];
@@ -3119,6 +3191,11 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   // DELETE /api/school/lessons/:id
   router.delete('/school/lessons/:id', async (req, res) => {
     try {
+      // Same gap as PATCH above: any authenticated user could delete any lesson.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'school_lessons', ownerColumn: 'created_by', id: req.params.id,
+        notFoundMessage: 'Lesson not found',
+      }))) return;
       await db.run('DELETE FROM school_lessons WHERE id = ?', req.params.id);
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: safeError(e) }); }
@@ -3127,8 +3204,13 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
   // POST /api/school/lessons/:id/progress — track student progress through lesson
   router.post('/school/lessons/:id/progress', async (req, res) => {
     try {
-      const body = req.body as { student_user_id?: string; completed_block?: string; status?: string; score?: number; time_spent_seconds?: number };
-      const studentId = body.student_user_id || 'default';
+      const body = req.body as { completed_block?: string; status?: string; score?: number; time_spent_seconds?: number };
+      // The student id came from the REQUEST BODY (`body.student_user_id || 'default'`),
+      // so any user could write scores and completion against any pupil — or into a
+      // shared 'default' bucket that belongs to nobody. A progress record is a claim
+      // about who did the work; it can only come from the authenticated caller.
+      const studentId = req.user?.id;
+      if (!studentId) return res.status(401).json({ error: 'Unauthorised' });
       const existing = await db.get('SELECT * FROM school_lesson_progress WHERE lesson_id = ? AND student_user_id = ?', req.params.id, studentId) as Record<string, unknown> | undefined;
       const completed = existing ? JSON.parse((existing.completed_blocks as string) || '[]') : [];
       if (body.completed_block && !completed.includes(body.completed_block)) completed.push(body.completed_block);
