@@ -164,7 +164,12 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 
 // GET /api/files/:id
 router.get('/files/:id', validateParams(FileIdParamSchema), async (req, res) => {
-  const id = req.params.id as string;
+  // basename() FIRST, so the same value is used for the ownership lookup and for the
+  // file read — checking one id and serving another is its own bug. It also makes the
+  // join provably a direct child of UPLOAD_DIR rather than relying on the realpath
+  // check below to catch traversal after the fact. FileIdParamSchema already rejects
+  // slashes, but a bare '..' passes it, and defence that is one regex deep is thin.
+  const id = path.basename(String(req.params.id));
 
   // Ownership is checked BEFORE touching the filesystem, so a caller cannot use
   // response timing or a 403-vs-404 difference to learn whether an id exists.

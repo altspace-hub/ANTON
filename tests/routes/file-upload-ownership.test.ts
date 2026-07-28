@@ -115,6 +115,15 @@ describe('file_uploads ownership record', () => {
     expect(guard).not.toContain('403');
   });
 
+  it('normalises the id before BOTH the ownership lookup and the file read', () => {
+    // Checking ownership of one id and serving another would be its own bug, so the
+    // basename must be taken once, before the guard — not separately at each use.
+    const norm = FILES.indexOf('path.basename(String(req.params.id))');
+    expect(norm).toBeGreaterThan(-1);
+    expect(norm).toBeLessThan(FILES.indexOf('SELECT uploaded_by FROM file_uploads'));
+    expect(FILES).not.toMatch(/path\.join\(UPLOAD_DIR, req\.params\.id/);
+  });
+
   it('treats a file with no record as unattributed, not as public', () => {
     const guard = FILES.slice(
       FILES.indexOf('SELECT uploaded_by FROM file_uploads'),
