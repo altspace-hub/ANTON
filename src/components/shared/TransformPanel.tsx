@@ -60,6 +60,15 @@ interface ArtifactRow {
 }
 
 const CATEGORY_ORDER: Category[] = ['visualize', 'adapt_audience', 'package', 'regulatory', 'review'];
+
+/**
+ * Registry renderers whose output ExportBar already offers via the legacy /api/export
+ * path. Listing them here too would show two buttons for the same file. Every OTHER
+ * 'package' renderer must still be listed — see the filter below.
+ */
+const EXPORTBAR_DUPLICATES = new Set([
+  'export-md', 'export-docx', 'export-xlsx', 'export-pdf', 'export-pptx',
+]);
 const CATEGORY_META: Record<Category, { label: string; icon: typeof BarChart3; blurb: string }> = {
   visualize:       { label: 'Visualize',          icon: BarChart3, blurb: 'Turn this output into a diagram you can preview and download. Instant — no AI call.' },
   adapt_audience:  { label: 'Adapt for audience', icon: Users,     blurb: 'Re-write the output for a different reader. Each one runs a fresh AI pass.' },
@@ -208,9 +217,16 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
       )}
 
       {CATEGORY_ORDER.map(cat => {
-        const items = grouped[cat] ?? [];
+        // The five export-* renderers produce the same artefacts ExportBar already offers
+        // through /api/export, so listing them here would give every format two buttons.
+        // But skipping the WHOLE 'package' category hid everything else in it — the
+        // standalone-html renderer has had no entry point anywhere in the product since it
+        // shipped, and a new one would inherit the same fate. Suppress the duplicates, not
+        // the category.
+        const items = (grouped[cat] ?? []).filter(
+          r => cat !== 'package' || !EXPORTBAR_DUPLICATES.has(r.id),
+        );
         if (items.length === 0) return null;
-        if (cat === 'package') return null; // handled by ExportBar
         const Icon = CATEGORY_META[cat].icon;
         const isOpen = expanded.has(cat);
         return (

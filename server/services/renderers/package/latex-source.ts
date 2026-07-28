@@ -311,7 +311,11 @@ function markdownToLatex(md: string, features: LatexFeatures): { latex: string; 
       features.booktabs ? '\\toprule' : '\\hline',
       `${head.map(c => `\\textbf{${renderInline(c, features)}}`).join(' & ')} \\\\`,
       features.booktabs ? '\\midrule' : '\\hline',
-      ...rows.map(r => `${padTo(r, cols, '').map(c => renderInline(c, features)).join(' & ')} \\\\`),
+      // A row with MORE cells than the header cannot widen a tabular — the column spec is
+      // fixed — but dropping the surplus loses the client's content silently, which is the
+      // failure mode this exporter exists to avoid. Fold the overflow into the last cell so
+      // the text survives and the LaTeX still compiles.
+      ...rows.map(r => `${foldTo(r, cols).map(c => renderInline(c, features)).join(' & ')} \\\\`),
       features.booktabs ? '\\bottomrule' : '\\hline',
       '\\end{tabular}',
       '\\end{table}',
@@ -355,6 +359,11 @@ function markdownToLatex(md: string, features: LatexFeatures): { latex: string; 
   }
 
   while (i < lines.length) {
+    // Belt and braces for the above: if any future branch ever returns true without
+    // advancing, fail loudly on the next iteration instead of hanging the server. An
+    // exception is caught by the renderer's error path and surfaces as a failed render;
+    // a spin is unrecoverable without restarting Node.
+    const startedAt = i;
     const line = lines[i];
     if (/^\s*$/.test(line)) { i++; continue; }
     if (/^---+$/.test(line)) {
@@ -372,8 +381,18 @@ function markdownToLatex(md: string, features: LatexFeatures): { latex: string; 
     if (consumeTable())  continue;
     if (consumeList())   continue;
     if (consumeBlockquote()) continue;
-    // Paragraph — accumulate until a blank line or a block break
-    const para: string[] = [];
+    // Paragraph — ALWAYS consumes the current line first, so the outer loop cannot spin.
+    //
+    // This is load-bearing, not defensive style. A line beginning with '|' that
+    // consumeTable() declined — a table missing its separator row, a table truncated by
+    // a streamed response, an ASCII/BNF diagram, a header that is the last line — matched
+    // no branch above AND was excluded from the accumulator below by its own `!/^\|/`
+    // guard. `i` never advanced. markdownToLatex is synchronous, so that is not a hung
+    // request: it pegs Node's single-threaded event loop and every route in ANTON stops
+    // responding until the process is restarted. Malformed pipe rows are ordinary LLM
+    // output, so this was reachable from a normal export.
+    const para: string[] = [lines[i]];
+    i++;
     while (i < lines.length && lines[i] && !/^#{1,6}\s+/.test(lines[i])
            && !/^```/.test(lines[i]) && !/^>\s?/.test(lines[i])
            && !LIST_ITEM_RE.test(lines[i])
@@ -381,6 +400,12 @@ function markdownToLatex(md: string, features: LatexFeatures): { latex: string; 
       para.push(lines[i]); i++;
     }
     if (para.length) out.push(renderInline(para.join(' '), features));
+
+    if (i === startedAt) {
+      throw new Error(
+        `[latex-source] parser made no progress at line ${i + 1}: ${JSON.stringify(lines[i]).slice(0, 80)}`,
+      );
+    }
   }
 
   // One `out` entry per BLOCK, not per line — blocks are joined with a blank
@@ -403,6 +428,17 @@ function cellAlignment(sepCell: string): string {
   if (/^:.*:$/.test(sepCell)) return 'c';
   if (/:$/.test(sepCell)) return 'r';
   return 'l';
+}
+
+/**
+ * Normalise a table row to exactly `length` cells WITHOUT losing text: short rows are
+ * padded, long rows have their surplus merged into the final cell.
+ */
+function foldTo(arr: string[], length: number): string[] {
+  if (arr.length === length) return arr;
+  if (arr.length < length) return [...arr, ...Array<string>(length - arr.length).fill('')];
+  const kept = arr.slice(0, length - 1);
+  return [...kept, arr.slice(length - 1).join(' ')];
 }
 
 function padTo<T>(arr: T[], length: number, fill: T): T[] {
@@ -491,9 +527,13 @@ function renderInline(raw: string, features: LatexFeatures): string {
   s = s.replace(/\*\*([^*]+)\*\*/g, (_m, inner: string) => `\\textbf{${inner}}`);
   s = s.replace(/\*([^*]+)\*/g, (_m, inner: string) => `\\textit{${inner}}`);
 
-  s = s.replace(/\u0001C(\d+)\u0002/g, (_m, n: string) => `\\texttt{${escapeLatex(codes[Number(n)])}}`);
+  s = s.replace(/\u0001C(\d+)\u0002/g, (_m, n: string) => `\\texttt{${escapeLatex(codes[Number(n)] ?? '')}}`);
   s = s.replace(/\u0001L(\d+)\u0002/g, (_m, n: string) => {
-    const { text, url } = links[Number(n)];
+    // Guarded: the delimiters are control characters, but content that happens to
+    // contain them must degrade to visible text rather than throwing mid-render.
+    const link = links[Number(n)];
+    if (!link) return '';
+    const { text, url } = link;
     const label = escapeLatex(text);
     // \href only exists with hyperref loaded. Without it, degrade to text the
     // reader can still act on rather than emitting an undefined control

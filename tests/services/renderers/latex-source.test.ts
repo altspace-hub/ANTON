@@ -473,3 +473,59 @@ describe('latex-source: registry registration', () => {
     expect(src).toMatch(/tex:\s*'[^']*LaTeX[^']*'/);
   });
 });
+
+/**
+ * ── Defects found by adversarial review of the first version of this renderer ──
+ *
+ * These are the tests that were missing, not extra polish: the original 42 all passed
+ * while the parser contained a reachable infinite loop.
+ */
+describe('malformed pipe lines cannot hang the parser', () => {
+  /**
+   * The outer loop advanced `i` only when a block consumer accepted the line or the
+   * paragraph accumulator took it. A line starting with '|' that consumeTable() declined
+   * was accepted by NEITHER — the accumulator excluded it with its own `!/^\|/` guard —
+   * so `i` never moved. markdownToLatex is synchronous, so this did not hang one request:
+   * it pegged Node's single-threaded event loop and stopped every route in ANTON until
+   * the process was restarted.
+   *
+   * All five inputs are ordinary LLM output — a table missing its separator row, a table
+   * truncated by a streamed response, an ASCII/BNF line.
+   *
+   * Be precise about what these tests do and do not give you. Against the old parser they
+   * HANG; they do not fail. The per-test timeout below cannot save you, because a
+   * synchronous spin blocks the event loop that vitest's timers run on — verified by
+   * reverting the fix, at which point this file never finishes and CI dies on the job
+   * timeout instead of reporting a failure.
+   *
+   * Clean failure comes from the progress assertion in markdownToLatex, which throws when
+   * an iteration ends without advancing. That is why the assertion is there and why it
+   * must not be removed as redundant: it is the difference between a future regression
+   * showing up as a red test and showing up as a production outage.
+   */
+  it.each([
+    ['a table with no separator row', '| Name | Value |\n| Alice | 1 |'],
+    ['a table truncated mid-stream',  'Intro text.\n\n| pending |'],
+    ['a lone pipe line',              '| trailing |'],
+    ['a header that is the last line', '# T\n\n| A | B |'],
+    ['an ASCII/BNF line',             '| expr ::= term | factor'],
+  ])('returns for %s', async (_label, md) => {
+    const { tex } = await renderTex(md);
+    expect(typeof tex).toBe('string');
+  }, 5000);
+
+  it('keeps the text of a malformed table rather than dropping it', async () => {
+    const { body } = await renderTex('| Name | Value |\n| Alice | 1 |');
+    expect(body).toContain('Alice');
+  });
+});
+
+describe('table rows are never silently truncated', () => {
+  it('folds cells beyond the header width into the last column', async () => {
+    // Dropping them kept the LaTeX valid but lost the client's content with no warning —
+    // the exact failure mode this exporter exists to avoid.
+    const { body } = await renderTex('| A | B |\n| --- | --- |\n| 1 | 2 | 3 | 4 |');
+    expect(body).toContain('3');
+    expect(body).toContain('4');
+  });
+});
