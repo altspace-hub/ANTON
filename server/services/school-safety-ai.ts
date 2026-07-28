@@ -51,8 +51,8 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
-import { callSync, isApiKeyConfigured } from './claude-client.js';
-import { getAnthropicUtilityModel } from './utility-model.js';
+import { callChat, getConfiguredProvider } from './provider-router.js';
+import { getRoutedUtilityModel } from './utility-model.js';
 
 /** Categories this layer may raise. Deliberately the welfare subset of layer 1's. */
 export type AiConcern = 'self_harm' | 'suicide' | 'distress' | 'abuse';
@@ -65,7 +65,14 @@ export interface AiScreenResult {
 
 const TIMEOUT_MS = Number(process.env.SCHOOL_AI_SCREEN_TIMEOUT_MS) || 2500;
 
-const SYSTEM = `You classify a single message written by a school pupil, to decide whether
+/**
+ * Exported so the prompt itself can be evaluated against a specific provider without
+ * reaching through the routing layer. Prompt quality is provider-dependent — a small
+ * Mistral model does not read the same instructions the same way a Haiku does — and
+ * the false-positive rate on coursework is the number that decides whether a school
+ * keeps this switched on.
+ */
+export const CLASSIFIER_SYSTEM_PROMPT = `You classify a single message written by a school pupil, to decide whether
 an adult should be made aware of it. You are a safety filter, not a tutor and not a
 conversational partner.
 
@@ -137,7 +144,13 @@ export async function aiScreenStudentMessage(
   // Follows the MARKETS_THINKING_DISABLED convention: one env var pauses the spend
   // without removing the code path.
   if (process.env.SCHOOL_AI_SCREEN_DISABLED === 'true') return { concern: null, skipped: 'disabled' };
-  if (!isApiKeyConfigured()) return { concern: null, skipped: 'no_api_key' };
+  // Provider-aware, not Anthropic-only. isApiKeyConfigured() checks ANTHROPIC_API_KEY
+  // alone, so on a Mistral instance it reported "no key" while a perfectly usable key
+  // sat in the env — and on an Anthropic instance that is merely out of CREDIT it
+  // reports fine and the call fails downstream, which is what actually happened here.
+  // Neither is worth a bespoke check: ask which provider is configured, and let the
+  // call itself be the test of whether it works.
+  if (!getConfiguredProvider()) return { concern: null, skipped: 'no_api_key' };
 
   const text = (message ?? '').trim();
   if (!text) return { concern: null };
@@ -146,16 +159,24 @@ export async function aiScreenStudentMessage(
     // getAnthropicUtilityModel returns a Claude id by construction — it falls back to
     // DEFAULT_UTILITY_MODEL for any non-Anthropic override — but its declared type is
     // the widened `string`. The cast is the type system catching up, not a claim.
-    // Derived from callSync's own signature rather than src/lib/types: claude-client
-    // declares a NARROWER local ModelId (Anthropic ids only), and importing the wider
-    // union does not satisfy it. getAnthropicUtilityModel returns a Claude id by
-    // construction — it falls back to DEFAULT_UTILITY_MODEL for any non-Anthropic
-    // override — so the cast is the type system catching up, not a claim.
-    const model = (await getAnthropicUtilityModel(db)) as Parameters<typeof callSync>[0]['model'];
-    const call = callSync({
+    // Provider-neutral, and that is not a nicety.
+    //
+    // The first version of this file called the Anthropic SDK directly via callSync and
+    // getAnthropicUtilityModel. On an instance configured for Mistral — or one whose
+    // Anthropic account is simply out of credit — layer 2 then failed on EVERY message
+    // and, because it fails open by design, did so silently. A safety layer that is
+    // quietly inert on somebody's actual configuration is the exact failure this
+    // codebase keeps producing.
+    //
+    // callChat + getRoutedUtilityModel follow whatever provider the instance is set to
+    // (Settings > default model, then env), so this works on Mistral, OpenAI, Gemini,
+    // Ollama or a compat endpoint without another code path.
+    const model = await getRoutedUtilityModel(db);
+    const call = callChat({
+      db,
       model,
-      thinking: 'quick',
-      system: SYSTEM,
+      maxTokens: 64,
+      system: CLASSIFIER_SYSTEM_PROMPT,
       messages: [{
         role: 'user',
         // Delimited so the boundary between instruction and data is explicit. Truncated
