@@ -45,6 +45,7 @@ import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { validateModuleMatches } from '../services/module-recommendation.js';
 import { computeRunCostUsd } from '../services/run-cost.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
@@ -1959,7 +1960,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '[]';
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-      res.json(matches.slice(0, 3));
+
+      // Grounding is not enough on its own. This route already puts real candidates in
+      // the prompt, but returned the model's answer unchecked — and a model given 40
+      // options still occasionally names a 41st that sounds right. A recommendation that
+      // 404s is worse than a missing one: it teaches the user the feature is broken.
+      const { valid, rejected } = await validateModuleMatches(
+        (matches as Array<{ moduleId: string }>).map((m) => ({ ...m, moduleId: String(m?.moduleId ?? '') })),
+      );
+      if (rejected.length > 0) {
+        console.warn(`[modules/recommend] dropped invented id(s): ${rejected.join(', ')}`);
+      }
+      res.json(valid.slice(0, 3));
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
     }

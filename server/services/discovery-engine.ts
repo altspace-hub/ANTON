@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { findCandidateModules, formatCandidatesForPrompt, validateModuleMatches } from './module-recommendation.js';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -1518,7 +1519,41 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     if (!session) throw new Error('Session not found');
     if (!anthropic) throw new Error('Anthropic client not configured');
 
-    const outputPrompt = getOutputGenerationPrompt(session.state);
+    let outputPrompt = getOutputGenerationPrompt(session.state);
+
+    // GROUND the module recommendations in the real catalogue.
+    //
+    // This prompt asks the model for `moduleId` values and, until now, contained no
+    // module list whatsoever — so every id it produced was reconstructed from memory of
+    // what an ANTON module id probably looks like. `matchedModules` is the output whose
+    // whole purpose is turning the conversation into something the user can actually
+    // open, and it was pointing at ids that mostly do not exist. The user found out by
+    // clicking one.
+    //
+    // Candidates are drawn from what the session actually discussed — the pain points
+    // and work activities, which is where the vocabulary is — so the list is relevant
+    // rather than the first 40 modules in catalogue order.
+    const discussed = [
+      ...session.state.painPoints.map((p) => `${p.description} ${p.theme}`),
+      ...session.state.workActivities.map((w) => w.description),
+      ...session.state.workflows.map((w) => w.name),
+      ...session.state.opportunities.map((o) => (o as { description?: string }).description ?? ''),
+      session.state.userProfile.role,
+      session.state.userProfile.industry,
+    ].filter(Boolean).join(' ');
+    const candidates = await findCandidateModules(discussed);
+    if (candidates.length > 0) {
+      outputPrompt += `
+
+## AVAILABLE MODULES — moduleId MUST be one of these exact ids
+`
+        + `Do not invent an id. If nothing here fits a pain point, omit the match rather
+`
+        + `than inventing one — a recommendation that does not open is worse than none.
+
+`
+        + formatCandidatesForPrompt(candidates);
+    }
 
     const chatResult = await callChat({
       model: mapModelToProvider('claude-sonnet-4-5-20250929'),
@@ -1551,6 +1586,20 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
         console.error('[discovery] Failed to parse output JSON:', e);
       }
     }
+
+    // VALIDATE, even though the prompt was grounded. A model given 40 candidates still
+    // occasionally returns a plausible-looking id that was not among them, and one that
+    // 404s is worse than one that is missing: it teaches the user the feature is broken.
+    // moduleName and areaId are overwritten from the catalogue rather than trusted — a
+    // right id with a wrong label sends the user somewhere they did not choose.
+    const validation = await validateModuleMatches(moduleMatches);
+    if (validation.rejected.length > 0) {
+      // Logged, never surfaced. Ids only — no session content.
+      console.warn(
+        `[discovery] dropped ${validation.rejected.length} hallucinated module id(s): ${validation.rejected.join(', ')}`,
+      );
+    }
+    moduleMatches = validation.valid as ModuleMatch[];
 
     // Save output
     const outputId = randomUUID();
