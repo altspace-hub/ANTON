@@ -46,6 +46,15 @@ export interface ReadinessScores {
 
 export interface ModuleMatch {
   moduleId: string;
+  /**
+   * Text to prefill the module's input with when the user opens it from Discovery.
+   *
+   * Composed from the session's OWN recorded pain points, not from the model's prose.
+   * The point of a deep link is that the user does not have to re-explain themselves —
+   * arriving at a blank box having just spent twenty minutes describing the problem is
+   * the moment the whole discovery conversation stops feeling worth it.
+   */
+  suggestedPrompt?: string;
   moduleName: string;
   areaId: string;
   areaName: string;
@@ -1600,6 +1609,28 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
       );
     }
     moduleMatches = validation.valid as ModuleMatch[];
+
+    // Attach the user's own words so the deep link lands somewhere useful.
+    //
+    // Deterministic, not model-generated: the pain points are what the user actually
+    // said, and asking the model for one more field would add prompt surface and a new
+    // thing to hallucinate for no gain. Capped because this travels in a query string.
+    const painContext = session.state.painPoints
+      .slice(0, 3)
+      .map((p) => `- ${p.description}`)
+      .join('\n');
+    if (painContext) {
+      moduleMatches = moduleMatches.map((m) => ({
+        ...m,
+        suggestedPrompt: [
+          'Context from my ANTON discovery session:',
+          '',
+          painContext,
+          '',
+          m.matchReason ? `Why this module: ${m.matchReason}` : '',
+        ].filter(Boolean).join('\n').slice(0, 1200),
+      }));
+    }
 
     // Save output
     const outputId = randomUUID();
