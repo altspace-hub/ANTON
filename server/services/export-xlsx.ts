@@ -161,32 +161,216 @@ function resolveXlsxStyle(brand?: BrandConfig | null) {
   };
 }
 
-// RAG status detection
-const RAG_PATTERNS: Record<string, { bgColor: string; fgColor: string }> = {
-  '🟢': { bgColor: '1A4731', fgColor: '27AE60' },
-  '🟡': { bgColor: '4A3900', fgColor: 'F5A623' },
-  '🟠': { bgColor: '4A2700', fgColor: 'E67E22' },
-  '🔴': { bgColor: '4A1010', fgColor: 'E74C3C' },
-  '✅': { bgColor: '1A4731', fgColor: '27AE60' },
-  '❌': { bgColor: '4A1010', fgColor: 'E74C3C' },
-  green:  { bgColor: '1A4731', fgColor: '27AE60' },
-  red:    { bgColor: '4A1010', fgColor: 'E74C3C' },
-  amber:  { bgColor: '4A3900', fgColor: 'F5A623' },
-  high:   { bgColor: '4A1010', fgColor: 'E74C3C' },
-  medium: { bgColor: '4A3900', fgColor: 'F5A623' },
-  low:    { bgColor: '1A4731', fgColor: '27AE60' },
-  critical: { bgColor: '4A1010', fgColor: 'E74C3C' },
-  compliant: { bgColor: '1A4731', fgColor: '27AE60' },
-  'non-compliant': { bgColor: '4A1010', fgColor: 'E74C3C' },
-  partial: { bgColor: '4A3900', fgColor: 'F5A623' },
+// ── RAG status detection ────────────────────────────────────
+//
+// Two things made the old version paint cells the wrong colour.
+//
+// 1. It matched with a bare `lower.startsWith(key)`. `high` is a key, so "Highly
+//    effective" — a GOOD rating — was painted red. `red` is a key, so "Reduced" and
+//    "Redundant" were too. `low` is a key, so "Lowest maturity" went green. Matching is
+//    now anchored on a word boundary, and keys are tried longest-first so
+//    "non-compliant" and "highly effective" win over "compliant" and "high".
+//
+// 2. `high`/`medium`/`low` have no fixed polarity. High RISK is red; high
+//    EFFECTIVENESS is green. With one hardcoded mapping, every maturity, readiness and
+//    control-strength matrix ANTON produces was inverted — the exporter confidently
+//    coloured the good half of the assessment red. The column header now picks the
+//    polarity. Words that carry their own polarity ("strong", "critical", "compliant")
+//    are never flipped.
+
+const RAG_GREEN = { bgColor: '1A4731', fgColor: '27AE60' };
+const RAG_AMBER = { bgColor: '4A3900', fgColor: 'F5A623' };
+const RAG_ORANGE = { bgColor: '4A2700', fgColor: 'E67E22' };
+const RAG_RED   = { bgColor: '4A1010', fgColor: 'E74C3C' };
+
+type RagColor = { bgColor: string; fgColor: string };
+
+/** Ratings whose meaning does not depend on what the column measures. */
+const RAG_ABSOLUTE: Record<string, RagColor> = {
+  '🟢': RAG_GREEN, '🟡': RAG_AMBER, '🟠': RAG_ORANGE, '🔴': RAG_RED,
+  '✅': RAG_GREEN, '❌': RAG_RED,
+  green: RAG_GREEN, amber: RAG_AMBER, red: RAG_RED,
+  // Compliance
+  compliant: RAG_GREEN,
+  'non-compliant': RAG_RED,
+  'not compliant': RAG_RED,
+  'partially compliant': RAG_AMBER,
+  partial: RAG_AMBER,
+  // Control strength — the Risk Atlas vocabulary (Strong / Adequate / Weak)
+  strong: RAG_GREEN,
+  adequate: RAG_AMBER,
+  weak: RAG_RED,
+  // Effectiveness
+  'highly effective': RAG_GREEN,
+  'fully effective': RAG_GREEN,
+  effective: RAG_GREEN,
+  'partially effective': RAG_AMBER,
+  'not effective': RAG_RED,
+  ineffective: RAG_RED,
+  satisfactory: RAG_GREEN,
+  unsatisfactory: RAG_RED,
+  // Appetite (Risk Atlas stage 7)
+  'within appetite': RAG_GREEN,
+  'outside appetite': RAG_RED,
+  unacceptable: RAG_RED,
+  // Outcomes
+  pass: RAG_GREEN,
+  fail: RAG_RED,
+  'on track': RAG_GREEN,
+  'off track': RAG_RED,
+  'at risk': RAG_AMBER,
+  overdue: RAG_RED,
+  complete: RAG_GREEN,
+  completed: RAG_GREEN,
+  critical: RAG_RED,
+  severe: RAG_RED,
+  negligible: RAG_GREEN,
 };
 
-function detectRag(value: string): { bgColor: string; fgColor: string } | null {
+/** Magnitude words: colour depends entirely on what the column measures. */
+const RAG_SCALED = [
+  'very high', 'highest', 'high',
+  'medium', 'moderate',
+  'very low', 'lowest', 'low',
+] as const;
+
+/**
+ * Headers where a HIGH value is good. Everything else is treated as risk-like
+ * (high = bad), which is the safer default for a compliance tool: under-stating a
+ * risk is worse than under-stating a maturity score.
+ */
+const HIGHER_IS_BETTER = /effect|control|maturity|readiness|strength|confidence|quality|coverage|compliance|assurance|capabilit|performance|score|rating/i;
+const HIGHER_IS_WORSE  = /risk|severity|impact|likelihood|probability|priority|gap|exposure|threat|vulnerab|deficien|issue|incident|breach|penalt/i;
+
+function headerFavoursHigh(header: string): boolean {
+  // A header naming a risk wins even if it also contains a positive word, so
+  // "Control Risk Rating" is treated as a risk column.
+  if (HIGHER_IS_WORSE.test(header)) return false;
+  return HIGHER_IS_BETTER.test(header);
+}
+
+/** Escape a key for use in a RegExp — several are emoji or contain '-'. */
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * True when `key` appears at the start of `value` as a whole word/phrase.
+ * "highly effective" must not match key "high"; "Reduced" must not match "red".
+ * Emoji have no word boundary, so they match as a bare prefix.
+ */
+function matchesKey(value: string, key: string): boolean {
+  if (!/[a-z0-9]$/i.test(key)) return value.startsWith(key);   // emoji / symbol
+  return new RegExp(`^${escapeRe(key)}\\b`, 'i').test(value);
+}
+
+function detectRag(value: string, header = ''): RagColor | null {
   const lower = value.toLowerCase().trim();
-  for (const [key, colors] of Object.entries(RAG_PATTERNS)) {
-    if (lower === key || lower.startsWith(key)) return colors;
+  if (!lower) return null;
+
+  // Longest first: "non-compliant" before "compliant", "highly effective" before
+  // "effective". Object key order must never be load-bearing here.
+  const absolute = Object.keys(RAG_ABSOLUTE).sort((a, b) => b.length - a.length);
+  for (const key of absolute) {
+    if (matchesKey(lower, key)) return RAG_ABSOLUTE[key];
   }
+
+  for (const key of [...RAG_SCALED].sort((a, b) => b.length - a.length)) {
+    if (!matchesKey(lower, key)) continue;
+    const isHigh = key.includes('high');
+    const isLow = key.includes('low');
+    if (!isHigh && !isLow) return RAG_AMBER;                   // medium / moderate
+    const good = headerFavoursHigh(header) ? isHigh : isLow;
+    return good ? RAG_GREEN : RAG_RED;
+  }
+
   return null;
+}
+
+// ── Numeric cell coercion ───────────────────────────────────
+//
+// Markdown table cells are strings, and `ws.addRow(string[])` makes every one of them
+// TEXT in Excel. A budget or scoring sheet then cannot be summed, sorted or charted,
+// and Excel decorates each cell with its "number stored as text" warning — which is
+// most of the value of exporting to .xlsx rather than .md in the first place.
+//
+// Coercion is deliberately conservative: mis-typing an identifier is worse than leaving
+// a number as text. "007" must not become 7, "2026-07-28" must not become a date
+// serial, and "1.2.3" must stay a version string. Anything not clearly a number is left
+// exactly as written.
+
+const CURRENCY = '\\$|€|£|¥|kr|SEK|NOK|DKK|EUR|USD|GBP|CHF|JPY';
+
+/** A number Excel can compute on, plus the format that preserves how it was written. */
+export function parseNumericCell(raw: string): { value: number; numFmt: string } | null {
+  const s = raw.trim();
+  if (!s) return null;
+
+  // Dates, versions, ranges, ratios, ids — numeric-looking but not numbers.
+  if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) return null;           // 2026-07-28
+  if (/^\d{1,2}[/.]\d{1,2}[/.]\d{2,4}$/.test(s)) return null;  // 28/07/2026
+  if (/^\d+(\.\d+){2,}$/.test(s)) return null;                 // 1.2.3
+  if (/^\d+\s*[-–—/]\s*\d+$/.test(s)) return null;             // 1-5, 3/5
+
+  let body = s;
+  let numFmt = '#,##0.###';
+  let sign = 1;
+
+  // Accounting negatives: (1,234)
+  const paren = body.match(/^\((.*)\)$/);
+  if (paren) { body = paren[1].trim(); sign = -1; }
+
+  const pct = /%$/.test(body);
+  if (pct) body = body.replace(/%$/, '').trim();
+
+  let currency = '';
+  const curMatch = body.match(new RegExp(`^(${CURRENCY})\\s*|\\s*(${CURRENCY})$`, 'i'));
+  if (curMatch) {
+    currency = (curMatch[1] || curMatch[2] || '').trim();
+    body = body.replace(new RegExp(`^(${CURRENCY})\\s*|\\s*(${CURRENCY})$`, 'gi'), '').trim();
+  }
+
+  if (body.startsWith('-')) { sign *= -1; body = body.slice(1).trim(); }
+  else if (body.startsWith('+')) body = body.slice(1).trim();
+
+  // Leading zeros are significant — an account or article number, not a quantity.
+  if (/^0\d/.test(body)) return null;
+
+  // A single dot followed by exactly three digits is the one genuinely undecidable
+  // form: "1.200" is 1.2 in English and 1200 in German. Guessing wrong is a 1000x
+  // error in a client's budget, so it stays text. "0.500" is exempt — a leading zero
+  // means the dot is a decimal point in either convention.
+  if (/^[1-9]\d{0,2}\.\d{3}$/.test(body)) return null;
+
+  // Thousands separators: 1,234.56 or 1 234,56 / 1.234,56. A comma with exactly three
+  // digits is read as grouping, with one or two as a decimal comma ("12,50") — the
+  // usual heuristic, and unambiguous in practice because decimal commas carry 1-2
+  // places and groups always carry 3.
+  let normalised: string;
+  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(body)) normalised = body.replace(/,/g, '');
+  // Leading group must be 1-9: "0.500" is a decimal, never a grouped thousand.
+  else if (/^[1-9]\d{0,2}([ .]\d{3})+(,\d+)?$/.test(body)) normalised = body.replace(/[ .]/g, '').replace(',', '.');
+  else if (/^\d+(\.\d+)?$/.test(body)) normalised = body;
+  else if (/^\d+,\d{1,2}$/.test(body)) normalised = body.replace(',', '.');   // 12,50
+  else return null;
+
+  const value = sign * Number(normalised);
+  if (!Number.isFinite(value)) return null;
+
+  const decimals = normalised.includes('.') ? normalised.split('.')[1].length : 0;
+
+  if (pct) {
+    // Excel percentages are fractions; 45 -> 0.45 formatted '0%' displays "45%" and
+    // sums correctly. Storing 45 with a '%' format would display "4500%".
+    return { value: value / 100, numFmt: decimals > 0 ? `0.${'0'.repeat(decimals)}%` : '0%' };
+  }
+  if (currency) {
+    const sym = currency.replace(/"/g, '');
+    numFmt = `"${sym}"#,##0${decimals > 0 ? '.' + '0'.repeat(decimals) : '.00'}`;
+    return { value, numFmt };
+  }
+  numFmt = decimals > 0 ? `#,##0.${'0'.repeat(decimals)}` : '#,##0';
+  return { value, numFmt };
 }
 
 // ── Parse markdown table ───────────────────────────────────
@@ -273,13 +457,35 @@ function styleHeaderRow(row: ExcelJS.Row, colCount: number, style: ReturnType<ty
 
 // ── Apply data row style ────────────────────────────────────
 
-function styleDataRow(row: ExcelJS.Row, rowIndex: number, colCount: number, style: ReturnType<typeof resolveXlsxStyle>) {
+function styleDataRow(
+  row: ExcelJS.Row,
+  rowIndex: number,
+  colCount: number,
+  style: ReturnType<typeof resolveXlsxStyle>,
+  headers: string[] = [],
+  numeric: Array<{ value: number; numFmt: string } | null> = [],
+) {
   const isAlt = rowIndex % 2 === 0;
   row.height = 20;
   for (let col = 1; col <= colCount; col++) {
     const cell = row.getCell(col);
+    const num = numeric[col - 1];
+
+    if (num) {
+      // Real number + the format it was written in, so it sums and sorts.
+      cell.numFmt = num.numFmt;
+      cell.alignment = { vertical: 'top', horizontal: 'right' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: isAlt ? `FF${style.altRow}` : `FF${style.dark}` },
+      };
+      cell.font = { color: { argb: 'FFE0E0E0' }, size: 10 };
+      continue;
+    }
+
     const cellVal = String(cell.value ?? '');
-    const rag = detectRag(cellVal);
+    const rag = detectRag(cellVal, headers[col - 1] ?? '');
 
     if (rag) {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${rag.bgColor}` } };
@@ -581,10 +787,11 @@ export async function generateXlsx(
         to: { row: ws.rowCount, column: colCount },
       };
 
-      // Data rows
+      // Data rows — numeric-looking cells are written as numbers, not text
       table.rows.forEach((cells, idx) => {
-        const row = ws.addRow(cells);
-        styleDataRow(row, idx, colCount, style);
+        const numeric = cells.map(parseNumericCell);
+        const row = ws.addRow(cells.map((c, i) => numeric[i] ? numeric[i]!.value : c));
+        styleDataRow(row, idx, colCount, style, table.headers, numeric);
       });
 
       ws.addRow([]); // spacer between tables

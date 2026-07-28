@@ -212,7 +212,7 @@ For `claude-opus-4-8`, always use `thinking: { type: 'adaptive' }` with `output_
 |---|---|---|
 | `.md` | Native | Default. Source of truth. |
 | `.docx` | `docx` npm | ANTON branding, headings, tables, ToC |
-| `.xlsx` | `exceljs` | Conditional formatting (RAG), auto-filters, formulas |
+| `.xlsx` | `exceljs` | Conditional formatting (RAG, column-polarity aware), auto-filters, freeze panes, typed numeric cells. No formulas are generated. |
 | `.pdf` | `pdfkit` | Professional typography, page numbers |
 | `.pptx` | `pptxgenjs` | Slide decks with speaker notes |
 | `.fountain` | Custom | Screenplay format (FDX export) |
