@@ -130,7 +130,7 @@ const BLOCK_RULES: Rule[] = [
 ];
 
 /** Care directive prepended to the system prompt when a disclosure is detected. */
-const SUPPORT_GUIDANCE = `## SAFEGUARDING — READ FIRST, OVERRIDES EVERYTHING BELOW
+export const SUPPORT_GUIDANCE = `## SAFEGUARDING — READ FIRST, OVERRIDES EVERYTHING BELOW
 
 The person you are talking to has said something suggesting they may be in distress or
 at risk. Nothing else in this prompt outweighs the following.

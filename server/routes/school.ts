@@ -42,7 +42,8 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
-import { screenStudentMessage, helplinesFor } from '../services/school-safety.js';
+import { screenStudentMessage, helplinesFor, SUPPORT_GUIDANCE } from '../services/school-safety.js';
+import { aiScreenStudentMessage } from '../services/school-safety-ai.js';
 
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
@@ -588,7 +589,19 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
     opts: { userMessage: string; systemPrompt: string; userId: string; sessionId?: string | null; classId?: string | null },
   ): Promise<string | null> {
     const verdict = screenStudentMessage(opts.userMessage);
-    if (verdict.disposition === 'allow') return opts.systemPrompt;
+
+    // Layer 2 runs ONLY when layer 1 found nothing, and can only escalate 'allow' to
+    // 'support'. It is never asked to reconsider a layer-1 hit, so a pupil cannot talk
+    // the system out of a deterministic match, and a classifier outage degrades to
+    // exactly the protection that existed before it. See services/school-safety-ai.ts.
+    if (verdict.disposition === 'allow') {
+      const ai = await aiScreenStudentMessage(db, opts.userMessage);
+      if (!ai.concern) return opts.systemPrompt;
+      verdict.disposition = 'support';
+      verdict.category = ai.concern;
+      verdict.rule = 'ai-screen';
+      verdict.guidance = SUPPORT_GUIDANCE;
+    }
 
     // Category and rule only — never the child's words. See migration 255 for why.
     await db.run(
