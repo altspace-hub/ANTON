@@ -15,6 +15,9 @@
  */
 import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+// Same shell as the dashboard + confirm card — this page used to be the only
+// standalone surface with its own hand-rolled inline styles. See standalone-theme.ts.
+import { esc, shell } from './standalone-theme.js';
 
 /** A bound action: returns true if it did something, false on no-op. */
 export type ActionHandler = (id: string, body: Record<string, string>) => boolean;
@@ -137,13 +140,35 @@ function cookie(req: FastifyRequest, name: string): string | null {
   }
   return null;
 }
+const MSG_CSS = `
+  section { max-width: 520px; }
+  .note { color: var(--anton-text-body); margin: 0; }
+  .back { margin: 14px 0 0; font-size: 14px; }
+`;
+
+/**
+ * The action layer's message page (every denial the operator ever sees).
+ *
+ * The CSP now carries the SAME five directives as the dashboard and the confirm
+ * card. It previously shipped only `default-src 'none'; style-src 'unsafe-inline'`
+ * and no X-Frame-Options — which made this the one standalone surface a page on
+ * another origin could load in an iframe. Nothing here is state-changing (the
+ * POST sink redirects), so this was not exploitable on its own, but a framed
+ * "Blocked / Denied" page is a ready-made prop for a clickjacking or
+ * social-engineering overlay against a loopback operator console. Directives are
+ * only ever ADDED here; never remove one to make styling easier.
+ */
 function msg(reply: FastifyReply, status: number, h: string, m: string): FastifyReply {
   return reply.status(status)
     .header('content-type', 'text/html; charset=utf-8')
-    .header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'")
+    .header('content-security-policy',
+      "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
+    .header('x-frame-options', 'DENY')
+    .header('referrer-policy', 'no-referrer')
     .header('cache-control', 'no-store').header('x-content-type-options', 'nosniff')
-    .send(`<!doctype html><meta charset="utf-8"><title>${esc(h)}</title><body style="font-family:system-ui;padding:24px"><h1>${esc(h)}</h1><p>${esc(m)}</p><p><a href="/">← dashboard</a></p>`);
-}
-function esc(s: unknown): string {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    // No state chip: this page is rendered for denials too, where the operator's
+    // unlock state is precisely what is NOT established.
+    .send(shell(h, `<section><h2>${esc(h)}</h2><p class="note">${esc(m)}</p>`
+      + `<p class="back"><a href="/">← back to the dashboard</a></p></section>`,
+      { css: MSG_CSS }));
 }
