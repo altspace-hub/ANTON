@@ -107,6 +107,18 @@ describe('schoolwork is not flagged — the tests that keep this usable', () => 
     expect(screenStudentMessage(msg).disposition, `"${msg}" is coursework`).toBe('allow');
   });
 
+  it('DOES fire on the "i want to die" idiom — deliberate, not an oversight', () => {
+    // Teenagers say this constantly and usually mean nothing by it, so this is a known
+    // false positive. It is kept because the asymmetry is not close: firing wrongly
+    // costs one gentle reply and an inbox row; not firing costs a real disclosure
+    // phrased the commonest way children phrase it. Any pattern narrow enough to
+    // exclude the idiom also misses "i'm so bored of being alive".
+    //
+    // Pinned as a test so nobody "fixes" it as noise without reading that argument.
+    expect(screenStudentMessage('this lesson is so boring i want to die').disposition).toBe('support');
+    expect(screenStudentMessage('i want to die of boredom').disposition).toBe('support');
+  });
+
   it('does not fire on third-person distress in a text being studied', () => {
     // The distinction the whole rule set rests on: first person, not any mention.
     expect(screenStudentMessage('the character wants to kill himself').disposition).toBe('allow');

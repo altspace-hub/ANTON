@@ -156,6 +156,14 @@ describe('the constraints that make layer 2 safe to add', () => {
     expect(AI).toMatch(/If you are unsure, answer "none"/);
   });
 
+  it('runs at temperature 0, so the same message always gets the same verdict', () => {
+    // callChat defaults to 0.5. At 0.5 this classifier flips on borderline phrasing —
+    // observed live, and confirmed by a 5-run sweep that is stable only at 0.
+    // A safety screen that answers differently on Monday and Tuesday is worse than one
+    // that is merely imperfect, because the inconsistency is invisible.
+    expect(AI).toMatch(/temperature: 0,/);
+  });
+
   it('has a hard timeout', () => {
     expect(AI).toMatch(/Promise\.race/);
     expect(AI).toMatch(/TIMEOUT_MS/);
