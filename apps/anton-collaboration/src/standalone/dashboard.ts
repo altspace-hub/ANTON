@@ -21,6 +21,9 @@ import type { EscrowRecord } from '../main/escrow-core.js';
 import type { AgreementApproval } from '../main/agreement-proposals.js';
 import type { NegotiationJob } from '../main/negotiation-store.js';
 import type { DashboardActions } from './dashboard-actions.js';
+// The GUI's look lives in ONE module shared with web-confirm.ts and
+// dashboard-actions.ts — see standalone-theme.ts for why it must stay inline.
+import { esc, pill, shell } from './standalone-theme.js';
 
 export interface CollabDashboardSettings {
   signingPubkey: string;
@@ -166,16 +169,22 @@ function page(
   ]));
   const escrowPanel = escrows.length ? section(`Escrow (${escrows.length})`, table(['Status', 'Agreement', 'Amount', 'Escrow', 'Release-to', 'Refund-to', 'Dispute', 'Fund tx'], eRows)) : '';
 
+  // Identity + mode now live in the shared header band, so the page body starts
+  // straight at the content. Refresh is an <a>, never a button — the read-only
+  // page is pinned as containing no <form/<button/<input.
+  const links = auth.mode === 'unlocked'
+    ? [{ href: '/', label: 'Refresh' }, { href: '/dashboard/logout', label: 'Lock' }]
+    : [{ href: '/', label: 'Refresh' }];
   return shell('ANTON Collaboration — dashboard', `
-    <h1>ANTON Collaboration <span class="tag">${auth.mode === 'unlocked' ? 'operator' : 'read-only'}</span>${auth.mode === 'unlocked' ? ' <a class="lock" href="/dashboard/logout">Lock</a>' : ''}</h1>
     ${settings}${approvalsPanel}${negPanel}${agreementsPanel}${tasksPanel}${fulfilmentPanel}${escrowPanel}
     <p class="foot">${auth.mode === 'unlocked'
       ? 'Operator console unlocked — Approve signs the agreement (gated by your key + a single-use form token). The AI agent cannot reach these actions. Money still settles separately in Agent Pay.'
-      : 'Read-only. Approvals happen in the one-time confirm link (terminal/browser); this page never signs or sends anything.'}</p>`);
+      : 'Read-only. Approvals happen in the one-time confirm link (terminal/browser); this page never signs or sends anything.'}</p>`,
+    { subtitle: 'dashboard', chip: auth.mode === 'unlocked' ? 'operator' : 'read-only', links, css: DASHBOARD_CSS });
 }
 
 function authBanner(auth: Auth): string {
-  if (auth.mode === 'locked') return `<p class="locked">🔒 Action console locked. To approve/reject from here, open the unlock link printed in the gateway terminal.</p>`;
+  if (auth.mode === 'locked') return `<p class="banner banner-gold">🔒 Action console locked. To approve/reject from here, open the unlock link printed in the gateway terminal.</p>`;
   return '';
 }
 function approvalForms(id: string, dnonce: string): string {
@@ -199,10 +208,9 @@ function approvalTarget(a: AgreementApproval): string {
 function goalText(n: NegotiationJob): string { try { return JSON.stringify(n.goal); } catch { return ''; } }
 
 // ── HTML helpers (CSP-locked) ────────────────────────────────────────────────
+// esc() / pill() / shell() come from standalone-theme.ts so the three GUI
+// surfaces cannot drift into three different escapers or three pill styles.
 
-function esc(s: unknown): string {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-}
 function short(s: string, n: number): string { return s && s.length > n + 4 ? `${esc(s.slice(0, n))}…` : esc(s); }
 function trunc(s: string, n: number): string { return s && s.length > n ? `${esc(s.slice(0, n))}…` : esc(s); }
 function ftc(microFtc: string): string { const n = Number(microFtc); return Number.isFinite(n) ? (n / 1e6).toLocaleString('en-US', { maximumFractionDigits: 6 }) : esc(microFtc); }
@@ -221,7 +229,6 @@ function ms(v: number | null): string {
   const s = Math.max(0, Math.floor(v / 1000));
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m`;
 }
-function pill(s: string): string { return `<span class="pill">${esc(s)}</span>`; }
 function kvTable(rows: Array<[string, string]>): string {
   return `<table class="kv">${rows.map(([k, v]) => `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>`).join('')}</table>`;
 }
@@ -232,27 +239,34 @@ function row(cells: string[]): string { return `<tr>${cells.map((c) => `<td>${c}
 function section(title: string, inner: string): string { return `<section><h2>${esc(title)}</h2>${inner}</section>`; }
 function empty(msg2: string): string { return `<p class="empty">${esc(msg2)}</p>`; }
 
-const CSS = `
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 14px/1.5 -apple-system, system-ui, Segoe UI, Roboto, sans-serif; background: #f4f6f8; color: #16202e; padding: 24px; }
-  h1 { font-size: 22px; margin: 0 0 18px; } .tag { font-size: 12px; font-weight: 600; color: #5b6b7d; background: #e9eef3; border-radius: 6px; padding: 2px 8px; vertical-align: middle; }
-  a.lock { font-size: 12px; font-weight: 600; color: #b25e00; margin-left: 8px; }
-  section { background: #fff; border: 1px solid #dfe6ee; border-radius: 12px; padding: 16px 18px; margin: 0 0 16px; max-width: 1040px; }
-  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .03em; color: #5b6b7d; margin: 0 0 10px; }
+/** Dashboard-only rules. Tokens, the header band, sections, pills and banners
+ *  all come from standalone-theme.ts — only the data-table treatment and the
+ *  operator action buttons are specific to this page. */
+const DASHBOARD_CSS = `
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .scroll { overflow-x: auto; }
-  th { text-align: left; color: #5b6b7d; font-weight: 600; padding: 6px 10px; border-bottom: 2px solid #eef2f6; white-space: nowrap; }
-  td { padding: 7px 10px; border-bottom: 1px solid #f0f3f6; vertical-align: top; word-break: break-word; }
-  table.kv td.k { color: #5b6b7d; width: 240px; } table.kv td.v { font-family: ui-monospace, Menlo, Consolas, monospace; }
-  .pill { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; background: #e9eef3; color: #44566a; border-radius: 999px; padding: 2px 8px; }
-  .empty { color: #8a98a6; margin: 0; } .foot { color: #8a98a6; font-size: 12px; max-width: 1040px; }
-  .locked { background: #fff8ec; border: 1px solid #f3e2c0; border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; font-size: 13px; }
+  th { text-align: left; color: var(--anton-text-muted); font-weight: 600; padding: 6px 10px;
+       border-bottom: 1px solid var(--anton-border-strong); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--anton-border-soft); vertical-align: top; word-break: break-word; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--anton-surface-alt); }
+  table.kv td.k { color: var(--anton-text-muted); width: 240px; }
+  table.kv td.v { font-family: var(--anton-mono); color: var(--anton-text); }
+  .empty { color: var(--anton-text-faint); margin: 0; }
+  .foot { color: var(--anton-text-faint); font-size: 12px; max-width: 1040px; margin: 0; }
   .acts { display: flex; gap: 6px; align-items: center; } .acts form { margin: 0; display: inline; }
-  .acts button { font-size: 12px; font-weight: 700; border-radius: 7px; border: 1px solid transparent; padding: 5px 10px; cursor: pointer; }
-  .acts .approve { background: #0D7D6C; color: #fff; } .acts .reject { background: #fff; color: #16202e; border-color: #cfdae6; } .acts .cancel { background: #fff; color: #8a98a6; border-color: #e3e9ef; }
+  .acts button { font: inherit; font-size: 12px; font-weight: 600; border-radius: var(--anton-r1);
+                 border: 1px solid transparent; padding: 5px 11px; cursor: pointer; }
+  .acts .approve { background: var(--anton-accent); color: var(--anton-accent-fg); }
+  .acts .approve:hover { background: var(--anton-accent-hover); }
+  .acts .reject { background: var(--anton-surface); color: var(--anton-red); border-color: var(--anton-red-dim); }
+  .acts .reject:hover { background: var(--anton-red-soft); }
+  .acts .cancel { background: var(--anton-surface); color: var(--anton-text-muted); border-color: var(--anton-border-soft); }
+  .acts .cancel:hover { background: var(--anton-surface-muted); }
 `;
-function shell(title: string, inner: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${CSS}</style></head><body>${inner}</body></html>`;
+
+/** Loopback-wall denial page (bad Host). Same shell as everything else so a
+ *  refused request still looks like ANTON rather than a bare error. */
+function simple(h: string, m: string): string {
+  return shell(h, `<section><h2>${esc(h)}</h2><p class="empty">${esc(m)}</p></section>`, { chip: 'blocked' });
 }
-function simple(h: string, m: string): string { return shell(h, `<div><h1>${esc(h)}</h1><p>${esc(m)}</p></div>`); }
