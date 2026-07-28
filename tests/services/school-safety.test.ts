@@ -137,6 +137,26 @@ describe('helplines are real or honestly generic', () => {
     expect(generic[0].contact).toMatch(/parent|carer|teacher/i);
   });
 
+  it('resolves country NAMES, not just ISO codes — found by live testing', () => {
+    // user_profiles.jurisdiction is free text. A real profile held "Sweden", not "SE",
+    // so the ISO-only lookup fell through to the generic fallback and a Swedish pupil in
+    // crisis would not have been shown BRIS. Every unit test passed, because every unit
+    // test used the code. This is the case that actually ships.
+    // Assert the NAME, not the number: BRIS and the generic European line share
+    // 116 111, so a contact-only assertion passes even when the country was not
+    // resolved at all — which is precisely the bug being fixed.
+    expect(helplinesFor('Sweden')[0].name).toBe('BRIS');
+    expect(helplinesFor('sweden')[0].name).toBe('BRIS');
+    expect(helplinesFor('  Sverige  ')[0].name).toBe('BRIS');
+    expect(helplinesFor('United Kingdom')[0].contact).toBe('0800 1111');
+    expect(helplinesFor('United States')[0].contact).toBe('988');
+    expect(helplinesFor('Germany')[0].contact).toBe('116 111');
+  });
+
+  it('still falls back for an unrecognised name rather than guessing', () => {
+    expect(helplinesFor('Atlantis')[0].contact).toMatch(/parent|carer|teacher/i);
+  });
+
   it('handles a missing jurisdiction', () => {
     expect(helplinesFor(null).length).toBeGreaterThan(0);
     expect(helplinesFor(undefined).length).toBeGreaterThan(0);
