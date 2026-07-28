@@ -616,6 +616,119 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
 ${opts.systemPrompt}`;
   }
 
+  // ── Safety inbox ──────────────────────────────────────────────────────
+  //
+  // Reads school_safety_events, which the LLM screen writes. Built deliberately
+  // differently from the Teacher Oversight page that was removed in #32:
+  //
+  //   - the table exists, and something actually WRITES to it (services/school-safety.ts);
+  //   - the query is scoped to pupils the caller teaches, not "any authenticated user";
+  //   - a failure returns an error, and the page shows it. Oversight wrapped its query in
+  //     `catch { return [] }` and had no error state, so a teacher saw "no flags" whether
+  //     that meant no incidents or a table that did not exist. A safety view that can only
+  //     ever look clean is worse than none.
+  //
+  // Category and rule only — the child's words were never stored. See migration 255.
+
+  /**
+   * Events for pupils this caller teaches.
+   *
+   * class_id is nullable: a pupil can chat outside a class, and those events matter most.
+   * So membership is resolved through ENROLMENT as well — an event counts if its class is
+   * one of yours, or if the pupil is enrolled in any class of yours. Scoping on class_id
+   * alone would silently hide exactly the conversations that happen off-lesson.
+   */
+  router.get('/school/safety/events', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const role = req.user?.school_role;
+      const isAdmin = role === 'school_admin';
+      if (!isAdmin && role !== 'teacher') {
+        // A pupil must not read the safety log — including their own. It is an adult's
+        // working record, and showing a child that their disclosure was categorised and
+        // filed is its own harm.
+        return res.status(403).json({ error: 'Teachers only' });
+      }
+
+      const includeAcknowledged = String(req.query.all ?? '') === '1';
+      const params: unknown[] = [];
+      let scope = '';
+      if (!isAdmin) {
+        scope = `AND (
+             e.class_id IN (SELECT id FROM school_classes WHERE teacher_user_id = ?)
+          OR e.student_user_id IN (
+               SELECT en.student_user_id FROM class_enrollments en
+                 JOIN school_classes c ON c.id = en.class_id
+                WHERE c.teacher_user_id = ?)
+        )`;
+        params.push(userId, userId);
+      }
+
+      const rows = await db.all(
+        `SELECT e.id, e.student_user_id, e.class_id, e.disposition, e.category,
+                e.created_at, e.acknowledged_at, e.acknowledged_by,
+                COALESCE(u.display_name, u.username) AS student_name,
+                c.name AS class_name
+           FROM school_safety_events e
+           LEFT JOIN users u ON u.id = e.student_user_id
+           LEFT JOIN school_classes c ON c.id = e.class_id
+          WHERE 1=1 ${scope} ${includeAcknowledged ? '' : 'AND e.acknowledged_at IS NULL'}
+          ORDER BY e.created_at DESC
+          LIMIT 200`,
+        ...params,
+      );
+
+      // rule_name is deliberately NOT returned. It is an implementation detail of the
+      // matcher; a teacher needs the category and the pupil, not the regex that fired.
+      res.json({ events: rows });
+    } catch (err) {
+      console.error('[school/safety/events]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  /** Mark an event as seen. Ownership is re-checked — the list scope is not a token. */
+  router.post('/school/safety/events/:id/acknowledge', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+      const role = req.user?.school_role;
+      const isAdmin = role === 'school_admin';
+      if (!isAdmin && role !== 'teacher') return res.status(403).json({ error: 'Teachers only' });
+
+      const params: unknown[] = [req.params.id];
+      let scope = '';
+      if (!isAdmin) {
+        scope = `AND (
+             e.class_id IN (SELECT id FROM school_classes WHERE teacher_user_id = ?)
+          OR e.student_user_id IN (
+               SELECT en.student_user_id FROM class_enrollments en
+                 JOIN school_classes c ON c.id = en.class_id
+                WHERE c.teacher_user_id = ?)
+        )`;
+        params.push(userId, userId);
+      }
+
+      const owned = await db.get(
+        `SELECT 1 AS ok FROM school_safety_events e WHERE e.id = ? ${scope}`, ...params,
+      );
+      // 404 not 403 — a 403 would confirm the event exists and tell a stranger that a
+      // named pupil has a safety record.
+      if (!owned) return res.status(404).json({ error: 'Not found' });
+
+      await db.run(
+        `UPDATE school_safety_events SET acknowledged_at = NOW(), acknowledged_by = ? WHERE id = ?`,
+        userId, req.params.id,
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[school/safety/acknowledge]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── POST /api/school/chat ──────────────────────────────────────────────
   router.post('/school/chat', async (req, res) => {
     try {
