@@ -139,14 +139,26 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
         } catch { /* non-fatal — export continues without change log */ }
       }
 
-      // Load brand config from user profile
+      // Load brand config from the user profile.
+      //
+      // This queried `WHERE user_id = ?`. `user_profiles` has no such column — it is a
+      // singleton keyed `id TEXT PRIMARY KEY DEFAULT 'default'` (schema.postgresql.sql:59),
+      // seeded by init-postgresql.ts:48 and read/written as id='default' by profile.ts.
+      // Postgres therefore threw "column user_id does not exist" on EVERY export, the
+      // bare catch below swallowed it, and brandConfig was always null — so the fonts,
+      // colours and palette configured in Settings silently did nothing to any .docx,
+      // .pdf or .xlsx ANTON has ever produced.
       let brandConfig = null;
       try {
-        const profile = await db.get('SELECT brand_config FROM user_profiles WHERE user_id = ?', getUserId(req)) as { brand_config: string } | undefined;
+        const profile = await db.get('SELECT brand_config FROM user_profiles WHERE id = ?', 'default') as { brand_config: string } | undefined;
         if (profile?.brand_config) {
           brandConfig = JSON.parse(profile.brand_config);
         }
-      } catch { /* non-fatal — use defaults */ }
+      } catch (err) {
+        // Still non-fatal — an export must never fail over branding — but no longer
+        // silent, because silence is what let the above survive.
+        console.warn('[export] brand config unavailable, using defaults:', safeError(err));
+      }
 
       switch (format) {
         case 'md': {
