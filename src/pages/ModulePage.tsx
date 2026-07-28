@@ -234,9 +234,17 @@ export default function ModulePage() {
 
   // ITEM 11: Prefill from URL param
   useEffect(() => {
+    // NO decodeURIComponent here. URLSearchParams.get() has already decoded the value,
+    // so decoding again is a second pass over text that is no longer encoded — and any
+    // literal '%' in it then throws URIError and takes the page down.
+    //
+    // "we lose 30% of the day to formatting" is an entirely ordinary sentence, and it
+    // was enough: encode -> '30%25' -> get() -> '30%' -> decodeURIComponent('30%') ->
+    // URIError: URI malformed. Latent while prefills were short hand-made strings;
+    // reachable the moment Discovery started passing a user's own words through.
     const prefill = searchParams.get('prefill');
     if (prefill) {
-      setUserInput(decodeURIComponent(prefill));
+      setUserInput(prefill);
     }
   }, [searchParams]);
 
