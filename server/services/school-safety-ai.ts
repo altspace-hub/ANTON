@@ -171,7 +171,17 @@ export async function aiScreenStudentMessage(
     // callChat + getRoutedUtilityModel follow whatever provider the instance is set to
     // (Settings > default model, then env), so this works on Mistral, OpenAI, Gemini,
     // Ollama or a compat endpoint without another code path.
-    const model = await getRoutedUtilityModel(db);
+    // Scope-specific override, falling back to the instance's routed utility model.
+    //
+    // This is a narrow, high-volume classification — one short JSON answer per pupil
+    // message — and there is no reason it must run on whatever the pupil-facing chat
+    // uses. Pointing it at a cheaper or differently-provisioned model is a legitimate
+    // operational choice, and on an instance whose main provider is out of credit it is
+    // the difference between the safety screen running and silently not running.
+    //
+    // Unset by default: behaviour is unchanged unless someone opts in.
+    const override = process.env.SCHOOL_AI_SCREEN_MODEL?.trim();
+    const model = override || await getRoutedUtilityModel(db);
     const call = callChat({
       db,
       model,

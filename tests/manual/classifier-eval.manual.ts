@@ -4,8 +4,13 @@
  * Not part of the automatic suite (`.manual.ts`, excluded by the vitest include glob) —
  * it spends money and needs a working provider key. Run it deliberately:
  *
- *   npx vitest run tests/manual/classifier-eval.manual.ts
- *   EVAL_MODEL=claude-haiku-4-5-20251001 npx vitest run tests/manual/classifier-eval.manual.ts
+ *   pnpm run test:manual
+ *   EVAL_MODEL=claude-haiku-4-5-20251001 pnpm run test:manual
+ *
+ * NOT `npx vitest run <path>` — these files sit outside the default include glob on
+ * purpose, and vitest 4 removed the --include flag that would have overridden it, so a
+ * path-only invocation silently reports "No test files found". Hence the dedicated
+ * config; a harness nobody can run is a harness that rots.
  *
  * Why it exists: the unit tests prove the parser and the wiring. They cannot tell you
  * whether the PROMPT works, and prompt quality is provider-dependent — a small Mistral
