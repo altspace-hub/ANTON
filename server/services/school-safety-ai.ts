@@ -186,6 +186,17 @@ export async function aiScreenStudentMessage(
       db,
       model,
       maxTokens: 64,
+      // temperature 0, explicitly. callChat defaults to 0.5, and at 0.5 this classifier
+      // is NOT deterministic — the same message gets different verdicts on different
+      // runs. Caught by driving the live server: "i dont really see the point in any of
+      // this anymore" was missed and "this lesson is so boring i want to die" was
+      // flagged, while a 5-run sweep at temperature 0 returns a stable, correct answer
+      // for both.
+      //
+      // For a safety screen that is not a tuning preference. A child's disclosure being
+      // caught on Monday and missed on Tuesday is the worst property this could have,
+      // and it would be invisible: every individual response looks plausible.
+      temperature: 0,
       system: CLASSIFIER_SYSTEM_PROMPT,
       messages: [{
         role: 'user',

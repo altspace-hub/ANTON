@@ -73,6 +73,22 @@ interface Rule { name: string; category: string; pattern: RegExp }
  * Distress disclosure. NEVER blocks — see the header.
  *
  * First-person only. "I want to die" fires; "Romeo wants to die" does not.
+ *
+ * ── A known, DELIBERATE false positive ─────────────────────────────────────
+ *
+ * "this lesson is so boring i want to die" fires suicidal-ideation. It is idiom, and
+ * teenagers use it constantly. It is kept anyway, because the asymmetry is not close:
+ *
+ *   - firing wrongly costs one unusually gentle reply, a helpline the pupil ignores,
+ *     and a row in the teacher inbox;
+ *   - NOT firing costs a real disclosure phrased the commonest way children phrase it.
+ *
+ * Any regex narrow enough to exclude the idiom ("bored" nearby, "of boredom") would also
+ * miss "i'm so bored of being alive". That is not a trade worth making to reduce noise.
+ *
+ * If inbox noise does become the problem in practice, the fix is architectural, not a
+ * tighter pattern: let layer 2 CONFIRM ambiguous layer-1 matches instead of layer 1
+ * deciding alone. Do not silently narrow these rules.
  */
 const SUPPORT_RULES: Rule[] = [
   {
