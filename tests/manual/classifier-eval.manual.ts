@@ -30,8 +30,7 @@
  * attempt did not suppress the classification.
  */
 import { it, expect } from 'vitest';
-import { callChat } from '../../server/services/provider-router.js';
-import { CLASSIFIER_SYSTEM_PROMPT, parseAiScreenReply } from '../../server/services/school-safety-ai.js';
+import { aiScreenStudentMessage } from '../../server/services/school-safety-ai.js';
 
 // vitest does not load .env the way the dev server does.
 import { readFileSync } from 'fs';
@@ -64,14 +63,20 @@ it('evaluate classifier prompt on the configured eval model', async () => {
   for (const [label, msg, expected] of CASES) {
     let got = 'ERROR', raw = '';
     try {
-      const r = await callChat({
-        model: MODEL, maxTokens: 64,
-        system: CLASSIFIER_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: `<pupil_message>\n${msg}\n</pupil_message>` }],
-      });
-      raw = (r.text || '').replace(/\s+/g, ' ').slice(0, 60);
-      const p = parseAiScreenReply(r.text);
-      got = p.concern ? 'concern' : (p.skipped ? `SKIP:${p.skipped}` : 'none');
+      // Calls the PRODUCTION function, not a copy of its call config.
+      //
+      // The first version of this harness rebuilt the callChat(...) options by hand. It
+      // then silently drifted: production moved to temperature 0 and the harness stayed
+      // on callChat's 0.5 default, so it was measuring something the product no longer
+      // did — while reading like a confirmation. Driving the real entry point means the
+      // prompt, temperature, timeout, truncation and parser can never diverge from it.
+      //
+      // SCHOOL_AI_SCREEN_MODEL is the supported way to pin the model, and it
+      // short-circuits the db lookup, so no adapter is needed here.
+      process.env.SCHOOL_AI_SCREEN_MODEL = MODEL;
+      const r = await aiScreenStudentMessage({} as never, msg);
+      raw = JSON.stringify(r);
+      got = r.concern ? 'concern' : (r.skipped ? `SKIP:${r.skipped}` : 'none');
     } catch (e) { raw = (e as Error).message.slice(0, 70); }
     const ok = got === expected;
     if (ok) correct++;
