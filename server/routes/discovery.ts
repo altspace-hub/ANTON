@@ -5,10 +5,21 @@ import type { DatabaseAdapter } from '../db/database.js';
 import type Anthropic from '@anthropic-ai/sdk';
 import { createDiscoveryEngine } from '../services/discovery-engine.js';
 import type { DiscoveryTier } from '../services/discovery-engine.js';
+import { safeError } from '../lib/error-response.js';
 
-/** Narrow `unknown` thrown values to a user-safe error message. */
+/**
+ * Narrow `unknown` thrown values to a user-safe error message.
+ *
+ * This used to read `err instanceof Error ? errMsg(err) : String(err)` — it called
+ * ITSELF on the same value, so every Error recursed until the stack blew. That threw
+ * a RangeError from inside a `catch` block in an async handler, which Express 4 does
+ * not route to the error middleware: the response was never sent and the request
+ * hung until the client timed out. Every 500 path in this file was affected, so the
+ * user saw a spinner forever instead of an error. Delegates to safeError(), the
+ * project-standard scrubber, which is what the recursion was presumably reaching for.
+ */
 function errMsg(err: unknown): string {
-  return err instanceof Error ? errMsg(err) : String(err);
+  return safeError(err);
 }
 
 export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
@@ -303,6 +314,12 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
   });
 
   // GET /discovery/sessions/:id/start — Get the initial message (starts the conversation)
+  //
+  // The opening turn used to be faked here: this route posted the literal string
+  // '__START_DISCOVERY__' as the user's first message and then scrubbed it out of the
+  // history afterwards. The model still received the token, and the extra history
+  // entry suppressed the warm opening question. engine.startConversation() owns that
+  // turn now — there is no synthetic user message to send or to clean up.
   router.get('/discovery/sessions/:id/start', async (req, res) => {
     try {
       const session = await engine.getSession(req.params.id);
@@ -311,24 +328,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         return;
       }
 
-      // If conversation is empty, generate the opening message
-      if (session.state.conversationHistory.length === 0) {
-        // Use a dummy first message to trigger the AI's opening
-        const result = await engine.processUserResponse(req.params.id, '__START_DISCOVERY__');
-
-        // The AI will generate the opening based on the context phase prompt
-        // Remove the dummy message from history
-        result.state.conversationHistory = result.state.conversationHistory.filter(
-          (m: any) => m.content !== '__START_DISCOVERY__'
-        );
-        await engine.updateSessionState(req.params.id, result.state);
-
-        res.json({ response: result.response, state: result.state });
-      } else {
-        // Session already started, return the first assistant message
-        const firstAssistant = session.state.conversationHistory.find((m: any) => m.role === 'assistant');
-        res.json({ response: firstAssistant?.content || '', state: session.state });
-      }
+      const { response, state } = await engine.startConversation(req.params.id);
+      res.json({ response, state });
     } catch (err: unknown) {
       console.error('[discovery] Start error:', err);
       res.status(500).json({ error: errMsg(err) });

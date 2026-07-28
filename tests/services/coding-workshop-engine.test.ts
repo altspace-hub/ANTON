@@ -320,6 +320,80 @@ describe('createCodingWorkshopEngine (mocked orchestrator — no live LLM)', () 
   });
 });
 
+// ── The OPENING turn: what actually reaches the facilitator model ──────────
+//
+// The assertion above only ever looked at the STORED state, which is why it stayed
+// green while two real bugs shipped: the sentinel was scrubbed from the history only
+// AFTER the model had already received it, and the extra history entry made the
+// turn-0 phase prompt unreachable. Both live in what we SEND, so that is what these
+// assert on.
+//
+// The turn-2 case is deliberate. The obvious fix — build the phase prompt before the
+// user message is pushed — fixes turn 1 and silently re-opens the kickoff on turn 2,
+// because turnCount counts user answers INCLUDING the current one. Only the synthetic
+// turn is meant to be excluded.
+
+describe('the opening workshop turn (what reaches the model)', () => {
+  /** Verbatim from the turnCount===0 branch of getWorkshopPhasePrompt. */
+  const OPENING_QUESTION = 'what are you trying to build, who is it for';
+  /** The turn>0 instruction — must NOT appear on the opening turn. */
+  const LATER_INSTRUCTION = 'The user has described the problem';
+
+  function recordingEngine() {
+    const seen: Array<{ system: string; messages: Array<{ role: string; content: string }> }> = [];
+    const db = fakeStore();
+    const engine = createCodingWorkshopEngine(db, {
+      callOrchestrator: async (args) => {
+        seen.push({ system: args.system, messages: args.messages });
+        return 'Welcome — what are you building?';
+      },
+      suggestFrameworks: async () => [],
+    });
+    return { seen, engine };
+  }
+
+  it('opens with the problem-first question — the turnCount===0 branch is reachable', async () => {
+    onlyMistral();
+    const { seen, engine } = recordingEngine();
+    const session = await engine.createSession('standard', 'project', 'user-1');
+
+    await engine.startConversation(session.id);
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0].system).toContain(OPENING_QUESTION);
+    expect(seen[0].system).not.toContain(LATER_INSTRUCTION);
+  });
+
+  it('never sends the __START_WORKSHOP__ sentinel to the model', async () => {
+    onlyMistral();
+    const { seen, engine } = recordingEngine();
+    const session = await engine.createSession('standard', 'project', 'user-1');
+
+    await engine.startConversation(session.id);
+
+    // Not vacuous: there IS exactly one user message, it just is not the token.
+    const messages = seen[0].messages;
+    expect(messages).toHaveLength(1);
+    expect(messages[0].role).toBe('user');
+    expect(messages[0].content.trim().length).toBeGreaterThan(0);
+    expect(JSON.stringify(messages)).not.toContain('__START');
+  });
+
+  it('does NOT re-open the kickoff on turn 2 — the first real answer gets the later prompt', async () => {
+    onlyMistral();
+    const { seen, engine } = recordingEngine();
+    const session = await engine.createSession('standard', 'project', 'user-1');
+
+    await engine.startConversation(session.id);
+    await engine.processUserResponse(session.id, 'A budgeting app for freelancers');
+
+    expect(seen).toHaveLength(2);
+    expect(seen[1].system).toContain(LATER_INSTRUCTION);
+    expect(seen[1].system).not.toContain(OPENING_QUESTION);
+    expect(seen[1].messages.at(-1)).toEqual({ role: 'user', content: 'A budgeting app for freelancers' });
+  });
+});
+
 // ── finalize seeds a coding_project (PG-backed; skips without DATABASE_URL) ─
 
 function resolveDatabaseUrl(): string | undefined {

@@ -47,6 +47,23 @@ import {
   CONTAINER_ENABLE_ENV,
 } from '../services/coding-container.js';
 import { safeError } from '../lib/error-response.js';
+import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
+
+/**
+ * Ownership for a coding project lives on its PARENT `projects` row, not on
+ * `coding_projects` — `coding_projects.created_by` is free text ('system' for
+ * anything seeded outside a request). Every other Studio router resolves the owner
+ * as `projects.user_id` (coding-studio.ts, core-team.ts, coding-git.ts,
+ * coding-preview.ts all do exactly this join), so these two read endpoints use the
+ * same source of truth rather than inventing a second one.
+ *
+ * LEFT JOIN, not JOIN: a coding project whose parent row is missing must still be
+ * visible to a solo owner or an admin (assertOwned's existence probe drops the owner
+ * predicate for them). For a scoped caller the NULL user_id simply fails the
+ * predicate, which is the fail-closed behaviour ownership.ts documents for
+ * unattributed rows on a shared instance.
+ */
+const CODING_PROJECT_OWNER_SOURCE = 'coding_projects cp LEFT JOIN projects p ON p.id = cp.project_id';
 
 // ── Phase Prompt Builders ───────────────────────────────────────────────────
 
@@ -1905,20 +1922,30 @@ export async function createCodingLargeRoutes(
   });
 
   // GET /api/coding/projects — List coding projects
+  //
+  // SECURITY: this listed EVERY tenant's coding projects. A Studio project carries
+  // the kickoff charter in `discovery_summary` — problem statement, jurisdiction,
+  // references, risks — so on a team install any authenticated user could read every
+  // other user's charter by calling the list endpoint.
   router.get('/coding/projects', async (req, res) => {
     try {
       const status = req.query.status as string;
       const tier = req.query.tier as string;
       const limit = parseInt(req.query.limit as string) || 20;
 
-      let sql = 'SELECT cp.*, p.name as parent_project_name FROM coding_projects cp LEFT JOIN projects p ON cp.project_id = p.id';
-      const params: any[] = [];
-      const conditions: string[] = [];
+      // `WHERE 1=1` so the owner fragment (which always begins with ' AND ') appends
+      // safely no matter which optional filters are present — the shape ownership.ts
+      // prescribes, precisely so removing a filter can never leave the query unscoped.
+      let sql = 'SELECT cp.*, p.name as parent_project_name FROM coding_projects cp LEFT JOIN projects p ON cp.project_id = p.id WHERE 1=1';
+      const params: unknown[] = [];
 
-      if (status) { conditions.push('cp.status = ?'); params.push(status); }
-      if (tier) { conditions.push('cp.tier = ?'); params.push(tier); }
+      if (status) { sql += ' AND cp.status = ?'; params.push(status); }
+      if (tier) { sql += ' AND cp.tier = ?'; params.push(tier); }
 
-      if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+      const scope = ownerFilter(req as OwnedRequest, 'p.user_id');
+      sql += scope.sql;
+      params.push(...scope.params);
+
       sql += ' ORDER BY cp.updated_at DESC LIMIT ?';
       params.push(limit);
 
@@ -1931,8 +1958,18 @@ export async function createCodingLargeRoutes(
   });
 
   // GET /api/coding/projects/:id — Get project with full state
+  //
+  // SECURITY: same leak as the list, by id — plus releases, tasks, reviews and tech
+  // debt. Scoped with assertOwned so a foreign id 404s exactly like a missing one
+  // (a 403 would confirm the project exists and turn ids into an enumeration oracle).
   router.get('/coding/projects/:id', async (req, res) => {
     try {
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: CODING_PROJECT_OWNER_SOURCE, ownerColumn: 'p.user_id',
+        id: req.params.id, idColumn: 'cp.id',
+        notFoundMessage: 'Project not found',
+      }))) return;
+
       const row = await db.get(`
         SELECT cp.*, p.name as parent_project_name
         FROM coding_projects cp

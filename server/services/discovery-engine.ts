@@ -324,8 +324,32 @@ IMPORTANT FORMATTING RULES:
 - You may use bold for emphasis sparingly
 `;
 
+/**
+ * The one user message the OPENING turn sends. Every chat provider requires at least
+ * one user message, but at kickoff the human has not typed anything — so this slot
+ * has to hold something. It used to hold the literal `__START_DISCOVERY__`; a plain
+ * sentence is what a person would actually say. It is never written to the
+ * conversation history, so it never reaches the UI, and it carries no instructions:
+ * the "open with Anchor Question 1" direction lives in the phase prompt.
+ */
+const OPENING_TURN_MESSAGE = "I'm ready to start.";
+
 // ── Phase-specific prompts ───────────────────────────────────────────────
 
+/**
+ * `turnCount` is the number of REAL user answers received so far INCLUDING the one
+ * being answered right now — which is why processUserResponse pushes the user
+ * message into the history BEFORE calling this. Read the branches below with that
+ * in mind: 0 = the user has said nothing yet (the opening turn), 1 = they have just
+ * answered Anchor Question 1, and so on.
+ *
+ * The `turnCount === 0` branch used to be unreachable: the opening turn was driven
+ * by a synthetic `__START_DISCOVERY__` message that WAS pushed into the history, so
+ * the count was already 1 and the very first thing a new user ever saw was the
+ * turn-1 instruction — "reflect back what you learned from their first answer" —
+ * about an answer they had never given. The opening turn is now excluded from the
+ * history entirely (see processUserResponse), so 0 means 0 again.
+ */
 function getPhasePrompt(phase: DiscoveryPhase, tier: DiscoveryTier, state: DiscoveryState): string {
   const turnCount = state.conversationHistory.filter(m => m.role === 'user').length;
 
@@ -1324,7 +1348,19 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
   // ── Conversation Turn ────────────────────────────────────────────────
 
-  async function processUserResponse(sessionId: string, userMessage: string): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
+  /**
+   * One conversation turn. `userMessage === null` means the SYNTHETIC OPENING TURN:
+   * the session has just been created and the human has not said anything yet.
+   *
+   * That case used to be expressed by passing the literal string
+   * `__START_DISCOVERY__`, which was pushed into the history and handed to the model
+   * as the user's opening words — a magic token no model has been trained on,
+   * delivered at the exact moment it is deciding how to greet a new user. It also
+   * made the history one user-turn too long, which is what killed the warm opening
+   * question (see getPhasePrompt). A null models "no user message yet" honestly, so
+   * neither problem can come back.
+   */
+  async function processTurn(sessionId: string, userMessage: string | null): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
     if (!anthropic) throw new Error('Anthropic client not configured');
@@ -1332,8 +1368,11 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     const state = session.state;
     const previousPhase = state.phase;
 
-    // Add user message to history
-    state.conversationHistory.push({ role: 'user', content: userMessage });
+    // Add user message to history. The opening turn has none — it is neither stored
+    // nor counted, so getPhasePrompt below sees turnCount 0 and opens the session.
+    if (userMessage !== null) {
+      state.conversationHistory.push({ role: 'user', content: userMessage });
+    }
 
     // Build messages for Claude
     const phasePrompt = getPhasePrompt(state.phase, state.tier, state);
@@ -1378,6 +1417,13 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
       }));
     }
 
+    // The opening turn contributed nothing to the history, so the array would be
+    // empty — which every provider rejects. Append the neutral kickoff for THIS
+    // request only; it is deliberately not part of the persisted conversation.
+    if (userMessage === null) {
+      messages = [...messages, { role: 'user', content: OPENING_TURN_MESSAGE }];
+    }
+
     const chatResult = await callChat({
       model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       maxTokens: 2048,
@@ -1410,14 +1456,37 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     updatedState.conversationHistory.push({ role: 'assistant', content: cleanResponse });
     updatedState.totalTokensUsed += (chatResult.inputTokens || 0) + (chatResult.outputTokens || 0);
 
-    // Save
-    updateSessionState(sessionId, updatedState);
+    // Save. The `await` is load-bearing: without it the route could answer before
+    // the turn was persisted (so a reload loses it), and a failing write would
+    // surface as an unhandled rejection instead of a 500 the caller can see. This
+    // is the same missing-await class that caused the SQLite→PostgreSQL bugs.
+    await updateSessionState(sessionId, updatedState);
 
     return {
       response: cleanResponse,
       state: updatedState,
       phaseChanged: previousPhase !== updatedState.phase,
     };
+  }
+
+  /** A normal turn: the user typed something. */
+  async function processUserResponse(sessionId: string, userMessage: string): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
+    return processTurn(sessionId, userMessage);
+  }
+
+  /**
+   * The opening assistant message. Returns the existing opening when the session has
+   * already started, so a page reload never re-runs (and re-bills) the first turn.
+   */
+  async function startConversation(sessionId: string): Promise<{ response: string; state: DiscoveryState }> {
+    const session = await getSession(sessionId);
+    if (!session) throw new Error('Session not found');
+
+    const existing = session.state.conversationHistory.find(m => m.role === 'assistant');
+    if (existing) return { response: existing.content, state: session.state };
+
+    const result = await processTurn(sessionId, null);
+    return { response: result.response, state: result.state };
   }
 
   // ── Generate Insights ────────────────────────────────────────────────
@@ -1537,6 +1606,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     updateSessionStatus,
     deleteSession,
     processUserResponse,
+    startConversation,
     generateInsights,
     generateOutput,
     getOutput,
