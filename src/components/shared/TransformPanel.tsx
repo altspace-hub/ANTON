@@ -74,6 +74,7 @@ function outcomeText(r: Renderer): string {
     md: 'a Markdown document', pdf: 'a PDF', docx: 'a Word document',
     xlsx: 'an Excel workbook', pptx: 'a slide deck', svg: 'an SVG image',
     mmd: 'a diagram', html: 'a standalone HTML file',
+    tex: 'a LaTeX source file (you compile it)',
   };
   const out = fileLabel[r.output.file_type] ?? `a .${r.output.file_type} file`;
   if (r.category === 'review' || r.category === 'adapt_audience') {
