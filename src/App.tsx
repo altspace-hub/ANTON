@@ -370,7 +370,6 @@ const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardP
 const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
 const TeacherStudentsPage = lazy(() => import('./pages/school/TeacherStudentsPage'));
 const TeacherClassProgressPage = lazy(() => import('./pages/school/TeacherClassProgressPage'));
-const TeacherOversightPage = lazy(() => import('./pages/school/TeacherOversightPage'));
 const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
 const AssignmentBuilderPage = lazy(() => import('./pages/school/AssignmentBuilderPage'));
 const AssignmentTakingPage = lazy(() => import('./pages/school/AssignmentTakingPage'));
@@ -823,7 +822,6 @@ export default function App() {
           <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
           <Route path="/school/teacher/classes/:classId/progress" element={<TeacherClassProgressPage />} />
           <Route path="/school/teacher/students" element={<TeacherStudentsPage />} />
-          <Route path="/school/teacher/oversight" element={<TeacherOversightPage />} />
           <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
           <Route path="/school/assignments/:id/take" element={<AssignmentTakingPage />} />
           <Route path="/school/assignments/:id/socratic" element={<SocraticExamPage />} />
