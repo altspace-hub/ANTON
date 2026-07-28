@@ -9,6 +9,7 @@ import {
   MessageSquare,
   ClipboardList,
   Users,
+  ShieldAlert,
   ChevronLeft,
   Menu,
   X,
@@ -140,6 +141,13 @@ const TEACHER_NAV: SchoolNavItem[] = [
     labelKey: 'nav.students',
     icon: <Users className="h-4 w-4" />,
     path: '/school/teacher/students',
+    roles: ['teacher', 'school_admin'],
+  },
+  {
+    id: 'safety',
+    labelKey: 'nav.safety',
+    icon: <ShieldAlert className="h-4 w-4" />,
+    path: '/school/teacher/safety',
     roles: ['teacher', 'school_admin'],
   },
 ];
