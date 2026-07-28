@@ -779,9 +779,9 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
       let objectivesText = '';
       if (assignmentId) {
         try {
-          const assignment = await db.get('SELECT title, instructions FROM teacher_assignments WHERE id = ?', assignmentId) as { title: string; instructions: string } | null;
+          const assignment = await db.get('SELECT title, description FROM teacher_assignments WHERE id = ?', assignmentId) as { title: string; description: string } | null;
           if (assignment) {
-            objectivesText = `\nExamination: "${assignment.title}"\nLearning objectives to assess:\n${assignment.instructions}`;
+            objectivesText = `\nExamination: "${assignment.title}"\nLearning objectives to assess:\n${assignment.description ?? ''}`;
           }
         } catch { /* non-fatal */ }
       }
@@ -821,9 +821,9 @@ Begin by briefly introducing yourself and asking your first question.`;
         conversation: { role: string; content: string }[];
       };
 
-      const assignment = await db.get('SELECT title, instructions FROM teacher_assignments WHERE id = ?', req.params.id) as { title: string; instructions: string } | null;
+      const assignment = await db.get('SELECT title, description FROM teacher_assignments WHERE id = ?', req.params.id) as { title: string; description: string } | null;
 
-      const objectives = assignment?.instructions ?? 'General subject knowledge and reasoning';
+      const objectives = assignment?.description ?? 'General subject knowledge and reasoning';
       const title = assignment?.title ?? 'Oral Examination';
 
       const evaluationPrompt = `Review this oral examination conversation and provide a structured evaluation.
@@ -920,7 +920,7 @@ Provide a structured evaluation with these exact sections:
 
       const sessionsThisWeek = await db.get(
         `SELECT COUNT(*) AS cnt FROM laxhjalp_sessions
-         WHERE student_user_id = ? AND created_at >= DATE('now', '-7 days')`
+         WHERE student_user_id = ? AND created_at >= NOW() - INTERVAL '7 days'`
       , userId) as { cnt: number } | undefined;
 
       const xpTotal = growthProfile?.total_xp ?? 0;
@@ -1040,7 +1040,7 @@ Provide a structured evaluation with these exact sections:
 
       const students = isTeacher
         ? await db.all(
-            `SELECT u.id, u.name, u.email, ce.enrolled_at
+            `SELECT u.id, COALESCE(u.display_name, u.username) AS name, u.email, ce.enrolled_at
              FROM class_enrollments ce
              JOIN users u ON u.id = ce.student_user_id
              WHERE ce.class_id = ?`
@@ -1472,7 +1472,7 @@ Provide a structured evaluation with these exact sections:
         const params: unknown[] = [userId];
         if (assignmentId) params.push(assignmentId);
         const submissions = await db.all(
-          `SELECT asub.*, ta.title AS assignment_title, u.name AS student_name, u.email AS student_email
+          `SELECT asub.*, ta.title AS assignment_title, COALESCE(u.display_name, u.username) AS student_name, u.email AS student_email
            FROM assignment_submissions asub
            JOIN teacher_assignments ta ON ta.id = asub.assignment_id
            JOIN school_classes sc ON sc.id = ta.class_id
@@ -1518,7 +1518,7 @@ Provide a structured evaluation with these exact sections:
 
       const submission = await db.get(
         `SELECT asub.*, ta.title AS assignment_title, ta.questions, ta.total_marks,
-           sc.name AS class_name, sc.teacher_user_id, u.name AS student_name
+           sc.name AS class_name, sc.teacher_user_id, COALESCE(u.display_name, u.username) AS student_name
          FROM assignment_submissions asub
          JOIN teacher_assignments ta ON ta.id = asub.assignment_id
          JOIN school_classes sc ON sc.id = ta.class_id
@@ -1745,7 +1745,7 @@ Format with clear markdown headers.`;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
       const children = await db.all(
-        `SELECT u.id, u.name, u.email, gsl.created_at AS linked_at
+        `SELECT u.id, COALESCE(u.display_name, u.username) AS name, u.email, gsl.created_at AS linked_at
          FROM guardian_student_links gsl
          JOIN users u ON u.id = gsl.student_user_id
          WHERE gsl.guardian_user_id = ?`
@@ -3039,7 +3039,7 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
       const params: unknown[] = [];
       if (subject_id) { sql += ' WHERE subject_id = ?'; params.push(subject_id); }
       sql += ' ORDER BY created_at DESC';
-      res.json(await db.run(sql, ...params));
+      res.json(await db.all(sql, ...params));
     } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
