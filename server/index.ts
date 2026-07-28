@@ -16,7 +16,7 @@ import { createHealthRouter } from './routes/health.js';
 import { createIntelligenceHealthRoutes } from './routes/intelligence-health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import { createRerunRoutes } from './routes/rerun.js';
-import filesRouter from './routes/files.js';
+import { createFilesRoutes } from './routes/files.js';
 import { createSessionRoutes } from './routes/sessions.js';
 import { createWorkTimelineRoutes } from './routes/work-timeline.js';
 import { createFolderRoutes } from './routes/folders.js';
@@ -582,7 +582,7 @@ app.use('/api', claudeRouter);
 // "Rerun with…" (Wave 2.3) — dispatches internally INTO claudeRouter so a rerun
 // goes through the exact live pipeline (composition, adapters, persistence).
 app.use('/api', createRerunRoutes(db, claudeRouter));
-app.use('/api', filesRouter);
+app.use('/api', createFilesRoutes(db));
 app.use('/api', await createSessionRoutes(db));
 // Unified work timeline (4.3) — sessions ∪ engagements ∪ workflow runs/executions ∪ discovery
 app.use('/api', createWorkTimelineRoutes(db));

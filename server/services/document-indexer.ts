@@ -26,7 +26,7 @@ export async function indexDocument(
   filePath: string,
   filename: string,
   collectionId: string,
-  uploadedBy: string,
+  uploadedBy: string | null,
   customMetadata?: Record<string, any>,
   chunkingOptions?: Partial<ChunkingOptions>
 ): Promise<IndexDocumentResult> {
