@@ -55,7 +55,21 @@ export function createSchoolEvidenceRoutes(db: DatabaseAdapter): Router {
            LIMIT 200`,
         ...args
       );
-      res.json({ entries: rows });
+
+      // teacher_notes and ai_assessment_summary are ADULT-FACING. A teacher writing
+      // "struggling, suspect dyslexia — raising with SENCO" is writing about the child,
+      // not to them, and this endpoint was handing it straight back to the pupil whose
+      // own record it is. Withheld from the scoped (pupil) read; an admin or solo
+      // operator still sees the full row.
+      const entries = scoped
+        ? rows.map((r) => {
+            const { teacher_notes: _tn, ai_assessment_summary: _ai, ...visible } =
+              r as Record<string, unknown>;
+            return visible;
+          })
+        : rows;
+
+      res.json({ entries });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
