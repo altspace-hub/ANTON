@@ -3192,168 +3192,29 @@ Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief descript
     } catch (e) { res.status(500).json({ error: safeError(e) }); }
   });
 
-  // ── Teacher Oversight ─────────────────────────────────────────────────────
-
-  // GET /api/school/oversight/summary
-  // Returns aggregate stats for the teacher's classes
-  router.get('/school/oversight/summary', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { range = '7d' } = req.query as { range?: string };
-      const dayMap: Record<string, number> = { today: 1, '7d': 7, '30d': 30 };
-      const days = dayMap[range] ?? 7;
-      const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-      // Count students in teacher's classes
-      const classes = await db.all(
-        'SELECT id FROM school_classes WHERE teacher_user_id = ?'
-      , teacherId) as { id: string }[];
-      const classIds = classes.map(c => c.id);
-
-      let totalStudents = 0;
-      let activeToday = 0;
-      let totalSessions = 0;
-
-      if (classIds.length > 0) {
-        const placeholders = classIds.map(() => '?').join(',');
-        const students = await db.all(
-          `SELECT DISTINCT student_user_id FROM class_members WHERE class_id IN (${placeholders})`
-        , ...classIds) as { student_user_id: string }[];
-        totalStudents = students.length;
-
-        const studentIds = students.map(s => s.student_user_id);
-        if (studentIds.length > 0) {
-          const sPlaceholders = studentIds.map(() => '?').join(',');
-          const todaySince = new Date(Date.now() - 86_400_000).toISOString();
-          const activeTodayRows = await db.get(
-            `SELECT COUNT(DISTINCT user_id) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
-          , ...studentIds, todaySince) as { cnt: number };
-          activeToday = activeTodayRows.cnt ?? 0;
-
-          const sessionRows = await db.get(
-            `SELECT COUNT(*) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
-          , ...studentIds, since) as { cnt: number };
-          totalSessions = sessionRows.cnt ?? 0;
-        }
-      }
-
-      // Flags (oversight_flags table may not exist — handle gracefully)
-      let flagCount = 0;
-      let unresolvedFlags = 0;
-      try {
-        const flags = await db.get(
-          `SELECT COUNT(*) as total, SUM(CASE WHEN resolved = 0 THEN 1 ELSE 0 END) as unresolved
-           FROM oversight_flags WHERE teacher_id = ? AND created_at > ?`
-        , teacherId, since) as { total: number; unresolved: number } | undefined;
-        flagCount = flags?.total ?? 0;
-        unresolvedFlags = flags?.unresolved ?? 0;
-      } catch {}
-
-      return res.json({ totalStudents, activeToday, totalSessions, flagCount, unresolvedFlags, range });
-    } catch (err) {
-      console.error('[school/oversight/summary]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
-
-  // GET /api/school/oversight/students
-  // Returns student list with recent activity for teacher's classes
-  router.get('/school/oversight/students', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { class_id, range = '7d' } = req.query as { class_id?: string; range?: string };
-      const dayMap: Record<string, number> = { today: 1, '7d': 7, '30d': 30 };
-      const days = dayMap[range] ?? 7;
-      const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-      const classes = await db.get(
-        `SELECT id FROM school_classes WHERE teacher_user_id = ?`
-      , teacherId) as { id: string }[];
-      const classIds = class_id
-        ? classes.map(c => c.id).filter(id => id === class_id)
-        : classes.map(c => c.id);
-
-      if (classIds.length === 0) return res.json([]);
-
-      const placeholders = classIds.map(() => '?').join(',');
-      const rows = await db.all(
-        `SELECT u.id, COALESCE(u.display_name, u.username) as name,
-                COUNT(DISTINCT s.id) as session_count,
-                MAX(s.created_at) as last_active
-         FROM class_members cm
-         JOIN users u ON u.id = cm.student_user_id
-         LEFT JOIN sessions s ON s.user_id = u.id AND s.created_at > ?
-         WHERE cm.class_id IN (${placeholders})
-         GROUP BY u.id
-         ORDER BY last_active DESC NULLS LAST`
-      , since, ...classIds) as { id: string; name: string; session_count: number; last_active: string | null }[];
-
-      return res.json(rows);
-    } catch (err) {
-      console.error('[school/oversight/students]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
-
-  // GET /api/school/oversight/flags
-  // Returns oversight flags for the teacher's classes
-  router.get('/school/oversight/flags', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { resolved = '0', range = '30d' } = req.query as { resolved?: string; range?: string };
-      const dayMap: Record<string, number> = { today: 1, '7d': 7, '30d': 30 };
-      const days = dayMap[range] ?? 30;
-      const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-      try {
-        const flags = await db.all(
-          `SELECT f.id, f.student_id, f.session_id, f.flag_type, f.reason, f.created_at, f.resolved,
-                  COALESCE(u.display_name, u.username) as student_name
-           FROM oversight_flags f
-           LEFT JOIN users u ON u.id = f.student_id
-           WHERE f.teacher_id = ? AND f.created_at > ?
-             AND f.resolved = ?
-           ORDER BY f.created_at DESC
-           LIMIT 200`
-        , teacherId, since, resolved === '1' ? 1 : 0) as Record<string, unknown>[];
-        return res.json(flags);
-      } catch {
-        // oversight_flags table may not exist yet
-        return res.json([]);
-      }
-    } catch (err) {
-      console.error('[school/oversight/flags]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
-
-  // POST /api/school/oversight/flags/:id/resolve
-  // Mark an oversight flag as resolved
-  router.post('/school/oversight/flags/:id/resolve', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { id } = req.params;
-      try {
-        const flag = await db.get('SELECT id FROM oversight_flags WHERE id = ?', id) as { id: string } | undefined;
-        if (!flag) return res.status(404).json({ error: 'Flag not found' });
-        await db.run(`UPDATE oversight_flags SET resolved = 1, resolved_at = ? WHERE id = ?`, new Date().toISOString(), id);
-        return res.json({ ok: true });
-      } catch {
-        return res.status(404).json({ error: 'Flag not found or table not initialised' });
-      }
-    } catch (err) {
-      console.error('[school/oversight/flags/resolve]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
+  // Teacher Oversight was REMOVED (2026-07-28), deliberately and not as cleanup.
+  //
+  // It presented itself as the School pillar's safeguarding dashboard: a flag inbox a
+  // teacher could open to see concerns raised about pupils. It never worked. Two of the
+  // tables it queried — `class_members` and `oversight_flags` — do not exist in the
+  // schema or in any migration (verified against a live database), and nothing anywhere
+  // in the codebase ever WROTE a flag, so even with the tables the inbox would have been
+  // empty for ever.
+  //
+  // The flags query was wrapped in `catch { return [] }` and the page had no error
+  // state, so a teacher saw "no flags" — indistinguishable from "no safety incidents".
+  // A safety dashboard that can only ever look clean is worse than no dashboard: it
+  // manufactures false assurance about children, and it stops anyone asking where the
+  // real oversight is.
+  //
+  // Removing it is not a decision that safeguarding does not matter. It is a decision
+  // not to CLAIM safeguarding that does not exist. Building it for real means input
+  // screening on /school/chat writing flags, a teacher-scoped inbox reading them, and
+  // authorization so only that pupil's teacher can resolve one — see
+  // not_to_github/ANTON_LOCAL_SURVEY_2026-07-27.md.
+  //
+  // NOTE: unrelated to /api/oversight/* (HumanOversightGate, EU AI Act Art. 14
+  // professional sign-off), which is a different feature and still in use.
 
   return router;
 }
