@@ -96,7 +96,12 @@ const PILL_TONES: Readonly<Record<string, PillTone>> = {
 };
 
 export function pillTone(state: string): PillTone {
-  return PILL_TONES[String(state ?? '').trim().toLowerCase()] ?? 'muted';
+  // Object.hasOwn, not a bare index: a state of 'constructor' or 'toString' resolves
+  // through the prototype to a FUNCTION, which is truthy, so `?? 'muted'` would not
+  // fire and that value would be interpolated straight into a class attribute. States
+  // come from our own tables today, but a lookup that depends on that is a trap.
+  const key = String(state ?? '').trim().toLowerCase();
+  return Object.hasOwn(PILL_TONES, key) ? PILL_TONES[key] : 'muted';
 }
 
 /** A colour-coded status pill. The tone class is what makes states legible at a
@@ -230,7 +235,7 @@ const BASE_CSS = `
     color: var(--anton-header-fg); border-radius: 999px; padding: 3px 10px;
   }
   .topbar a {
-    color: var(--anton-header-fg); font-size: 12px; font-weight: 600;
+    color: var(--anton-header-fg); font-size: 14px; font-weight: 600;
     text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.45);
     padding-bottom: 1px; margin-left: 12px;
   }
@@ -249,9 +254,13 @@ const BASE_CSS = `
      biggest tell that this was not an ANTON surface. */
   h2 { font-size: 15px; font-weight: 600; letter-spacing: -.005em; color: var(--anton-text); margin: 0 0 12px; }
 
-  /* Status pills — one tone per state family (see PILL_TONES). */
+  /* Status pills — one tone per state family (see PILL_TONES).
+     14px, not the 11px a dense admin table invites: this pill IS the status of a
+     financial agreement, and CLAUDE.md sets a 14px floor for ANTON's 35-65 audience.
+     The two places that stay at 12px (.chip, .decide .sep) are supplementary labels
+     whose meaning is already carried by adjacent full-size text. */
   .pill {
-    display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .01em;
+    display: inline-block; font-size: 14px; font-weight: 600; letter-spacing: .01em;
     border-radius: 999px; padding: 2px 9px; border: 1px solid transparent; white-space: nowrap;
   }
   .pill-gold  { background: var(--anton-gold-dim);  color: var(--anton-gold);  border-color: var(--anton-gold); }
@@ -262,7 +271,7 @@ const BASE_CSS = `
 
   /* Banners — the -soft background / -dim border / full-strength text triple. */
   .banner {
-    border-radius: var(--anton-r2); padding: 10px 12px; margin: 0 0 12px; font-size: 13px;
+    border-radius: var(--anton-r2); padding: 10px 12px; margin: 0 0 12px; font-size: 14px;
     background: var(--anton-surface-muted); border: 1px solid var(--anton-border-soft);
     color: var(--anton-text-body);
   }

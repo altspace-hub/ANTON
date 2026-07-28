@@ -242,8 +242,10 @@ function empty(msg2: string): string { return `<p class="empty">${esc(msg2)}</p>
 /** Dashboard-only rules. Tokens, the header band, sections, pills and banners
  *  all come from standalone-theme.ts — only the data-table treatment and the
  *  operator action buttons are specific to this page. */
-const DASHBOARD_CSS = `
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+// Exported so the readability-floor test can scan every rule this app ships,
+// not just the shared base.
+export const DASHBOARD_CSS = `
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .scroll { overflow-x: auto; }
   th { text-align: left; color: var(--anton-text-muted); font-weight: 600; padding: 6px 10px;
        border-bottom: 1px solid var(--anton-border-strong); white-space: nowrap; }
@@ -253,9 +255,9 @@ const DASHBOARD_CSS = `
   table.kv td.k { color: var(--anton-text-muted); width: 240px; }
   table.kv td.v { font-family: var(--anton-mono); color: var(--anton-text); }
   .empty { color: var(--anton-text-faint); margin: 0; }
-  .foot { color: var(--anton-text-faint); font-size: 12px; max-width: 1040px; margin: 0; }
+  .foot { color: var(--anton-text-faint); font-size: 14px; max-width: 1040px; margin: 0; }
   .acts { display: flex; gap: 6px; align-items: center; } .acts form { margin: 0; display: inline; }
-  .acts button { font: inherit; font-size: 12px; font-weight: 600; border-radius: var(--anton-r1);
+  .acts button { font: inherit; font-size: 14px; font-weight: 600; border-radius: var(--anton-r1);
                  border: 1px solid transparent; padding: 5px 11px; cursor: pointer; }
   .acts .approve { background: var(--anton-accent); color: var(--anton-accent-fg); }
   .acts .approve:hover { background: var(--anton-accent-hover); }
@@ -268,5 +270,8 @@ const DASHBOARD_CSS = `
 /** Loopback-wall denial page (bad Host). Same shell as everything else so a
  *  refused request still looks like ANTON rather than a bare error. */
 function simple(h: string, m: string): string {
-  return shell(h, `<section><h2>${esc(h)}</h2><p class="empty">${esc(m)}</p></section>`, { chip: 'blocked' });
+  // css is required: `.empty` is defined in DASHBOARD_CSS, not in the shared base, so
+  // omitting it rendered this page's only line of text unstyled.
+  return shell(h, `<section><h2>${esc(h)}</h2><p class="empty">${esc(m)}</p></section>`,
+    { chip: 'blocked', css: DASHBOARD_CSS });
 }

@@ -296,11 +296,11 @@ function defaultOpenUrl(url: string): void {
  *  so a mis-aimed click cannot sign an agreement. */
 const CONFIRM_CSS = `
   .card { width: 100%; max-width: 520px; padding: 26px 28px 24px; box-shadow: var(--anton-shadow-lg); }
-  .kicker { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+  .kicker { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
     color: var(--anton-gold); margin: 0 0 4px; }
   .amt { font-size: 40px; font-weight: 700; letter-spacing: -.025em; line-height: 1.1;
     color: var(--anton-text); margin: 2px 0 2px; }
-  .amt-sub { font-family: var(--anton-mono); font-size: 12px; color: var(--anton-text-muted); margin: 0 0 18px; }
+  .amt-sub { font-family: var(--anton-mono); font-size: 14px; color: var(--anton-text-muted); margin: 0 0 18px; }
   .row { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0;
     border-top: 1px solid var(--anton-border-soft); font-size: 14px; }
   .row .k { color: var(--anton-text-muted); flex: none; }

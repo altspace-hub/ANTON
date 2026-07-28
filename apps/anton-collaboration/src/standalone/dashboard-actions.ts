@@ -143,7 +143,7 @@ function cookie(req: FastifyRequest, name: string): string | null {
 const MSG_CSS = `
   section { max-width: 520px; }
   .note { color: var(--anton-text-body); margin: 0; }
-  .back { margin: 14px 0 0; font-size: 13px; }
+  .back { margin: 14px 0 0; font-size: 14px; }
 `;
 
 /**

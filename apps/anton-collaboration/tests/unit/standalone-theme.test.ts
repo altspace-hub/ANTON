@@ -23,6 +23,7 @@ import { registerCollabDashboard, type CollabDashboardOptions } from '../../src/
 import { DashboardActions } from '../../src/standalone/dashboard-actions.js';
 import { CollabWebConfirmModalDriver } from '../../src/standalone/web-confirm.js';
 import { pillTone, pill, shell } from '../../src/standalone/standalone-theme.js';
+import { DASHBOARD_CSS } from '../../src/standalone/dashboard.js';
 import type { AgreementApproval } from '../../src/main/agreement-proposals.js';
 import type { NegotiationJob } from '../../src/main/negotiation-store.js';
 import type { Agreement } from '../../src/main/agreement-core.js';
@@ -175,15 +176,32 @@ describe('standalone GUI — one ANTON shell across all three surfaces', () => {
     const { readFileSync, existsSync } = await import('node:fs');
     if (!existsSync(cssPath)) return;
     const antonLocal = readFileSync(cssPath, 'utf8');
+
+    // The upstream check is scoped to the html.light BLOCK and asserts the value is
+    // bound to its SPECIFIC token. An earlier version searched the whole file for the
+    // bare hex, which cannot detect drift: if upstream retunes --color-bg, the old hex
+    // very likely still appears somewhere (another theme, an accent palette, a comment),
+    // so the guard passes while the two have in fact diverged — the exact thing it
+    // exists to catch. Verified by editing the upstream value and watching the old
+    // assertion stay green.
+    const lightBlock = /html\.light\s*\{([\s\S]*?)^\}/m.exec(antonLocal)?.[1];
+    expect(lightBlock, 'html.light block found in src/index.css').toBeTruthy();
+
     const shellCss = shell('t', '');
-    // A representative value from each family that was copied across.
-    for (const [token, value] of [
-      ['--anton-bg', '#F5F3EF'], ['--anton-surface', '#FFFFFF'], ['--anton-text', '#1A1B2E'],
-      ['--anton-border-soft', '#EAE7E0'], ['--anton-gold', '#C8842B'], ['--anton-red', '#C7361F'],
-      ['--anton-green', '#1F8A5C'], ['--anton-blue', '#3070C7'], ['--anton-accent', '#0D7D6C'],
+    // local token -> [upstream token, shared value]
+    for (const [token, upstream, value] of [
+      ['--anton-bg',          '--color-bg',          '#F5F3EF'],
+      ['--anton-surface',     '--color-surface',     '#FFFFFF'],
+      ['--anton-text',        '--color-text',        '#1A1B2E'],
+      ['--anton-border-soft', '--color-border-soft', '#EAE7E0'],
+      ['--anton-gold',        '--color-gold',        '#C8842B'],
+      ['--anton-red',         '--color-red',         '#C7361F'],
+      ['--anton-green',       '--color-green',       '#1F8A5C'],
+      ['--anton-blue',        '--color-blue',        '#3070C7'],
     ] as const) {
-      expect(shellCss, `${token} present`).toContain(`${token}: ${value}`);
-      expect(antonLocal, `${token} still ${value} upstream`).toContain(value);
+      expect(shellCss, `${token} present locally`).toContain(`${token}: ${value}`);
+      expect(lightBlock!, `${upstream} still ${value} upstream`)
+        .toMatch(new RegExp(`${upstream}:\\s*${value}\\b`, 'i'));
     }
   });
 
@@ -346,5 +364,43 @@ describe('standalone GUI — CSP + read-only posture survive the restyle', () =>
       expect(dash, `dashboard: ${bad}`).not.toContain(bad);
       expect(message, `message: ${bad}`).not.toContain(bad);
     }
+  });
+});
+
+/**
+ * ── Found by adversarial review of the first version of this port ──
+ */
+describe('readability floor and pill safety', () => {
+  it('carries no content text below 14px', async () => {
+    // CLAUDE.md's design system sets "14px+ minimum font" for ANTON's 35-65 audience.
+    // The first port left the agreement-approval card — the highest-stakes screen in the
+    // product — at 12-13px, and status pills at 11px. Two supplementary labels stay at
+    // 12px on purpose; both duplicate adjacent full-size text and are listed here so the
+    // exception is deliberate rather than drift.
+    const ALLOWED_SMALL = ['.chip', '.decide .sep'];
+    const css = shell('t', '') + DASHBOARD_CSS;
+    const offenders: string[] = [];
+    for (const m of css.matchAll(/([^{}]+)\{([^}]*font-size:\s*(\d+)px[^}]*)\}/g)) {
+      const size = Number(m[3]);
+      const selector = m[1].trim().split('\n').pop()!.trim();
+      if (size < 14 && !ALLOWED_SMALL.some(a => selector.includes(a))) {
+        offenders.push(`${selector} -> ${size}px`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('pillTone cannot be tricked into emitting a prototype member', () => {
+    // A bare index lookup resolves 'constructor'/'toString' through the prototype to a
+    // FUNCTION, which is truthy — so `?? 'muted'` never fires and that value lands in a
+    // class attribute.
+    for (const hostile of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+      expect(pillTone(hostile)).toBe('muted');
+    }
+  });
+
+  it('still maps real states to distinct tones', () => {
+    expect(pillTone('pending')).not.toBe(pillTone('rejected'));
+    expect(pillTone('agreed')).not.toBe(pillTone('pending'));
   });
 });
