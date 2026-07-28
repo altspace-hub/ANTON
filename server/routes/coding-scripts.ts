@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createCodingEngine } from '../services/coding-engine.js';
+import { ownerFilter } from '../middleware/ownership.js';
 
 export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -62,9 +63,9 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
       };
 
       await db.run(`
-        INSERT INTO sessions (id, module_id, title, config, created_at)
-        VALUES (?, ?, ?, ?, NOW())
-      `, sessionId, 'script-lite', title, JSON.stringify(config));
+        INSERT INTO sessions (id, module_id, title, config, user_id, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+      `, sessionId, 'script-lite', title, JSON.stringify(config), req.user?.id ?? null);
 
       res.json({
         id: sessionId,
@@ -138,9 +139,10 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
       const { id } = req.params;
       const { script, explanation, dependencies } = req.body;
 
+      const scope = ownerFilter(req, 'user_id');
       const session = await db.get(
-        'SELECT id, config FROM sessions WHERE id = ? AND module_id = ?'
-      , id, 'script-lite') as { id: string; config: string } | undefined;
+        `SELECT id, config FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`
+      , id, 'script-lite', ...scope.params) as { id: string; config: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Script session not found' });
 
@@ -168,12 +170,13 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
   router.get('/coding/script-lite/history', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
+      const scope = ownerFilter(req, 's.user_id');
       const sessions = await db.all(`
         SELECT s.* FROM sessions s
-        WHERE s.module_id = 'script-lite'
+        WHERE s.module_id = 'script-lite'${scope.sql}
         ORDER BY s.created_at DESC
         LIMIT ?
-      `, limit);
+      `, ...scope.params, limit);
       res.json(sessions);
     } catch (error) {
       console.error('[coding-scripts] History error:', error);
@@ -184,9 +187,10 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
   // GET /api/coding/script-lite/:id — Get specific script
   router.get('/coding/script-lite/:id', async (req, res) => {
     try {
+      const scope = ownerFilter(req, 'user_id');
       const session = await db.get(
-        'SELECT * FROM sessions WHERE id = ? AND module_id = ?'
-      , req.params.id, 'script-lite');
+        `SELECT * FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`
+      , req.params.id, 'script-lite', ...scope.params);
       if (!session) return res.status(404).json({ error: 'Script not found' });
       res.json(session);
     } catch (error) {
@@ -254,9 +258,9 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
       };
 
       await db.run(`
-        INSERT INTO sessions (id, module_id, title, config, created_at)
-        VALUES (?, ?, ?, ?, NOW())
-      `, sessionId, 'script-medium', title, JSON.stringify(config));
+        INSERT INTO sessions (id, module_id, title, config, user_id, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+      `, sessionId, 'script-medium', title, JSON.stringify(config), req.user?.id ?? null);
 
       res.json({
         id: sessionId,
@@ -295,10 +299,11 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
         return res.status(400).json({ error: 'session_id and feedback are required' });
       }
 
-      // Verify the session exists
+      // Verify the session exists AND belongs to the caller
+      const scope = ownerFilter(req, 'user_id');
       const session = await db.get(
-        'SELECT id FROM sessions WHERE id = ? AND module_id = ?'
-      , session_id, 'script-medium') as { id: string } | undefined;
+        `SELECT id FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`
+      , session_id, 'script-medium', ...scope.params) as { id: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -328,10 +333,11 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
         return res.status(400).json({ error: 'session_id, preview_html, and app_type are required' });
       }
 
-      // Verify the session exists
+      // Verify the session exists AND belongs to the caller
+      const scope = ownerFilter(req, 'user_id');
       const session = await db.get(
-        'SELECT id FROM sessions WHERE id = ? AND module_id = ?'
-      , session_id, 'script-medium') as { id: string } | undefined;
+        `SELECT id FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`
+      , session_id, 'script-medium', ...scope.params) as { id: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
@@ -363,9 +369,10 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
         return res.status(400).json({ error: 'files array is required' });
       }
 
+      const scope = ownerFilter(req, 'user_id');
       const session = await db.get(
-        'SELECT id, config FROM sessions WHERE id = ? AND module_id = ?'
-      , id, 'script-medium') as { id: string; config: string } | undefined;
+        `SELECT id, config FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`
+      , id, 'script-medium', ...scope.params) as { id: string; config: string } | undefined;
 
       if (!session) return res.status(404).json({ error: 'Application session not found' });
 
@@ -392,9 +399,10 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
   // GET /api/coding/script-medium/:id — Get specific generation
   router.get('/coding/script-medium/:id', async (req, res) => {
     try {
+      const scope = ownerFilter(req, 'user_id');
       const session = await db.get(
-        'SELECT * FROM sessions WHERE id = ? AND module_id = ?'
-      , req.params.id, 'script-medium');
+        `SELECT * FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`
+      , req.params.id, 'script-medium', ...scope.params);
       if (!session) return res.status(404).json({ error: 'Application not found' });
       res.json(session);
     } catch (error) {
@@ -406,7 +414,8 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
   // GET /api/coding/script-medium/:id/files — List generated files
   router.get('/coding/script-medium/:id/files', async (req, res) => {
     try {
-      const session = await db.get('SELECT config FROM sessions WHERE id = ? AND module_id = ?', req.params.id, 'script-medium') as { config: string } | undefined;
+      const scope = ownerFilter(req, 'user_id');
+      const session = await db.get(`SELECT config FROM sessions WHERE id = ? AND module_id = ?${scope.sql}`, req.params.id, 'script-medium', ...scope.params) as { config: string } | undefined;
       if (!session) return res.status(404).json({ error: 'Application not found' });
 
       const config = JSON.parse(session.config || '{}');
