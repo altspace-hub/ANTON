@@ -42,6 +42,7 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { screenStudentMessage, helplinesFor } from '../services/school-safety.js';
 
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
@@ -561,6 +562,60 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
 
   const router = Router();
 
+  /**
+   * Safety screen for every pupil-facing LLM route.
+   *
+   * Runs on the pupil's own words before any model call. Three outcomes, and the middle
+   * one is the point of the whole thing:
+   *
+   *   block   — an instrumental request for harm ("how do I make a bomb"). Refused
+   *             kindly, no model call, no cost.
+   *   support — a disclosure of distress ("I want to hurt myself"). NOT refused. The
+   *             conversation continues with a care directive that outranks every other
+   *             prompt layer, and real help is attached to the response. Turning a child
+   *             away at the moment they reached out is the worst response available, so
+   *             the screen never does it.
+   *   allow   — everything else, untouched. Matching is deliberately narrow: a pupil
+   *             studying Macbeth types "kill" and must not be flagged for coursework.
+   *
+   * Returns null when the request was blocked (the response has already been sent), and
+   * the system prompt to use otherwise — unchanged for 'allow', care-directive-prefixed
+   * for 'support'.
+   */
+  async function applySafetyScreen(
+    req: Parameters<Parameters<typeof router.post>[1]>[0],
+    res: Response,
+    opts: { userMessage: string; systemPrompt: string; userId: string; sessionId?: string | null; classId?: string | null },
+  ): Promise<string | null> {
+    const verdict = screenStudentMessage(opts.userMessage);
+    if (verdict.disposition === 'allow') return opts.systemPrompt;
+
+    // Category and rule only — never the child's words. See migration 255 for why.
+    await db.run(
+      `INSERT INTO school_safety_events (id, student_user_id, session_id, class_id, disposition, category, rule_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      crypto.randomUUID(), opts.userId, opts.sessionId ?? null, opts.classId ?? null,
+      verdict.disposition, verdict.category, verdict.rule,
+    ).catch((e) => console.warn('[school/safety] audit write failed (non-fatal):', e));
+
+    if (verdict.disposition === 'block') {
+      res.status(200).json({ blocked: true, notice: verdict.studentNotice });
+      return null;
+    }
+
+    const profileRow = await db.get<{ jurisdiction: string | null }>(
+      'SELECT jurisdiction FROM user_profiles WHERE id = ?', 'default',
+    ).catch(() => null);
+    res.setHeader('X-Anton-Safety', 'support');
+    res.setHeader('X-Anton-Safety-Help', JSON.stringify(helplinesFor(profileRow?.jurisdiction)));
+    // PREPENDED, not appended: buildSchoolPrompt puts T1 Child Mode first under its own
+    // "ALWAYS follow these rules" framing, and a care directive arriving after it would
+    // be competing with an instruction to add emoji and stay relentlessly upbeat.
+    return `${verdict.guidance}
+
+${opts.systemPrompt}`;
+  }
+
   // ── POST /api/school/chat ──────────────────────────────────────────────
   router.post('/school/chat', async (req, res) => {
     try {
@@ -616,7 +671,18 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
         { growthStage: profile?.stage, senMode: profile?.sen_mode, explanationStyle: profile?.explanation_style, gymnasietProgram: profile?.gymnasiet_program ?? undefined, universityProgram: profile?.university_program ?? undefined }
       );
 
-      const systemPrompt = await buildSchoolPrompt(promptConfig);
+      let systemPrompt = await buildSchoolPrompt(promptConfig);
+      {
+        const screened = await applySafetyScreen(req, res, {
+          userMessage: lastUserMsg,
+          systemPrompt,
+          userId,
+          sessionId: sessionId as string ?? null,
+          classId: classId as string ?? null,
+        });
+        if (screened === null) return;   // blocked; response already sent
+        systemPrompt = screened;
+      }
 
       const apiMessages = (Array.isArray(messages) ? messages : []).map(
         (m: Record<string, unknown>) => ({
@@ -714,7 +780,18 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
         classRow
       );
 
-      const systemPrompt = await buildSchoolPrompt(promptConfig);
+      let systemPrompt = await buildSchoolPrompt(promptConfig);
+      {
+        const screened = await applySafetyScreen(req, res, {
+          userMessage: String(stuckPoint ?? ''),
+          systemPrompt,
+          userId,
+          sessionId: sessionId as string ?? null,
+          classId: classId as string ?? null,
+        });
+        if (screened === null) return;   // blocked; response already sent
+        systemPrompt = screened;
+      }
 
       const messages = [
         ...(Array.isArray(priorMessages) ? priorMessages : []).map(
@@ -2167,7 +2244,18 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
         additionalContext: `## Programming Language\nThe student is working in **${language}**. All code examples must use ${language}. Adapt your vocabulary and concepts to ${language} conventions.`,
       };
 
-      const systemPrompt = await buildSchoolPrompt(promptConfig);
+      let systemPrompt = await buildSchoolPrompt(promptConfig);
+      {
+        const screened = await applySafetyScreen(req, res, {
+          userMessage: String((Array.isArray(messages) && messages.length ? (messages[messages.length-1] as Record<string, unknown>)?.content : '') ?? ''),
+          systemPrompt,
+          userId,
+          sessionId: null,
+          classId: null,
+        });
+        if (screened === null) return;   // blocked; response already sent
+        systemPrompt = screened;
+      }
 
       const apiMessages = (Array.isArray(messages) ? messages : []).map(
         (m: Record<string, unknown>) => ({
