@@ -13,9 +13,12 @@
  *   Tables: DXA widths (max 4657 DXA per column)
  *
  * Supports: # headings, ## subheadings, ### h3, #### h4,
- *           **bold**, *italic*, bullet lists (- item),
+ *           **bold**, *italic*, `inline code`, bullet lists (- item),
  *           numbered lists (1. item), tables (| col | col |),
- *           and plain paragraphs.
+ *           fenced code blocks (``` or ~~~), and plain paragraphs.
+ *
+ * Fenced blocks are rendered verbatim in a monospace face — their contents are NEVER
+ * re-parsed as markdown, so a script's `#` comment cannot become a Word heading.
  */
 
 import {
@@ -177,7 +180,7 @@ interface BrandConfig {
 }
 
 /** Plain text-run spec used internally before constructing TextRun instances */
-type RunSpec = { text: string; bold?: boolean; italics?: boolean };
+type RunSpec = { text: string; bold?: boolean; italics?: boolean; font?: string };
 
 // ── Default colour constants ───────────────────────────────────
 
@@ -259,11 +262,18 @@ function stripHeadingPrefix(text: string): string {
 
 // ── Inline text parser (returns plain specs, not TextRun instances) ──
 
+/** Monospace face for code, with a Word-resolvable fallback chain. */
+const CODE_FONT = 'Consolas';
+
 function parseInline(text: string): RunSpec[] {
   const runs: RunSpec[] = [];
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
+  // Code spans are split out FIRST and never re-parsed, so `**not bold**` inside
+  // backticks stays literal — the whole point of a code span.
+  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g);
   for (const part of parts) {
-    if (part.startsWith('**') && part.endsWith('**')) {
+    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+      runs.push({ text: part.slice(1, -1), font: CODE_FONT });
+    } else if (part.startsWith('**') && part.endsWith('**')) {
       runs.push({ text: part.slice(2, -2), bold: true });
     } else if (part.startsWith('*') && part.endsWith('*')) {
       runs.push({ text: part.slice(1, -1), italics: true });
@@ -551,6 +561,51 @@ export async function generateDocx(
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
+
+    // ── Fenced code block ────────────────────────────────────────
+    // MUST be tested before every other rule. Without it the lines INSIDE a fence were
+    // re-parsed as markdown, so a script's `# Load the data` comment became a real Word
+    // Heading 1 — page break, section number, an entry in the table of contents — and
+    // `- item` became a bullet, `| a | b |` became a table. Worse than the mangled block
+    // itself, it advanced the h1/h2/h3 counters, so every genuine heading AFTER a code
+    // block was misnumbered. One fenced snippet corrupted the whole document's structure.
+    const fence = line.match(/^\s*(```|~~~)/);
+    if (fence) {
+      const marker = fence[1];
+      const codeLines: string[] = [];
+      i++;                                                    // consume the opening fence
+      // CommonMark: an unclosed block runs to the end of the document. Closing only on a
+      // matching marker means a ``` inside a ~~~ block stays part of the code.
+      while (i < lines.length && !lines[i].trim().startsWith(marker)) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++;                              // consume the closing fence
+
+      // Trailing blank lines inside the fence add empty shaded paragraphs.
+      while (codeLines.length > 0 && codeLines[codeLines.length - 1].trim() === '') codeLines.pop();
+
+      for (const codeLine of codeLines) {
+        children.push(new Paragraph({
+          children: [new TextRun({
+            // Leading whitespace becomes non-breaking, so Word cannot collapse it.
+            // Otherwise indentation is lost, and Python — where indentation IS the
+            // syntax — arrives in the .docx as code that would no longer run.
+            text: codeLine.replace(/^[	 ]+/, (ws) =>
+              ' '.repeat(ws.replace(/	/g, '    ').length)),
+            font: CODE_FONT,
+            size: s.bodySize,
+            color: DEF_DARK,
+          })],
+          shading: { type: ShadingType.CLEAR, fill: 'F4F4F4' },
+          spacing: { before: 0, after: 0 },
+        }));
+      }
+      if (codeLines.length > 0) {
+        children.push(new Paragraph({ text: '', spacing: PARA_SPACING }));
+      }
+      continue;
+    }
 
     // ── Heading 1 — page break before, 20 pt Montserrat, numbered ──
     if (line.startsWith('# ')) {
