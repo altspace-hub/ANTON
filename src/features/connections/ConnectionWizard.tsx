@@ -297,13 +297,33 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
   };
 
   const handleTest = async () => {
-    // Create a temp connection to test — we'll test after saving instead
-    // For now, do a lightweight format validation
+    // Real connectivity test against the config being typed, before anything is saved.
+    //
+    // This used to sleep 600ms and set { ok: true } unconditionally — it could not fail.
+    // Someone entering the wrong database password got a green tick reading
+    // "Configuration validated", saved the connection, and found out when a workflow
+    // failed days later. A test that always passes is worse than no test button at all:
+    // it converts "I should check this" into false confidence.
     setTesting(true);
     setTestResult(null);
-    await new Promise((r) => setTimeout(r, 600));
-    setTestResult({ ok: true, message: 'Configuration validated. Full connectivity test available after saving.' });
-    setTesting(false);
+    try {
+      const res = await fetch('/api/connections/test', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: selectedType, config }),
+      });
+      const data = await res.json() as { ok?: boolean; message?: string; error?: string };
+      if (!res.ok) {
+        setTestResult({ ok: false, message: data.error ?? `Test failed (HTTP ${res.status})` });
+      } else {
+        setTestResult({ ok: data.ok === true, message: data.message ?? 'No response from test' });
+      }
+    } catch (e) {
+      // A failed request is a failed test. Reporting it as a pass is the bug being fixed.
+      setTestResult({ ok: false, message: e instanceof Error ? e.message : 'Test request failed' });
+    } finally {
+      setTesting(false);
+    }
   };
 
   const handleSave = async () => {
