@@ -12,6 +12,11 @@ def inline(t):
     t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
     t = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', t)
     t = re.sub(r'`(.+?)`', r'<code>\1</code>', t)
+    # Auto-link bare email addresses. A privacy policy whose contact address is not
+    # clickable is a policy people do not write to, and the in-product copy links it —
+    # leaving this one as plain text would be a gratuitous difference between the two.
+    t = re.sub(r'(?<!:)\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\b',
+               r'<a href="mailto:\1">\1</a>', t)
     return t
 
 out, lines = [], src.split('\n')
