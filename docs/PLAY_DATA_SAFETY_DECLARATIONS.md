@@ -153,7 +153,23 @@ the paired instance, which **may forward them to an LLM provider**.
    is **not** in the launch build, delete the push-token rows; if it is, keep them (Shared = Google/Apple).
 4. **Privacy-policy URL.** All four forms require a public privacy-policy URL — blocked on the
    `terms.futurechain.eu` DNS + page deploy (your existing operator item).
-5. **Don't claim forward secrecy** for Comm (static-DH crypto).
+5. **Don't claim forward secrecy** for Comm — but the reason changed on 2026-07-26, and the
+   old one is now misleading. This item used to read "(static-DH crypto)". The ratchet has
+   since shipped and been device-verified: `ratchet.ts` / `ratchet-session.ts` /
+   `ratchet-transport.ts`, DB v21, 1:1 and group traffic both ratcheted. Reading the old
+   parenthetical today would suggest the blocker is gone. It is not, for two separate reasons:
+
+   a. **The claim is gated on external review**, which has not happened (FS Phase 5). Phases
+      2–4 being complete is not the same as the claim being defensible in a store listing.
+   b. **The static-DH path is still live.** `sealForPeer1to1` falls back to `sealForPeer`
+      (`crypto.ts`) when the peer has no ratchet session, and rv=1 peers send group frames
+      legacy — see `peer-caps.ts`. At launch that is every already-installed build and every
+      user who has not updated, so forward secrecy would not be true of all traffic even if
+      (a) were satisfied.
+
+   Verified 2026-07-29 that no user-facing string or marketing copy claims it: the reset chip
+   says "Secure session was repaired", and the only "forward secrecy" occurrences in the tree
+   are code comments. Keep it that way until both (a) and (b) are closed.
 6. **Account deletion wording.** There is no server-side account to delete (self-custody); the deletion
    answer is "local wipe + uninstall," with the on-chain-immutability caveat. Use Play's
    "data isn't collected" / local-deletion phrasing accordingly.
