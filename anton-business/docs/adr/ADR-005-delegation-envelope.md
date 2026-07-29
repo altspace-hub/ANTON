@@ -2,8 +2,8 @@
 
 **Status:** SUPERSEDED (2026-05-14) — rolled back as part of the v2.0
 architecture pivot away from a merchant-backend. The phone never signs
-a server-held delegation in the new model; merchants arrange Safello
-sweep authority bilaterally with Safello. The TS + Rust implementations
+a server-held delegation in the new model; merchants arrange an exchange partner
+sweep authority bilaterally with an exchange partner. The TS + Rust implementations
 of this envelope live in `anton-business/_archive/` if we ever revive
 a hosted-ANTON-Business SKU.
 
@@ -116,7 +116,7 @@ The `SignedDelegation` envelope serialised over HTTP:
     "maxPerDayMicroFtc": "1000000000",
     "merchantId": "KTH00001",
     "nonce": "550e8400-e29b-41d4-a716-446655440000",
-    "safelloReceivingAddress": "fc_safello_a1b2c3...",
+    "exchangeReceivingAddress": "fc_exchange_a1b2c3...",
     "validUntil": 1893456000,
     "walletAddress": "fc_merchant_x9y8z7..."
   },
@@ -200,7 +200,7 @@ CI fails on any divergence.
 - `apps/merchant-backend/src/services/delegation.rs` — verify path.
 - `apps/merchant-backend/src/routes/delegation.rs` — `POST /merchant/:address/delegate`.
 - Onboarding screen "Authorise auto-convert" in the Business app.
-- Settlement orchestration loop (Safello flow in spec §12.2).
+- Settlement orchestration loop (an exchange partner flow in spec §12.2).
 
 ## Reference implementation snippets
 
