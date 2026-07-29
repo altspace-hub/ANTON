@@ -32,6 +32,32 @@ const upload = multer({
 
 import { ownerFilter, assertOwned, type OwnedRequest } from '../middleware/ownership.js';
 
+/**
+ * Delete a rejected upload's temp file, having first proved the path is inside
+ * TEMPLATES_DIR.
+ *
+ * `multer({ dest })` — as opposed to `diskStorage` — names the temp file itself and
+ * never consults `originalname`, so `req.file.path` cannot today be steered by the
+ * uploader. That is a property of one option on line 22, though, not of this code:
+ * a later switch to `diskStorage` with a `filename` callback would silently turn
+ * these unlinks into an arbitrary-delete primitive, and nothing here would complain.
+ *
+ * So the containment is asserted rather than assumed. It also resolves the
+ * `js/path-injection` alerts CodeQL raises on the two call sites — which it raises
+ * because it cannot see the `dest`-vs-`diskStorage` distinction, and which are worth
+ * answering with a check rather than a suppression for exactly that reason.
+ */
+function discardUpload(filePath: string | undefined): void {
+  if (!filePath) return;
+  const root = path.resolve(TEMPLATES_DIR) + path.sep;
+  const abs = path.resolve(filePath);
+  if (!abs.startsWith(root)) {
+    console.warn('[templates] refusing to delete an upload outside the templates directory');
+    return;
+  }
+  fs.removeSync(abs);
+}
+
 export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
@@ -65,7 +91,7 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
     if (!type) {
       // Unreachable through the fileFilter above; kept so the two can never
       // silently disagree if one of them is changed later.
-      fs.removeSync(req.file.path);
+      discardUpload(req.file.path);
       res.status(400).json({ error: `Invalid file type (allowed: ${ACCEPTED_LIST})` });
       return;
     }
@@ -78,7 +104,7 @@ export async function createTemplatesRouter(db: DatabaseAdapter): Promise<Router
       // Refuse rather than store a row whose file can never be referenced from a
       // .tex. Keeping "every latex row has a usable filename" true in the table
       // is what lets the renderer bundle without inventing names.
-      fs.removeSync(req.file.path);
+      discardUpload(req.file.path);
       res.status(400).json({ error: 'Could not derive a usable LaTeX filename from that upload' });
       return;
     }
