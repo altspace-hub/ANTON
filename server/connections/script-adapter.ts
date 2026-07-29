@@ -2,6 +2,16 @@
  * script-adapter.ts
  * Executes approved scripts in a sandboxed child process.
  * Enforces file hash verification, runtime limits, and memory limits.
+ *
+ * ⚠ NOT WIRED, and unlike its deleted siblings there is nothing live to move the checks
+ * into: no route or executor calls runScript, so a script registered through the Script
+ * Library cannot be executed at all. That makes the unenforced hash check harmless today
+ * (nothing runs, so nothing runs unverified) but it also means the Script Library is a
+ * registry with no runner behind it.
+ *
+ * Kept rather than deleted because it is the intended implementation of a shipped UI —
+ * whoever wires the run path should use this, hash verification included, not write a
+ * fresh spawn() call at the route.
  */
 
 import { spawn } from 'child_process';

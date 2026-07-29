@@ -1,4 +1,4 @@
-export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library' | 'channel_bridge';
+export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library' | 'channel_bridge' | 'messaging';
 
 export type ChannelType = 'whatsapp' | 'telegram' | 'sms' | 'voice' | 'generic_http';
 
