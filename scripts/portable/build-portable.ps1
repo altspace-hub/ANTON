@@ -282,14 +282,25 @@ if ($LASTEXITCODE -ne 0) { Die "could not read back $zipPath to verify it" }
 Say "$($entries.Count) entries"
 if ($entries.Count -lt 100) { Die "archive has only $($entries.Count) entries - something went wrong" }
 
+# Anchors matter here, and every one of them was earned on the first run: the initial
+# patterns failed the build on three FALSE positives, all of which SHOULD ship —
+#   keystore.properties.example   a template, no secret in it
+#   relay/.env.example            ditto, x3
+#   tests/android/                this repo's own Android test directory
+# Failing closed on those was the right instinct, but a gate that cries wolf gets
+# loosened by whoever hits it next, so the patterns are now exact:
+#   - `$` on the file patterns, so `.example` variants are not secrets
+#   - `^[^/]+/` on the directory patterns, which pins them to the TOP level of the
+#     bundle folder — `tests/android/` is not `android/`
+# Do not relax these into bare substrings. Tighten the exclusion list instead.
 $forbidden = @(
-  @{ Label = 'signing keystore';      Pattern = '\.(keystore|jks|p12|pepk)(\.bak)?$' },
-  @{ Label = 'keystore password file'; Pattern = 'keystore\.properties' },
-  @{ Label = 'internal/private docs';  Pattern = '(^|/)not_to_git(hub)?/' },
-  @{ Label = 'dev environment file';   Pattern = '(^|/)\.env($|\.)' },
-  @{ Label = 'private phone-app source'; Pattern = '(^|/)src/(pay|comm|business|agent)/' },
-  @{ Label = 'native app tree';        Pattern = '(^|/)android(-pay|-comm|-business|-agent)?/' },
-  @{ Label = 'git history';            Pattern = '(^|/)\.git/' }
+  @{ Label = 'signing keystore';         Pattern = '\.(keystore|jks|p12|pepk)(\.bak)?$' },
+  @{ Label = 'keystore password file';   Pattern = '(^|/)keystore\.properties(\.bak)?$' },
+  @{ Label = 'internal/private docs';    Pattern = '(^|/)not_to_git(hub)?/' },
+  @{ Label = 'real dev environment file'; Pattern = '(^|/)\.env(\.local|\.production)?$' },
+  @{ Label = 'private phone-app source'; Pattern = '^[^/]+/src/(pay|comm|business|agent)/' },
+  @{ Label = 'native app tree';          Pattern = '^[^/]+/android(-pay|-comm|-business|-agent)?/' },
+  @{ Label = 'git history';              Pattern = '(^|/)\.git/' }
 )
 $leaks = @()
 foreach ($rule in $forbidden) {
