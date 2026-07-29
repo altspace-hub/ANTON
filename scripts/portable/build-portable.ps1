@@ -202,6 +202,44 @@ $exclude = @(
   '.git', '.env', 'pgdata', '.portable-run', '.portable-tmp',
   'dist-installer', 'node_modules/.cache', 'not_to_git',
   'relay/node_modules',
+
+  # ── Added 2026-07-29 after proving what the old list shipped ──────────────
+  #
+  # 'not_to_git' above does NOT match the directory that actually exists, which
+  # is `not_to_github` (455 files, including SECURITY_AUDIT_2026-07-25.md, which
+  # documents UNPATCHED Critical findings). tar's --exclude is a glob, and
+  # `not_to_git` matches only that literal name. Verified empirically: with the
+  # old list, not_to_github/SECURITY_AUDIT.md landed in the archive. Both names
+  # are listed now because both directories exist.
+  'not_to_github',
+
+  # Release signing material. These are on this machine and in no repo, and the
+  # old list did not mention them — a public download would have handed anyone
+  # the ability to sign an APK as ANTON.
+  #
+  # EVERY pattern here starts with `*` on purpose. The loop below prefixes each
+  # entry with "$leaf/", and tested against bsdtar: `*` DOES span `/`, so
+  # `leaf/*.keystore` correctly catches android-pay/app.keystore and
+  # deep/nested/x.keystore — but a BARE filename becomes `leaf/keystore.properties`
+  # and then matches ONLY the top level, missing android-*/keystore.properties,
+  # which is exactly where those files live. The leading `*` absorbs the path.
+  '*.keystore', '*.keystore.bak', '*keystore.properties', '*keystore.properties.bak',
+  '*.jks', '*.p12', '*.pepk',
+
+  # The phone apps: private source the owner publishes commercially, plus ~1.2 GB
+  # of native build trees that also carry the keystores. ANTON Local serves only
+  # dist/client, dist/app and docs/help (server/index.ts:978-992), so none of
+  # this is needed to run the bundle — it was pure bloat and pure risk.
+  'android', 'android-pay', 'android-comm', 'android-business', 'android-agent',
+  'src/pay', 'src/comm', 'src/business', 'src/agent',
+  'dist/pay', 'dist/comm', 'dist/business', 'dist/agent',
+  'ios-templates', 'ios-templates-comm',
+
+  # Other local-only secrets and scratch that no distributable needs. Same `*`
+  # rule as above for anything that can appear below the top level.
+  '*.env.local', '*.env.production', '.env.*', 'coverage', 'playwright-report',
+  'test-results', '.claude',
+  # ─────────────────────────────────────────────────────────────────────────
   'anton-business/packages/futurechain-sdk/node_modules',
   'anton-business/packages/shared-types/node_modules',
   # Anton Agent Pay (Electron desktop app, merged from another machine):
@@ -226,6 +264,56 @@ Say "zipping the whole bundle (this is the slow part - several minutes) ..."
 Say "leaving out: $($exclude -join ', ')"
 & tar.exe @tarArgs
 if ($LASTEXITCODE -ne 0) { Die "zip step failed" }
+
+# ---- leak check: inspect the ARCHIVE, not the exclusion list ----
+#
+# This exists because the exclusion list above silently rotted. It said
+# 'not_to_git' while the directory on disk was `not_to_github` — 455 files
+# including a security audit of unpatched Critical findings — and nothing at all
+# mentioned the five release keystores or their plaintext passwords. Nobody
+# noticed, because a wrong exclusion produces a perfectly ordinary-looking zip.
+#
+# So the list is no longer trusted. Whatever it says, the finished archive is read
+# back and the build FAILS if anything sensitive is in it. A list can drift; a
+# check on the artifact cannot be wrong about what shipped.
+Step "checking the archive for anything that must not ship"
+$entries = & tar.exe -tf $zipPath
+if ($LASTEXITCODE -ne 0) { Die "could not read back $zipPath to verify it" }
+Say "$($entries.Count) entries"
+if ($entries.Count -lt 100) { Die "archive has only $($entries.Count) entries - something went wrong" }
+
+$forbidden = @(
+  @{ Label = 'signing keystore';      Pattern = '\.(keystore|jks|p12|pepk)(\.bak)?$' },
+  @{ Label = 'keystore password file'; Pattern = 'keystore\.properties' },
+  @{ Label = 'internal/private docs';  Pattern = '(^|/)not_to_git(hub)?/' },
+  @{ Label = 'dev environment file';   Pattern = '(^|/)\.env($|\.)' },
+  @{ Label = 'private phone-app source'; Pattern = '(^|/)src/(pay|comm|business|agent)/' },
+  @{ Label = 'native app tree';        Pattern = '(^|/)android(-pay|-comm|-business|-agent)?/' },
+  @{ Label = 'git history';            Pattern = '(^|/)\.git/' }
+)
+$leaks = @()
+foreach ($rule in $forbidden) {
+  $hits = @($entries | Where-Object { $_ -match $rule.Pattern })
+  if ($hits.Count -gt 0) {
+    $leaks += "$($rule.Label): $($hits.Count) entr$(if($hits.Count -eq 1){'y'}else{'ies'}), e.g. $($hits[0])"
+  }
+}
+if ($leaks.Count -gt 0) {
+  Remove-Item $zipPath -Force -ErrorAction SilentlyContinue
+  Write-Host ""
+  foreach ($l in $leaks) { Write-Host "  [LEAK] $l" -ForegroundColor Red }
+  Die "archive contained material that must not be published - zip DELETED, fix `$exclude and rebuild"
+}
+Ok "no keystores, secrets, private app source or internal docs in the archive"
+
+# Positive control: the things the bundle NEEDS must actually be present, or a
+# runaway exclusion would produce a clean-but-useless zip that passes the checks
+# above by containing nothing.
+$required = @('/dist/client/index.html', '/dist/app/index.html', '/docs/help/index.html',
+              '/server/index.ts', '/package.json')
+$missing = @($required | Where-Object { $m = $_; -not ($entries | Where-Object { $_ -like "*$m" }) })
+if ($missing.Count -gt 0) { Die "archive is missing what the bundle needs: $($missing -join ', ')" }
+Ok "dist/client, dist/app, docs/help, server and package.json all present"
 
 # ---- summary ---------------------------------------------------
 $zipMb = [Math]::Round((Get-Item $zipPath).Length / 1MB, 0)
