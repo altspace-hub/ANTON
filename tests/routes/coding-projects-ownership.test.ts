@@ -238,11 +238,19 @@ describe('the project WRITER attributes an owner', () => {
     expect(codingInsert).not.toContain("'system'");
   });
 
-  it('does not overstate what the by-id guard covers', () => {
-    // The sibling routes under /coding/projects/:id are still unscoped. A comment that
-    // claims otherwise is worse than no comment — it stops the next reader looking.
+  it('states what the by-id guard covers — no more, and no less', () => {
+    // This comment used to warn that the sibling routes were unscoped. They are now
+    // guarded (tests/routes/coding-projects-sibling-ownership.test.ts enforces it), so
+    // that warning had to go: a comment claiming a gap that no longer exists sends the
+    // next reader looking for the wrong thing, exactly as a comment denying a real gap
+    // stops them looking at all.
     const guard = SRC.slice(SRC.indexOf('// GET /api/coding/projects/:id'), SRC.indexOf("router.get('/coding/projects/:id'"));
-    expect(guard).toMatch(/still unscoped|separate pass/i);
+    expect(guard.length, 'the slice must actually contain the comment block').toBeGreaterThan(200);
+    expect(guard).not.toMatch(/still unscoped|separate pass/i);
+    // What IS still uncovered is named: the same URL prefix is also served by other
+    // routers, and this file's guard says nothing about those.
+    expect(guard).toMatch(/coding-git\.ts/);
+    expect(guard).toMatch(/coding-preview\.ts/);
   });
 });
 
