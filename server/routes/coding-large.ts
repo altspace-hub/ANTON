@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { readFile, mkdir } from 'node:fs/promises';
@@ -54,7 +55,7 @@ import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/owner
  * `coding_projects` — `coding_projects.created_by` is free text ('system' for
  * anything seeded outside a request). Every other Studio router resolves the owner
  * as `projects.user_id` (coding-studio.ts, core-team.ts, coding-git.ts,
- * coding-preview.ts all do exactly this join), so these two read endpoints use the
+ * coding-preview.ts all do exactly this join), so every endpoint in this file uses the
  * same source of truth rather than inventing a second one.
  *
  * LEFT JOIN, not JOIN: a coding project whose parent row is missing must still be
@@ -64,6 +65,49 @@ import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/owner
  * unattributed rows on a shared instance.
  */
 const CODING_PROJECT_OWNER_SOURCE = 'coding_projects cp LEFT JOIN projects p ON p.id = cp.project_id';
+
+/**
+ * The one guard every `/coding/projects/:id` handler opens with.
+ *
+ * It exists as a named function rather than 57 copies of an `assertOwned` call for a
+ * reason that is about review, not tidiness: a reviewer scanning this file can see at a
+ * glance whether a handler is guarded, and the completeness test in
+ * `tests/routes/coding-projects-sibling-ownership.test.ts` can enforce that mechanically
+ * for routes that do not exist yet.
+ *
+ * Call it as the FIRST statement inside the handler's `try`, before any read:
+ *
+ *   if (!(await ensureCodingProject(db, req, res))) return;
+ *
+ * Placing it first is load-bearing, not stylistic. Every one of these handlers used to
+ * begin by loading the project row; guarding afterwards would still 404 the caller, but
+ * only after another tenant's charter had been read into memory (and, on the error
+ * paths, into the log line). It also means a foreign id gets the same 404 as a missing
+ * one before any 400 for a malformed body — so the validation messages cannot be used to
+ * probe which projects exist.
+ *
+ * Ownership resolves through `projects.user_id`, never `coding_projects.created_by`
+ * (free text, historically the literal 'system'). Solo mode and admins are not scoped:
+ * see the header of middleware/ownership.ts for why that is deliberate.
+ */
+async function ensureCodingProject(
+  db: DatabaseAdapter,
+  // `Request<{ id: string }>`, not a bare `Request`: express 5's ParamsDictionary types
+  // an unknown param as `string | string[]` (repeated / wildcard params), and assertOwned
+  // takes a single id. Naming the route param here keeps that honest at the call site —
+  // every caller is registered on a path whose FIRST param is :id — instead of coercing
+  // an array into a string that would silently never match a row.
+  req: Request<{ id: string }>,
+  res: Response,
+): Promise<boolean> {
+  return assertOwned(db, req as OwnedRequest, res, {
+    table: CODING_PROJECT_OWNER_SOURCE,
+    ownerColumn: 'p.user_id',
+    id: req.params.id,
+    idColumn: 'cp.id',
+    notFoundMessage: 'Project not found',
+  });
+}
 
 // ── Phase Prompt Builders ───────────────────────────────────────────────────
 
@@ -1976,11 +2020,23 @@ export async function createCodingLargeRoutes(
   // exactly like a missing one (a 403 would confirm the project exists and turn ids into
   // an enumeration oracle).
   //
-  // SCOPE, stated plainly so nobody reads more assurance into this than it carries: this
-  // guards THIS aggregate read only. The ~54 sibling routes under /coding/projects/:id —
-  // PATCH, releases, tasks, reviews, tech-debt, DELETE — are still unscoped, so a
-  // determined caller can reach much of the same data through them. Closing those is a
-  // separate pass; do not treat the workshop charter as protected until it is done.
+  // SCOPE: all 57 routes under /coding/projects/:id are now guarded — this aggregate
+  // read directly, and the other 56 (PATCH, releases, tasks, reviews, tech-debt,
+  // commands, applications, DELETE) through `ensureCodingProject`, which is the same
+  // assertOwned call against the same owner source. The charter is no longer reachable
+  // by asking a sibling endpoint for it.
+  //
+  // Two other routers also mount under this prefix — coding-git.ts (git
+  // status/commits/init) and coding-preview.ts (dev-server start/stop/logs). Both
+  // enforce ownership themselves, via their own loadProjectAccess() joining
+  // projects.user_id, so they are covered; they are named here only so the next reader
+  // knows to look there too. coding-review.ts does NOT mount under this prefix at all —
+  // it owns /coding/review/* — despite an earlier version of this comment saying so.
+  //
+  // What this does NOT cover, and the next reader must not over-read it as covering:
+  // child ids taken from the request BODY. Guarding :id proves you own the PROJECT; it
+  // says nothing about a coding_release_id or task id you passed in. Those are scoped
+  // separately — see the release/task handlers below.
   router.get('/coding/projects/:id', async (req, res) => {
     try {
       if (!(await assertOwned(db, req as OwnedRequest, res, {
@@ -2027,6 +2083,7 @@ export async function createCodingLargeRoutes(
   // PATCH /api/coding/projects/:id — Update project
   router.patch('/coding/projects/:id', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       // Workspace binding is security-gated: validate against ALLOWED_FOLDER_PATHS at bind time.
       if (req.body.directory_path) {
         const validation = await validateWorkspacePath(req.body.directory_path);
@@ -2067,6 +2124,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/baseline', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2094,6 +2152,7 @@ export async function createCodingLargeRoutes(
   // POST /api/coding/projects/:id/baseline/save — Save baseline assessment from AI
   router.post('/coding/projects/:id/baseline/save', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2117,6 +2176,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/baseline', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       res.json({ baseline_summary: project.baseline_summary });
@@ -2130,6 +2190,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/discovery', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2156,6 +2217,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/discovery/finalize', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2188,6 +2250,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/architecture', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2218,6 +2281,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/architecture/review', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2253,6 +2317,7 @@ export async function createCodingLargeRoutes(
 
   router.patch('/coding/projects/:id/architecture', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { summary } = req.body;
       await db.run("UPDATE coding_projects SET architecture_summary = ?, updated_at = NOW() WHERE id = ?", summary || '', req.params.id);
 
@@ -2273,6 +2338,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/estimate', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2310,6 +2376,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/releases', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const releases = await db.all('SELECT * FROM coding_releases WHERE coding_project_id = ? ORDER BY release_number ASC', req.params.id);
       res.json(releases.map(parseRelease));
     } catch (error) {
@@ -2320,6 +2387,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/releases', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { name, description, scope, acceptance_criteria = [], milestone_date, git_branch } = req.body;
       if (!name) return res.status(400).json({ error: 'name is required' });
 
@@ -2343,6 +2411,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/releases/:rid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const row = await db.get('SELECT * FROM coding_releases WHERE id = ? AND coding_project_id = ?', req.params.rid, req.params.id);
       if (!row) return res.status(404).json({ error: 'Release not found' });
 
@@ -2357,6 +2426,7 @@ export async function createCodingLargeRoutes(
 
   router.patch('/coding/projects/:id/releases/:rid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const updates: string[] = [];
       const params: any[] = [];
       const allowed = ['name', 'description', 'scope', 'status', 'acceptance_criteria', 'milestone_date', 'git_branch', 'complexity_estimate', 'complexity_actual'];
@@ -2384,6 +2454,7 @@ export async function createCodingLargeRoutes(
   // POST /api/coding/projects/:id/releases/:rid/plan — Generate task breakdown for a release
   router.post('/coding/projects/:id/releases/:rid/plan', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2426,6 +2497,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/tasks', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const releaseId = req.query.release_id as string;
       const status = req.query.status as string;
 
@@ -2445,8 +2517,22 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/tasks', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { coding_release_id, title, description, complexity_band = 'medium', acceptance_criteria = [], depends_on = [] } = req.body;
       if (!coding_release_id || !title) return res.status(400).json({ error: 'coding_release_id and title are required' });
+
+      // ensureCodingProject above proved the caller owns :id. It says NOTHING about
+      // coding_release_id, which arrives in the BODY — so without this check a user could
+      // post a task into someone else's release: the row lands with their own
+      // coding_project_id (so it stays invisible to them) but the victim's release id.
+      // The victim then sees a stranger's task in GET /releases/:rid, which lists by
+      // release id, and the completion rollup below counts it. Reproduced against a real
+      // database with two tenants before this line existed.
+      const targetRelease = await db.get(
+        'SELECT id FROM coding_releases WHERE id = ? AND coding_project_id = ?',
+        coding_release_id, req.params.id,
+      );
+      if (!targetRelease) return res.status(404).json({ error: 'Release not found' });
 
       const maxTask = await db.get('SELECT COUNT(*) as c FROM coding_tasks WHERE coding_release_id = ?', coding_release_id) as any;
       const taskNumber = `T${(maxTask?.c || 0) + 1}`;
@@ -2466,6 +2552,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/tasks/:tid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const row = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id);
       if (!row) return res.status(404).json({ error: 'Task not found' });
       res.json(parseTask(row));
@@ -2477,6 +2564,7 @@ export async function createCodingLargeRoutes(
 
   router.patch('/coding/projects/:id/tasks/:tid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const updates: string[] = [];
       const params: any[] = [];
       const allowed = ['title', 'description', 'status', 'assigned_role', 'complexity_band', 'acceptance_criteria',
@@ -2506,6 +2594,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/tasks/:tid/plan', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2535,14 +2624,21 @@ export async function createCodingLargeRoutes(
       const systemPromptOverride = buildTaskPlanSystemPrompt(project.name, task.title, releaseContext);
       const taskPlanPrompt = buildTaskPlanUserMessage(parsedTask, release, parsedProject);
 
-      await db.run("UPDATE coding_tasks SET status = 'planning', updated_at = NOW() WHERE id = ?", req.params.tid);
+      // 'planned', not 'planning'. coding_tasks_status_check does not include 'planning',
+      // so this UPDATE threw and the bare catch below turned it into a blanket 500 —
+      // "Failed to plan task" for every user, owner included. The value came from
+      // src/lib/coding-types.ts, which listed 'planning' as a task status; it never was
+      // one (server/types/coding.ts and the constraint agree), and that type is corrected
+      // in this change too. Issuing the plan prompt marks the task planned, matching how
+      // /execute marks it in_progress when it issues the execute prompt.
+      await db.run("UPDATE coding_tasks SET status = 'planned', updated_at = NOW() WHERE id = ?", req.params.tid);
 
       res.json({
         taskPlanPrompt,
         systemPromptOverride,
         moduleId: 'coding-large-implementation',
         areaId: 'coding',
-        status: 'planning',
+        status: 'planned',
         taskId: req.params.tid,
       });
     } catch (error) {
@@ -2553,6 +2649,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/tasks/:tid/execute', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2594,6 +2691,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/tasks/:tid/complete', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2617,20 +2715,24 @@ export async function createCodingLargeRoutes(
       `, completionRecordStr, completion_notes || null, req.params.tid, req.params.id);
 
       // Check if all tasks in the release are completed
+      // Both statements are scoped by coding_project_id as well as release id. The
+      // create-task fix above stops NEW cross-project rows, but rows written before it
+      // may already exist, and an unscoped rollup here would let one of them decide a
+      // release's status in a project its author has no access to.
       let releaseUpdated = false;
       if (task.coding_release_id) {
         const pendingTasks = await db.get(`
           SELECT COUNT(*) as count FROM coding_tasks
-          WHERE coding_release_id = ? AND status != 'completed'
-        `, task.coding_release_id) as any;
+          WHERE coding_release_id = ? AND coding_project_id = ? AND status != 'completed'
+        `, task.coding_release_id, req.params.id) as any;
 
         if (pendingTasks.count === 0) {
           await db.run(`
             UPDATE coding_releases
             SET status = 'review',
                 updated_at = NOW()
-            WHERE id = ?
-          `, task.coding_release_id);
+            WHERE id = ? AND coding_project_id = ?
+          `, task.coding_release_id, req.params.id);
           releaseUpdated = true;
         }
       }
@@ -2654,6 +2756,7 @@ export async function createCodingLargeRoutes(
   // GET /api/coding/projects/:id/workspace — bind + test-command status
   router.get('/coding/projects/:id/workspace', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const validation = await validateWorkspacePath(project.directory_path);
@@ -2674,6 +2777,7 @@ export async function createCodingLargeRoutes(
   // PUT /api/coding/projects/:id/workspace — bind (or unbind with null)
   router.put('/coding/projects/:id/workspace', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2700,6 +2804,7 @@ export async function createCodingLargeRoutes(
   // PUT /api/coding/projects/:id/test-command — argv ARRAY, never a shell string
   router.put('/coding/projects/:id/test-command', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2723,6 +2828,7 @@ export async function createCodingLargeRoutes(
   // (test failures, panel flags, CVEs, decisions), newest first. No LLM call.
   router.get('/coding/projects/:id/atoms', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const limitRaw = parseInt(String(req.query.limit ?? '20'), 10);
@@ -2758,6 +2864,7 @@ export async function createCodingLargeRoutes(
   // GET /api/coding/projects/:id/container/probe — honest current state.
   router.get('/coding/projects/:id/container/probe', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get(
         'SELECT environment_mode FROM coding_projects WHERE id = ?',
         req.params.id,
@@ -2800,6 +2907,7 @@ export async function createCodingLargeRoutes(
   // runs will fall back to local.
   router.post('/coding/projects/:id/container/mode', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get(
         'SELECT id FROM coding_projects WHERE id = ?',
         req.params.id,
@@ -2863,6 +2971,7 @@ export async function createCodingLargeRoutes(
   // POST /api/coding/projects/:id/workspace/provision
   router.post('/coding/projects/:id/workspace/provision', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -2952,6 +3061,7 @@ export async function createCodingLargeRoutes(
   // GET /api/coding/projects/:id/toolchain — honest per-language detect-and-report.
   router.get('/coding/projects/:id/toolchain', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const toolchains = await probeAllToolchains();
@@ -2969,6 +3079,7 @@ export async function createCodingLargeRoutes(
   // GET /api/coding/projects/:id/commands — the per-project command set + DB scope.
   router.get('/coding/projects/:id/commands', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const meta = await getProvisionMeta(db, req.params.id);
@@ -2992,6 +3103,7 @@ export async function createCodingLargeRoutes(
   // PUT /api/coding/projects/:id/commands/:kind — argv ARRAY (never a shell), or null.
   router.put('/coding/projects/:id/commands/:kind', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const kind = req.params.kind;
       if (!['setup', 'build', 'test'].includes(kind)) {
         return res.status(400).json({ error: "kind must be 'setup', 'build', or 'test'" });
@@ -3018,6 +3130,7 @@ export async function createCodingLargeRoutes(
   // POST /api/coding/projects/:id/commands/:kind/apply-preset — seed from a language preset.
   router.post('/coding/projects/:id/commands/apply-preset', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const language = req.body?.language;
@@ -3046,6 +3159,7 @@ export async function createCodingLargeRoutes(
   // core-team role dissents at the BUILD gate (the enforced governance gate).
   router.post('/coding/projects/:id/commands/:kind/run', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const kind = req.params.kind;
       if (!['setup', 'build', 'test'].includes(kind)) {
         return res.status(400).json({ error: "kind must be 'setup', 'build', or 'test'" });
@@ -3219,6 +3333,7 @@ export async function createCodingLargeRoutes(
   // be dropped explicitly (a cascade can't drop them).
   router.delete('/coding/projects/:id', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT id FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -3264,6 +3379,7 @@ export async function createCodingLargeRoutes(
   // returns a deterministic per-file diff. NOTHING is written here.
   router.post('/coding/projects/:id/tasks/:tid/apply/preview', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const task = await db.get('SELECT id FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
@@ -3359,6 +3475,7 @@ export async function createCodingLargeRoutes(
   // GET /api/coding/projects/:id/applications — list (content stripped)
   router.get('/coding/projects/:id/applications', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const taskId = req.query.task_id as string | undefined;
       let sql = 'SELECT * FROM coding_workspace_applications WHERE coding_project_id = ?';
       const params: any[] = [req.params.id];
@@ -3375,6 +3492,7 @@ export async function createCodingLargeRoutes(
   // GET /api/coding/projects/:id/applications/:aid
   router.get('/coding/projects/:id/applications/:aid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const row = await db.get('SELECT * FROM coding_workspace_applications WHERE id = ? AND coding_project_id = ?', req.params.aid, req.params.id);
       if (!row) return res.status(404).json({ error: 'Application not found' });
       res.json(parseApplication(row));
@@ -3389,6 +3507,7 @@ export async function createCodingLargeRoutes(
   // backs originals up to .anton-coding-backup/<timestamp>/ before writing.
   router.post('/coding/projects/:id/applications/:aid/approve', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const app = await db.get('SELECT * FROM coding_workspace_applications WHERE id = ? AND coding_project_id = ?', req.params.aid, req.params.id) as any;
@@ -3503,6 +3622,7 @@ export async function createCodingLargeRoutes(
   // POST /api/coding/projects/:id/applications/:aid/reject
   router.post('/coding/projects/:id/applications/:aid/reject', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const app = await db.get('SELECT id, status FROM coding_workspace_applications WHERE id = ? AND coding_project_id = ?', req.params.aid, req.params.id) as any;
       if (!app) return res.status(404).json({ error: 'Application not found' });
       if (app.status !== 'proposed') {
@@ -3529,6 +3649,7 @@ export async function createCodingLargeRoutes(
   // command), so every run requires approved:true from an explicit UI action.
   router.post('/coding/projects/:id/tests/run', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -3658,6 +3779,7 @@ export async function createCodingLargeRoutes(
   // resulting diff like any other application. No unattended iteration.
   router.post('/coding/projects/:id/tasks/:tid/revise', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       const task = await db.get('SELECT * FROM coding_tasks WHERE id = ? AND coding_project_id = ?', req.params.tid, req.params.id) as any;
@@ -3733,6 +3855,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/tests', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const tests = await db.all('SELECT * FROM coding_test_runs WHERE coding_project_id = ? ORDER BY run_at DESC LIMIT 50', req.params.id);
       res.json(tests.map((t: any) => ({
         ...t,
@@ -3749,6 +3872,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/tests', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { test_type, test_suite_name, results = {}, pass_count = 0, fail_count = 0, skip_count = 0, duration_ms, coding_release_id, coding_task_id } = req.body;
       if (!test_type) return res.status(400).json({ error: 'test_type is required' });
 
@@ -3773,6 +3897,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/tech-debt', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const status = req.query.status as string;
       let sql = 'SELECT * FROM coding_tech_debt WHERE coding_project_id = ?';
       const params: any[] = [req.params.id];
@@ -3787,6 +3912,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/tech-debt', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { title, description, rationale, severity = 'medium', owner, target_release_id, source = 'manual', source_task_id } = req.body;
       if (!title) return res.status(400).json({ error: 'title is required' });
 
@@ -3813,6 +3939,7 @@ export async function createCodingLargeRoutes(
 
   router.patch('/coding/projects/:id/tech-debt/:tdid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { status, resolution_notes, owner, target_release_id, severity } = req.body;
       const updates: string[] = [];
       const params: any[] = [];
@@ -3839,6 +3966,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/changes', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const changes = await db.all('SELECT * FROM coding_changes WHERE coding_project_id = ? ORDER BY created_at DESC LIMIT 500', req.params.id);
       res.json(changes.map((c: any) => ({
         ...c,
@@ -3856,6 +3984,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/changes', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { change_type, change_level, title, rationale, original_state = {}, revised_state = {}, affected_release_ids = [], affected_task_ids = [] } = req.body;
       if (!change_type || !change_level || !title) return res.status(400).json({ error: 'change_type, change_level, and title are required' });
 
@@ -3874,6 +4003,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/changes/:cid/impact', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -3910,6 +4040,7 @@ export async function createCodingLargeRoutes(
 
   router.patch('/coding/projects/:id/changes/:cid', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const { status } = req.body;
       if (!status) return res.status(400).json({ error: 'status is required' });
       await db.run("UPDATE coding_changes SET status = ?, approved_at = CASE WHEN ? = 'approved' THEN NOW() ELSE approved_at END, updated_at = NOW() WHERE id = ? AND coding_project_id = ?", status, status, req.params.cid, req.params.id);
@@ -3940,6 +4071,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/cost', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
       res.json({
@@ -3955,6 +4087,7 @@ export async function createCodingLargeRoutes(
 
   router.get('/coding/projects/:id/activity', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const limit = parseInt(req.query.limit as string) || 30;
       const activity = await db.get(`
         SELECT 'task' as type, id, title, status, updated_at as timestamp FROM coding_tasks WHERE coding_project_id = ?
@@ -3976,6 +4109,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/alignment-check', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -4013,6 +4147,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/operational-readiness', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -4048,6 +4183,7 @@ export async function createCodingLargeRoutes(
 
   router.post('/coding/projects/:id/rediscovery', async (req, res) => {
     try {
+      if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 

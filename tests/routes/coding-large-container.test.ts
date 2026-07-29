@@ -82,6 +82,14 @@ describe('ANTON Studio Phase 6 — container routes', () => {
     if (server) await new Promise<void>((r) => server.close(() => r()));
     const app = express();
     app.use(express.json());
+    // server/index.ts mounts this router behind authMiddleware, which ALWAYS stamps
+    // req.user (solo → the solo admin; team → the JWT subject, or 401 before the
+    // router is reached). A harness without it models a request that cannot occur,
+    // and the ownership guard on /coding/projects/:id correctly 401s it.
+    app.use((req, _res, next) => {
+      (req as express.Request & { user?: unknown }).user = { id: 'solo', username: 'solo', role: 'admin' };
+      next();
+    });
     app.use('/api', router);
     await new Promise<void>((resolve) => { server = app.listen(0, '127.0.0.1', () => resolve()); });
     const addr = server.address();
