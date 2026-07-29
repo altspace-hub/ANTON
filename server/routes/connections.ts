@@ -48,6 +48,56 @@ export async function createConnectionsRoutes(db: DatabaseAdapter) {
   });
 
   // GET /api/connections/:id — get single connection
+  // ── Literal paths MUST be registered before '/connections/:id' ─────────────
+  //
+  // Express matches in registration order, so '/connections/:id' declared first will
+  // swallow '/connections/scripts' with id='scripts'. That is exactly what happened:
+  // the Script Library called GET /api/connections/scripts, hit the by-id handler, and
+  // got {"error":"Connection not found"} — so the page has been permanently empty since
+  // the route was added, while looking like a feature with nothing in it yet.
+  //
+  // Verified against the running server before and after this change.
+
+  // GET /api/connections/scripts — list approved scripts
+  router.get('/connections/scripts', async (req, res) => {
+    try {
+      // await: listScripts() is async, and res.json(Promise) serialises to `{}`.
+      // Stacked on top of the route shadowing, so the Script Library had TWO reasons
+      // to be empty — fixing the route alone would have returned {} and the UI would
+      // have called setScripts({}) on it. This is the missing-await class that caused
+      // the SQLite->PostgreSQL migration bugs; it survives here because a Promise
+      // serialises to a plausible-looking empty object rather than throwing.
+      res.json(await manager.listScripts());
+    } catch (err) {
+      console.error('[connections] scripts list error:', err);
+      res.status(500).json({ error: 'Failed to list scripts' });
+    }
+  });
+
+  // POST /api/connections/test — test a config that has NOT been saved yet.
+  //
+  // The creation wizard needs a real check before a connection exists. Without this it
+  // slept 600ms and returned a hardcoded pass, so someone typing the wrong database
+  // password saw a green tick, saved it, and found out when a workflow failed. A test
+  // that cannot fail is worse than no test.
+  //
+  // Nothing is persisted and nothing is returned but the verdict — the config arrives in
+  // the request body and stays there.
+  router.post('/connections/test', requireAdminOrSolo, async (req, res) => {
+    try {
+      const { type, config } = req.body as { type?: string; config?: Record<string, unknown> };
+      if (!type || typeof config !== 'object' || config === null) {
+        res.status(400).json({ error: 'type and config are required' });
+        return;
+      }
+      const result = await manager.testConfig(type, config);
+      res.json(result);
+    } catch (err) {
+      console.error('[connections] pre-save test error:', err);
+      res.status(500).json({ error: 'Failed to test configuration' });
+    }
+  });
+
   router.get('/connections/:id', async (req, res) => {
     try {
       const conn = await manager.get(String(req.params.id));
@@ -197,16 +247,6 @@ export async function createConnectionsRoutes(db: DatabaseAdapter) {
   });
 
   // ── Scripts ──────────────────────────────────────────────────
-
-  // GET /api/connections/scripts — list approved scripts
-  router.get('/connections/scripts', async (req, res) => {
-    try {
-      res.json(manager.listScripts());
-    } catch (err) {
-      console.error('[connections] scripts list error:', err);
-      res.status(500).json({ error: 'Failed to list scripts' });
-    }
-  });
 
   // POST /api/connections/scripts — create/register a new script (admin only)
   router.post('/connections/scripts', requireAdminOrSolo, async (req, res) => {

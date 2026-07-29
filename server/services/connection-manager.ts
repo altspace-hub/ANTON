@@ -242,19 +242,22 @@ export async function createConnectionManager(db: DatabaseAdapter) {
       );
     },
 
-    async test(id: string): Promise<{ ok: boolean; message: string }> {
-      const conn = await this.get(id);
-      if (!conn) return { ok: false, message: 'Connection not found' };
-
+    /**
+     * Test a config that may not be saved yet.
+     *
+     * Split out of test() so the creation WIZARD can run the real check before a
+     * connection exists. The wizard previously slept 600ms and returned a hardcoded
+     * pass — so a user configuring a database with the wrong password saw a green tick,
+     * saved it, and discovered the truth when a workflow failed. A test that cannot fail
+     * is worse than no test: it converts "I should check this" into false confidence.
+     *
+     * Takes an already-decrypted config. Callers holding a stored connection must go
+     * through test(), which decrypts at the data layer.
+     */
+    async testConfig(type: string, cfg: Record<string, unknown>): Promise<{ ok: boolean; message: string }> {
       let result: { ok: boolean; message: string };
-
-      // Already decrypted by get() — decrypting again would be a no-op today (the
-      // marker is gone) but would silently start corrupting values if the vault ever
-      // changed shape. One decrypt, at one boundary.
-      const cfg = conn.config as Record<string, unknown>;
-
       try {
-        if (conn.type === 'database') {
+        if (type === 'database') {
           const driverName = (cfg.driver as string) || 'sqlite';
           try {
             const driver = await getDriver(driverName);
@@ -263,7 +266,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
             const error = err as Error;
             result = { ok: false, message: `Driver error: ${error.message}` };
           }
-        } else if (conn.type === 'api') {
+        } else if (type === 'api') {
           const baseUrl = cfg.base_url as string;
           if (!baseUrl) {
             result = { ok: false, message: 'base_url not configured' };
@@ -276,7 +279,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
             clearTimeout(timeout);
             result = { ok: res.ok || res.status < 500, message: `HTTP ${res.status} ${res.statusText}` };
           }
-        } else if (conn.type === 'filesystem') {
+        } else if (type === 'filesystem') {
           const { default: fs } = await import('fs-extra');
           const basePath = cfg.base_path as string;
           if (!basePath) {
@@ -293,6 +296,17 @@ export async function createConnectionManager(db: DatabaseAdapter) {
       } catch (err) {
         result = { ok: false, message: err instanceof Error ? err.message : String(err) };
       }
+      return result;
+    },
+
+    async test(id: string): Promise<{ ok: boolean; message: string }> {
+      const conn = await this.get(id);
+      if (!conn) return { ok: false, message: 'Connection not found' };
+
+      // Already decrypted by get() — decrypting again would be a no-op today (the
+      // marker is gone) but would silently start corrupting values if the vault ever
+      // changed shape. One decrypt, at one boundary.
+      const result = await this.testConfig(conn.type, conn.config as Record<string, unknown>);
 
       const now = new Date().toISOString();
       await db.run(
