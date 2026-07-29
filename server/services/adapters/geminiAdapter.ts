@@ -2,7 +2,7 @@
 // Gemini Adapter — Streams Google Gemini responses as SSE
 // ═══════════════════════════════════════════════════════════
 
-import type { Response } from 'express';
+import type { StreamSink } from '../stream-sink.js';
 
 export interface GeminiStreamParams {
   model: string;
@@ -19,7 +19,7 @@ function mapRole(role: string): string {
 
 export async function streamGemini(
   params: GeminiStreamParams,
-  res: Response
+  res: StreamSink
 ): Promise<{ inputTokens: number; outputTokens: number; text: string }> {
   const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) throw new Error('GOOGLE_API_KEY not configured');
