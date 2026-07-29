@@ -214,6 +214,22 @@ describe('the project WRITER attributes an owner', () => {
     expect(insert.slice(0, insert.indexOf('`'))).toContain('user_id');
   });
 
+  it('and that INSERT is syntactically valid SQL', () => {
+    // The assertion above is about the SHAPE OF THE SOURCE, and that is exactly how it
+    // failed: between 2026-07-28 and 2026-07-29 the statement contained `//` comment
+    // lines inside the template literal, so every create 500'd — and `.toContain
+    // ('user_id')` passed the whole time, because invalid SQL contains that string just
+    // as happily as valid SQL.
+    //
+    // A `//` anywhere in the statement means a comment leaked into the string. Parsing
+    // it for real is in tests/lint/sql-template-literals.test.ts, which needs a database;
+    // this cheap check runs everywhere.
+    const m = /db\.run\(`([^`]*INSERT INTO projects[^`]*)`/.exec(SRC);
+    expect(m, 'INSERT INTO projects not found').toBeTruthy();
+    expect(m![1]).not.toMatch(/^\s*\/\//m);
+    expect(m![1]).toMatch(/VALUES\s*\(/);
+  });
+
   it('uses the authenticated caller, not the always-undefined req.userId', () => {
     // `(req as any).userId` is never set anywhere — authMiddleware stamps req.user.id.
     // Reading the wrong property is how coding_projects.created_by came to be the
