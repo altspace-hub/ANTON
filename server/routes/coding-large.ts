@@ -1907,13 +1907,17 @@ export async function createCodingLargeRoutes(
         // omitting it writes a row owned by a user who does not exist, and the creator
         // is immediately 404'd out of the project they just made. Scoping the reads
         // without attributing the write turns a leak into data loss.
+        // 'default' rather than null: the column is NOT NULL DEFAULT 'default', so an
+        // explicit null would fail the constraint. authMiddleware always stamps
+        // req.user, so the fallback is unreachable in practice — it exists to keep the
+        // column's own semantics rather than to be relied on.
+        //
+        // These comment lines sat INSIDE the template literal below until 2026-07-29,
+        // which put `//` into the SQL text and made every create 500. Comments belong
+        // outside the backticks; a template literal has no comment syntax.
         await db.run(`
           INSERT INTO projects (id, name, description, status, user_id, created_at, updated_at)
           VALUES (?, ?, ?, 'active', ?, NOW(), NOW())
-        // 'default' rather than null: the column is NOT NULL DEFAULT 'default', so an
-        // explicit null would 500 on insert. authMiddleware always stamps req.user, so
-        // the fallback is unreachable in practice — it exists to keep the column's own
-        // semantics rather than to be relied on.
         `, parentProjectId, name, description || '', req.user?.id ?? 'default');
       }
 
