@@ -33,6 +33,21 @@ import {
   resolveExplicitDbDriver,
 } from './workflow-step-registry.js';
 
+// Per-connection guardrails (allowlists, rate limit, row/timeout ceilings, TLS).
+// Until this import existed the wizard collected all of them and nothing read them —
+// see the header of connection-guard.ts for the measured before-state.
+import {
+  assertEndpointAllowed,
+  assertWithinRateLimit,
+  assertQueryPermitted,
+  assertTablesAllowed,
+  resolveMaxRows,
+  resolveTimeoutMs,
+  tlsOptionFor,
+  mssqlTlsOptions,
+  isFileReadable,
+} from './connection-guard.js';
+
 export interface ExecutionResult {
   success: boolean;
   runId: string;
@@ -471,6 +486,9 @@ async function executeHeadlessStep(
       if (!connId) throw new Error('file_read step requires a connectionId');
 
       let basePath: string;
+      // Empty for a Knowledge Library path, which carries no connection config and so
+      // has no per-connection extension/size limits to apply.
+      let connCfg: Record<string, unknown> = {};
 
       if (connId.startsWith('kl:')) {
         // Knowledge Library entry — resolve path from knowledge_library table
@@ -485,6 +503,7 @@ async function executeHeadlessStep(
         if (!conn) throw new Error(`Connection not found: ${connId}`);
         if (conn.type !== 'filesystem') throw new Error('Connection is not a filesystem connection');
         const cfg = conn.config as Record<string, unknown>;
+        connCfg = cfg;
         basePath = cfg.base_path as string || cfg.path as string || '';
       }
 
@@ -514,7 +533,11 @@ async function executeHeadlessStep(
 
         const filePath = path.join(basePath, entry.name);
         const stat = fs.statSync(filePath);
-        if (stat.size > 2 * 1024 * 1024) continue; // Skip files > 2MB
+        // The connection's own allowed_extensions / max_file_size_mb. A filesystem
+        // connection scoped to '.pdf' previously still handed over .env and .pem
+        // files sitting in the same folder — the scope was recorded and ignored.
+        // Unset extensions mean all; unset size keeps the previous 2 MB ceiling.
+        if (!isFileReadable(connCfg, entry.name, stat.size)) continue;
 
         try {
           const content = fs.readFileSync(filePath, 'utf-8');
@@ -549,6 +572,12 @@ async function executeHeadlessStep(
         throw new Error(`API call blocked: URL scheme must be https:// (got: ${url.slice(0, 30)})`);
       }
 
+      // The connection's own boundaries, checked BEFORE the request is built so a
+      // refusal cannot leak the auth headers. Both are no-ops for a connection that
+      // configured neither.
+      assertEndpointAllowed(cfg, method, endpointPath);
+      assertWithinRateLimit(conn.id, cfg);
+
       const headers: Record<string, string> = { ...(cfg.headers as Record<string, string> || {}) };
       if (step.config.headers) {
         for (const [k, v] of Object.entries(step.config.headers)) {
@@ -566,7 +595,8 @@ async function executeHeadlessStep(
 
       const outputVar = step.config.outputVariable || 'api_response';
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), step.config.timeout_ms || 30000);
+      // The connection's timeout_seconds caps the step's own timeout_ms.
+      const timeout = setTimeout(() => controller.abort(), resolveTimeoutMs(cfg, step.config.timeout_ms));
 
       try {
         const response = await fetch(url, { method, headers, body, signal: controller.signal });
@@ -605,8 +635,16 @@ async function executeHeadlessStep(
         ? resolveTemplate(step.config.queryTemplate, context)
         : '';
       const parameters = step.config.parameters || [];
-      const maxRows = step.config.maxRows || 1000;
+      // The connection's max_rows_per_query is a ceiling on the step's own maxRows.
+      const maxRows = resolveMaxRows(cfg, step.config.maxRows);
       const outputVar = step.config.outputVariable || 'query_result';
+
+      // The query is built by string-interpolating workflow context into
+      // queryTemplate, so it must be shape-checked before it reaches any driver:
+      // read-only unless the connection carries the 'write' permission, single
+      // statement, and confined to allowed_tables when one is configured.
+      assertQueryPermitted(conn.permissions, query);
+      assertTablesAllowed(cfg, query);
 
       let rows: unknown[] = [];
       let rowCount = 0;
@@ -616,7 +654,10 @@ async function executeHeadlessStep(
           host: cfg.host as string, port: cfg.port as number,
           database: cfg.database as string, user: cfg.username as string,
           password: cfg.password as string,
-          ssl: cfg.ssl ? { rejectUnauthorized: false } : undefined,
+          // Honours the wizard's "Verify SSL certificate" checkbox. This was
+          // hardcoded to rejectUnauthorized:false, so every workflow query ran with
+          // certificate verification off no matter what the operator ticked.
+          ssl: tlsOptionFor(cfg),
           connectionTimeoutMillis: 10000, query_timeout: 30000,
         });
         await client.connect();
@@ -629,6 +670,10 @@ async function executeHeadlessStep(
           host: cfg.host as string, port: cfg.port as number,
           database: cfg.database as string, user: cfg.username as string,
           password: cfg.password as string, connectTimeout: 10000,
+          // No ssl option was passed at all, so a connection saved with "Enable
+          // SSL/TLS encryption" ticked connected in cleartext — a silent downgrade
+          // one step worse than an unverified certificate.
+          ssl: tlsOptionFor(cfg),
         });
         const [results] = await connection.execute(query, parameters as (string | number | boolean | null | Date | Buffer)[]);
         rows = (Array.isArray(results) ? results : []).slice(0, maxRows);
@@ -639,7 +684,9 @@ async function executeHeadlessStep(
           server: cfg.host as string, port: cfg.port as number,
           database: cfg.database as string, user: cfg.username as string,
           password: cfg.password as string,
-          options: { encrypt: cfg.ssl as boolean, trustServerCertificate: true },
+          // trustServerCertificate was hardcoded true — the mssql spelling of
+          // "never verify". It is now the inverse of the operator's checkbox.
+          options: mssqlTlsOptions(cfg),
           connectionTimeout: 10000, requestTimeout: 30000,
         });
         const result = await pool.request().query(query);

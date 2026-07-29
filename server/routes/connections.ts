@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import { redactConfig } from '../services/credential-vault.js';
 import type { DatabaseAdapter } from '../db/database.js';
-import { createConnectionManager } from '../services/connection-manager.js';
+import { createConnectionManager, USER_CREATABLE_CONNECTION_TYPES } from '../services/connection-manager.js';
 import { requireAdminOrSolo } from '../middleware/auth.js';
 
 export async function createConnectionsRoutes(db: DatabaseAdapter) {
@@ -131,9 +131,15 @@ export async function createConnectionsRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      const validTypes = ['database', 'api', 'filesystem', 'email', 'script_library', 'channel_bridge'];
-      if (!validTypes.includes(type)) {
-        res.status(400).json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` });
+      // Single source of truth, next to the ConnectionType union it must agree with.
+      // The hand-maintained copy that used to live here had drifted from that union in
+      // both directions: it allowed 'channel_bridge' (which needs the token that
+      // POST /api/bridges mints) and omitted 'messaging' (which four read paths query
+      // for), so the Slack/Teams integration had no way to come into existence.
+      if (!(USER_CREATABLE_CONNECTION_TYPES as readonly string[]).includes(type)) {
+        res.status(400).json({
+          error: `Invalid type. Must be one of: ${USER_CREATABLE_CONNECTION_TYPES.join(', ')}`,
+        });
         return;
       }
 

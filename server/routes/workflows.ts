@@ -14,6 +14,17 @@ import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '../../s
 import { WORKFLOWS } from '../../src/lib/workflow-definitions.js';
 import { createConnectionManager } from '../services/connection-manager.js';
 import { resolveExplicitDbDriver } from '../services/workflow-step-registry.js';
+// Per-connection guardrails — see connection-guard.ts for why they were unreachable.
+import {
+  assertEndpointAllowed,
+  assertWithinRateLimit,
+  assertQueryPermitted,
+  assertTablesAllowed,
+  resolveMaxRows,
+  resolveTimeoutMs,
+  tlsOptionFor,
+  mssqlTlsOptions,
+} from '../services/connection-guard.js';
 import pkg from 'pg';
 import { safeError } from '../lib/error-response.js';
 const { Client: PgClient } = pkg;
@@ -223,6 +234,13 @@ async function executeStep(
         : '';
       const url = `${baseUrl}${endpointPath}`;
 
+      // Same per-connection boundaries the headless executor applies. This runner is a
+      // near-duplicate of the one in workflow-executor.ts; enforcing in only one of them
+      // would leave the control bypassable by choosing the other trigger path.
+      assertEndpointAllowed(cfg, method, endpointPath);
+      assertWithinRateLimit(conn.id, cfg);
+      const apiTimeoutMs = resolveTimeoutMs(cfg, step.config.timeout_ms);
+
       // Build headers
       const headers: Record<string, string> = { ...(cfg.headers as Record<string, string> || {}) };
       if (step.config.headers) {
@@ -245,7 +263,7 @@ async function executeStep(
 
       // ASYNC MODE: Fire-and-forget
       if (step.config.async) {
-        fetch(url, { method, headers, body, signal: AbortSignal.timeout(step.config.timeout_ms || 30000) })
+        fetch(url, { method, headers, body, signal: AbortSignal.timeout(apiTimeoutMs) })
           .then(() => console.log(`[workflow] Async API call dispatched: ${method} ${url}`))
           .catch((err) => console.error(`[workflow] Async API call failed: ${err.message}`));
 
@@ -263,7 +281,7 @@ async function executeStep(
 
       // SYNC MODE: Wait for response
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), step.config.timeout_ms || 30000);
+      const timeout = setTimeout(() => controller.abort(), apiTimeoutMs);
 
       try {
         const response = await fetch(url, { method, headers, body, signal: controller.signal });
@@ -334,8 +352,13 @@ async function executeStep(
         ? resolveTemplate(step.config.queryTemplate, ctx)
         : '';
       const parameters = step.config.parameters || [];
-      const maxRows = step.config.maxRows || 1000;
+      const maxRows = resolveMaxRows(cfg, step.config.maxRows);
       const outputVar = step.config.outputVariable || 'query_result';
+
+      // See the headless twin in workflow-executor.ts: the query is interpolated from
+      // workflow context, so it is shape-checked and scoped before any driver sees it.
+      assertQueryPermitted(conn.permissions, query);
+      assertTablesAllowed(cfg, query);
 
       let rows: unknown[] = [];
       let rowCount = 0;
@@ -349,7 +372,9 @@ async function executeStep(
             database: cfg.database as string,
             user: cfg.username as string,
             password: cfg.password as string,
-            ssl: cfg.ssl ? { rejectUnauthorized: false } : undefined,
+            // Was hardcoded rejectUnauthorized:false — TLS verification off regardless
+            // of the operator's "Verify SSL certificate" checkbox.
+            ssl: tlsOptionFor(cfg),
             connectionTimeoutMillis: 10000,
             query_timeout: 30000,
           });
@@ -370,6 +395,9 @@ async function executeStep(
             user: cfg.username as string,
             password: cfg.password as string,
             connectTimeout: 10000,
+            // No ssl option was passed, so "Enable SSL/TLS encryption" produced a
+            // cleartext connection.
+            ssl: tlsOptionFor(cfg),
           });
 
           const [results] = await connection.execute(query, parameters as (string | number | boolean | null | Date | Buffer)[]);
@@ -386,10 +414,9 @@ async function executeStep(
             database: cfg.database as string,
             user: cfg.username as string,
             password: cfg.password as string,
-            options: {
-              encrypt: cfg.ssl as boolean,
-              trustServerCertificate: true,
-            },
+            // trustServerCertificate was hardcoded true — mssql's spelling of
+            // "never verify". It now mirrors the operator's checkbox.
+            options: mssqlTlsOptions(cfg),
             connectionTimeout: 10000,
             requestTimeout: 30000,
           });

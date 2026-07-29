@@ -125,6 +125,13 @@ export const SENSITIVE_FIELDS = [
   'secret',
   'client_secret',
   'bearer_token',
+  // A Slack/Teams incoming-webhook URL IS the credential — anyone holding it can post
+  // into the channel; there is no second factor. Added when 'messaging' connections
+  // became creatable, so the URL is never stored in the clear and never leaves the
+  // server in a GET /api/connections response. No existing row carries this key
+  // (messaging could not be written before, and channel_bridge configs use `token`),
+  // so nothing needs re-encrypting.
+  'webhook_url',
 ] as const;
 
 export function encryptConfig(config: Record<string, unknown>): Record<string, unknown> {

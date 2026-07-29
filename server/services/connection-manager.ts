@@ -8,7 +8,34 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { encryptConfig, decryptConfig, mergeSecrets } from './credential-vault.js';
 import { getDriver } from './db-drivers/driver-registry.js';
 
-export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library' | 'messaging';
+/**
+ * Every value the `connections.type` CHECK constraint accepts
+ * (server/db/schema.postgresql.sql, GROUP 16).
+ */
+export const CONNECTION_TYPES = [
+  'database', 'api', 'filesystem', 'email', 'script_library', 'channel_bridge', 'messaging',
+] as const;
+
+/**
+ * The subset POST /api/connections may create.
+ *
+ * `channel_bridge` is excluded deliberately: a bridge is only usable with the access
+ * token that POST /api/bridges mints and returns exactly once, so a bridge row created
+ * through the generic endpoint would be a dead record with no way to authenticate.
+ *
+ * `messaging` used to be missing from this list while four queries read
+ * `type = 'messaging'` (routes/integrations.ts x3, workflow-executor's
+ * messaging_notification step). Nothing could write the type, so the Slack/Teams
+ * integration was structurally unreachable: /api/integrations/test and /send always
+ * 404'd, /api/integrations/connections always returned [], and a workflow's "Messaging
+ * Notification" step always returned { sent: false } — while reporting the step as
+ * successful. Derived from CONNECTION_TYPES so the two lists cannot drift apart again.
+ */
+export const USER_CREATABLE_CONNECTION_TYPES = [
+  'database', 'api', 'filesystem', 'email', 'script_library', 'messaging',
+] as const satisfies readonly (typeof CONNECTION_TYPES)[number][];
+
+export type ConnectionType = (typeof CONNECTION_TYPES)[number];
 export type ConnectionStatus = 'pending' | 'active' | 'disabled' | 'error';
 
 export interface Connection {
@@ -289,6 +316,25 @@ export async function createConnectionManager(db: DatabaseAdapter) {
             result = exists
               ? { ok: true, message: `Folder accessible: ${basePath}` }
               : { ok: false, message: `Folder not found: ${basePath}` };
+          }
+        } else if (type === 'messaging') {
+          // A real post to the webhook, for the same reason the other branches are real:
+          // making the type creatable without this would hand the wizard back its
+          // "cannot fail" green tick for exactly one connection type.
+          const platform = cfg.platform as string;
+          const webhookUrl = cfg.webhook_url as string;
+          if (!webhookUrl) {
+            result = { ok: false, message: 'webhook_url not configured' };
+          } else if (platform === 'slack') {
+            const { testSlackWebhook } = await import('./integrations/slack-webhook.js');
+            const r = await testSlackWebhook(webhookUrl);
+            result = { ok: r.ok, message: r.ok ? 'Test message delivered to Slack' : (r.error ?? 'Slack webhook failed') };
+          } else if (platform === 'teams') {
+            const { testTeamsWebhook } = await import('./integrations/teams-webhook.js');
+            const r = await testTeamsWebhook(webhookUrl);
+            result = { ok: r.ok, message: r.ok ? 'Test message delivered to Teams' : (r.error ?? 'Teams webhook failed') };
+          } else {
+            result = { ok: false, message: `Unknown messaging platform: "${platform}" (expected slack or teams)` };
           }
         } else {
           result = { ok: true, message: 'Connection type checked (no live test available)' };

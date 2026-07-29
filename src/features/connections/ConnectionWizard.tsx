@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Database, Globe, FolderOpen, Mail, Code, ChevronRight, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { X, Database, Globe, FolderOpen, Mail, Code, MessageSquare, ChevronRight, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import type { ConnectionType } from './types';
 
 const getToken = () => localStorage.getItem('openexpert-token') ?? '';
@@ -24,6 +24,11 @@ const TYPE_OPTIONS: TypeOption[] = [
   { id: 'filesystem',     label: 'Filesystem',      description: 'Access local folders with configurable permissions', icon: FolderOpen },
   { id: 'email',          label: 'Email',           description: 'SMTP or IMAP email integration', icon: Mail },
   { id: 'script_library', label: 'Script Library',  description: 'Register a folder of approved executable scripts', icon: Code },
+  // The server has always been able to READ messaging connections (Slack/Teams tests,
+  // sends, and the workflow "Messaging Notification" step) but nothing could create one,
+  // so every one of those paths was permanently empty. This option is what makes them
+  // reachable.
+  { id: 'messaging',      label: 'Messaging',       description: 'Post workflow notifications to a Slack or Teams channel', icon: MessageSquare },
 ];
 
 const INPUT_CLASS = 'w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1';
@@ -101,10 +106,32 @@ function DatabaseForm({ config, onChange }: { config: Record<string, unknown>; o
       <div>
         <label htmlFor="db-max-rows" className={LABEL_CLASS}>Max Rows Per Query</label>
         <input id="db-max-rows" type="number" min={1} max={100000} placeholder="10000" value={String(config.max_rows_per_query ?? '')} onChange={(e) => set('max_rows_per_query', parseInt(e.target.value) || undefined)} className={INPUT_CLASS} />
+        <p className="mt-1 text-xs text-adv-gray">A ceiling on what any workflow step may request. Blank = no ceiling.</p>
       </div>
       <div>
         <label htmlFor="db-allowed-tables" className={LABEL_CLASS}>Allowed Tables (comma-separated, leave blank for all)</label>
         <input id="db-allowed-tables" type="text" placeholder="users, orders, products" value={String(config.allowed_tables ?? '')} onChange={(e) => set('allowed_tables', e.target.value)} className={INPUT_CLASS} />
+        <p className="mt-1 text-xs text-adv-gray">Every table a query reads must appear here. Blank = every table.</p>
+      </div>
+      {/*
+        The escape hatch for the read-only default. Workflow SQL is assembled by
+        interpolating workflow context into a template, so anything other than a single
+        SELECT is refused unless write access was granted here, deliberately, at creation.
+      */}
+      <div>
+        <label className={LABEL_CLASS}>Permissions</label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-adv-off-white">
+          <input
+            type="checkbox"
+            checked={((config.permissions as string[]) ?? []).includes('write')}
+            onChange={(e) => set('permissions', e.target.checked ? ['read', 'write'] : ['read'])}
+            className="rounded border-border"
+          />
+          Allow write queries (INSERT / UPDATE / DELETE)
+        </label>
+        <p className="mt-1 text-xs text-adv-gray">
+          Off by default — workflow steps may only run SELECT statements on this connection.
+        </p>
       </div>
     </div>
   );
@@ -157,6 +184,10 @@ function ApiForm({ config, onChange }: { config: Record<string, unknown>; onChan
       {/* Allowed endpoints */}
       <div>
         <label className={LABEL_CLASS}>Allowed Endpoints</label>
+        <p className="mb-1.5 text-xs text-adv-gray">
+          Workflow API steps may only call paths listed here. Leave empty to allow any path
+          under the base URL.
+        </p>
         <div className="space-y-1.5">
           {endpoints.map((ep, i) => (
             <div key={i} className="flex items-center gap-2 rounded-lg border border-border bg-adv-dark-2 px-2 py-1.5 text-xs">
@@ -236,6 +267,44 @@ function FilesystemForm({ config, onChange }: { config: Record<string, unknown>;
         <label className={LABEL_CLASS}>Max File Size (MB)</label>
         <input type="number" min={1} max={500} placeholder="50" value={String(config.max_file_size_mb ?? '')} onChange={(e) => set('max_file_size_mb', parseInt(e.target.value) || 50)} className={INPUT_CLASS} />
       </div>
+    </div>
+  );
+}
+
+function MessagingForm({ config, onChange }: { config: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const set = (key: string, val: unknown) => onChange({ ...config, [key]: val });
+  const platform = String(config.platform ?? 'slack');
+  return (
+    <div className="space-y-3">
+      <div>
+        <label htmlFor="msg-platform" className={LABEL_CLASS}>Platform</label>
+        <select id="msg-platform" value={platform} onChange={(e) => set('platform', e.target.value)} className={INPUT_CLASS}>
+          <option value="slack">Slack</option>
+          <option value="teams">Microsoft Teams</option>
+        </select>
+      </div>
+      <div>
+        <label htmlFor="msg-webhook" className={LABEL_CLASS}>Incoming Webhook URL *</label>
+        {/* Treated as a credential: encrypted at rest and stripped from API responses
+            (credential-vault SENSITIVE_FIELDS). Anyone holding this URL can post to the
+            channel, so it is a password field, not a URL field. */}
+        <input
+          id="msg-webhook"
+          type="password"
+          placeholder={platform === 'slack' ? 'https://hooks.slack.com/services/...' : 'https://outlook.office.com/webhook/...'}
+          value={String(config.webhook_url ?? '')}
+          onChange={(e) => set('webhook_url', e.target.value)}
+          className={INPUT_CLASS}
+        />
+        <p className="mt-1 text-xs text-adv-gray">
+          {platform === 'slack'
+            ? 'Slack → Channel settings → Integrations → Add apps → Incoming Webhooks.'
+            : 'Teams → Channel → Connectors → Incoming Webhook.'}
+        </p>
+      </div>
+      <p className="text-xs text-adv-gray">
+        Validating this connection posts a real test message to the channel.
+      </p>
     </div>
   );
 }
@@ -330,7 +399,10 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
     setSaving(true);
     setError('');
     try {
-      const permissions = selectedType === 'filesystem'
+      // Database connections carry permissions too now — the executor reads
+      // permissions.includes('write') to decide whether non-SELECT SQL is allowed, so
+      // leaving them out here would make the checkbox above decorative.
+      const permissions = selectedType === 'filesystem' || selectedType === 'database'
         ? (config.permissions as string[] | undefined) ?? ['read']
         : [];
 
@@ -424,6 +496,7 @@ export function ConnectionWizard({ onClose, onCreated }: ConnectionWizardProps) 
               {selectedType === 'database'       && <DatabaseForm config={config} onChange={setConfig} />}
               {selectedType === 'api'            && <ApiForm config={config} onChange={setConfig} />}
               {selectedType === 'filesystem'     && <FilesystemForm config={config} onChange={setConfig} />}
+              {selectedType === 'messaging'      && <MessagingForm config={config} onChange={setConfig} />}
               {(selectedType === 'email' || selectedType === 'script_library') && <GenericForm config={config} onChange={setConfig} />}
             </div>
           )}
