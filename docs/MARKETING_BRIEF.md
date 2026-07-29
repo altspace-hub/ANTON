@@ -397,7 +397,7 @@ A phone-resident PWA + Android app, Capacitor-wrapped, paired to a desktop ANTON
 
 **Phone-only merchant POS for FutureChain payments.**
 
-No backend. The phone is the entire merchant. The merchant has a bilateral KYC + sweep agreement with Safello (out of scope for us); the phone's QRs point at a Safello-arranged receive address. Safello sweeps + converts FTC → SEK independently. **ANTON Business doesn't touch any of that infrastructure** — that's the point. A bakery, a barber, a market stall can take crypto in 60 seconds with no servers.
+No backend. The phone is the entire merchant. The merchant has a bilateral KYC + sweep agreement with an exchange partner (out of scope for us); the phone's QRs point at an exchange-arranged receive address. The exchange partner sweeps + converts FTC → SEK independently. **ANTON Business doesn't touch any of that infrastructure** — that's the point. A bakery, a barber, a market stall can take crypto in 60 seconds with no servers.
 
 **Surfaces**:
 - **Simple mode**: keypad → QR with ADR-004 v1 remittance reference
@@ -414,7 +414,7 @@ Built on Capacitor + Vite + Tailwind in `src/business/` + `android-business/`. E
 
 A consumer scans a merchant's `futurechain:pay` QR and pays in FTC. Same build chain as Business; cloned from `android-business/` and renamed (more reliable on Windows than `npx cap add`). QR scanning uses the `qr-scanner` npm package (pure web, getUserMedia + worker) — zero plugin-list changes. Includes a paste-a-URI fallback for testing without a second phone.
 
-Settlement is bilateral (merchant ↔ Safello) — Pay only records the customer's local receipt in IndexedDB; it does not broadcast a chain transaction.
+Settlement is bilateral (merchant ↔ exchange partner) — Pay only records the customer's local receipt in IndexedDB; it does not broadcast a chain transaction.
 
 ### 6.4 ANTON Communications · *navy + teal*
 

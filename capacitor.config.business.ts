@@ -36,7 +36,7 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     iosScheme: 'https',
     allowNavigation: [
-      // Whitelist for the merchant's own FutureChain RPC + Safello
+      // Whitelist for the merchant's own FutureChain RPC + an exchange partner
       // touchpoints. v0 talks to RPC directly so http/https on these
       // is fine. The production allowlist tightens to the canonical
       // host once it's set.

@@ -799,7 +799,7 @@
  (gap-free ledger)                                   PACS.008 draft assembled
                                                             │
    settlement is bilateral, off-app  ◀───────────────────────┘
-   (merchant ↔ Safello blockchain node)
+   (merchant ↔ exchange partner blockchain node)
 </pre>
   </div>
   <p>The <code>ref</code> field carries the ADR-004 <strong>v1</strong> reference —
@@ -807,7 +807,7 @@
   and optional item count / VAT / discount. On the payer side, the purpose is mapped
   to an ISO 20022 external purpose code (RETAIL→GDDS, RESTAURANT/SERVICE→SCVE,
   EVENT→OTHR, REFUND→REFUND) when the PACS.008 draft is assembled. Settlement itself
-  is bilateral between the merchant and Safello — the apps only keep local records.</p>
+  is bilateral between the merchant and an exchange partner — the apps only keep local records.</p>
 </section>
 
 <!-- ============================ AAP ============================ -->
@@ -856,7 +856,7 @@
     <tr><td>AAP transport</td><td><span class="badge b-partial">PARTIAL</span></td><td>Handshake + bundles + nonce replay in place</td></tr>
     <tr><td>SDK <code>pacs008</code> builder</td><td><span class="badge b-stub">STUB</span></td><td>Blocked on Rust <code>iso20022_pacs008.rs</code> being vendored</td></tr>
     <tr><td>Portals cross-instance discovery</td><td><span class="badge b-spec">ROADMAP</span></td><td>6-phase plan; legal review gates public launch</td></tr>
-    <tr><td>Safello settlement integration</td><td><span class="badge b-spec">SPEC</span></td><td>Bilateral KYC model; reference code archived</td></tr>
+    <tr><td>Exchange settlement integration</td><td><span class="badge b-spec">SPEC</span></td><td>Bilateral KYC model; reference code archived</td></tr>
   </table>
   <div class="note warn"><strong>The critical-path blocker:</strong> the FutureChain
   Rust core (<code>iso20022_pacs008.rs</code>) must be vendored before PACS.008 can be
