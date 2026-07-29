@@ -235,6 +235,25 @@ export async function createMarketThesesRoutes(db: DatabaseAdapter, anthropic?: 
     }
   });
 
+  // Registered BEFORE '/markets/predictions/:id': Express matches in registration order, so the
+  // parameterised route would otherwise swallow this one (id='track-record') and
+  // return its "not found" error — which is what it did. See
+  // tests/routes/route-shadowing.test.ts.
+  router.get('/markets/predictions/track-record', async (_req, res) => {
+    try {
+      const trackRecord = await thesisService.getTrackRecord();
+      const calibration = await validationService.getCalibrationData();
+      const brierScore = await validationService.getOverallBrierScore();
+      const byHorizon = await validationService.getAccuracyByHorizon();
+      const byTemporalHorizon = await validationService.getAccuracyByTemporalHorizon();
+      const bySymbol = await validationService.getAccuracyBySymbol();
+      res.json({ trackRecord, calibration, brierScore, byHorizon, byTemporalHorizon, bySymbol });
+    } catch (err) {
+      console.error('[market-predictions] Track record error:', err);
+      res.status(500).json({ error: 'Failed to get track record' });
+    }
+  });
+
   router.get('/markets/predictions/:id', async (req, res) => {
     try {
       const prediction = await thesisService.getPrediction(req.params.id);
@@ -280,20 +299,6 @@ export async function createMarketThesesRoutes(db: DatabaseAdapter, anthropic?: 
 
   // ── Track Record ───────────────────────────────────────────────────────
 
-  router.get('/markets/predictions/track-record', async (_req, res) => {
-    try {
-      const trackRecord = await thesisService.getTrackRecord();
-      const calibration = await validationService.getCalibrationData();
-      const brierScore = await validationService.getOverallBrierScore();
-      const byHorizon = await validationService.getAccuracyByHorizon();
-      const byTemporalHorizon = await validationService.getAccuracyByTemporalHorizon();
-      const bySymbol = await validationService.getAccuracyBySymbol();
-      res.json({ trackRecord, calibration, brierScore, byHorizon, byTemporalHorizon, bySymbol });
-    } catch (err) {
-      console.error('[market-predictions] Track record error:', err);
-      res.status(500).json({ error: 'Failed to get track record' });
-    }
-  });
 
   // ── Signal Weight Update ───────────────────────────────────────────────
 

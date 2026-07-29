@@ -109,7 +109,15 @@ export async function createMarketValidationService(db: DatabaseAdapter) {
          AVG(brier_score) as avg_brier
        FROM market_predictions
        WHERE status = 'validated' AND time_horizon_days IS NOT NULL
-       GROUP BY horizon`
+       -- GROUP BY the EXPRESSION, not the select alias. SQLite resolves an output alias
+       -- here; PostgreSQL does not, and rejects the query with "column
+       -- market_predictions.time_horizon_days must appear in the GROUP BY clause".
+       GROUP BY
+         CASE
+           WHEN time_horizon_days <= 30 THEN 'short'
+           WHEN time_horizon_days <= 180 THEN 'medium'
+           ELSE 'long'
+         END`
     );
   }
 
@@ -124,7 +132,10 @@ export async function createMarketValidationService(db: DatabaseAdapter) {
        FROM market_predictions
        WHERE status = 'validated' AND target_symbol IS NOT NULL
        GROUP BY target_symbol
-       HAVING total >= 3
+       -- HAVING COUNT(*), not the alias. SQLite allows an output alias in HAVING;
+       -- PostgreSQL evaluates HAVING before the select list exists and errors with
+       -- "column total does not exist".
+       HAVING COUNT(*) >= 3
        ORDER BY accuracy DESC
        LIMIT ?`, limit
     );

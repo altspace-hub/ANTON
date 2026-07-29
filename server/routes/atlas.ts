@@ -170,6 +170,19 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
     } catch (err) { res.status(400).json({ error: safeError(err) }); }
   });
 
+  // Registered BEFORE '/atlas/:id': Express matches in registration order, so the
+  // parameterised route would otherwise swallow this one (id='packs') and
+  // return its "not found" error — which is what it did. See
+  // tests/routes/route-shadowing.test.ts.
+  router.get('/atlas/packs', async (req, res) => {
+    try {
+      // Pack content is internal authoring IP — require auth even for the list
+      if (!(req as AuthedRequest).user?.id) { res.status(401).json({ error: 'Authentication required' }); return; }
+      const list = await packs.listPacks();
+      res.json({ success: true, packs: list });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
   router.get('/atlas/:id', async (req, res) => {
     try {
       const id = String(req.params.id);
@@ -764,14 +777,6 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
 
   // ── Packs ──────────────────────────────────────────────────────
 
-  router.get('/atlas/packs', async (req, res) => {
-    try {
-      // Pack content is internal authoring IP — require auth even for the list
-      if (!(req as AuthedRequest).user?.id) { res.status(401).json({ error: 'Authentication required' }); return; }
-      const list = await packs.listPacks();
-      res.json({ success: true, packs: list });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
-  });
 
   router.post('/atlas/packs/seed', async (req, res) => {
     try {
