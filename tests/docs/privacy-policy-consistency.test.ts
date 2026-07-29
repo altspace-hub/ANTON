@@ -29,17 +29,31 @@ const MD = 'docs/legal/privacy-policy.md';
 const STANDALONE = 'docs/legal/privacy-policy.html';
 const IN_PRODUCT = 'docs/help/privacy.html';
 
-/** Strip tags, entities and markdown emphasis so the three become comparable prose. */
+const ENTITIES: Record<string, string> = {
+  '&mdash;': '—', '&euro;': '€', '&rarr;': '→', '&nbsp;': ' ',
+  '&lt;': '<', '&gt;': '>', '&quot;': '"', '&amp;': '&',
+};
+
+/**
+ * Strip tags, entities and markdown emphasis so the three renderings become comparable
+ * prose.
+ *
+ * Entities are decoded in a SINGLE pass rather than by chained .replace() calls. The
+ * chained version had `&amp;` → `&` running before `&nbsp;` → ' ', so `&amp;nbsp;` —
+ * a literal, correctly-escaped ampersand followed by text — decoded twice and vanished
+ * into a space. CodeQL flagged it as double-unescaping and was right. One pass over the
+ * string means no replacement can produce input for another.
+ */
 function prose(raw: string): string {
   return raw
     .replace(/<!--[\s\S]*?-->/g, ' ')          // editor-facing comments
     .replace(/<style[\s\S]*?<\/style>/gi, ' ') // inline CSS in the standalone page
     .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')     // help-site sidebar
     .replace(/<[^>]+>/g, ' ')
-    .replace(/&mdash;/g, '—').replace(/&euro;/g, '€').replace(/&rarr;/g, '→')
-    .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+    .replace(/&(?:mdash|euro|rarr|nbsp|lt|gt|quot|amp);/g, (m) => ENTITIES[m] ?? m)
     .replace(/[*_`>|]/g, ' ')
     .replace(/\s+/g, ' ')
+    .trim()
     .toLowerCase();
 }
 
@@ -67,6 +81,26 @@ const CLAIMS: Array<[string, string]> = [
   ['relay sees routing only',  'cannot decrypt, the content'],
   ['not legal advice',         'not legal advice'],
 ];
+
+describe('the prose normaliser itself', () => {
+  // It is the thing every assertion below depends on, so a silent bug in it would make
+  // the whole file agree about nothing.
+  it('decodes each entity exactly once', () => {
+    // The regression: chained replaces turned '&amp;nbsp;' into ' ' by decoding twice.
+    expect(prose('a &amp;nbsp; b')).toBe('a &nbsp; b');
+    expect(prose('a &amp;mdash; b')).toBe('a &mdash; b');
+  });
+
+  it('still decodes genuine entities', () => {
+    expect(prose('cost &euro;1,000 &mdash; paid')).toBe('cost €1,000 — paid');
+    expect(prose('a &amp; b')).toBe('a & b');
+  });
+
+  it('strips markup without eating the text around it', () => {
+    expect(prose('<p>we do <strong>not</strong> claim</p>')).toBe('we do not claim');
+    expect(prose('<style>p{content:"hidden"}</style>visible')).toBe('visible');
+  });
+});
 
 describe('all three copies of the privacy policy exist', () => {
   it.each([MD, STANDALONE, IN_PRODUCT])('%s', (p) => {
