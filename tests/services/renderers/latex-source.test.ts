@@ -15,7 +15,12 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs/promises';
 import { readFileSync } from 'fs';
-import type { RenderContext, RenderResult } from '../../../server/services/renderer-registry.types.js';
+import JSZip from 'jszip';
+import type {
+  LatexAssetFile,
+  RenderContext,
+  RenderResult,
+} from '../../../server/services/renderer-registry.types.js';
 import { BUILTIN_RENDERERS } from '../../../server/services/renderer-registry.builtin.js';
 
 let tmpDir: string;
@@ -527,5 +532,209 @@ describe('table rows are never silently truncated', () => {
     const { body } = await renderTex('| A | B |\n| --- | --- |\n| 1 | 2 | 3 | 4 |');
     expect(body).toContain('3');
     expect(body).toContain('4');
+  });
+});
+
+// ── Bundling the company house style ──────────────────────────────────────
+//
+// The renderer's output SHAPE changes when the company has uploaded a class
+// file: a .zip instead of a bare .tex. The assertions below deliberately read
+// the archive back with JSZip while the renderer writes it with adm-zip — a
+// round-trip through the same library would prove only that the library is
+// self-consistent, and "the code called a zip function" is not the claim being
+// made. The claim is that a recipient can open the file and find both halves of
+// a compilable document inside it.
+
+/** Render with the given assets and return the artifact's raw bytes + result. */
+async function renderArtifact(
+  markdown: string,
+  assets: LatexAssetFile[] | undefined,
+  options: Record<string, unknown> = {},
+): Promise<{ result: RenderResult; bytes: Buffer }> {
+  const { render } = await import('../../../server/services/renderers/package/latex-source.js');
+  const sessionId = `sess_latex_${++sessionSeq}`;
+  const result = await render(
+    {
+      schema_version: '1.0', module_id: 'test-module', area_id: '',
+      content_type: 'analytic_report', sector: null, generated_at: '', model: '',
+      body: {},
+    },
+    {
+      session: {
+        id: sessionId, module_id: 'test-module', title: 'Report',
+        area_id: '', content_type: 'analytic_report', sector: null, user_id: null,
+      },
+      options,
+      markdown,
+      latex_assets: assets,
+    },
+  );
+  const bytes = await fs.readFile(path.join(tmpDir, 'renderer-artifacts', result.file_path));
+  return { result, bytes };
+}
+
+const CLS_BYTES = Buffer.from(
+  [
+    '\\NeedsTeXFormat{LaTeX2e}',
+    '\\ProvidesClass{acmecorp}[2026/07/29 ACME house style]',
+    '\\LoadClass{article}',
+    '',
+  ].join('\n'),
+  'utf-8',
+);
+const STY_BYTES = Buffer.from('\\ProvidesPackage{acmecolors}\n', 'utf-8');
+const BIB_BYTES = Buffer.from('@book{x, title={T}}\n', 'utf-8');
+
+/** ZIP local-file-header magic. Present iff the artifact really is an archive. */
+const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+
+describe('latex-source: no house style uploaded', () => {
+  it('emits a plain .tex, exactly as it always did', async () => {
+    const { result, bytes } = await renderArtifact('# Title\n\nBody.', undefined);
+    expect(result.file_type).toBe('tex');
+    expect(result.mime_type).toBe('application/x-tex');
+    expect(result.file_path.endsWith('.tex')).toBe(true);
+    // Not merely "does not claim to be a zip" — it must not BE one.
+    expect(bytes.subarray(0, 4).equals(ZIP_MAGIC)).toBe(false);
+    expect(bytes.toString('utf-8')).toContain('\\begin{document}');
+    expect(result.metadata.bundled).toBe(false);
+    expect(result.metadata.bundled_files).toEqual([]);
+  });
+
+  it('emits a plain .tex when the asset list is present but empty', async () => {
+    const { result } = await renderArtifact('# Title\n\nBody.', []);
+    expect(result.file_type).toBe('tex');
+  });
+});
+
+describe('latex-source: house style uploaded', () => {
+  it('emits a zip that really contains BOTH the .tex and the class file', async () => {
+    const { result, bytes } = await renderArtifact(
+      '# Findings\n\nThe residual risk is acceptable.',
+      [{ filename: 'acmecorp.cls', content: CLS_BYTES }],
+      { latex_documentclass: 'acmecorp' },
+    );
+
+    expect(result.file_type).toBe('zip');
+    expect(result.mime_type).toBe('application/zip');
+    expect(bytes.subarray(0, 4).equals(ZIP_MAGIC)).toBe(true);
+
+    const zip = await JSZip.loadAsync(bytes);
+    const names = Object.keys(zip.files).sort();
+    expect(names).toHaveLength(2);
+    expect(names).toContain('acmecorp.cls');
+
+    const texName = names.find(n => n.endsWith('.tex'));
+    expect(texName).toBeDefined();
+
+    // The .tex in the archive is the real document, not a stub or a manifest.
+    const tex = await zip.file(texName!)!.async('string');
+    expect(tex).toContain('\\documentclass{acmecorp}');
+    expect(tex).toContain('\\begin{document}');
+    expect(tex).toContain('\\section{Findings}');
+    expect(tex).toContain('The residual risk is acceptable.');
+
+    // The class file is the uploaded bytes, unaltered — a class file that has
+    // been re-encoded or trimmed is a class file that will not load.
+    const cls = await zip.file('acmecorp.cls')!.async('nodebuffer');
+    expect(cls.equals(CLS_BYTES)).toBe(true);
+  });
+
+  it('names the archive after the .tex it carries', async () => {
+    const { result, bytes } = await renderArtifact(
+      'Body.', [{ filename: 'acmecorp.cls', content: CLS_BYTES }],
+    );
+    const zip = await JSZip.loadAsync(bytes);
+    const texName = Object.keys(zip.files).find(n => n.endsWith('.tex'))!;
+    expect(path.basename(result.file_path)).toBe(texName.replace(/\.tex$/, '.zip'));
+    expect(result.metadata.tex_filename).toBe(texName);
+  });
+
+  it('carries every uploaded file, not just the first', async () => {
+    const { bytes, result } = await renderArtifact(
+      'Body.',
+      [
+        { filename: 'acmecorp.cls', content: CLS_BYTES },
+        { filename: 'acmecolors.sty', content: STY_BYTES },
+        { filename: 'refs.bib', content: BIB_BYTES },
+      ],
+    );
+    const zip = await JSZip.loadAsync(bytes);
+    expect(Object.keys(zip.files).sort()).toEqual(
+      expect.arrayContaining(['acmecorp.cls', 'acmecolors.sty', 'refs.bib']),
+    );
+    expect(result.metadata.bundled_files).toEqual(['acmecorp.cls', 'acmecolors.sty', 'refs.bib']);
+    expect((await zip.file('refs.bib')!.async('nodebuffer')).equals(BIB_BYTES)).toBe(true);
+  });
+
+  it('reports the archive size, not the .tex size', async () => {
+    const { result, bytes } = await renderArtifact(
+      'Body.', [{ filename: 'acmecorp.cls', content: CLS_BYTES }],
+    );
+    expect(result.file_size_bytes).toBe(bytes.length);
+  });
+});
+
+describe('latex-source: a hostile asset name cannot shape the archive', () => {
+  it('reduces a traversal path to its basename instead of writing outside the archive', async () => {
+    const { bytes } = await renderArtifact(
+      'Body.',
+      [
+        { filename: '../../../etc/acmecorp.cls', content: CLS_BYTES },
+        { filename: '..\\..\\windows\\evil.sty', content: STY_BYTES },
+      ],
+    );
+    const zip = await JSZip.loadAsync(bytes);
+    const names = Object.keys(zip.files);
+    expect(names).toContain('acmecorp.cls');
+    expect(names).toContain('evil.sty');
+    for (const n of names) {
+      expect(n).not.toContain('..');
+      expect(n).not.toContain('/');
+      expect(n).not.toContain('\\');
+    }
+  });
+
+  it('drops an asset whose real extension is not a LaTeX one', async () => {
+    const { result, bytes } = await renderArtifact(
+      'Body.',
+      [
+        { filename: 'acmecorp.cls', content: CLS_BYTES },
+        { filename: 'payload.exe', content: Buffer.from('MZ', 'utf-8') },
+        { filename: 'acmecorp.cls.exe', content: Buffer.from('MZ', 'utf-8') },
+      ],
+    );
+    const zip = await JSZip.loadAsync(bytes);
+    expect(Object.keys(zip.files).sort().filter(n => !n.endsWith('.tex'))).toEqual(['acmecorp.cls']);
+    expect(result.metadata.bundled_files).toEqual(['acmecorp.cls']);
+  });
+
+  it('falls back to a plain .tex when NOTHING survives the filter', async () => {
+    // Not an empty archive: a zip holding only the .tex would be a worse
+    // deliverable than the .tex itself.
+    const { result } = await renderArtifact(
+      'Body.', [{ filename: 'payload.exe', content: Buffer.from('MZ', 'utf-8') }],
+    );
+    expect(result.file_type).toBe('tex');
+    expect(result.metadata.bundled).toBe(false);
+  });
+
+  it('keeps the first of two assets claiming the same name', async () => {
+    const { bytes } = await renderArtifact(
+      'Body.',
+      [
+        { filename: 'acmecorp.cls', content: CLS_BYTES },
+        { filename: 'acmecorp.cls', content: STY_BYTES },
+      ],
+    );
+    const zip = await JSZip.loadAsync(bytes);
+    expect(Object.keys(zip.files).filter(n => n === 'acmecorp.cls')).toHaveLength(1);
+    expect((await zip.file('acmecorp.cls')!.async('nodebuffer')).equals(CLS_BYTES)).toBe(true);
+  });
+
+  it('ignores an asset whose content is not a Buffer', async () => {
+    const bogus = [{ filename: 'acmecorp.cls', content: 'not a buffer' }] as unknown as LatexAssetFile[];
+    const { result } = await renderArtifact('Body.', bogus);
+    expect(result.file_type).toBe('tex');
   });
 });

@@ -26,6 +26,7 @@ import {
   evaluateRequiresField,
 } from './renderer-registry.types.js';
 import { BUILTIN_RENDERERS } from './renderer-registry.builtin.js';
+import { loadLatexBrandAssets } from './brand-latex-assets.js';
 import {
   type ContentType,
   type StructuredOutput,
@@ -181,6 +182,11 @@ export function createRendererRegistry(db: DatabaseAdapter) {
 
     const markdown = await loadLatestMarkdown(sessionId);
     const brandTemplate = await loadBrandTemplate(session.user_id);
+    // Company-uploaded LaTeX class/style files. Scoped to the SESSION's owner —
+    // see loadLatexBrandAssets for why that, and not the caller, is the right
+    // subject. Empty on every instance that has never uploaded one, which is
+    // what keeps the .tex export unchanged for everybody else.
+    const latexAssets = await loadLatexBrandAssets(db, session.user_id);
     const ctx: RenderContext = {
       session: {
         id: session.id,
@@ -194,6 +200,7 @@ export function createRendererRegistry(db: DatabaseAdapter) {
       options,
       brand_template: brandTemplate ?? undefined,
       markdown: markdown ?? undefined,
+      latex_assets: latexAssets.length > 0 ? latexAssets : undefined,
     };
 
     // Resolve + execute the render function
