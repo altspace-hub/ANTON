@@ -11,9 +11,28 @@
 // Deterministic — no LLM. Converts the Markdown output with its own minimal
 // parser (same shape as the standalone-html renderer next door, so the two
 // stay comparable) and escapes the ten LaTeX special characters.
+//
+// OUTPUT SHAPE. Two, chosen by whether the instance has a LaTeX house style:
+//
+//   • no uploaded class/style files → a plain `.tex`, exactly as before.
+//   • one or more uploaded          → a `.zip` holding that same `.tex` plus
+//     every uploaded `.cls` / `.sty` / `.bib`.
+//
+// The second exists because `\documentclass{acmecorp}` is worthless to the
+// recipient without `acmecorp.cls`, and the whole point of the renderer is that
+// the file leaves the building. The first exists because wrapping a lone `.tex`
+// in an archive would tax every instance that has no house style with an unzip
+// step that gains them nothing.
 
-import type { BrandTemplate, RenderFn, RenderResult } from '../../renderer-registry.types.js';
+import AdmZip from 'adm-zip';
+import type {
+  BrandTemplate,
+  LatexAssetFile,
+  RenderFn,
+  RenderResult,
+} from '../../renderer-registry.types.js';
 import { saveArtifact, buildFilename } from '../lib/artifact-storage.js';
+import { safeLatexAssetName } from '../../brand-latex-assets.js';
 
 // ── Company preamble configuration ────────────────────────────────────────
 //
@@ -70,32 +89,103 @@ export const render: RenderFn = async (_payload, context): Promise<RenderResult>
     markdown,
   });
 
-  const filename = buildFilename('{module_id}-{timestamp}.{file_type}', {
+  const texFilename = buildFilename('{module_id}-{timestamp}.{file_type}', {
     module_id: context.session.module_id,
     renderer_id: 'latex-source',
     file_type: 'tex',
   });
-  const saved = await saveArtifact({ sessionId: context.session.id, filename, content: latex });
+
+  const assets = resolveAssets(context.latex_assets, texFilename);
+
+  const baseMetadata = {
+    title: context.session.title,
+    word_count: markdown.split(/\s+/).filter(Boolean).length,
+    documentclass: style.documentclass,
+    documentclass_source: style.documentclass_source,
+    preamble_source: style.preamble_source,
+    // Surfaced so an operator whose config was ignored can see why rather
+    // than silently getting the ANTON defaults back.
+    rejected_config: style.rejected,
+    ...stats,
+  };
+
+  // ── No house-style files uploaded: emit the bare .tex, byte for byte as
+  // before. Bundling a lone .tex in a zip would be a regression for every
+  // instance that never uploads a class file — an extra unzip step for
+  // nothing — so the archive appears only when it carries something.
+  if (assets.length === 0) {
+    const saved = await saveArtifact({ sessionId: context.session.id, filename: texFilename, content: latex });
+    return {
+      file_path: saved.rel_path,
+      file_type: 'tex',
+      mime_type: 'application/x-tex',
+      file_size_bytes: saved.size_bytes,
+      metadata: { ...baseMetadata, bundled: false, bundled_files: [] },
+      validation: { valid: true },
+    };
+  }
+
+  // ── House style present: ship the .tex WITH the class/style/bib files, so
+  // `\documentclass{acmecorp}` resolves on the recipient's machine instead of
+  // failing with "File acmecorp.cls not found" on a document they cannot fix.
+  const zip = new AdmZip();
+  zip.addFile(texFilename, Buffer.from(latex, 'utf-8'));
+  for (const asset of assets) zip.addFile(asset.filename, asset.content);
+
+  const zipFilename = texFilename.replace(/\.tex$/, '.zip');
+  const saved = await saveArtifact({
+    sessionId: context.session.id,
+    filename: zipFilename,
+    content: zip.toBuffer(),
+  });
 
   return {
     file_path: saved.rel_path,
-    file_type: 'tex',
-    mime_type: 'application/x-tex',
+    file_type: 'zip',
+    mime_type: 'application/zip',
     file_size_bytes: saved.size_bytes,
     metadata: {
-      title: context.session.title,
-      word_count: markdown.split(/\s+/).filter(Boolean).length,
-      documentclass: style.documentclass,
-      documentclass_source: style.documentclass_source,
-      preamble_source: style.preamble_source,
-      // Surfaced so an operator whose config was ignored can see why rather
-      // than silently getting the ANTON defaults back.
-      rejected_config: style.rejected,
-      ...stats,
+      ...baseMetadata,
+      bundled: true,
+      tex_filename: texFilename,
+      bundled_files: assets.map(a => a.filename),
     },
     validation: { valid: true },
   };
 };
+
+/**
+ * Filter the supplied assets down to the ones that may safely become archive
+ * entries.
+ *
+ * The registry already sanitises these on the way out of the database, and
+ * routes/templates.ts already sanitises on the way in. This is the third pass,
+ * deliberately: a renderer is a plain function that anything holding a
+ * RenderContext can call, so it cannot assume its input came through either of
+ * those. `safeLatexAssetName` is the single shared definition of "safe", so the
+ * three passes cannot drift apart into disagreeing about a name.
+ *
+ * It reduces (a directory component is stripped, an exotic character is replaced)
+ * but it never invents: a name with no usable LaTeX extension left is DROPPED
+ * rather than forced into one, because a file renamed to `.cls` that is not a
+ * class file produces a bundle that looks complete and still does not compile.
+ */
+function resolveAssets(
+  assets: LatexAssetFile[] | undefined,
+  texFilename: string,
+): LatexAssetFile[] {
+  if (!assets || assets.length === 0) return [];
+  const seen = new Set<string>([texFilename]);
+  const out: LatexAssetFile[] = [];
+  for (const asset of assets) {
+    if (!Buffer.isBuffer(asset?.content)) continue;
+    const filename = safeLatexAssetName(asset.filename ?? '');
+    if (!filename || seen.has(filename)) continue;
+    seen.add(filename);
+    out.push({ filename, content: asset.content });
+  }
+  return out;
+}
 
 // ── Style resolution ──────────────────────────────────────────────────────
 

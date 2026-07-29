@@ -232,7 +232,7 @@ export const BUILTIN_RENDERERS: RendererDefinition[] = [
   {
     id: 'latex-source',
     label: 'LaTeX source (.tex)',
-    description: 'LaTeX source file you compile yourself — respects your own \\documentclass and preamble so the content drops into an existing house style.',
+    description: 'LaTeX source file you compile yourself — respects your own \\documentclass and preamble so the content drops into an existing house style. Ships as a .zip with your uploaded .cls / .sty / .bib files when you have any, so the recipient can compile it.',
     category: 'package',
     trigger: 'post_hoc',
     applies_when: {},
