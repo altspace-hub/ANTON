@@ -2026,11 +2026,17 @@ export async function createCodingLargeRoutes(
   // assertOwned call against the same owner source. The charter is no longer reachable
   // by asking a sibling endpoint for it.
   //
-  // What this still does NOT cover, so the next reader does not over-read it: the
-  // /coding/projects/:id routes registered by OTHER routers — coding-git.ts (git
-  // status/commits/init), coding-preview.ts (dev-server start/stop/logs) and
-  // coding-review.ts — mount under the same prefix and are scoped separately, or not
-  // yet at all. Guarding them belongs with those files.
+  // Two other routers also mount under this prefix — coding-git.ts (git
+  // status/commits/init) and coding-preview.ts (dev-server start/stop/logs). Both
+  // enforce ownership themselves, via their own loadProjectAccess() joining
+  // projects.user_id, so they are covered; they are named here only so the next reader
+  // knows to look there too. coding-review.ts does NOT mount under this prefix at all —
+  // it owns /coding/review/* — despite an earlier version of this comment saying so.
+  //
+  // What this does NOT cover, and the next reader must not over-read it as covering:
+  // child ids taken from the request BODY. Guarding :id proves you own the PROJECT; it
+  // says nothing about a coding_release_id or task id you passed in. Those are scoped
+  // separately — see the release/task handlers below.
   router.get('/coding/projects/:id', async (req, res) => {
     try {
       if (!(await assertOwned(db, req as OwnedRequest, res, {
@@ -2515,6 +2521,19 @@ export async function createCodingLargeRoutes(
       const { coding_release_id, title, description, complexity_band = 'medium', acceptance_criteria = [], depends_on = [] } = req.body;
       if (!coding_release_id || !title) return res.status(400).json({ error: 'coding_release_id and title are required' });
 
+      // ensureCodingProject above proved the caller owns :id. It says NOTHING about
+      // coding_release_id, which arrives in the BODY — so without this check a user could
+      // post a task into someone else's release: the row lands with their own
+      // coding_project_id (so it stays invisible to them) but the victim's release id.
+      // The victim then sees a stranger's task in GET /releases/:rid, which lists by
+      // release id, and the completion rollup below counts it. Reproduced against a real
+      // database with two tenants before this line existed.
+      const targetRelease = await db.get(
+        'SELECT id FROM coding_releases WHERE id = ? AND coding_project_id = ?',
+        coding_release_id, req.params.id,
+      );
+      if (!targetRelease) return res.status(404).json({ error: 'Release not found' });
+
       const maxTask = await db.get('SELECT COUNT(*) as c FROM coding_tasks WHERE coding_release_id = ?', coding_release_id) as any;
       const taskNumber = `T${(maxTask?.c || 0) + 1}`;
 
@@ -2605,14 +2624,21 @@ export async function createCodingLargeRoutes(
       const systemPromptOverride = buildTaskPlanSystemPrompt(project.name, task.title, releaseContext);
       const taskPlanPrompt = buildTaskPlanUserMessage(parsedTask, release, parsedProject);
 
-      await db.run("UPDATE coding_tasks SET status = 'planning', updated_at = NOW() WHERE id = ?", req.params.tid);
+      // 'planned', not 'planning'. coding_tasks_status_check does not include 'planning',
+      // so this UPDATE threw and the bare catch below turned it into a blanket 500 —
+      // "Failed to plan task" for every user, owner included. The value came from
+      // src/lib/coding-types.ts, which listed 'planning' as a task status; it never was
+      // one (server/types/coding.ts and the constraint agree), and that type is corrected
+      // in this change too. Issuing the plan prompt marks the task planned, matching how
+      // /execute marks it in_progress when it issues the execute prompt.
+      await db.run("UPDATE coding_tasks SET status = 'planned', updated_at = NOW() WHERE id = ?", req.params.tid);
 
       res.json({
         taskPlanPrompt,
         systemPromptOverride,
         moduleId: 'coding-large-implementation',
         areaId: 'coding',
-        status: 'planning',
+        status: 'planned',
         taskId: req.params.tid,
       });
     } catch (error) {
@@ -2689,20 +2715,24 @@ export async function createCodingLargeRoutes(
       `, completionRecordStr, completion_notes || null, req.params.tid, req.params.id);
 
       // Check if all tasks in the release are completed
+      // Both statements are scoped by coding_project_id as well as release id. The
+      // create-task fix above stops NEW cross-project rows, but rows written before it
+      // may already exist, and an unscoped rollup here would let one of them decide a
+      // release's status in a project its author has no access to.
       let releaseUpdated = false;
       if (task.coding_release_id) {
         const pendingTasks = await db.get(`
           SELECT COUNT(*) as count FROM coding_tasks
-          WHERE coding_release_id = ? AND status != 'completed'
-        `, task.coding_release_id) as any;
+          WHERE coding_release_id = ? AND coding_project_id = ? AND status != 'completed'
+        `, task.coding_release_id, req.params.id) as any;
 
         if (pendingTasks.count === 0) {
           await db.run(`
             UPDATE coding_releases
             SET status = 'review',
                 updated_at = NOW()
-            WHERE id = ?
-          `, task.coding_release_id);
+            WHERE id = ? AND coding_project_id = ?
+          `, task.coding_release_id, req.params.id);
           releaseUpdated = true;
         }
       }

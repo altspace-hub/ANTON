@@ -9,7 +9,13 @@ export type CodingProjectStatus =
 
 export type CodingReleaseStatus = 'planned' | 'in_progress' | 'testing' | 'review' | 'completed' | 'cancelled';
 
-export type CodingTaskStatus = 'pending' | 'planning' | 'planned' | 'in_progress' | 'review' | 'testing' | 'completed' | 'blocked' | 'cancelled';
+// Kept in step with coding_tasks_status_check and server/types/coding.ts. This listed
+// 'planning' as well, which the constraint has never allowed — and a backend handler
+// duly wrote it, so POST /tasks/:tid/plan 500'd for everyone. A status union that is
+// wider than the column is not a harmless superset: it is a licence to write a value
+// the database will reject. 'planning' IS a valid coding_projects status; it is not a
+// task one.
+export type CodingTaskStatus = 'pending' | 'planned' | 'in_progress' | 'review' | 'testing' | 'completed' | 'blocked' | 'cancelled';
 
 export type ComplexityBand = 'small' | 'medium' | 'large';
 
