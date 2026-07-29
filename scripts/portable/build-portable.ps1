@@ -239,6 +239,28 @@ $exclude = @(
   # rule as above for anything that can appear below the top level.
   '*.env.local', '*.env.production', '.env.*', 'coverage', 'playwright-report',
   'test-results', '.claude',
+
+  # ── Gitignored LOCAL STATE. This is the category the old list missed entirely,
+  # because it was written from a "what is in git" mindset — and git-ignored
+  # working state is precisely what leaks, since nobody reviews it.
+  #
+  # What was actually sitting in these on 2026-07-29, all of which the June zip
+  # would have published:
+  #   .live-walk/        50 MB of live payment-test scripts and output, containing
+  #                      FOUR real fc_ wallet addresses, a device-pulled
+  #                      installed-comm.apk, and a 64-hex Ed25519 PRIVATE KEY in
+  #                      biz-authorize.cjs
+  #   .artifacts/        30 MB, 54 device screenshots from wallet/identity testing
+  #   .anton/            12 MB of local orchestrator state
+  #   .studio-workspaces/ a Studio demo project
+  '.anton', '.artifacts', '.live-walk', '.studio-workspaces',
+
+  # Stale phone-app zips that happen to sit in the repo root. Shipping June-dated
+  # app builds inside the current ANTON Local download is 62 MB of confusion:
+  # whoever unzips it gets APKs older than the bundle around them. The apps are
+  # distributed through Play, not through here.
+  'ANTON-apps-*.zip', 'ANTON-Comm-*.zip', 'ANTON-Companion-*.zip',
+  'ANTON-Pay-Business-*.zip',
   # ─────────────────────────────────────────────────────────────────────────
   'anton-business/packages/futurechain-sdk/node_modules',
   'anton-business/packages/shared-types/node_modules',
@@ -300,7 +322,15 @@ $forbidden = @(
   @{ Label = 'real dev environment file'; Pattern = '(^|/)\.env(\.local|\.production)?$' },
   @{ Label = 'private phone-app source'; Pattern = '^[^/]+/src/(pay|comm|business|agent)/' },
   @{ Label = 'native app tree';          Pattern = '^[^/]+/android(-pay|-comm|-business|-agent)?/' },
-  @{ Label = 'git history';              Pattern = '(^|/)\.git/' }
+  @{ Label = 'git history';              Pattern = '(^|/)\.git/' },
+  # Local working state. `.live-walk` held a real Ed25519 private key and four live
+  # wallet addresses; `.artifacts` held 54 device screenshots. Gated as well as
+  # excluded, because this is the category the exclusion list forgot once already.
+  @{ Label = 'local test/run state';     Pattern = '^[^/]+/\.(live-walk|artifacts|anton|studio-workspaces|claude)/' },
+  @{ Label = 'stale phone-app zip';      Pattern = '^[^/]+/ANTON-[A-Za-z-]+-?[0-9.]*\.zip$' },
+  # Belt and braces on the thing that would actually hurt: a device-pulled APK has
+  # no business in a source bundle and is how the .live-walk debris got noticed.
+  @{ Label = 'device-pulled APK';        Pattern = '(^|/)installed-[a-z]+\.apk$' }
 )
 $leaks = @()
 foreach ($rule in $forbidden) {
