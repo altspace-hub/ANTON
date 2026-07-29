@@ -98,58 +98,23 @@ describe('no route is registered twice in the same file', () => {
    * which is correct — Express silently takes the first and the second is dead code.
    */
   /**
-   * KNOWN, UNRESOLVED — needs a product decision, not a code change.
+   * The allow-list that used to live here is GONE, because its subject is.
    *
-   * school.ts registers three lesson routes twice, over two DIFFERENT tables, and two
-   * separate page-families in the frontend call the same paths expecting different
-   * backends:
-   *
-   *   LessonBuilderPage / LessonLibraryPage           -> teacher_lessons (first, wins)
-   *   SchoolCurriculumPage / SchoolLessonBuilderPage  -> school_lessons  (dead)
-   *
-   * The school_lessons cluster is dead at BOTH ends: its list/get/create are swallowed
-   * here, and App.tsx separately registers /school/curriculum twice so
-   * CurriculumRegistryPage wins over SchoolCurriculumPage. Its PATCH/DELETE/progress
-   * routes ARE reachable (unique paths), so the layer is half-alive — which is worse
-   * than either whole answer.
-   *
-   * Deciding which lesson model is canonical means deleting roughly 1,180 lines of one
-   * of them. That is an owner's call. Listed here rather than silently deleted, and
-   * rather than deleting the assertion — an allow-list entry is documentation that
-   * survives; a removed test is not.
+   * school.ts registered three lesson routes twice over two different tables. The
+   * school_lessons cluster was dead at both ends and has been removed (2026-07-29);
+   * teacher_lessons is canonical. The rot guard that paired with the allow-list did its
+   * job: it failed the moment the duplicates were resolved, which is how an exception
+   * gets deleted instead of outliving its reason.
    */
-  const KNOWN_DUPLICATES = [
-    'school.ts GET /school/lessons',
-    'school.ts GET /school/lessons/:id',
-    'school.ts POST /school/lessons',
-  ];
-
-  it('reports zero NEW exact duplicates', () => {
+  it('reports zero exact duplicates', () => {
     const seen = new Set<string>();
     const dupes: string[] = [];
     for (const r of allRegistrations()) {
       const key = `${r.file} ${r.method} ${r.path}`;
-      const label = `${r.file} ${r.method.toUpperCase()} ${r.path}`;
-      if (seen.has(key) && !KNOWN_DUPLICATES.includes(label)) {
-        dupes.push(`${label} registered twice — the second is unreachable`);
-      }
+      if (seen.has(key)) dupes.push(`${r.file}: ${r.method.toUpperCase()} ${r.path} registered twice — the second is unreachable`);
       seen.add(key);
     }
     expect(dupes, dupes.join('\n  ')).toEqual([]);
-  });
-
-  it('the known duplicates still exist, so the allow-list cannot rot', () => {
-    // If someone resolves them, this fails and the entry gets deleted. An allow-list
-    // that outlives its subject is how a guard quietly stops guarding.
-    const seen = new Set<string>();
-    const found: string[] = [];
-    for (const r of allRegistrations()) {
-      const key = `${r.file} ${r.method} ${r.path}`;
-      const label = `${r.file} ${r.method.toUpperCase()} ${r.path}`;
-      if (seen.has(key) && KNOWN_DUPLICATES.includes(label)) found.push(label);
-      seen.add(key);
-    }
-    expect(found.sort()).toEqual([...KNOWN_DUPLICATES].sort());
   });
 });
 
