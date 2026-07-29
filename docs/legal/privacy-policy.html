@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy &mdash; ANTON</title>
+<meta name="description" content="Privacy policy for ANTON and the ANTON apps: Companion, Comm, Pay, Business and Agent.">
+<style>
+  :root{--bg:#fff;--fg:#1c2430;--muted:#5b6672;--line:#e2e6ea;--accent:#0D7D6C;--card:#f6f8f9}
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0B1426;--fg:#E0E0E0;--muted:#B0B0B0;--line:#223047;--accent:#2DD4A8;--card:#152238}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2.5rem 1.25rem 5rem;background:var(--bg);color:var(--fg);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  main{max-width:46rem;margin:0 auto}
+  h1{font-size:2rem;line-height:1.2;margin:0 0 1rem}
+  h2{font-size:1.3rem;margin:2.5rem 0 .6rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+  h3{font-size:1.05rem;margin:1.8rem 0 .4rem}
+  a{color:var(--accent)}
+  code{background:var(--card);padding:.1em .35em;border-radius:3px;font-size:.9em}
+  hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
+  blockquote{margin:1.2rem 0;padding:.9rem 1.1rem;background:var(--card);
+    border-left:3px solid var(--accent);border-radius:0 6px 6px 0}
+  blockquote p{margin:.4rem 0}
+  table{border-collapse:collapse;width:100%;margin:1rem 0;font-size:.94rem}
+  th,td{border:1px solid var(--line);padding:.5rem .6rem;text-align:left;vertical-align:top}
+  th{background:var(--card);font-weight:600}
+  ul{padding-left:1.25rem}
+  li{margin:.35rem 0}
+  em{color:var(--muted)}
+  main > p:last-child{color:var(--muted);font-size:.92rem}
+</style>
+</head>
+<body>
+<main>
+<h1>Privacy Policy</h1>
+<p><strong>For ANTON and the ANTON apps — Companion, Comm, Pay, Business and Agent.</strong></p>
+<p>Version 1.0 · Last updated 29 July 2026</p>
+<hr>
+<h2>The short version</h2>
+<p>These apps are local-first. Your documents, messages, contacts, receipts and private keys stay on your own device or your own server. There is no account system, we cannot read your messages, and we do not sell or share your data with advertisers.</p>
+<p>Three things <em>do</em> leave your device, and each has its own section below: AI model requests, encrypted message routing, and — if you use a wallet — payments written to a public blockchain, which are permanent.</p>
+<hr>
+<h2>1. Who this covers</h2>
+<ul>
+<li><strong>ANTON</strong> — the workspace you install and run yourself, on your own machine or server.</li>
+<li><strong>ANTON Companion</strong> — the phone app that connects to <em>your</em> ANTON instance.</li>
+<li><strong>ANTON Comm</strong> — end-to-end encrypted messaging, with an optional wallet.</li>
+<li><strong>ANTON Pay</strong> — a self-custody wallet for FutureChain payments.</li>
+<li><strong>ANTON Business</strong> — a receive-only merchant point of sale.</li>
+<li><strong>ANTON Agent</strong> — an assistant app that connects to your own instance or agents.</li>
+</ul>
+<p>Where a section applies to only some of them, it says so.</p>
+<h2>2. What stays on your device</h2>
+<p>By design the following never leave your device or your own server. We have no copy and no way to obtain one:</p>
+<ul>
+<li>Private keys, recovery phrases and device identity keys — held in the Android Keystore or iOS Keychain, or an encrypted local store on desktop.</li>
+<li>Your message history, attachments and voice messages.</li>
+<li>Your contacts and address book.</li>
+<li>Documents you add to ANTON, and anything derived from them.</li>
+<li>Receipts, sales records, Z-reports, inventory, customer lists and tax records.</li>
+<li>PINs and app-lock codes.</li>
+</ul>
+<p>Exports — CSV, PDF, SIE, backups — leave only when <em>you</em> send them, through your operating system's own share sheet. We are not a party to that transfer.</p>
+<h2>3. What leaves your device, and why</h2>
+<h3>3.1 AI model requests — ANTON, Companion, Agent</h3>
+<p>When you run a module or ask a question, the text of that request — and any document content you have chosen to include — is sent to the AI provider <em>you</em> have configured, using <em>your</em> API key. That may be Anthropic, OpenAI, Azure OpenAI, Google or Mistral, or a local model you run yourself, in which case nothing leaves your machine at all.</p>
+<p>Those providers handle that data under their own terms, not ours. We receive no copy, and we add no analytics or telemetry to that path.</p>
+<h3>3.2 Encrypted message routing — Comm</h3>
+<p>Message content — text, images, video, voice messages, and location if you choose to share it — is encrypted on your device before it is sent and can be decrypted only by the contact you sent it to. A relay server forwards the encrypted bytes.</p>
+<p>The relay necessarily sees the <em>routing</em> information needed to deliver a message: your public key and a derived routing identifier, and the same for the recipient. It does not see, and cannot decrypt, the content. Voice and video calls connect device to device where possible; establishing that connection exposes your IP address to a public STUN server for NAT discovery, but no call content passes through it.</p>
+<blockquote>
+<p><strong>What we do not claim.</strong> The message encryption is confidential and per-message key-separated. We do <strong>not</strong> claim forward secrecy for all traffic: a newer ratcheting protocol is in place between up-to-date devices, but messages to and from older builds still use the previous scheme, and the implementation has not yet been externally reviewed. This page will say so plainly when that changes.</p>
+</blockquote>
+<h3>3.3 Blockchain payments — Pay, Business, and the Comm wallet</h3>
+<p>If you use a wallet, a payment you send is signed on your device and broadcast to the <strong>public FutureChain ledger</strong>.</p>
+<blockquote>
+<p><strong>This is public and permanent.</strong> Anyone can read it, and it cannot be deleted, edited or withdrawn — not by you, and not by us.</p>
+<p>What is written on-chain includes the amount and fee, the sender and recipient addresses, the payer's name, and any reference or message you attach — in the clear, <em>not</em> encrypted. For transfers of €1,000 or more, where transfer-of-funds rules require it, the originator's postal address is included too. Payments below that threshold omit the address.</p>
+</blockquote>
+<p>Reading your balance or history sends your wallet address to the node you have configured, which lets that node's operator associate the address with your IP address. You can point the app at a different node, including one you run yourself.</p>
+<p>Converting between FutureChain and ordinary currency is arranged between you and your own exchange partner. That relationship, and any identity checks it involves, is between you and them; the apps are not a party to it and hold none of that data.</p>
+<h3>3.4 Pairing and abuse prevention — Companion, Comm, Pay, Business</h3>
+<p>To stop automated abuse of the relay, apps send a random per-installation identifier when they first enrol, and Pay and Comm may send a Google Play Integrity token. These are not advertising identifiers and are not linked to your identity. Reinstalling generates a new one.</p>
+<h3>3.5 Notifications</h3>
+<p>If push notifications are enabled for your instance, a push token is registered with Google (FCM) or Apple (APNs). The payload carries only an opaque wake signal — an event identifier and a severity — never message content. Push is off by default.</p>
+<h3>3.6 Portals — Comm</h3>
+<p>If you visit or use a portal published by someone else, what you type into it is sent to <em>their</em> ANTON instance, together with your contact hash. That is a transfer to a third party, and their handling applies to it.</p>
+<h2>4. What we do not do</h2>
+<ul>
+<li>We do not run an account system for these apps. There is no server-side profile.</li>
+<li>We do not use advertising identifiers, ad networks or third-party analytics.</li>
+<li>We do not sell or rent personal data.</li>
+<li>We do not read your messages, documents or receipts. For messages, we cannot.</li>
+<li>We do not profile you for advertising, or make automated decisions with legal effect.</li>
+</ul>
+<h2>5. Deleting your data</h2>
+<p>Because there is no account, deletion is something you carry out on the device.</p>
+<table><thead><tr><th>App</th><th>How to delete</th></tr></thead><tbody>
+<tr><td>ANTON</td><td>Delete the data directory and database on your own machine.</td></tr>
+<tr><td>Companion</td><td>Unpair the device, then uninstall — removes the session and device keys.</td></tr>
+<tr><td>Comm</td><td>Sign out, which wipes identity and keys, then uninstall.</td></tr>
+<tr><td>Pay</td><td>Settings → Reset app, then uninstall.</td></tr>
+<tr><td>Business</td><td>Settings → full reset, then uninstall.</td></tr>
+</tbody></table>
+<p>Uninstalling also clears the keys held in the Android Keystore or iOS Keychain.</p>
+<blockquote>
+<p><strong>One thing cannot be deleted.</strong> Payments already written to the public ledger are permanent. Resetting or uninstalling removes your local copy; it does not, and cannot, remove the on-chain record. Please take that into account before you send.</p>
+</blockquote>
+<h2>6. Your rights</h2>
+<p>If you are in the EU or the UK, the GDPR gives you rights of access, rectification, erasure, restriction, portability and objection. For these apps most of those rights are exercised directly: the data is in your possession, so you can read it, correct it, export it and delete it without asking us. Where we do act as a controller — for a support email you send us, for example — use the contact address below.</p>
+<p>You also have the right to complain to your national data protection authority.</p>
+<h2>7. Children and School mode</h2>
+<p>These apps are not directed at children under 13. ANTON's School mode is intended for use under the supervision of a school or a parent, who is responsible for the pupil's data under their own policies.</p>
+<p>In School mode, ordinary conversations are <strong>not</strong> stored. If safety screening flags a concern, a record of the <em>category</em> only — never what the pupil wrote — is made available to their teacher.</p>
+<h2>8. Security</h2>
+<p>Data in transit is protected with TLS, except for connections to a node or instance on your own machine, where the traffic does not leave the device. Message content is additionally end-to-end encrypted. Keys are stored in the platform's hardware-backed keystore where the device provides one.</p>
+<p>No system is perfectly secure, and self-custody means that if you lose your recovery phrase we cannot restore your wallet for you. Keep it somewhere safe and offline.</p>
+<h2>9. Changes to this policy</h2>
+<p>If we change this policy materially we will update the version and date at the top and note what changed. Continuing to use the apps after a change means the updated policy applies.</p>
+<h2>10. Contact</h2>
+<p>Questions about this policy, or about data we hold as a controller: <strong><a href="mailto:privacy@futurechain.eu">privacy@futurechain.eu</a></strong></p>
+<hr>
+<p><em>This policy describes the apps' actual behaviour, derived from an audit of the code paths that transmit data off the device. It is a factual description, not legal advice, and should be reviewed by counsel before being relied on for a regulatory filing.</em></p>
+</main>
+</body>
+</html>
