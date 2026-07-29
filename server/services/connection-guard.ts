@@ -207,6 +207,28 @@ export function assertQueryPermitted(permissions: readonly string[], sql: string
       'Recreate the connection with the "Write" permission enabled to allow modifications.'
     );
   }
+
+  // The leading keyword is not enough. PostgreSQL runs data-modifying CTEs, so
+  //
+  //   WITH gone AS (DELETE FROM secrets RETURNING *) SELECT * FROM gone
+  //
+  // is a single statement that begins with WITH, passes the check above, and deletes
+  // the table. Verified against this project's own PostgreSQL: three rows in, zero
+  // rows out. T-SQL's `WITH c AS (SELECT ...) DELETE FROM c` gets in the same way.
+  // So the whole body is scanned, not just its first word.
+  //
+  // `body` has already had string literals, quoted identifiers and comments removed,
+  // which is what makes a bare keyword scan safe: `SELECT 'delete me'` and a column
+  // named "update" are both gone by this point. Word boundaries keep `delete_flag`
+  // and `updates` from matching. `SELECT ... FOR UPDATE` is refused too — it takes
+  // row locks, which is not something a read-only connection should be doing.
+  const write = /\b(INSERT|UPDATE|DELETE|MERGE|UPSERT|TRUNCATE|DROP|ALTER|CREATE|REPLACE|GRANT|REVOKE|COMMENT|VACUUM|COPY|CALL|DO|EXEC|EXECUTE)\b/i.exec(body);
+  if (write) {
+    throw new ConnectionGuardError(
+      `Only read-only queries are permitted on this connection — found "${write[1].toUpperCase()}". ` +
+      'Recreate the connection with the "Write" permission enabled to allow modifications.'
+    );
+  }
 }
 
 // ── Database: table allowlist ──────────────────────────────────────────────

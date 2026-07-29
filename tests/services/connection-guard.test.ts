@@ -116,6 +116,49 @@ describe('read-only SQL', () => {
     expect(() => assertQueryPermitted(['read', 'write'], 'DELETE FROM orders')).not.toThrow();
   });
 
+  it('refuses a write hidden inside a CTE, which the leading keyword does not catch', () => {
+    // The first version of this guard only looked at the first word, so every one of
+    // these passed as "read-only". They are not hypothetical: PostgreSQL executes
+    // data-modifying CTEs, and the first was run against this project's own database
+    // during review — three rows in, zero rows out, from a query that begins WITH.
+    for (const q of [
+      'WITH gone AS (DELETE FROM secrets RETURNING *) SELECT * FROM gone',
+      "WITH u AS (UPDATE users SET role='admin' RETURNING id) SELECT * FROM u",
+      "WITH i AS (INSERT INTO users(name) VALUES ('x') RETURNING id) SELECT * FROM i",
+      'WITH c AS (SELECT * FROM users) DELETE FROM c',            // the T-SQL spelling
+      'WITH RECURSIVE r AS (SELECT 1) TRUNCATE audit_log',
+    ]) {
+      expect(() => assertQueryPermitted([], q), q).toThrow(/read-only/i);
+    }
+  });
+
+  it('still permits a genuinely read-only CTE', () => {
+    // Paired with the case above: a guard that refused every WITH would pass that test
+    // and break the feature. These must keep working.
+    expect(() => assertQueryPermitted([], 'WITH x AS (SELECT 1) SELECT * FROM x')).not.toThrow();
+    expect(() => assertQueryPermitted([],
+      'WITH RECURSIVE t AS (SELECT 1 n UNION ALL SELECT n+1 FROM t WHERE n < 5) SELECT * FROM t',
+    )).not.toThrow();
+  });
+
+  it('does not mistake ordinary identifiers for write keywords', () => {
+    // The scan runs over text with literals and quoted identifiers already removed, so
+    // these are the cases that would otherwise produce false refusals.
+    for (const q of [
+      'SELECT delete_flag, updated_at FROM updates',
+      "SELECT * FROM orders WHERE note = 'please delete this row'",
+      'SELECT "update" FROM t',
+      'SELECT * FROM inserted_records JOIN created_at_view ON true',
+    ]) {
+      expect(() => assertQueryPermitted([], q), q).not.toThrow();
+    }
+  });
+
+  it('refuses SELECT ... FOR UPDATE, which takes row locks', () => {
+    expect(() => assertQueryPermitted([], 'SELECT * FROM orders FOR UPDATE')).toThrow(/read-only/i);
+    expect(() => assertQueryPermitted(['write'], 'SELECT * FROM orders FOR UPDATE')).not.toThrow();
+  });
+
   it('refuses a second statement even for a write-enabled connection', () => {
     // db.query(text) with no values goes over the simple protocol, which runs every
     // statement in the string. The query is built by interpolating workflow context,
