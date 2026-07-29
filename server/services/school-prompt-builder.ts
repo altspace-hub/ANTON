@@ -2,6 +2,7 @@
  * School Mode Prompt Builder
  *
  * Assembles the 7-layer prompt system for School Mode.
+ * Layer 0: Safety Foundation (school-safety-foundation.md) — all tiers, first, non-negotiable
  * Layer 1: System Foundation (school-system-foundation.md)
  * Layer 2: Subject Context (areas/school/{subject}/area-context.md)
  * Layer 3: Lesson Methodology (areas/school/{subject}/modules/{module}/system-prompt.md)
@@ -14,6 +15,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getSchoolSafetyFoundation } from './school-safety-foundation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = path.join(__dirname, '..');
@@ -51,9 +53,34 @@ function interpolate(template: string, vars: Record<string, string>): string {
 export async function buildSchoolPrompt(config: SchoolPromptConfig): Promise<string> {
   const layers: string[] = [];
 
-  // ── T1 Child Mode Layer (highest priority) ─────────────────────────────────
+  // ── Layer 0: Safety Foundation — ALL TIERS, FIRST ─────────────────────────
+  //
+  // Placement is deliberate, and it is above T1 Child Mode rather than below it.
+  //
+  // Everything after this point is written for a lesson in progress. T1 Child Mode
+  // opens with "ALWAYS follow these rules" and then asks for relentless enthusiasm,
+  // a closing emoji on every response, and treats violence and religion as topics
+  // that simply do not exist. Those are the right instructions for long division and
+  // exactly the wrong ones for a child disclosing that someone at home frightens them.
+  // A safeguarding protocol arriving *after* that block is competing with it; arriving
+  // before it, with an explicit precedence banner, it governs it. The same call was
+  // already made for the acute-hit guidance in routes/school.ts (~line 624), which is
+  // PREPENDED for this exact reason — Layer 0 keeps the two consistent.
+  //
+  // Unconditional by tier: the safeguarding, safe-messaging, inclusion and child data
+  // rules are not a small-child concern. A sixteen-year-old in a T3 A-level session is
+  // if anything likelier to raise self-harm or substance topics, and T1 Child Mode —
+  // the only safety-shaped block that existed before this — never applied to them.
+  const safetyFoundation = await getSchoolSafetyFoundation();
+  if (safetyFoundation) {
+    layers.push(safetyFoundation);
+  }
+
+  // ── T1 Child Mode Layer ────────────────────────────────────────────────────
+  // push, not unshift: array order is prompt order, and this block must stay
+  // BELOW Layer 0. An unshift here would silently jump it above the safety layer.
   if (config.educationTier === 'T1') {
-    layers.unshift(`## T1 CHILD MODE — Ages 7–12
+    layers.push(`${layers.length ? '\n\n---\n\n' : ''}## T1 CHILD MODE — Ages 7–12
 You are talking with a child aged 7–12 years old. ALWAYS follow these rules:
 - Use simple, everyday words. If a hard word is needed, immediately explain it.
 - Keep answers short: maximum 4 sentences unless the child asks for more.
@@ -81,7 +108,11 @@ You are talking with a child aged 7–12 years old. ALWAYS follow these rules:
       curriculum_name: config.curriculumId ?? 'lgr22',
       task_type: config.taskType,
     });
-    layers.push(foundation);
+    // Separator only when something precedes it. Layers join with '', so without this
+    // the T1 block used to run straight into this heading with no break at all; and an
+    // unconditional prefix would open the prompt with a bare '---' (read as front-matter)
+    // whenever Layer 0 is absent.
+    layers.push(layers.length ? `\n\n---\n\n${foundation}` : foundation);
   }
 
   // ── Layer 1.5: Student Growth Stage ──────────────────────────────────────

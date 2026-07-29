@@ -8,6 +8,7 @@
 
 Every student-facing module call is wrapped with a role-appropriate overlay applied to the seven-layer prompt builder:
 
+- **Layer 0 (Safety Foundation)** — `server/prompts/school-safety-foundation.md`, loaded by `server/services/school-safety-foundation.ts`. Disclosure-response protocol, age-banded content standards, Samaritans/WHO-style safe messaging, inclusion, and child data minimisation. It is placed **first, for every tier**, above the T1 child-mode tone block, and carries an explicit precedence banner — a safeguarding protocol that sits below an instruction to stay relentlessly upbeat and end every reply with an emoji is competing with it rather than governing it. The file is read once and cached; if it cannot be read the layer is omitted and the loss is logged, so a lesson never dies over a missing prompt file but the gap is never silent either.
 - **Layer 1 (System Foundation)** is replaced with a school-safe foundation: no harmful content generation, age-appropriate vocabulary, refusal behaviours for self-harm / sexual / violence / discrimination categories.
 - **Layer 7 (Transparency)** is augmented with an emit-trail directive — every reasoning trace is captured in `revelation_chains` for teacher / guardian audit.
 - **Web search** is disabled by default for under-13 sessions (configurable at the school-mode settings level for older students).
@@ -121,7 +122,8 @@ The pillar isn't certified against any of these — what's claimed is that the *
 
 ## Where to look
 
-- **Code:** `server/services/school-prompt-builder.ts`, `server/routes/school.ts`, `server/routes/school-evidence.ts`
+- **Code:** `server/services/school-prompt-builder.ts`, `server/services/school-safety-foundation.ts`, `server/routes/school.ts`, `server/routes/school-evidence.ts`
+- **Prompt layer:** `server/prompts/school-safety-foundation.md`
 - **Schema:** `server/db/migrations-pg/094_app_gateway.sql` (guardians + approvals), `168_school_evidence_curriculum.sql` (Evidence Log + Curriculum Registry)
 - **Architecture:** [`/docs/architecture/future/f-54-school-mode.md`](../architecture/future/f-54-school-mode.md)
 - **Marketing:** [`/docs/marketing/school.md`](../marketing/school.md)
