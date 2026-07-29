@@ -3308,185 +3308,25 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
     }
   });
 
-  // ── Lesson/Curriculum endpoints (School Enhancements) ────────────────────
+  // The school_lessons / school_curricula layer was REMOVED (2026-07-29).
+  //
+  // It was a second, parallel implementation of lessons, dead at BOTH ends:
+  //
+  //   - its GET/POST /school/lessons and GET /school/lessons/:id were registered AFTER
+  //     the teacher_lessons versions, and Express matches in registration order, so they
+  //     were never reached;
+  //   - the only page that called it, SchoolCurriculumPage, was itself unreachable —
+  //     App.tsx registered /school/curriculum twice and CurriculumRegistryPage won;
+  //   - SchoolLessonPage and SchoolLessonBuilderPage had unique routes, but the ONLY
+  //     navigation to them came from that unreachable page.
+  //
+  // Its PATCH / DELETE / progress routes WERE reachable, so the layer was half-alive —
+  // worse than either whole answer. Both tables held zero rows, so nothing was lost.
+  // teacher_lessons is canonical: it is what LessonBuilderPage and LessonLibraryPage use.
+  //
+  // /school/curricula/upload is a DIFFERENT route, still used by TeacherClassConfigPage,
+  // and deliberately kept.
 
-  // GET /api/school/curricula
-  router.get('/school/curricula', async (req, res) => {
-    try {
-      const { subject_id } = req.query;
-      let sql = 'SELECT * FROM school_curricula';
-      const params: unknown[] = [];
-      if (subject_id) { sql += ' WHERE subject_id = ?'; params.push(subject_id); }
-      sql += ' ORDER BY created_at DESC';
-      res.json(await db.all(sql, ...params));
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/curricula
-  router.post('/school/curricula', async (req, res) => {
-    try {
-      const body = req.body as Record<string, unknown>;
-      const id = `cur_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      await db.run(`INSERT INTO school_curricula (id, subject_id, title, description, tier, language, units, created_by) VALUES (?,?,?,?,?,?,?,?)`, 
-        id, body.subject_id || '', body.title || 'Untitled Curriculum', body.description || null,
-        body.tier || 'T2', body.language || 'en', JSON.stringify(body.units || []), body.created_by || 'teacher'
-      );
-      res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // GET /api/school/lessons
-  router.get('/school/lessons', async (req, res) => {
-    try {
-      const { subject_id, curriculum_id } = req.query;
-      let sql = 'SELECT * FROM school_lessons';
-      const params: unknown[] = [];
-      const conditions: string[] = [];
-      if (subject_id) { conditions.push('subject_id = ?'); params.push(subject_id); }
-      if (curriculum_id) { conditions.push('curriculum_id = ?'); params.push(curriculum_id); }
-      if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
-      sql += ' ORDER BY created_at DESC';
-      const rows = await db.all(sql, ...params) as Record<string, unknown>[];
-      res.json(rows.map(r => ({ ...r, content_blocks: JSON.parse((r.content_blocks as string) || '[]') })));
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // GET /api/school/lessons/:id
-  router.get('/school/lessons/:id', async (req, res) => {
-    try {
-      const row = await db.get('SELECT * FROM school_lessons WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
-      if (!row) return res.status(404).json({ error: 'Lesson not found' });
-      return res.json({ ...row, content_blocks: JSON.parse((row.content_blocks as string) || '[]') });
-    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/lessons
-  router.post('/school/lessons', async (req, res) => {
-    try {
-      const body = req.body as Record<string, unknown>;
-      const id = `lesson_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      await db.run(`INSERT INTO school_lessons (id, curriculum_id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier, published, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, 
-        id, body.curriculum_id || null, body.subject_id || '',
-        body.title || 'Untitled Lesson', body.description || null,
-        JSON.stringify(body.content_blocks || []),
-        body.estimated_minutes || 30, body.bloom_level || 'understand',
-        body.tier || 'T2', body.published ? 1 : 0, body.created_by || 'teacher'
-      );
-      res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // PATCH /api/school/lessons/:id
-  router.patch('/school/lessons/:id', async (req, res) => {
-    try {
-      // Had NO authorization of any kind — it never read req.user. Any authenticated
-      // pupil could rewrite the content_blocks of any lesson, i.e. inject arbitrary
-      // material into what children are taught, or flip `published`.
-      if (!(await assertOwned(db, req as OwnedRequest, res, {
-        table: 'school_lessons', ownerColumn: 'created_by', id: req.params.id,
-        notFoundMessage: 'Lesson not found',
-      }))) return;
-      const body = req.body as Record<string, unknown>;
-      const fields: string[] = [];
-      const values: unknown[] = [];
-      if (body.title !== undefined) { fields.push('title = ?'); values.push(body.title); }
-      if (body.description !== undefined) { fields.push('description = ?'); values.push(body.description); }
-      if (body.content_blocks !== undefined) { fields.push('content_blocks = ?'); values.push(JSON.stringify(body.content_blocks)); }
-      if (body.estimated_minutes !== undefined) { fields.push('estimated_minutes = ?'); values.push(body.estimated_minutes); }
-      if (body.bloom_level !== undefined) { fields.push('bloom_level = ?'); values.push(body.bloom_level); }
-      if (body.published !== undefined) { fields.push('published = ?'); values.push(body.published ? 1 : 0); }
-      if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
-      values.push(req.params.id);
-      await db.run(`UPDATE school_lessons SET ${fields.join(', ')} WHERE id = ?`, ...values);
-      return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // DELETE /api/school/lessons/:id
-  router.delete('/school/lessons/:id', async (req, res) => {
-    try {
-      // Same gap as PATCH above: any authenticated user could delete any lesson.
-      if (!(await assertOwned(db, req as OwnedRequest, res, {
-        table: 'school_lessons', ownerColumn: 'created_by', id: req.params.id,
-        notFoundMessage: 'Lesson not found',
-      }))) return;
-      await db.run('DELETE FROM school_lessons WHERE id = ?', req.params.id);
-      res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/lessons/:id/progress — track student progress through lesson
-  router.post('/school/lessons/:id/progress', async (req, res) => {
-    try {
-      const body = req.body as { completed_block?: string; status?: string; score?: number; time_spent_seconds?: number };
-      // The student id came from the REQUEST BODY (`body.student_user_id || 'default'`),
-      // so any user could write scores and completion against any pupil — or into a
-      // shared 'default' bucket that belongs to nobody. A progress record is a claim
-      // about who did the work; it can only come from the authenticated caller.
-      const studentId = req.user?.id;
-      if (!studentId) return res.status(401).json({ error: 'Unauthorised' });
-      const existing = await db.get('SELECT * FROM school_lesson_progress WHERE lesson_id = ? AND student_user_id = ?', req.params.id, studentId) as Record<string, unknown> | undefined;
-      const completed = existing ? JSON.parse((existing.completed_blocks as string) || '[]') : [];
-      if (body.completed_block && !completed.includes(body.completed_block)) completed.push(body.completed_block);
-      const id = existing ? (existing.id as string) : `lp_${Date.now()}`;
-      const status = body.status || (existing?.status as string) || 'in_progress';
-      await db.run(`INSERT INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, completed_blocks = EXCLUDED.completed_blocks, score = EXCLUDED.score, time_spent_seconds = EXCLUDED.time_spent_seconds, completed_at = EXCLUDED.completed_at`, 
-        id, req.params.id, studentId, status, JSON.stringify(completed),
-        body.score ?? (existing?.score as number ?? null),
-        (body.time_spent_seconds ?? 0) + ((existing?.time_spent_seconds as number) ?? 0),
-        existing?.started_at || new Date().toISOString(),
-        status === 'completed' ? new Date().toISOString() : (existing?.completed_at || null)
-      );
-      res.json({ ok: true, completed_blocks: completed, status });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/lessons/generate — AI generates a lesson
-  router.post('/school/lessons/generate', async (req, res) => {
-    try {
-      if (!isApiKeyConfigured()) return res.status(503).json({ error: 'Anthropic client not available' });
-      const { subject_id, topic, tier, learning_objectives } = req.body as { subject_id: string; topic: string; tier?: string; learning_objectives?: string[] };
-
-      setSSEHeaders(res);
-
-      const chatResult = await streamChat({
-        model: mapModelToProvider('claude-sonnet-4-6'),
-        system: 'You are a helpful lesson generator. Return ONLY valid JSON.',
-        messages: [{
-          role: 'user',
-          content: `Generate a structured lesson on "${topic}" for ${subject_id} (tier: ${tier || 'T2'}).
-${learning_objectives?.length ? `Learning objectives: ${learning_objectives.join(', ')}` : ''}
-
-Return a JSON lesson structure with content_blocks array. Each block has type and content:
-- type "text": {content: "markdown text"}
-- type "exercise": {content: "exercise instructions", solution: "solution hint"}
-- type "quiz": {question: "...", options: ["A","B","C","D"], correct: 0, explanation: "..."}
-- type "video": {provider: "youtube", search_query: "search terms to find relevant video", title: "suggested title"}
-- type "key_concepts": {concepts: [{term: "...", definition: "..."}]}
-
-Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief description", "estimated_minutes": 30, "bloom_level": "understand|apply|analyze", "content_blocks": [...]}`
-        }],
-        maxTokens: 2000,
-      }, res);
-
-      const fullText = chatResult.text;
-
-      // Try to save the generated lesson
-      try {
-        const parsed = JSON.parse(fullText.replace(/```json\n?|\n?```/g, '').trim()) as Record<string, unknown>;
-        const id = `lesson_${Date.now()}_gen`;
-        await db.run(`INSERT INTO school_lessons (id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier) VALUES (?,?,?,?,?,?,?,?)`, 
-          id, subject_id, parsed.title || topic, parsed.description || null,
-          JSON.stringify(parsed.content_blocks || []),
-          parsed.estimated_minutes || 30, parsed.bloom_level || 'understand', tier || 'T2'
-        );
-        res.write(`data: ${JSON.stringify({ type: 'lesson_id', content: id })}\n\n`);
-      } catch {}
-
-      res.write('data: [DONE]\n\n');
-      res.end();
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
 
   // Teacher Oversight was REMOVED (2026-07-28), deliberately and not as cleanup.
   //

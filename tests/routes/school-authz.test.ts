@@ -50,36 +50,36 @@ describe('the guard that could never fail', () => {
   });
 });
 
-describe('lesson content cannot be rewritten by anyone who asks', () => {
-  it('PATCH is owner-gated', () => {
-    // Previously read req.user not at all: any pupil could rewrite content_blocks —
-    // i.e. inject arbitrary material into what children are taught.
-    const body = routeBody(SCHOOL, "router.patch('/school/lessons/:id'");
-    expect(body).toContain('assertOwned');
-    expect(body).toContain("table: 'school_lessons'");
-    expect(body).toContain("ownerColumn: 'created_by'");
+describe('the school_lessons lesson routes are gone, not merely guarded', () => {
+  /**
+   * These once asserted that PATCH / DELETE /school/lessons/:id and
+   * /school/lessons/:id/progress were owner-gated. They were — that guard was real and
+   * necessary while the routes existed.
+   *
+   * The whole school_lessons layer has since been removed (2026-07-29): it was a second
+   * lesson implementation, dead at both ends, with only its mutating routes reachable.
+   * teacher_lessons is canonical.
+   *
+   * The assertions are INVERTED rather than deleted. "This route is guarded" and "this
+   * route does not exist" are both meaningful; silently dropping the block would leave
+   * nothing to notice if someone reintroduced an unguarded copy.
+   */
+  it('no school_lessons route is registered any more', () => {
+    const code = SCHOOL.replace(/^\s*\/\/.*$/gm, '');
+    expect(code).not.toMatch(/router\.(patch|delete)\('\/school\/lessons\/:id'/);
+    expect(code).not.toMatch(/router\.post\('\/school\/lessons\/:id\/progress'/);
+    expect(code).not.toMatch(/FROM school_lessons|INTO school_lessons/);
   });
 
-  it('DELETE is owner-gated', () => {
-    const body = routeBody(SCHOOL, "router.delete('/school/lessons/:id'");
-    expect(body).toContain('assertOwned');
+  it('the canonical teacher_lessons routes survive', () => {
+    // The deletion must not have taken the working implementation with it.
+    expect(SCHOOL).toMatch(/FROM teacher_lessons/);
+    expect(SCHOOL).toMatch(/router\.get\('\/school\/lessons'/);
   });
 
-  it('both use the shared helper rather than a second ownership mechanism', () => {
-    expect(SCHOOL).toContain("from '../middleware/ownership.js'");
-  });
-});
-
-describe('progress records claim who did the work', () => {
-  it('takes the student id from the session, never the body', () => {
-    const body = routeBody(SCHOOL, "router.post('/school/lessons/:id/progress'");
-    expect(body).toContain('const studentId = req.user?.id');
-    expect(body).not.toContain('body.student_user_id');
-  });
-
-  it('no longer falls back to a shared "default" bucket', () => {
-    const body = routeBody(SCHOOL, "router.post('/school/lessons/:id/progress'");
-    expect(body).not.toMatch(/\|\|\s*'default'/);
+  it('the still-used curricula upload route survives', () => {
+    // Different route, called by TeacherClassConfigPage, deliberately kept.
+    expect(SCHOOL).toMatch(/router\.post\('\/school\/curricula\/upload'/);
   });
 });
 
