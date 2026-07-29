@@ -24,7 +24,7 @@
  */
 
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
-import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
+import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 const DEFAULT_LOCAL_CONTEXT = 32_768;

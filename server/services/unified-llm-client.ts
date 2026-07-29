@@ -18,7 +18,7 @@ import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, 
 import * as claudeClient from './claude-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
-import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
+import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
 // ── Configuration ──────────────────────────────────────────────

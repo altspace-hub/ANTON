@@ -33,7 +33,7 @@ import { streamOllama, callOllama } from './adapters/ollamaAdapter.js';
 import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
-import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
+import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
 import { MODEL_CAPABILITIES, getThinkingConfig } from '../config/model-capabilities.js';
 import { getEffectiveDefaultModel } from './default-model-store.js';
 import { resolveOllamaNumCtx } from './context-budget.js';
