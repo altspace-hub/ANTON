@@ -28,7 +28,7 @@ import type { DatabaseAdapter } from '../../db/database.js';
 
 import { verifyDescriptor, type SignedDescriptorEnvelope } from '../capability-descriptor/signer.ts';
 import { descriptorHash } from '../capability-descriptor/hash.ts';
-import { ANTON_GENERATOR } from '../anton-bundler.js';
+import { ANTON_GENERATOR } from '../anton-bundle-registry.js';
 
 // ── Manifest schema (Spec v0.2 §D.2) ────────────────────────────────────────
 
