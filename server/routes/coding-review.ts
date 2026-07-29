@@ -86,20 +86,10 @@ export async function createCodingReviewRoutes(db: DatabaseAdapter): Promise<Rou
     }
   });
 
-  // GET /api/coding/review/:id — Get review session
-  router.get('/coding/review/:id', async (req, res) => {
-    try {
-      const row = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', req.params.id);
-      if (!row) return res.status(404).json({ error: 'Review session not found' });
-
-      const session = parseReviewSession(row);
-      res.json(session);
-    } catch (error) {
-      console.error('[coding-review] Get error:', error);
-      res.status(500).json({ error: 'Failed to get review session' });
-    }
-  });
-
+  // Registered BEFORE '/coding/review/:id': Express matches in registration order, so the
+  // parameterised route would otherwise swallow this one (id='sessions') and
+  // return its "not found" error — which is what it did. See
+  // tests/routes/route-shadowing.test.ts.
   // GET /api/coding/review/sessions — List review sessions
   router.get('/coding/review/sessions', async (req, res) => {
     try {
@@ -125,6 +115,21 @@ export async function createCodingReviewRoutes(db: DatabaseAdapter): Promise<Rou
       res.status(500).json({ error: 'Failed to list review sessions' });
     }
   });
+
+  // GET /api/coding/review/:id — Get review session
+  router.get('/coding/review/:id', async (req, res) => {
+    try {
+      const row = await db.get('SELECT * FROM code_review_sessions WHERE id = ?', req.params.id);
+      if (!row) return res.status(404).json({ error: 'Review session not found' });
+
+      const session = parseReviewSession(row);
+      res.json(session);
+    } catch (error) {
+      console.error('[coding-review] Get error:', error);
+      res.status(500).json({ error: 'Failed to get review session' });
+    }
+  });
+
 
   // POST /api/coding/review/diff — Diff-aware re-review
   router.post('/coding/review/diff', async (req, res) => {

@@ -70,6 +70,48 @@ export function createJobsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  // Registered BEFORE '/jobs/:id': Express matches in registration order, so the
+  // parameterised route would otherwise swallow this one (id='saved-searches') and
+  // return its "not found" error — which is what it did. See
+  // tests/routes/route-shadowing.test.ts.
+  // ── Saved searches ─────────────────────────────────────────────────────
+  router.get('/jobs/saved-searches', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const rows = await db.all(
+        `SELECT id, label, filter_json, created_at FROM job_saved_searches
+         WHERE user_id = ? ORDER BY created_at DESC`,
+        req.user!.id,
+      );
+      res.json({ searches: rows });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Registered BEFORE '/jobs/:id': Express matches in registration order, so the
+  // parameterised route would otherwise swallow this one (id='profile') and
+  // return its "not found" error — which is what it did. See
+  // tests/routes/route-shadowing.test.ts.
+  // ── Career profile CRUD ───────────────────────────────────────────────
+  router.get('/jobs/profile', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userRow = await db.get<{ career_profile_bundle_id: string | null }>(
+        `SELECT career_profile_bundle_id FROM users WHERE id = ?`, req.user!.id,
+      );
+      if (!userRow?.career_profile_bundle_id) {
+        res.json({ profile: null });
+        return;
+      }
+      const bundle = await db.get<{ payload: unknown }>(
+        `SELECT payload FROM anton_bundles WHERE id = ?`,
+        userRow.career_profile_bundle_id,
+      ).catch(() => null);
+      res.json({ profile: bundle?.payload ?? null });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── Job detail — published fields only ─────────────────────────────────
   router.get('/jobs/:id', async (req: Request, res: Response) => {
     try {
@@ -191,19 +233,6 @@ export function createJobsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  // ── Saved searches ─────────────────────────────────────────────────────
-  router.get('/jobs/saved-searches', requireAuth, async (req: Request, res: Response) => {
-    try {
-      const rows = await db.all(
-        `SELECT id, label, filter_json, created_at FROM job_saved_searches
-         WHERE user_id = ? ORDER BY created_at DESC`,
-        req.user!.id,
-      );
-      res.json({ searches: rows });
-    } catch (err) {
-      res.status(500).json({ error: safeError(err) });
-    }
-  });
 
   router.post('/jobs/saved-searches', requireAuth, async (req: Request, res: Response) => {
     try {
@@ -232,25 +261,6 @@ export function createJobsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  // ── Career profile CRUD ───────────────────────────────────────────────
-  router.get('/jobs/profile', requireAuth, async (req: Request, res: Response) => {
-    try {
-      const userRow = await db.get<{ career_profile_bundle_id: string | null }>(
-        `SELECT career_profile_bundle_id FROM users WHERE id = ?`, req.user!.id,
-      );
-      if (!userRow?.career_profile_bundle_id) {
-        res.json({ profile: null });
-        return;
-      }
-      const bundle = await db.get<{ payload: unknown }>(
-        `SELECT payload FROM anton_bundles WHERE id = ?`,
-        userRow.career_profile_bundle_id,
-      ).catch(() => null);
-      res.json({ profile: bundle?.payload ?? null });
-    } catch (err) {
-      res.status(500).json({ error: safeError(err) });
-    }
-  });
 
   router.post('/jobs/profile/import', requireAuth, async (req: Request, res: Response) => {
     try {
