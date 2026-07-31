@@ -50,6 +50,7 @@
   <a class="lnk" href="status.html">Build status</a>
   <a class="lnk" href="glossary.html">Glossary</a>
   <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+  <a class="lnk" href="privacy.html">Privacy policy</a>
 </nav>
 
 <!-- ===================== CONTENT ===================== -->
@@ -113,7 +114,7 @@
         <p>The customer scans, the URI is decoded and validated, and a review screen
         appears.</p></div>
       <div class="feature"><div class="ic">⛓</div><h4>Settled bilaterally</h4>
-        <p>The actual on-chain transfer happens off-app, merchant ↔ Safello. The apps
+        <p>The actual on-chain transfer happens off-app, merchant ↔ exchange partner. The apps
         keep local records.</p></div>
     </div>
 
@@ -141,7 +142,7 @@
       page names which is which — and so does <a href="status.html">Build status</a>.</li>
       <li><strong>Settlement is not the apps' job.</strong> The apps agree on the
       payment and record it. Moving the money is bilateral between the merchant and
-      Safello, off-app. The apps are honest ledgers, not a clearing house.</li>
+      an exchange partner, off-app. The apps are honest ledgers, not a clearing house.</li>
     </ul>
 
     <div class="callout callout--warn">
@@ -280,7 +281,7 @@
         │                                                  │
         ▼                                                  │
    settlement is bilateral, off-app  ◀──────────────────────┘
-   merchant ↔ Safello blockchain node
+   merchant ↔ exchange partner blockchain node
 </pre>
     </div>
 
@@ -310,7 +311,7 @@
         <p>On confirm, Pay/Comm record the payment locally and assemble the PACS.008
         draft from the saved identity and the scanned creditor. Business records a
         matching <em>kvitto</em> in its gap-free ledger. Settlement then happens
-        bilaterally, off-app, between the merchant and Safello.</p></li>
+        bilaterally, off-app, between the merchant and an exchange partner.</p></li>
     </ol>
 
     <div class="callout callout--example">
@@ -347,7 +348,7 @@
         <h4>Settlement</h4>
         <p>The apps agree on the payment and record it — they do not move the money.
         Settlement is <strong>bilateral</strong>: the merchant settles directly with
-        <strong>Safello</strong>, which runs the blockchain node. The KYC model is
+        <strong>an exchange partner</strong>, which runs the blockchain node. The KYC model is
         merchant-side. Settlement integration is currently
         <span class="badge b-spec">SPEC</span> — the reference code is archived. The
         apps are designed to be honest local ledgers regardless of when settlement

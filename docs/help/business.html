@@ -50,6 +50,7 @@
   <a class="lnk" href="status.html">Build status</a>
   <a class="lnk" href="glossary.html">Glossary</a>
   <a class="lnk" href="faq.html">FAQ &amp; troubleshooting</a>
+  <a class="lnk" href="privacy.html">Privacy policy</a>
 </nav>
 
 <!-- ===================== CONTENT ===================== -->
@@ -124,7 +125,7 @@
       describe a sale precisely — amount, items, VAT, your merchant identity — pack
       that description into a QR, and write a receipt. The customer's app
       (<a href="pay.html">Pay</a> or <a href="comm.html">Comm</a>) reads the code; the
-      actual money moves bilaterally between you and Safello, off-app. Business is the
+      actual money moves bilaterally between you and your exchange partner, off-app. Business is the
       <em>counter</em>, not the till.</p>
     </div>
 
@@ -132,7 +133,7 @@
     <ul>
       <li><strong>You create codes; you don't collect payments.</strong> The QR is a
       request. Settlement happens on the FutureChain rail between the merchant and
-      Safello — the app's job ends when the code is shown and the receipt is written.</li>
+      an exchange partner — the app's job ends when the code is shown and the receipt is written.</li>
       <li><strong>The QR is a contract, and you write it.</strong> Everything the
       customer sees on their Review screen — amount, your business name, the purpose,
       the expiry — comes from the code <em>you</em> generated. Getting the cart and the
@@ -167,7 +168,7 @@
             registration. This drives how VAT appears on receipts and in Extended-mode
             carts.</p></li>
           <li><span class="st">Confirm the receive address</span>
-            <p>The Safello-arranged FutureChain receive address that customer payments
+            <p>The exchange-arranged FutureChain receive address that customer payments
             settle to. Every QR carries it as the <code>to</code> field.</p></li>
           <li><span class="st">You're open for business</span>
             <p>The Home screen offers the two sale modes. Settings — ported from
@@ -318,8 +319,8 @@
       <div class="ct"><span class="em">⚠</span>Settlement is bilateral, off-app</div>
       <p>"Mark as paid" records that the customer confirmed on their side — it does not
       mean the app moved money. Actual settlement is bilateral between the merchant and
-      Safello on the FutureChain rail. For low-value, in-person sales this is fine; for
-      a large or remote sale, confirm the funds have arrived through your Safello
+      an exchange partner on the FutureChain rail. For low-value, in-person sales this is fine; for
+      a large or remote sale, confirm the funds have arrived through your exchange
       arrangement before handing over goods. See <a href="payments-flow.html">The
       payment flow</a>.</p>
     </div>
@@ -333,7 +334,7 @@
 
     <table>
       <tr><th>Field</th><th>What it carries</th></tr>
-      <tr><td><code>to</code></td><td>The merchant's Safello-arranged FutureChain receive address.</td></tr>
+      <tr><td><code>to</code></td><td>The merchant's exchange-arranged FutureChain receive address.</td></tr>
       <tr><td><code>amount</code></td><td>The total in <strong>micro-FTC</strong> (1 FTC = 1,000,000 micro-FTC).</td></tr>
       <tr><td><code>ref</code></td><td>The ADR-004 <strong>v1</strong> reference — an 8-char merchant id, a 12-char order id, the purpose, and optional item count / VAT / discount.</td></tr>
       <tr><td><code>cn/cc/cct/cst/cpc</code></td><td>The ISO 20022 <strong>creditor party</strong> — your business name, country, city, street and postcode.</td></tr>
@@ -427,7 +428,7 @@
           <li>Enter your legal details exactly at onboarding — they become the QR's creditor party.</li>
           <li>Use Extended mode whenever a sale needs an itemised, VAT-correct receipt.</li>
           <li>Export the kvitto ledger to PDF or JSON regularly, and store it off the phone.</li>
-          <li>For a large or remote sale, confirm Safello settlement before releasing goods.</li>
+          <li>For a large or remote sale, confirm exchange settlement before releasing goods.</li>
           <li>Show the customer a fresh code if the 15-minute countdown has run low.</li>
         </ul>
       </div>
