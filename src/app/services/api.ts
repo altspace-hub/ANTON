@@ -26,18 +26,124 @@ function getApiBase(): string {
   return '/api/app';
 }
 
-const SESSION_KEY = 'anton-companion-session';
+/**
+ * ── Session token: in memory, never in plaintext localStorage ────────────────
+ *
+ * This used to live in `localStorage['anton-companion-session']`, a deliberate
+ * synchronous mirror so `getSessionToken()` could stay sync. CodeQL flagged it
+ * (4 high-severity clear-text-storage alerts) and it was right to: the token is
+ * a live credential, and anything able to read the origin's localStorage —
+ * devtools on a shared machine, a profile-sync or backup extension, a copied
+ * browser profile — could lift it verbatim.
+ *
+ * The token now lives in a module variable, hydrated once per app run from the
+ * secure store (which on a browser is itself AES-GCM-wrapped under a
+ * non-extractable key). `getSessionToken()` stays SYNCHRONOUS, so not one of its
+ * ~10 call sites changes; the async work is absorbed by `ensureSession()`, which
+ * `clientFetch` awaits before every request.
+ *
+ * Why a fallback secure key exists: `WelcomePage`'s register-simple path calls
+ * `saveSessionToken()` before any instance record is created, so there is no
+ * `session:<id>` to persist under. Without SESSION_FALLBACK_KEY that flow would
+ * lose its token on the next reload and silently drop the user back to Welcome.
+ */
+const LEGACY_SESSION_KEY = 'anton-companion-session';
+const SESSION_FALLBACK_KEY = 'app-session-token';
 
-export function getSessionToken(): string | null {
-  return localStorage.getItem(SESSION_KEY);
+let sessionToken: string | null = null;
+let hydrating: Promise<void> | null = null;
+
+/**
+ * Load the token into memory if it is not already there. Idempotent, and safe to
+ * call concurrently — callers share the one in-flight promise.
+ */
+export function ensureSession(): Promise<void> {
+  if (sessionToken !== null) return Promise.resolve();
+  if (!hydrating) {
+    hydrating = (async () => {
+      // Migration: an already-paired device still has the plaintext mirror.
+      //
+      // PERSIST BEFORE DELETING. Adopting into memory and removing the mirror is
+      // a durable delete paired with a non-durable write: nothing re-persists on
+      // a plain launch (the only durable writers are addInstance and
+      // saveSessionToken, all of which are pair/register/switch actions). For any
+      // install where the mirror was the ONLY durable copy — pre-instances.ts
+      // pairings, and the register-simple path that saves a token without ever
+      // creating an instance record — the migration boot would be the last boot
+      // that token existed, dropping a still-registered user back to pairing.
+      //
+      // On write failure the mirror is deliberately LEFT IN PLACE and retried
+      // next boot: one more run with a plaintext copy is much cheaper than
+      // silently destroying the user's session.
+      try {
+        const legacy = localStorage.getItem(LEGACY_SESSION_KEY);
+        if (legacy) {
+          sessionToken = legacy;
+          const { getActiveInstanceId } = await import('./instances');
+          const { setSecure } = await import('./secure-store');
+          const activeId = getActiveInstanceId();
+          await setSecure(activeId ? `session:${activeId}` : SESSION_FALLBACK_KEY, legacy);
+          localStorage.removeItem(LEGACY_SESSION_KEY);
+          return;
+        }
+      } catch {
+        // Either storage is unavailable or the durable write failed. If we
+        // adopted a value it is live for this run; the mirror stays for the next.
+        if (sessionToken) return;
+      }
+
+      const { getActiveInstanceId, getInstanceSessionToken } = await import('./instances');
+      const activeId = getActiveInstanceId();
+      if (activeId) {
+        const tok = await getInstanceSessionToken(activeId);
+        if (tok) { sessionToken = tok; return; }
+      }
+      const { getSecure } = await import('./secure-store');
+      sessionToken = await getSecure(SESSION_FALLBACK_KEY);
+    })()
+      .catch(() => { /* leave null; the caller's auth simply fails as before */ })
+      .finally(() => { hydrating = null; });
+  }
+  return hydrating;
 }
 
+export function getSessionToken(): string | null {
+  return sessionToken;
+}
+
+/**
+ * Set the active session token. Synchronous for callers; the durable write is
+ * best-effort in the background so pairing UI is never blocked on storage.
+ */
 export function saveSessionToken(token: string): void {
-  localStorage.setItem(SESSION_KEY, token);
+  sessionToken = token;
+  void (async () => {
+    try {
+      const { getActiveInstanceId } = await import('./instances');
+      const { setSecure } = await import('./secure-store');
+      // Prefer the per-instance key so a multi-instance switch picks the right
+      // token; fall back for the pre-instance register-simple flow.
+      const activeId = getActiveInstanceId();
+      await setSecure(activeId ? `session:${activeId}` : SESSION_FALLBACK_KEY, token);
+    } catch { /* in-memory token still works for this run */ }
+  })();
 }
 
 export function clearSession(): void {
-  localStorage.removeItem(SESSION_KEY);
+  sessionToken = null;
+  try { localStorage.removeItem(LEGACY_SESSION_KEY); } catch { /* ignore */ }
+  void (async () => {
+    try {
+      const { removeSecure } = await import('./secure-store');
+      await removeSecure(SESSION_FALLBACK_KEY);
+    } catch { /* ignore */ }
+  })();
+}
+
+/** Test seam: drop in-memory state so a suite can exercise hydration. */
+export function _resetSessionForTests(): void {
+  sessionToken = null;
+  hydrating = null;
 }
 
 /** Get auth headers for ANTON main API calls (uses JWT from main app if available) */
@@ -77,6 +183,10 @@ function headers(extra?: Record<string, string>): Record<string, string> {
  * `suffix` is the path AFTER `/api/app` (e.g. `/register`, `/org/abc/profile`).
  */
 export async function clientFetch(suffix: string, init?: RequestInit): Promise<Response> {
+  // Absorbs the async hydration so every getSessionToken() caller can stay
+  // synchronous. Without this there is a window from app start until the token
+  // loads where requests would go out unauthenticated.
+  await ensureSession();
   // Lazy import to avoid an import cycle: transports/index.ts imports
   // instances.ts, which is what we re-export from. Keeping the import
   // dynamic decouples the module load order.
@@ -111,8 +221,24 @@ export async function clientFetch(suffix: string, init?: RequestInit): Promise<R
   }
 
   // Legacy / public_https path: build the full URL and use native fetch.
+  //
+  // The token is (re)attached HERE rather than trusted from `init`. Callers build
+  // their headers with the synchronous `headers()` / `fetchWithAuth()`, which may
+  // run BEFORE hydration completes on a cold start — at which point
+  // getSessionToken() is still null and the header would be silently missing.
+  // Re-reading after `ensureSession()` above closes that window. An
+  // already-present header is left alone so an explicit override still wins.
   const base = getApiBase();
-  return fetch(`${base}${suffix}`, init);
+  const nativeHeaders: Record<string, string> = {};
+  const given = init?.headers;
+  if (given) {
+    if (given instanceof Headers) given.forEach((v, k) => { nativeHeaders[k] = v; });
+    else if (Array.isArray(given)) for (const [k, v] of given) nativeHeaders[k] = v;
+    else for (const [k, v] of Object.entries(given)) nativeHeaders[k] = String(v);
+  }
+  const tok = getSessionToken();
+  if (tok && !nativeHeaders['x-app-session']) nativeHeaders['x-app-session'] = tok;
+  return fetch(`${base}${suffix}`, { ...init, headers: nativeHeaders });
 }
 
 /**

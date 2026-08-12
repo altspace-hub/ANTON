@@ -48,6 +48,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"server/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"server/**/*.ts\"",
     "test": "vitest run",
+    "test:manual": "vitest run -c vitest.manual.config.ts",
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",

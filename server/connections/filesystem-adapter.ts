@@ -2,6 +2,21 @@
  * filesystem-adapter.ts
  * Safe file system access through registered filesystem connections.
  * Enforces base_path boundary, allowed extensions, and size limits.
+ *
+ * ⚠ NOT WIRED. Nothing in the repository imports this module — verified by grepping for
+ * the path and for every exported symbol (listFiles / readFile / writeFile). Its two
+ * sibling files, api-adapter.ts and database-adapter.ts, were deleted for the same
+ * reason once their checks had been moved somewhere that runs.
+ *
+ * What survived: the allowed_extensions and max_file_size_mb limits now live in
+ * services/connection-guard.ts (isFileReadable) and are applied by the workflow
+ * `file_read` step, which is the only live filesystem-connection reader.
+ *
+ * What is still only here: resolveSafePath's traversal guard, and writeFile's
+ * permissions check. Neither is a gap today because nothing offers sub-path reads or
+ * writes through a filesystem connection — but if you build that surface, route it
+ * through these functions (or through connection-guard) rather than re-implementing the
+ * checks in the route, which is exactly how the adapters became dead in the first place.
  */
 
 import path from 'path';

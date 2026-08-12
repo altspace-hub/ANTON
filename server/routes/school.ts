@@ -41,6 +41,9 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
+import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { screenStudentMessage, helplinesFor, SUPPORT_GUIDANCE } from '../services/school-safety.js';
+import { aiScreenStudentMessage } from '../services/school-safety-ai.js';
 
 import type { Response } from 'express';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
@@ -560,6 +563,185 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
 
   const router = Router();
 
+  /**
+   * Safety screen for every pupil-facing LLM route.
+   *
+   * Runs on the pupil's own words before any model call. Three outcomes, and the middle
+   * one is the point of the whole thing:
+   *
+   *   block   — an instrumental request for harm ("how do I make a bomb"). Refused
+   *             kindly, no model call, no cost.
+   *   support — a disclosure of distress ("I want to hurt myself"). NOT refused. The
+   *             conversation continues with a care directive that outranks every other
+   *             prompt layer, and real help is attached to the response. Turning a child
+   *             away at the moment they reached out is the worst response available, so
+   *             the screen never does it.
+   *   allow   — everything else, untouched. Matching is deliberately narrow: a pupil
+   *             studying Macbeth types "kill" and must not be flagged for coursework.
+   *
+   * Returns null when the request was blocked (the response has already been sent), and
+   * the system prompt to use otherwise — unchanged for 'allow', care-directive-prefixed
+   * for 'support'.
+   */
+  async function applySafetyScreen(
+    req: Parameters<Parameters<typeof router.post>[1]>[0],
+    res: Response,
+    opts: { userMessage: string; systemPrompt: string; userId: string; sessionId?: string | null; classId?: string | null },
+  ): Promise<string | null> {
+    const verdict = screenStudentMessage(opts.userMessage);
+
+    // Layer 2 runs ONLY when layer 1 found nothing, and can only escalate 'allow' to
+    // 'support'. It is never asked to reconsider a layer-1 hit, so a pupil cannot talk
+    // the system out of a deterministic match, and a classifier outage degrades to
+    // exactly the protection that existed before it. See services/school-safety-ai.ts.
+    if (verdict.disposition === 'allow') {
+      const ai = await aiScreenStudentMessage(db, opts.userMessage);
+      if (!ai.concern) return opts.systemPrompt;
+      verdict.disposition = 'support';
+      verdict.category = ai.concern;
+      verdict.rule = 'ai-screen';
+      verdict.guidance = SUPPORT_GUIDANCE;
+    }
+
+    // Category and rule only — never the child's words. See migration 255 for why.
+    await db.run(
+      `INSERT INTO school_safety_events (id, student_user_id, session_id, class_id, disposition, category, rule_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      crypto.randomUUID(), opts.userId, opts.sessionId ?? null, opts.classId ?? null,
+      verdict.disposition, verdict.category, verdict.rule,
+    ).catch((e) => console.warn('[school/safety] audit write failed (non-fatal):', e));
+
+    if (verdict.disposition === 'block') {
+      res.status(200).json({ blocked: true, notice: verdict.studentNotice });
+      return null;
+    }
+
+    const profileRow = await db.get<{ jurisdiction: string | null }>(
+      'SELECT jurisdiction FROM user_profiles WHERE id = ?', 'default',
+    ).catch(() => null);
+    res.setHeader('X-Anton-Safety', 'support');
+    res.setHeader('X-Anton-Safety-Help', JSON.stringify(helplinesFor(profileRow?.jurisdiction)));
+    // PREPENDED, not appended: buildSchoolPrompt puts T1 Child Mode first under its own
+    // "ALWAYS follow these rules" framing, and a care directive arriving after it would
+    // be competing with an instruction to add emoji and stay relentlessly upbeat.
+    return `${verdict.guidance}
+
+${opts.systemPrompt}`;
+  }
+
+  // ── Safety inbox ──────────────────────────────────────────────────────
+  //
+  // Reads school_safety_events, which the LLM screen writes. Built deliberately
+  // differently from the Teacher Oversight page that was removed in #32:
+  //
+  //   - the table exists, and something actually WRITES to it (services/school-safety.ts);
+  //   - the query is scoped to pupils the caller teaches, not "any authenticated user";
+  //   - a failure returns an error, and the page shows it. Oversight wrapped its query in
+  //     `catch { return [] }` and had no error state, so a teacher saw "no flags" whether
+  //     that meant no incidents or a table that did not exist. A safety view that can only
+  //     ever look clean is worse than none.
+  //
+  // Category and rule only — the child's words were never stored. See migration 255.
+
+  /**
+   * Events for pupils this caller teaches.
+   *
+   * class_id is nullable: a pupil can chat outside a class, and those events matter most.
+   * So membership is resolved through ENROLMENT as well — an event counts if its class is
+   * one of yours, or if the pupil is enrolled in any class of yours. Scoping on class_id
+   * alone would silently hide exactly the conversations that happen off-lesson.
+   */
+  router.get('/school/safety/events', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+
+      const role = req.user?.school_role;
+      const isAdmin = role === 'school_admin';
+      if (!isAdmin && role !== 'teacher') {
+        // A pupil must not read the safety log — including their own. It is an adult's
+        // working record, and showing a child that their disclosure was categorised and
+        // filed is its own harm.
+        return res.status(403).json({ error: 'Teachers only' });
+      }
+
+      const includeAcknowledged = String(req.query.all ?? '') === '1';
+      const params: unknown[] = [];
+      let scope = '';
+      if (!isAdmin) {
+        scope = `AND (
+             e.class_id IN (SELECT id FROM school_classes WHERE teacher_user_id = ?)
+          OR e.student_user_id IN (
+               SELECT en.student_user_id FROM class_enrollments en
+                 JOIN school_classes c ON c.id = en.class_id
+                WHERE c.teacher_user_id = ?)
+        )`;
+        params.push(userId, userId);
+      }
+
+      const rows = await db.all(
+        `SELECT e.id, e.student_user_id, e.class_id, e.disposition, e.category,
+                e.created_at, e.acknowledged_at, e.acknowledged_by,
+                COALESCE(u.display_name, u.username) AS student_name,
+                c.name AS class_name
+           FROM school_safety_events e
+           LEFT JOIN users u ON u.id = e.student_user_id
+           LEFT JOIN school_classes c ON c.id = e.class_id
+          WHERE 1=1 ${scope} ${includeAcknowledged ? '' : 'AND e.acknowledged_at IS NULL'}
+          ORDER BY e.created_at DESC
+          LIMIT 200`,
+        ...params,
+      );
+
+      // rule_name is deliberately NOT returned. It is an implementation detail of the
+      // matcher; a teacher needs the category and the pupil, not the regex that fired.
+      res.json({ events: rows });
+    } catch (err) {
+      console.error('[school/safety/events]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  /** Mark an event as seen. Ownership is re-checked — the list scope is not a token. */
+  router.post('/school/safety/events/:id/acknowledge', async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorised' });
+      const role = req.user?.school_role;
+      const isAdmin = role === 'school_admin';
+      if (!isAdmin && role !== 'teacher') return res.status(403).json({ error: 'Teachers only' });
+
+      const params: unknown[] = [req.params.id];
+      let scope = '';
+      if (!isAdmin) {
+        scope = `AND (
+             e.class_id IN (SELECT id FROM school_classes WHERE teacher_user_id = ?)
+          OR e.student_user_id IN (
+               SELECT en.student_user_id FROM class_enrollments en
+                 JOIN school_classes c ON c.id = en.class_id
+                WHERE c.teacher_user_id = ?)
+        )`;
+        params.push(userId, userId);
+      }
+
+      const owned = await db.get(
+        `SELECT 1 AS ok FROM school_safety_events e WHERE e.id = ? ${scope}`, ...params,
+      );
+      // 404 not 403 — a 403 would confirm the event exists and tell a stranger that a
+      // named pupil has a safety record.
+      if (!owned) return res.status(404).json({ error: 'Not found' });
+
+      await db.run(
+        `UPDATE school_safety_events SET acknowledged_at = NOW(), acknowledged_by = ? WHERE id = ?`,
+        userId, req.params.id,
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[school/safety/acknowledge]', err);
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── POST /api/school/chat ──────────────────────────────────────────────
   router.post('/school/chat', async (req, res) => {
     try {
@@ -615,7 +797,18 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
         { growthStage: profile?.stage, senMode: profile?.sen_mode, explanationStyle: profile?.explanation_style, gymnasietProgram: profile?.gymnasiet_program ?? undefined, universityProgram: profile?.university_program ?? undefined }
       );
 
-      const systemPrompt = await buildSchoolPrompt(promptConfig);
+      let systemPrompt = await buildSchoolPrompt(promptConfig);
+      {
+        const screened = await applySafetyScreen(req, res, {
+          userMessage: lastUserMsg,
+          systemPrompt,
+          userId,
+          sessionId: sessionId as string ?? null,
+          classId: classId as string ?? null,
+        });
+        if (screened === null) return;   // blocked; response already sent
+        systemPrompt = screened;
+      }
 
       const apiMessages = (Array.isArray(messages) ? messages : []).map(
         (m: Record<string, unknown>) => ({
@@ -631,12 +824,24 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
       const onComplete = async (data: { text: string; outputTokens: number }) => {
         try {
           if (sessionId) {
-            await db.run(
-              `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
-               VALUES (?, ?, 'assistant', ?, ?, ?)`
-            , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
-            await db.run('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?',
-              new Date().toISOString(), sessionId as string, userId);
+            // Ownership is checked BEFORE the insert. The sessionId arrives in the
+            // request body, and this INSERT trusted it — while the UPDATE immediately
+            // below already scoped by user_id, which is what makes the omission plain.
+            // An attacker could plant arbitrary AI-attributed text into another child's
+            // transcript: the message is stored with role 'assistant', so it reads to
+            // the pupil, a teacher or a guardian as something ANTON said.
+            const owned = await db.get(
+              'SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?',
+              sessionId as string, userId,
+            );
+            if (owned) {
+              await db.run(
+                `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
+                 VALUES (?, ?, 'assistant', ?, ?, ?)`
+              , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+              await db.run('UPDATE sessions SET updated_at = ? WHERE id = ? AND user_id = ?',
+                new Date().toISOString(), sessionId as string, userId);
+            }
           }
           await updateGrowthProfile(db, userId);
           if (resolvedClassId) await updateStudentProgress(db, userId, resolvedClassId, resolvedSubjectId, resolvedTaskType);
@@ -701,7 +906,18 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
         classRow
       );
 
-      const systemPrompt = await buildSchoolPrompt(promptConfig);
+      let systemPrompt = await buildSchoolPrompt(promptConfig);
+      {
+        const screened = await applySafetyScreen(req, res, {
+          userMessage: String(stuckPoint ?? ''),
+          systemPrompt,
+          userId,
+          sessionId: sessionId as string ?? null,
+          classId: classId as string ?? null,
+        });
+        if (screened === null) return;   // blocked; response already sent
+        systemPrompt = screened;
+      }
 
       const messages = [
         ...(Array.isArray(priorMessages) ? priorMessages : []).map(
@@ -740,10 +956,19 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
               await db.run('UPDATE laxhjalp_sessions SET resolved = 1, status = ?, updated_at = ? WHERE id = ?',
                 'resolved', new Date().toISOString(), laxhjalpId);
               if (sessionId) {
-                await db.run(
-                  `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
-                   VALUES (?, ?, 'assistant', ?, ?, ?)`
-                , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+                // Same body-supplied sessionId, same check as /school/chat above: an
+                // assistant-attributed message must not land in a session the caller
+                // does not own.
+                const owned = await db.get(
+                  'SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?',
+                  sessionId as string, userId,
+                );
+                if (owned) {
+                  await db.run(
+                    `INSERT INTO messages (id, session_id, role, content, token_count, created_at)
+                     VALUES (?, ?, 'assistant', ?, ?, ?)`
+                  , crypto.randomUUID(), sessionId as string, data.text, data.outputTokens, new Date().toISOString());
+                }
               }
             } catch (e) {
               console.warn('[school/laxhjalp] onComplete error (non-fatal):', e);
@@ -779,9 +1004,9 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
       let objectivesText = '';
       if (assignmentId) {
         try {
-          const assignment = await db.get('SELECT title, instructions FROM teacher_assignments WHERE id = ?', assignmentId) as { title: string; instructions: string } | null;
+          const assignment = await db.get('SELECT title, description FROM teacher_assignments WHERE id = ?', assignmentId) as { title: string; description: string } | null;
           if (assignment) {
-            objectivesText = `\nExamination: "${assignment.title}"\nLearning objectives to assess:\n${assignment.instructions}`;
+            objectivesText = `\nExamination: "${assignment.title}"\nLearning objectives to assess:\n${assignment.description ?? ''}`;
           }
         } catch { /* non-fatal */ }
       }
@@ -821,9 +1046,9 @@ Begin by briefly introducing yourself and asking your first question.`;
         conversation: { role: string; content: string }[];
       };
 
-      const assignment = await db.get('SELECT title, instructions FROM teacher_assignments WHERE id = ?', req.params.id) as { title: string; instructions: string } | null;
+      const assignment = await db.get('SELECT title, description FROM teacher_assignments WHERE id = ?', req.params.id) as { title: string; description: string } | null;
 
-      const objectives = assignment?.instructions ?? 'General subject knowledge and reasoning';
+      const objectives = assignment?.description ?? 'General subject knowledge and reasoning';
       const title = assignment?.title ?? 'Oral Examination';
 
       const evaluationPrompt = `Review this oral examination conversation and provide a structured evaluation.
@@ -920,7 +1145,7 @@ Provide a structured evaluation with these exact sections:
 
       const sessionsThisWeek = await db.get(
         `SELECT COUNT(*) AS cnt FROM laxhjalp_sessions
-         WHERE student_user_id = ? AND created_at >= DATE('now', '-7 days')`
+         WHERE student_user_id = ? AND created_at >= NOW() - INTERVAL '7 days'`
       , userId) as { cnt: number } | undefined;
 
       const xpTotal = growthProfile?.total_xp ?? 0;
@@ -995,6 +1220,16 @@ Provide a structured evaluation with these exact sections:
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
+      // Creating a class makes you its teacher_user_id, which is what every
+      // teacher-scoped query in this file keys off. With no role check any pupil could
+      // mint a class, hand out its join code, and hold the teacher role over whoever
+      // enrolled. Only meaningful now that school_role is actually populated (#33);
+      // before that this check would have locked everyone out.
+      const schoolRole = req.user?.school_role;
+      if (schoolRole !== 'teacher' && schoolRole !== 'school_admin') {
+        return res.status(403).json({ error: 'Only teachers can create classes' });
+      }
+
       const {
         name, subject = 'mathematics', educationTier = 'T2',
         curriculumId = 'lgr22', defaultAssistanceLevel = 'L2',
@@ -1040,7 +1275,7 @@ Provide a structured evaluation with these exact sections:
 
       const students = isTeacher
         ? await db.all(
-            `SELECT u.id, u.name, u.email, ce.enrolled_at
+            `SELECT u.id, COALESCE(u.display_name, u.username) AS name, u.email, ce.enrolled_at
              FROM class_enrollments ce
              JOIN users u ON u.id = ce.student_user_id
              WHERE ce.class_id = ?`
@@ -1119,6 +1354,19 @@ Provide a structured evaluation with these exact sections:
       , req.params.id) as { leaderboard_enabled: number } | null;
 
       if (!classRow) return res.status(404).json({ error: 'Class not found' });
+
+      // Membership was never checked — only that the class existed and had the
+      // leaderboard switched on. Any authenticated user could read any class id and get
+      // back every pupil's name and XP. Teacher-of-the-class or enrolled-student only.
+      const member = await db.get(
+        `SELECT 1 AS ok FROM school_classes c
+          WHERE c.id = ? AND (c.teacher_user_id = ?
+                OR EXISTS (SELECT 1 FROM class_enrollments e
+                            WHERE e.class_id = c.id AND e.student_user_id = ?))`,
+        req.params.id, userId, userId,
+      );
+      if (!member) return res.status(404).json({ error: 'Class not found' });
+
       if (!classRow.leaderboard_enabled) return res.json({ enabled: false, entries: [] });
 
       const rows = await db.all(
@@ -1472,7 +1720,7 @@ Provide a structured evaluation with these exact sections:
         const params: unknown[] = [userId];
         if (assignmentId) params.push(assignmentId);
         const submissions = await db.all(
-          `SELECT asub.*, ta.title AS assignment_title, u.name AS student_name, u.email AS student_email
+          `SELECT asub.*, ta.title AS assignment_title, COALESCE(u.display_name, u.username) AS student_name, u.email AS student_email
            FROM assignment_submissions asub
            JOIN teacher_assignments ta ON ta.id = asub.assignment_id
            JOIN school_classes sc ON sc.id = ta.class_id
@@ -1518,7 +1766,7 @@ Provide a structured evaluation with these exact sections:
 
       const submission = await db.get(
         `SELECT asub.*, ta.title AS assignment_title, ta.questions, ta.total_marks,
-           sc.name AS class_name, sc.teacher_user_id, u.name AS student_name
+           sc.name AS class_name, sc.teacher_user_id, COALESCE(u.display_name, u.username) AS student_name
          FROM assignment_submissions asub
          JOIN teacher_assignments ta ON ta.id = asub.assignment_id
          JOIN school_classes sc ON sc.id = ta.class_id
@@ -1745,7 +1993,7 @@ Format with clear markdown headers.`;
       if (!userId) return res.status(401).json({ error: 'Unauthorised' });
 
       const children = await db.all(
-        `SELECT u.id, u.name, u.email, gsl.created_at AS linked_at
+        `SELECT u.id, COALESCE(u.display_name, u.username) AS name, u.email, gsl.created_at AS linked_at
          FROM guardian_student_links gsl
          JOIN users u ON u.id = gsl.student_user_id
          WHERE gsl.guardian_user_id = ?`
@@ -2122,7 +2370,18 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
         additionalContext: `## Programming Language\nThe student is working in **${language}**. All code examples must use ${language}. Adapt your vocabulary and concepts to ${language} conventions.`,
       };
 
-      const systemPrompt = await buildSchoolPrompt(promptConfig);
+      let systemPrompt = await buildSchoolPrompt(promptConfig);
+      {
+        const screened = await applySafetyScreen(req, res, {
+          userMessage: String((Array.isArray(messages) && messages.length ? (messages[messages.length-1] as Record<string, unknown>)?.content : '') ?? ''),
+          systemPrompt,
+          userId,
+          sessionId: null,
+          classId: null,
+        });
+        if (screened === null) return;   // blocked; response already sent
+        systemPrompt = screened;
+      }
 
       const apiMessages = (Array.isArray(messages) ? messages : []).map(
         (m: Record<string, unknown>) => ({
@@ -2657,9 +2916,21 @@ Format as structured markdown with clear headers. Be practical and teacher-frien
     if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
     const { teacherLevelOverride, senOverride } = req.body as Record<string, string>;
 
-    // Verify teacher owns this class
-    const cls = await db.all(`SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`, req.params.classId, teacherId);
-    if (!cls) return res.status(403).json({ error: 'Forbidden' });
+    // Verify teacher owns this class.
+    //
+    // This was `db.all(...)` tested with `if (!cls)`. db.all returns an ARRAY, and an
+    // empty array is truthy — so the guard never fired and ANY authenticated user could
+    // set teacher_level_override and sen_override (a Special Educational Needs
+    // designation) on any pupil in any class. The check reads as present, which is why
+    // it survived: only the return type gives it away.
+    //
+    // 404 rather than 403, matching middleware/ownership.ts — a 403 confirms the class
+    // exists and turns ids into an enumeration oracle.
+    const cls = await db.get(
+      `SELECT id FROM school_classes WHERE id = ? AND teacher_user_id = ?`,
+      req.params.classId, teacherId,
+    );
+    if (!cls) return res.status(404).json({ error: 'Class not found' });
 
     // Columns added by mig 204 (teacher_level_override, sen_override).
     await db.run(`UPDATE student_class_enrollments SET teacher_level_override = ?, sen_override = ? WHERE class_id = ? AND student_user_id = ?`, teacherLevelOverride ?? null, senOverride ?? null, req.params.classId, req.params.studentId);
@@ -2989,6 +3260,14 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
          WHERE r.id = ?`
       , req.params.id) as Record<string, unknown> | undefined;
       if (!room) return res.status(404).json({ error: 'Room not found' });
+
+      // `SELECT r.*` returned join_code to anyone who knew a room id — including for
+      // private rooms — which hands out the credential the join endpoint accepts. The
+      // host keeps it (they need it to invite people); nobody else is given it back.
+      // Codes are generated with Math.random(), not a CSPRNG, so they are guessable
+      // enough that handing them out on request is the whole ballgame.
+      if (room.host_user_id !== req.user?.id) delete room.join_code;
+
       return res.json(room);
     } catch (err) {
       console.error('[school/study-rooms GET/:id]', err);
@@ -3029,331 +3308,49 @@ Write a complete personal statement draft of ${wordTarget}. After the draft, pro
     }
   });
 
-  // ── Lesson/Curriculum endpoints (School Enhancements) ────────────────────
+  // The school_lessons / school_curricula layer was REMOVED (2026-07-29).
+  //
+  // It was a second, parallel implementation of lessons, dead at BOTH ends:
+  //
+  //   - its GET/POST /school/lessons and GET /school/lessons/:id were registered AFTER
+  //     the teacher_lessons versions, and Express matches in registration order, so they
+  //     were never reached;
+  //   - the only page that called it, SchoolCurriculumPage, was itself unreachable —
+  //     App.tsx registered /school/curriculum twice and CurriculumRegistryPage won;
+  //   - SchoolLessonPage and SchoolLessonBuilderPage had unique routes, but the ONLY
+  //     navigation to them came from that unreachable page.
+  //
+  // Its PATCH / DELETE / progress routes WERE reachable, so the layer was half-alive —
+  // worse than either whole answer. Both tables held zero rows, so nothing was lost.
+  // teacher_lessons is canonical: it is what LessonBuilderPage and LessonLibraryPage use.
+  //
+  // /school/curricula/upload is a DIFFERENT route, still used by TeacherClassConfigPage,
+  // and deliberately kept.
 
-  // GET /api/school/curricula
-  router.get('/school/curricula', async (req, res) => {
-    try {
-      const { subject_id } = req.query;
-      let sql = 'SELECT * FROM school_curricula';
-      const params: unknown[] = [];
-      if (subject_id) { sql += ' WHERE subject_id = ?'; params.push(subject_id); }
-      sql += ' ORDER BY created_at DESC';
-      res.json(await db.run(sql, ...params));
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
 
-  // POST /api/school/curricula
-  router.post('/school/curricula', async (req, res) => {
-    try {
-      const body = req.body as Record<string, unknown>;
-      const id = `cur_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      await db.run(`INSERT INTO school_curricula (id, subject_id, title, description, tier, language, units, created_by) VALUES (?,?,?,?,?,?,?,?)`, 
-        id, body.subject_id || '', body.title || 'Untitled Curriculum', body.description || null,
-        body.tier || 'T2', body.language || 'en', JSON.stringify(body.units || []), body.created_by || 'teacher'
-      );
-      res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // GET /api/school/lessons
-  router.get('/school/lessons', async (req, res) => {
-    try {
-      const { subject_id, curriculum_id } = req.query;
-      let sql = 'SELECT * FROM school_lessons';
-      const params: unknown[] = [];
-      const conditions: string[] = [];
-      if (subject_id) { conditions.push('subject_id = ?'); params.push(subject_id); }
-      if (curriculum_id) { conditions.push('curriculum_id = ?'); params.push(curriculum_id); }
-      if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
-      sql += ' ORDER BY created_at DESC';
-      const rows = await db.all(sql, ...params) as Record<string, unknown>[];
-      res.json(rows.map(r => ({ ...r, content_blocks: JSON.parse((r.content_blocks as string) || '[]') })));
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // GET /api/school/lessons/:id
-  router.get('/school/lessons/:id', async (req, res) => {
-    try {
-      const row = await db.get('SELECT * FROM school_lessons WHERE id = ?', req.params.id) as Record<string, unknown> | undefined;
-      if (!row) return res.status(404).json({ error: 'Lesson not found' });
-      return res.json({ ...row, content_blocks: JSON.parse((row.content_blocks as string) || '[]') });
-    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/lessons
-  router.post('/school/lessons', async (req, res) => {
-    try {
-      const body = req.body as Record<string, unknown>;
-      const id = `lesson_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      await db.run(`INSERT INTO school_lessons (id, curriculum_id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier, published, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, 
-        id, body.curriculum_id || null, body.subject_id || '',
-        body.title || 'Untitled Lesson', body.description || null,
-        JSON.stringify(body.content_blocks || []),
-        body.estimated_minutes || 30, body.bloom_level || 'understand',
-        body.tier || 'T2', body.published ? 1 : 0, body.created_by || 'teacher'
-      );
-      res.json({ id, ok: true });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // PATCH /api/school/lessons/:id
-  router.patch('/school/lessons/:id', async (req, res) => {
-    try {
-      const body = req.body as Record<string, unknown>;
-      const fields: string[] = [];
-      const values: unknown[] = [];
-      if (body.title !== undefined) { fields.push('title = ?'); values.push(body.title); }
-      if (body.description !== undefined) { fields.push('description = ?'); values.push(body.description); }
-      if (body.content_blocks !== undefined) { fields.push('content_blocks = ?'); values.push(JSON.stringify(body.content_blocks)); }
-      if (body.estimated_minutes !== undefined) { fields.push('estimated_minutes = ?'); values.push(body.estimated_minutes); }
-      if (body.bloom_level !== undefined) { fields.push('bloom_level = ?'); values.push(body.bloom_level); }
-      if (body.published !== undefined) { fields.push('published = ?'); values.push(body.published ? 1 : 0); }
-      if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
-      values.push(req.params.id);
-      await db.run(`UPDATE school_lessons SET ${fields.join(', ')} WHERE id = ?`, ...values);
-      return res.json({ ok: true });
-    } catch (e) { return res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // DELETE /api/school/lessons/:id
-  router.delete('/school/lessons/:id', async (req, res) => {
-    try {
-      await db.run('DELETE FROM school_lessons WHERE id = ?', req.params.id);
-      res.json({ ok: true });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/lessons/:id/progress — track student progress through lesson
-  router.post('/school/lessons/:id/progress', async (req, res) => {
-    try {
-      const body = req.body as { student_user_id?: string; completed_block?: string; status?: string; score?: number; time_spent_seconds?: number };
-      const studentId = body.student_user_id || 'default';
-      const existing = await db.get('SELECT * FROM school_lesson_progress WHERE lesson_id = ? AND student_user_id = ?', req.params.id, studentId) as Record<string, unknown> | undefined;
-      const completed = existing ? JSON.parse((existing.completed_blocks as string) || '[]') : [];
-      if (body.completed_block && !completed.includes(body.completed_block)) completed.push(body.completed_block);
-      const id = existing ? (existing.id as string) : `lp_${Date.now()}`;
-      const status = body.status || (existing?.status as string) || 'in_progress';
-      await db.run(`INSERT INTO school_lesson_progress (id, lesson_id, student_user_id, status, completed_blocks, score, time_spent_seconds, started_at, completed_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, completed_blocks = EXCLUDED.completed_blocks, score = EXCLUDED.score, time_spent_seconds = EXCLUDED.time_spent_seconds, completed_at = EXCLUDED.completed_at`, 
-        id, req.params.id, studentId, status, JSON.stringify(completed),
-        body.score ?? (existing?.score as number ?? null),
-        (body.time_spent_seconds ?? 0) + ((existing?.time_spent_seconds as number) ?? 0),
-        existing?.started_at || new Date().toISOString(),
-        status === 'completed' ? new Date().toISOString() : (existing?.completed_at || null)
-      );
-      res.json({ ok: true, completed_blocks: completed, status });
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // POST /api/school/lessons/generate — AI generates a lesson
-  router.post('/school/lessons/generate', async (req, res) => {
-    try {
-      if (!isApiKeyConfigured()) return res.status(503).json({ error: 'Anthropic client not available' });
-      const { subject_id, topic, tier, learning_objectives } = req.body as { subject_id: string; topic: string; tier?: string; learning_objectives?: string[] };
-
-      setSSEHeaders(res);
-
-      const chatResult = await streamChat({
-        model: mapModelToProvider('claude-sonnet-4-6'),
-        system: 'You are a helpful lesson generator. Return ONLY valid JSON.',
-        messages: [{
-          role: 'user',
-          content: `Generate a structured lesson on "${topic}" for ${subject_id} (tier: ${tier || 'T2'}).
-${learning_objectives?.length ? `Learning objectives: ${learning_objectives.join(', ')}` : ''}
-
-Return a JSON lesson structure with content_blocks array. Each block has type and content:
-- type "text": {content: "markdown text"}
-- type "exercise": {content: "exercise instructions", solution: "solution hint"}
-- type "quiz": {question: "...", options: ["A","B","C","D"], correct: 0, explanation: "..."}
-- type "video": {provider: "youtube", search_query: "search terms to find relevant video", title: "suggested title"}
-- type "key_concepts": {concepts: [{term: "...", definition: "..."}]}
-
-Return ONLY valid JSON: {"title": "Lesson Title", "description": "Brief description", "estimated_minutes": 30, "bloom_level": "understand|apply|analyze", "content_blocks": [...]}`
-        }],
-        maxTokens: 2000,
-      }, res);
-
-      const fullText = chatResult.text;
-
-      // Try to save the generated lesson
-      try {
-        const parsed = JSON.parse(fullText.replace(/```json\n?|\n?```/g, '').trim()) as Record<string, unknown>;
-        const id = `lesson_${Date.now()}_gen`;
-        await db.run(`INSERT INTO school_lessons (id, subject_id, title, description, content_blocks, estimated_minutes, bloom_level, tier) VALUES (?,?,?,?,?,?,?,?)`, 
-          id, subject_id, parsed.title || topic, parsed.description || null,
-          JSON.stringify(parsed.content_blocks || []),
-          parsed.estimated_minutes || 30, parsed.bloom_level || 'understand', tier || 'T2'
-        );
-        res.write(`data: ${JSON.stringify({ type: 'lesson_id', content: id })}\n\n`);
-      } catch {}
-
-      res.write('data: [DONE]\n\n');
-      res.end();
-    } catch (e) { res.status(500).json({ error: safeError(e) }); }
-  });
-
-  // ── Teacher Oversight ─────────────────────────────────────────────────────
-
-  // GET /api/school/oversight/summary
-  // Returns aggregate stats for the teacher's classes
-  router.get('/school/oversight/summary', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { range = '7d' } = req.query as { range?: string };
-      const dayMap: Record<string, number> = { today: 1, '7d': 7, '30d': 30 };
-      const days = dayMap[range] ?? 7;
-      const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-      // Count students in teacher's classes
-      const classes = await db.all(
-        'SELECT id FROM school_classes WHERE teacher_user_id = ?'
-      , teacherId) as { id: string }[];
-      const classIds = classes.map(c => c.id);
-
-      let totalStudents = 0;
-      let activeToday = 0;
-      let totalSessions = 0;
-
-      if (classIds.length > 0) {
-        const placeholders = classIds.map(() => '?').join(',');
-        const students = await db.all(
-          `SELECT DISTINCT student_user_id FROM class_members WHERE class_id IN (${placeholders})`
-        , ...classIds) as { student_user_id: string }[];
-        totalStudents = students.length;
-
-        const studentIds = students.map(s => s.student_user_id);
-        if (studentIds.length > 0) {
-          const sPlaceholders = studentIds.map(() => '?').join(',');
-          const todaySince = new Date(Date.now() - 86_400_000).toISOString();
-          const activeTodayRows = await db.get(
-            `SELECT COUNT(DISTINCT user_id) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
-          , ...studentIds, todaySince) as { cnt: number };
-          activeToday = activeTodayRows.cnt ?? 0;
-
-          const sessionRows = await db.get(
-            `SELECT COUNT(*) as cnt FROM sessions WHERE user_id IN (${sPlaceholders}) AND created_at > ?`
-          , ...studentIds, since) as { cnt: number };
-          totalSessions = sessionRows.cnt ?? 0;
-        }
-      }
-
-      // Flags (oversight_flags table may not exist — handle gracefully)
-      let flagCount = 0;
-      let unresolvedFlags = 0;
-      try {
-        const flags = await db.get(
-          `SELECT COUNT(*) as total, SUM(CASE WHEN resolved = 0 THEN 1 ELSE 0 END) as unresolved
-           FROM oversight_flags WHERE teacher_id = ? AND created_at > ?`
-        , teacherId, since) as { total: number; unresolved: number } | undefined;
-        flagCount = flags?.total ?? 0;
-        unresolvedFlags = flags?.unresolved ?? 0;
-      } catch {}
-
-      return res.json({ totalStudents, activeToday, totalSessions, flagCount, unresolvedFlags, range });
-    } catch (err) {
-      console.error('[school/oversight/summary]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
-
-  // GET /api/school/oversight/students
-  // Returns student list with recent activity for teacher's classes
-  router.get('/school/oversight/students', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { class_id, range = '7d' } = req.query as { class_id?: string; range?: string };
-      const dayMap: Record<string, number> = { today: 1, '7d': 7, '30d': 30 };
-      const days = dayMap[range] ?? 7;
-      const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-      const classes = await db.get(
-        `SELECT id FROM school_classes WHERE teacher_user_id = ?`
-      , teacherId) as { id: string }[];
-      const classIds = class_id
-        ? classes.map(c => c.id).filter(id => id === class_id)
-        : classes.map(c => c.id);
-
-      if (classIds.length === 0) return res.json([]);
-
-      const placeholders = classIds.map(() => '?').join(',');
-      const rows = await db.all(
-        `SELECT u.id, COALESCE(u.display_name, u.username) as name,
-                COUNT(DISTINCT s.id) as session_count,
-                MAX(s.created_at) as last_active
-         FROM class_members cm
-         JOIN users u ON u.id = cm.student_user_id
-         LEFT JOIN sessions s ON s.user_id = u.id AND s.created_at > ?
-         WHERE cm.class_id IN (${placeholders})
-         GROUP BY u.id
-         ORDER BY last_active DESC NULLS LAST`
-      , since, ...classIds) as { id: string; name: string; session_count: number; last_active: string | null }[];
-
-      return res.json(rows);
-    } catch (err) {
-      console.error('[school/oversight/students]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
-
-  // GET /api/school/oversight/flags
-  // Returns oversight flags for the teacher's classes
-  router.get('/school/oversight/flags', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { resolved = '0', range = '30d' } = req.query as { resolved?: string; range?: string };
-      const dayMap: Record<string, number> = { today: 1, '7d': 7, '30d': 30 };
-      const days = dayMap[range] ?? 30;
-      const since = new Date(Date.now() - days * 86_400_000).toISOString();
-
-      try {
-        const flags = await db.all(
-          `SELECT f.id, f.student_id, f.session_id, f.flag_type, f.reason, f.created_at, f.resolved,
-                  COALESCE(u.display_name, u.username) as student_name
-           FROM oversight_flags f
-           LEFT JOIN users u ON u.id = f.student_id
-           WHERE f.teacher_id = ? AND f.created_at > ?
-             AND f.resolved = ?
-           ORDER BY f.created_at DESC
-           LIMIT 200`
-        , teacherId, since, resolved === '1' ? 1 : 0) as Record<string, unknown>[];
-        return res.json(flags);
-      } catch {
-        // oversight_flags table may not exist yet
-        return res.json([]);
-      }
-    } catch (err) {
-      console.error('[school/oversight/flags]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
-
-  // POST /api/school/oversight/flags/:id/resolve
-  // Mark an oversight flag as resolved
-  router.post('/school/oversight/flags/:id/resolve', async (req, res) => {
-    try {
-      const teacherId = req.user?.id;
-      if (!teacherId) return res.status(401).json({ error: 'Unauthorised' });
-
-      const { id } = req.params;
-      try {
-        const flag = await db.get('SELECT id FROM oversight_flags WHERE id = ?', id) as { id: string } | undefined;
-        if (!flag) return res.status(404).json({ error: 'Flag not found' });
-        await db.run(`UPDATE oversight_flags SET resolved = 1, resolved_at = ? WHERE id = ?`, new Date().toISOString(), id);
-        return res.json({ ok: true });
-      } catch {
-        return res.status(404).json({ error: 'Flag not found or table not initialised' });
-      }
-    } catch (err) {
-      console.error('[school/oversight/flags/resolve]', err);
-      return res.status(500).json({ error: 'Internal error' });
-    }
-  });
+  // Teacher Oversight was REMOVED (2026-07-28), deliberately and not as cleanup.
+  //
+  // It presented itself as the School pillar's safeguarding dashboard: a flag inbox a
+  // teacher could open to see concerns raised about pupils. It never worked. Two of the
+  // tables it queried — `class_members` and `oversight_flags` — do not exist in the
+  // schema or in any migration (verified against a live database), and nothing anywhere
+  // in the codebase ever WROTE a flag, so even with the tables the inbox would have been
+  // empty for ever.
+  //
+  // The flags query was wrapped in `catch { return [] }` and the page had no error
+  // state, so a teacher saw "no flags" — indistinguishable from "no safety incidents".
+  // A safety dashboard that can only ever look clean is worse than no dashboard: it
+  // manufactures false assurance about children, and it stops anyone asking where the
+  // real oversight is.
+  //
+  // Removing it is not a decision that safeguarding does not matter. It is a decision
+  // not to CLAIM safeguarding that does not exist. Building it for real means input
+  // screening on /school/chat writing flags, a teacher-scoped inbox reading them, and
+  // authorization so only that pupil's teacher can resolve one — see
+  // not_to_github/ANTON_LOCAL_SURVEY_2026-07-27.md.
+  //
+  // NOTE: unrelated to /api/oversight/* (HumanOversightGate, EU AI Act Art. 14
+  // professional sign-off), which is a different feature and still in use.
 
   return router;
 }

@@ -5,6 +5,7 @@
 
 import { safeError } from '../lib/error-response.js';
 import express from 'express';
+import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs-extra';
@@ -53,7 +54,10 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
 
     try {
       const { collectionId, metadata, chunkSize, overlapSize } = req.body;
-      const userId = (req as any).userId || 'system';
+      // req.userId is never set — the auth middleware stamps req.user.id. Reading the
+      // wrong property meant every document was attributed to the literal 'system',
+      // which silently disabled the ownership checks on reindex/delete/get below.
+      const userId = req.user?.id ?? null;
 
       if (!collectionId) {
         return res.status(400).json({ error: 'collectionId is required' });
@@ -105,7 +109,10 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
 
     try {
       const { collectionId, metadata, chunkSize, overlapSize } = req.body;
-      const userId = (req as any).userId || 'system';
+      // req.userId is never set — the auth middleware stamps req.user.id. Reading the
+      // wrong property meant every document was attributed to the literal 'system',
+      // which silently disabled the ownership checks on reindex/delete/get below.
+      const userId = req.user?.id ?? null;
 
       if (!collectionId) {
         return res.status(400).json({ error: 'collectionId is required' });
@@ -162,7 +169,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.get('/documents/collection/:collectionId', async (req, res) => {
     try {
       const { collectionId } = req.params;
-      const documents = await getCollectionDocuments(db, collectionId);
+      const documents = await getCollectionDocuments(db, collectionId, ownerFilter(req, 'uploaded_by'));
       res.json({ documents });
     } catch (error) {
       console.error('[documents] List error:', error);
@@ -192,6 +199,14 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.post('/documents/:id/reindex', async (req, res) => {
     try {
       const { id } = req.params;
+
+      // SECURITY (2026-07-27 survey): keyed off the document id alone, so on a shared
+      // instance any user could read or destroy another user's uploaded document —
+      // including its full extracted text. Checked before the row is loaded.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'rag_documents', ownerColumn: 'uploaded_by', id,
+        notFoundMessage: 'Document not found',
+      }))) return;
       const { collectionId, chunkSize, overlapSize } = req.body;
 
       if (!collectionId) {
@@ -228,6 +243,14 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
     try {
       const { id } = req.params;
 
+      // SECURITY (2026-07-27 survey): keyed off the document id alone, so on a shared
+      // instance any user could read or destroy another user's uploaded document —
+      // including its full extracted text. Checked before the row is loaded.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'rag_documents', ownerColumn: 'uploaded_by', id,
+        notFoundMessage: 'Document not found',
+      }))) return;
+
       // Get document to find collection
       const doc = await db.get('SELECT collection_id FROM rag_documents WHERE id = ?', id) as any;
 
@@ -255,6 +278,14 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.get('/documents/:id', async (req, res) => {
     try {
       const { id } = req.params;
+
+      // SECURITY (2026-07-27 survey): keyed off the document id alone, so on a shared
+      // instance any user could read or destroy another user's uploaded document —
+      // including its full extracted text. Checked before the row is loaded.
+      if (!(await assertOwned(db, req as OwnedRequest, res, {
+        table: 'rag_documents', ownerColumn: 'uploaded_by', id,
+        notFoundMessage: 'Document not found',
+      }))) return;
 
       const document = await db.get('SELECT * FROM rag_documents WHERE id = ?', id);
 

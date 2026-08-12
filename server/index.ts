@@ -16,7 +16,7 @@ import { createHealthRouter } from './routes/health.js';
 import { createIntelligenceHealthRoutes } from './routes/intelligence-health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import { createRerunRoutes } from './routes/rerun.js';
-import filesRouter from './routes/files.js';
+import { createFilesRoutes } from './routes/files.js';
 import { createSessionRoutes } from './routes/sessions.js';
 import { createWorkTimelineRoutes } from './routes/work-timeline.js';
 import { createFolderRoutes } from './routes/folders.js';
@@ -38,9 +38,10 @@ import { createExchangeRoutes } from './routes/exchange.js';
 import { createSettingsRoutes } from './routes/settings.js';
 import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoints.js';
 import { seedApeApiEndpoint } from './services/apeapi-seed.js';
+import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
-import { createAuthMiddleware } from './middleware/auth.js';
+import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
 import { createAuthRoutes } from './routes/auth.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createCompliancePolicyRoutes } from './routes/compliance-policy.js';
@@ -85,7 +86,6 @@ import { createCodingRoutes } from './routes/coding.js';
 import { createCodingReviewRoutes } from './routes/coding-review.js';
 import { createCodingScriptsRoutes } from './routes/coding-scripts.js';
 import { createCodingLargeRoutes } from './routes/coding-large.js';
-import { createPptxPipelineRoutes } from './routes/pptx-pipeline.js';
 import { createPresentationsRoutes } from './routes/presentations.js';
 import { createInstructionBuilderRoutes } from './routes/instruction-builder.js';
 import { createAlignmentReviewerRoutes } from './routes/alignment-reviewer.js';
@@ -200,7 +200,17 @@ if (!process.env.ANTHROPIC_API_KEY) {
 // solo branch. Team mode must be set explicitly in .env; auth reads the env lazily.
 if (!process.env.DEPLOYMENT_MODE) {
   process.env.DEPLOYMENT_MODE = 'solo';
-  logger.info('[deploy] DEPLOYMENT_MODE not set — defaulting to solo (set DEPLOYMENT_MODE=team in .env for multi-user JWT auth)');
+  // WARN, not info. Defaulting to solo means every request is served as an admin
+  // with no authentication — correct on a laptop, a data breach on a shared host.
+  // .env.example previously implied DATABASE_URL turned team mode on by itself, so
+  // operators have followed that guidance and shipped an open instance believing it
+  // was authenticated. The default stays solo (right for the common case); the log
+  // now states the consequence rather than just the fact.
+  logger.warn(
+    '[deploy] DEPLOYMENT_MODE not set — defaulting to SOLO: authentication is OFF and '
+    + 'every request is served as an admin. This is correct for a single-user machine. '
+    + 'If anyone else can reach this server, stop and set DEPLOYMENT_MODE=team (plus JWT_SECRET) in .env.',
+  );
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -571,7 +581,7 @@ app.use('/api', claudeRouter);
 // "Rerun with…" (Wave 2.3) — dispatches internally INTO claudeRouter so a rerun
 // goes through the exact live pipeline (composition, adapters, persistence).
 app.use('/api', createRerunRoutes(db, claudeRouter));
-app.use('/api', filesRouter);
+app.use('/api', createFilesRoutes(db));
 app.use('/api', await createSessionRoutes(db));
 // Unified work timeline (4.3) — sessions ∪ engagements ∪ workflow runs/executions ∪ discovery
 app.use('/api', createWorkTimelineRoutes(db));
@@ -597,6 +607,9 @@ app.use('/api', await createSettingsRoutes(db));
 app.use('/api', createCustomModelEndpointsRoutes(db));
 // Auto-register ApeAPI (compat: bundle) from APEAPI_API_KEY if set — one-step onboarding.
 await seedApeApiEndpoint(db);
+// Same for Moonshot AI (Kimi) from MOONSHOT_API_KEY — also OpenAI-compatible, so it
+// needs no adapter of its own; models become addressable as compat:kimi:<model>.
+await seedMoonshotEndpoint(db);
 app.use('/api', await createRagRoutes(db));
 app.use('/api', await createKnowledgeLibraryRoutes(db));
 app.use('/api', await createEurLexRoutes(db, anthropic));
@@ -807,7 +820,12 @@ const { createFCBudgetRoutes } = await import('./routes/fc-budget.js');
 app.use('/api', await createFCBudgetRoutes(db));
 const { createFCMarketplaceRoutes } = await import('./routes/fc-marketplace.js');
 app.use('/api', await createFCMarketplaceRoutes(db));
-// FutureChain Payment Gateway — admin routes (session-protected)
+// FutureChain Payment Gateway — admin routes (session-protected + admin-gated).
+// All 5 routes live under /futurechain/gateway/ (config read/write, API-key
+// regeneration, audit log, stats), so the guard is scoped to that exact prefix
+// rather than to the '/api' mount — a middleware on '/api' here would run for
+// every route mounted BELOW this line and 403 non-admins across the app.
+app.use('/api/futurechain/gateway', requireAdminOrSolo);
 app.use('/api', gwAdmin);
 // P2P message transport — public endpoint for ANTON-to-ANTON delivery (rate-limited)
 const { createP2PRoutes } = await import('./routes/p2p.js');
@@ -863,7 +881,6 @@ app.use('/api', await createCodingRoutes(db));
 app.use('/api', await createCodingReviewRoutes(db));
 app.use('/api', await createCodingScriptsRoutes(db));
 app.use('/api', await createCodingLargeRoutes(db));
-app.use('/api', await createPptxPipelineRoutes(db));
 app.use('/api', await createPresentationsRoutes(db));
 app.use('/api', await createInstructionBuilderRoutes(db));
 app.use('/api', await createAlignmentReviewerRoutes(db));
@@ -941,7 +958,20 @@ app.use('/api', await createAgentRoutes(db));
 // Companion App Gateway — admin routes (session-protected)
 if (APP_GATEWAY_ENABLED) {
   const appAdminRouter = (app as unknown as Record<string, unknown>)._appAdminRouter as import('express').Router;
-  app.use('/api/admin/app', appAdminRouter);
+  // Admin-gated: these 33 routes mint enrollment packages for arbitrary users,
+  // do org CRUD, repoint the mesh relay and inject checkpoints. They sit behind
+  // authMiddleware, but that only proves SOME user — in team mode a viewer
+  // reached them. Applied at the mount rather than inside app-gateway.ts on
+  // purpose: importing middleware/auth.js there would pull its module-level
+  // JWT_SECRET throw into the import graph of tests that construct the router
+  // directly (app-gateway.ts deliberately imports SOLO_USER_ID from the
+  // side-effect-free user-constants.js for the same reason).
+  //
+  // NOTE this is NOT what keeps a mesh peer out — solo mode is the default and
+  // stamps every request role:'admin', so requireAdminOrSolo passes for mesh
+  // traffic too. The mesh path is bounded by the allowlist in
+  // services/mesh/bridge.ts, which never dispatches /api/admin/* at all.
+  app.use('/api/admin/app', requireAdminOrSolo, appAdminRouter);
 }
 
 // Serve companion app PWA at /app (if built)

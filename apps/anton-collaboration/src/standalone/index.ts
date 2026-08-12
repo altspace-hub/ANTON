@@ -129,7 +129,26 @@ async function main(): Promise<void> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
   const negModel = process.env.ANTON_COLLAB_NEG_MODEL?.trim();
   const negotiations = new NegotiationStore();
-  const brain: NegotiationBrain | undefined = anthropicKey
+  // ANTON_COLLAB_NEG_MODEL only accepts CLAUDE ids, and saying so is the point.
+  //
+  // ClaudeNegotiationBrain talks to the Anthropic SDK directly and uses Anthropic-only
+  // request shapes — adaptive thinking, a top-level output_config.effort, and Anthropic
+  // tool-use for the structured decision. Handing it 'mistral-large-latest' does not
+  // switch provider; it sends an unknown model id to Anthropic and every negotiation
+  // fails at the API. The override LOOKED provider-agnostic and was not, which is worse
+  // than not having it.
+  //
+  // The four-eyes REVIEWER below is the slot that genuinely accepts either provider
+  // (see agreement-reviewer.ts: Claude ids go to the Anthropic SDK, anything else to
+  // Mistral's OpenAI-compatible endpoint), and it is the better place for a second
+  // provider anyway — one model must not rubber-stamp its own decision.
+  const negModelIsClaude = !negModel || negModel.startsWith('claude-');
+  if (negModel && !negModelIsClaude) {
+    log(`  ⚠ ANTON_COLLAB_NEG_MODEL="${negModel}" is not a Claude id. The negotiation brain`);
+    log('    is Anthropic-only, so it stays OFF rather than failing on every call.');
+    log('    For a non-Anthropic model use ANTON_COLLAB_REVIEW_MODEL (four-eyes reviewer).');
+  }
+  const brain: NegotiationBrain | undefined = anthropicKey && negModelIsClaude
     ? new ClaudeNegotiationBrain({ apiKey: anthropicKey, ...(negModel ? { model: negModel } : {}) })
     : undefined;
 
@@ -295,7 +314,12 @@ async function main(): Promise<void> {
     log(' Dash actions: ON — unlock the operator approve/reject console ONCE from THIS terminal:');
     log(`   ${dashActions.unlockUrl()}`);
   }
-  log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : 'OFF — set ANTHROPIC_API_KEY'}`);
+  // The OFF reason has to name the ACTUAL cause. "set ANTHROPIC_API_KEY" is
+  // actively misleading when the key is set and the model id was the problem.
+  const negOff = !anthropicKey
+    ? 'OFF — set ANTHROPIC_API_KEY'
+    : 'OFF — ANTON_COLLAB_NEG_MODEL is not a Claude id (this brain is Anthropic-only)';
+  log(` Negotiate:  ${brain ? `LLM brain (${negModel ?? 'claude-opus-4-8'})` : negOff}`);
   log(` 4-eyes:     ${reviewer ? `ON (${reviewModel}, ${reviewStrict ? 'STRICT — auto-reject on raise' : 'advisory'})` : 'OFF — set ANTON_COLLAB_REVIEW_MODEL'}`);
   log(' Verbs:      discover · talk · negotiate · agreement · settle · fulfilment · escrow (custodial; spends gated in Agent Pay)');
   log(' Tasks:      human↔agent inbox ON — poll listTasks, reply with postMessage(role:agent), setTaskStatus done');

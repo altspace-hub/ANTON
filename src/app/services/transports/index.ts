@@ -23,6 +23,7 @@ import { effectiveTransport, getActiveInstance, type Instance, type TransportKin
 import { publicHttpsTransport } from './public_https';
 import { meshTransportForInstance } from './mesh';
 import { getDeviceX25519Keypair } from '../identity';
+import { getSessionToken } from '../api';
 
 /** A request the app wants to make to its paired instance. Mirrors the
  *  small subset of fetch() options the existing call sites actually use. */
@@ -131,9 +132,7 @@ function meshTransportForInstanceAsync(inst: Instance): Transport {
     return meshTransportForInstance(inst, {
       phoneStaticKeypair,
       getAuthHeaders: (): Record<string, string> => {
-        const t = (typeof localStorage !== 'undefined')
-          ? localStorage.getItem('anton-companion-session')
-          : null;
+        const t = getSessionToken();
         return t ? { 'x-app-session': t } : {};
       },
     });

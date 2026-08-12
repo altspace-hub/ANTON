@@ -5,10 +5,37 @@
 
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import { encryptConfig, decryptConfig } from './credential-vault.js';
+import { encryptConfig, decryptConfig, mergeSecrets } from './credential-vault.js';
 import { getDriver } from './db-drivers/driver-registry.js';
 
-export type ConnectionType = 'database' | 'api' | 'filesystem' | 'email' | 'script_library' | 'messaging';
+/**
+ * Every value the `connections.type` CHECK constraint accepts
+ * (server/db/schema.postgresql.sql, GROUP 16).
+ */
+export const CONNECTION_TYPES = [
+  'database', 'api', 'filesystem', 'email', 'script_library', 'channel_bridge', 'messaging',
+] as const;
+
+/**
+ * The subset POST /api/connections may create.
+ *
+ * `channel_bridge` is excluded deliberately: a bridge is only usable with the access
+ * token that POST /api/bridges mints and returns exactly once, so a bridge row created
+ * through the generic endpoint would be a dead record with no way to authenticate.
+ *
+ * `messaging` used to be missing from this list while four queries read
+ * `type = 'messaging'` (routes/integrations.ts x3, workflow-executor's
+ * messaging_notification step). Nothing could write the type, so the Slack/Teams
+ * integration was structurally unreachable: /api/integrations/test and /send always
+ * 404'd, /api/integrations/connections always returned [], and a workflow's "Messaging
+ * Notification" step always returned { sent: false } — while reporting the step as
+ * successful. Derived from CONNECTION_TYPES so the two lists cannot drift apart again.
+ */
+export const USER_CREATABLE_CONNECTION_TYPES = [
+  'database', 'api', 'filesystem', 'email', 'script_library', 'messaging',
+] as const satisfies readonly (typeof CONNECTION_TYPES)[number][];
+
+export type ConnectionType = (typeof CONNECTION_TYPES)[number];
 export type ConnectionStatus = 'pending' | 'active' | 'disabled' | 'error';
 
 export interface Connection {
@@ -134,12 +161,35 @@ export async function createConnectionManager(db: DatabaseAdapter) {
         ) as RawConnectionRow[];
       }
       void userId;
-      return rows.map(parseConnection);
+      // Same contract as get(): decrypted for use, never serialised raw to a client.
+      return rows.map(parseConnection).map((c) => ({
+        ...c, config: decryptConfig(c.config as Record<string, unknown>),
+      }));
     },
 
+    /**
+     * Returns the connection with its config DECRYPTED and ready to use.
+     *
+     * It previously returned the stored (encrypted) config, and every consumer was
+     * expected to remember decryptConfig. Nine did not — the adapters, workflows.ts and
+     * workflow-executor all passed AES ciphertext straight in as the host and password.
+     * That is why a connection could Test green (test() decrypted) and then fail on
+     * every workflow run, with the only workaround being to store the password in
+     * cleartext.
+     *
+     * Decrypting here rather than at nine call sites means a tenth consumer cannot get
+     * it wrong. The corresponding duty is that config must NEVER be serialised to a
+     * client — see redactConfig, applied in routes/connections.ts.
+     *
+     * Safe for both row populations: decryptConfig only acts where an `_encrypted`
+     * marker is present, so rows written in plaintext by the old update() pass through
+     * untouched.
+     */
     async get(id: string): Promise<Connection | null> {
       const row = await db.get('SELECT * FROM connections WHERE id = ?', id) as RawConnectionRow | undefined;
-      return row ? parseConnection(row) : null;
+      if (!row) return null;
+      const conn = parseConnection(row);
+      return { ...conn, config: decryptConfig(conn.config as Record<string, unknown>) };
     },
 
     async create(
@@ -178,7 +228,18 @@ export async function createConnectionManager(db: DatabaseAdapter) {
 
       const now = new Date().toISOString();
       const display_name = data.display_name ?? existing.display_name;
-      const config = JSON.stringify(data.config ?? existing.config);
+      // Encrypt on the way in. update() previously stored data.config verbatim — the
+      // edit form's PLAINTEXT values — so editing a connection silently downgraded its
+      // credentials to cleartext at rest, undoing what create() had done. encryptConfig
+      // is idempotent (it skips values already in ciphertext form), so re-encrypting the
+      // existing config on a display-name-only edit is a no-op.
+      // ...and merge over the stored config first, so an edit that omits the password
+      // (which is now every edit, since GET redacts it) keeps the existing credential
+      // instead of wiping it.
+      const config = JSON.stringify(encryptConfig(mergeSecrets(
+        (data.config ?? existing.config) as Record<string, unknown>,
+        existing.config as Record<string, unknown>,
+      )));
       const permissions = JSON.stringify(data.permissions ?? existing.permissions);
       const status = data.status ?? existing.status;
 
@@ -208,17 +269,22 @@ export async function createConnectionManager(db: DatabaseAdapter) {
       );
     },
 
-    async test(id: string): Promise<{ ok: boolean; message: string }> {
-      const conn = await this.get(id);
-      if (!conn) return { ok: false, message: 'Connection not found' };
-
+    /**
+     * Test a config that may not be saved yet.
+     *
+     * Split out of test() so the creation WIZARD can run the real check before a
+     * connection exists. The wizard previously slept 600ms and returned a hardcoded
+     * pass — so a user configuring a database with the wrong password saw a green tick,
+     * saved it, and discovered the truth when a workflow failed. A test that cannot fail
+     * is worse than no test: it converts "I should check this" into false confidence.
+     *
+     * Takes an already-decrypted config. Callers holding a stored connection must go
+     * through test(), which decrypts at the data layer.
+     */
+    async testConfig(type: string, cfg: Record<string, unknown>): Promise<{ ok: boolean; message: string }> {
       let result: { ok: boolean; message: string };
-
-      // Decrypt config before testing
-      const cfg = decryptConfig(conn.config) as Record<string, unknown>;
-
       try {
-        if (conn.type === 'database') {
+        if (type === 'database') {
           const driverName = (cfg.driver as string) || 'sqlite';
           try {
             const driver = await getDriver(driverName);
@@ -227,7 +293,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
             const error = err as Error;
             result = { ok: false, message: `Driver error: ${error.message}` };
           }
-        } else if (conn.type === 'api') {
+        } else if (type === 'api') {
           const baseUrl = cfg.base_url as string;
           if (!baseUrl) {
             result = { ok: false, message: 'base_url not configured' };
@@ -240,7 +306,7 @@ export async function createConnectionManager(db: DatabaseAdapter) {
             clearTimeout(timeout);
             result = { ok: res.ok || res.status < 500, message: `HTTP ${res.status} ${res.statusText}` };
           }
-        } else if (conn.type === 'filesystem') {
+        } else if (type === 'filesystem') {
           const { default: fs } = await import('fs-extra');
           const basePath = cfg.base_path as string;
           if (!basePath) {
@@ -251,12 +317,42 @@ export async function createConnectionManager(db: DatabaseAdapter) {
               ? { ok: true, message: `Folder accessible: ${basePath}` }
               : { ok: false, message: `Folder not found: ${basePath}` };
           }
+        } else if (type === 'messaging') {
+          // A real post to the webhook, for the same reason the other branches are real:
+          // making the type creatable without this would hand the wizard back its
+          // "cannot fail" green tick for exactly one connection type.
+          const platform = cfg.platform as string;
+          const webhookUrl = cfg.webhook_url as string;
+          if (!webhookUrl) {
+            result = { ok: false, message: 'webhook_url not configured' };
+          } else if (platform === 'slack') {
+            const { testSlackWebhook } = await import('./integrations/slack-webhook.js');
+            const r = await testSlackWebhook(webhookUrl);
+            result = { ok: r.ok, message: r.ok ? 'Test message delivered to Slack' : (r.error ?? 'Slack webhook failed') };
+          } else if (platform === 'teams') {
+            const { testTeamsWebhook } = await import('./integrations/teams-webhook.js');
+            const r = await testTeamsWebhook(webhookUrl);
+            result = { ok: r.ok, message: r.ok ? 'Test message delivered to Teams' : (r.error ?? 'Teams webhook failed') };
+          } else {
+            result = { ok: false, message: `Unknown messaging platform: "${platform}" (expected slack or teams)` };
+          }
         } else {
           result = { ok: true, message: 'Connection type checked (no live test available)' };
         }
       } catch (err) {
         result = { ok: false, message: err instanceof Error ? err.message : String(err) };
       }
+      return result;
+    },
+
+    async test(id: string): Promise<{ ok: boolean; message: string }> {
+      const conn = await this.get(id);
+      if (!conn) return { ok: false, message: 'Connection not found' };
+
+      // Already decrypted by get() — decrypting again would be a no-op today (the
+      // marker is gone) but would silently start corrupting values if the vault ever
+      // changed shape. One decrypt, at one boundary.
+      const result = await this.testConfig(conn.type, conn.config as Record<string, unknown>);
 
       const now = new Date().toISOString();
       await db.run(

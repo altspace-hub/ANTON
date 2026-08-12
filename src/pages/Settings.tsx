@@ -20,9 +20,11 @@ import { useIntelligenceHealth, type FeatureHealth } from '@/components/shared/I
 interface BrandTemplate {
   id: string;
   name: string;
-  type: 'docx' | 'pptx';
+  /** 'latex' covers .cls / .sty / .bib — the real extension is in original_name. */
+  type: 'docx' | 'pptx' | 'latex';
   file_size: number;
   created_at: string;
+  original_name?: string | null;
 }
 
 interface TeamUser {
@@ -685,8 +687,12 @@ export default function Settings() {
     flash();
   }
 
+  // Shell is deliberately wide: several tabs (local models, connections, team) are
+  // card grids and tables that were being squeezed into a 672px column on a 1900px
+  // screen. Form-style tabs keep their own narrower measure below — widening the
+  // shell must not stretch a single text input across the whole display.
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-adv-white">{t('settings.title')}</h1>
         {saved && (
@@ -746,7 +752,7 @@ export default function Settings() {
 
       {/* Navigation tab */}
       {activeTab === 'navigation' && (
-        <div className="space-y-6">
+        <div className="max-w-3xl space-y-6">
           <div className="rounded-xl border border-border bg-adv-card p-6">
             <NavItemConfig />
           </div>
@@ -755,7 +761,7 @@ export default function Settings() {
 
       {/* Knowledge Library tab */}
       {activeTab === 'knowledge' && (
-        <div className="space-y-4">
+        <div className="max-w-3xl space-y-4">
           <div>
             <h3 className="text-base font-semibold text-adv-off-white">{t('settings.knowledgeLibrary')}</h3>
             <p className="mt-1 text-sm text-adv-gray">{t('settings.knowledgeLibraryDesc')}</p>
@@ -2416,7 +2422,7 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
           {templateUploading ? t('settings.uploading') : t('settings.uploadTemplate')}
           <input
             type="file"
-            accept=".docx,.pptx"
+            accept=".docx,.pptx,.cls,.sty,.bib"
             className="hidden"
             onChange={handleTemplateUpload}
             disabled={templateUploading}
@@ -2430,7 +2436,9 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-adv-gray" />
                   <span className="text-sm text-adv-off-white">{tpl.name}</span>
-                  <span className="text-xs text-adv-gray">.{tpl.type}</span>
+                  {/* A LaTeX row is stored as type 'latex' but must be shown by its
+                      real filename — "acmecorp.cls" is the thing \documentclass names. */}
+                  <span className="text-xs text-adv-gray">{tpl.original_name || `.${tpl.type}`}</span>
                   {tpl.file_size && (
                     <span className="text-xs text-adv-gray">
                       {(tpl.file_size / 1024).toFixed(0)} KB

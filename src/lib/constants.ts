@@ -3495,6 +3495,33 @@ export const AREAS = [
 export const MODELS: ModelInfo[] = [
   // ── Anthropic ─────────────────────────────────────────────
   {
+    id: 'claude-opus-5',
+    recommended: true,
+    label: 'Claude Opus 5',
+    description: 'Claude 5 flagship. 1M context, 128k output. Best for complex reasoning, agentic coding, and high-stakes compliance work. Adaptive thinking, on by default. Same price as Opus 4.8.',
+    inputCostPer1M: 5,
+    outputCostPer1M: 25,
+    maxOutput: 128000,
+    provider: 'anthropic',
+    contextWindow: 1000000,
+    costTier: 3,
+  },
+  {
+    id: 'claude-sonnet-5',
+    recommended: true,
+    label: 'Claude Sonnet 5',
+    // PRICING CHANGES 2026-08-31: introductory $2/$10 reverts to $3/$15. Update
+    // these numbers and the server capability row together — cost displays and the
+    // budget bar both read from here, so a stale rate silently under-reports spend.
+    description: 'Claude 5 workhorse. 1M context, 128k output. Strong reasoning at a fraction of Opus cost. Adaptive thinking. Introductory pricing ($2/$10) through 31 Aug 2026, then $3/$15.',
+    inputCostPer1M: 2,
+    outputCostPer1M: 10,
+    maxOutput: 128000,
+    provider: 'anthropic',
+    contextWindow: 1000000,
+    costTier: 2,
+  },
+  {
     id: 'claude-fable-5',
     label: 'Claude Fable 5',
     description: 'Most powerful Claude — a new tier above Opus. 1M context, 128k output. For the hardest reasoning and long-horizon agentic work. Note: ~2× Opus pricing. Adaptive thinking only. Knowledge cutoff Jan 2026.',
@@ -3512,7 +3539,6 @@ export const MODELS: ModelInfo[] = [
     inputCostPer1M: 5,
     outputCostPer1M: 25,
     maxOutput: 128000,
-    recommended: true,
     provider: 'anthropic',
     contextWindow: 1000000,
     costTier: 3,
@@ -3546,7 +3572,6 @@ export const MODELS: ModelInfo[] = [
     inputCostPer1M: 3,
     outputCostPer1M: 15,
     maxOutput: 64000,
-    recommended: true,
     provider: 'anthropic',
     contextWindow: 1000000,
     costTier: 2,
@@ -3577,6 +3602,40 @@ export const MODELS: ModelInfo[] = [
   },
   // ── OpenAI ────────────────────────────────────────────────
   {
+    id: 'gpt-5.6-sol',
+    label: 'GPT-5.6 Sol',
+    description: "OpenAI's frontier tier. 1M context. Six reasoning-effort levels (none → max) that map 1:1 onto ANTON's thinking levels. Reserve max for hardest quality-first work.",
+    inputCostPer1M: 5,
+    outputCostPer1M: 30,
+    maxOutput: 128000,
+    provider: 'openai',
+    contextWindow: 1000000,
+    costTier: 3,
+  },
+  {
+    id: 'gpt-5.6-terra',
+    recommended: true,
+    label: 'GPT-5.6 Terra',
+    description: 'Balanced GPT-5.6 — intelligence against cost. 1M context, full reasoning-effort range. The sensible default of the family.',
+    inputCostPer1M: 2.5,
+    outputCostPer1M: 15,
+    maxOutput: 128000,
+    provider: 'openai',
+    contextWindow: 1000000,
+    costTier: 2,
+  },
+  {
+    id: 'gpt-5.6-luna',
+    label: 'GPT-5.6 Luna',
+    description: 'Efficient GPT-5.6 for high-volume work. 1M context, full reasoning-effort range. Cheapest of the family.',
+    inputCostPer1M: 1,
+    outputCostPer1M: 6,
+    maxOutput: 128000,
+    provider: 'openai',
+    contextWindow: 1000000,
+    costTier: 1,
+  },
+  {
     id: 'gpt-5.4',
     label: 'GPT-5.4',
     description: 'OpenAI latest flagship. Advanced reasoning, coding, and instruction following.',
@@ -3587,7 +3646,6 @@ export const MODELS: ModelInfo[] = [
     contextWindow: 256000,
     costTier: 3,
     supportsSeed: true,
-    recommended: true,
   },
   {
     id: 'gpt-4o',
@@ -3783,12 +3841,20 @@ export function providerForModelId(modelId: string): string {
   return MODELS.find((m) => m.id === modelId)?.provider ?? 'unknown';
 }
 
-export function thinkingGranularity(provider?: string): ThinkingGranularity {
+export function thinkingGranularity(provider?: string, model?: string): ThinkingGranularity {
   switch (provider) {
     case 'anthropic': return 'full';
     case 'azure': return 'effort3';
     case 'mistral': return 'threshold';
     case 'openai':
+      // OpenAI was previously classed 'binary' for every model, which was wrong
+      // twice over. GPT-5.x accepts none/low/medium/high/xhigh/max — six values,
+      // a 1:1 with our six levels. The o-series accepts three. And older chat
+      // models (gpt-4o…) accept no reasoning parameter at all, so the level has
+      // literally no effect — 'none', not 'on/off'.
+      if (model && /^gpt-5\./i.test(model)) return 'full';
+      if (model && /^o[1-9]/i.test(model)) return 'effort3';
+      return 'none';
     case 'google': return 'binary';
     default: return 'none';
   }

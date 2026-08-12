@@ -41,7 +41,17 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
   return async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     // Solo mode: no auth required
     if (!isTeamMode()) {
-      req.user = { id: SOLO_USER_ID, username: 'solo', role: 'admin' };
+      // school_role is read from the DB, not invented, so a solo operator can put
+      // themselves in the pupil view to see what a child sees. NULL means "not set",
+      // and the single operator who owns the instance gets the full role — otherwise
+      // /school/admin/* answered 403 to the only person on the machine.
+      const solo = await db.get<{ school_role: string | null }>(
+        'SELECT school_role FROM users WHERE id = ?', SOLO_USER_ID,
+      ).catch(() => null);
+      req.user = {
+        id: SOLO_USER_ID, username: 'solo', role: 'admin',
+        school_role: solo?.school_role ?? 'school_admin',
+      };
       return next();
     }
 
@@ -59,8 +69,26 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
     try {
       const token = rawToken;
       const payload = jwt.verify(token, JWT_SECRET!) as AuthUser & { exp: number };
-      // Check token still in DB (allows logout to work)
-      const session = await db.get('SELECT * FROM user_sessions WHERE token = ? AND expires_at > datetime("now")', token);
+      // Check token still in DB (allows logout to work), and pick up school_role in the
+      // SAME query — a join, not a second round trip.
+      //
+      // school_role deliberately does NOT come from the JWT payload, even though the
+      // type allows it. Two reasons, and the first is decisive:
+      //
+      //   1. Solo mode issues no token at all, so a JWT-carried role would leave the
+      //      School pillar permanently role-less in ANTON's DEFAULT deployment.
+      //   2. Tokens last 7 days. Promoting somebody to teacher mid-term must not wait
+      //      for them to log out — a school adding a teacher on Monday cannot be told
+      //      they can teach on the following Monday.
+      //
+      // routes/friends.ts already reads this column live for the same reason.
+      const session = await db.get<{ school_role: string | null }>(
+        `SELECT u.school_role
+           FROM user_sessions s
+           JOIN users u ON u.id = s.user_id
+          WHERE s.token = ? AND s.expires_at > NOW()`,
+        token,
+      );
       if (!session) {
         res.status(401).json({ error: 'Session expired — please log in again' });
         return;
@@ -72,7 +100,7 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
         username: payload.username,
         role: payload.role,
         display_name: payload.display_name,
-        school_role: payload.school_role,
+        school_role: session.school_role ?? undefined,
       };
       next();
     } catch {
@@ -81,61 +109,16 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
   };
 }
 
-export function requireRole(role: 'admin' | 'analyst' | 'viewer') {
-  const ROLE_LEVELS: Record<string, number> = { viewer: 0, analyst: 1, admin: 2 };
-  return function (req: Request, res: Response, next: NextFunction) {
-    if (!req.user) { res.status(401).json({ error: 'Not authenticated' }); return; }
-    if (ROLE_LEVELS[req.user.role] < ROLE_LEVELS[role]) {
-      res.status(403).json({ error: 'Insufficient permissions' });
-      return;
-    }
-    next();
-  };
-}
+// The role guards live in role-guards.ts — they need no JWT, and keeping them here
+// meant any module enforcing authorisation also inherited this file's module-load
+// JWT_SECRET throw. Re-exported so existing import sites are unaffected.
+export {
+  requireRole, requireAuth, requireAdmin, requireAdminOrSolo,
+} from './role-guards.js';
 
 export function generateToken(user: AuthUser): string {
   return jwt.sign(user, JWT_SECRET!, { expiresIn: '7d' });
 }
 
-// Convenience middleware — requires authentication (any role)
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  next();
-}
-
-// Convenience middleware — requires admin role
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-  if (req.user.role !== 'admin') {
-    res.status(403).json({ error: 'Admin access required' });
-    return;
-  }
-  next();
-}
-
-/**
- * Middleware: Require admin role OR solo user mode.
- * Used for features that should be admin-only in team mode,
- * but accessible to everyone in solo/single-user mode.
- */
-export function requireAdminOrSolo(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-
-  const isAdmin = req.user.role === 'admin';
-  const isSoloMode = !isTeamMode();
-
-  if (isAdmin || isSoloMode) {
-    next();
-  } else {
-    res.status(403).json({ error: 'Admin access required' });
-  }
-}
+// requireAuth / requireAdmin / requireAdminOrSolo now live in role-guards.ts and are
+// re-exported above — one definition, importable without this file's JWT_SECRET throw.

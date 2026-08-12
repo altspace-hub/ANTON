@@ -369,8 +369,8 @@ const MyRadarPage = lazy(() => import('./pages/school/MyRadarPage'));
 const TeacherDashboardPage = lazy(() => import('./pages/school/TeacherDashboardPage'));
 const TeacherClassConfigPage = lazy(() => import('./pages/school/TeacherClassConfigPage'));
 const TeacherStudentsPage = lazy(() => import('./pages/school/TeacherStudentsPage'));
+const SafetyInboxPage = lazy(() => import('./pages/school/SafetyInboxPage'));
 const TeacherClassProgressPage = lazy(() => import('./pages/school/TeacherClassProgressPage'));
-const TeacherOversightPage = lazy(() => import('./pages/school/TeacherOversightPage'));
 const GuardianDashboardPage = lazy(() => import('./pages/school/GuardianDashboardPage'));
 const AssignmentBuilderPage = lazy(() => import('./pages/school/AssignmentBuilderPage'));
 const AssignmentTakingPage = lazy(() => import('./pages/school/AssignmentTakingPage'));
@@ -385,9 +385,6 @@ const UCASStatementPage = lazy(() => import('./pages/school/UCASStatementPage'))
 const StudyRoomsPage = lazy(() => import('./pages/school/StudyRoomsPage'));
 const StudyRoomPage = lazy(() => import('./pages/school/StudyRoomPage'));
 const SchoolLoginPage = lazy(() => import('./pages/school/SchoolLoginPage'));
-const SchoolCurriculumPage = lazy(() => import('./pages/school/SchoolCurriculumPage'));
-const SchoolLessonPage = lazy(() => import('./pages/school/SchoolLessonPage'));
-const SchoolLessonBuilderPage = lazy(() => import('./pages/school/SchoolLessonBuilderPage'));
 
 export default function App() {
   const { i18n } = useTranslation();
@@ -823,7 +820,7 @@ export default function App() {
           <Route path="/school/teacher/classes/:classId/settings" element={<TeacherClassConfigPage />} />
           <Route path="/school/teacher/classes/:classId/progress" element={<TeacherClassProgressPage />} />
           <Route path="/school/teacher/students" element={<TeacherStudentsPage />} />
-          <Route path="/school/teacher/oversight" element={<TeacherOversightPage />} />
+          <Route path="/school/teacher/safety" element={<SafetyInboxPage />} />
           <Route path="/school/teacher/assignments/new" element={<AssignmentBuilderPage />} />
           <Route path="/school/assignments/:id/take" element={<AssignmentTakingPage />} />
           <Route path="/school/assignments/:id/socratic" element={<SocraticExamPage />} />
@@ -839,9 +836,6 @@ export default function App() {
           <Route path="/school/ucas" element={<UCASStatementPage />} />
           <Route path="/school/study-rooms" element={<StudyRoomsPage />} />
           <Route path="/school/study-room/:roomId" element={<StudyRoomPage />} />
-          <Route path="/school/curriculum" element={<SchoolCurriculumPage />} />
-          <Route path="/school/lesson/:lessonId" element={<SchoolLessonPage />} />
-          <Route path="/school/lesson-builder" element={<SchoolLessonBuilderPage />} />
         </Route>
       </Routes>
     </Suspense>

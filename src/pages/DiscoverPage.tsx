@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search, Send, Sprout, TreePine, Trees, Mountain,
   ChevronRight, Pause, Play, Download, FileText, ArrowRight,
@@ -76,7 +77,7 @@ interface Insights {
 interface DiscoveryOutput {
   id: string;
   contentMd: string;
-  moduleMatches: Array<{ moduleName: string; areaName: string; matchReason: string; estimatedTimeSavings: string; effortToStart: string; bestFor: string }>;
+  moduleMatches: Array<{ moduleId: string; moduleName: string; areaName: string; matchReason: string; estimatedTimeSavings: string; effortToStart: string; bestFor: string; suggestedPrompt?: string }>;
   actionPlan: Array<{ action: string; owner: string; timeline: string; priority: string }>;
   metrics: Record<string, unknown>;
   nonAiFindings: Array<{ description: string; realSolution: string; priority: string }>;
@@ -989,19 +990,53 @@ export default function DiscoverPage() {
             <div className="mb-6">
               <div className="mb-2 text-xs font-medium uppercase tracking-wider text-adv-gray">Recommended Modules</div>
               <div className="space-y-2">
-                {output.moduleMatches.map((m, i) => (
-                  <div key={i} className="rounded-lg border border-border bg-adv-card p-3">
-                    <div className="mb-1 text-sm font-medium text-adv-teal">{m.moduleName}</div>
-                    <div className="mb-1 text-xs text-adv-gray">{m.areaName}</div>
-                    <p className="text-xs text-adv-off-white leading-relaxed">{m.matchReason}</p>
-                    {m.estimatedTimeSavings && (
-                      <div className="mt-1.5 flex items-center gap-1 text-xs text-adv-green">
-                        <Clock className="h-3 w-3" />
-                        {m.estimatedTimeSavings}
+                {output.moduleMatches.map((m, i) => {
+                  // The whole point of Discovery is ending up somewhere you can start.
+                  // These were static divs: the user spent twenty minutes describing
+                  // their work, got a list of module NAMES, and then had to go and find
+                  // each one by hand — which is where most people stop.
+                  //
+                  // Only linked when the id is present. Backend validation guarantees a
+                  // present id is real (services/module-recommendation.ts), and a card
+                  // with no id degrades to exactly what it was rather than rendering a
+                  // link that 404s.
+                  const href = m.moduleId
+                    ? `/module/${encodeURIComponent(m.moduleId)}?from=discovery`
+                      + (m.suggestedPrompt ? `&prefill=${encodeURIComponent(m.suggestedPrompt)}` : '')
+                    : null;
+                  const body = (
+                    <>
+                      <div className="mb-1 flex items-center gap-1.5 text-sm font-medium text-adv-teal">
+                        {m.moduleName}
+                        {href && <ArrowRight className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100" />}
                       </div>
-                    )}
-                  </div>
-                ))}
+                      <div className="mb-1 text-xs text-adv-gray">{m.areaName}</div>
+                      <p className="text-xs text-adv-off-white leading-relaxed">{m.matchReason}</p>
+                      {m.estimatedTimeSavings && (
+                        <div className="mt-1.5 flex items-center gap-1 text-xs text-adv-green">
+                          <Clock className="h-3 w-3" />
+                          {m.estimatedTimeSavings}
+                        </div>
+                      )}
+                      {href && (
+                        <div className="mt-2 text-xs text-adv-teal">
+                          Open this module — your notes from this session come with you
+                        </div>
+                      )}
+                    </>
+                  );
+                  return href ? (
+                    <Link
+                      key={i}
+                      to={href}
+                      className="group block rounded-lg border border-border bg-adv-card p-3 transition hover:border-adv-teal/50"
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    <div key={i} className="rounded-lg border border-border bg-adv-card p-3">{body}</div>
+                  );
+                })}
               </div>
             </div>
           )}

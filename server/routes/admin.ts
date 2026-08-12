@@ -43,12 +43,27 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
 
   // PATCH /api/admin/users/:id — update user (admin only)
   router.patch('/admin/users/:id', requireRole('admin'), async (req, res) => {
-    const { role, display_name, monthly_token_budget, password } = req.body as {
+    const { role, display_name, monthly_token_budget, password, school_role } = req.body as {
       role?: string;
       display_name?: string;
       monthly_token_budget?: number;
       password?: string;
+      school_role?: string | null;
     };
+
+    // school_role had NO write path anywhere in the codebase, so the column was NULL for
+    // every user ever created — which made every teacher-gated branch in school.ts dead
+    // code and the School pillar's entire teacher surface unreachable. This is that path.
+    //
+    // Allowlisted rather than passed through: the value is compared with === against
+    // literals in school.ts, so a typo ('Teacher', 'teachers') fails silently and looks
+    // exactly like a missing permission. Explicit null clears the role.
+    const SCHOOL_ROLES = ['student', 'teacher', 'school_admin'] as const;
+    if (school_role !== undefined && school_role !== null
+        && !SCHOOL_ROLES.includes(school_role as typeof SCHOOL_ROLES[number])) {
+      res.status(400).json({ error: `school_role must be one of ${SCHOOL_ROLES.join(', ')}, or null to clear` });
+      return;
+    }
     if (password) {
       const hash = await bcrypt.hash(password, 10);
       await db.run('UPDATE users SET password_hash = ? WHERE id = ?', hash, req.params.id);
@@ -56,6 +71,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
     if (role) await db.run('UPDATE users SET role = ? WHERE id = ?', role, req.params.id);
     if (display_name) await db.run('UPDATE users SET display_name = ? WHERE id = ?', display_name, req.params.id);
     if (monthly_token_budget !== undefined) await db.run('UPDATE users SET monthly_token_budget = ? WHERE id = ?', monthly_token_budget, req.params.id);
+    if (school_role !== undefined) await db.run('UPDATE users SET school_role = ? WHERE id = ?', school_role, req.params.id);
     res.json({ success: true });
   });
 

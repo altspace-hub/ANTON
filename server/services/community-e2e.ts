@@ -92,10 +92,16 @@ export function deriveSharedSecret(myPrivateKeyHex: string, peerPublicKeyHex: st
   return crypto.diffieHellman({ privateKey, publicKey });
 }
 
-// ── HKDF Key Derivation (Forward Secrecy) ───────────────────────
+// ── HKDF Key Derivation (per-message key SEPARATION) ────────────
 // Derives a unique per-message key from the static shared secret + random salt.
-// This means compromising the long-term X25519 private key does NOT reveal
-// past messages — each message used a different derived key.
+//
+// NOT forward secrecy. The shared secret is STATIC (both inputs are long-term
+// keys) and the salt travels in the envelope, so anyone who later obtains a
+// long-term X25519 private key can re-derive every past message key. What this
+// buys is key SEPARATION: cracking or reusing one message's key does not help
+// with another. Real forward secrecy needs an ephemeral handshake (X3DH +
+// Double Ratchet). Do not describe this layer as forward secret in code
+// comments, UI, or marketing — see src/comm/services/crypto.ts:9-18.
 
 function deriveMessageKey(sharedSecret: Buffer, salt: Buffer): Buffer {
   return Buffer.from(
@@ -103,7 +109,7 @@ function deriveMessageKey(sharedSecret: Buffer, salt: Buffer): Buffer {
   );
 }
 
-// ── AES-256-GCM Encryption with AAD + Forward Secrecy ───────────
+// ── AES-256-GCM Encryption with AAD + per-message key separation ─
 // - HKDF derives per-message key from shared secret + random salt
 // - AAD (Additional Authenticated Data) binds sender/recipient to ciphertext
 //   so metadata tampering breaks the auth tag

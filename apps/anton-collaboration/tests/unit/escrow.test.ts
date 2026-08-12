@@ -71,8 +71,21 @@ async function openAndFund(ctx: Ctx, engine: EscrowEngine): Promise<void> {
   await engine.markFunded(ID, 'tx_fund');
 }
 
-/** The buyer SIGNS a delivery confirmation (what authorizes a release post-C2). */
+/** The buyer SIGNS a delivery confirmation (what authorizes a release post-C2).
+ *
+ *  A shipment is recorded first because confirmDelivery now REFUSES to run
+ *  without one: a signed "I received the goods" for an order that was never sent
+ *  is precisely what escrow's releaseAllowed() treats as the buyer's
+ *  authorisation to pay out. These tests previously modelled open → fund →
+ *  deliver with no shipment at all, which is a sequence that should not be
+ *  reachable. Seeding the record directly keeps this a fixture, not a second
+ *  code path. */
 async function seedDelivered(ctx: Ctx): Promise<void> {
+  const prev = await ctx.fulStore.get(ID);
+  await ctx.fulStore.put({
+    ...(prev ?? { agreementId: ID, proposalHash: PHASH }),
+    agreementId: ID, proposalHash: PHASH, status: 'shipped',
+  });
   await ctx.buyerFulfilment.confirmDelivery(ID);
 }
 

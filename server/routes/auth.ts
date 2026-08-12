@@ -228,12 +228,22 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
   // GET /api/auth/me
   router.get('/auth/me', async (req, res) => {
     if (!IS_TEAM_MODE) {
-      res.json({ id: 'solo', username: 'solo', role: 'admin', display_name: 'Solo User' });
+      // school_role included so the School sidebar resolves a real role. SchoolLayout,
+      // SchoolProfilePage and SchoolSettingsPage all read it off this response and
+      // default to 'student' when absent — which is why every teacher nav item was
+      // invisible even to an instance admin.
+      const soloRow = await db.get<{ school_role: string | null }>(
+        'SELECT school_role FROM users WHERE id = ?', 'solo',
+      ).catch(() => null);
+      res.json({
+        id: 'solo', username: 'solo', role: 'admin', display_name: 'Solo User',
+        school_role: soloRow?.school_role ?? 'school_admin',
+      });
       return;
     }
     const token = req.headers.authorization?.slice(7);
     if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
-    const session = await db.get(`SELECT u.id, u.username, u.role, u.display_name FROM user_sessions s
+    const session = await db.get(`SELECT u.id, u.username, u.role, u.display_name, u.school_role FROM user_sessions s
        JOIN users u ON s.user_id = u.id
        WHERE s.token = ? AND s.expires_at > NOW()`
     , token) as Record<string, unknown> | undefined;

@@ -10,6 +10,10 @@ const GRANULARITY_NOTE: Partial<Record<ThinkingGranularity, string>> = {
   effort3: 'This model maps thinking to three reasoning-effort levels — finer levels merge.',
   threshold: 'On this model, deeper reasoning engages at Investigate and above.',
   binary: 'This model reasons on or off — levels above Think Hard behave similarly.',
+  // NOTE: 'binary' now applies to Google only. OpenAI used to be classed here, but
+  // GPT-5.x exposes six reasoning-effort values (none→max) that map 1:1 onto these
+  // levels, and older OpenAI chat models accept no reasoning parameter at all.
+  // Neither is "on or off".
   none: "This model doesn't use thinking levels — they won't change its output.",
 };
 
@@ -51,7 +55,7 @@ interface ThinkingControlsProps {
 }
 
 function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
-  const granularity = model ? thinkingGranularity(providerForModelId(model)) : 'full';
+  const granularity = model ? thinkingGranularity(providerForModelId(model), model) : 'full';
   const note = granularity !== 'full' ? GRANULARITY_NOTE[granularity] : undefined;
   return (
     <div>

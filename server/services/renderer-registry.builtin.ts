@@ -230,6 +230,23 @@ export const BUILTIN_RENDERERS: RendererDefinition[] = [
     sort_order: 60,
   },
   {
+    id: 'latex-source',
+    label: 'LaTeX source (.tex)',
+    description: 'LaTeX source file you compile yourself — respects your own \\documentclass and preamble so the content drops into an existing house style. Ships as a .zip with your uploaded .cls / .sty / .bib files when you have any, so the recipient can compile it.',
+    category: 'package',
+    trigger: 'post_hoc',
+    applies_when: {},
+    output: {
+      file_type: 'tex',
+      mime_type: 'application/x-tex',
+      filename_template: '{module_id}-{timestamp}.{file_type}',
+    },
+    renderer_module: './renderers/package/latex-source.js',
+    phase: 1,
+    status: 'beta',
+    sort_order: 70,
+  },
+  {
     id: 'mermaid-sequence',
     label: 'Sequence diagram',
     description: 'Actor-message sequence diagram for process maps with named actors (Mermaid source).',

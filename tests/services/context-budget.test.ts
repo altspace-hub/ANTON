@@ -18,7 +18,7 @@ import {
   resolveOllamaNumCtx,
   resetOllamaWindowCacheForTests,
 } from '../../server/services/context-budget.js';
-import { invalidateCustomEndpointCache } from '../../server/routes/custom-model-endpoints.js';
+import { invalidateCustomEndpointCache } from '../../server/services/custom-endpoint-resolver.js';
 
 const ENV_KEYS = ['MAX_CONTEXT_TOKENS', 'OLLAMA_BASE_URL', 'OLLAMA_NUM_CTX', 'OLLAMA_AUTH_TOKEN'] as const;
 let savedEnv: Record<string, string | undefined>;

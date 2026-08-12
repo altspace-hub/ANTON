@@ -35,12 +35,12 @@ export async function streamOpenAI(
     stream_options: { include_usage: true },
   };
 
-  // o-series reasoning models take reasoning_effort, reject temperature, and use
-  // max_completion_tokens. Everything else is a standard chat completion. (The old
-  // code appended a "-thinking" suffix to the model id, which is not a valid OpenAI
-  // model and 404'd whenever native reasoning was enabled.)
+  // Reasoning models (o-series AND gpt-5.x) take reasoning_effort, reject
+  // temperature, and use max_completion_tokens. Everything else is a standard chat
+  // completion. The model is passed through because the accepted effort values
+  // differ: gpt-5.x adds xhigh/max, which an o-series deployment rejects with a 400.
   if (isOpenAIReasoningModel(params.model)) {
-    body.reasoning_effort = openaiReasoningEffort(params.thinkingLevel ?? 'think');
+    body.reasoning_effort = openaiReasoningEffort(params.thinkingLevel ?? 'think', params.model);
     body.max_completion_tokens = params.maxTokens || 8192;
   } else {
     body.temperature = params.temperature;

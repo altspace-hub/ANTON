@@ -53,7 +53,12 @@ export const FileIdParamSchema = z.object({
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 export const ExportSchema = z.object({
-  format: z.enum(['md', 'docx', 'xlsx', 'pdf', 'pptx']),
+  // Must list EVERY format the switch in routes/export.ts handles. `fountain` and `fdx`
+  // were implemented there (:218, :229), given ExportBar entries and documented in
+  // openapi.ts, but never added here — so validate(ExportSchema) rejected them with a
+  // 400 before dispatch was ever reached, and both were unreachable from the day they
+  // shipped. tests/routes/export-formats.test.ts now pins the two lists together.
+  format: z.enum(['md', 'docx', 'xlsx', 'pdf', 'pptx', 'fountain', 'fdx']),
   content: z.string().min(1).max(2_000_000), // 2 MB text cap
   metadata: z.object({
     filename: z.string().max(200).optional(),

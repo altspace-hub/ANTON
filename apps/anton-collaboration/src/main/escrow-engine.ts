@@ -29,6 +29,9 @@ import type { EscrowStore } from './escrow-store.js';
 import type { FulfilmentStore } from './fulfilment-store.js';
 import type { Agreement } from './agreement-core.js';
 
+/** Floor for the auto-release window — see openEscrow. */
+export const MIN_AUTO_RELEASE_MS = 24 * 60 * 60 * 1000;
+
 export const DEFAULT_FUND_DEADLINE_MS = 7 * 24 * 60 * 60 * 1000;  // 7 days to fund
 export const DEFAULT_DISPUTE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // 14 days to resolve
 
@@ -79,6 +82,36 @@ export class EscrowEngine {
     if (!buyerPubkey || !sellerPubkey) throw new Error('agreement is missing a party pubkey (not fully agreed?)');
     const existing = await this.store.get(agreementId);
     if (existing) return existing; // idempotent open
+
+    // openEscrow is LLM-callable and ungated, and every address below is taken
+    // verbatim from the caller. Immutability-after-open (which does hold) is
+    // worth nothing if the values fixed at open are attacker-chosen, so sanity
+    // must be enforced HERE or nowhere.
+    const me = await this.identity.pubkey();
+    if (me !== buyerPubkey && me !== input.arbiterPubkey) {
+      // Kills role inversion: a seller who proposes with sellerRole:'acceptor'
+      // makes buyerPubkeyOf(a) resolve to THEIR key on the victim's instance.
+      // The victim is then neither buyer nor arbiter, so their own instance
+      // refuses to open — before any address is fixed. Allowing the arbiter
+      // preserves the each-instance-syncs-the-open model the tests rely on.
+      throw new Error('only the buyer or the named arbiter may open this escrow');
+    }
+    if (input.arbiterPubkey === sellerPubkey || input.arbiterPubkey === buyerPubkey) {
+      // A seller who is also the arbiter decides their own dispute, which is the
+      // entire trust assumption escrow rests on.
+      throw new Error('the arbiter must be a third party, not the buyer or the seller');
+    }
+    if (input.escrowAddress === input.releaseTo) {
+      // Funding an address that is also the release target is a direct payment
+      // wearing escrow's name — the fund leg alone pays the seller.
+      throw new Error('escrowAddress must differ from releaseTo — that is a direct payment, not escrow');
+    }
+    if (input.autoReleaseMs !== undefined && input.autoReleaseMs < MIN_AUTO_RELEASE_MS) {
+      // releaseAllowed() permits an auto-release on a SELLER-SIGNED 'shipped'
+      // record alone. escrow-core promises "never on seller self-attestation
+      // alone"; with autoReleaseMs:1 that is precisely what it becomes.
+      throw new Error(`autoReleaseMs must be at least ${MIN_AUTO_RELEASE_MS}ms (24h) — a shorter window is seller self-release`);
+    }
     const createdAt = this.now();
     const record: EscrowRecord = {
       agreementId, proposalHash: a.proposalHash,

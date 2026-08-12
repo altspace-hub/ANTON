@@ -50,6 +50,7 @@ import { CliModalDriver } from './cli-modal.js';
 import { WebConfirmModalDriver } from './web-confirm.js';
 import { registerAgentPayDashboard } from './dashboard.js';
 import { DashboardActions } from './dashboard-actions.js';
+import { isTrustedTerminal } from './terminal-channel.js';
 import { attestationChainConfig } from '../main/attestation-config.js';
 import { ensureEnrolled } from '../main/enrollment.js';
 
@@ -160,7 +161,17 @@ async function main(): Promise<void> {
     approvalEnv === 'web' ? 'web'
     : approvalEnv === 'terminal' ? 'terminal'
     : mcpStdio ? 'web' : 'terminal';
-  const webAutoOpen = (process.env.AGENT_PAY_WEB_CONFIRM_AUTOOPEN ?? '').trim().toLowerCase() === 'true';
+  // Is stderr the OPERATOR's terminal, or a pipe/file the MCP host captures?
+  // Every operator capability here (confirm URL, dashboard unlock key, pair code)
+  // is printed to `log`, and the safety model assumed only the human reads it.
+  // Under --mcp-stdio that is false. See terminal-channel.ts.
+  const capabilityChannelTrusted = isTrustedTerminal();
+  // Auto-open defaults ON when the channel is untrusted — there it is the only
+  // way the confirm URL reaches the human without transiting a readable stream.
+  const autoOpenEnv = (process.env.AGENT_PAY_WEB_CONFIRM_AUTOOPEN ?? '').trim().toLowerCase();
+  const webAutoOpen = autoOpenEnv === 'true' ? true
+    : autoOpenEnv === 'false' ? false
+    : !capabilityChannelTrusted;
 
   // One storage backend shared by the wallet (wallet.* keys) and the
   // durable transaction ledger (ledger.v1 key) — different namespaces.
@@ -198,7 +209,7 @@ async function main(): Promise<void> {
   }
 
   const modal = approvalMode === 'web'
-    ? new WebConfirmModalDriver({ port, now: Date.now, log, autoOpen: webAutoOpen })
+    ? new WebConfirmModalDriver({ port, now: Date.now, log, autoOpen: webAutoOpen, capabilityChannelTrusted })
     : new CliModalDriver();                      // approve in THIS terminal
   const deps: ServerDeps = {
     pairings: new PairingStore(),
@@ -275,16 +286,35 @@ async function main(): Promise<void> {
   log(` Wallet:     ${walletReady ? 'ready' : 'NONE — read-only (set AGENT_PAY_MNEMONIC to send)'}`);
   log(` Caps:       per-payment ${limits.maxPerPaymentFtc ?? '∞'} FTC · 24h ${limits.maxDailyFtc ?? '∞'} FTC`);
   if (approvalMode === 'web') {
-    log(' Approval:   BROWSER — each payment prints a one-time confirm URL to THIS');
-    log('             terminal; open it and click Approve/Reject. No bypass.');
-    if (webAutoOpen) log('             (auto-open enabled)');
+    if (capabilityChannelTrusted) {
+      log(' Approval:   BROWSER — each payment prints a one-time confirm URL to THIS');
+      log('             terminal; open it and click Approve/Reject. No bypass.');
+      if (webAutoOpen) log('             (auto-open enabled)');
+    } else {
+      log(' Approval:   BROWSER — this output is NOT a terminal, so one-time confirm');
+      log('             URLs are withheld from it (they would be readable in your MCP');
+      log('             host\'s logs). Each payment opens your browser instead.');
+      if (!webAutoOpen) {
+        log('   ⚠ AGENT_PAY_WEB_CONFIRM_AUTOOPEN=false — with no terminal and no auto-open');
+        log('     there is NO way to approve; every payment will expire unapproved.');
+      }
+    }
   } else {
     log(' Approval:   every payment needs a typed "y" in THIS terminal — no bypass');
   }
   log(` Dashboard:  ${dashboardOn ? `http://127.0.0.1:${port}/   (settings + history, read-only)` : 'off'}`);
   if (dashActions) {
-    log(' Dash actions: ON — unlock the operator approve/reject console ONCE from THIS terminal:');
-    log(`   ${dashActions.unlockUrl()}`);
+    // The unlock URL embeds the 256-bit dashboard key — a standing capability to
+    // approve payments, so it is strictly MORE sensitive than a single confirm
+    // URL and must obey the same rule.
+    if (capabilityChannelTrusted) {
+      log(' Dash actions: ON — unlock the operator approve/reject console ONCE from THIS terminal:');
+      log(`   ${dashActions.unlockUrl()}`);
+    } else {
+      log(' Dash actions: ON, but the unlock link is WITHHELD — this output is not a');
+      log('   terminal, and that link is a standing approval capability. Start the');
+      log('   gateway from a terminal once to unlock the console.');
+    }
   }
   if (mcpStdio) log(' MCP:        stdio enabled (stdout reserved for MCP).');
   log('════════════════════════════════════════════════════════════════');

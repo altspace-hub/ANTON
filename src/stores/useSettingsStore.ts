@@ -30,7 +30,9 @@ export function getStoredDefaultModel(): ModelId {
       return saved as ModelId;
     }
   }
-  return 'claude-opus-4-8';
+  // Fallback only — a user's saved choice above always wins, so existing
+  // installs keep whatever they had and are not silently moved to a new model.
+  return 'claude-opus-5';
 }
 
 export function getStoredDefaultThinking(): ThinkingLevel {

@@ -26,6 +26,7 @@ import {
   evaluateRequiresField,
 } from './renderer-registry.types.js';
 import { BUILTIN_RENDERERS } from './renderer-registry.builtin.js';
+import { loadLatexBrandAssets } from './brand-latex-assets.js';
 import {
   type ContentType,
   type StructuredOutput,
@@ -181,6 +182,11 @@ export function createRendererRegistry(db: DatabaseAdapter) {
 
     const markdown = await loadLatestMarkdown(sessionId);
     const brandTemplate = await loadBrandTemplate(session.user_id);
+    // Company-uploaded LaTeX class/style files. Scoped to the SESSION's owner —
+    // see loadLatexBrandAssets for why that, and not the caller, is the right
+    // subject. Empty on every instance that has never uploaded one, which is
+    // what keeps the .tex export unchanged for everybody else.
+    const latexAssets = await loadLatexBrandAssets(db, session.user_id);
     const ctx: RenderContext = {
       session: {
         id: session.id,
@@ -194,6 +200,7 @@ export function createRendererRegistry(db: DatabaseAdapter) {
       options,
       brand_template: brandTemplate ?? undefined,
       markdown: markdown ?? undefined,
+      latex_assets: latexAssets.length > 0 ? latexAssets : undefined,
     };
 
     // Resolve + execute the render function
@@ -303,17 +310,49 @@ export function createRendererRegistry(db: DatabaseAdapter) {
     return row?.content ?? null;
   }
 
-  async function loadBrandTemplate(userId: string | null): Promise<import('./renderer-registry.types.js').BrandTemplate | null> {
-    if (!userId) return null;
+  /**
+   * Load the instance brand config and adapt it to the renderer contract.
+   *
+   * Two bugs sat here, and each one alone was enough to make branding a no-op.
+   *
+   * 1. The query read `WHERE user_id = ?`. `user_profiles` has no such column — it is a
+   *    singleton keyed `id TEXT PRIMARY KEY DEFAULT 'default'`. Postgres threw, the bare
+   *    catch returned null, and no renderer ever saw a brand.
+   *
+   * 2. The row was cast straight to BrandTemplate. What is STORED is Settings' shape —
+   *    `{ fonts: { body, h1… }, palette: string[] }` — while renderers read
+   *    `primary_color` / `accent_color` / `font_family`. A cast does not convert, so even
+   *    with the query fixed every field would have been undefined and every renderer
+   *    would have fallen through to its defaults. The two are mapped explicitly below.
+   *
+   * It is instance-wide by design: user_profiles holds one row, so `userId` selects
+   * nothing. The parameter is kept because the signature is part of the render context,
+   * and a per-user brand would reinstate it.
+   */
+  async function loadBrandTemplate(_userId: string | null): Promise<import('./renderer-registry.types.js').BrandTemplate | null> {
     try {
       const row = await db.get<{ brand_config: unknown }>(
-        `SELECT brand_config FROM user_profiles WHERE user_id = ? LIMIT 1`,
-        userId,
+        `SELECT brand_config FROM user_profiles WHERE id = ? LIMIT 1`,
+        'default',
       );
       if (!row?.brand_config) return null;
-      const cfg = typeof row.brand_config === 'string' ? JSON.parse(row.brand_config) : row.brand_config;
-      return cfg as import('./renderer-registry.types.js').BrandTemplate;
-    } catch {
+      const cfg = (typeof row.brand_config === 'string' ? JSON.parse(row.brand_config) : row.brand_config) as {
+        fonts?: Record<string, { family?: string; color?: string }>;
+        palette?: string[];
+        [k: string]: unknown;
+      };
+
+      const withHash = (c?: string) => (c && !c.startsWith('#') ? `#${c}` : c);
+      return {
+        primary_color: withHash(cfg.palette?.[0] ?? cfg.fonts?.h1?.color),
+        accent_color:  withHash(cfg.palette?.[1] ?? cfg.palette?.[0]),
+        font_family:   cfg.fonts?.body?.family,
+        // Anything Settings stores that has no first-class field — including a company
+        // LaTeX preamble — reaches renderers through here rather than being dropped.
+        extra: cfg,
+      };
+    } catch (err) {
+      console.warn('[renderer-registry] brand config unavailable, using defaults:', (err as Error).message);
       return null;
     }
   }

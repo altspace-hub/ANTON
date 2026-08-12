@@ -94,10 +94,11 @@ export function getActiveInstance(): Instance | null {
 export function setActiveInstance(id: string): void {
   if (!getInstance(id)) throw new Error('Unknown instance');
   localStorage.setItem(KEY_ACTIVE, id);
-  void getInstanceSessionToken(id).then(tok => {
-    if (tok) localStorage.setItem('anton-companion-session', tok);
-    else localStorage.removeItem('anton-companion-session');
-  }).catch(() => { /* swallow */ });
+  void (async () => {
+    const tok = await getInstanceSessionToken(id);
+    const { saveSessionToken, clearSession } = await import('./api');
+    if (tok) saveSessionToken(tok); else clearSession();
+  })().catch(() => { /* swallow */ });
   for (const cb of activeListeners) cb(id);
 }
 
@@ -110,10 +111,10 @@ export function setActiveInstance(id: string): void {
 export async function setActiveInstanceAsync(id: string): Promise<void> {
   if (!getInstance(id)) throw new Error('Unknown instance');
   const tok = await getInstanceSessionToken(id);
-  // Atomic: write active id + session bridge in one sync block, THEN notify.
+  const { saveSessionToken, clearSession } = await import('./api');
+  // Atomic: set active id + the in-memory session in one sync block, THEN notify.
   localStorage.setItem(KEY_ACTIVE, id);
-  if (tok) localStorage.setItem('anton-companion-session', tok);
-  else localStorage.removeItem('anton-companion-session');
+  if (tok) saveSessionToken(tok); else clearSession();
   for (const cb of activeListeners) cb(id);
 }
 
@@ -157,7 +158,8 @@ export async function addInstance(input: Omit<Instance, 'id' | 'paired_at' | 'la
   // If this addition is the active instance, also bridge the session token now
   // (synchronous mirror so the next API call reads it without awaiting).
   if (getActiveInstanceId() === id && input.session_token) {
-    localStorage.setItem('anton-companion-session', input.session_token);
+    const { saveSessionToken } = await import('./api');
+    saveSessionToken(input.session_token);
   }
   return inst;
 }

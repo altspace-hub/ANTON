@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -23,7 +24,7 @@ import { streamOllama, listOllamaModels } from '../services/adapters/ollamaAdapt
 import { streamAzureOpenAI } from '../services/adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from '../services/adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible } from '../services/adapters/openaiCompatibleAdapter.js';
-import { resolveCustomEndpoint } from './custom-model-endpoints.js';
+import { resolveCustomEndpoint } from '../services/custom-endpoint-resolver.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';
@@ -44,6 +45,7 @@ import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { validateModuleMatches } from '../services/module-recommendation.js';
 import { computeRunCostUsd } from '../services/run-cost.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
@@ -136,7 +138,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         (model as string) ||
         getAreaDefaultModelSync(areaId as string | null | undefined) ||
         getEffectiveDefaultModel() ||
-        'claude-opus-4-8';
+        'claude-opus-5';
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
@@ -352,7 +354,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // (unchanged), ~104k for Mistral Large, the trained window for
       // ollama:* (via /api/show), the per-endpoint setting for compat:*.
       // Previously every non-1M model silently got the ~892k default.
-      const is1MModel = model === 'claude-opus-4-8' || model === 'claude-sonnet-4-6';
+      // Derived from the capability table, not a hardcoded id list — every new
+      // 1M-context model would otherwise silently be treated as short-context and
+      // pick up a long-context beta header it does not need (see line ~1120).
+      const is1MModel = (MODEL_CAPABILITIES[model]?.maxContextWindow ?? 0) >= 1_000_000;
       const knowledgeBudget = await resolveContextBudget(model, db as DatabaseAdapter);
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
@@ -664,7 +669,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Use the split composer for Anthropic models (supports caching); plain for others.
       const isCachingModel =
         provider === 'anthropic' &&
-        (selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6' || selectedModel === 'claude-sonnet-4-5-20250929');
+        (selectedModel === 'claude-opus-5' || selectedModel === 'claude-sonnet-5'
+          || selectedModel === 'claude-fable-5'
+          || selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6'
+          || selectedModel === 'claude-sonnet-4-5-20250929');
 
       let composedPrompt: string;
       let staticSystemPrompt: string | undefined;
@@ -1952,7 +1960,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '[]';
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-      res.json(matches.slice(0, 3));
+
+      // Grounding is not enough on its own. This route already puts real candidates in
+      // the prompt, but returned the model's answer unchecked — and a model given 40
+      // options still occasionally names a 41st that sounds right. A recommendation that
+      // 404s is worse than a missing one: it teaches the user the feature is broken.
+      const { valid, rejected } = await validateModuleMatches(
+        (matches as Array<{ moduleId: string }>).map((m) => ({ ...m, moduleId: String(m?.moduleId ?? '') })),
+      );
+      if (rejected.length > 0) {
+        console.warn(`[modules/recommend] dropped invented id(s): ${rejected.join(', ')}`);
+      }
+      res.json(valid.slice(0, 3));
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
     }

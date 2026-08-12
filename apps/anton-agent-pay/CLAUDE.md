@@ -45,7 +45,8 @@ Edit `claude_desktop_config.json` (`%APPDATA%\Claude\claude_desktop_config.json`
 The MCP transport exposes the **same six tools** as the HTTP path. Two things to know:
 
 - **No pairing / no bearer on this path.** MCP stdio sends no `Origin` and the gateway accepts that; every MCP client is the built-in identity `mcp-stdio`.
-- **Approval defaults to the BROWSER under `--mcp-stdio`** (the MCP transport owns stdin, so terminal `y` is unavailable). A one-time confirm URL — `http://127.0.0.1:<port>/confirm/<secret>` — prints to the server's **stderr** (visible in Claude Desktop's MCP logs). Set `AGENT_PAY_WEB_CONFIRM_AUTOOPEN=true` to best-effort auto-open it.
+- **Approval defaults to the BROWSER under `--mcp-stdio`** (the MCP transport owns stdin, so terminal `y` is unavailable). Each payment mints a one-time confirm URL — `http://127.0.0.1:<port>/confirm/<secret>` — and **opens it in the operator's browser**.
+- **The confirm URL is NOT printed when stderr is not a terminal.** That URL is the approval capability, and under `--mcp-stdio` stderr is captured into the MCP host's log files — which you, the agent, may be able to read. Publishing it there would let you approve your own payments, so it is withheld and delivered via the OS browser handler instead. Auto-open is therefore ON by default in this mode; `AGENT_PAY_WEB_CONFIRM_AUTOOPEN=false` disables it, and with no terminal and no auto-open there is **no** way to approve — every payment expires unapproved (fail-closed by design).
 
 ### Claude API / Claude Code — HTTP tool-use
 

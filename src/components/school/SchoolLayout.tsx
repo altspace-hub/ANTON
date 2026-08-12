@@ -9,6 +9,7 @@ import {
   MessageSquare,
   ClipboardList,
   Users,
+  ShieldAlert,
   ChevronLeft,
   Menu,
   X,
@@ -20,7 +21,6 @@ import {
   BookMarked,
   FlipHorizontal,
   Heart,
-  ShieldCheck,
 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -144,10 +144,10 @@ const TEACHER_NAV: SchoolNavItem[] = [
     roles: ['teacher', 'school_admin'],
   },
   {
-    id: 'oversight',
-    labelKey: 'nav.oversight',
-    icon: <ShieldCheck className="h-4 w-4" />,
-    path: '/school/teacher/oversight',
+    id: 'safety',
+    labelKey: 'nav.safety',
+    icon: <ShieldAlert className="h-4 w-4" />,
+    path: '/school/teacher/safety',
     roles: ['teacher', 'school_admin'],
   },
 ];

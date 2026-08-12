@@ -263,13 +263,21 @@ export function parseSlides(markdown: string): ParsedSlide[] {
         else if (trimmed === 'Body:')               { currentSection = 'body'; }
         else if (trimmed === 'Left:')               { currentSection = 'left'; }
         else if (trimmed === 'Right:')              { currentSection = 'right'; }
+        // Notes MUST be consumed before the bullet rule. A bulleted line inside a
+        // Notes: block was previously matched by the branch below and pushed onto the
+        // slide body — so the speaker's private notes were printed on the slide, in
+        // front of the audience. Notes are the one section where a leading '- ' is
+        // ordinary prose rather than structure.
+        else if (currentSection === 'notes' && trimmed) {
+          const noteText = trimmed.replace(/^[-*]\s+/, '');
+          slide.notes = (slide.notes ? slide.notes + ' ' : '') + noteText;
+        }
         else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           const content = trimmed.slice(2);
           if (currentSection === 'left')        leftLines.push(content);
           else if (currentSection === 'right')  rightLines.push(content);
           else                                  bodyLines.push(content);
         }
-        else if (currentSection === 'notes' && trimmed) { slide.notes = (slide.notes ? slide.notes + ' ' : '') + trimmed; }
         else if (trimmed && !trimmed.startsWith('```')) {
           if (currentSection === 'body' || currentSection === null) bodyLines.push(trimmed);
         }
@@ -283,6 +291,165 @@ export function parseSlides(markdown: string): ParsedSlide[] {
   return slides;
 }
 
+// ── Plain-markdown fallback ────────────────────────────────────────────────────
+//
+// parseSlides() only understands the `## SLIDE n:` dialect, which just a handful of
+// presentation modules emit. Every other module — i.e. almost all 550 — produces
+// ordinary markdown.
+//
+// Fed that, parseSlides did not fail loudly. `split(/^## SLIDE \d+:/m)` on text without
+// markers returns the whole document as a single block, so it produced exactly ONE
+// slide: title = the literal "# Heading" (hashes included), body = every remaining
+// line with "## Section" appearing as raw text, then cut to the layout's 7-item cap.
+// A 40-page analysis exported as one crowded slide holding about seven lines of it.
+//
+// This derives a real deck from ordinary structure instead: headings start slides,
+// bullets and paragraphs become body items, markdown tables become table slides. It is
+// used only when no SLIDE markers are present, so the authored dialect is untouched.
+
+const MAX_BULLET_CHARS = 240;
+
+/** One markdown table, if `lines` starting at `i` are one. */
+function takeTable(lines: string[], i: number): { headers: string[]; rows: string[][]; next: number } | null {
+  if (!lines[i]?.trim().startsWith('|')) return null;
+  const block: string[] = [];
+  let j = i;
+  while (j < lines.length && lines[j].trim().startsWith('|')) { block.push(lines[j].trim()); j++; }
+  const cells = (l: string) => l.split('|').slice(1, -1).map((c) => c.trim());
+  const rows = block.filter((l) => !/^\|[\s:|-]+\|$/.test(l));
+  if (rows.length < 1) return null;
+  return { headers: cells(rows[0]), rows: rows.slice(1).map(cells), next: j };
+}
+
+export function parsePlainMarkdown(markdown: string): ParsedSlide[] {
+  const lines = markdown.split('\n');
+  const slides: ParsedSlide[] = [];
+  let current: ParsedSlide | null = null;
+  let body: string[] = [];
+  let inFence = false;
+
+  const flush = () => {
+    if (!current) return;
+    if (body.length) current.body = body;
+    // A heading with nothing under it is a section divider, not an empty content slide.
+    if (!current.body?.length && !current.rows?.length) current.type = 'section-divider';
+    slides.push(current);
+    current = null;
+    body = [];
+  };
+
+  const open = (title: string, type: SlideType = 'content') => {
+    flush();
+    current = { number: slides.length + 1, title: title || 'Overview', type };
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trim();
+
+    // Code fences are copied verbatim, never interpreted as headings or bullets.
+    if (/^(```|~~~)/.test(line)) { inFence = !inFence; continue; }
+    if (inFence) { if (line) body.push(line); continue; }
+
+    if (/^#{1,3}\s+/.test(line)) {
+      open(line.replace(/^#+\s+/, '').trim());
+      continue;
+    }
+
+    const table = takeTable(lines, i);
+    if (table && table.headers.length > 0) {
+      // Annotated because control-flow analysis cannot see that open() assigns
+      // `current` from inside a closure, so it narrows the variable to null here.
+      const title = (current as ParsedSlide | null)?.title ?? 'Table';
+      // A table becomes its own slide: mixing it into a bullet list loses the grid.
+      flush();
+      slides.push({ number: slides.length + 1, title, type: 'table', headers: table.headers, rows: table.rows });
+      i = table.next - 1;
+      continue;
+    }
+
+    if (!line) continue;
+    if (/^([-*_])\1{2,}$/.test(line)) continue;                 // horizontal rule
+
+    if (!current) open('Overview');
+    const text = line.replace(/^[-*+]\s+/, '').replace(/^\d+\.\s+/, '');
+    // Long paragraphs are truncated per bullet rather than dropped, and the ellipsis
+    // is visible — unlike the old silent slice of the whole document.
+    body.push(text.length > MAX_BULLET_CHARS ? text.slice(0, MAX_BULLET_CHARS - 1) + '…' : text);
+  }
+  flush();
+
+  // Promote a lone leading heading to a proper title slide.
+  if (slides.length > 1 && slides[0].type === 'section-divider') slides[0].type = 'title';
+  return slides;
+}
+
+// ── Overflow pagination ────────────────────────────────────────────────────────
+//
+// Each layout capped its body with `.slice(0, n)` — 7 items for content, 8 for agenda,
+// 6 for numbered cards. Anything past the cap was DROPPED, with nothing in the file or
+// the UI to say so. A 30-finding analysis exported as 7 findings that looked complete,
+// which is the worst way for an export to fail: the deliverable is wrong and looks
+// right, and the reader has no way to know.
+//
+// Body items beyond a layout's capacity now continue onto additional slides titled
+// "… (cont.)". Layouts keep their slice() as a hard backstop, so a layout that gains a
+// tighter cap can never silently drop content again — it just paginates.
+
+/** Body capacity per layout, matching each builder's slice(). */
+const BODY_CAPACITY: Partial<Record<SlideType, number>> = {
+  content: 7,
+  agenda: 8,
+  'numbered-cards': 6,
+  'icon-list': 7,
+  stats: 6,
+};
+
+/** Rows per table slide — beyond this the table runs off the bottom of the slide. */
+const TABLE_ROW_CAPACITY = 12;
+
+export function paginate(slides: ParsedSlide[]): ParsedSlide[] {
+  const out: ParsedSlide[] = [];
+
+  for (const slide of slides) {
+    const bodyCap = BODY_CAPACITY[slide.type];
+
+    if (bodyCap && slide.body && slide.body.length > bodyCap) {
+      for (let i = 0; i < slide.body.length; i += bodyCap) {
+        const part = slide.body.slice(i, i + bodyCap);
+        out.push({
+          ...slide,
+          number: out.length + 1,
+          title: i === 0 ? slide.title : `${slide.title} (cont.)`,
+          body: part,
+          // Notes belong to the first slide only; repeating them would have the
+          // presenter read the same script on every continuation.
+          notes: i === 0 ? slide.notes : undefined,
+        });
+      }
+      continue;
+    }
+
+    if (slide.type === 'table' && slide.rows && slide.rows.length > TABLE_ROW_CAPACITY) {
+      for (let i = 0; i < slide.rows.length; i += TABLE_ROW_CAPACITY) {
+        out.push({
+          ...slide,
+          number: out.length + 1,
+          title: i === 0 ? slide.title : `${slide.title} (cont.)`,
+          headers: slide.headers,           // repeated, so a continued table stays readable
+          rows: slide.rows.slice(i, i + TABLE_ROW_CAPACITY),
+          notes: i === 0 ? slide.notes : undefined,
+        });
+      }
+      continue;
+    }
+
+    out.push({ ...slide, number: out.length + 1 });
+  }
+
+  return out;
+}
+
 // ── PPTX Generator ─────────────────────────────────────────────────────────────
 
 export async function generatePptx(
@@ -293,7 +460,16 @@ export async function generatePptx(
   const b = resolveBrand(brand);
   const ctx: Ctx = { pptx: null, acc: b.accentColor, sec: b.secondaryColor, fnt: b.fontFamily, co: b.companyName, chartColors: b.chartColors };
 
-  const slides = parseSlides(markdown);
+  // Gate on the MARKERS, not on how many slides parseSlides returned.
+  //
+  // `"text".split(/^## SLIDE \d+:/m)` yields ["text"] — one element, not zero — so
+  // parseSlides returns a slide for ANY non-empty input. Ordinary module output
+  // therefore became exactly one content slide whose title was the literal "# Heading"
+  // and whose body was every remaining line, headings included as raw "## Text", then
+  // cut to the layout's 7 items. That is the "one truncated slide" symptom; the
+  // `slides.length === 0` fallback below was never what produced it.
+  const hasSlideMarkers = /^## SLIDE \d+:/m.test(markdown);
+  const slides = paginate(hasSlideMarkers ? parseSlides(markdown) : parsePlainMarkdown(markdown));
   const pptx = new PptxGenJS();
   ctx.pptx = pptx;
 
@@ -366,10 +542,23 @@ export async function generatePptx(
     }
   }
 
+  // Only reachable when BOTH parsers found nothing — i.e. the input carries no heading,
+  // bullet, table or paragraph at all. This used to be the COMMON path (parseSlides
+  // returned [] for any non-presentation module) and silently truncated the whole
+  // document at 2000 characters; the plain-markdown fallback now handles that case.
+  // If content is still cut here, the slide says so rather than looking complete.
   if (slides.length === 0) {
     const s = pptx.addSlide({ masterName: 'CONTENT_MASTER' });
+    const LIMIT = 2000;
+    const shown = markdown.slice(0, LIMIT);
     s.addText('Presentation Content', t({ x: 0.5, y: 0.15, w: 12, h: 0.7, fontSize: 22, color: C.white, bold: true }, ctx));
-    s.addText(markdown.slice(0, 2000), t({ x: 0.5, y: 1.2, w: 12.3, h: 5.5, fontSize: 12, color: C.dark, valign: 'top' }, ctx));
+    s.addText(shown, t({ x: 0.5, y: 1.2, w: 12.3, h: 5.5, fontSize: 12, color: C.dark, valign: 'top' }, ctx));
+    if (markdown.length > LIMIT) {
+      s.addText(
+        `Content truncated — ${markdown.length - LIMIT} more characters not shown. Export to Word or Markdown for the full text.`,
+        t({ x: 0.5, y: 6.75, w: 12.3, h: 0.35, fontSize: 10, color: C.red, italic: true }, ctx),
+      );
+    }
   }
 
   const output = await pptx.write({ outputType: 'nodebuffer' });
@@ -381,6 +570,39 @@ export async function generatePptx(
 /** Inject fontFace into any pptxgenjs text options object */
 function t(options: Record<string, unknown>, ctx: Ctx): Record<string, unknown> {
   return { ...options, fontFace: ctx.fnt };
+}
+
+/**
+ * Markdown inline formatting → pptxgenjs text runs.
+ *
+ * Body text was passed to addText() as a raw string, so `**Finding:**` rendered on the
+ * slide as the literal characters `**Finding:**`. ANTON's prompts ask for emphasis, so
+ * this fired on ordinary output — asterisks on a slide in front of a client.
+ *
+ * Returns a plain string when there is no formatting, since pptxgenjs handles that
+ * fast path and it keeps the produced XML smaller.
+ */
+export function mdRuns(text: string): string | Array<{ text: string; options?: Record<string, unknown> }> {
+  if (!/[*_`]/.test(text)) return text;
+
+  const runs: Array<{ text: string; options?: Record<string, unknown> }> = [];
+  // Code spans first and never re-parsed, so `**literal**` inside backticks stays literal.
+  const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_)/g);
+
+  for (const part of parts) {
+    if (!part) continue;
+    if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+      runs.push({ text: part.slice(1, -1), options: { fontFace: 'Consolas' } });
+    } else if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
+      runs.push({ text: part.slice(2, -2), options: { bold: true } });
+    } else if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
+      if (part.length > 2) runs.push({ text: part.slice(1, -1), options: { italic: true } });
+      else runs.push({ text: part });
+    } else {
+      runs.push({ text: part });
+    }
+  }
+  return runs.length > 0 ? runs : text;
 }
 
 /** Title text in the dark header bar */
@@ -451,7 +673,7 @@ function addContentSlide(ctx: Ctx, slide: ParsedSlide) {
       const y = 1.12 + i * (itemH + gap);
       cardBg(s, ctx, 0.5, y, 12.3, itemH);
       accentBar(s, ctx, 0.5, y, itemH);
-      s.addText(item, t({ x: 0.75, y: y + 0.05, w: 11.9, h: itemH - 0.1, fontSize: 13, color: C.dark, valign: 'middle', wrap: true }, ctx));
+      s.addText(mdRuns(item) as never, t({ x: 0.75, y: y + 0.05, w: 11.9, h: itemH - 0.1, fontSize: 13, color: C.dark, valign: 'middle', wrap: true }, ctx));
     });
   }
   if (slide.notes) s.addNotes(slide.notes);
@@ -481,7 +703,7 @@ function addAgendaSlide(ctx: Ctx, slide: ParsedSlide) {
       s.addText(String(i + 1), t({ x, y: y + (itemH - circleD) / 2, w: circleD, h: circleD, fontSize: 15, color: C.dark, bold: true, align: 'center', valign: 'middle' }, ctx));
 
       cardBg(s, ctx, x + circleD + 0.12, y, colW - circleD - 0.12, itemH);
-      s.addText(item, t({ x: x + circleD + 0.28, y: y + 0.05, w: colW - circleD - 0.45, h: itemH - 0.1, fontSize: 14, color: C.dark, valign: 'middle', wrap: true }, ctx));
+      s.addText(mdRuns(item) as never, t({ x: x + circleD + 0.28, y: y + 0.05, w: colW - circleD - 0.45, h: itemH - 0.1, fontSize: 14, color: C.dark, valign: 'middle', wrap: true }, ctx));
     });
   }
   if (slide.notes) s.addNotes(slide.notes);
@@ -503,7 +725,7 @@ function addNumberedCardsSlide(ctx: Ctx, slide: ParsedSlide) {
       cardBg(s, ctx, 0.5, y, 12.3, itemH);
       s.addShape(pptx.ShapeType.ellipse, { x: 0.65, y: y + (itemH - circleD) / 2, w: circleD, h: circleD, fill: { color: acc }, line: { type: 'none' } });
       s.addText(String(i + 1), t({ x: 0.65, y: y + (itemH - circleD) / 2, w: circleD, h: circleD, fontSize: 16, color: C.dark, bold: true, align: 'center', valign: 'middle' }, ctx));
-      s.addText(item, t({ x: 0.65 + circleD + 0.2, y: y + 0.07, w: 11.7 - circleD, h: itemH - 0.14, fontSize: 13, color: C.dark, valign: 'middle', wrap: true }, ctx));
+      s.addText(mdRuns(item) as never, t({ x: 0.65 + circleD + 0.2, y: y + 0.07, w: 11.7 - circleD, h: itemH - 0.14, fontSize: 13, color: C.dark, valign: 'middle', wrap: true }, ctx));
     });
   }
   if (slide.notes) s.addNotes(slide.notes);
@@ -523,7 +745,7 @@ function addIconListSlide(ctx: Ctx, slide: ParsedSlide) {
     items.forEach((item, i) => {
       const y = 1.12 + i * (itemH + gap);
       cardBg(s, ctx, 0.5, y, 12.3, itemH, fills[i % 2]);
-      s.addText(item, t({ x: 0.72, y: y + 0.05, w: 12.0, h: itemH - 0.1, fontSize: 13, color: C.dark, valign: 'middle', wrap: true }, ctx));
+      s.addText(mdRuns(item) as never, t({ x: 0.72, y: y + 0.05, w: 12.0, h: itemH - 0.1, fontSize: 13, color: C.dark, valign: 'middle', wrap: true }, ctx));
     });
   }
   if (slide.notes) s.addNotes(slide.notes);
@@ -593,7 +815,7 @@ function addCalloutSlide(ctx: Ctx, slide: ParsedSlide) {
       const y = 3.35 + i * (suppH + 0.1);
       s.addShape(pptx.ShapeType.rect, { x: 0.5, y, w: 12.3, h: suppH, fill: { color: C.card }, line: { color: '1E3A5F', pt: 0.75 } });
       accentBar(s, ctx, 0.5, y, suppH);
-      s.addText(item, t({ x: 0.72, y: y + 0.05, w: 12.0, h: suppH - 0.1, fontSize: 12, color: C.offWhite, valign: 'middle', wrap: true }, ctx));
+      s.addText(mdRuns(item) as never, t({ x: 0.72, y: y + 0.05, w: 12.0, h: suppH - 0.1, fontSize: 12, color: C.offWhite, valign: 'middle', wrap: true }, ctx));
     });
   }
   if (slide.notes) s.addNotes(slide.notes);
@@ -623,7 +845,7 @@ function addTwoColumnSlide(ctx: Ctx, slide: ParsedSlide) {
       const y = 1.67 + i * (itemH + gap);
       cardBg(s, ctx, x, y, colW, itemH);
       accentBar(s, ctx, x, y, itemH, accentColor);
-      s.addText(item, t({ x: x + 0.16, y: y + 0.04, w: colW - 0.26, h: itemH - 0.08, fontSize: 12, color: C.dark, valign: 'middle', wrap: true }, ctx));
+      s.addText(mdRuns(item) as never, t({ x: x + 0.16, y: y + 0.04, w: colW - 0.26, h: itemH - 0.08, fontSize: 12, color: C.dark, valign: 'middle', wrap: true }, ctx));
     });
   };
 

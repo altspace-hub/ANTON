@@ -25,6 +25,7 @@ interface Harness {
   app: FastifyInstance;
   agreements: AgreementStore;
   buyerFulfilment: FulfilmentEngine;
+  fulStore: FulfilmentStore;
   identity: AgreementIdentity;
   buyerPub: string;
   call: (method: string, params?: unknown) => Promise<{ status: number; body: any }>;
@@ -48,6 +49,7 @@ async function buildHarness(withEscrow = true): Promise<Harness> {
   return {
     app, agreements, identity, buyerPub,
     buyerFulfilment: new FulfilmentEngine(agreements, buyerId, fulStore),
+    fulStore,
     call: async (method, params) => {
       const res = await app.inject({
         method: 'POST', url: '/rpc',
@@ -87,6 +89,12 @@ describe('escrow verbs (custodial flow over JSON-RPC)', () => {
     expect((await h.call('markEscrowFunded', { agreementId: ID, txHash: 'tx_fund' })).body.result.escrow.status).toBe('funded');
 
     // buyer SIGNS the delivery confirmation (what authorizes a release post-C2)
+    // Record the shipment first — confirmDelivery now refuses without one, since
+    // a signed "I received the goods" for an order that was never sent is exactly
+    // what releaseAllowed() treats as authorisation to pay out. Seeded rather than
+    // called through markShipped because that verb is seller-only and this
+    // harness runs as the buyer.
+    await h.fulStore.put({ agreementId: ID, proposalHash: PHASH, status: 'shipped' });
     await h.buyerFulfilment.confirmDelivery(ID);
 
     const relInstr = await h.call('getEscrowReleaseInstruction', { agreementId: ID });

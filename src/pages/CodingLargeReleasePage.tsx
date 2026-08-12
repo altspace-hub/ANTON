@@ -913,8 +913,12 @@ export default function CodingLargeReleasePage() {
                       </div>
                     )}
 
-                    {/* Planning: Show streaming indicator */}
-                    {(task.status === 'planning' && isStreamingThisTask && activeMode === 'plan') && (
+                    {/* Planning: Show streaming indicator.
+                        'planned', not 'planning' — the latter is not a value coding_tasks
+                        can hold, so this indicator had never once rendered. It is the
+                        status the plan endpoint writes when it issues the prompt, which
+                        is exactly when this spinner should appear. */}
+                    {(task.status === 'planned' && isStreamingThisTask && activeMode === 'plan') && (
                       <div className="space-y-3 pt-2">
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin text-adv-teal" />

@@ -1,13 +1,25 @@
 import { Router } from 'express';
+import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import type Anthropic from '@anthropic-ai/sdk';
 import { createDiscoveryEngine } from '../services/discovery-engine.js';
 import type { DiscoveryTier } from '../services/discovery-engine.js';
+import { safeError } from '../lib/error-response.js';
 
-/** Narrow `unknown` thrown values to a user-safe error message. */
+/**
+ * Narrow `unknown` thrown values to a user-safe error message.
+ *
+ * This used to read `err instanceof Error ? errMsg(err) : String(err)` — it called
+ * ITSELF on the same value, so every Error recursed until the stack blew. That threw
+ * a RangeError from inside a `catch` block in an async handler, which Express 4 does
+ * not route to the error middleware: the response was never sent and the request
+ * hung until the client timed out. Every 500 path in this file was affected, so the
+ * user saw a spinner forever instead of an error. Delegates to safeError(), the
+ * project-standard scrubber, which is what the recursion was presumably reaching for.
+ */
 function errMsg(err: unknown): string {
-  return err instanceof Error ? errMsg(err) : String(err);
+  return safeError(err);
 }
 
 export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
@@ -40,6 +52,27 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
     } catch (err: unknown) {
       res.status(500).json({ error: errMsg(err) });
     }
+  });
+
+  /**
+   * SECURITY (2026-07-27 survey): the twelve /discovery/sessions/:id routes below —
+   * read state, patch status, delete, respond, generate, export, start — all keyed off
+   * the id alone, so any authenticated user on a shared instance could read and mutate
+   * another tenant's discovery session, including their stated pain points and business
+   * case.
+   *
+   * Guarded ONCE here rather than per-route. Twelve individual checks is how the
+   * thirteenth route ships without one; a router.use over the id prefix cannot be
+   * forgotten by a later handler. Note this does not match the bare
+   * `/discovery/sessions` list (no id segment), which already scopes via
+   * engine.listSessions(userId).
+   */
+  router.use('/discovery/sessions/:id', async (req, res, next) => {
+    if (!(await assertOwned(db, req as OwnedRequest, res, {
+      table: 'discovery_sessions', ownerColumn: 'user_id', id: req.params.id,
+      notFoundMessage: 'Discovery session not found',
+    }))) return;
+    next();
   });
 
   // GET /discovery/sessions/:id — Get session state
@@ -174,13 +207,20 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
   // GET /discovery/followups/pending — Get pending follow-ups
   router.get('/discovery/followups/pending', async (req, res) => {
     try {
+      // SECURITY: this returned every tenant's pending follow-ups — the join exposes
+      // ds.tier/state alongside another org's follow-up content. Scoped through the
+      // joined session's owner.
+      // NOTE: db.get returns ONE row for what the client treats as a list. Left as-is
+      // deliberately — changing it to db.all alters the response shape and belongs in
+      // its own change, not smuggled into a security fix.
+      const scope = ownerFilter(req as OwnedRequest, 'ds.user_id');
       const rows = await db.get(`
         SELECT f.*, ds.tier, ds.state
         FROM discovery_followups f
         JOIN discovery_sessions ds ON f.session_id = ds.id
-        WHERE f.status = 'pending'
+        WHERE f.status = 'pending'${scope.sql}
         ORDER BY f.scheduled_date ASC
-      `);
+      `, ...scope.params);
       res.json(rows);
     } catch (err: unknown) {
       res.status(500).json({ error: errMsg(err) });
@@ -274,6 +314,12 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
   });
 
   // GET /discovery/sessions/:id/start — Get the initial message (starts the conversation)
+  //
+  // The opening turn used to be faked here: this route posted the literal string
+  // '__START_DISCOVERY__' as the user's first message and then scrubbed it out of the
+  // history afterwards. The model still received the token, and the extra history
+  // entry suppressed the warm opening question. engine.startConversation() owns that
+  // turn now — there is no synthetic user message to send or to clean up.
   router.get('/discovery/sessions/:id/start', async (req, res) => {
     try {
       const session = await engine.getSession(req.params.id);
@@ -282,24 +328,8 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
         return;
       }
 
-      // If conversation is empty, generate the opening message
-      if (session.state.conversationHistory.length === 0) {
-        // Use a dummy first message to trigger the AI's opening
-        const result = await engine.processUserResponse(req.params.id, '__START_DISCOVERY__');
-
-        // The AI will generate the opening based on the context phase prompt
-        // Remove the dummy message from history
-        result.state.conversationHistory = result.state.conversationHistory.filter(
-          (m: any) => m.content !== '__START_DISCOVERY__'
-        );
-        await engine.updateSessionState(req.params.id, result.state);
-
-        res.json({ response: result.response, state: result.state });
-      } else {
-        // Session already started, return the first assistant message
-        const firstAssistant = session.state.conversationHistory.find((m: any) => m.role === 'assistant');
-        res.json({ response: firstAssistant?.content || '', state: session.state });
-      }
+      const { response, state } = await engine.startConversation(req.params.id);
+      res.json({ response, state });
     } catch (err: unknown) {
       console.error('[discovery] Start error:', err);
       res.status(500).json({ error: errMsg(err) });

@@ -79,6 +79,20 @@ export interface BrandTemplate {
   extra?: Record<string, unknown>;
 }
 
+/**
+ * A company-uploaded LaTeX asset (`brand_templates` rows of type 'latex') —
+ * a `.cls`, `.sty` or `.bib` file, already read into memory and already
+ * reduced to a filename that is safe to use as an archive entry.
+ *
+ * `filename` is the name the file must have to be usable, NOT the name it is
+ * stored under: LaTeX resolves `\documentclass{acmecorp}` to `acmecorp.cls`,
+ * while uploads are stored under a random UUID.
+ */
+export interface LatexAssetFile {
+  filename: string;
+  content: Buffer;
+}
+
 export interface RenderContext {
   session: RenderSessionContext;
   options: Record<string, unknown>;
@@ -86,6 +100,12 @@ export interface RenderContext {
   /** Markdown output (from messages.content). Renderers that need prose rather
    *  than the structured payload (e.g. plain-language, executive-one-pager) use this. */
   markdown?: string;
+  /**
+   * LaTeX class/style/bibliography files uploaded for this session's owner.
+   * Absent or empty means the instance has no LaTeX house style, and renderers
+   * must behave exactly as they did before assets existed.
+   */
+  latex_assets?: LatexAssetFile[];
 }
 
 export interface RenderValidationResult {

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
@@ -6,6 +7,8 @@ import { fileTypeFromBuffer } from 'file-type';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { validateParams } from '../lib/validate.js';
 import { FileIdParamSchema } from '../lib/schemas.js';
+import type { DatabaseAdapter } from '../db/database.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 fs.ensureDirSync(UPLOAD_DIR);
@@ -13,8 +16,13 @@ fs.ensureDirSync(UPLOAD_DIR);
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
   filename: (_req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
+    // The id is unguessable (randomUUID: 122 CSPRNG bits) but that is defence in
+    // depth, not authorisation — GET /files/:id now checks the file_uploads
+    // ownership record written on upload (migration 253). An unguessable id alone
+    // is a capability URL, and capability URLs leak through everything that records
+    // a URL: browser history, proxy logs, a pasted link, a screenshot.
+    const unique = randomUUID();
+    cb(null, `${unique}-${file.originalname}`);
   },
 });
 
@@ -41,9 +49,10 @@ const upload = multer({
   },
 });
 
-const router = Router();
+export function createFilesRoutes(db: DatabaseAdapter): Router {
+  const router = Router();
 
-// POST /api/files/upload
+  // POST /api/files/upload
 router.post('/files/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
@@ -109,6 +118,15 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 
   const isImage = IMAGE_EXTENSIONS.has(ext);
 
+  // Record who uploaded this, so GET /files/:id can be an authorisation decision
+  // rather than a guess about who holds the id. Recorded BEFORE responding, so the
+  // caller can never receive an id whose owner was not written.
+  await db.run(
+    `INSERT INTO file_uploads (id, original_name, extension, size_bytes, uploaded_by)
+     VALUES (?, ?, ?, ?, ?)`,
+    req.file.filename, req.file.originalname, ext, req.file.size, req.user?.id ?? null,
+  );
+
   // For images: return base64 data for Claude vision API; for documents: extract text
   if (isImage) {
     const mediaType = IMAGE_MEDIA_TYPES[ext] || 'image/png';
@@ -145,8 +163,33 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
 });
 
 // GET /api/files/:id
-router.get('/files/:id', validateParams(FileIdParamSchema), (req, res) => {
-  const filePath = path.join(UPLOAD_DIR, req.params.id as string);
+router.get('/files/:id', validateParams(FileIdParamSchema), async (req, res) => {
+  // basename() FIRST, so the same value is used for the ownership lookup and for the
+  // file read — checking one id and serving another is its own bug. It also makes the
+  // join provably a direct child of UPLOAD_DIR rather than relying on the realpath
+  // check below to catch traversal after the fact. FileIdParamSchema already rejects
+  // slashes, but a bare '..' passes it, and defence that is one regex deep is thin.
+  const id = path.basename(String(req.params.id));
+
+  // Ownership is checked BEFORE touching the filesystem, so a caller cannot use
+  // response timing or a 403-vs-404 difference to learn whether an id exists.
+  if (scopesToOwner(req as OwnedRequest)) {
+    const row = await db.get(
+      'SELECT uploaded_by FROM file_uploads WHERE id = ?', id,
+    ) as { uploaded_by: string | null } | undefined;
+
+    // No row means the file predates the ownership record (migration 253). It is
+    // unattributed, not public: on a shared instance it is withheld from non-admins,
+    // exactly as ownership.ts treats every other unattributed row. Solo installs and
+    // admins skip this branch entirely, so nothing disappears from a single-user
+    // machine — the case where breaking existing attachments would be worst.
+    if (!row || row.uploaded_by !== (req as OwnedRequest).user?.id) {
+      res.status(404).json({ error: 'File not found' });
+      return;
+    }
+  }
+
+  const filePath = path.join(UPLOAD_DIR, id);
   // Existence check before realpath (realpath throws on missing file)
   if (!fs.existsSync(filePath)) {
     res.status(404).json({ error: 'File not found' });
@@ -169,4 +212,5 @@ router.get('/files/:id', validateParams(FileIdParamSchema), (req, res) => {
   res.sendFile(realFilePath);
 });
 
-export default router;
+  return router;
+}

@@ -286,6 +286,27 @@ IMPORTANT FORMATTING RULES:
 
 // ── Per-phase prompts (clone of discovery getPhasePrompt ~:329) ────────────
 
+/**
+ * The one user message the OPENING turn sends. Every chat provider requires at least
+ * one user message, but at kickoff the human has not typed anything. This slot used
+ * to hold the literal `__START_WORKSHOP__`, so the facilitator's first impression of
+ * the user was a magic token. Never persisted to the conversation history, so the
+ * user never sees it, and it carries no instructions — the "open warmly with the
+ * problem question" direction lives in the phase prompt below.
+ */
+const OPENING_TURN_MESSAGE = "I'm ready to start.";
+
+/**
+ * `turnCount` is the number of REAL user answers received so far INCLUDING the one
+ * being answered right now — hence processUserResponse pushes the user message into
+ * the history BEFORE calling this. 0 therefore means "the user has said nothing yet".
+ *
+ * The `turnCount === 0` branch was unreachable (same bug as discovery's): the opening
+ * turn was driven by a synthetic `__START_WORKSHOP__` message that WAS pushed into
+ * the history, so the count was already 1 and the kickoff opened with the turn-1
+ * instruction — "The user has described the problem. Reflect it back." — before the
+ * user had described anything. The opening turn no longer enters the history.
+ */
 function getWorkshopPhasePrompt(phase: WorkshopPhase, state: WorkshopState): string {
   const turnCount = state.conversationHistory.filter((m) => m.role === 'user').length;
 
@@ -858,9 +879,15 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
   }
 
   // ── Conversation turn (clone of discovery processUserResponse) ───────
-  async function processUserResponse(
+  /**
+   * One workshop turn. `userMessage === null` means the SYNTHETIC OPENING TURN — the
+   * session has just been created and the user has not typed anything yet. Modelling
+   * that as null rather than a magic string keeps the token out of both the history
+   * and the messages array, and keeps the phase prompt's turn count honest.
+   */
+  async function processTurn(
     sessionId: string,
-    userMessage: string,
+    userMessage: string | null,
     attachmentIds: string[] = [],
   ): Promise<{ response: string; state: WorkshopState; phaseChanged: boolean }> {
     const session = await getSession(sessionId);
@@ -869,8 +896,11 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
     const state = session.state;
     // Persist the CLEAN message (what the user typed) — the extracted attachment
     // text is heavy and only needed for THIS turn, so it is appended to the LLM
-    // message below, NOT stored in the conversation history.
-    state.conversationHistory.push({ role: 'user', content: userMessage });
+    // message below, NOT stored in the conversation history. The opening turn has
+    // no user message at all: nothing to store, nothing to count.
+    if (userMessage !== null) {
+      state.conversationHistory.push({ role: 'user', content: userMessage });
+    }
 
     // Framework auto-suggest fires the FIRST time we land on the guidelines
     // phase (§C-req1: "frameworks/packs auto-suggested" at phase 4).
@@ -890,6 +920,12 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
     ].join('\n\n');
 
     const messages = state.conversationHistory.map((m) => ({ role: m.role, content: m.content }));
+    // The opening turn contributed nothing to the history, so this array would be
+    // empty — which every provider rejects. Add the neutral kickoff for THIS request
+    // only; it is deliberately never part of the persisted conversation.
+    if (userMessage === null) {
+      messages.push({ role: 'user', content: OPENING_TURN_MESSAGE });
+    }
     // Append the attachment text to the latest user turn — for the LLM only.
     const attachmentContext = await buildAttachmentContext(attachmentIds);
     if (attachmentContext && messages.length > 0) {
@@ -907,7 +943,20 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
     return { response: cleanResponse, state: updatedState, phaseChanged };
   }
 
-  /** Generate the opening assistant message (no user input yet). */
+  /** A normal turn: the user typed something. */
+  async function processUserResponse(
+    sessionId: string,
+    userMessage: string,
+    attachmentIds: string[] = [],
+  ): Promise<{ response: string; state: WorkshopState; phaseChanged: boolean }> {
+    return processTurn(sessionId, userMessage, attachmentIds);
+  }
+
+  /**
+   * Generate the opening assistant message (no user input yet). The turn no longer
+   * needs a synthetic message stripped out afterwards — processTurn(…, null) never
+   * puts one in the history in the first place.
+   */
   async function startConversation(
     sessionId: string,
   ): Promise<{ response: string; state: WorkshopState }> {
@@ -917,12 +966,7 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
       const first = session.state.conversationHistory.find((m) => m.role === 'assistant');
       return { response: first?.content ?? '', state: session.state };
     }
-    const result = await processUserResponse(sessionId, '__START_WORKSHOP__');
-    // Strip the synthetic kickoff turn from the persisted history.
-    result.state.conversationHistory = result.state.conversationHistory.filter(
-      (m) => m.content !== '__START_WORKSHOP__',
-    );
-    await updateSessionState(sessionId, result.state);
+    const result = await processTurn(sessionId, null);
     return { response: result.response, state: result.state };
   }
 
@@ -965,11 +1009,26 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
 
     const discoverySummary = buildCharterMarkdown(charter);
 
+    // WHO OWNS THE SEEDED PROJECT. `projects.user_id` is NOT NULL DEFAULT 'default',
+    // so omitting it did not fail — it silently stamped every workshop project with
+    // the literal 'default'. Downstream Studio routes (coding-studio / core-team /
+    // coding-git / coding-preview) all resolve the owner as `projects.user_id` and
+    // 404 anything truthy that is not the caller, so in DEPLOYMENT_MODE=team a
+    // non-admin was locked out of the project the UI had just navigated them to.
+    // Solo only escaped because the solo user is an admin. Same resolution order the
+    // coding_projects.created_by insert below uses; the last resort is the column's
+    // own default rather than 'system' so an unattributed row keeps table semantics.
+    // The session's CREATOR owns the project, not whoever finalises it. loadOwned in
+    // routes/coding-workshop.ts lets any admin act on any user's session, so preferring
+    // the caller would hand a support admin's account the project the user just built —
+    // and 404 the user out of their own work, which is the exact bug this block fixes.
+    const ownerUserId = session.userId ?? userId ?? 'default';
+
     await db.transaction(async (tx) => {
       await tx.run(
-        `INSERT INTO projects (id, name, description, status, created_at, updated_at)
-         VALUES (?, ?, ?, 'active', NOW(), NOW())`,
-        projectId, charter.title, charter.summary,
+        `INSERT INTO projects (id, name, description, status, user_id, created_at, updated_at)
+         VALUES (?, ?, ?, 'active', ?, NOW(), NOW())`,
+        projectId, charter.title, charter.summary, ownerUserId,
       );
       await tx.run(
         `INSERT INTO coding_projects

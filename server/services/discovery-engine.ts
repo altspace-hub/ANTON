@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { findCandidateModules, formatCandidatesForPrompt, validateModuleMatches } from './module-recommendation.js';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,15 @@ export interface ReadinessScores {
 
 export interface ModuleMatch {
   moduleId: string;
+  /**
+   * Text to prefill the module's input with when the user opens it from Discovery.
+   *
+   * Composed from the session's OWN recorded pain points, not from the model's prose.
+   * The point of a deep link is that the user does not have to re-explain themselves —
+   * arriving at a blank box having just spent twenty minutes describing the problem is
+   * the moment the whole discovery conversation stops feeling worth it.
+   */
+  suggestedPrompt?: string;
   moduleName: string;
   areaId: string;
   areaName: string;
@@ -324,8 +334,32 @@ IMPORTANT FORMATTING RULES:
 - You may use bold for emphasis sparingly
 `;
 
+/**
+ * The one user message the OPENING turn sends. Every chat provider requires at least
+ * one user message, but at kickoff the human has not typed anything — so this slot
+ * has to hold something. It used to hold the literal `__START_DISCOVERY__`; a plain
+ * sentence is what a person would actually say. It is never written to the
+ * conversation history, so it never reaches the UI, and it carries no instructions:
+ * the "open with Anchor Question 1" direction lives in the phase prompt.
+ */
+const OPENING_TURN_MESSAGE = "I'm ready to start.";
+
 // ── Phase-specific prompts ───────────────────────────────────────────────
 
+/**
+ * `turnCount` is the number of REAL user answers received so far INCLUDING the one
+ * being answered right now — which is why processUserResponse pushes the user
+ * message into the history BEFORE calling this. Read the branches below with that
+ * in mind: 0 = the user has said nothing yet (the opening turn), 1 = they have just
+ * answered Anchor Question 1, and so on.
+ *
+ * The `turnCount === 0` branch used to be unreachable: the opening turn was driven
+ * by a synthetic `__START_DISCOVERY__` message that WAS pushed into the history, so
+ * the count was already 1 and the very first thing a new user ever saw was the
+ * turn-1 instruction — "reflect back what you learned from their first answer" —
+ * about an answer they had never given. The opening turn is now excluded from the
+ * history entirely (see processUserResponse), so 0 means 0 again.
+ */
 function getPhasePrompt(phase: DiscoveryPhase, tier: DiscoveryTier, state: DiscoveryState): string {
   const turnCount = state.conversationHistory.filter(m => m.role === 'user').length;
 
@@ -1324,7 +1358,19 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
   // ── Conversation Turn ────────────────────────────────────────────────
 
-  async function processUserResponse(sessionId: string, userMessage: string): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
+  /**
+   * One conversation turn. `userMessage === null` means the SYNTHETIC OPENING TURN:
+   * the session has just been created and the human has not said anything yet.
+   *
+   * That case used to be expressed by passing the literal string
+   * `__START_DISCOVERY__`, which was pushed into the history and handed to the model
+   * as the user's opening words — a magic token no model has been trained on,
+   * delivered at the exact moment it is deciding how to greet a new user. It also
+   * made the history one user-turn too long, which is what killed the warm opening
+   * question (see getPhasePrompt). A null models "no user message yet" honestly, so
+   * neither problem can come back.
+   */
+  async function processTurn(sessionId: string, userMessage: string | null): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
     if (!anthropic) throw new Error('Anthropic client not configured');
@@ -1332,8 +1378,11 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     const state = session.state;
     const previousPhase = state.phase;
 
-    // Add user message to history
-    state.conversationHistory.push({ role: 'user', content: userMessage });
+    // Add user message to history. The opening turn has none — it is neither stored
+    // nor counted, so getPhasePrompt below sees turnCount 0 and opens the session.
+    if (userMessage !== null) {
+      state.conversationHistory.push({ role: 'user', content: userMessage });
+    }
 
     // Build messages for Claude
     const phasePrompt = getPhasePrompt(state.phase, state.tier, state);
@@ -1378,6 +1427,13 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
       }));
     }
 
+    // The opening turn contributed nothing to the history, so the array would be
+    // empty — which every provider rejects. Append the neutral kickoff for THIS
+    // request only; it is deliberately not part of the persisted conversation.
+    if (userMessage === null) {
+      messages = [...messages, { role: 'user', content: OPENING_TURN_MESSAGE }];
+    }
+
     const chatResult = await callChat({
       model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       maxTokens: 2048,
@@ -1410,14 +1466,37 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     updatedState.conversationHistory.push({ role: 'assistant', content: cleanResponse });
     updatedState.totalTokensUsed += (chatResult.inputTokens || 0) + (chatResult.outputTokens || 0);
 
-    // Save
-    updateSessionState(sessionId, updatedState);
+    // Save. The `await` is load-bearing: without it the route could answer before
+    // the turn was persisted (so a reload loses it), and a failing write would
+    // surface as an unhandled rejection instead of a 500 the caller can see. This
+    // is the same missing-await class that caused the SQLite→PostgreSQL bugs.
+    await updateSessionState(sessionId, updatedState);
 
     return {
       response: cleanResponse,
       state: updatedState,
       phaseChanged: previousPhase !== updatedState.phase,
     };
+  }
+
+  /** A normal turn: the user typed something. */
+  async function processUserResponse(sessionId: string, userMessage: string): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
+    return processTurn(sessionId, userMessage);
+  }
+
+  /**
+   * The opening assistant message. Returns the existing opening when the session has
+   * already started, so a page reload never re-runs (and re-bills) the first turn.
+   */
+  async function startConversation(sessionId: string): Promise<{ response: string; state: DiscoveryState }> {
+    const session = await getSession(sessionId);
+    if (!session) throw new Error('Session not found');
+
+    const existing = session.state.conversationHistory.find(m => m.role === 'assistant');
+    if (existing) return { response: existing.content, state: session.state };
+
+    const result = await processTurn(sessionId, null);
+    return { response: result.response, state: result.state };
   }
 
   // ── Generate Insights ────────────────────────────────────────────────
@@ -1449,7 +1528,41 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     if (!session) throw new Error('Session not found');
     if (!anthropic) throw new Error('Anthropic client not configured');
 
-    const outputPrompt = getOutputGenerationPrompt(session.state);
+    let outputPrompt = getOutputGenerationPrompt(session.state);
+
+    // GROUND the module recommendations in the real catalogue.
+    //
+    // This prompt asks the model for `moduleId` values and, until now, contained no
+    // module list whatsoever — so every id it produced was reconstructed from memory of
+    // what an ANTON module id probably looks like. `matchedModules` is the output whose
+    // whole purpose is turning the conversation into something the user can actually
+    // open, and it was pointing at ids that mostly do not exist. The user found out by
+    // clicking one.
+    //
+    // Candidates are drawn from what the session actually discussed — the pain points
+    // and work activities, which is where the vocabulary is — so the list is relevant
+    // rather than the first 40 modules in catalogue order.
+    const discussed = [
+      ...session.state.painPoints.map((p) => `${p.description} ${p.theme}`),
+      ...session.state.workActivities.map((w) => w.description),
+      ...session.state.workflows.map((w) => w.name),
+      ...session.state.opportunities.map((o) => (o as { description?: string }).description ?? ''),
+      session.state.userProfile.role,
+      session.state.userProfile.industry,
+    ].filter(Boolean).join(' ');
+    const candidates = await findCandidateModules(discussed);
+    if (candidates.length > 0) {
+      outputPrompt += `
+
+## AVAILABLE MODULES — moduleId MUST be one of these exact ids
+`
+        + `Do not invent an id. If nothing here fits a pain point, omit the match rather
+`
+        + `than inventing one — a recommendation that does not open is worse than none.
+
+`
+        + formatCandidatesForPrompt(candidates);
+    }
 
     const chatResult = await callChat({
       model: mapModelToProvider('claude-sonnet-4-5-20250929'),
@@ -1481,6 +1594,42 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
       } catch (e) {
         console.error('[discovery] Failed to parse output JSON:', e);
       }
+    }
+
+    // VALIDATE, even though the prompt was grounded. A model given 40 candidates still
+    // occasionally returns a plausible-looking id that was not among them, and one that
+    // 404s is worse than one that is missing: it teaches the user the feature is broken.
+    // moduleName and areaId are overwritten from the catalogue rather than trusted — a
+    // right id with a wrong label sends the user somewhere they did not choose.
+    const validation = await validateModuleMatches(moduleMatches);
+    if (validation.rejected.length > 0) {
+      // Logged, never surfaced. Ids only — no session content.
+      console.warn(
+        `[discovery] dropped ${validation.rejected.length} hallucinated module id(s): ${validation.rejected.join(', ')}`,
+      );
+    }
+    moduleMatches = validation.valid as ModuleMatch[];
+
+    // Attach the user's own words so the deep link lands somewhere useful.
+    //
+    // Deterministic, not model-generated: the pain points are what the user actually
+    // said, and asking the model for one more field would add prompt surface and a new
+    // thing to hallucinate for no gain. Capped because this travels in a query string.
+    const painContext = session.state.painPoints
+      .slice(0, 3)
+      .map((p) => `- ${p.description}`)
+      .join('\n');
+    if (painContext) {
+      moduleMatches = moduleMatches.map((m) => ({
+        ...m,
+        suggestedPrompt: [
+          'Context from my ANTON discovery session:',
+          '',
+          painContext,
+          '',
+          m.matchReason ? `Why this module: ${m.matchReason}` : '',
+        ].filter(Boolean).join('\n').slice(0, 1200),
+      }));
     }
 
     // Save output
@@ -1537,6 +1686,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     updateSessionStatus,
     deleteSession,
     processUserResponse,
+    startConversation,
     generateInsights,
     generateOutput,
     getOutput,

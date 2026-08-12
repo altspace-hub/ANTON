@@ -299,6 +299,31 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       if (agent.status !== 'active') { res.status(404).json({ error: 'Agent is not active' }); return; }
       if (!agent.auto_response_enabled) { res.status(403).json({ error: 'Agent does not accept public queries' }); return; }
 
+      // A TOOL-BEARING agent must not be publicly queryable by accident.
+      //
+      // auto_response_enabled is DEFAULT TRUE (migration 111_specialized_agents),
+      // so every agent an operator creates is reachable here by an unauthenticated
+      // caller. That is a reasonable default for a conversational agent; it is not
+      // one for an agent holding live connectors, where the caller's text steers a
+      // model whose output drives SQL against ANTON's own database and HTTP calls
+      // carrying the operator's vault credentials. The executor now bounds what
+      // those calls may do, but exposure should still be a deliberate choice.
+      //
+      // Opt in per agent with agent_profiles.public_tool_use (migration 252,
+      // DEFAULT FALSE). Only consulted when the agent actually has active
+      // connectors, so ordinary conversational agents are unaffected.
+      {
+        const { createConnectorExecutor } = await import('../services/agent-connector-executor.js');
+        const exec = await createConnectorExecutor(db);
+        const connectors = await exec.getAgentConnectors(agent.id);
+        if (connectors.length > 0 && (agent as { public_tool_use?: boolean }).public_tool_use !== true) {
+          res.status(403).json({
+            error: 'This agent uses connectors and is not enabled for anonymous queries — set public_tool_use on the agent to allow it',
+          });
+          return;
+        }
+      }
+
       const result = await processor.processQuery(agent.id, message, {
         conversationId,
         source: 'p2p',

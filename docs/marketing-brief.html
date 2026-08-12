@@ -609,7 +609,7 @@
     </ul>
 
     <h3 style="margin-top: 40px;">ANTON Business <span style="color: var(--blue); font-size: 14px; font-weight: 500;">· blue</span></h3>
-    <p><strong>Phone-only merchant POS for FutureChain payments.</strong> No backend. The phone is the entire merchant. Bilateral KYC + sweep agreement with Safello handles FTC → SEK conversion off-app. A bakery, a barber, a market stall can take crypto in 60 seconds with no servers.</p>
+    <p><strong>Phone-only merchant POS for FutureChain payments.</strong> No backend. The phone is the entire merchant. Bilateral KYC + sweep agreement with an exchange partner handles FTC → SEK conversion off-app. A bakery, a barber, a market stall can take crypto in 60 seconds with no servers.</p>
     <ul>
       <li><strong>Simple mode</strong>: keypad → QR with ADR-004 v1 remittance reference.</li>
       <li><strong>Extended mode</strong>: cart with item catalog → QR.</li>
@@ -620,7 +620,7 @@
     </ul>
 
     <h3 style="margin-top: 40px;">ANTON Pay <span style="color: var(--sunrise); font-size: 14px; font-weight: 500;">· sunrise</span></h3>
-    <p><strong>The customer-side counterpart to Business.</strong> Consumer scans a merchant's <code>futurechain:pay</code> QR and pays in FTC. QR scanning via the <code>qr-scanner</code> npm package (pure web). Includes a paste-a-URI fallback. Settlement is bilateral merchant ↔ Safello — Pay only records the customer's local receipt in IndexedDB.</p>
+    <p><strong>The customer-side counterpart to Business.</strong> Consumer scans a merchant's <code>futurechain:pay</code> QR and pays in FTC. QR scanning via the <code>qr-scanner</code> npm package (pure web). Includes a paste-a-URI fallback. Settlement is bilateral merchant ↔ exchange partner — Pay only records the customer's local receipt in IndexedDB.</p>
 
     <h3 style="margin-top: 40px;">ANTON Communications <span style="color: var(--navy); font-size: 14px; font-weight: 500;">· navy + teal</span></h3>
     <p><strong>Separate consumer app — the social / personal layer.</strong> Chat with friends. Social events. Portals visitor surface. Wallet shell. Paired to hosted ANTON for the consumer surface.</p>
@@ -642,7 +642,7 @@
       <li>R13 Location share</li>
     </ul>
     <p><strong>5 tabs</strong>: Chat · Wassup · Events · Portals · Wallet.</p>
-    <p><strong>E2E crypto</strong>: X25519 keypair derived from device Ed25519 → AES-256-GCM via WebCrypto with per-message HKDF salt for forward secrecy → AAD binds <code>(fromHash, toHash)</code> into the auth tag.</p>
+    <p><strong>E2E crypto</strong>: X25519 keypair derived from device Ed25519 → AES-256-GCM via WebCrypto with per-message HKDF salt for per-message key separation → AAD binds <code>(fromHash, toHash)</code> into the auth tag.</p>
   </div>
 </section>
 

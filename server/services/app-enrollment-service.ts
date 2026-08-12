@@ -577,10 +577,13 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     const sessionRaw = urlSafe(crypto.randomBytes(32));
     const sessionHash = hashSessionToken(sessionRaw);
     const sessionExpires = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+    // device_id is what makes revokeDevice() able to end this session later.
+    // Without it, unpairing the device left the token valid for its full 30-day
+    // TTL (migration 251).
     await db.run(
-      `INSERT INTO app_session_tokens (token, connected_user_id, expires_at)
-       VALUES (?, ?, ?)`,
-      sessionHash, userId, sessionExpires,
+      `INSERT INTO app_session_tokens (token, connected_user_id, expires_at, device_id)
+       VALUES (?, ?, ?, ?)`,
+      sessionHash, userId, sessionExpires, device.id,
     );
 
     // 7. Burn the token
@@ -629,13 +632,41 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
     );
   }
 
+  /**
+   * Unpair a device. This is the control an operator reaches for when a phone is
+   * lost or stolen or an employee leaves, so it has to actually end access —
+   * marking the row revoked is not enough on its own.
+   *
+   * Ordering matters: kill the live credential FIRST, then mark the device. If
+   * the device UPDATE succeeded and the session DELETE then failed, the caller
+   * would see an error while the UI's listDevices() (which filters
+   * `revoked_at IS NULL`) had already stopped showing the device — the exact
+   * state that made this bug invisible. Doing sessions first means a partial
+   * failure leaves the device still listed and still revocable.
+   */
   async function revokeDevice(connectedUserId: string, deviceId: string): Promise<void> {
+    // 1. End every session issued to this device.
+    //
+    // The `device_id IS NULL` arm covers sessions issued BEFORE migration 251,
+    // which carry no device attribution and never can. They are indistinguishable
+    // from a session belonging to the device being revoked, so unpairing clears
+    // them too. That can sign out another of this user's older devices, which is
+    // the correct trade for a revocation control: it fails safe (over-revoking)
+    // rather than silently leaving a stolen phone authenticated. The arm becomes
+    // a no-op once pre-251 sessions age past their 30-day TTL.
+    await db.run(
+      `DELETE FROM app_session_tokens
+        WHERE connected_user_id = ?
+          AND (device_id = ? OR device_id IS NULL)`,
+      connectedUserId, deviceId,
+    );
+    // 2. Mark the device revoked (app-auth + requireApproved both refuse it now).
     await db.run(
       `UPDATE app_devices SET revoked_at = NOW()
         WHERE id = ? AND connected_user_id = ? AND revoked_at IS NULL`,
       deviceId, connectedUserId,
     );
-    // Also disable any push tokens
+    // 3. Stop pushing to it.
     await db.run(
       `UPDATE app_push_tokens SET enabled = FALSE WHERE device_id = ?`,
       deviceId,

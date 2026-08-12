@@ -32,6 +32,9 @@ import { execFile } from 'node:child_process';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ModalDriver, CollabModalPayload, ModalDecision } from '../main/modal.js';
 import { coerceDecision } from '../main/coerce-decision.js';
+// Shared with the dashboard so the highest-stakes screen in the product looks
+// like ANTON, not like a stray admin page. See standalone-theme.ts.
+import { esc, shell } from './standalone-theme.js';
 
 /** Bound on simultaneously-outstanding confirm URLs (fail-closed flood guard). */
 const MAX_OUTSTANDING_CONFIRMS = 32;
@@ -283,78 +286,84 @@ function defaultOpenUrl(url: string): void {
 }
 
 // ── HTML rendering (all dynamic values escaped; CSP-locked; JS-free) ─────────────
+// esc() and shell() are imported from standalone-theme.ts; only the approval
+// card's own layout lives here.
 
-function esc(s: unknown): string {
-  return String(s).replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-}
-
-const PAGE_CSS = `
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 16px/1.5 -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
-    background: #f4f6f8; color: #16202e; display: flex; min-height: 100vh;
-    align-items: center; justify-content: center; padding: 24px; }
-  .card { background: #fff; border: 1px solid #dfe6ee; border-radius: 14px; max-width: 480px;
-    width: 100%; padding: 28px; box-shadow: 0 8px 30px rgba(16,32,46,.08); }
-  .warn { color: #b25e00; font-weight: 700; font-size: 14px; letter-spacing: .02em;
-    text-transform: uppercase; margin: 0 0 14px; }
-  .amt { font-size: 30px; font-weight: 800; margin: 6px 0 2px; }
-  .row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0;
-    border-top: 1px solid #eef2f6; font-size: 15px; }
-  .row .k { color: #5b6b7d; } .row .v { text-align: right; word-break: break-word; }
-  .note { background: #fff8ec; border: 1px solid #f3e2c0; border-radius: 8px;
-    padding: 10px 12px; margin: 14px 0 0; font-size: 14px; }
-  .note.bad { background: #fdecec; border-color: #f3c0c0; }
-  .btns { display: flex; gap: 10px; margin-top: 22px; }
-  button { flex: 1; padding: 13px 16px; font-size: 16px; font-weight: 700; border-radius: 10px;
-    border: 1px solid transparent; cursor: pointer; }
-  .approve { background: #0D7D6C; color: #fff; }
-  .reject { background: #fff; color: #16202e; border-color: #cfdae6; }
-  .done { text-align: center; }
-  .done h1 { font-size: 22px; margin: 0 0 8px; }
-  .done p { color: #5b6b7d; margin: 0; }
+/** Confirm-card rules. The hierarchy is deliberate: the AMOUNT is the hero
+ *  (it is the number the operator is actually agreeing to), then the terms
+ *  rows, then the review banner, and finally two visually SEPARATED decisions —
+ *  Approve is the only filled control on the page and Reject sits below a rule,
+ *  so a mis-aimed click cannot sign an agreement. */
+const CONFIRM_CSS = `
+  .card { width: 100%; max-width: 520px; padding: 26px 28px 24px; box-shadow: var(--anton-shadow-lg); }
+  .kicker { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600;
+    color: var(--anton-gold); margin: 0 0 4px; }
+  .amt { font-size: 40px; font-weight: 700; letter-spacing: -.025em; line-height: 1.1;
+    color: var(--anton-text); margin: 2px 0 2px; }
+  .amt-sub { font-family: var(--anton-mono); font-size: 14px; color: var(--anton-text-muted); margin: 0 0 18px; }
+  .row { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0;
+    border-top: 1px solid var(--anton-border-soft); font-size: 14px; }
+  .row .k { color: var(--anton-text-muted); flex: none; }
+  .row .v { text-align: right; word-break: break-word; color: var(--anton-text); }
+  .banner { margin: 16px 0 0; }
+  .decide { margin-top: 22px; }
+  .decide button { width: 100%; font: inherit; font-size: 15px; font-weight: 600;
+    border-radius: var(--anton-r2); border: 1px solid transparent; padding: 13px 16px; cursor: pointer; }
+  .decide .approve { background: var(--anton-accent); color: var(--anton-accent-fg); box-shadow: var(--anton-shadow); }
+  .decide .approve:hover { background: var(--anton-accent-hover); }
+  .decide .sep { display: flex; align-items: center; gap: 10px; margin: 14px 0 12px;
+    color: var(--anton-text-faint); font-size: 12px; }
+  .decide .sep::before, .decide .sep::after {
+    content: ""; flex: 1; height: 1px; background: var(--anton-border-soft); }
+  .decide .reject { background: var(--anton-surface); color: var(--anton-red); border-color: var(--anton-red-dim); }
+  .decide .reject:hover { background: var(--anton-red-soft); }
+  .done { text-align: center; padding: 8px 0 4px; }
+  .done h1 { font-size: 21px; font-weight: 600; color: var(--anton-text); margin: 0 0 8px; }
+  .done p { color: var(--anton-text-muted); margin: 0; }
 `;
 
-function htmlShell(title: string, inner: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8">`
-    + `<meta name="viewport" content="width=device-width,initial-scale=1">`
-    + `<title>${esc(title)}</title><style>${PAGE_CSS}</style></head>`
-    + `<body><div class="card">${inner}</div></body></html>`;
+/** Wraps the card in the shared ANTON shell, vertically centred. */
+function htmlShell(title: string, inner: string, chip?: string): string {
+  return shell(title, `<div class="card">${inner}</div>`, { bodyClass: 'centered', css: CONFIRM_CSS, chip });
 }
 
 function renderConfirmPage(rec: PendingConfirm, secret: string): string {
   const p = rec.payload;
   const action = `/agreement-confirm/${esc(secret)}`;
   const verb = p.kind === 'agreement_propose' ? 'Propose' : p.kind === 'agreement_accept' ? 'Accept' : 'Counter';
-  const cp = p.counterpartyLabel ? `${esc(p.counterpartyLabel)} <span class="k">(${esc(p.counterparty)})</span>` : esc(p.counterparty);
+  const cp = p.counterpartyLabel ? `${esc(p.counterpartyLabel)} <span class="muted">(${esc(p.counterparty)})</span>` : esc(p.counterparty);
+  // The agent note is unverified input, so it is toned gold (caution) rather
+  // than neutral — the operator must not read it as something ANTON vouches for.
   const note = p.agentNote
-    ? `<div class="note"><b>Agent note</b> (agent-supplied, not verified): ${esc(p.agentNote)}</div>`
+    ? `<div class="banner banner-gold"><b>Agent note</b> (agent-supplied, not verified): ${esc(p.agentNote)}</div>`
     : '';
+  // Four-eyes review: red when the second model raised a concern, green when it
+  // cleared. Previously both rendered as the same gold "note" box.
   const review = p.review
-    ? `<div class="note${p.review.raise ? ' bad' : ''}"><b>${p.review.raise ? '⚠ Independent review raised a concern' : '✓ Independent review: ok'}</b>`
-      + ` <span class="k">(${esc(p.review.reviewModel ?? 'second model')}, severity ${esc(p.review.severity)})</span>`
+    ? `<div class="banner ${p.review.raise ? 'banner-red' : 'banner-green'}"><b>${p.review.raise ? '⚠ Independent review raised a concern' : '✓ Independent review: ok'}</b>`
+      + ` <span class="muted">(${esc(p.review.reviewModel ?? 'second model')}, severity ${esc(p.review.severity)})</span>`
       + (p.review.concerns && p.review.concerns.length > 0 ? `<br>${p.review.concerns.map((c) => esc(c)).join('<br>')}` : '')
       + `</div>`
     : '';
   const inner = `
-    <p class="warn">⚠ Agreement ${esc(verb.toLowerCase())} — approval required</p>
+    <p class="kicker">⚠ Agreement ${esc(verb.toLowerCase())} — approval required</p>
     <div class="amt">${esc(p.amountFtc)} FTC</div>
-    <div class="row"><span class="k">Base units</span><span class="v">${esc(p.amountMicroFtc)} µFTC</span></div>
+    <p class="amt-sub">${esc(p.amountMicroFtc)} µFTC</p>
     <div class="row"><span class="k">Decision</span><span class="v">${esc(p.decision)}</span></div>
     <div class="row"><span class="k">Terms</span><span class="v">${esc(p.terms)}</span></div>
     <div class="row"><span class="k">Counterparty</span><span class="v">${cp}</span></div>
-    <div class="row"><span class="k">Agent</span><span class="v">${esc(p.agentName)} <span class="k">(paired ${esc(p.agentPairedAgo)})</span></span></div>
+    <div class="row"><span class="k">Agent</span><span class="v">${esc(p.agentName)} <span class="muted">(paired ${esc(p.agentPairedAgo)})</span></span></div>
     ${review}
     ${note}
     <form method="post" action="${action}">
       <input type="hidden" name="pageNonce" value="${esc(rec.pageNonce)}">
-      <div class="btns">
+      <div class="decide">
         <button class="approve" type="submit" name="decision" value="approve">Approve &amp; sign</button>
-        <button class="reject" type="submit" name="decision" value="reject">Reject</button>
+        <div class="sep">or</div>
+        <button class="reject" type="submit" name="decision" value="reject">Reject — sign nothing</button>
       </div>
     </form>`;
-  return htmlShell('Confirm agreement', inner);
+  return htmlShell('Confirm agreement', inner, 'approval');
 }
 
 function renderSimplePage(heading: string, message: string): string {

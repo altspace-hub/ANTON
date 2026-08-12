@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getIdentity } from './services/identity';
-import { getSessionToken } from './services/api';
+import { getSessionToken, ensureSession } from './services/api';
 import { onActiveInstanceChange, getActiveInstance, getActiveInstanceId, getInstanceSessionToken, refreshInstanceInfo } from './services/instances';
 import { registerPush, requestPushPermission, setNotificationRouter, startNativeNotificationListener } from './services/push';
 import { listPendingCheckpoints } from './services/checkpoints';
@@ -122,11 +122,11 @@ export default function App() {
       // store survives, getSessionToken() returns null and the user lands
       // on Welcome despite still being paired. This restores the mirror.
       try {
-        const activeId = getActiveInstanceId();
-        if (activeId && !getSessionToken()) {
-          const tok = await getInstanceSessionToken(activeId);
-          if (tok) localStorage.setItem('anton-companion-session', tok);
-        }
+        // Hydrate the in-memory session token from the secure store. This used to
+        // rebuild a plaintext localStorage mirror; the token is no longer stored
+        // in the clear, so this is now the ordinary boot path rather than a
+        // recovery hack, and ensureSession owns the legacy-mirror migration.
+        await ensureSession();
       } catch { /* swallow — fall through to identity check */ }
 
       if (cancelled) return;
@@ -170,11 +170,15 @@ export default function App() {
       void requestPushPermission().catch(() => { /* swallow */ });
       return;
     }
-    // Modern Ed25519-paired users: gate registration on the session token
-    // being bridged into localStorage (App.tsx cold-start bridge can race
-    // this effect on first launch).
-    if (!getSessionToken()) return;
-    void registerPush().catch(() => { /* swallow — silent by default per spec §8.7 */ });
+    // Modern Ed25519-paired users: gate registration on having a session token.
+    // The token now lives in memory and is hydrated asynchronously, so a bare
+    // getSessionToken() here loses the race on EVERY cold start (it used to be
+    // read straight from localStorage). Await hydration, then re-check.
+    void (async () => {
+      await ensureSession();
+      if (!getSessionToken()) return;
+      await registerPush().catch(() => { /* swallow — silent by default per spec §8.7 */ });
+    })();
     // Track C Slice 1: refresh instance metadata (incl. relay_endpoints) on
     // each launch / instance switch, so a relay rotation on the operator's
     // side is picked up without re-pairing. relays_changed is set when the
