@@ -4,7 +4,7 @@
 // Magistral returns structured thinking blocks: { type: "thinking" } + { type: "text" }
 // ═══════════════════════════════════════════════════════════
 
-import type { Response } from 'express';
+import type { StreamSink } from '../stream-sink.js';
 import {
   convertClaudeToolsToOpenAI,
   isCapabilityRejection,
@@ -68,7 +68,7 @@ function resolveModel(model: string, thinkingLevel?: string, nativeReasoningEnab
 
 export async function streamMistral(
   params: MistralStreamParams,
-  res: Response
+  res: StreamSink
 ): Promise<{ inputTokens: number; outputTokens: number; text: string; thinking: string }> {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error('MISTRAL_API_KEY not configured');

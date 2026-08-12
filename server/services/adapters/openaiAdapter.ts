@@ -2,7 +2,7 @@
 // OpenAI Adapter — Streams OpenAI chat completions as SSE
 // ═══════════════════════════════════════════════════════════
 
-import type { Response } from 'express';
+import type { StreamSink } from '../stream-sink.js';
 import type { ThinkingLevel } from '../../../src/lib/types.js';
 import { isOpenAIReasoningModel, openaiReasoningEffort } from '../thinking-map.js';
 
@@ -20,7 +20,7 @@ export interface OpenAIStreamParams {
 
 export async function streamOpenAI(
   params: OpenAIStreamParams,
-  res: Response
+  res: StreamSink
 ): Promise<{ inputTokens: number; outputTokens: number; text: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured');

@@ -19,7 +19,7 @@
 // Wire format: standard OpenAI Chat Completions. SSE streaming for live deltas.
 // ═══════════════════════════════════════════════════════════
 
-import type { Response } from 'express';
+import type { StreamSink } from '../stream-sink.js';
 import {
   convertClaudeToolsToOpenAI,
   isCapabilityRejection,
@@ -114,7 +114,7 @@ export interface OpenAICompatibleStreamResult {
  */
 export async function streamOpenAICompatible(
   params: OpenAICompatibleStreamParams,
-  res: Response,
+  res: StreamSink,
 ): Promise<OpenAICompatibleStreamResult> {
   const response = await postCompatChat(params, true);
 

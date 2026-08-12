@@ -32,7 +32,7 @@
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import { BUNDLE_TYPE_REGISTRY, type GovernanceMetadata } from './anton-bundler.js';
+import { BUNDLE_TYPE_REGISTRY, type GovernanceMetadata } from './anton-bundle-registry.js';
 import {
   verifyManifestSignature,
   recordAndCheckSigner,

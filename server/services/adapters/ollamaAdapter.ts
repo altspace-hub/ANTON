@@ -7,7 +7,7 @@
 // rewrite, Cloudflare Access JWT, etc.). Native Ollama has no auth.
 // ═══════════════════════════════════════════════════════════
 
-import type { Response } from 'express';
+import type { StreamSink } from '../stream-sink.js';
 import {
   convertClaudeToolsToOpenAI,
   isCapabilityRejection,
@@ -90,7 +90,7 @@ async function postOllamaChat(params: OllamaStreamParams, stream: boolean): Prom
 
 export async function streamOllama(
   params: OllamaStreamParams,
-  res: Response
+  res: StreamSink
 ): Promise<{ inputTokens: number; outputTokens: number; text: string }> {
   const response = await postOllamaChat(params, true);
 

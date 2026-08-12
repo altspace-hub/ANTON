@@ -7,7 +7,7 @@
 
 import { AzureOpenAI } from 'openai';
 import type OpenAI from 'openai';
-import type { Response } from 'express';
+import type { StreamSink } from '../stream-sink.js';
 import type { ThinkingLevel } from '../../../src/lib/types.js';
 import { azureReasoningEffort } from '../thinking-map.js';
 import type { UnifiedLLMRequest, UnifiedLLMResponse } from '../model-adapter.js';
@@ -54,7 +54,7 @@ function mapTemperature(creativity: string, providerMax: number): number {
 export async function streamAzureOpenAI(
   params: AzureOpenAIStreamParams,
   config: AzureOpenAIConfig,
-  res: Response
+  res: StreamSink
 ): Promise<{ inputTokens: number; outputTokens: number; text: string }> {
   const isReasoning = config.isReasoningModel || params.isReasoningModel;
 
