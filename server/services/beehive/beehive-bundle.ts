@@ -18,7 +18,7 @@
 // sharing/archival, not re-import.
 
 import AdmZip from 'adm-zip';
-import { ANTON_GENERATOR, type AntonBundleType } from '../anton-bundler.js';
+import { ANTON_GENERATOR, type AntonBundleType } from '../anton-bundle-registry.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createBeehiveState } from './beehive-state.js';
 import { createBeehiveDeliberation } from './beehive-deliberation.js';
