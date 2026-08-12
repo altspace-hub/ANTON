@@ -29,7 +29,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { encrypt } from './credential-vault.js';
-import { invalidateCustomEndpointCache } from '../routes/custom-model-endpoints.js';
+import { invalidateCustomEndpointCache } from './custom-endpoint-resolver.js';
 
 export const MOONSHOT_SLUG = 'kimi';
 
