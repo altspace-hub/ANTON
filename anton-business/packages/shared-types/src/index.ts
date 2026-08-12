@@ -32,8 +32,8 @@ export interface MerchantSettlementConfig {
   thresholdFtc: string;
   /** For HYBRID mode: amount to keep on-chain. */
   holdAmountFtc: string;
-  safelloMerchantId?: string;
-  safelloReceivingAddress?: string;
+  exchangeMerchantId?: string;
+  exchangeReceivingAddress?: string;
   bankAccount?: {
     iban?: string;
     /** Swedish clearing + account number for non-IBAN flows. */
@@ -67,7 +67,7 @@ export interface Settlement {
   ftcAmount: string;
   sekAmount?: string;
   rate?: string;
-  safelloPayoutId?: string;
+  exchangePayoutId?: string;
   status: 'pending_chain' | 'pending_payout' | 'paid_out' | 'failed';
   createdAt: string;
   paidOutAt?: string;
