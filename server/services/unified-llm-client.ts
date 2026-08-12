@@ -12,13 +12,13 @@
  * - All other models → ModelAdapter (unified interface)
  */
 
-import type { Response } from 'express';
+import type { StreamSink } from './stream-sink.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, type UnifiedLLMRequest, type OpenAICompatibleConfig } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
-import { resolveCustomEndpoint } from '../routes/custom-model-endpoints.js';
+import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
 // ── Configuration ──────────────────────────────────────────────
@@ -167,7 +167,7 @@ export function isModelAvailable(modelId: string, db?: DatabaseAdapter): boolean
 
 export async function streamToResponse(
   config: UnifiedStreamConfig,
-  res: Response,
+  res: StreamSink,
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
   const provider = getProviderFromModelId(config.model, config.db);
@@ -421,8 +421,11 @@ export async function streamToHandler(
     // caller reject (→ 500) instead of hanging.
     let streamErrorMessage: string | null = null;
     let completed = false;
-    const mockRes = {
-      writeHead: () => mockRes,
+    // A real StreamSink (no Express fakery): parses the SSE wire format the
+    // stream writes and forwards each event to the caller's handler.
+    const mockRes: StreamSink = {
+      headersSent: false,
+      writeHead: () => undefined,
       write: (chunk: string) => {
         // Parse all SSE data lines from the chunk (may contain multiple events)
         const lines = chunk.split('\n');
@@ -442,11 +445,7 @@ export async function streamToHandler(
         return true;
       },
       end: () => { console.log(`[streamToHandler] mock end, ${mockEventCount} events forwarded`); },
-      on: () => mockRes,
-      once: () => mockRes,
-      emit: () => false,
-      headersSent: false,
-    } as unknown as import('express').Response;
+    };
 
     const wrappedComplete = onComplete
       ? (data: StreamCompletionData) => { completed = true; onComplete(data); }

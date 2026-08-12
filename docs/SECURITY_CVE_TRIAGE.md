@@ -221,3 +221,60 @@ cannot mask anything else. The gate stays blocking for everything.
 | Agent Pay | `npx vitest run` (in `apps/anton-agent-pay/`) | ✅ 237 passed |
 | Capacitor CLI still usable | `npx cap --version` | ✅ 8.3.1 from devDependencies |
 | Electron chain intact | `pnpm why tar` | ✅ `tar@6.2.1` still under `@electron/rebuild` |
+
+---
+
+## Addendum — 2026-08-12 (8 new HIGH advisory paths; the accepted ignore RETIRED)
+
+Eighteen days after the 07-25 batch, the gate is red again: **8 blocking high paths across
+6 package groups**, all published after 07-25 against modules already in the tree. Same
+playbook — direct bump where direct, bounded override where transitive — plus one new shape
+(a dependency-**removal** override) and one piece of good news: the 07-25 accepted-risk
+entry's review trigger fired, and the ignore list is **empty again**.
+
+| Package | Advisory | Was | Fix | Path |
+|---|---|---|---|---|
+| `socket.io-parser` | GHSA-2m8v-j782-fhvr — zero-attachment memory exhaustion, `>=4.0.0 <4.2.7` | override `>=4.2.6` (unbounded) | **override → `>=4.2.7 <4.3.0`** (now bounded to the `~4.2.4` both socket.io@4.8.3 and socket.io-client@4.8.3 declare) | `.>socket.io>socket.io-parser` — **reachable pre-auth**: `/study-rooms` namespace has no auth middleware and the parser decodes packets before any namespace auth runs |
+| `fast-uri` | GHSA-7p8r-x3mc-p8w7 — host confusion via backslash, `>=3.0.0 <3.1.5` | override `>=3.1.4 <4.0.0` | **floor raised → `>=3.1.5 <4.0.0`** (same bounded shape) | `.>ajv>fast-uri` — reachable via ajv-formats URI validation of remote portal capability descriptors |
+| `ip-address` | GHSA-mwp4-54f8-5fhr — Address4 leading-zero octet confusion, `<=10.3.0` | transitive 10.2.0 | **new override → `>=10.3.1 <11.0.0`** (both parents declare ^10.x: express-rate-limit ^10.2.0, socks ^10.0.1) | `.>express-rate-limit>ip-address` (+ MCP SDK copy, + dev-tree socks). Low reachability: express-rate-limit gates it behind `net.isIPv6` and `trust proxy` is not set, so `req.ip` is OS-canonical |
+| `brace-expansion` ×3 | GHSA-rgw5-rvv9-x895 — DoS bypassing the CVE-2026-14257 caps; `<1.1.18`, `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9` | pins `>=1.1.16` / `>=2.1.2` / `>=5.0.8` | **pins raised → `@1: >=1.1.18 <2.0.0`, `@2: >=2.1.4 <3.0.0`, `@5: >=5.0.9 <6.0.0`** (each patch sits inside its minimatch parent's declared caret) | via `exceljs>archiver>…>minimatch` ×2 + build-tooling `glob@11+` |
+| `image-size` ×2 | GHSA-w3rx-r6r6-pgpr (ICNS) + GHSA-5p2g-fcmc-qvqq (JXL/HEIF) — parser infinite loops, `<=2.0.2`, **no patched release exists** | transitive 1.2.1 | **removal override → `"pptxgenjs>image-size": "-"`** (see below) | `.>pptxgenjs>image-size` |
+| `nanoid` | GHSA-28wg-ghj8-5hjv — non-secure generator infinite loop on negative size; `>=4.0.0 <5.1.16` and `<3.3.16` | direct `^5.1.6`; dev-tree 3.3.11 | **direct bump → `^5.1.16`** + **override `nanoid@3: >=3.3.16 <4.0.0`** (postcss declares ^3.3.11; dev-tree only, keeps the unfiltered `pnpm run audit` clean) | `.>nanoid` (secure root export only, constant sizes — the vulnerable `non-secure` module is imported nowhere) |
+
+### The `image-size` removal override — a new shape, with its own trigger
+
+Both advisories list **no patched version** (npm latest is 2.0.2, the vulnerable one), and
+pptxgenjs@4.0.1 — the current latest — declares `image-size ^1.2.1`. But image-size is a
+**phantom dependency**: it appears in pptxgenjs's manifest and is never imported by any
+shipped pptxgenjs build (grep of all four dist bundles: zero references; the one `sizeOf`
+mention sits in a block-commented "currently unused" function). ANTON's three pptxgenjs
+call sites (`export-pptx.ts`, `renderers/adapt/board-deck.ts`, `template-injector.ts`)
+never call `addImage`, so no image ever flows toward it. pnpm's `"-"` override value
+removes the package from the tree entirely — the vulnerable code is not on disk, which
+beats any ignore.
+
+> **Review trigger (dated).** Re-verify at the **next pptxgenjs version bump** (if a future
+> release genuinely imports image-size, pptx export fails loudly with MODULE_NOT_FOUND at
+> require time — not silently), or by **2027-02-01**, whichever comes first.
+
+### GHSA-mh99-v99m-4gvg: the accepted risk is retired
+
+The 07-25 trigger read *"revisit when a 1.1.17 / 2.1.3 backport of the 5.0.8 cap
+appears."* It appeared: the advisory now lists patched **1.1.17 / 2.1.3 / 3.0.3 / 5.0.8**,
+and the new floors (1.1.18 / 2.1.4 / 5.0.9) exceed them on every line.
+`pnpm.auditConfig.ignoreGhsas` is **empty** again, and this doc's accepted-with-reason
+state returns to **None** — the 06-21 claim holds once more.
+
+### Correction to the 06-11 table
+
+The 06-11 entry for `express-rate-limit` claimed the `^8.5.2` bump *"also clears … its
+`ip-address` finding."* That was wrong: the bump cleared the express-rate-limit advisory
+itself, but the lockfile kept `ip-address@10.2.0`, which this batch's advisory now flags.
+Cleared properly today by the bounded override above. (Lesson: verify the *resolved*
+version in the lockfile, not the parent's declared range.)
+
+### Bare-floor cleanup (partial)
+
+`socket.io-parser` was one of the ten bare `>=` floors flagged on 07-25; it is now bounded.
+Nine remain (`protobufjs`, `hono`, `@hono/node-server`, `@xmldom/xmldom`, `tmp`,
+`@grpc/grpc-js`, `find-my-way`, `ws`, `form-data`) — still a tracked follow-up.

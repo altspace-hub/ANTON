@@ -11,6 +11,7 @@ import { Router } from 'express';
 import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { encrypt, decrypt } from '../services/credential-vault.js';
+import { invalidateCustomEndpointCache } from '../services/custom-endpoint-resolver.js';
 import {
   checkOpenAICompatibleHealth,
   listOpenAICompatibleModels,
@@ -277,58 +278,8 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Server-side lookup helpers (used by the provider router).
-// Cached in-process for the lifetime of the process; cleared on
-// any write through the route layer above.
+// Server-side lookup helpers moved to
+// services/custom-endpoint-resolver.ts (2026-07-29) so the LLM
+// core no longer imports a route module (Express + role-guards).
+// This route layer invalidates the resolver cache on every write.
 // ─────────────────────────────────────────────────────────────
-
-interface ResolvedEndpoint {
-  slug: string;
-  baseUrl: string;
-  apiKey?: string;
-  defaultModel: string | null;
-  /** Optional per-endpoint context window (informational column from
-   *  migration 215) — consumed by context-budget.ts for compat: models. */
-  contextWindow: number | null;
-  extraHeaders: Record<string, string>;
-  enabled: boolean;
-}
-
-let endpointCache: Map<string, ResolvedEndpoint> | null = null;
-let cacheLoadingPromise: Promise<void> | null = null;
-
-export async function resolveCustomEndpoint(
-  db: DatabaseAdapter,
-  slug: string,
-): Promise<ResolvedEndpoint | null> {
-  if (!endpointCache) {
-    if (!cacheLoadingPromise) {
-      cacheLoadingPromise = (async () => {
-        const rows = (await db.all(
-          'SELECT * FROM custom_model_endpoints WHERE enabled = TRUE',
-        )) as EndpointRow[];
-        const map = new Map<string, ResolvedEndpoint>();
-        for (const r of rows) {
-          map.set(r.slug, {
-            slug: r.slug,
-            baseUrl: r.base_url,
-            apiKey: r.api_key_encrypted ? decrypt(r.api_key_encrypted) : undefined,
-            defaultModel: r.default_model,
-            contextWindow: r.context_window,
-            extraHeaders: r.extra_headers ?? {},
-            enabled: r.enabled,
-          });
-        }
-        endpointCache = map;
-      })();
-    }
-    await cacheLoadingPromise;
-    cacheLoadingPromise = null;
-  }
-  return endpointCache?.get(slug) ?? null;
-}
-
-export function invalidateCustomEndpointCache(): void {
-  endpointCache = null;
-  cacheLoadingPromise = null;
-}

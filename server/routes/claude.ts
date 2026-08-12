@@ -24,7 +24,7 @@ import { streamOllama, listOllamaModels } from '../services/adapters/ollamaAdapt
 import { streamAzureOpenAI } from '../services/adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from '../services/adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible } from '../services/adapters/openaiCompatibleAdapter.js';
-import { resolveCustomEndpoint } from './custom-model-endpoints.js';
+import { resolveCustomEndpoint } from '../services/custom-endpoint-resolver.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';

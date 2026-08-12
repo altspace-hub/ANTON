@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { Response } from 'express';
+import type { StreamSink } from './stream-sink.js';
 import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
 
 // ── Types ──────────────────────────────────────────────────
@@ -195,7 +195,7 @@ export function isApiKeyConfigured(): boolean {
 
 export async function streamToResponse(
   config: StreamConfig,
-  res: Response,
+  res: StreamSink,
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
   const anthropic = getClient();
