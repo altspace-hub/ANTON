@@ -28,12 +28,14 @@ import {
   isValidVerifierModelId,
 } from '../services/verifier-model.js';
 import { getParseStats } from '../services/parse-telemetry.js';
+import { initSdkEngineStore, isSdkEngineEnabled, setSdkEngineEnabled } from '../services/sdk-engine-store.js';
+import { testSdkEngine, SDK_ENGINE_MODELS } from '../services/claude-sdk-client.js';
 
 // Model-id prefixes accepted as a server-side default. Anything else must
 // match a configured custom-model slot (checked against the DB below).
 const KNOWN_MODEL_PREFIXES = [
   'claude-', 'gpt-', 'gemini-', 'mistral-', 'magistral-',
-  'codestral', 'devstral', 'azure:', 'ollama:', 'compat:',
+  'codestral', 'devstral', 'azure:', 'ollama:', 'compat:', 'sdk:',
 ];
 
 export interface CustomModelConfig {
@@ -69,6 +71,38 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // ANTON Studio P0: prime the per-area default + coding role-strategy caches.
   initAreaDefaultModelStore(db);
   initCodingModelStrategy(db);
+  // Prime the SDK execution-engine toggle cache.
+  initSdkEngineStore(db);
+
+  // ── SDK execution engine (Claude Agent SDK / subscription auth) ─────────
+  // GET is open (booleans + static model list, no secrets — same rule as the
+  // other GET routes here). Mutations are admin-gated like every other
+  // instance-wide setting.
+  router.get('/settings/sdk-engine', async (_req, res) => {
+    res.json({
+      enabled: isSdkEngineEnabled(),
+      models: SDK_ENGINE_MODELS,
+    });
+  });
+
+  router.post('/settings/sdk-engine', requireAdminOrSolo, async (req, res) => {
+    const { enabled } = req.body as { enabled?: unknown };
+    if (typeof enabled !== 'boolean') {
+      res.status(400).json({ error: 'enabled must be a boolean' });
+      return;
+    }
+    await setSdkEngineEnabled(db, enabled);
+    console.log(`[settings] SDK execution engine ${enabled ? 'enabled' : 'disabled'}`);
+    res.json({ ok: true, enabled });
+  });
+
+  // POST /api/settings/sdk-engine/test — a one-word live ping through the
+  // engine (bypasses the enabled gate so users can test BEFORE enabling).
+  // Spawns the Claude Code runtime; response reports honest status either way.
+  router.post('/settings/sdk-engine/test', requireAdminOrSolo, async (_req, res) => {
+    const result = await testSdkEngine();
+    res.json(result);
+  });
 
   // GET /api/settings/default-model — the server-side default model and
   // where it comes from (Settings persistence vs .env vs unset).

@@ -16,6 +16,7 @@ import type { StreamSink } from './stream-sink.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, type UnifiedLLMRequest, type OpenAICompatibleConfig } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
+import * as sdkClient from './claude-sdk-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
@@ -171,6 +172,22 @@ export async function streamToResponse(
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
   const provider = getProviderFromModelId(config.model, config.db);
+
+  // SDK execution engine — sdk:<model> runs through the Claude Agent SDK
+  // subprocess (subscription auth), emitting the identical SSE contract.
+  if (provider === 'anthropic_sdk') {
+    return sdkClient.streamToResponse(
+      {
+        model: config.model,
+        thinking: config.thinking,
+        system: config.system,
+        staticSystemPrompt: config.staticSystemPrompt,
+        messages: config.messages,
+      },
+      res,
+      onComplete
+    );
+  }
 
   // Special case: Use existing claude-client for Anthropic models
   // This preserves prompt caching optimization
@@ -342,6 +359,17 @@ export async function streamToResponse(
 export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCompletionData> {
   const provider = getProviderFromModelId(config.model, config.db);
 
+  // SDK execution engine — aggregate the stream into one completion.
+  if (provider === 'anthropic_sdk') {
+    return sdkClient.completeText({
+      model: config.model,
+      thinking: config.thinking,
+      system: config.system,
+      staticSystemPrompt: config.staticSystemPrompt,
+      messages: config.messages,
+    });
+  }
+
   // For Anthropic, we could use the existing client, but it's stream-only
   // So we'll use the adapter for consistency in non-streaming mode
 
@@ -407,9 +435,10 @@ export async function streamToHandler(
 ): Promise<void> {
   const provider = getProviderFromModelId(config.model, config.db);
 
-  if (provider === 'anthropic') {
+  if (provider === 'anthropic' || provider === 'anthropic_sdk') {
     // Create a mock response to capture SSE events from claude-client
-    // and redirect them to the onEvent callback
+    // (or the SDK engine, which deliberately mirrors its swallow-into-SSE-error
+    // contract) and redirect them to the onEvent callback
     let mockEventCount = 0;
     // claude-client's streamToResponse SWALLOWS API errors: on failure it
     // emits an SSE `error` event then res.end()s, rather than throwing or
@@ -451,7 +480,20 @@ export async function streamToHandler(
       ? (data: StreamCompletionData) => { completed = true; onComplete(data); }
       : undefined;
 
-    await claudeClient.streamToResponse(
+    if (provider === 'anthropic_sdk') {
+      await sdkClient.streamToResponse(
+        {
+          model: config.model,
+          thinking: config.thinking,
+          system: config.system,
+          staticSystemPrompt: config.staticSystemPrompt,
+          messages: config.messages,
+        },
+        mockRes,
+        wrappedComplete
+      );
+    } else {
+      await claudeClient.streamToResponse(
       {
         model: config.model as 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6',
         thinking: config.thinking,
@@ -465,6 +507,7 @@ export async function streamToHandler(
       mockRes,
       wrappedComplete
     );
+    }
 
     // If the underlying stream errored (provider 4xx, insufficient credit, …)
     // and never completed, surface it so the caller rejects instead of hanging.
