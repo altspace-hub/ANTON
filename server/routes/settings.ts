@@ -223,7 +223,7 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
       // Allow custom-slot model ids (arbitrary ids with a configured provider)
       const customModels = await getCustomModelConfigs(db);
       if (!customModels.some((m) => m.modelId === model)) {
-        res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure: id, or a configured custom model` });
+        res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure:/sdk:/codex: id, or a configured custom model` });
         return;
       }
     }
@@ -271,7 +271,7 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
         if (!isValidVerifierModelId(model)) {
           const customModels = await getCustomModelConfigs(db);
           if (!customModels.some((m) => m.modelId === model)) {
-            res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure: id, or a configured custom model` });
+            res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure:/sdk:/codex: id, or a configured custom model` });
             return;
           }
         }

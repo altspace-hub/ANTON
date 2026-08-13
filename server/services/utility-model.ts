@@ -148,7 +148,10 @@ export function getAnthropicUtilityModelSync(): string {
  */
 export function isValidUtilityModelId(model: string): boolean {
   if (MODEL_REGISTRY[model]) return true;
-  return model.startsWith('ollama:') || model.startsWith('compat:') || model.startsWith('azure:');
+  return model.startsWith('ollama:') || model.startsWith('compat:') || model.startsWith('azure:')
+    // Subscription execution engines (sdk:/codex:) — like the dynamic prefixes
+    // above there is no static registry entry; the enabled gate applies at call time.
+    || model.startsWith('sdk:') || model.startsWith('codex:');
 }
 
 /**

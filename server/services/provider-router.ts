@@ -872,6 +872,28 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
 
+  // ── Subscription execution engines (non-streaming) ──
+  // sdk:<model> / codex:<model> run through the Claude Agent SDK / Codex SDK
+  // subprocess on this machine's subscription sign-in — no API key. Like the
+  // API branches, failures (engine disabled, not signed in, run error) throw.
+  // jsonMode/tools are not forwarded: the engines are text-only, same as the
+  // Anthropic branch which also carries JSON expectations in the prompt.
+  if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+    const { completeText } = provider === 'anthropic_sdk'
+      ? await import('./claude-sdk-client.js')
+      : await import('./codex-sdk-client.js');
+    const data = await completeText({
+      model: modelId,
+      thinking: (config.thinkingLevel ?? 'quick') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+      system: config.system,
+      messages: config.messages.map(m => ({
+        role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: m.content,
+      })),
+    });
+    return { text: data.text, thinking: data.thinking, inputTokens: data.inputTokens, outputTokens: data.outputTokens };
+  }
+
   throw new Error(`Non-streaming not implemented for provider: ${provider}`);
 }
 

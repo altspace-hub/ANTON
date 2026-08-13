@@ -303,7 +303,7 @@ export async function streamToResponse(
       // system/assistant envelope messages carry nothing this engine needs.
     }
 
-    console.log(`[sdk-engine] run complete — ${usageData.inputTokens} in / ${usageData.outputTokens} out tokens`);
+    if (currentText) console.log(`[sdk-engine] run complete — ${usageData.inputTokens} in / ${usageData.outputTokens} out tokens`);
     if (currentThinking) contentBlocks.push({ type: 'thinking', content: currentThinking });
     if (currentText) contentBlocks.push({ type: 'text', content: currentText });
     sendEvent({ type: 'stream_end', contentBlocks, sourceManifest: config.sourceManifest });

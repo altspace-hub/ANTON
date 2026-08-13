@@ -1770,6 +1770,9 @@ export default function Settings() {
                   { value: 'gpt-4o-mini', label: 'GPT-4o Mini', disabled: !providerStatus.OPENAI_API_KEY },
                   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', disabled: !providerStatus.GOOGLE_API_KEY },
                   { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
+                  // Subscription engines (sdk:/codex:) — verify on the machine's
+                  // subscription sign-in, no API credits needed.
+                  ...subscriptionModels.map((m) => ({ value: m.id, label: m.label, disabled: false })),
                   ...(ecoOllama.available && ecoOllama.models.length > 0
                     ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
                     : []),
