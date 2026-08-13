@@ -51,9 +51,11 @@ const CHIP_ACTIVE = 'border-adv-teal bg-adv-teal-dim text-adv-teal';
 const CHIP_INACTIVE = 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white';
 
 const MODEL_OPTIONS: { value: ModelId; label: string }[] = [
+  { value: 'claude-opus-5', label: 'Opus 5' },
+  { value: 'claude-sonnet-5', label: 'Sonnet 5' },
+  { value: 'claude-fable-5', label: 'Fable 5' },
   { value: 'claude-opus-4-8', label: 'Opus 4.8' },
   { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },
-  { value: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
   { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5' },
 ];
 
@@ -426,6 +428,11 @@ export default function Settings() {
   const [ecoOllama, setEcoOllama] = useState<{ available: boolean; models: string[] }>({ available: false, models: [] });
   const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null }>>([]);
 
+  // Subscription execution engines (sdk:<model> / codex:<model>): enabled
+  // engines' models are valid default-model choices — they run on this
+  // machine's subscription sign-in, not an API key.
+  const [subscriptionModels, setSubscriptionModels] = useState<Array<{ id: string; label: string }>>([]);
+
   // Wave 3.8: utility model for background tasks (extraction, scoring,
   // naming). Server-persisted only (app_settings 'utility_model').
   const [utilityModel, setUtilityModel] = useState<string>('claude-haiku-4-5-20251001');
@@ -548,6 +555,15 @@ export default function Settings() {
       .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; enabled: boolean }> }) =>
         setEcoEndpoints((data.endpoints ?? []).filter((e) => e.enabled)))
       .catch(() => {});
+
+    // Subscription engines: union of enabled engines' models (same probe as ModelSelector)
+    const engineState = (r: Response) => r.ok ? r.json() : { enabled: false, models: [] };
+    Promise.all([
+      fetch('/api/settings/sdk-engine').then(engineState).catch(() => ({ enabled: false, models: [] })),
+      fetch('/api/settings/codex-engine').then(engineState).catch(() => ({ enabled: false, models: [] })),
+    ]).then((engines: Array<{ enabled?: boolean; models?: Array<{ id: string; label: string }> }>) => {
+      setSubscriptionModels(engines.flatMap((e) => (e.enabled ? e.models ?? [] : [])));
+    }).catch(() => {});
   }, []);
 
   // Saves a provider key: applied immediately server-side (no restart) and
@@ -1529,6 +1545,24 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* Subscription engines — enabled in Local & cost-effective models */}
+            {subscriptionModels.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-1.5 text-xs text-adv-gray">Subscription (SDK) — runs on your subscription sign-in, no API credits needed</p>
+                <div className="flex flex-wrap gap-2">
+                  {subscriptionModels.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => handleSetModel(m.id as ModelId)}
+                      className={`${CHIP_BASE} ${defaultModel === m.id ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* OpenAI */}
             <div className="mb-3">
               <p className="mb-1.5 text-xs text-adv-gray">
@@ -1539,10 +1573,10 @@ export default function Settings() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {([
-                  { value: 'gpt-5.4',      label: 'GPT-5.4',       tier: '★ Latest' },
-                  { value: 'gpt-4.1',      label: 'GPT-4.1',       tier: '● Flagship' },
-                  { value: 'gpt-4o',       label: 'GPT-4o',        tier: '◑ Balanced' },
-                  { value: 'gpt-4o-mini',  label: 'GPT-4o Mini',   tier: '○ Fast' },
+                  { value: 'gpt-5.6-sol',   label: 'GPT-5.6 Sol',   tier: '★ Frontier' },
+                  { value: 'gpt-5.6-terra', label: 'GPT-5.6 Terra', tier: '● Balanced' },
+                  { value: 'gpt-5.6-luna',  label: 'GPT-5.6 Luna',  tier: '○ Fast' },
+                  { value: 'gpt-5.4',       label: 'GPT-5.4',       tier: '◑ Previous' },
                 ] as { value: ModelId; label: string; tier: string }[]).map(({ value: modelValue, label }) => {
                   const disabled = !providerStatus.OPENAI_API_KEY;
                   return (
