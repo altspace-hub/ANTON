@@ -244,6 +244,7 @@ export async function streamToResponse(
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
 
   try {
+    console.log(`[sdk-engine] run → model=${underlying} thinking=${config.thinking}`);
     const query = await resolveQuery();
     sendEvent({ type: 'stream_start', messageId: randomUUID() });
 
@@ -292,6 +293,7 @@ export async function streamToResponse(
           sendEvent({ type: 'usage', ...usageData, thinkingTokens: 0 });
         } else {
           const detail = result.errors?.length ? ` — ${result.errors.join('; ')}` : '';
+          console.warn(`[sdk-engine] run failed (${result.subtype})${detail}`);
           sendEvent({
             type: 'error',
             message: `SDK engine run failed (${result.subtype})${detail}. If this mentions authentication, run \`claude\` once on this machine and log in.`,
@@ -301,6 +303,7 @@ export async function streamToResponse(
       // system/assistant envelope messages carry nothing this engine needs.
     }
 
+    console.log(`[sdk-engine] run complete — ${usageData.inputTokens} in / ${usageData.outputTokens} out tokens`);
     if (currentThinking) contentBlocks.push({ type: 'thinking', content: currentThinking });
     if (currentText) contentBlocks.push({ type: 'text', content: currentText });
     sendEvent({ type: 'stream_end', contentBlocks, sourceManifest: config.sourceManifest });
@@ -314,6 +317,7 @@ export async function streamToResponse(
     // Mirror claude-client's contract: failures surface as an SSE error event,
     // never a thrown exception after headers are out.
     const msg = err instanceof Error ? err.message : 'SDK engine failed to start';
+    console.error(`[sdk-engine] error: ${msg}`);
     sendEvent({
       type: 'error',
       message: `SDK engine error: ${msg}. The Claude Code runtime must be installed and logged in on this machine.`,
