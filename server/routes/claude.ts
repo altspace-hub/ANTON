@@ -36,6 +36,8 @@ import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { streamToResponse as sdkStreamToResponse } from '../services/claude-sdk-client.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
+import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
+import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
 import { validate } from '../lib/validate.js';
 import { ClaudeMessageSchema } from '../lib/schemas.js';
 import { acquireStream, releaseStream } from '../services/stream-limiter.js';
@@ -178,8 +180,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // no API key). Prefix-detected like ollama:/azure:/compat: so it never
       // falls through to getModelConfig=undefined → provider='anthropic'.
       const isSdkEngineModel = selectedModel.startsWith('sdk:');
-      const modelConfig = (isOllamaModel || isAzureModel || isCompatModel || isSdkEngineModel) ? undefined : await getModelConfig(selectedModel, db);
-      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : isCompatModel ? 'openai_compatible' : isSdkEngineModel ? 'anthropic_sdk' : (modelConfig?.provider || 'anthropic');
+      // codex:<model> — the ChatGPT-subscription Codex engine (no API key).
+      const isCodexEngineModel = selectedModel.startsWith('codex:');
+      const modelConfig = (isOllamaModel || isAzureModel || isCompatModel || isSdkEngineModel || isCodexEngineModel) ? undefined : await getModelConfig(selectedModel, db);
+      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : isCompatModel ? 'openai_compatible' : isSdkEngineModel ? 'anthropic_sdk' : isCodexEngineModel ? 'openai_codex' : (modelConfig?.provider || 'anthropic');
 
       if (provider === 'anthropic') {
         if (!isApiKeyConfigured()) {
@@ -191,6 +195,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // Claude Code login. Gate on the Settings toggle before any SSE starts.
         if (!isSdkEngineEnabled()) {
           res.status(400).json({ error: 'The SDK execution engine is disabled. Enable it in Settings → Execution engines (requires Claude Code installed and logged in on this machine).' });
+          return;
+        }
+      } else if (provider === 'openai_codex') {
+        // No API key involved — the engine authenticates with this machine's
+        // ChatGPT sign-in (`codex login`). Gate on the Settings toggle.
+        if (!isCodexEngineEnabled()) {
+          res.status(400).json({ error: 'The ChatGPT (Codex) execution engine is disabled. Enable it in Settings → Execution engines (requires a ChatGPT sign-in on this machine: `npx codex login`).' });
           return;
         }
       } else if (provider === 'azure_openai') {
@@ -1131,11 +1142,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Route to the correct provider adapter
-      if (provider === 'anthropic_sdk') {
-        // SDK execution engine — the Claude Agent SDK subprocess, authenticated
-        // by this machine's Claude Code login (no API key). Text engine only:
-        // no web_search tool exists there, so strip the web-search instructions
-        // exactly as the non-Anthropic branch does.
+      if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+        // Subscription execution engines — the Claude Agent SDK or Codex SDK
+        // subprocess, authenticated by this machine's Claude Code / ChatGPT
+        // login (no API key). Neither has ANTON's web_search tool, so strip
+        // the web-search instructions exactly as the non-Anthropic branch does.
         const sdkPrompt = composedPrompt
           .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
           .replace(/\n{3,}/g, '\n\n');
@@ -1156,8 +1167,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         res.on('close', () => clearTimeout(sdkTimeoutId));
         res.on('finish', () => clearTimeout(sdkTimeoutId));
 
+        const engineStream = provider === 'anthropic_sdk' ? sdkStreamToResponse : codexStreamToResponse;
         try {
-          await sdkStreamToResponse(
+          await engineStream(
             {
               model: selectedModel,
               thinking: (thinking || 'think_hard') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',

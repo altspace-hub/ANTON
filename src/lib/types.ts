@@ -46,9 +46,13 @@ export type ModelId =
   // subprocess (this machine's Claude Code login / subscription), not the
   // Messages API. Format: sdk:<anthropic_model_id>
   | `sdk:${string}`
+  // ChatGPT-subscription engine — OpenAI models run through the Codex SDK
+  // subprocess (this machine's `codex login` / ChatGPT subscription), not the
+  // API. Format: codex:<model> or codex:auto for the CLI default.
+  | `codex:${string}`
   | (string & {}); // allows additional model IDs without breaking type narrowing
 
-export type ModelProvider = 'anthropic' | 'anthropic_sdk' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama' | 'openai_compatible';
+export type ModelProvider = 'anthropic' | 'anthropic_sdk' | 'openai' | 'openai_codex' | 'azure_openai' | 'google' | 'mistral' | 'ollama' | 'openai_compatible';
 
 export type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 

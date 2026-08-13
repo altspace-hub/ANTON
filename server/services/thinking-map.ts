@@ -139,6 +139,25 @@ export function isOpenAIReasoningModel(model: string): boolean {
   return /^o[1-9]/i.test(model) || /^gpt-5\./i.test(model);
 }
 
+// ── Codex (the ChatGPT-subscription SDK engine) ──────────────────────────────
+
+export type CodexEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+
+/** modelReasoningEffort for the Codex SDK engine (codex:<model> ids). Codex
+ *  accepts minimal..xhigh — no 'max' — so the top three levels share xhigh. */
+const CODEX_EFFORT: Record<ThinkingLevel, CodexEffort> = {
+  quick: 'minimal',
+  think: 'medium',
+  think_hard: 'high',
+  investigate: 'xhigh',
+  plan_first: 'xhigh',
+  deep_investigate: 'xhigh',
+};
+
+export function codexReasoningEffort(level: ThinkingLevel): CodexEffort {
+  return CODEX_EFFORT[level];
+}
+
 // ── Mistral (switch to a Magistral reasoning model) ───────────────────────────
 
 const MISTRAL_REASONING_LEVELS: ReadonlySet<string> = new Set([
