@@ -189,9 +189,21 @@ jobs:
       # dompurify `(MPL-2.0 OR Apache-2.0)` and jszip `(MIT OR GPL-3.0-or-later)`
       # (used under MIT). license-checker can't evaluate SPDX OR-expressions, so
       # the exact dual string is allowlisted rather than the chosen term.
+      #
+      # Excluded by name (2026-08-13): @anthropic-ai/claude-agent-sdk — the SDK
+      # execution engine's runtime. Its LICENSE.md: "© Anthropic PBC. All
+      # rights reserved. Use is subject to the Legal Agreements outlined here:
+      # https://code.claude.com/docs/en/legal-and-compliance" — first-party
+      # proprietary terms from the product's primary AI vendor, NOT copyleft.
+      # Its package.json license field is "SEE LICENSE IN README.md" (not an
+      # SPDX id), which license-checker mis-parses into a README badge URL
+      # ("Custom: https://img.shields.io/badge/Node.js-18") that no allowlist
+      # string can legitimately cover. Name-scoped exclusion, so the gate
+      # stays blocking for every other package.
       - name: License check
         run: |
           pnpm dlx license-checker --production --excludePrivatePackages \
+            --excludePackagesStartingWith "@anthropic-ai/claude-agent-sdk" \
             --onlyAllow "MIT;MIT*;MIT-0;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;Apache*;MPL-2.0;CC0-1.0;CC-BY-3.0;CC-BY-4.0;0BSD;Unlicense;Python-2.0;BlueOak-1.0.0;OFL-1.1;(MPL-2.0 OR Apache-2.0);(MIT OR GPL-3.0-or-later)" \
             || (echo "LICENSE CHECK FAILED — a non-permitted (likely strong-copyleft) license is present in PRODUCTION dependencies. Review output above." && exit 1)
 
