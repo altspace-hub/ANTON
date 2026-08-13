@@ -1,26 +1,26 @@
-﻿/**
- * claude-sdk-client.ts â€” the SDK execution engine.
+/**
+ * claude-sdk-client.ts — the SDK execution engine.
  *
  * Runs Anthropic models through the Claude Agent SDK subprocess instead of
  * the Messages API (claude-client.ts). The point is auth: the subprocess
  * authenticates with the machine's Claude Code login, so a Claude
  * SUBSCRIPTION can power module runs on an instance whose ANTHROPIC_API_KEY
  * is absent or unfunded. Model ids use the `sdk:` prefix (sdk:claude-opus-5),
- * following the azure:/ollama:/compat: convention â€” no static registry entry.
+ * following the azure:/ollama:/compat: convention — no static registry entry.
  *
  * This engine is a TEXT ENGINE, not an agent:
- *   - `tools: []` â€” every built-in tool disabled. No file access, no shell,
+ *   - `tools: []` — every built-in tool disabled. No file access, no shell,
  *     no web search. Nothing needs containing because nothing is granted.
- *   - `maxTurns: 1` â€” one completion per request.
- *   - `settingSources: []` â€” the user's personal Claude Code settings, hooks
+ *   - `maxTurns: 1` — one completion per request.
+ *   - `settingSources: []` — the user's personal Claude Code settings, hooks
  *     and CLAUDE.md never leak into an ANTON run.
- *   - `persistSession: false` â€” runs don't pile up in ~/.claude/projects.
+ *   - `persistSession: false` — runs don't pile up in ~/.claude/projects.
  *
  * AUTH RULE (the load-bearing line): the subprocess env is
  * `{ ...process.env }` with ANTHROPIC_API_KEY DELETED. ANTON's server holds
  * the (possibly unfunded) key in its own environment; if the subprocess saw
  * it, the SDK would bill the key instead of the subscription. The spread is
- * mandatory â€” Options.env REPLACES the subprocess environment wholesale, and
+ * mandatory — Options.env REPLACES the subprocess environment wholesale, and
  * a bare object strips PATH/HOME and the subprocess never starts on Windows.
  *
  * Capability differences vs the API path, stated rather than hidden:
@@ -37,7 +37,7 @@ import type { StreamSink } from './stream-sink.js';
 import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
 import { isSdkEngineEnabled } from './sdk-engine-store.js';
 
-// â”€â”€ Model id convention â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Model id convention ─────────────────────────────────────
 
 export const SDK_MODEL_PREFIX = 'sdk:';
 
@@ -45,12 +45,12 @@ export function isSdkModel(modelId: string): boolean {
   return modelId.startsWith(SDK_MODEL_PREFIX);
 }
 
-/** sdk:claude-opus-5 â†’ claude-opus-5 */
+/** sdk:claude-opus-5 → claude-opus-5 */
 export function sdkUnderlyingModel(modelId: string): string {
   return isSdkModel(modelId) ? modelId.slice(SDK_MODEL_PREFIX.length) : modelId;
 }
 
-/** The models offered in the picker when the engine is enabled â€” single
+/** The models offered in the picker when the engine is enabled — single
  *  source for the Settings route; the frontend renders what this returns. */
 export const SDK_ENGINE_MODELS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'sdk:claude-opus-5', label: 'Claude Opus 5 (subscription)' },
@@ -58,7 +58,7 @@ export const SDK_ENGINE_MODELS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'sdk:claude-fable-5', label: 'Claude Fable 5 (subscription)' },
 ];
 
-// â”€â”€ Subprocess environment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Subprocess environment ──────────────────────────────────
 
 /**
  * The env handed to the SDK subprocess: everything the server has (PATH,
@@ -72,7 +72,7 @@ export function buildSdkEnv(base: NodeJS.ProcessEnv = process.env): Record<strin
   return env;
 }
 
-// â”€â”€ Thinking mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Thinking mapping ────────────────────────────────────────
 
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
@@ -94,7 +94,7 @@ export function sdkThinkingOptions(level: ThinkingLevel, underlyingModel: string
   return { thinking: { type: 'enabled', budgetTokens: budget } };
 }
 
-// â”€â”€ Config / result shapes (mirror claude-client) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Config / result shapes (mirror claude-client) ───────────
 
 export interface SdkStreamConfig {
   /** The prefixed id, e.g. sdk:claude-opus-5. */
@@ -102,7 +102,7 @@ export interface SdkStreamConfig {
   thinking: ThinkingLevel;
   /** Dynamic system prompt portion (or the whole prompt when static is absent). */
   system: string;
-  /** Static portion â€” concatenated ahead of `system`. The SDK has no
+  /** Static portion — concatenated ahead of `system`. The SDK has no
    *  cache_control surface, so the split collapses; order is preserved. */
   staticSystemPrompt?: string;
   messages: Array<{ role: 'user' | 'assistant'; content: string | object[] }>;
@@ -124,18 +124,18 @@ interface ContentBlock {
   content: string;
 }
 
-// â”€â”€ Concurrency cap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Concurrency cap ─────────────────────────────────────────
 
 const MAX_CONCURRENT_SDK_RUNS = 2;
 let activeRuns = 0;
 
-// â”€â”€ Prompt flattening â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Prompt flattening ───────────────────────────────────────
 
 /**
- * The SDK takes one prompt string per run (persistSession:false â€” no session
+ * The SDK takes one prompt string per run (persistSession:false — no session
  * to continue). Multi-turn ANTON sessions are flattened into a transcript:
  * prior turns labelled, final user message last. Content blocks that are not
- * plain strings (tool results from older runs) are JSON-stringified â€” lossy
+ * plain strings (tool results from older runs) are JSON-stringified — lossy
  * but honest, and rare on this path.
  */
 export function flattenMessages(messages: SdkStreamConfig['messages']): string {
@@ -150,9 +150,9 @@ export function flattenMessages(messages: SdkStreamConfig['messages']): string {
   return `<conversation_so_far>\n${history}\n</conversation_so_far>\n\n${text(last.content)}`;
 }
 
-// â”€â”€ Streaming â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Streaming ───────────────────────────────────────────────
 
-/** Minimal structural types for the SDK messages this engine consumes â€”
+/** Minimal structural types for the SDK messages this engine consumes —
  *  narrow on discriminants, never trust the rest (strict mode, no `any`). */
 interface SdkPartialMessage {
   type: 'stream_event';
@@ -177,7 +177,7 @@ interface SdkResultMessage {
 }
 type SdkMessage = SdkPartialMessage | SdkResultMessage | { type: string };
 
-/** Injectable SDK boundary â€” tests replace this; production resolves the real
+/** Injectable SDK boundary — tests replace this; production resolves the real
  *  package lazily (the SDK is a ~1.2 MB module; don't pay for it at boot). */
 type QueryFn = (params: { prompt: string; options: Record<string, unknown> }) => AsyncIterable<SdkMessage>;
 let queryImpl: QueryFn | null = null;
@@ -196,7 +196,7 @@ export async function streamToResponse(
   onComplete?: (data: SdkCompletionData) => void | Promise<void>,
   opts?: {
     /** The Settings "Test" button probes the engine BEFORE the user enables
-     *  it â€” that one caller may bypass the enabled gate. Route callers never set this. */
+     *  it — that one caller may bypass the enabled gate. Route callers never set this. */
     bypassEnabledCheck?: boolean;
   },
 ): Promise<void> {
@@ -214,13 +214,13 @@ export async function streamToResponse(
   };
 
   if (!opts?.bypassEnabledCheck && !isSdkEngineEnabled()) {
-    sendEvent({ type: 'error', message: 'The SDK execution engine is disabled. Enable it in Settings â†’ Execution engines.' });
+    sendEvent({ type: 'error', message: 'The SDK execution engine is disabled. Enable it in Settings → Execution engines.' });
     res.write('data: [DONE]\n\n');
     res.end();
     return;
   }
   if (activeRuns >= MAX_CONCURRENT_SDK_RUNS) {
-    sendEvent({ type: 'error', message: `SDK engine busy â€” at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.` });
+    sendEvent({ type: 'error', message: `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.` });
     res.write('data: [DONE]\n\n');
     res.end();
     return;
@@ -258,7 +258,7 @@ export async function streamToResponse(
         settingSources: [],      // never inherit the user's personal Claude Code config
         persistSession: false,
         includePartialMessages: true,
-        env: buildSdkEnv(),      // process.env minus ANTHROPIC_API_KEY â†’ subscription auth
+        env: buildSdkEnv(),      // process.env minus ANTHROPIC_API_KEY → subscription auth
         cwd: os.tmpdir(),        // neutral cwd; nothing reads it (no tools) but never the repo
         abortController,
         ...sdkThinkingOptions(config.thinking, underlying),
@@ -278,7 +278,7 @@ export async function streamToResponse(
       } else if (message.type === 'result') {
         const result = message as SdkResultMessage;
         if (result.subtype === 'success') {
-          // Native builds may not emit partials â€” fall back to the final text.
+          // Native builds may not emit partials — fall back to the final text.
           if (!currentText && typeof result.result === 'string' && result.result.length > 0) {
             currentText = result.result;
             sendEvent({ type: 'text_delta', content: result.result });
@@ -291,7 +291,7 @@ export async function streamToResponse(
           };
           sendEvent({ type: 'usage', ...usageData, thinkingTokens: 0 });
         } else {
-          const detail = result.errors?.length ? ` â€” ${result.errors.join('; ')}` : '';
+          const detail = result.errors?.length ? ` — ${result.errors.join('; ')}` : '';
           sendEvent({
             type: 'error',
             message: `SDK engine run failed (${result.subtype})${detail}. If this mentions authentication, run \`claude\` once on this machine and log in.`,
@@ -325,7 +325,7 @@ export async function streamToResponse(
   }
 }
 
-// â”€â”€ Non-streaming + health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Non-streaming + health check ────────────────────────────
 
 /** In-memory StreamSink for callers that want a single aggregated answer. */
 class CollectingSink implements StreamSink {
@@ -352,7 +352,7 @@ export async function completeText(
         try {
           const event = JSON.parse(line.slice(6)) as { type?: string; message?: string };
           if (event.type === 'error' && event.message) errorMessage = event.message;
-        } catch { /* non-JSON line â€” ignore */ }
+        } catch { /* non-JSON line — ignore */ }
       }
     },
     end: () => undefined,
@@ -364,7 +364,7 @@ export async function completeText(
 
 /**
  * Settings "Test" button: a one-word ping through the real engine. Returns an
- * honest status instead of throwing â€” the caller renders message verbatim.
+ * honest status instead of throwing — the caller renders message verbatim.
  */
 export async function testSdkEngine(): Promise<{ ok: boolean; message: string }> {
   try {
@@ -376,7 +376,7 @@ export async function testSdkEngine(): Promise<{ ok: boolean; message: string }>
     }, { bypassEnabledCheck: true });
     return {
       ok: true,
-      message: `SDK engine works â€” model replied ("${data.text.slice(0, 40).trim()}"), ${data.inputTokens} in / ${data.outputTokens} out tokens via this machine's Claude Code login.`,
+      message: `SDK engine works — model replied ("${data.text.slice(0, 40).trim()}"), ${data.inputTokens} in / ${data.outputTokens} out tokens via this machine's Claude Code login.`,
     };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : 'SDK engine test failed' };
