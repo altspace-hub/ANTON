@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Server,
   Edit2,
+  Sparkles,
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 
@@ -227,6 +228,134 @@ const OLLAMA_RECOMMENDED: OllamaModel[] = [
 
 // ── Component ──────────────────────────────────────────────────────────
 
+// ── SDK execution engine (Claude subscription) ────────────────────────
+
+/**
+ * Toggle + live test for the Claude Agent SDK execution engine: Anthropic
+ * models run through this machine's Claude Code login instead of the
+ * Messages API — no API key, usage draws on the Claude subscription.
+ * Test works BEFORE enabling (the server bypasses the gate for the ping).
+ */
+function SdkEngineCard() {
+  const [enabled, setEnabled] = useState<boolean | null>(null); // null = loading
+  const [models, setModels] = useState<{ id: string; label: string }[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchWithAuth('/api/settings/sdk-engine')
+      .then((r) => (r.ok ? r.json() : { enabled: false, models: [] }))
+      .then((d: { enabled: boolean; models: { id: string; label: string }[] }) => {
+        setEnabled(!!d.enabled);
+        setModels(d.models ?? []);
+      })
+      .catch(() => setEnabled(false));
+  }, []);
+
+  const toggle = async () => {
+    if (enabled === null || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const r = await fetchWithAuth('/api/settings/sdk-engine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: !enabled }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `Save failed (${r.status})`);
+      setEnabled(!enabled);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runTest = async () => {
+    if (testing) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await fetchWithAuth('/api/settings/sdk-engine/test', { method: 'POST' });
+      const d = (await r.json()) as { ok: boolean; message: string };
+      setTestResult(d);
+    } catch (err) {
+      setTestResult({ ok: false, message: err instanceof Error ? err.message : 'Test failed' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-border bg-adv-card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-adv-teal" />
+          <h3 className="text-base font-semibold text-adv-off-white">Claude via SDK — your subscription, no API key</h3>
+        </div>
+        <button
+          onClick={toggle}
+          disabled={enabled === null || saving}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
+            enabled
+              ? 'bg-adv-teal text-adv-dark hover:bg-adv-teal-dark'
+              : 'border border-border text-adv-off-white hover:border-adv-teal'
+          }`}
+        >
+          {enabled === null ? 'Loading…' : saving ? 'Saving…' : enabled ? 'Enabled — click to disable' : 'Enable'}
+        </button>
+      </div>
+
+      <p className="text-sm text-adv-off-white mb-2">
+        Runs Anthropic models through the <strong>Claude Code login on this machine</strong> instead of the API.
+        Usage draws on your Claude subscription (Pro/Max/Team) — no <code className="text-xs">ANTHROPIC_API_KEY</code> needed.
+        Requires Claude Code installed and logged in (run <code className="text-xs bg-adv-dark px-1 py-0.5 rounded">claude</code> once in a terminal).
+      </p>
+      <p className="text-sm text-adv-gray mb-4">
+        What this engine does <em>not</em> do: ANTON's web-search knowledge mode is unavailable on it, the first token
+        arrives a few seconds later than the API (a runtime starts per request), and at most 2 requests run at once.
+        Everything else — knowledge sources, output formats, thinking levels — works identically.
+      </p>
+
+      <div className="flex items-center gap-3 mb-3">
+        <button
+          onClick={runTest}
+          disabled={testing}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm text-adv-off-white hover:border-adv-teal transition-colors disabled:opacity-60"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${testing ? 'animate-spin' : ''}`} />
+          {testing ? 'Testing (spawns the runtime — can take ~30s)…' : 'Test the engine'}
+        </button>
+        <span className="text-xs text-adv-gray">Works before enabling — test first, then switch it on.</span>
+      </div>
+
+      {testResult && (
+        <div className={`rounded-lg border p-3 mb-3 ${testResult.ok ? 'border-adv-green/30 bg-adv-green/5' : 'border-adv-gold/30 bg-adv-gold/5'}`}>
+          <div className="flex items-start gap-2 text-sm">
+            {testResult.ok
+              ? <Check className="h-4 w-4 text-adv-green shrink-0 mt-0.5" />
+              : <AlertCircle className="h-4 w-4 text-adv-gold shrink-0 mt-0.5" />}
+            <span className="text-adv-off-white">{testResult.message}</span>
+          </div>
+        </div>
+      )}
+
+      {saveError && (
+        <p className="text-sm text-adv-red mb-3">{saveError}</p>
+      )}
+
+      {enabled && models.length > 0 && (
+        <p className="text-xs text-adv-gray">
+          Now available in every model picker under <span className="font-medium text-adv-off-white">Subscription (SDK)</span>:{' '}
+          {models.map((m) => m.label).join(' · ')}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export default function LocalModelsSettingsPanel() {
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus | null>(null);
   const [ollamaLoading, setOllamaLoading] = useState(false);
@@ -407,11 +536,14 @@ export default function LocalModelsSettingsPanel() {
       <div>
         <h2 className="text-lg font-semibold text-adv-off-white mb-1">Local & cost-effective models</h2>
         <p className="text-sm text-adv-gray max-w-3xl">
-          Use Ollama for fully-local inference, or plug in an OpenAI-compatible endpoint (DeepSeek, OpenRouter,
-          Together, Groq, vLLM, LM Studio) for cheap or fast hosted models. The same workspace, every provider,
-          switchable per session.
+          Run Claude on your subscription via the SDK engine, use Ollama for fully-local inference, or plug in an
+          OpenAI-compatible endpoint (DeepSeek, OpenRouter, Together, Groq, vLLM, LM Studio) for cheap or fast
+          hosted models. The same workspace, every provider, switchable per session.
         </p>
       </div>
+
+      {/* ── SDK EXECUTION ENGINE (Claude subscription) ─────────────── */}
+      <SdkEngineCard />
 
       {/* ── OLLAMA SECTION ────────────────────────────────────────── */}
       <section className="rounded-xl border border-border bg-adv-card p-5">

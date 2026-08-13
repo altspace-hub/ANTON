@@ -34,6 +34,8 @@ import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
+import { streamToResponse as sdkStreamToResponse } from '../services/claude-sdk-client.js';
+import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { validate } from '../lib/validate.js';
 import { ClaudeMessageSchema } from '../lib/schemas.js';
 import { acquireStream, releaseStream } from '../services/stream-limiter.js';
@@ -172,12 +174,23 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // it never falls through to getModelConfig=undefined → provider='anthropic'
       // (which silently ran the request on Claude instead of the chosen model).
       const isCompatModel = selectedModel.startsWith('compat:');
-      const modelConfig = (isOllamaModel || isAzureModel || isCompatModel) ? undefined : await getModelConfig(selectedModel, db);
-      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : isCompatModel ? 'openai_compatible' : (modelConfig?.provider || 'anthropic');
+      // sdk:<model> — the Claude Agent SDK execution engine (subscription auth,
+      // no API key). Prefix-detected like ollama:/azure:/compat: so it never
+      // falls through to getModelConfig=undefined → provider='anthropic'.
+      const isSdkEngineModel = selectedModel.startsWith('sdk:');
+      const modelConfig = (isOllamaModel || isAzureModel || isCompatModel || isSdkEngineModel) ? undefined : await getModelConfig(selectedModel, db);
+      const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : isCompatModel ? 'openai_compatible' : isSdkEngineModel ? 'anthropic_sdk' : (modelConfig?.provider || 'anthropic');
 
       if (provider === 'anthropic') {
         if (!isApiKeyConfigured()) {
           res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+          return;
+        }
+      } else if (provider === 'anthropic_sdk') {
+        // No API key involved — the engine authenticates with this machine's
+        // Claude Code login. Gate on the Settings toggle before any SSE starts.
+        if (!isSdkEngineEnabled()) {
+          res.status(400).json({ error: 'The SDK execution engine is disabled. Enable it in Settings → Execution engines (requires Claude Code installed and logged in on this machine).' });
           return;
         }
       } else if (provider === 'azure_openai') {
@@ -1118,7 +1131,49 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Route to the correct provider adapter
-      if (provider === 'anthropic') {
+      if (provider === 'anthropic_sdk') {
+        // SDK execution engine — the Claude Agent SDK subprocess, authenticated
+        // by this machine's Claude Code login (no API key). Text engine only:
+        // no web_search tool exists there, so strip the web-search instructions
+        // exactly as the non-Anthropic branch does.
+        const sdkPrompt = composedPrompt
+          .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
+          .replace(/\n{3,}/g, '\n\n');
+
+        const sdkAbort = new AbortController();
+        req.on('close', () => sdkAbort.abort());
+        // Runtime spawn adds seconds before first token — same shape as the
+        // API path's per-thinking-level ceilings, one notch more generous.
+        const sdkTimeouts: Record<string, number> = {
+          quick: 180_000,
+          think: 300_000,
+          think_hard: 420_000,
+          investigate: 600_000,
+          plan_first: 600_000,
+          deep_investigate: 600_000,
+        };
+        const sdkTimeoutId = setTimeout(() => sdkAbort.abort(), sdkTimeouts[thinking as string] || 420_000);
+        res.on('close', () => clearTimeout(sdkTimeoutId));
+        res.on('finish', () => clearTimeout(sdkTimeoutId));
+
+        try {
+          await sdkStreamToResponse(
+            {
+              model: selectedModel,
+              thinking: (thinking || 'think_hard') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+              system: sdkPrompt,
+              staticSystemPrompt,
+              messages,
+              signal: sdkAbort.signal,
+              sourceManifest: resolved.sourceManifest,
+            },
+            res,
+            onComplete,
+          );
+        } finally {
+          clearTimeout(sdkTimeoutId);
+        }
+      } else if (provider === 'anthropic') {
         // Use existing Anthropic streaming.
         // staticSystemPrompt is populated only for caching-capable models (Opus/Sonnet);
         // for Haiku it is undefined and claude-client will send a plain single block.

@@ -760,6 +760,11 @@ export function createModelAdapter(
       }
       return new OpenAICompatibleAdapter(openaiCompatibleConfig);
 
+    case 'anthropic_sdk':
+      // The SDK engine is not a request/response adapter — it streams through
+      // claude-sdk-client.ts (unified-llm-client branches before reaching here).
+      throw new Error('The SDK execution engine streams via claude-sdk-client, not a model adapter');
+
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }
@@ -813,6 +818,9 @@ export function invalidateCustomModelConfigsCache(): void {
 }
 
 export function getProviderFromModelId(modelId: string, db?: DatabaseAdapter): ModelProvider {
+  // sdk:<model> — the Claude Agent SDK execution engine (subscription auth).
+  // Checked before 'claude-' so sdk:claude-* never misroutes to the API path.
+  if (modelId.startsWith('sdk:')) return 'anthropic_sdk';
   if (modelId.startsWith('claude-')) return 'anthropic';
   if (modelId.startsWith('azure:')) return 'azure_openai';
   if (modelId.startsWith('gpt-')) return 'openai';

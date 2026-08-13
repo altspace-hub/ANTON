@@ -61,6 +61,13 @@ interface CompatEndpoint {
   enabled: boolean;
 }
 
+/** SDK execution engine state (Settings → Execution engines). When enabled,
+ *  sdk:<model> ids run through the machine's Claude Code login — no API key. */
+interface SdkEngineState {
+  enabled: boolean;
+  models: { id: string; label: string }[];
+}
+
 // Built-in cloud models grouped by AI company (display order). The company label
 // is derived from each model's technical `provider` field — no per-model field to
 // keep in sync. Ollama-provider entries are intentionally omitted here: the live
@@ -78,6 +85,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   const [customModels, setCustomModels] = useState<ModelInfo[]>([]);
   const [azureDeployments, setAzureDeployments] = useState<AzureDeployment[]>([]);
   const [compatEndpoints, setCompatEndpoints] = useState<CompatEndpoint[]>([]);
+  const [sdkEngine, setSdkEngine] = useState<SdkEngineState>({ enabled: false, models: [] });
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +142,18 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
       });
   }, []);
 
+  // Fetch the SDK execution-engine state (sdk:<model> — subscription auth)
+  useEffect(() => {
+    fetch('/api/settings/sdk-engine')
+      .then((r) => r.ok ? r.json() : { enabled: false, models: [] })
+      .then((data: SdkEngineState) => {
+        setSdkEngine({ enabled: !!data.enabled, models: data.models ?? [] });
+      })
+      .catch(() => {
+        setSdkEngine({ enabled: false, models: [] });
+      });
+  }, []);
+
   // Close dropdown on outside click
   useEffect(() => {
     if (!open) return;
@@ -164,9 +184,13 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   });
   const isCompatModel = typeof value === 'string' && value.startsWith('compat:');
   const compatBareModel = isCompatModel ? (value as string).split(':').slice(2).join(':') : '';
+  const sdkMatch = typeof value === 'string' && value.startsWith('sdk:')
+    ? sdkEngine.models.find((m) => m.id === value)
+    : undefined;
   const currentLabel = currentModel?.label
     || (azureMatch ? `Azure: ${azureMatch.displayName || azureMatch.deploymentName}` : null)
     || (isCompatModel ? compatBareModel : null)
+    || (sdkMatch ? sdkMatch.label : null)
     || (typeof value === 'string' && value.startsWith('ollama:') ? value.replace('ollama:', '') : value);
   const isCustomModel = customModels.some((m) => m.id === value);
   const isAzureModel = !!azureMatch;
@@ -402,6 +426,44 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
               </>
             )}
 
+            {/* Subscription (SDK engine) — Claude models via this machine's Claude Code login */}
+            {sdkEngine.enabled && sdkEngine.models.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 border-t border-border">
+                  <Sparkles className="h-3 w-3 text-adv-teal" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">
+                    Subscription (SDK)
+                  </span>
+                </div>
+                {sdkEngine.models.map((m) => {
+                  const isActive = value === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => { onChange(m.id as ModelId); setOpen(false); }}
+                      className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                        isActive
+                          ? 'bg-adv-teal-dim text-adv-teal'
+                          : 'hover:bg-adv-dark text-adv-off-white'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium truncate ${isActive ? 'text-adv-teal' : ''}`}>
+                            {m.label}
+                          </span>
+                          <span className="shrink-0 rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
+                            No API key
+                          </span>
+                        </div>
+                      </div>
+                      {isActive && <Check className="h-4 w-4 shrink-0 text-adv-teal" />}
+                    </button>
+                  );
+                })}
+              </>
+            )}
+
             {/* Ollama divider + models */}
             {ollamaChecked && (
               <>
@@ -591,6 +653,47 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-adv-gray">OpenAI-compatible endpoint · no extra setup needed.</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Subscription (SDK engine) section */}
+        {sdkEngine.enabled && sdkEngine.models.length > 0 && (
+          <div className="pt-1">
+            <div className="mb-1.5 flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-adv-gray">
+                Subscription (SDK)
+              </span>
+            </div>
+            {sdkEngine.models.map((m) => {
+              const isActive = value === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onChange(m.id as ModelId)}
+                  className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                    isActive
+                      ? 'border-adv-teal bg-adv-teal-dim'
+                      : 'border-border bg-adv-card hover:border-adv-gray-med'
+                  }`}
+                >
+                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center ${isActive ? 'border-adv-teal' : 'border-adv-gray-med'}`}>
+                    {isActive && <div className="h-2 w-2 rounded-full bg-adv-teal" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                        {m.label}
+                      </span>
+                      <span className="rounded bg-adv-teal/10 px-1.5 py-0.5 text-xs font-medium text-adv-teal">
+                        No API key
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-adv-gray">Runs through this machine's Claude Code login · web search unavailable on this engine.</p>
                   </div>
                 </button>
               );

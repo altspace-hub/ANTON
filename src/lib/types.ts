@@ -42,9 +42,13 @@ export type ModelId =
   // OpenAI-compatible custom endpoints (DeepSeek, OpenRouter, Together, Groq,
   // Fireworks, vLLM, LM Studio, llama.cpp). Format: compat:<endpoint_slug>:<model>
   | `compat:${string}:${string}`
+  // SDK execution engine — Anthropic models run through the Claude Agent SDK
+  // subprocess (this machine's Claude Code login / subscription), not the
+  // Messages API. Format: sdk:<anthropic_model_id>
+  | `sdk:${string}`
   | (string & {}); // allows additional model IDs without breaking type narrowing
 
-export type ModelProvider = 'anthropic' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama' | 'openai_compatible';
+export type ModelProvider = 'anthropic' | 'anthropic_sdk' | 'openai' | 'azure_openai' | 'google' | 'mistral' | 'ollama' | 'openai_compatible';
 
 export type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
