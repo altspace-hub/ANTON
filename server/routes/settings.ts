@@ -30,12 +30,14 @@ import {
 import { getParseStats } from '../services/parse-telemetry.js';
 import { initSdkEngineStore, isSdkEngineEnabled, setSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { testSdkEngine, SDK_ENGINE_MODELS } from '../services/claude-sdk-client.js';
+import { initCodexEngineStore, isCodexEngineEnabled, setCodexEngineEnabled } from '../services/codex-engine-store.js';
+import { testCodexEngine, CODEX_ENGINE_MODELS } from '../services/codex-sdk-client.js';
 
 // Model-id prefixes accepted as a server-side default. Anything else must
 // match a configured custom-model slot (checked against the DB below).
 const KNOWN_MODEL_PREFIXES = [
   'claude-', 'gpt-', 'gemini-', 'mistral-', 'magistral-',
-  'codestral', 'devstral', 'azure:', 'ollama:', 'compat:', 'sdk:',
+  'codestral', 'devstral', 'azure:', 'ollama:', 'compat:', 'sdk:', 'codex:',
 ];
 
 export interface CustomModelConfig {
@@ -101,6 +103,33 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   // Spawns the Claude Code runtime; response reports honest status either way.
   router.post('/settings/sdk-engine/test', requireAdminOrSolo, async (_req, res) => {
     const result = await testSdkEngine();
+    res.json(result);
+  });
+
+  // ── ChatGPT execution engine (Codex SDK / ChatGPT-subscription auth) ────
+  // Same contract as the Claude engine routes above.
+  initCodexEngineStore(db);
+
+  router.get('/settings/codex-engine', async (_req, res) => {
+    res.json({
+      enabled: isCodexEngineEnabled(),
+      models: CODEX_ENGINE_MODELS,
+    });
+  });
+
+  router.post('/settings/codex-engine', requireAdminOrSolo, async (req, res) => {
+    const { enabled } = req.body as { enabled?: unknown };
+    if (typeof enabled !== 'boolean') {
+      res.status(400).json({ error: 'enabled must be a boolean' });
+      return;
+    }
+    await setCodexEngineEnabled(db, enabled);
+    console.log(`[settings] ChatGPT (Codex) execution engine ${enabled ? 'enabled' : 'disabled'}`);
+    res.json({ ok: true, enabled });
+  });
+
+  router.post('/settings/codex-engine/test', requireAdminOrSolo, async (_req, res) => {
+    const result = await testCodexEngine();
     res.json(result);
   });
 

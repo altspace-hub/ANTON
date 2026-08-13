@@ -17,6 +17,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createModelAdapter, getProviderFromModelId, getCustomModelConfigsSync, type UnifiedLLMRequest, type OpenAICompatibleConfig } from './model-adapter.js';
 import * as claudeClient from './claude-client.js';
 import * as sdkClient from './claude-sdk-client.js';
+import * as codexClient from './codex-sdk-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
@@ -173,10 +174,12 @@ export async function streamToResponse(
 ): Promise<void> {
   const provider = getProviderFromModelId(config.model, config.db);
 
-  // SDK execution engine — sdk:<model> runs through the Claude Agent SDK
-  // subprocess (subscription auth), emitting the identical SSE contract.
-  if (provider === 'anthropic_sdk') {
-    return sdkClient.streamToResponse(
+  // Subscription execution engines — sdk:<model> / codex:<model> run through
+  // the Claude Agent SDK / Codex SDK subprocess (subscription auth), emitting
+  // the identical SSE contract.
+  if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+    const engine = provider === 'anthropic_sdk' ? sdkClient : codexClient;
+    return engine.streamToResponse(
       {
         model: config.model,
         thinking: config.thinking,
@@ -359,9 +362,10 @@ export async function streamToResponse(
 export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCompletionData> {
   const provider = getProviderFromModelId(config.model, config.db);
 
-  // SDK execution engine — aggregate the stream into one completion.
-  if (provider === 'anthropic_sdk') {
-    return sdkClient.completeText({
+  // Subscription execution engines — aggregate the stream into one completion.
+  if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+    const engine = provider === 'anthropic_sdk' ? sdkClient : codexClient;
+    return engine.completeText({
       model: config.model,
       thinking: config.thinking,
       system: config.system,
@@ -435,10 +439,10 @@ export async function streamToHandler(
 ): Promise<void> {
   const provider = getProviderFromModelId(config.model, config.db);
 
-  if (provider === 'anthropic' || provider === 'anthropic_sdk') {
+  if (provider === 'anthropic' || provider === 'anthropic_sdk' || provider === 'openai_codex') {
     // Create a mock response to capture SSE events from claude-client
-    // (or the SDK engine, which deliberately mirrors its swallow-into-SSE-error
-    // contract) and redirect them to the onEvent callback
+    // (or the subscription engines, which deliberately mirror its
+    // swallow-into-SSE-error contract) and redirect them to the onEvent callback
     let mockEventCount = 0;
     // claude-client's streamToResponse SWALLOWS API errors: on failure it
     // emits an SSE `error` event then res.end()s, rather than throwing or
@@ -480,8 +484,9 @@ export async function streamToHandler(
       ? (data: StreamCompletionData) => { completed = true; onComplete(data); }
       : undefined;
 
-    if (provider === 'anthropic_sdk') {
-      await sdkClient.streamToResponse(
+    if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+      const engine = provider === 'anthropic_sdk' ? sdkClient : codexClient;
+      await engine.streamToResponse(
         {
           model: config.model,
           thinking: config.thinking,

@@ -12,7 +12,7 @@
  * + unified-llm-client resolution). This panel is the surface for managing it.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   HardDrive,
   Globe,
@@ -228,15 +228,19 @@ const OLLAMA_RECOMMENDED: OllamaModel[] = [
 
 // ── Component ──────────────────────────────────────────────────────────
 
-// ── SDK execution engine (Claude subscription) ────────────────────────
+// ── Subscription execution engines (Claude / ChatGPT) ─────────────────
 
 /**
- * Toggle + live test for the Claude Agent SDK execution engine: Anthropic
- * models run through this machine's Claude Code login instead of the
- * Messages API — no API key, usage draws on the Claude subscription.
+ * Toggle + live test for a subscription execution engine: models run through
+ * a machine login (Claude Code / ChatGPT sign-in) instead of an API key.
  * Test works BEFORE enabling (the server bypasses the gate for the ping).
  */
-function SdkEngineCard() {
+function SubscriptionEngineCard(props: {
+  endpoint: string; // e.g. '/api/settings/sdk-engine'
+  title: string;
+  description: ReactNode;
+  notes: ReactNode;
+}) {
   const [enabled, setEnabled] = useState<boolean | null>(null); // null = loading
   const [models, setModels] = useState<{ id: string; label: string }[]>([]);
   const [saving, setSaving] = useState(false);
@@ -245,21 +249,21 @@ function SdkEngineCard() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchWithAuth('/api/settings/sdk-engine')
+    fetchWithAuth(props.endpoint)
       .then((r) => (r.ok ? r.json() : { enabled: false, models: [] }))
       .then((d: { enabled: boolean; models: { id: string; label: string }[] }) => {
         setEnabled(!!d.enabled);
         setModels(d.models ?? []);
       })
       .catch(() => setEnabled(false));
-  }, []);
+  }, [props.endpoint]);
 
   const toggle = async () => {
     if (enabled === null || saving) return;
     setSaving(true);
     setSaveError(null);
     try {
-      const r = await fetchWithAuth('/api/settings/sdk-engine', {
+      const r = await fetchWithAuth(props.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !enabled }),
@@ -278,7 +282,7 @@ function SdkEngineCard() {
     setTesting(true);
     setTestResult(null);
     try {
-      const r = await fetchWithAuth('/api/settings/sdk-engine/test', { method: 'POST' });
+      const r = await fetchWithAuth(`${props.endpoint}/test`, { method: 'POST' });
       const d = (await r.json()) as { ok: boolean; message: string };
       setTestResult(d);
     } catch (err) {
@@ -293,7 +297,7 @@ function SdkEngineCard() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-adv-teal" />
-          <h3 className="text-base font-semibold text-adv-off-white">Claude via SDK — your subscription, no API key</h3>
+          <h3 className="text-base font-semibold text-adv-off-white">{props.title}</h3>
         </div>
         <button
           onClick={toggle}
@@ -308,16 +312,8 @@ function SdkEngineCard() {
         </button>
       </div>
 
-      <p className="text-sm text-adv-off-white mb-2">
-        Runs Anthropic models through the <strong>Claude Code login on this machine</strong> instead of the API.
-        Usage draws on your Claude subscription (Pro/Max/Team) — no <code className="text-xs">ANTHROPIC_API_KEY</code> needed.
-        Requires Claude Code installed and logged in (run <code className="text-xs bg-adv-dark px-1 py-0.5 rounded">claude</code> once in a terminal).
-      </p>
-      <p className="text-sm text-adv-gray mb-4">
-        What this engine does <em>not</em> do: ANTON's web-search knowledge mode is unavailable on it, the first token
-        arrives a few seconds later than the API (a runtime starts per request), and at most 2 requests run at once.
-        Everything else — knowledge sources, output formats, thinking levels — works identically.
-      </p>
+      <p className="text-sm text-adv-off-white mb-2">{props.description}</p>
+      <p className="text-sm text-adv-gray mb-4">{props.notes}</p>
 
       <div className="flex items-center gap-3 mb-3">
         <button
@@ -353,6 +349,53 @@ function SdkEngineCard() {
         </p>
       )}
     </section>
+  );
+}
+
+function SdkEngineCard() {
+  return (
+    <SubscriptionEngineCard
+      endpoint="/api/settings/sdk-engine"
+      title="Claude via SDK — your subscription, no API key"
+      description={
+        <>
+          Runs Anthropic models through the <strong>Claude Code login on this machine</strong> instead of the API.
+          Usage draws on your Claude subscription (Pro/Max/Team) — no <code className="text-xs">ANTHROPIC_API_KEY</code> needed.
+          Requires Claude Code installed and logged in (run <code className="text-xs bg-adv-dark px-1 py-0.5 rounded">claude</code> once in a terminal).
+        </>
+      }
+      notes={
+        <>
+          What this engine does <em>not</em> do: ANTON's web-search knowledge mode is unavailable on it, the first token
+          arrives a few seconds later than the API (a runtime starts per request), and at most 2 requests run at once.
+          Everything else — knowledge sources, output formats, thinking levels — works identically.
+        </>
+      }
+    />
+  );
+}
+
+function CodexEngineCard() {
+  return (
+    <SubscriptionEngineCard
+      endpoint="/api/settings/codex-engine"
+      title="ChatGPT via Codex — your subscription, no API key"
+      description={
+        <>
+          Runs OpenAI models through the <strong>ChatGPT sign-in on this machine</strong> instead of the API.
+          Usage draws on your ChatGPT subscription (Plus/Pro/Team) — no <code className="text-xs">OPENAI_API_KEY</code> needed.
+          Sign in once with <code className="text-xs bg-adv-dark px-1 py-0.5 rounded">npx codex login</code> in the ANTON folder
+          (opens a browser; the runtime itself is bundled with ANTON).
+        </>
+      }
+      notes={
+        <>
+          Honest limits: ANTON's web-search knowledge mode is unavailable on it, ANTON's instructions ride inside the
+          prompt (Codex has no separate system-prompt channel), the first token arrives seconds later than the API,
+          and at most 2 requests run at once. The run executes in a read-only sandbox with network access off.
+        </>
+      }
+    />
   );
 }
 
@@ -542,8 +585,9 @@ export default function LocalModelsSettingsPanel() {
         </p>
       </div>
 
-      {/* ── SDK EXECUTION ENGINE (Claude subscription) ─────────────── */}
+      {/* ── SUBSCRIPTION EXECUTION ENGINES (Claude / ChatGPT) ──────── */}
       <SdkEngineCard />
+      <CodexEngineCard />
 
       {/* ── OLLAMA SECTION ────────────────────────────────────────── */}
       <section className="rounded-xl border border-border bg-adv-card p-5">

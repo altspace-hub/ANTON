@@ -86,6 +86,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   const [azureDeployments, setAzureDeployments] = useState<AzureDeployment[]>([]);
   const [compatEndpoints, setCompatEndpoints] = useState<CompatEndpoint[]>([]);
   const [sdkEngine, setSdkEngine] = useState<SdkEngineState>({ enabled: false, models: [] });
+  const [codexEngine, setCodexEngine] = useState<SdkEngineState>({ enabled: false, models: [] });
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -142,7 +143,8 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
       });
   }, []);
 
-  // Fetch the SDK execution-engine state (sdk:<model> — subscription auth)
+  // Fetch the subscription execution-engine states (sdk:<model> = Claude
+  // Code login, codex:<model> = ChatGPT sign-in — both keyless)
   useEffect(() => {
     fetch('/api/settings/sdk-engine')
       .then((r) => r.ok ? r.json() : { enabled: false, models: [] })
@@ -151,6 +153,14 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
       })
       .catch(() => {
         setSdkEngine({ enabled: false, models: [] });
+      });
+    fetch('/api/settings/codex-engine')
+      .then((r) => r.ok ? r.json() : { enabled: false, models: [] })
+      .then((data: SdkEngineState) => {
+        setCodexEngine({ enabled: !!data.enabled, models: data.models ?? [] });
+      })
+      .catch(() => {
+        setCodexEngine({ enabled: false, models: [] });
       });
   }, []);
 
@@ -184,8 +194,13 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   });
   const isCompatModel = typeof value === 'string' && value.startsWith('compat:');
   const compatBareModel = isCompatModel ? (value as string).split(':').slice(2).join(':') : '';
-  const sdkMatch = typeof value === 'string' && value.startsWith('sdk:')
-    ? sdkEngine.models.find((m) => m.id === value)
+  // Union of enabled subscription engines' models — one picker section.
+  const subscriptionModels = [
+    ...(sdkEngine.enabled ? sdkEngine.models : []),
+    ...(codexEngine.enabled ? codexEngine.models : []),
+  ];
+  const sdkMatch = typeof value === 'string' && (value.startsWith('sdk:') || value.startsWith('codex:'))
+    ? [...sdkEngine.models, ...codexEngine.models].find((m) => m.id === value)
     : undefined;
   const currentLabel = currentModel?.label
     || (azureMatch ? `Azure: ${azureMatch.displayName || azureMatch.deploymentName}` : null)
@@ -426,8 +441,8 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
               </>
             )}
 
-            {/* Subscription (SDK engine) — Claude models via this machine's Claude Code login */}
-            {sdkEngine.enabled && sdkEngine.models.length > 0 && (
+            {/* Subscription engines — Claude Code login / ChatGPT sign-in, keyless */}
+            {subscriptionModels.length > 0 && (
               <>
                 <div className="flex items-center gap-2 px-3 py-2 border-t border-border">
                   <Sparkles className="h-3 w-3 text-adv-teal" />
@@ -435,7 +450,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                     Subscription (SDK)
                   </span>
                 </div>
-                {sdkEngine.models.map((m) => {
+                {subscriptionModels.map((m) => {
                   const isActive = value === m.id;
                   return (
                     <button
@@ -660,8 +675,8 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
           </div>
         )}
 
-        {/* Subscription (SDK engine) section */}
-        {sdkEngine.enabled && sdkEngine.models.length > 0 && (
+        {/* Subscription engines section (Claude Code login / ChatGPT sign-in) */}
+        {subscriptionModels.length > 0 && (
           <div className="pt-1">
             <div className="mb-1.5 flex items-center gap-2">
               <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
@@ -669,7 +684,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                 Subscription (SDK)
               </span>
             </div>
-            {sdkEngine.models.map((m) => {
+            {subscriptionModels.map((m) => {
               const isActive = value === m.id;
               return (
                 <button
@@ -693,7 +708,11 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                         No API key
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-adv-gray">Runs through this machine's Claude Code login · web search unavailable on this engine.</p>
+                    <p className="mt-0.5 text-xs text-adv-gray">
+                      {m.id.startsWith('codex:')
+                        ? "Runs through this machine's ChatGPT sign-in · web search unavailable on this engine."
+                        : "Runs through this machine's Claude Code login · web search unavailable on this engine."}
+                    </p>
                   </div>
                 </button>
               );
