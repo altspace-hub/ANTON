@@ -111,14 +111,17 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
 
     for (let level = 1; level <= MAX_LEVELS; level++) {
       try {
-        // Use streamToHandler to get the response (works reliably with Anthropic)
+        // Use streamToHandler to get the response — dispatches by model id
+        // across providers, including the sdk:/codex: subscription engines.
         const { streamToHandler } = await import('./unified-llm-client.js');
+        const { getMarketsModel } = await import('./markets-model-store.js');
+        const whyChainModel = await getMarketsModel(db);
 
         const result = await new Promise<{ text: string }>((resolve, reject) => {
           let text = '';
           streamToHandler(
             {
-              model: 'claude-sonnet-4-5-20250929' as import('../../src/lib/types.js').ModelId,
+              model: whyChainModel as import('../../src/lib/types.js').ModelId,
               thinking: 'think' as import('../../src/lib/types.js').ThinkingLevel,
               system: WHY_CHAIN_SYSTEM_PROMPT,
               messages: [{ role: 'user', content: currentQuestion }],
@@ -228,11 +231,14 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
    * Execute all pending why-chains.
    */
   async function executeAllPending(): Promise<{ executed: number; results: Array<{ chainId: string; success: boolean; summary: string }> }> {
+    // Cap per run: each chain burns up to MAX_LEVELS LLM calls, and the
+    // weekend validation pass can queue dozens of chains at once. The rest
+    // stay pending and drain on subsequent runs.
     const pending = await db.all<{ id: string }>(
-      "SELECT id FROM market_why_chains WHERE status = 'in_progress' AND num_levels = 0 ORDER BY created_at ASC"
+      "SELECT id FROM market_why_chains WHERE status = 'in_progress' AND num_levels = 0 ORDER BY created_at ASC LIMIT 10"
     );
 
-    console.log(`[why-chain] Found ${pending.length} pending chains to execute`);
+    console.log(`[why-chain] Found ${pending.length} pending chains to execute (capped at 10/run)`);
 
     const results: Array<{ chainId: string; success: boolean; summary: string }> = [];
 

@@ -436,6 +436,9 @@ export default function Settings() {
   // Wave 3.8: utility model for background tasks (extraction, scoring,
   // naming). Server-persisted only (app_settings 'utility_model').
   const [utilityModel, setUtilityModel] = useState<string>('claude-haiku-4-5-20251001');
+  // Markets pillar model ('' = unset → utility model applies). Server-persisted
+  // only (app_settings 'markets_model').
+  const [marketsModel, setMarketsModel] = useState<string>('');
   // Double-check (four-eyes) — optional second-model review. Off by default.
   const [doubleCheckEnabled, setDoubleCheckEnabled] = useState<boolean>(false);
   const [verifierModel, setVerifierModel] = useState<string>('claude-haiku-4-5-20251001');
@@ -606,6 +609,7 @@ export default function Settings() {
     loadBrandConfig();
     loadCustomModels();
     loadUtilityModel();
+    loadMarketsModel();
     loadDoubleCheck();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
@@ -647,6 +651,31 @@ export default function Settings() {
   function handleSetUtilityModel(model: string) {
     setUtilityModel(model);
     fetchWithAuth('/api/settings/utility-model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    }).catch(() => {
+      // Non-fatal — server keeps its previous value; UI refetches on next visit
+    });
+    flash();
+  }
+
+  // Markets pillar model — what markets background intelligence runs on
+  // (atom extraction, theses, why-chains, analyst notes, consuls).
+  // '' = unset → the utility model applies.
+  async function loadMarketsModel() {
+    try {
+      const res = await fetchWithAuth('/api/settings/markets-model');
+      if (res.ok) {
+        const data = await res.json() as { model?: string | null };
+        setMarketsModel(data.model ?? '');
+      }
+    } catch { /* default (utility model) stands */ }
+  }
+
+  function handleSetMarketsModel(model: string) {
+    setMarketsModel(model);
+    fetchWithAuth('/api/settings/markets-model', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model }),
@@ -1740,6 +1769,42 @@ export default function Settings() {
                   disabled={disabled}
                   title={disabled ? t('settings.notConfigured') : undefined}
                   className={`${CHIP_BASE} ${utilityModel === value ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Markets AI model — what the Markets pillar's background intelligence runs on */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-adv-gray">{t('settings.marketsModel', 'Markets AI model')}</span>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.marketsModelDesc', 'Used by Markets automation: atom extraction, theses, why-chains, analyst notes, consuls and the prediction verifier. Subscription (SDK) models run on your Claude sign-in — no API credits. "Default" follows the Utility model.')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { value: '', label: t('settings.marketsModelDefault', 'Default (utility model)'), disabled: false },
+                ...subscriptionModels.map((m) => ({ value: m.id, label: m.label, disabled: false })),
+                { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', disabled: false },
+                { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', disabled: false },
+                { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
+                { value: 'mistral-medium-latest', label: 'Mistral Medium 3.5', disabled: !providerStatus.MISTRAL_API_KEY },
+                ...(ecoOllama.available && ecoOllama.models.length > 0
+                  ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
+                  : []),
+                ...ecoEndpoints.filter((e) => e.defaultModel).map((e) => ({
+                  value: `compat:${e.slug}:${e.defaultModel}`, label: `${e.displayName} (${e.defaultModel})`, disabled: false,
+                })),
+              ] as { value: string; label: string; disabled: boolean }[]).map(({ value, label, disabled }) => (
+                <button
+                  key={value || 'default'}
+                  onClick={() => { if (!disabled) handleSetMarketsModel(value); }}
+                  disabled={disabled}
+                  title={disabled ? t('settings.notConfigured') : undefined}
+                  className={`${CHIP_BASE} ${marketsModel === value ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
                 >
                   {label}
                 </button>

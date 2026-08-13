@@ -1737,7 +1737,13 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
         let catchUpActions = 0;
 
-        // 1. Process backlog immediately (always useful after restart) — LLM-spending
+        // 1. Process backlog immediately (always useful after restart) — LLM-spending.
+        // Free triage runs FIRST: processBacklog takes rows oldest-first, so
+        // after downtime the paid pass would otherwise burn its whole budget
+        // on stale rows the 30-day triage rule is about to discard anyway.
+        if (marketsLlmOn) {
+          await sweepBacklogTriage();
+        }
         const backlog = await getBacklogSize();
         if (backlog > 0 && marketsLlmOn) {
           const processed = await processBacklog(Math.min(backlog, 100));

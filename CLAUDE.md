@@ -526,7 +526,8 @@ See `.env.example` for the complete list. Key variables:
 | `MAX_CONTEXT_TOKENS` | No | Max context window (default: 900000) |
 | `ALLOWED_FOLDER_PATHS` | No | Comma-separated whitelist for filesystem-connector access |
 | `VECTOR_BACKEND` | No | Embeddings-table vector engine: `sqlite` (default, in-process JS cosine) or `pgvector` (Postgres HNSW; needs the pgvector extension + `POST /api/embeddings/backfill-vec`). Auto-falls back to JS if unavailable. |
-| `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. |
+| `MARKETS_AUTOMATION` | No | `true` opts in to the token/data-spending markets crons (~20 jobs). Unset = only free deterministic loops run. The `MARKETS_*_DISABLED` flags below are finer overrides within an enabled tier. |
+| `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. Markets LLM calls run on the Settings → "Markets AI model" choice (app_settings `markets_model`, e.g. `sdk:claude-opus-5` for subscription auth); unset falls back to the utility model. |
 | `MARKETS_FETCH_DISABLED` | No | `true` pauses every external markets data fetch (FMP, news, RSS). |
 | `RADAR_AUTOMATION_DISABLED` | No | `true` disables radar auto-scan + scheduled radar cron. Manual UI scans still work. |
 

@@ -37,7 +37,10 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, stepName: string)
 }
 
 const COMPUTATION_TIMEOUT = 60_000;  // 60s for computation steps
-const LLM_TIMEOUT = 120_000;        // 120s for LLM/AI steps
+// 300s for LLM/AI steps — generous enough for the sdk:/codex: subscription
+// engines, whose runtime spawn adds seconds before the first token and whose
+// reasoning models think longer than the old 120s allowed.
+const LLM_TIMEOUT = 300_000;
 const FETCH_TIMEOUT = 120_000;      // 120s for data fetching (17 sources)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -121,11 +124,12 @@ export async function createMarketWorkflowOrchestrator(
       }
       return text;
     }
-    // Fall back to existing callChat (provider-agnostic; honor the configured provider)
+    // Fall back to existing callChat (provider-agnostic; honor the configured
+    // markets model — Settings → "Markets AI model", else the utility model)
     const { callChat } = await import('./provider-router.js');
-    const { getRoutedUtilityModel } = await import('./utility-model.js');
+    const { getMarketsModel } = await import('./markets-model-store.js');
     const result = await callChat({
-      model: await getRoutedUtilityModel(db),
+      model: await getMarketsModel(db),
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,

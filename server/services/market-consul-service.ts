@@ -12,9 +12,9 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
-import type Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
-import { callSync } from './claude-client.js';
+import { callChat } from './provider-router.js';
+import { getMarketsModel } from './markets-model-store.js';
 
 export interface ConsulMember {
   /** Stable id used for performance tracking. */
@@ -39,8 +39,10 @@ export interface DeliberationInput {
   subject: string;
   /** Free-text context the consuls should consider (atoms, why-chain, market data summary). */
   context: string;
-  /** Which model to use. Defaults to claude-opus-4-8. */
-  model?: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+  /** Which model to use. Defaults to the configured markets model
+   *  (Settings → "Markets AI model", else the utility model). Any
+   *  provider-routable id works, including sdk:/codex: subscription ids. */
+  model?: string;
   /** Optional subset of consul ids; defaults to all four. */
   consulIds?: string[];
 }
@@ -72,11 +74,10 @@ async function loadPrompt(file: string): Promise<string> {
 
 export async function runDeliberation(
   db: DatabaseAdapter,
-  client: Anthropic,
   input: DeliberationInput
 ): Promise<DeliberationResult> {
   const t0 = Date.now();
-  const model = input.model ?? 'claude-opus-4-8';
+  const model = input.model ?? await getMarketsModel(db);
   const members = input.consulIds
     ? COUNCIL_MEMBERS.filter(m => input.consulIds!.includes(m.id))
     : [...COUNCIL_MEMBERS];
@@ -97,47 +98,44 @@ export async function runDeliberation(
   const contributions: ConsulContribution[] = [];
   let totalIn = 0, totalOut = 0;
 
-  // Run consul prompts in parallel — they don't depend on each other.
-  const consulPromises = members.map(async (member, idx) => {
-    const startedAt = Date.now();
-    const promptBody = await loadPrompt(member.promptFile);
-    const userMsg = `Subject of deliberation: ${input.subject}\n\nContext:\n${input.context}\n\nProvide your contribution from your role's perspective. Be concise but specific. Cite reasoning, not just conclusions.`;
-    const result = await callSync({
-      model,
-      thinking: 'think',
-      system: promptBody,
-      messages: [{ role: 'user', content: userMsg }],
-    });
-    const durationMs = Date.now() - startedAt;
-    // Persist as a revelation_step. 2026-07-17: the table columns are
-    // phase_index / output_content (NOT step_index / content) — the old names
-    // don't exist, so every member insert threw AFTER its LLM call, Promise
-    // .allSettled dropped them all, contributions.length===0, and the whole
-    // paid deliberation 500'd. thinking_content defaults to '' (omitted).
-    await db.run(
-      `INSERT INTO revelation_steps (id, chain_id, phase_index, phase_name, output_content, input_tokens, output_tokens, duration_ms, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      randomUUID(), chainId, idx, member.id,
-      result.text, result.inputTokens, result.outputTokens, durationMs
-    );
-    return {
-      consulId: member.id,
-      consulName: member.name,
-      contribution: result.text,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-      durationMs,
-    } satisfies ConsulContribution;
-  });
-
-  const settled = await Promise.allSettled(consulPromises);
-  for (const r of settled) {
-    if (r.status === 'fulfilled') {
-      contributions.push(r.value);
-      totalIn += r.value.inputTokens;
-      totalOut += r.value.outputTokens;
-    } else {
-      console.warn('[consul-deliberation] member failed:', r.reason);
+  // Consuls run SEQUENTIALLY (one failure never blocks the rest): the
+  // sdk:/codex: subscription engines cap concurrent runs at 2 and throw
+  // over the cap — four parallel consuls would lose two contributions.
+  for (const [idx, member] of members.entries()) {
+    try {
+      const startedAt = Date.now();
+      const promptBody = await loadPrompt(member.promptFile);
+      const userMsg = `Subject of deliberation: ${input.subject}\n\nContext:\n${input.context}\n\nProvide your contribution from your role's perspective. Be concise but specific. Cite reasoning, not just conclusions.`;
+      const result = await callChat({
+        model,
+        thinkingLevel: 'think',
+        system: promptBody,
+        messages: [{ role: 'user', content: userMsg }],
+        maxTokens: 4096,
+      });
+      const durationMs = Date.now() - startedAt;
+      // Persist as a revelation_step. 2026-07-17: the table columns are
+      // phase_index / output_content (NOT step_index / content) — the old names
+      // don't exist, so every member insert threw AFTER its LLM call and the
+      // whole paid deliberation 500'd. thinking_content defaults to '' (omitted).
+      await db.run(
+        `INSERT INTO revelation_steps (id, chain_id, phase_index, phase_name, output_content, input_tokens, output_tokens, duration_ms, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        randomUUID(), chainId, idx, member.id,
+        result.text, result.inputTokens, result.outputTokens, durationMs
+      );
+      contributions.push({
+        consulId: member.id,
+        consulName: member.name,
+        contribution: result.text,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        durationMs,
+      });
+      totalIn += result.inputTokens;
+      totalOut += result.outputTokens;
+    } catch (err) {
+      console.warn('[consul-deliberation] member failed:', err);
     }
   }
 
@@ -158,11 +156,12 @@ export async function runDeliberation(
   ].join('\n');
 
   const synthesisStarted = Date.now();
-  const synthesisResult = await callSync({
+  const synthesisResult = await callChat({
     model,
-    thinking: 'think_hard',
+    thinkingLevel: 'think_hard',
     system: synthesisPrompt,
     messages: [{ role: 'user', content: synthesisInput }],
+    maxTokens: 8192,
   });
   const synthDuration = Date.now() - synthesisStarted;
   totalIn += synthesisResult.inputTokens;

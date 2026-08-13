@@ -1,4 +1,3 @@
-import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { PgNotifyService } from './pg-notify-service.js';
 import Anthropic from '@anthropic-ai/sdk';
@@ -176,15 +175,15 @@ export async function createMarketThesisService(db: DatabaseAdapter, client?: An
   // ── AI Scoring ───────────────────────────────────────────────────────────
 
   async function scoreThesisWithAI(thesisId: string): Promise<{ score: number; analysis: string } | null> {
-    if (!client) return null;
-
     const thesis = await getThesis(thesisId);
     if (!thesis) return null;
 
     try {
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 2048,
+      const { callChat } = await import('./provider-router.js');
+      const { getMarketsModel } = await import('./markets-model-store.js');
+      const message = await callChat({
+        model: await getMarketsModel(db),
+        maxTokens: 2048,
         system: `You are a financial analysis quality assessor. Score investment theses on a 0-1 scale.
 Consider: clarity of thesis, quality of evidence, falsifiability of predictions, risk awareness, time horizon appropriateness.
 Return JSON: { "score": 0.0-1.0, "analysis": "brief assessment", "strengths": [...], "weaknesses": [...] }`,
@@ -204,12 +203,7 @@ Predictions: ${thesis.predictions.length}`,
         }],
       });
 
-      let text = '';
-      for (const block of message.content) {
-        if (block.type === 'text') text += block.text;
-      }
-
-      const cleaned = text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      const cleaned = message.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
       const result = JSON.parse(cleaned) as { score: number; analysis: string };
 
       await updateThesis(thesisId, { aiScore: result.score, aiAnalysis: result.analysis });

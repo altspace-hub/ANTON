@@ -29,6 +29,7 @@ import {
 } from '../services/verifier-model.js';
 import { getParseStats } from '../services/parse-telemetry.js';
 import { initSdkEngineStore, isSdkEngineEnabled, setSdkEngineEnabled } from '../services/sdk-engine-store.js';
+import { initMarketsModelStore, getMarketsModelSetting, setMarketsModel, isValidMarketsModelId } from '../services/markets-model-store.js';
 import { testSdkEngine, SDK_ENGINE_MODELS } from '../services/claude-sdk-client.js';
 import { initCodexEngineStore, isCodexEngineEnabled, setCodexEngineEnabled } from '../services/codex-engine-store.js';
 import { testCodexEngine, CODEX_ENGINE_MODELS } from '../services/codex-sdk-client.js';
@@ -75,6 +76,8 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
   initCodingModelStrategy(db);
   // Prime the SDK execution-engine toggle cache.
   initSdkEngineStore(db);
+  // Prime the Markets pillar model cache.
+  initMarketsModelStore(db);
 
   // ── SDK execution engine (Claude Agent SDK / subscription auth) ─────────
   // GET is open (booleans + static model list, no secrets — same rule as the
@@ -231,6 +234,47 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
     await setUtilityModel(db, model);
     console.log(`[settings] Set utility model: ${model}`);
     res.json({ ok: true, model, isDefault: model === DEFAULT_UTILITY_MODEL });
+  });
+
+  // GET /api/settings/markets-model — the model the Markets pillar's
+  // background intelligence runs on (atom extraction, theses, why-chains,
+  // analyst notes, consuls, prediction verifier). null = unset → the
+  // provider-routed utility model applies (pre-existing behaviour).
+  router.get('/settings/markets-model', async (_req, res) => {
+    const persisted = await getMarketsModelSetting(db);
+    res.json({ model: persisted, isDefault: persisted === null });
+  });
+
+  // POST /api/settings/markets-model — persist the markets-model choice
+  // (app_settings 'markets_model'; plain value, not a secret). Empty/null
+  // clears the row (utility-model fallback applies again). Same validation
+  // rule as the utility model, so sdk:/codex: subscription ids are accepted.
+  router.post('/settings/markets-model', requireAdminOrSolo, async (req, res) => {
+    const { model } = req.body as { model?: string | null };
+
+    if (model === null || model === undefined || model === '') {
+      await setMarketsModel(db, null);
+      console.log('[settings] Cleared markets model (utility-model fallback applies)');
+      res.json({ ok: true, model: null, isDefault: true });
+      return;
+    }
+
+    if (typeof model !== 'string' || model.length > 200) {
+      res.status(400).json({ error: 'model must be a string of at most 200 characters' });
+      return;
+    }
+
+    if (!isValidMarketsModelId(model)) {
+      const customModels = await getCustomModelConfigs(db);
+      if (!customModels.some((m) => m.modelId === model)) {
+        res.status(400).json({ error: `Unrecognised model id '${model}' — expected a model-registry id, an ollama:/compat:/azure:/sdk:/codex: id, or a configured custom model` });
+        return;
+      }
+    }
+
+    await setMarketsModel(db, model);
+    console.log(`[settings] Set markets model: ${model}`);
+    res.json({ ok: true, model, isDefault: false });
   });
 
   // GET /api/settings/double-check — the optional "four-eyes" secondary review.

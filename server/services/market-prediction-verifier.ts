@@ -288,10 +288,11 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
         ...recentAtoms.map(a => `- ${a.content.slice(0, 200)}`),
       ].join('\n');
 
-      // Configured utility model, provider-routed (review 3.8) —
-      // streamToHandler dispatches by model id across providers.
-      const { getRoutedUtilityModel } = await import('./utility-model.js');
-      const verifierModel = await getRoutedUtilityModel(db);
+      // Configured markets model (Settings → "Markets AI model", falls back
+      // to the utility model) — streamToHandler dispatches by model id
+      // across providers, including the sdk:/codex: subscription engines.
+      const { getMarketsModel } = await import('./markets-model-store.js');
+      const verifierModel = await getMarketsModel(db);
 
       const result = await new Promise<{ text: string }>((resolve, reject) => {
         let text = '';

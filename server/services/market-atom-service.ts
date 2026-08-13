@@ -1,7 +1,8 @@
-import { getAnthropicUtilityModel } from './utility-model.js';
+import { getMarketsModel } from './markets-model-store.js';
+import { callChat } from './provider-router.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { PgNotifyService } from './pg-notify-service.js';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { dateOffsetLiteral, ilike } from '../db/dialect-helpers.js';
 
 // Optional PG notify service — set via setNotifyService() from server/index.ts
@@ -308,12 +309,12 @@ export async function createMarketAtomService(db: DatabaseAdapter, client?: Anth
 
   // ── AI Extraction ────────────────────────────────────────────────────────
 
+  // Extraction goes through callChat (provider-router), which dispatches on
+  // the configured markets model — API providers, ollama:, compat:, and the
+  // sdk:/codex: subscription engines all work. No Anthropic client needed
+  // (the old no-client early-return silently consumed raw rows with zero
+  // atoms whenever the service was built without a client).
   async function extractAtomsFromRawData(rawDataId: string, rawContent: string, dataType: string): Promise<string[]> {
-    if (!client) {
-      console.warn('[market-atoms] No Anthropic client — skipping AI extraction');
-      return [];
-    }
-
     try {
       const userPrompt = `Extract market knowledge atoms from this ${dataType} data:\n\n${rawContent.slice(0, 8000)}
 
@@ -333,17 +334,15 @@ Return a JSON array of atoms with these fields:
 
 Return ONLY the JSON array, no other text.`;
 
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 8192,
+      const extractionModel = await getMarketsModel(db);
+      const result = await callChat({
+        model: extractionModel,
         system: EXTRACTION_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
+        maxTokens: 8192,
+        jsonMode: true,
       });
-
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
+      const responseText = result.text;
 
       // Parse JSON (strip markdown fences, handle truncated responses)
       let cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
@@ -375,7 +374,7 @@ Return ONLY the JSON array, no other text.`;
           tags: raw.tags,
           rawDataId,
           extractionMethod: 'ai',
-          extractionModel: await getAnthropicUtilityModel(db),
+          extractionModel,
           importanceScore: raw.importance_score,
         });
         createdIds.push(id);
@@ -395,8 +394,6 @@ Return ONLY the JSON array, no other text.`;
    * Fundamental atoms have slower decay rates than news-derived atoms.
    */
   async function extractAtomsFromFundamentals(symbol: string, dataType: string, data: unknown): Promise<string[]> {
-    if (!client) return [];
-
     const prompt = `Extract market knowledge atoms from this ${dataType} data for ${symbol}.
 
 Focus on:
@@ -418,19 +415,16 @@ Return a JSON array of atoms with: content, atom_type, confidence, category, sub
 Return ONLY the JSON array.`;
 
     try {
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 8192,
+      const extractionModel = await getMarketsModel(db);
+      const result = await callChat({
+        model: extractionModel,
         system: 'You are an expert financial analyst extracting fundamental insights into structured market atoms. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
+        maxTokens: 8192,
+        jsonMode: true,
       });
 
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
-
-      let cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      let cleaned = result.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
       // Handle truncated JSON arrays
       if (cleaned.startsWith('[') && !cleaned.endsWith(']')) {
         const lastBrace = cleaned.lastIndexOf('}');
@@ -454,7 +448,7 @@ Return ONLY the JSON array.`;
           decayRate: raw.decay_rate ?? 0.02,
           tags: raw.tags || ['fundamental'],
           extractionMethod: 'ai',
-          extractionModel: await getAnthropicUtilityModel(db),
+          extractionModel,
           importanceScore: raw.importance_score,
         });
         createdIds.push(id);
