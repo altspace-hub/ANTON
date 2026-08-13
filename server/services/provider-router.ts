@@ -26,6 +26,10 @@
 import type { Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import { getProviderFromModelId } from './model-adapter.js';
+// Static on purpose: a request-time first dynamic import deadlocks the event
+// loop under `tsx watch` with an open stdin (see claude-sdk-client.ts).
+import { completeText as sdkEngineCompleteText } from './claude-sdk-client.js';
+import { completeText as codexEngineCompleteText } from './codex-sdk-client.js';
 import { streamMistral, type MistralStreamParams } from './adapters/mistralAdapter.js';
 import { streamOpenAI } from './adapters/openaiAdapter.js';
 import { streamGemini } from './adapters/geminiAdapter.js';
@@ -879,9 +883,7 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
   // jsonMode/tools are not forwarded: the engines are text-only, same as the
   // Anthropic branch which also carries JSON expectations in the prompt.
   if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
-    const { completeText } = provider === 'anthropic_sdk'
-      ? await import('./claude-sdk-client.js')
-      : await import('./codex-sdk-client.js');
+    const completeText = provider === 'anthropic_sdk' ? sdkEngineCompleteText : codexEngineCompleteText;
     const data = await completeText({
       model: modelId,
       thinking: (config.thinkingLevel ?? 'quick') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',

@@ -184,10 +184,26 @@ let queryImpl: QueryFn | null = null;
 export function setSdkQueryImplForTests(impl: QueryFn | null): void {
   queryImpl = impl;
 }
+/**
+ * The SDK package is imported ONCE, at server boot, and the promise cached.
+ * A request-time first-import is forbidden here: under `tsx watch` with an
+ * open stdin — i.e. every interactive `pnpm run dev` — the first dynamic
+ * import of a not-yet-cached package after boot deadlocks the whole event
+ * loop (main thread parked in the module-loader wait; 2026-08-13 diagnosis).
+ * Boot-time imports are safe, so the ~0.3s / 1.2 MB cost moves to startup.
+ */
+let sdkModulePromise: Promise<QueryFn> | null = null;
+function startSdkImport(): Promise<QueryFn> {
+  sdkModulePromise ??= import('@anthropic-ai/claude-agent-sdk')
+    .then((mod) => mod.query as unknown as QueryFn);
+  return sdkModulePromise;
+}
+// Boot-time warmup. On failure, reset so the next run retries and surfaces the error.
+startSdkImport().catch(() => { sdkModulePromise = null; });
+
 async function resolveQuery(): Promise<QueryFn> {
   if (queryImpl) return queryImpl;
-  const mod = await import('@anthropic-ai/claude-agent-sdk');
-  return mod.query as unknown as QueryFn;
+  return startSdkImport();
 }
 
 export async function streamToResponse(
