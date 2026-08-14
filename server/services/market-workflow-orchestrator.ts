@@ -596,13 +596,13 @@ Also for each thesis, include a "predictions" array with 1-2 testable prediction
 - time_horizon_days (number): days until testable
 - deadline (string): ISO date YYYY-MM-DD when this should be checked
 
-TIME HORIZON RULES (CRITICAL — we need fast learning feedback):
-- DEFAULT to 7-14 day horizons. We are in a learning phase and need rapid validation cycles.
-- For "macro" or "sector" theses: 7-14 days with specific price-level predictions
-- For "investment" (company-specific): 7-21 days, NOT 30-180 days
-- For "event" theses: deadline must match the event date
-- For "contrarian" theses: 14-30 days maximum
-- EVERY prediction MUST have time_horizon_days <= 21 unless tied to a specific future event
+TIME HORIZON RULES (CRITICAL — we grade every band, so spread deliberately):
+- Three bands: TACTICAL = 1-3 days (fast feedback, specific price level or % move),
+  SWING = 5-21 days (earnings windows, momentum, mean reversion),
+  POSITION = 30-180 days (structural theses: AI capex, rates path, energy transition).
+- Across the whole batch aim for at least 2 tactical, at least 3 swing, and 1-2 position predictions.
+- For "event" theses: the deadline must match the event date (use earnings dates from context when present).
+- Position predictions need concrete, checkable success criteria — not vibes.
 - Include a specific price target or percentage move where possible (e.g., "SPY above 550 by date")
 - Predictions must be testable with daily price data — vague directional calls are not useful
 - Today is ${new Date().toISOString().split('T')[0]}
@@ -1558,7 +1558,8 @@ Return ONLY a JSON array.`;
           continue;
         }
 
-        const horizonDays = Math.max(7, Math.min(14, horizon));
+        // Bands: tactical 1-3d / swing 5-21d / position 30-90d (pulse caps at 90).
+        const horizonDays = Math.max(1, Math.min(90, horizon));
         const deadlineDate = new Date(Date.now() + horizonDays * 86400000).toISOString().split('T')[0];
         const clampedConf = Math.max(0.3, Math.min(0.8, conf));
 
@@ -1574,7 +1575,7 @@ Return ONLY a JSON array.`;
             timeHorizonDays: horizonDays,
             deadline: deadlineDate,
             keyAssumptions: [...assumptions, '[source:weekly_pulse]'],
-            horizon: horizonDays <= 7 ? 'this_week' : 'this_month',
+            horizon: horizonDays <= 7 ? 'this_week' : horizonDays <= 30 ? 'this_month' : 'this_year',
           });
           created++;
         } catch (err) {
