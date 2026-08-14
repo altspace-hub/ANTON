@@ -786,7 +786,20 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           console.warn(`[market-data] FMP earnings-calendar HTTP ${resp.status}`);
         } else {
           const events = await resp.json() as Array<{ symbol: string; date: string; eps: number; epsEstimated: number; revenue: number; revenueEstimated: number }>;
-          for (const evt of (events ?? []).slice(0, 50)) {
+          // Prioritise symbols we actually hold or track — the raw calendar
+          // is thousands of micro-caps and slice(0,50) grabbed an arbitrary
+          // window of them. Tracked-first, then fill remaining slots.
+          const tracked = new Set(
+            (await db.all<{ symbol: string }>(
+              'SELECT DISTINCT symbol FROM market_index_holdings WHERE removed_at IS NULL'
+            )).map((r) => r.symbol.toUpperCase())
+          );
+          const all = events ?? [];
+          const prioritised = [
+            ...all.filter((e) => tracked.has((e.symbol ?? '').toUpperCase())),
+            ...all.filter((e) => !tracked.has((e.symbol ?? '').toUpperCase())),
+          ];
+          for (const evt of prioritised.slice(0, 50)) {
             await ingestRawData({
               sourceId, dataType: 'earnings_calendar', symbol: evt.symbol,
               title: `${evt.symbol} earnings ${evt.date}`,
