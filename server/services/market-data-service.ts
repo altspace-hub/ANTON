@@ -777,10 +777,14 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       try {
         const from = new Date().toISOString().slice(0, 10);
         const toDate = new Date(Date.now() + 28 * 86400000).toISOString().slice(0, 10);
-        const url = `https://financialmodelingprep.com/stable/earning-calendar?from=${from}&to=${toDate}&apikey=${apiKey}`;
+        // NB: 'earnings-calendar' (plural) — the singular path 404s with an
+        // empty body, which read as a "successful" zero-item fetch forever.
+        const url = `https://financialmodelingprep.com/stable/earnings-calendar?from=${from}&to=${toDate}&apikey=${apiKey}`;
         const resp = await fetch(url);
         await incrementFmpCount();
-        if (resp.ok) {
+        if (!resp.ok) {
+          console.warn(`[market-data] FMP earnings-calendar HTTP ${resp.status}`);
+        } else {
           const events = await resp.json() as Array<{ symbol: string; date: string; eps: number; epsEstimated: number; revenue: number; revenueEstimated: number }>;
           for (const evt of (events ?? []).slice(0, 50)) {
             await ingestRawData({
