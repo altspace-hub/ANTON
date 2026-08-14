@@ -144,6 +144,8 @@ export async function createMarketWorkflowOrchestrator(
   // every weekly-pulse row stuck 'running' forever in the workflows UI.
   async function recordRun(runId: string, workflowId: string, status: string, error?: string): Promise<void> {
     try {
+      // completed_at is a TEXT column (SQLite heritage) — NOW() must be cast
+      // or the CASE branches mismatch and the whole INSERT errors out.
       await db.run(`
         INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, error_message)
         VALUES (?, ?, 'market-orchestrator', ?, 'system', ?)
@@ -151,10 +153,12 @@ export async function createMarketWorkflowOrchestrator(
           status = EXCLUDED.status,
           error_message = EXCLUDED.error_message,
           completed_at = CASE WHEN EXCLUDED.status IN ('completed', 'failed')
-                              THEN NOW() ELSE workflow_runs.completed_at END
+                              THEN NOW()::text ELSE workflow_runs.completed_at END
       `, runId, workflowId, status, error ?? null);
-    } catch {
-      // workflow_runs table may not exist
+    } catch (err) {
+      // Non-fatal (the run itself must never die on bookkeeping), but LOUD:
+      // this catch silently ate a type-mismatch bug for a full day.
+      console.warn(`[orchestrator] recordRun failed for ${runId} (${status}): ${err instanceof Error ? err.message : err}`);
     }
   }
 
