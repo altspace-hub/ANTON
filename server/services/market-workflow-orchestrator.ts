@@ -1503,9 +1503,12 @@ ${trackContext}
 ${pulseInsights.promptContext}
 ${quantContext}
 
-Generate 5-8 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
+Generate 8-12 directional predictions on liquid ETFs spread across THREE horizon bands (this mix is mandatory):
+- 3-4 TACTICAL: time_horizon_days 1-3 (next-session moves, event reactions)
+- 4-5 SWING: time_horizon_days 7-21 (earnings windows, rotation, mean reversion)
+- 2-3 POSITION: time_horizon_days 30-90 (structural trends: rates path, AI capex, energy cycle)
 FEWER predictions with HIGHER conviction. Only predict when evidence is strong.
-All deadlines must be between ${new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} and ${new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]}.
+Today is ${new Date().toISOString().split('T')[0]}.
 Include a specific price target or percentage move where possible (e.g., "SPY above 550").
 
 Return ONLY a JSON array.`;
@@ -1593,7 +1596,7 @@ Return ONLY a JSON array.`;
       }
       stepsCompleted.push('predictions_created');
 
-      console.log(`[weekly-pulse] Created ${created}/${predictions.length} predictions with 7-14 day horizons`);
+      console.log(`[weekly-pulse] Created ${created}/${predictions.length} predictions across tactical/swing/position horizons`);
 
       await recordRun(runId, 'wf_markets_weekly_pulse', 'completed');
       return { runId, status: 'completed', stepsCompleted, stepResults };
