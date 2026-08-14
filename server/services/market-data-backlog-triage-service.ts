@@ -91,7 +91,7 @@ export async function createMarketDataBacklogTriageService(db: DatabaseAdapter) 
       `UPDATE market_data_raw
          SET is_processed = 1,
              metadata = (
-               COALESCE(NULLIF(metadata, '')::jsonb, '{}'::jsonb)
+               CASE WHEN left(ltrim(COALESCE(metadata, '')), 1) = '{' THEN metadata::jsonb ELSE '{}'::jsonb END
                || jsonb_build_object('triage_reason', 'stale_age', 'triaged_at', NOW()::text)
              )::text
        WHERE is_processed = 0
@@ -106,7 +106,7 @@ export async function createMarketDataBacklogTriageService(db: DatabaseAdapter) 
       `UPDATE market_data_raw
          SET is_processed = 1,
              metadata = (
-               COALESCE(NULLIF(metadata, '')::jsonb, '{}'::jsonb)
+               CASE WHEN left(ltrim(COALESCE(metadata, '')), 1) = '{' THEN metadata::jsonb ELSE '{}'::jsonb END
                || jsonb_build_object('triage_reason', 'empty_content', 'triaged_at', NOW()::text)
              )::text
        WHERE is_processed = 0
@@ -120,7 +120,7 @@ export async function createMarketDataBacklogTriageService(db: DatabaseAdapter) 
       `UPDATE market_data_raw
          SET is_processed = 1,
              metadata = (
-               COALESCE(NULLIF(metadata, '')::jsonb, '{}'::jsonb)
+               CASE WHEN left(ltrim(COALESCE(metadata, '')), 1) = '{' THEN metadata::jsonb ELSE '{}'::jsonb END
                || jsonb_build_object('triage_reason', 'too_short', 'triaged_at', NOW()::text)
              )::text
        WHERE is_processed = 0

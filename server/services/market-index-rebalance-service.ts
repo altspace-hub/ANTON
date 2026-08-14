@@ -776,11 +776,15 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     const index = await db.get<IndexRow>('SELECT * FROM market_indexes WHERE id = ?', indexId);
     if (!index) throw new Error(`Index ${indexId} not found`);
 
+    // market_indexes.universe is JSONB (migration 056) — the pg driver hands
+    // back an already-parsed array; JSON.parse on it threw, so screening
+    // always saw an empty universe and rebalances proposed no candidates.
     let universe: string[] = [];
-    try {
-      universe = JSON.parse(index.universe || '[]');
-    } catch {
-      universe = [];
+    const rawUniverse = index.universe as unknown;
+    if (Array.isArray(rawUniverse)) {
+      universe = rawUniverse as string[];
+    } else if (typeof rawUniverse === 'string') {
+      try { universe = JSON.parse(rawUniverse || '[]'); } catch { universe = []; }
     }
 
     if (universe.length === 0) {

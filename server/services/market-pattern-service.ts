@@ -103,8 +103,15 @@ export async function createMarketPatternService(db: DatabaseAdapter) {
     // Simple heuristic: if we have contradicting signals for same entity
     const entitySignals: Record<string, { bullish: number; bearish: number }> = {};
     for (const atom of recentAtoms) {
+      // entities is JSONB — arrives pre-parsed from the pg driver; JSON.parse
+      // on it threw for every atom, so this detector never fired.
       let entities: Array<{ name?: string; id: string }>;
-      try { entities = JSON.parse(atom.entities); } catch { continue; }
+      if (typeof atom.entities === 'string') {
+        try { entities = JSON.parse(atom.entities); } catch { continue; }
+      } else {
+        entities = atom.entities as unknown as Array<{ name?: string; id: string }>;
+      }
+      if (!Array.isArray(entities)) continue;
       for (const ent of entities) {
         const key = ent.name ?? ent.id;
         if (!entitySignals[key]) entitySignals[key] = { bullish: 0, bearish: 0 };
