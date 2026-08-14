@@ -138,12 +138,20 @@ export async function createMarketWorkflowOrchestrator(
     return result.text;
   }
 
-  // Helper: record workflow run
+  // Helper: record workflow run. UPSERT on id: callers record the same run
+  // twice (start = 'running', end = 'completed'/'failed') — a plain INSERT
+  // collided on the PK for the second write and was swallowed, leaving e.g.
+  // every weekly-pulse row stuck 'running' forever in the workflows UI.
   async function recordRun(runId: string, workflowId: string, status: string, error?: string): Promise<void> {
     try {
       await db.run(`
         INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, error_message)
         VALUES (?, ?, 'market-orchestrator', ?, 'system', ?)
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          error_message = EXCLUDED.error_message,
+          completed_at = CASE WHEN EXCLUDED.status IN ('completed', 'failed')
+                              THEN NOW() ELSE workflow_runs.completed_at END
       `, runId, workflowId, status, error ?? null);
     } catch {
       // workflow_runs table may not exist

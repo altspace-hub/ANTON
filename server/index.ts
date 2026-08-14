@@ -1663,6 +1663,28 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     cron.schedule('0 12 * * *', () => { void runMarketsFreeSweeps('1200-catchup'); }, MARKET_TZ);
     setTimeout(() => { void runMarketsFreeSweeps('startup-catchup'); }, 120_000).unref();
 
+    // Sleep catch-up for the SPENDING phases (2026-08-14): the workstation
+    // also sleeps through 07:00 without rebooting, and node-cron never
+    // replays missed jobs — the first night of re-enabled automation lost
+    // Phase 6 (23:00) and Phase 1 (07:00) exactly this way while the boot
+    // catch-up (which only fires on restart) never got its chance. At 12:30
+    // on weekdays, if nothing has been extracted yet today, run one
+    // Phase-1-sized pass so a slept-through morning self-heals.
+    scheduleSpending('30 12 * * 1-5', async () => {
+      try {
+        if (marketsThinkingDisabled) return;
+        const extractedToday = await db.get<{ n: number | string }>(
+          'SELECT COUNT(*) AS n FROM market_atoms WHERE created_at >= CURRENT_DATE'
+        );
+        if (Number(extractedToday?.n ?? 0) > 0) return; // morning phases ran — nothing was missed
+        console.log('[markets-catchup] 12:30 sleep catch-up — no atoms extracted today, running a Phase-1-sized pass');
+        const backlog = await getBacklogSize();
+        if (!marketsFetchDisabled && backlog < 500) await marketDataService.fetchAllSources();
+        const processed = await processBacklog(40);
+        console.log(`[markets-catchup] 12:30 sleep catch-up complete — processed ${processed} (backlog was ${backlog})`);
+      } catch (err) { console.error('[markets-catchup] 12:30 sleep catch-up error:', err); }
+    });
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00 — external fetch (opt-in)
     scheduleSpending('0 8,15,21 * * 1-5', async () => {
       if (marketsFetchDisabled) return;
