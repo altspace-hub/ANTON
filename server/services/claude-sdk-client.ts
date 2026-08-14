@@ -319,7 +319,12 @@ export async function streamToResponse(
       // system/assistant envelope messages carry nothing this engine needs.
     }
 
-    if (currentText) console.log(`[sdk-engine] run complete — ${usageData.inputTokens} in / ${usageData.outputTokens} out tokens`);
+    if (currentText) {
+      // input_tokens alone is misleading here: most of the prompt lands in the
+      // cache fields (a 27k-char run logged "2 in" without them).
+      const cached = usageData.cacheReadTokens + usageData.cacheCreationTokens;
+      console.log(`[sdk-engine] run complete — ${usageData.inputTokens + cached} in (${cached} cached) / ${usageData.outputTokens} out tokens`);
+    }
     if (currentThinking) contentBlocks.push({ type: 'thinking', content: currentThinking });
     if (currentText) contentBlocks.push({ type: 'text', content: currentText });
     sendEvent({ type: 'stream_end', contentBlocks, sourceManifest: config.sourceManifest });
