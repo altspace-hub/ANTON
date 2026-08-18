@@ -3,6 +3,14 @@ import { createMarketNavEngine } from '../../../server/services/market-nav-engin
 import type { DatabaseAdapter } from '../../../server/db/database.js';
 
 /**
+ * SCOPE: these are arithmetic/branching tests over a hand-written adapter. A
+ * double cannot model pg's type behaviour, and this suite proved that the hard
+ * way — it passed for a guard that was inert in production, because the double
+ * returned published_at as a string while node-postgres returns a Date (see
+ * tests/services/markets-loop.integration.test.ts, drift #4). Anything that
+ * depends on a real column type belongs in that PostgreSQL-backed suite; keep
+ * these for the branch logic they can actually see.
+ *
  * 2026-08-17: the daily NAV ran at 09:39 (boot catch-up) while the broad price
  * fetch lands at 16:00. Every US holding was therefore priced from Friday's
  * bar, so five of six indexes recorded an exactly 0.000% Monday — and that
@@ -44,10 +52,11 @@ function harness(barDate: string, barClose: number, history: NavRow[]): Harness 
     },
     get: async (sql: string, ...params: unknown[]) => {
       if (sql.includes("data_type = 'price'")) {
-        const upperBound = String(params[1]); // navDate
-        // mimic `published_at < navDate + 1 day`
-        if (barDate > upperBound) return undefined;
-        return { content: JSON.stringify({ close: barClose }), published_at: `${barDate} 00:00:00+02` };
+        // Params are (navDate, symbol, navDate): the freshness flag is computed
+        // in SQL, so the double reproduces both bounds itself.
+        const navDate = String(params[0]);
+        if (barDate > navDate) return undefined;          // published_at < navDate + 1 day
+        return { content: JSON.stringify({ close: barClose }), is_fresh: barDate >= navDate };
       }
       if (sql.includes("data_type = 'event'")) return undefined;
       if (sql.includes('MAX(nav_value)')) {

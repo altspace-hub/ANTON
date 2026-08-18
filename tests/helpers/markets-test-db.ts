@@ -47,6 +47,10 @@ export const FIXTURE_TABLES = [
   'market_signal_weight_adjustments',
   'workflow_runs',
   'market_confidence_calibration',
+  'market_index_nav_history',
+  'market_index_holdings',
+  'market_indexes',
+  'market_data_raw',
 ] as const;
 
 export interface ProvisionResult {

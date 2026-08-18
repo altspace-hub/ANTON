@@ -13,6 +13,12 @@
  *      182 patterns consumed with ZERO weight adjustments written (1.10b).
  *   3. The loop watchdog filtered workflow_runs on status='success', a value
  *      the table's CHECK constraint forbids → permanently stale (1.10c).
+ *   4. The NAV stale-session guard compared String(published_at).slice(0,10)
+ *      against a 'YYYY-MM-DD' nav_date. published_at is TIMESTAMPTZ, which pg
+ *      returns as a JS Date, so the slice was "Mon Aug 17" — and
+ *      "Mon Aug 17" >= "2026-08-18" is TRUE ('M' > '2'). Every holding counted
+ *      as fresh, the guard never fired, and the unit suite passed throughout
+ *      because its double returned strings (2026-08-18).
  * Every leg here runs the real service SQL against real PG column types, so
  * a third drift of this class fails the suite instead of freezing the loop.
  *
@@ -36,6 +42,7 @@ import { createPredictionVerifier, MAX_VERIFICATION_ATTEMPTS } from '../../serve
 import { createMarketPatternWeightFeedbackService } from '../../server/services/market-pattern-weight-feedback-service';
 import { checkMarketsLoopHealth } from '../../server/services/market-loop-health';
 import { createMarketIntelligenceService } from '../../server/services/market-intelligence-service';
+import { createMarketNavEngine } from '../../server/services/market-nav-engine';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -597,5 +604,110 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(Number(row?.actual_accuracy)).toBeCloseTo(0.6, 4);
       expect(row?.is_overconfident).toBe(1); // stated 0.7 > actual 0.6
     }, 25_000); // verifier sleeps 1s/item when >3 expired
+  });
+
+  // ── 5. NAV engine (market-nav-engine) ─────────────────────────────────────
+
+  describe('NAV engine (market-nav-engine)', () => {
+    /** An index with one holding: 10 shares carried at 100. */
+    async function seedIndex() {
+      await db.run(
+        `INSERT INTO market_indexes (id, name, status, current_nav, total_return)
+         VALUES ('idx_t', 'Test Index', 'active', 1000, 0)`);
+      await db.run(
+        `INSERT INTO market_index_holdings (index_id, symbol, weight, shares, entry_price, current_price)
+         VALUES ('idx_t', 'AAPL', 1, 10, 100, 100)`);
+    }
+
+    /** A daily bar stamped with a real TIMESTAMPTZ trading date. */
+    async function seedBar(id: string, barDate: string, close: number) {
+      await db.run(
+        `INSERT INTO market_data_raw (id, source_id, data_type, symbol, content, published_at, fetched_at)
+         VALUES (?, 'src_test', 'price', 'AAPL', ?, ?::date, NOW())`,
+        id, JSON.stringify({ symbol: 'AAPL', date: barDate, close }), barDate);
+    }
+
+    async function seedNav(rows: Array<[string, number]>) {
+      for (const [date, value] of rows) {
+        await db.run(
+          `INSERT INTO market_index_nav_history (index_id, nav_date, nav_value, daily_return)
+           VALUES ('idx_t', ?, ?, 0)`, date, value);
+      }
+    }
+
+    const navDates = async () => (await db.all<{ nav_date: string }>(
+      `SELECT nav_date FROM market_index_nav_history WHERE index_id = 'idx_t' ORDER BY nav_date`
+    )).map(r => r.nav_date);
+
+    it('skips the write when the newest bar predates the session', async () => {
+      await seedIndex();
+      await seedNav([['2026-08-14', 1000]]);
+      await seedBar('bar_fri', '2026-08-14', 100);
+
+      const engine = await createMarketNavEngine(db);
+      const r = await engine.calculateDailyNav('idx_t', '2026-08-17');
+
+      // Every price is carried forward from Friday → the Monday row would be a
+      // guaranteed 0.000%, and would then baseline the real Monday move.
+      expect(r.written).toBe(false);
+      expect(await navDates()).toEqual(['2026-08-14']);
+    });
+
+    it('writes the session once a bar dated that session exists', async () => {
+      await seedIndex();
+      await seedNav([['2026-08-14', 1000]]);
+      await seedBar('bar_fri', '2026-08-14', 100);
+      await seedBar('bar_mon', '2026-08-17', 110);
+
+      const engine = await createMarketNavEngine(db);
+      const r = await engine.calculateDailyNav('idx_t', '2026-08-17');
+
+      expect(r.written).toBe(true);
+      expect(Number(r.nav)).toBeCloseTo(1100, 6);
+      expect(r.dailyReturn).toBeCloseTo(0.10, 6);
+    });
+
+    it('measures a repair against the previous session, not the row it replaces', async () => {
+      await seedIndex();
+      await seedNav([['2026-08-14', 1000], ['2026-08-17', 1000]]); // phantom flat Monday
+      await seedBar('bar_fri', '2026-08-14', 100);
+      await seedBar('bar_mon', '2026-08-17', 110);
+
+      const engine = await createMarketNavEngine(db);
+      const r = await engine.calculateDailyNav('idx_t', '2026-08-17');
+
+      // The write is an upsert: without the nav_date < ? bound the same-day row
+      // is its own baseline and the repair reports 0%, erasing the move.
+      expect(r.dailyReturn).toBeCloseTo(0.10, 6);
+      expect(await navDates()).toEqual(['2026-08-14', '2026-08-17']);
+    });
+
+    it('does not price a session from a later session bar', async () => {
+      await seedIndex();
+      await seedNav([['2026-08-13', 1000]]);
+      await seedBar('bar_mon', '2026-08-17', 110); // only Monday on hand
+
+      const engine = await createMarketNavEngine(db);
+      const r = await engine.calculateDailyNav('idx_t', '2026-08-14');
+
+      expect(r.written).toBe(false);
+      expect(await navDates()).toEqual(['2026-08-13']);
+    });
+
+    it('repairing an older session leaves current price and current_nav alone', async () => {
+      await seedIndex();
+      await seedNav([['2026-08-13', 1000], ['2026-08-17', 1200]]);
+      await seedBar('bar_fri', '2026-08-14', 105);
+
+      const engine = await createMarketNavEngine(db);
+      await engine.calculateDailyNav('idx_t', '2026-08-14');
+
+      const h = await db.get<{ current_price: string }>(
+        `SELECT current_price FROM market_index_holdings WHERE index_id = 'idx_t'`);
+      expect(Number(h?.current_price)).toBe(100); // seeded, not Friday's 105
+      const idx = await db.get<{ current_nav: string }>(
+        `SELECT current_nav FROM market_indexes WHERE id = 'idx_t'`);
+      expect(Number(idx?.current_nav)).toBe(1000);
+    });
   });
 });

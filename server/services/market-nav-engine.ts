@@ -106,12 +106,17 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
       // Newest price bar for this symbol dated on or before navDate. The
       // upper bound is what makes a backfill honest: without it, repairing an
       // older session would silently price it with today's bars.
-      const priceRow = await db.get<{ content: string; published_at: string }>(
-        `SELECT content, published_at FROM market_data_raw
+      // is_fresh is decided in SQL, not in JS: node-postgres hands back
+      // timestamptz as a Date, so String(published_at).slice(0,10) yields
+      // "Mon Aug 17" — which compares >= "2026-08-18" as true ('M' > '2') and
+      // silently defeated this guard for every holding.
+      const priceRow = await db.get<{ content: string; is_fresh: boolean }>(
+        `SELECT content, (published_at >= ?::date) AS is_fresh
+           FROM market_data_raw
          WHERE symbol = ? AND data_type = 'price'
            AND published_at < (?::date + INTERVAL '1 day')
          ORDER BY published_at DESC LIMIT 1`,
-        holding.symbol, navDate
+        navDate, holding.symbol, navDate
       );
 
       let price = holding.current_price ?? holding.entry_price ?? 0;
@@ -156,8 +161,7 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
               );
               holdingsUpdated++;
             }
-            // published_at is the trading date of the bar (00:00 of that day).
-            if (String(priceRow.published_at).slice(0, 10) >= navDate) freshBars++;
+            if (priceRow.is_fresh) freshBars++;
           }
         } catch {
           // Use existing price

@@ -184,3 +184,63 @@ CREATE TABLE IF NOT EXISTS market_confidence_calibration (
   period_end             TEXT,
   computed_at            TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ── NAV engine ──────────────────────────────────────────────────────────────
+-- Column types are load-bearing here, not incidental. published_at is
+-- TIMESTAMPTZ, which node-postgres hands back as a JS Date; nav_date is TEXT.
+-- A guard that compared String(published_at).slice(0,10) against a
+-- 'YYYY-MM-DD' nav_date silently passed for every row ("Mon Aug 17" sorts
+-- above "2026-08-18") and a mocked adapter returning strings could not see it.
+CREATE TABLE IF NOT EXISTS market_indexes (
+  id                 TEXT PRIMARY KEY,
+  name               TEXT NOT NULL,
+  description        TEXT NOT NULL DEFAULT '',
+  index_type         TEXT NOT NULL DEFAULT 'custom',
+  status             TEXT NOT NULL DEFAULT 'draft',
+  max_holdings       INTEGER NOT NULL DEFAULT 20,
+  rebalance_frequency TEXT NOT NULL DEFAULT 'monthly',
+  weighting_method   TEXT NOT NULL DEFAULT 'equal',
+  total_return       NUMERIC(16,6) DEFAULT 0.0,
+  current_nav        NUMERIC(16,6) DEFAULT 1000.0,
+  currency           TEXT DEFAULT 'USD',
+  drawdown_alert     TEXT,
+  created_at         TIMESTAMPTZ DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS market_index_holdings (
+  id             SERIAL PRIMARY KEY,
+  index_id       TEXT NOT NULL,
+  symbol         TEXT NOT NULL,
+  name           TEXT,
+  weight         NUMERIC NOT NULL DEFAULT 0,
+  shares         DOUBLE PRECISION NOT NULL DEFAULT 0,
+  entry_price    NUMERIC,
+  current_price  NUMERIC,
+  unrealized_pnl NUMERIC DEFAULT 0,
+  added_at       TIMESTAMPTZ DEFAULT NOW(),
+  removed_at     TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS market_index_nav_history (
+  id                SERIAL PRIMARY KEY,
+  index_id          TEXT NOT NULL,
+  nav_date          TEXT NOT NULL,
+  nav_value         NUMERIC(16,6) NOT NULL,
+  daily_return      NUMERIC(10,6),
+  cumulative_return DOUBLE PRECISION,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS market_data_raw (
+  id           TEXT PRIMARY KEY,
+  source_id    TEXT NOT NULL,
+  data_type    TEXT NOT NULL,
+  symbol       TEXT,
+  title        TEXT,
+  content      TEXT,
+  published_at TIMESTAMPTZ,
+  fetched_at   TIMESTAMPTZ DEFAULT NOW(),
+  metadata     TEXT DEFAULT '{}',
+  is_processed INTEGER NOT NULL DEFAULT 0
+);
