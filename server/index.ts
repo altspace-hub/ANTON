@@ -1490,18 +1490,23 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) { console.error('[markets-schedule] Phase 8 error:', err); }
     });
 
-    // Daily auto-verification of expired predictions (12:00 CET weekdays).
-    // Stays registered always: directional/price-target grading is free
-    // (pure price comparison). LLM (binary/event) verification only runs
-    // when the automation opt-in + thinking flag both allow it — deferred
-    // predictions stay retriable.
-    cron.schedule('0 12 * * 1-5', async () => {
+    // Auto-verification of expired predictions. Stays registered always:
+    // directional/price-target grading is free (pure price comparison). LLM
+    // (binary/event) verification only runs when the automation opt-in + the
+    // thinking flag both allow it — deferred predictions stay retriable.
+    //
+    // findExpired() only returns ungraded predictions past their horizon, so a
+    // pass is idempotent and cheap when there is nothing due: running it often
+    // costs a query and buys back a day of feedback latency.
+    let lastVerifyPassAt = 0;
+    async function runVerificationPass(label: string): Promise<void> {
+      lastVerifyPassAt = Date.now();
       try {
         const { createPredictionVerifier } = await import('./services/market-prediction-verifier.js');
         const verifier = await createPredictionVerifier(db);
         const result = await verifier.runAutoVerification({ allowLLM: marketsLlmOn });
         if (result.verified > 0 || result.unverifiable > 0 || result.deferred_llm > 0) {
-          console.log(`[markets-verify] Daily: verified=${result.verified} (${result.correct}✓ ${result.incorrect}✗) unverifiable=${result.unverifiable} llm_deferred=${result.deferred_llm}`);
+          console.log(`[markets-verify] ${label}: verified=${result.verified} (${result.correct}✓ ${result.incorrect}✗) unverifiable=${result.unverifiable} llm_deferred=${result.deferred_llm}`);
         }
         // Plan 1.10d: compute confidence calibration after a successful
         // verification pass — pure SQL arithmetic over validated predictions,
@@ -1516,8 +1521,26 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
             console.error('[markets-verify] Calibration check failed:', calErr instanceof Error ? calErr.message : calErr);
           }
         }
-      } catch (err) { console.error('[markets-verify] Daily verification error:', err); }
-    }, MARKET_TZ);
+      } catch (err) { console.error(`[markets-verify] ${label} verification error:`, err); }
+    }
+
+    // Every day, not just weekdays: the tactical band (1-3 day horizons, added
+    // 2026-08-14) resolves on Fridays and Saturdays too, and a weekday-only
+    // pass left those sitting until Monday. Four passes so a single missed
+    // slot costs hours instead of a full day.
+    cron.schedule('0 8,12,16,20 * * *', () => { void runVerificationPass('scheduled'); }, MARKET_TZ);
+
+    // Sleep safety net. node-cron resolves the next wall-clock slot and simply
+    // skips slots the host sleeps through — on 2026-08-17 this workstation was
+    // in Modern Standby 11:27→17:26 and 18:00→08:39, so the 12:00 pass never
+    // fired and twelve predictions sat ungraded. setInterval is monotonic: an
+    // overdue timer fires once on resume, which is exactly the signal needed.
+    const VERIFY_MAX_GAP_MS = 6 * 60 * 60 * 1000;
+    setInterval(() => {
+      if (Date.now() - lastVerifyPassAt < VERIFY_MAX_GAP_MS) return;
+      console.log('[markets-verify] No pass in the last 6h (host asleep or restarted) — running catch-up');
+      void runVerificationPass('gap-catchup');
+    }, 15 * 60 * 1000).unref();
 
     // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00) — external fetch (opt-in)
     scheduleSpending('0 14,16,18,20,22 * * 1-5', async () => {
@@ -1833,6 +1856,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
             console.log('[markets-catchup] NAV catch-up complete');
           } catch (err) { console.error('[markets-catchup] NAV catch-up failed:', err); }
         }
+
+        // 3b. Grade anything already past its horizon (free — price comparison).
+        // A restart is the one moment we know the scheduled passes may have
+        // been missed, and it costs a single query when nothing is due.
+        await runVerificationPass('boot-catchup');
 
         // 4. Check if prediction validation ran this week (should run Saturday) — LLM-spending
         if ((dayOfWeek === 6 || dayOfWeek === 0) && marketsLlmOn) {
