@@ -1773,10 +1773,16 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
 
     console.log('[markets-schedule] Sustainable CET schedule active — quality over speed');
 
-    // ── Startup Catch-Up: recover missed workflows after downtime ──────────
-    setTimeout(async () => {
+    // ── Catch-Up: recover missed workflows after downtime ─────────────────
+    // Runs at startup AND on resume from host sleep (see the drift detector
+    // below). Every step is idempotent and heartbeat-gated, so an extra run
+    // costs a handful of queries.
+    let catchUpRunning = false;
+    async function runMarketsCatchUp(trigger: string): Promise<void> {
+      if (catchUpRunning) { console.log(`[markets-catchup] ${trigger} skipped — a catch-up is already running`); return; }
+      catchUpRunning = true;
       try {
-        console.log('[markets-catchup] Checking for missed workflows...');
+        console.log(`[markets-catchup] Checking for missed workflows (${trigger})...`);
         const now = new Date();
         const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
         const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
@@ -1908,14 +1914,44 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         } catch { /* MVs may not exist yet */ }
 
         if (catchUpActions > 0) {
-          console.log(`[markets-catchup] Startup recovery complete — ${catchUpActions} actions taken`);
+          console.log(`[markets-catchup] ${trigger} recovery complete — ${catchUpActions} actions taken`);
         } else {
-          console.log('[markets-catchup] All workflows up to date — nothing to catch up');
+          console.log(`[markets-catchup] All workflows up to date (${trigger}) — nothing to catch up`);
         }
       } catch (err) {
-        console.error('[markets-catchup] Startup catch-up failed:', err);
+        console.error(`[markets-catchup] ${trigger} catch-up failed:`, err);
+      } finally {
+        catchUpRunning = false;
       }
-    }, 10_000); // Run 10 seconds after startup to let everything initialize
+    }
+
+    // Run 10 seconds after startup to let everything initialize.
+    setTimeout(() => { void runMarketsCatchUp('startup'); }, 10_000);
+
+    // ── Host-sleep drift detector ─────────────────────────────────────────
+    // This workstation runs Modern Standby: on 2026-08-17 it was asleep
+    // 11:27→17:26 and 18:00→08:39, and node-cron resolves the NEXT wall-clock
+    // slot rather than replaying ones it slept through — so Phase 4 (18:00
+    // daily intelligence), Phase 5 (22:15 NAV + price sync + checkpoints) and
+    // Phase 6 (23:00) simply never happened, with nothing to notice afterwards.
+    // Boot catch-up covers a restart; nothing covered a resume.
+    //
+    // A short interval whose wall clock has jumped far more than its period is
+    // an unambiguous resume signal — true whether the host froze the process
+    // (clock advanced, timer late) or suspended entirely (timer fires on wake).
+    // Date.now() rather than a monotonic source is deliberate: it is the wall
+    // clock the cron slots were missed against.
+    const DRIFT_TICK_MS = 60_000;
+    const DRIFT_THRESHOLD_MS = 10 * 60_000;
+    let lastDriftTickAt = Date.now();
+    setInterval(() => {
+      const now = Date.now();
+      const drift = now - lastDriftTickAt;
+      lastDriftTickAt = now;
+      if (drift < DRIFT_THRESHOLD_MS) return;
+      console.log(`[markets-catchup] Wall clock jumped ${Math.round(drift / 60_000)} min — host resumed; running catch-up`);
+      void runMarketsCatchUp('resume');
+    }, DRIFT_TICK_MS).unref();
 
   } catch (err) {
     console.error('[markets-schedule] Failed to start market scheduled jobs:', err);

@@ -71,3 +71,28 @@ describe('markets prediction verification cadence', () => {
     expect(src).toMatch(/runVerificationPass\('boot-catchup'\)/);
   });
 });
+
+describe('markets catch-up on host resume', () => {
+  it('recovers missed phases on resume, not only at startup', () => {
+    // node-cron resolves the NEXT wall-clock slot and never replays ones the
+    // host slept through, so Phase 4 (18:00), Phase 5 (22:15 NAV) and Phase 6
+    // (23:00) simply vanished on a night this workstation was in Modern
+    // Standby. Boot catch-up covered a restart; nothing covered a resume.
+    expect(src).toMatch(/async function runMarketsCatchUp\(/);
+    expect(src).toMatch(/runMarketsCatchUp\('startup'\)/);
+    expect(src).toMatch(/runMarketsCatchUp\('resume'\)/);
+  });
+
+  it('detects resume from wall-clock drift on a short interval', () => {
+    // A 60s interval that fires far later than 60s means wall-clock time
+    // passed while the process was frozen or suspended.
+    expect(src).toMatch(/DRIFT_TICK_MS/);
+    expect(src).toMatch(/DRIFT_THRESHOLD_MS/);
+    expect(src).toMatch(/setInterval\([\s\S]{0,600}?runMarketsCatchUp\('resume'\)/);
+  });
+
+  it('will not run two catch-ups concurrently', () => {
+    // Startup + an immediate resume must not double-run the paid steps.
+    expect(src).toMatch(/catchUpRunning/);
+  });
+});
