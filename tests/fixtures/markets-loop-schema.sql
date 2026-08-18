@@ -244,3 +244,23 @@ CREATE TABLE IF NOT EXISTS market_data_raw (
   metadata     TEXT DEFAULT '{}',
   is_processed INTEGER NOT NULL DEFAULT 0
 );
+
+-- ── Historical price sync target ────────────────────────────────────────────
+-- The UNIQUE is (symbol, price_date, source) — three columns, not two. The
+-- sync INSERT omits `source`, so every row takes the default and duplicate
+-- (symbol, price_date) pairs from different feeds collide on ONE conflict key
+-- inside a single statement. price_date is TEXT here, matching production.
+CREATE TABLE IF NOT EXISTS market_historical_prices (
+  id             SERIAL PRIMARY KEY,
+  symbol         TEXT NOT NULL,
+  price_date     TEXT NOT NULL,
+  open           DOUBLE PRECISION,
+  high           DOUBLE PRECISION,
+  low            DOUBLE PRECISION,
+  close          DOUBLE PRECISION,
+  adjusted_close DOUBLE PRECISION,
+  volume         BIGINT,
+  source         TEXT DEFAULT 'fmp',
+  fetched_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (symbol, price_date, source)
+);

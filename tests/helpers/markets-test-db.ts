@@ -51,6 +51,7 @@ export const FIXTURE_TABLES = [
   'market_index_holdings',
   'market_indexes',
   'market_data_raw',
+  'market_historical_prices',
 ] as const;
 
 export interface ProvisionResult {

@@ -56,7 +56,7 @@ VALUES (
   'EODHD European Markets',
   'api',
   'eodhd',
-  '{"api_key_env":"EODHD_API_KEY","exchange":"XETRA","symbols":["ASML.AS","SAP.DE","SIE.DE","ALV.DE","DTE.DE","AIR.PA","MC.PA","OR.PA","TTE.PA","BNP.PA"]}',
+  '{"api_key_env":"EODHD_API_KEY","exchange":"XETRA","symbols":["ASML.AS","SAP.XETRA","SIE.XETRA","ALV.XETRA","DTE.XETRA","AIR.PA","MC.PA","OR.PA","TTE.PA","BNP.PA"]}',
   24,
   0
 ) ON CONFLICT DO NOTHING;

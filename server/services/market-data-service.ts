@@ -845,7 +845,19 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         if (!response.ok) { console.warn(`[market-data] EODHD ${ticker}: HTTP ${response.status}`); continue; }
         const days = await response.json() as Array<{ date: string; open: number; high: number; low: number; close: number; adjusted_close: number; volume: number }>;
 
-        for (const day of (days ?? []).slice(0, 10)) {
+        // EODHD returns the window ASCENDING (oldest first) — unlike FMP and
+        // Alpha Vantage, which return newest first. A plain .slice(0, 10) here
+        // therefore kept the OLDEST ten bars and discarded every recent one:
+        // the feed reported success daily while the newest stored bar sat at
+        // 2026-07-31 for two and a half weeks, which silently froze NAV for
+        // every index priced off it. Sort explicitly rather than trusting the
+        // provider's order, so this cannot regress if the API changes.
+        const RECENT_BARS = 10;
+        const recent = [...(days ?? [])]
+          .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+          .slice(0, RECENT_BARS);
+
+        for (const day of recent) {
           await ingestRawData({
             sourceId, dataType: 'price', symbol: ticker,
             title: `${ticker} ${day.date}`,
@@ -1096,7 +1108,16 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     try {
       const result = await db.run(`
         INSERT INTO market_historical_prices (symbol, price_date, open, high, low, close, volume)
-        SELECT symbol, price_date::date, open, high, low, close, volume
+        -- DISTINCT ON is load-bearing, not tidiness. The same symbol/day arrives
+        -- from more than one source (e.g. mds_fmp_prices AND mds_fmp_sp100_b1 —
+        -- 2668 such pairs as of 2026-08-18), and because this INSERT omits
+        -- the source column, every duplicate collapses onto the SAME conflict key in a
+        -- single statement. Postgres rejects that outright with "ON CONFLICT DO
+        -- UPDATE command cannot affect row a second time", the catch below
+        -- swallowed it, and market_historical_prices stopped advancing on
+        -- 2026-04-02. Newest write wins.
+        SELECT DISTINCT ON (symbol, price_date::date)
+               symbol, price_date::date, open, high, low, close, volume
         FROM market_price_normalized
         WHERE price_date::date > (
           -- price_date is a TEXT column (ISO date strings); cast to date so the
@@ -1104,6 +1125,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           -- cannot be matched") and the outer date comparison stays date-vs-date.
           SELECT COALESCE(MAX(price_date::date), '2020-01-01'::date) FROM market_historical_prices
         )
+        ORDER BY symbol, price_date::date, created_at DESC
         -- market_historical_prices' only UNIQUE is (symbol, price_date, source)
         -- — there is no unique on (symbol, price_date) alone (just a plain index),
         -- so a 2-column ON CONFLICT raised "no unique or exclusion constraint
@@ -1114,7 +1136,10 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           close = EXCLUDED.close, high = EXCLUDED.high, low = EXCLUDED.low,
           open = EXCLUDED.open, volume = EXCLUDED.volume
       `);
-      const synced = (result as { rowCount?: number })?.rowCount ?? 0;
+      // RunResult exposes `changes`, not pg's raw `rowCount` — reading the
+      // latter reported 0 synced rows even when thousands were written, which
+      // silences the log line below and makes a working sync look dead.
+      const synced = result?.changes ?? 0;
       if (synced > 0) console.log(`[market-data] Synced ${synced} prices to historical table`);
       return synced;
     } catch (err) {
