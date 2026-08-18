@@ -130,6 +130,13 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   async function getPriceAtDate(
     symbol: string, date: string, maxStalenessDays = PRICE_STALENESS_DAYS,
   ): Promise<number | null> {
+    return (await getBarAtDate(symbol, date, maxStalenessDays))?.close ?? null;
+  }
+
+  /** getPriceAtDate, but keeping the date of the bar actually used. */
+  async function getBarAtDate(
+    symbol: string, date: string, maxStalenessDays = PRICE_STALENESS_DAYS,
+  ): Promise<{ close: number; priceDate: string } | null> {
     const row = await db.get<{ close: number; price_date: string }>(
       `SELECT close, price_date FROM market_price_normalized
        WHERE symbol = $1 AND price_date <= $2
@@ -139,7 +146,33 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     if (!row) return null;
     const gapMs = new Date(date).getTime() - new Date(row.price_date).getTime();
     if (Number.isFinite(gapMs) && gapMs > maxStalenessDays * 86_400_000) return null;
-    return row.close;
+    return { close: row.close, priceDate: String(row.price_date).slice(0, 10) };
+  }
+
+  /**
+   * First bar on or AFTER `date` — the next trading session.
+   *
+   * Needed because a deadline can land on a day the market never traded. A
+   * Sunday deadline resolves backwards to Friday's close, and when the
+   * prediction was itself made on that Friday the start and end bars are the
+   * same row: a zero-length window that scores every directional call as a
+   * ~0.0% move, i.e. an automatic loss no forecast could avoid. The tactical
+   * band (1-3 day horizons) puts deadlines on weekends routinely, so this is
+   * not an edge case — it silently biased the accuracy record downward.
+   */
+  async function getBarAtOrAfter(
+    symbol: string, date: string, maxWaitDays = PRICE_STALENESS_DAYS,
+  ): Promise<{ close: number; priceDate: string } | null> {
+    const row = await db.get<{ close: number; price_date: string }>(
+      `SELECT close, price_date FROM market_price_normalized
+       WHERE symbol = $1 AND price_date > $2
+       ORDER BY price_date ASC LIMIT 1`,
+      symbol, date
+    );
+    if (!row) return null;
+    const gapMs = new Date(row.price_date).getTime() - new Date(date).getTime();
+    if (Number.isFinite(gapMs) && gapMs > maxWaitDays * 86_400_000) return null;
+    return { close: row.close, priceDate: String(row.price_date).slice(0, 10) };
   }
 
   /**
@@ -163,13 +196,35 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       return { predictionId: pred.id, wasCorrect: false, actualOutcome: 'Unverifiable — no symbol or direction', actualValue: null, method: 'unverifiable', verificationConfidence: 0, explanation: 'Missing target symbol or predicted direction' };
     }
 
-    // Get price at prediction creation and at deadline
-    const startPrice = await getPriceAtDate(pred.target_symbol, new Date(pred.created_at).toISOString().split('T')[0]);
-    const endPrice = await getPriceAtDate(pred.target_symbol, pred.deadline);
+    // Bars at prediction creation and at the deadline.
+    const createdDate = new Date(pred.created_at).toISOString().split('T')[0];
+    const startBar = await getBarAtDate(pred.target_symbol, createdDate);
+    let endBar = await getBarAtDate(pred.target_symbol, pred.deadline);
 
-    if (!startPrice || !endPrice) {
-      return { predictionId: pred.id, wasCorrect: false, actualOutcome: 'Unverifiable — no price data', actualValue: null, method: 'unverifiable', verificationConfidence: 0, explanation: `No price data for ${pred.target_symbol} at ${new Date(pred.created_at).toISOString().split('T')[0]} or ${pred.deadline}` };
+    // A deadline on a non-trading day resolves backwards, which can land on the
+    // very bar the prediction started from — a zero-length window that grades
+    // every directional call as ~0.0%. When that happens, roll forward to the
+    // first session after the deadline: the market's next actual answer.
+    if (startBar && endBar && endBar.priceDate <= startBar.priceDate) {
+      const rolled = await getBarAtOrAfter(pred.target_symbol, pred.deadline);
+      // Keep the original bar when nothing has traded yet, so the degenerate
+      // check below reports *why* rather than the generic "no price data".
+      if (rolled) endBar = rolled;
     }
+
+    if (!startBar || !endBar) {
+      return { predictionId: pred.id, wasCorrect: false, actualOutcome: 'Unverifiable — no price data', actualValue: null, method: 'unverifiable', verificationConfidence: 0, explanation: `No price data for ${pred.target_symbol} at ${createdDate} or ${pred.deadline}` };
+    }
+
+    // Still degenerate: the deadline has passed but no session has traded since
+    // the prediction was made. Leave it 'expired' and retriable rather than
+    // stamping a fabricated 0.0% on the accuracy record.
+    if (endBar.priceDate <= startBar.priceDate) {
+      return { predictionId: pred.id, wasCorrect: false, actualOutcome: 'Unverifiable — no trading session in window', actualValue: null, method: 'unverifiable', verificationConfidence: 0, explanation: `${pred.target_symbol}: no session between ${startBar.priceDate} and deadline ${pred.deadline} — awaiting the next close` };
+    }
+
+    const startPrice = startBar.close;
+    const endPrice = endBar.close;
 
     const pctChange = ((endPrice - startPrice) / startPrice) * 100;
     const absPctChange = Math.abs(pctChange);
@@ -216,7 +271,7 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       }
     }
 
-    const explanation = `${pred.target_symbol}: ${startPrice.toFixed(2)} → ${endPrice.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%). Predicted: ${pred.predicted_direction}, Actual: ${actualDirection}. Grade: ${(gradedScore * 100).toFixed(0)}%`;
+    const explanation = `${pred.target_symbol}: ${startPrice.toFixed(2)} → ${endPrice.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%) over ${startBar.priceDate}→${endBar.priceDate}. Predicted: ${pred.predicted_direction}, Actual: ${actualDirection}. Grade: ${(gradedScore * 100).toFixed(0)}%`;
 
     return {
       predictionId: pred.id,

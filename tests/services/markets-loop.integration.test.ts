@@ -19,6 +19,11 @@
  *      "Mon Aug 17" >= "2026-08-18" is TRUE ('M' > '2'). Every holding counted
  *      as fresh, the guard never fired, and the unit suite passed throughout
  *      because its double returned strings (2026-08-18).
+ *   5. syncPricesToHistorical INSERT..SELECT..ON CONFLICT drew duplicate
+ *      (symbol, price_date) rows from two feeds while omitting `source`, so
+ *      they collapsed onto one conflict key mid-statement → "ON CONFLICT DO
+ *      UPDATE command cannot affect row a second time". The catch swallowed
+ *      it and market_historical_prices froze at 2026-04-02 for four months.
  * Every leg here runs the real service SQL against real PG column types, so
  * a third drift of this class fails the suite instead of freezing the loop.
  *
@@ -43,6 +48,7 @@ import { createMarketPatternWeightFeedbackService } from '../../server/services/
 import { checkMarketsLoopHealth } from '../../server/services/market-loop-health';
 import { createMarketIntelligenceService } from '../../server/services/market-intelligence-service';
 import { createMarketNavEngine } from '../../server/services/market-nav-engine';
+import { createMarketDataService } from '../../server/services/market-data-service';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -708,6 +714,127 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       const idx = await db.get<{ current_nav: string }>(
         `SELECT current_nav FROM market_indexes WHERE id = 'idx_t'`);
       expect(Number(idx?.current_nav)).toBe(1000);
+    });
+  });
+
+  // ── 6. Weekend / non-trading deadlines ───────────────────────────────────
+
+  describe('verify leg — deadlines on non-trading days', () => {
+    /**
+     * A deadline can land on a day the market never traded. getPriceAtDate
+     * resolves backwards, so a Sunday deadline returns Friday's close — and
+     * when the prediction was made on that same Friday, start and end are the
+     * SAME bar. Every directional call then scores a ~0.0% move and fails
+     * automatically, no matter what the market did. The tactical band puts
+     * deadlines on weekends routinely: on 2026-08-14 three of twelve graded
+     * predictions (SPY, TLT, VIXY, all due Sunday 08-16) went down this way.
+     */
+    it('rolls a weekend deadline forward to the next session instead of grading a zero-length window', async () => {
+      // Friday 2026-08-14 close, no weekend bars, Monday 2026-08-17 close +3%.
+      await seedPrice(db, 'SPY', '2026-08-14', 100);
+      await seedPrice(db, 'SPY', '2026-08-17', 103);
+      await seedPrediction(db, {
+        id: 'p_weekend', symbol: 'SPY', direction: 'up', confidence: 0.6,
+        createdAt: '2026-08-14T17:00:00Z',
+        deadline: '2026-08-16T00:00:00Z',   // Sunday
+      });
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction({
+        id: 'p_weekend', title: 't', prediction_type: 'directional',
+        target_symbol: 'SPY', predicted_direction: 'up', predicted_value: null,
+        confidence: 0.6, created_at: '2026-08-14T17:00:00Z',
+        deadline: '2026-08-16', verification_attempts: 0,
+      } as never);
+
+      expect(r.method).toBe('auto_price');
+      expect(r.wasCorrect).toBe(true);              // +3% up, as predicted
+      expect(r.actualOutcome).toContain('up');
+      expect(r.explanation).toContain('2026-08-14→2026-08-17');
+    });
+
+    it('leaves a prediction retriable when no session has traded since it was made', async () => {
+      // Only the Friday bar exists — the market has not answered yet.
+      await seedPrice(db, 'QQQ', '2026-08-14', 100);
+      await seedPrediction(db, {
+        id: 'p_pending', symbol: 'QQQ', direction: 'up', confidence: 0.6,
+        createdAt: '2026-08-14T17:00:00Z',
+        deadline: '2026-08-16T00:00:00Z',
+      });
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction({
+        id: 'p_pending', title: 't', prediction_type: 'directional',
+        target_symbol: 'QQQ', predicted_direction: 'up', predicted_value: null,
+        confidence: 0.6, created_at: '2026-08-14T17:00:00Z',
+        deadline: '2026-08-16', verification_attempts: 0,
+      } as never);
+
+      // Unverifiable → runAutoVerification keeps it 'expired' and retriable,
+      // rather than stamping a fabricated 0.0% onto the accuracy record.
+      expect(r.method).toBe('unverifiable');
+      expect(r.actualOutcome).toMatch(/no trading session/i);
+    });
+
+    it('still grades an ordinary weekday window from the deadline bar', async () => {
+      await seedPrice(db, 'IWM', '2026-08-17', 100);
+      await seedPrice(db, 'IWM', '2026-08-19', 96);
+      await seedPrice(db, 'IWM', '2026-08-21', 90);  // AFTER the deadline — must not be used
+      await seedPrediction(db, {
+        id: 'p_weekday', symbol: 'IWM', direction: 'down', confidence: 0.6,
+        createdAt: '2026-08-17T17:00:00Z', deadline: '2026-08-19T00:00:00Z',
+      });
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction({
+        id: 'p_weekday', title: 't', prediction_type: 'directional',
+        target_symbol: 'IWM', predicted_direction: 'down', predicted_value: null,
+        confidence: 0.6, created_at: '2026-08-17T17:00:00Z',
+        deadline: '2026-08-19', verification_attempts: 0,
+      } as never);
+
+      expect(r.method).toBe('auto_price');
+      expect(r.explanation).toContain('2026-08-17→2026-08-19');
+      expect(Number(r.actualValue)).toBe(96);       // not 90
+    });
+  });
+
+  // ── 7. Historical price sync ─────────────────────────────────────────────
+
+  describe('price sync (market-data-service.syncPricesToHistorical)', () => {
+    /**
+     * The same symbol/day legitimately arrives from more than one source —
+     * mds_fmp_prices and mds_fmp_sp100_b1 both carry AAPL (2668 such pairs in
+     * the dev DB on 2026-08-18). The sync INSERT omits `source`, so every
+     * duplicate takes the column default and lands on the SAME conflict key
+     * within one statement, which PostgreSQL rejects outright. Only real pg
+     * enforces that, which is why this test lives here.
+     */
+    it('syncs when the same symbol/day exists under two sources', async () => {
+      await seedPrice(db, 'AAPL', '2026-08-17', 300);
+      await db.run(
+        `INSERT INTO market_price_normalized (id, symbol, price_date, close, source_id)
+         VALUES ('AAPL_2026-08-17_b', 'AAPL', '2026-08-17', 301, 'other_feed')`);
+
+      const svc = await createMarketDataService(db);
+      const synced = await svc.syncPricesToHistorical();
+
+      // Pre-fix this threw, was swallowed, and returned 0 with nothing written.
+      expect(synced).toBeGreaterThan(0);
+      const rows = await db.all<{ symbol: string; close: number }>(
+        `SELECT symbol, close FROM market_historical_prices WHERE symbol = 'AAPL'`);
+      expect(rows).toHaveLength(1);          // one row, not a duplicate-key crash
+    });
+
+    it('reports the number of rows it wrote', async () => {
+      await seedPrice(db, 'MSFT', '2026-08-17', 480);
+
+      const svc = await createMarketDataService(db);
+      const synced = await svc.syncPricesToHistorical();
+
+      // Read via RunResult.changes; pg's raw rowCount is not exposed there, and
+      // reading it returned 0 even on a successful multi-thousand-row sync.
+      expect(synced).toBe(1);
     });
   });
 });
