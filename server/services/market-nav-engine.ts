@@ -59,33 +59,59 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
 
   /**
    * Calculate daily NAV for a single index.
-   * For each active holding, finds the latest price from market_data_raw,
-   * then computes NAV = sum(shares * price) for all holdings.
+   * For each active holding, finds the newest price bar dated on or before
+   * `asOfDate` in market_data_raw, then computes NAV = sum(shares * price).
+   *
+   * `asOfDate` ('YYYY-MM-DD', default today) makes the function re-runnable for
+   * a past session — needed to repair a NAV row that was written before that
+   * session's prices had landed. All lookups are bounded by it so a backfill
+   * cannot see the future.
+   *
+   * Returns `written: false` when no holding had a price bar dated on or after
+   * `asOfDate`. See the `freshBars` guard below for why that is not a no-op.
    */
-  async function calculateDailyNav(indexId: string): Promise<{
+  async function calculateDailyNav(indexId: string, asOfDate?: string): Promise<{
     nav: number;
     dailyReturn: number | null;
     holdingsUpdated: number;
+    written: boolean;
   }> {
+    const navDate = asOfDate ?? new Date().toISOString().split('T')[0];
+
     const holdings = await db.all<HoldingRow>(
       'SELECT * FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL',
       indexId
     );
 
     if (holdings.length === 0) {
-      return { nav: 0, dailyReturn: null, holdingsUpdated: 0 };
+      return { nav: 0, dailyReturn: null, holdingsUpdated: 0, written: false };
     }
+
+    // Repairing an older session must not rewrite "current" state: the holding
+    // prices and market_indexes.current_nav describe now, not the session being
+    // recomputed. Only the newest known session owns those fields.
+    const laterSession = await db.get<{ nav_date: string }>(
+      'SELECT nav_date FROM market_index_nav_history WHERE index_id = ? AND nav_date > ? LIMIT 1',
+      indexId, navDate
+    );
+    const isLatestSession = !laterSession;
 
     let totalValue = 0;
     let holdingsUpdated = 0;
+    // Holdings whose price bar is actually dated on/after navDate, i.e. carries
+    // information about THIS session rather than a carried-forward earlier close.
+    let freshBars = 0;
 
     for (const holding of holdings) {
-      // Find latest price for this symbol from market_data_raw
-      const priceRow = await db.get<{ content: string }>(
-        `SELECT content FROM market_data_raw
+      // Newest price bar for this symbol dated on or before navDate. The
+      // upper bound is what makes a backfill honest: without it, repairing an
+      // older session would silently price it with today's bars.
+      const priceRow = await db.get<{ content: string; published_at: string }>(
+        `SELECT content, published_at FROM market_data_raw
          WHERE symbol = ? AND data_type = 'price'
+           AND published_at < (?::date + INTERVAL '1 day')
          ORDER BY published_at DESC LIMIT 1`,
-        holding.symbol
+        holding.symbol, navDate
       );
 
       let price = holding.current_price ?? holding.entry_price ?? 0;
@@ -96,8 +122,9 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
       const eventRow = await db.get<{ content: string }>(
         `SELECT content FROM market_data_raw
          WHERE symbol = ? AND data_type = 'event'
+           AND published_at < (?::date + INTERVAL '1 day')
          ORDER BY published_at DESC LIMIT 1`,
-        holding.symbol
+        holding.symbol, navDate
       );
       if (eventRow) {
         try {
@@ -119,14 +146,18 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
           const newPrice = data.close ?? data.adjusted_close ?? data['4. close'] ?? data.c ?? null;
           if (newPrice && !isNaN(Number(newPrice))) {
             price = Number(newPrice);
-            // Update holding's current price
-            await db.run(
-              'UPDATE market_index_holdings SET current_price = ?, unrealized_pnl = ? WHERE id = ?',
-              price,
-              holding.entry_price ? (price - holding.entry_price) * holding.shares : 0,
-              holding.id
-            );
-            holdingsUpdated++;
+            if (isLatestSession) {
+              // Update holding's current price
+              await db.run(
+                'UPDATE market_index_holdings SET current_price = ?, unrealized_pnl = ? WHERE id = ?',
+                price,
+                holding.entry_price ? (price - holding.entry_price) * holding.shares : 0,
+                holding.id
+              );
+              holdingsUpdated++;
+            }
+            // published_at is the trading date of the bar (00:00 of that day).
+            if (String(priceRow.published_at).slice(0, 10) >= navDate) freshBars++;
           }
         } catch {
           // Use existing price
@@ -136,20 +167,35 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
       totalValue += adjustedShares * price + dividendCash;
     }
 
-    // Get previous NAV for daily return calculation
+    // No holding had a bar for this session: every price is carried forward
+    // from an earlier close, so NAV is arithmetically guaranteed to equal the
+    // last row and daily_return to be exactly 0. Writing that is worse than
+    // writing nothing — 2026-08-17 ran at 09:39 before the 16:00 price fetch
+    // and stamped a phantom 0.000% Monday on five of six indexes, which then
+    // became the baseline the real Monday move was measured against. Skip the
+    // write; the next run with real bars fills the session in.
+    if (freshBars === 0) {
+      console.log(`[nav-engine] ${indexId}: no price bars dated >= ${navDate} — NAV write skipped (would be a phantom flat session)`);
+      return { nav: totalValue, dailyReturn: null, holdingsUpdated, written: false };
+    }
+
+    // Previous NAV for the daily return. Must exclude navDate itself: this
+    // function is an upsert, so on a re-run the same-day row is still present
+    // and would be used as its own baseline, zeroing the return it is meant
+    // to correct.
     const prevNav = await db.get<NavHistoryRow>(
-      'SELECT nav_value FROM market_index_nav_history WHERE index_id = ? ORDER BY nav_date DESC LIMIT 1',
-      indexId
+      'SELECT nav_value FROM market_index_nav_history WHERE index_id = ? AND nav_date < ? ORDER BY nav_date DESC LIMIT 1',
+      indexId, navDate
     );
 
     const dailyReturn = prevNav && prevNav.nav_value > 0
       ? (totalValue - prevNav.nav_value) / prevNav.nav_value
       : null;
 
-    // Circuit breaker: check drawdown from peak
+    // Circuit breaker: check drawdown from peak (peak as known at navDate)
     const peakRow = await db.get<{ peak: number }>(
-      'SELECT MAX(nav_value) as peak FROM market_index_nav_history WHERE index_id = ?',
-      indexId
+      'SELECT MAX(nav_value) as peak FROM market_index_nav_history WHERE index_id = ? AND nav_date < ?',
+      indexId, navDate
     );
     const peak = peakRow?.peak ?? totalValue;
     if (peak > 0 && totalValue < peak) {
@@ -167,63 +213,74 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
 
     // Get inception NAV for cumulative return
     const inceptionNav = await db.get<{ nav_value: number }>(
-      'SELECT nav_value FROM market_index_nav_history WHERE index_id = ? ORDER BY nav_date ASC LIMIT 1',
-      indexId
+      'SELECT nav_value FROM market_index_nav_history WHERE index_id = ? AND nav_date <= ? ORDER BY nav_date ASC LIMIT 1',
+      indexId, navDate
     );
 
     const cumulativeReturn = inceptionNav && inceptionNav.nav_value > 0
       ? (totalValue - inceptionNav.nav_value) / inceptionNav.nav_value
       : 0;
 
-    // Record NAV
-    const today = new Date().toISOString().split('T')[0];
-
-    // Upsert: delete existing entry for today then insert
+    // Record NAV — upsert: delete the existing entry for navDate then insert
     await db.run(
       'DELETE FROM market_index_nav_history WHERE index_id = ? AND nav_date = ?',
-      indexId, today
+      indexId, navDate
     );
 
     await db.run(`
       INSERT INTO market_index_nav_history (index_id, nav_date, nav_value, daily_return, cumulative_return)
       VALUES (?, ?, ?, ?, ?)
-    `, indexId, today, totalValue, dailyReturn, cumulativeReturn);
+    `, indexId, navDate, totalValue, dailyReturn, cumulativeReturn);
 
-    // Update index record
-    await db.run(
-      "UPDATE market_indexes SET current_nav = ?, total_return = ?, updated_at = NOW() WHERE id = ?",
-      totalValue, cumulativeReturn, indexId
-    );
+    // Update index record — "current" only when this IS the current session.
+    if (isLatestSession) {
+      await db.run(
+        "UPDATE market_indexes SET current_nav = ?, total_return = ?, updated_at = NOW() WHERE id = ?",
+        totalValue, cumulativeReturn, indexId
+      );
+    }
 
-    return { nav: totalValue, dailyReturn, holdingsUpdated };
+    return { nav: totalValue, dailyReturn, holdingsUpdated, written: true };
   }
 
   /**
    * Update NAV for all active indexes.
+   *
+   * `asOfDate` ('YYYY-MM-DD', default today) recomputes a past session from the
+   * bars now on hand — used to repair a NAV row written before that session's
+   * prices had landed. Indexes with no bar for the session are skipped, not
+   * written flat.
    */
-  async function updateAllActiveIndexes(): Promise<{
+  async function updateAllActiveIndexes(asOfDate?: string): Promise<{
     updated: number;
-    results: Array<{ indexId: string; nav: number; error?: string }>;
+    skipped: number;
+    results: Array<{ indexId: string; nav: number; written?: boolean; error?: string }>;
   }> {
     const indexes = await db.all<{ id: string; name: string }>(
       "SELECT id, name FROM market_indexes WHERE status = 'active'"
     );
 
-    const results: Array<{ indexId: string; nav: number; error?: string }> = [];
+    const results: Array<{ indexId: string; nav: number; written?: boolean; error?: string }> = [];
 
     for (const idx of indexes) {
       try {
-        const result = await calculateDailyNav(idx.id);
-        results.push({ indexId: idx.id, nav: result.nav });
-        console.log(`[nav-engine] ${idx.name}: NAV=${result.nav.toFixed(2)}, return=${result.dailyReturn !== null ? (result.dailyReturn * 100).toFixed(3) + '%' : 'N/A'}`);
+        const result = await calculateDailyNav(idx.id, asOfDate);
+        results.push({ indexId: idx.id, nav: result.nav, written: result.written });
+        if (result.written) {
+          console.log(`[nav-engine] ${idx.name}: NAV=${result.nav.toFixed(2)}, return=${result.dailyReturn !== null ? (result.dailyReturn * 100).toFixed(3) + '%' : 'N/A'}`);
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        results.push({ indexId: idx.id, nav: 0, error: message });
+        results.push({ indexId: idx.id, nav: 0, written: false, error: message });
         console.error(`[nav-engine] ${idx.name} failed: ${message}`);
       }
     }
 
-    return { updated: results.filter(r => !r.error).length, results };
+    return {
+      updated: results.filter(r => !r.error && r.written).length,
+      skipped: results.filter(r => !r.error && !r.written).length,
+      results,
+    };
   }
 
   /**
