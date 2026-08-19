@@ -52,6 +52,13 @@ function getModelConfig(tier: GapModelTier) {
   const bare = String(tier).replace(/^(sdk|codex):/, '');
   const isOpus = tier === 'opus' || /(^|[-/])opus/i.test(bare);
   const isSonnet = tier === 'sonnet' || /(^|[-/])sonnet/i.test(bare);
+  // Any other Claude — Fable, Haiku, or a family that does not exist yet.
+  // sdk:claude-fable-5 is one of three models the subscription engine actually
+  // offers today, and without this branch it would assess at think_hard/64K
+  // while its two siblings got investigate/128K, for no reason a user could
+  // see. Output budget stays conservative because the family is unknown;
+  // reasoning depth does not, because it is still Claude.
+  const isOtherClaude = !isOpus && !isSonnet && /^claude[-.]/i.test(bare);
 
   // Aliases resolve to the current default of their family; a real id is used
   // verbatim so the selector's choice is honoured exactly.
@@ -68,6 +75,14 @@ function getModelConfig(tier: GapModelTier) {
       model: (tier === 'sonnet' ? 'claude-sonnet-4-6' : String(tier)) as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 40000,
+      maxTokensSynthesis: 128_000,
+    };
+  }
+  if (isOtherClaude) {
+    return {
+      model: String(tier),
+      thinkingLevel: 'investigate' as string,
+      maxTokensBatch: 16000,
       maxTokensSynthesis: 128_000,
     };
   }

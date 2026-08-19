@@ -74,6 +74,25 @@ describe('gap assessment — model tier resolution', () => {
       expect(c.thinkingLevel).toBe('investigate');
     });
 
+    it('gives every offered subscription model the same reasoning depth', () => {
+      // The engine offers Opus 5, Sonnet 5 and Fable 5. Fable matches neither
+      // the opus nor the sonnet pattern, so without a general Claude branch it
+      // silently assessed shallower than its two siblings.
+      const offered = ['sdk:claude-opus-5', 'sdk:claude-sonnet-5', 'sdk:claude-fable-5'];
+      for (const id of offered) {
+        const c = __getModelConfig(id);
+        expect(c.model, id).toBe(id);
+        expect(c.thinkingLevel, id).toBe('investigate');
+        expect(c.maxTokensSynthesis, id).toBe(128_000);
+      }
+    });
+
+    it('extends the same treatment to a Claude family that does not exist yet', () => {
+      const c = __getModelConfig('claude-newfamily-9');
+      expect(c.thinkingLevel).toBe('investigate');
+      expect(c.maxTokensSynthesis).toBe(128_000);
+    });
+
     it('passes a codex engine through untouched', () => {
       const c = __getModelConfig('codex:gpt-5.4');
       expect(c.model).toBe('codex:gpt-5.4');
