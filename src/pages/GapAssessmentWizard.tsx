@@ -17,7 +17,8 @@ import {
   RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
-import type { KnowledgeSourceConfig } from '@/lib/types';
+import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
+import ModelSelector from '@/components/shared/ModelSelector';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
 import { useExport } from '@/hooks/useExport';
 
@@ -421,37 +422,16 @@ function GapAssessmentWizardInner() {
     maturity: 3,
     concerns: '',
     documents: '',
-    modelTier: 'sonnet' as string,
+    modelTier: 'claude-sonnet-4-6' as string,
   });
 
-  // Fetch available non-Claude models for the model selector
-  const [extraModels, setExtraModels] = useState<Array<{ id: string; label: string; provider: string }>>([]);
-  useEffect(() => {
-    // Azure deployments
-    fetch('/api/azure-openai/deployments')
-      .then(r => r.ok ? r.json() : { deployments: [] })
-      .then((data: { deployments?: Array<{ deploymentName: string; displayName: string | null; modelName: string; isActive: boolean }> }) => {
-        const models: Array<{ id: string; label: string; provider: string }> = [];
-        for (const d of (data.deployments ?? []).filter(d => d.isActive !== false)) {
-          models.push({ id: `azure:${d.deploymentName}`, label: d.displayName || d.deploymentName, provider: 'Azure' });
-        }
-        // Check provider status for Mistral/OpenAI
-        fetch('/api/settings/provider-status')
-          .then(r => r.json())
-          .then((status: Record<string, boolean>) => {
-            if (status.MISTRAL_API_KEY) {
-              models.push({ id: 'mistral-large-latest', label: 'Mistral Large 3', provider: 'Mistral' });
-            }
-            if (status.OPENAI_API_KEY) {
-              models.push({ id: 'gpt-5.4', label: 'GPT-5.4', provider: 'OpenAI' });
-              models.push({ id: 'gpt-4o', label: 'GPT-4o', provider: 'OpenAI' });
-            }
-            setExtraModels(models);
-          })
-          .catch(() => setExtraModels(models));
-      })
-      .catch(() => {});
-  }, []);
+  /** Human label for a stored modelTier — legacy aliases plus real model ids. */
+  const modelTierLabel = (tier: string): string => {
+    if (tier === 'opus') return 'Opus 4.8 (deep reasoning)';
+    if (tier === 'sonnet') return 'Sonnet 4.6 (standard)';
+    return tier;
+  };
+
   const [scopeConfig, setScopeConfig] = useState<{ selectedThemes: string[] }>({ selectedThemes: [] });
   const [progressEvents, setProgressEvents] = useState<ProgressEvent[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -809,10 +789,15 @@ function GapAssessmentWizardInner() {
     if (currentStep === 5) void loadSecondOpinion();
   }, [currentStep, loadSecondOpinion]);
 
-  // Default the second-opinion model to the opposite Claude tier of the primary run
+  // Seed the second opinion with a model that is NOT the one that produced the
+  // findings — a challenge from the same model is not a second opinion. The
+  // old rule flipped between two hardcoded tiers; now that any model can be
+  // primary, fall back to the other Claude family and only then to a default.
   useEffect(() => {
     if (currentStep === 5 && !soTier) {
-      setSoTier(contextConfig.modelTier === 'opus' ? 'sonnet' : 'opus');
+      const primary = String(contextConfig.modelTier);
+      const primaryIsOpus = primary === 'opus' || /opus/i.test(primary);
+      setSoTier(primaryIsOpus ? 'claude-sonnet-4-6' : 'claude-opus-4-8');
     }
   }, [currentStep, contextConfig.modelTier, soTier]);
 
@@ -1438,50 +1423,25 @@ function GapAssessmentWizardInner() {
               />
             </div>
 
-            {/* ── AI Model Tier ─────────────────────────────────────────── */}
+            {/* ── AI Model ──────────────────────────────────────────────── */}
             <div className="rounded-xl border border-border bg-adv-card p-4">
               <label className="mb-2 block text-xs font-medium text-adv-gray">AI Analysis Depth</label>
-              <p className="text-[11px] text-adv-gray mb-3">Choose the AI model for all assessment stages. Opus provides deeper reasoning but costs more and takes longer.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setContextConfig(c => ({ ...c, modelTier: 'sonnet' }))}
-                  className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === 'sonnet' ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'sonnet' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                    <span className="text-sm font-medium text-adv-off-white">Sonnet 4.6</span>
-                  </div>
-                  <p className="text-[11px] text-adv-gray leading-snug">Fast &amp; thorough. Deep thinking (32K budget) on every stage. Good for standard assessments.</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setContextConfig(c => ({ ...c, modelTier: 'opus' }))}
-                  className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === 'opus' ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'opus' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                    <span className="text-sm font-medium text-adv-off-white">Opus 4.8</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-adv-gold/20 text-adv-gold font-medium">Deep</span>
-                  </div>
-                  <p className="text-[11px] text-adv-gray leading-snug">Maximum reasoning depth. Adaptive thinking at full effort. Best for critical, company-shaping assessments.</p>
-                </button>
-                {extraModels.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setContextConfig(c => ({ ...c, modelTier: m.id }))}
-                    className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === m.id ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === m.id ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                      <span className="text-sm font-medium text-adv-off-white">{m.label}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">{m.provider}</span>
-                    </div>
-                    <p className="text-[11px] text-adv-gray leading-snug">{m.provider} model. Good for multi-provider comparison or when Claude is unavailable.</p>
-                  </button>
-                ))}
-              </div>
+              <p className="text-[11px] text-adv-gray mb-3">
+                Choose the model for all assessment stages. Claude Opus reasons deepest but costs more and takes
+                longer; Sonnet is the balanced default. Subscription engines run through your Claude sign-in
+                instead of an API key.
+              </p>
+              {/* The shared selector, as everywhere else in ANTON — it already
+                  carries the full model registry plus Azure deployments,
+                  OpenAI-compatible endpoints, local Ollama and the sdk:/codex:
+                  subscription engines. The bespoke picker this replaced named
+                  two Claude versions inline and hand-assembled a short list of
+                  extras, so it went stale every time the registry moved and
+                  could never offer a subscription engine at all. */}
+              <ModelSelector
+                value={contextConfig.modelTier as ModelId}
+                onChange={(m) => setContextConfig(c => ({ ...c, modelTier: m as string }))}
+              />
             </div>
 
             {/* ── Evidence Documents ─────────────────────────────────────── */}
@@ -1660,7 +1620,7 @@ function GapAssessmentWizardInner() {
                   Entity: {contextConfig.entityType} — {contextConfig.jurisdiction}<br />
                   Frameworks: {fwIds.join(', ')}<br />
                   Maturity: {MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)<br />
-                  Model: {contextConfig.modelTier === 'opus' ? 'Opus 4.8 (deep reasoning)' : 'Sonnet 4.6 (standard)'}
+                  Model: {modelTierLabel(contextConfig.modelTier)}
                 </p>
                 {iterations.length > 0 && (
                   <label className="mb-4 flex max-w-md items-start gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/5 px-3 py-2.5 text-left cursor-pointer">
@@ -2088,18 +2048,12 @@ function GapAssessmentWizardInner() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <select
-                    value={soTier}
-                    onChange={e => setSoTier(e.target.value)}
-                    disabled={soRunning}
-                    className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
-                  >
-                    {contextConfig.modelTier !== 'opus' && <option value="opus">Claude Opus 4.8</option>}
-                    {contextConfig.modelTier !== 'sonnet' && <option value="sonnet">Claude Sonnet 4.6</option>}
-                    {extraModels.filter(m => m.id !== contextConfig.modelTier).map(m => (
-                      <option key={m.id} value={m.id}>{m.label} ({m.provider})</option>
-                    ))}
-                  </select>
+                  {/* Second opinion deliberately uses the same selector as the
+                      primary choice, so any model the assessment can run on can
+                      also challenge it. */}
+                  <div className="w-56">
+                    <ModelSelector value={soTier as ModelId} onChange={(m) => setSoTier(m as string)} />
+                  </div>
                   <button
                     onClick={runSecondOpinion}
                     disabled={soRunning || !soTier || findings.length === 0}
