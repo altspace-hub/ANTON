@@ -21,12 +21,14 @@ interface AttributionPosition {
   weightChangePct: number; subsequentReturnPct: number; pnlBps: number;
   returnLowPct: number; returnHighPct: number;
   predictionsCredited: number; avgSignalScore: number;
+  shadow: boolean;
 }
 interface AttributionSummary {
   positions: AttributionPosition[];
   totals: {
     distinctPositions: number; totalPnlPct: number; helped: number; hurt: number;
     attributedPredictions: number; rawSumPnlPct: number;
+    shadowPositions: number; shadowPnlPct: number;
   };
   coverage: {
     attributionRows: number; computedRows: number; pendingRows: number;
@@ -365,7 +367,7 @@ export default function MarketLearningPage() {
             </div>
           )
         ) : activeTab === 'attribution' ? (
-          !attribution || attribution.totals.distinctPositions === 0 ? (
+          !attribution || (attribution.totals.distinctPositions === 0 && attribution.totals.shadowPositions === 0) ? (
             <p className="text-sm text-adv-gray text-center py-4">
               No prediction has reached the portfolio yet — attribution is recorded when a rebalance acts on a signal.
             </p>
@@ -397,6 +399,21 @@ export default function MarketLearningPage() {
                 </div>
               </div>
 
+              {attribution.totals.shadowPositions > 0 && (
+                <div className="rounded-lg border border-adv-gold/30 bg-adv-dark p-3">
+                  <p className="text-xs text-adv-gold">
+                    Shadow — proposed, never traded
+                  </p>
+                  <p className="text-sm text-adv-off-white mt-1">
+                    <span className={attribution.totals.shadowPnlPct >= 0 ? 'text-adv-green' : 'text-adv-red'}>
+                      {attribution.totals.shadowPnlPct >= 0 ? '+' : ''}{attribution.totals.shadowPnlPct.toFixed(3)}%
+                    </span>
+                    {' '}across {attribution.totals.shadowPositions} position(s). These are rehearsals while live
+                    rebalancing is paused — they are excluded from the contribution figure above because no holding moved.
+                  </p>
+                </div>
+              )}
+
               {/* The caveat belongs next to the number, not in a doc nobody opens. */}
               <p className="text-xs text-adv-gray-med leading-relaxed">
                 Contribution is weight change x subsequent return, rolled up to one row per position.
@@ -423,7 +440,12 @@ export default function MarketLearningPage() {
                   <tbody>
                     {attribution.positions.map((pos) => (
                       <tr key={`${pos.rebalanceId}-${pos.symbol}`} className="border-b border-adv-dark/50">
-                        <td className="py-1.5 pr-3 text-adv-off-white font-medium">{pos.symbol}</td>
+                        <td className="py-1.5 pr-3 text-adv-off-white font-medium">
+                          {pos.symbol}
+                          {pos.shadow && (
+                            <span className="ml-1.5 rounded bg-adv-gold/15 px-1 py-0.5 text-[10px] text-adv-gold align-middle">shadow</span>
+                          )}
+                        </td>
                         <td className="py-1.5 pr-3 text-adv-gray">{pos.executedAt}</td>
                         <td className={`py-1.5 pr-3 text-right ${pos.weightChangePct >= 0 ? 'text-adv-green' : 'text-adv-red'}`}>
                           {pos.weightChangePct >= 0 ? '+' : ''}{pos.weightChangePct.toFixed(2)}%

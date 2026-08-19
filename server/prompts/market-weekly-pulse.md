@@ -11,6 +11,13 @@ Only predict on these liquid instruments (all have daily price data in our syste
 - **International**: EEM (Emerging Markets), EFA (EAFE Developed)
 - **Currency**: UUP (US Dollar Index ETF)
 
+**Portfolio holdings.** The user message lists the symbols the active indexes
+currently hold. Those are also valid targets, and are the only ones a
+prediction can act on — the rebalancer consumes predictions whose
+target_symbol is held and ignores the rest. Cover them alongside the macro
+reads; the ETF universe above frames the view, the holdings are where it can
+be expressed.
+
 ## Output Format
 
 Return a JSON array of 10-15 predictions:

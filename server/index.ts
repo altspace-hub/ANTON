@@ -1254,9 +1254,15 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       String(process.env.MARKETS_FETCH_DISABLED || '').toLowerCase() === 'true';
     const marketsAutorebalanceDisabled =
       String(process.env.MARKETS_AUTOREBALANCE_DISABLED || '').toLowerCase() === 'true';
+    // Rehearse rebalancing without committing holdings. Only meaningful while
+    // the live path is paused; see sweepShadowRebalance.
+    const marketsRebalanceShadow =
+      String(process.env.MARKETS_REBALANCE_SHADOW || '').toLowerCase() === 'true';
     if (marketsThinkingDisabled) console.log('[markets-schedule] MARKETS_THINKING_DISABLED=true — LLM phases will skip');
     if (marketsFetchDisabled) console.log('[markets-schedule] MARKETS_FETCH_DISABLED=true — data fetches will skip');
     if (marketsAutorebalanceDisabled) console.log('[markets-schedule] MARKETS_AUTOREBALANCE_DISABLED=true — scheduled rebalances will skip');
+    if (marketsRebalanceShadow && marketsAutorebalanceDisabled) console.log('[markets-schedule] MARKETS_REBALANCE_SHADOW=true — rebalances recorded but NOT executed');
+    if (marketsRebalanceShadow && !marketsAutorebalanceDisabled) console.warn('[markets-schedule] MARKETS_REBALANCE_SHADOW ignored — live rebalancing is enabled');
 
     // ── Markets automation opt-in (plan 1.11) ──────────────────────────────
     // MARKETS_AUTOMATION=true is the explicit opt-in master switch for every
@@ -1657,6 +1663,30 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
 
     // M6: time-based scheduled rebalance sweep. Deterministic (no LLM); gated by
     // MARKETS_AUTOREBALANCE_DISABLED for manual-only environments.
+    /**
+     * Shadow rebalance: record what the signals WOULD trade, move nothing.
+     *
+     * Runs only while live rebalancing is paused — the two are alternatives,
+     * not layers, and running both would double-count attribution against the
+     * same holdings. Free of LLM cost: generateRebalanceProposal is arithmetic
+     * over predictions and prices.
+     */
+    async function sweepShadowRebalance(): Promise<void> {
+      if (!marketsRebalanceShadow || !marketsAutorebalanceDisabled) return;
+      try {
+        const { createMarketIndexRebalanceService } =
+          await import('./services/market-index-rebalance-service.js');
+        const svc = await createMarketIndexRebalanceService(db);
+        const r = await svc.runShadowRebalances();
+        if (r.proposed.length > 0) {
+          const total = r.proposed.reduce((a, p) => a + p.trades, 0);
+          console.log(`[markets-rebalance-shadow] checked=${r.checked} proposed=${r.proposed.length} would-be trades=${total} (nothing executed)`);
+        }
+      } catch (err) {
+        console.error('[markets-rebalance-shadow] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }
+
     async function sweepScheduledRebalance(): Promise<void> {
       if (marketsAutorebalanceDisabled) return;
       try {
@@ -1697,6 +1727,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       await sweepThesisLifecycle();
       await sweepInvestigationLifecycle();
       await sweepScheduledRebalance();
+      await sweepShadowRebalance();
       await sweepBacklogTriage();
     }
 
@@ -1706,6 +1737,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     cron.schedule('0 5 * * *', () => { void sweepThesisLifecycle(); }, MARKET_TZ);
     cron.schedule('30 5 * * *', () => { void sweepInvestigationLifecycle(); }, MARKET_TZ);
     cron.schedule('0 6 * * *', () => { void sweepScheduledRebalance(); }, MARKET_TZ);
+    cron.schedule('15 6 * * *', () => { void sweepShadowRebalance(); }, MARKET_TZ);
     cron.schedule('30 6 * * *', () => { void sweepBacklogTriage(); }, MARKET_TZ);
 
     // Catch-up: also run all free sweeps at 12:00 CET (a time the workstation is

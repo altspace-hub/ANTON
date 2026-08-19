@@ -254,11 +254,15 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
       weightChangePct: number; subsequentReturnPct: number; pnlBps: number;
       returnLowPct: number; returnHighPct: number;
       predictionsCredited: number; avgSignalScore: number;
+      /** 'shadow' rows describe trades that were never executed. */
+      shadow: boolean;
     }>;
     totals: {
       distinctPositions: number; totalPnlPct: number;
       helped: number; hurt: number;
       attributedPredictions: number; rawSumPnlPct: number;
+      /** Counterfactual: positions the signals proposed but never traded. */
+      shadowPositions: number; shadowPnlPct: number;
     };
     coverage: {
       attributionRows: number; computedRows: number; pendingRows: number;
@@ -270,11 +274,12 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
       weight_change: string | number; subsequent_return: string | number;
       attribution_pnl: string | number; predictions_credited: string | number;
       return_low: string | number; return_high: string | number;
-      avg_signal: string | number | null;
+      avg_signal: string | number | null; trigger_type: string | null;
     }>(
       `SELECT a.rebalance_id,
               p.target_symbol AS symbol,
               TO_CHAR(r.executed_at, 'YYYY-MM-DD') AS executed_at,
+              MAX(r.trigger_type)       AS trigger_type,
               -- weight_change is constant within a (rebalance, symbol) group:
               -- it is one position's move. subsequent_return is NOT — each
               -- contributing prediction has its own horizon and so its own
@@ -309,6 +314,7 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
       returnHighPct: Number(r.return_high) * 100,
       predictionsCredited: Number(r.predictions_credited),
       avgSignalScore: r.avg_signal == null ? 0 : Number(r.avg_signal),
+      shadow: r.trigger_type === 'shadow',
     }));
 
     const raw = await db.get<{ raw_sum: string | number | null; attributed: string | number }>(
@@ -331,10 +337,14 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
     return {
       positions: mapped,
       totals: {
-        distinctPositions: mapped.length,
-        totalPnlPct: mapped.reduce((acc, r) => acc + r.pnlBps, 0) / 100,
-        helped: mapped.filter(r => r.pnlBps > 0).length,
-        hurt: mapped.filter(r => r.pnlBps < 0).length,
+        // Executed and shadow are reported apart: merging them would present
+        // trades that never happened as portfolio performance.
+        distinctPositions: mapped.filter(r => !r.shadow).length,
+        totalPnlPct: mapped.filter(r => !r.shadow).reduce((acc, r) => acc + r.pnlBps, 0) / 100,
+        helped: mapped.filter(r => !r.shadow && r.pnlBps > 0).length,
+        hurt: mapped.filter(r => !r.shadow && r.pnlBps < 0).length,
+        shadowPositions: mapped.filter(r => r.shadow).length,
+        shadowPnlPct: mapped.filter(r => r.shadow).reduce((acc, r) => acc + r.pnlBps, 0) / 100,
         attributedPredictions: Number(raw?.attributed ?? 0),
         rawSumPnlPct: Number(raw?.raw_sum ?? 0) * 100,
       },

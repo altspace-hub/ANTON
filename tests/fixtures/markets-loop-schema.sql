@@ -204,6 +204,9 @@ CREATE TABLE IF NOT EXISTS market_indexes (
   current_nav        NUMERIC(16,6) DEFAULT 1000.0,
   currency           TEXT DEFAULT 'USD',
   drawdown_alert     TEXT,
+  -- Gates the LIVE rebalance path. Shadow runs must never write it, so the
+  -- column has to exist here for that invariant to be testable at all.
+  last_rebalance_at  TIMESTAMPTZ,
   created_at         TIMESTAMPTZ DEFAULT NOW(),
   updated_at         TIMESTAMPTZ DEFAULT NOW()
 );

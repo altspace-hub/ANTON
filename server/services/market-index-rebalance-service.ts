@@ -980,6 +980,97 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
 
   // ── Run Scheduled Rebalances ─────────────────────────────────────────────
 
+  /**
+   * Shadow rebalance: compute what the signals WOULD do, record it, move
+   * nothing.
+   *
+   * Scheduled rebalancing has been off since 2026-04-27, so predictions have
+   * had no route to the portfolio and the attribution ledger has one data
+   * point. Shadow mode reopens the measurement without committing holdings:
+   * the proposal, the would-be trades and the prediction→weight attribution
+   * are all recorded, so the Portfolio Impact readout fills with counterfactual
+   * contribution that can be judged before anything is risked.
+   *
+   * Two things it deliberately does NOT do:
+   *   • touch market_index_holdings — nothing moves, so pre and post snapshots
+   *     are identical by construction;
+   *   • touch market_indexes.last_rebalance_at — that field gates the LIVE
+   *     path, and a shadow run writing it would silently suppress the real
+   *     rebalance it is supposed to be rehearsing.
+   *
+   * Cadence comes from the index's own rebalance_frequency, measured against
+   * the last SHADOW run, so the simulation matches what live would have done.
+   * That makes evidence accrue at the real rate — monthly for most indexes —
+   * rather than manufacturing daily rows that only look like data.
+   */
+  async function runShadowRebalances(): Promise<{
+    checked: number; proposed: Array<{ indexId: string; rebalanceId: string; trades: number }>;
+  }> {
+    const activeIndexes = await db.all<IndexRow>(
+      "SELECT * FROM market_indexes WHERE status = 'active'"
+    );
+    const proposed: Array<{ indexId: string; rebalanceId: string; trades: number }> = [];
+
+    for (const index of activeIndexes) {
+      try {
+        const threshold = FREQUENCY_DAYS[index.rebalance_frequency] ?? 30;
+        const last = await db.get<{ days_since: number | null }>(
+          `SELECT ${daysDiff(db.dialect, 'NOW()', 'MAX(executed_at)')} AS days_since
+             FROM market_index_rebalances
+            WHERE index_id = ? AND trigger_type = 'shadow'`,
+          index.id,
+        );
+        const daysSince = last?.days_since == null ? null : Math.floor(Number(last.days_since));
+        if (daysSince !== null && daysSince < threshold) continue;
+
+        const proposal = await generateRebalanceProposal(index.id);
+        const actionable = proposal.proposedChanges.filter(c => c.action !== 'hold');
+        if (actionable.length === 0) continue;
+
+        const holdings = await db.all<HoldingRow>(
+          'SELECT * FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL ORDER BY weight DESC',
+          index.id,
+        );
+        // Identical pre/post: the whole point is that nothing moved.
+        const snapshot = JSON.stringify(holdings.map(h => ({
+          symbol: h.symbol, weight: h.weight, shares: h.shares,
+        })));
+
+        const trades = actionable.map(c => ({
+          symbol: c.symbol,
+          action: c.action === 'remove' ? 'sell' : c.action === 'add' ? 'buy' : 'adjust',
+          oldWeight: holdings.find(h => h.symbol === c.symbol)?.weight ?? 0,
+          newWeight: c.proposedWeight,
+        }));
+
+        const rebalanceId = `shadow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await db.run(`
+          INSERT INTO market_index_rebalances
+            (id, index_id, rebalance_type, trigger_type, pre_holdings, post_holdings, trades, reasoning, nav_at_rebalance)
+          VALUES (?, ?, 'shadow', 'shadow', ?, ?, ?, ?, ?)
+        `, rebalanceId, index.id, snapshot, snapshot, JSON.stringify(trades),
+           `SHADOW (not executed): ${trades.length} trade(s) the signals would have made.`,
+           index.current_nav);
+
+        try {
+          const { createMarketPredictionAttributionService } =
+            await import('./market-prediction-attribution-service.js');
+          const attribution = await createMarketPredictionAttributionService(db);
+          await attribution.recordAttributionsForRebalance(rebalanceId, trades);
+        } catch (err) {
+          console.warn(`[shadow-rebalance] attribution failed for ${rebalanceId}:`,
+            err instanceof Error ? err.message : err);
+        }
+
+        proposed.push({ indexId: index.id, rebalanceId, trades: trades.length });
+      } catch (err) {
+        console.error(`[shadow-rebalance] failed for ${index.id}:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    return { checked: activeIndexes.length, proposed };
+  }
+
   async function runScheduledRebalances(): Promise<{ checked: number; rebalanced: string[] }> {
     const activeIndexes = await db.all<IndexRow>(
       "SELECT * FROM market_indexes WHERE status = 'active'"
@@ -1208,6 +1299,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
   return {
     shouldRebalance,
     generateRebalanceProposal,
+    runShadowRebalances,
     evaluateHoldings,
     screenUniverse,
     rankCandidates,

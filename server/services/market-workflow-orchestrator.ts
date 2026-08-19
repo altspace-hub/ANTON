@@ -1600,6 +1600,30 @@ Return ONLY the JSON array, no other text.`;
       const today = new Date().toISOString().split('T')[0];
       const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
 
+      // Holdings context: the rebalancer only consumes predictions whose
+      // target_symbol is actually held (target_symbol IN (held symbols)), so a
+      // forecast on an unheld ETF can never influence the portfolio no matter
+      // how good it is. On 2026-08-19 only 30 of 92 live predictions named a
+      // held symbol — two thirds of the work was unreachable by construction.
+      // Surfacing the book here lets the analyst cover names that can act.
+      const heldRows = await db.all<{ symbol: string; name: string | null }>(
+        `SELECT DISTINCT h.symbol, h.name
+           FROM market_index_holdings h
+           JOIN market_indexes i ON i.id = h.index_id
+          WHERE h.removed_at IS NULL AND i.status = 'active'
+          ORDER BY h.symbol`
+      );
+      const heldSymbols = heldRows.map(r => r.symbol);
+      const holdingsContext = heldSymbols.length === 0 ? '' : `
+CURRENT PORTFOLIO HOLDINGS (${heldSymbols.length} symbols across the active indexes):
+${heldSymbols.join(', ')}
+
+A prediction only reaches the portfolio if its target_symbol is one of the
+above. Devote AT LEAST HALF of your predictions to these names, and use the
+ETF universe for the macro reads that frame them. Do not force a call on a
+holding you have no evidence for — coverage matters less than being right.
+`;
+
       const userMessage = `Today is ${dayName}, ${today}.
 
 RECENT MARKET INTELLIGENCE (${recentAtoms.length} atoms):
@@ -1607,8 +1631,8 @@ ${atomContext.slice(0, 3000)}
 ${trackContext}
 ${pulseInsights.promptContext}
 ${quantContext}
-
-Generate 8-12 directional predictions on liquid ETFs spread across THREE horizon bands (this mix is mandatory):
+${holdingsContext}
+Generate 8-12 directional predictions spread across THREE horizon bands (this mix is mandatory):
 - 3-4 TACTICAL: time_horizon_days 1-3 (next-session moves, event reactions)
 - 4-5 SWING: time_horizon_days 7-21 (earnings windows, rotation, mean reversion)
 - 2-3 POSITION: time_horizon_days 30-90 (structural trends: rates path, AI capex, energy cycle)

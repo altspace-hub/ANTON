@@ -64,6 +64,7 @@ import { createMarketPredictionAttributionService } from '../../server/services/
 import { createMarketInvestigationService } from '../../server/services/market-investigation-service';
 import { createWhyChainExecutor } from '../../server/services/market-why-chain-executor';
 import { createMarketWorkflowOrchestrator } from '../../server/services/market-workflow-orchestrator';
+import { createMarketIndexRebalanceService } from '../../server/services/market-index-rebalance-service';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -1184,6 +1185,112 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       const row = await db.get<{ status: string }>(
         `SELECT status FROM market_why_chains WHERE id = 'mwhy_fresh'`);
       expect(row?.status).toBe('in_progress');
+    });
+  });
+
+  // ── 11. Shadow rebalance ─────────────────────────────────────────────────
+
+  describe('shadow rebalance (market-index-rebalance-service)', () => {
+    /**
+     * Live rebalancing has been paused since 2026-04-27, so predictions have
+     * had no route to the portfolio and attribution has one data point. Shadow
+     * mode reopens the measurement without committing holdings — but only if it
+     * genuinely commits nothing.
+     */
+    beforeEach(async () => {
+      await db.run(
+        `INSERT INTO market_indexes (id, name, status, current_nav, rebalance_frequency)
+         VALUES ('idx_s', 'Shadow Test', 'active', 1000, 'monthly')`);
+      // Weights must be OFF their target or every change is 'hold' and the
+      // proposal is empty — which would make every assertion below vacuous.
+      // 'equal' weighting over two holdings targets 0.5/0.5, so 0.8/0.2 drifts
+      // well past the 2% tolerance in both directions.
+      await db.run(
+        `INSERT INTO market_index_holdings (index_id, symbol, weight, shares, entry_price, current_price)
+         VALUES ('idx_s', 'AAPL', 0.8, 16, 100, 100), ('idx_s', 'MSFT', 0.2, 4, 100, 100)`);
+    });
+
+    it('produces a non-empty proposal for a drifted index', async () => {
+      // Guards the guard: if this returns nothing, every invariant below passes
+      // for the wrong reason.
+      const svc = await createMarketIndexRebalanceService(db);
+      const r = await svc.runShadowRebalances();
+      expect(r.checked).toBeGreaterThan(0);
+      expect(r.proposed.length).toBeGreaterThan(0);
+      expect(r.proposed[0].trades).toBeGreaterThan(0);
+    });
+
+    it('records a proposal without moving a single holding', async () => {
+      const before = await db.all<{ symbol: string; weight: string; removed_at: string | null }>(
+        `SELECT symbol, weight, removed_at FROM market_index_holdings WHERE index_id = 'idx_s' ORDER BY symbol`);
+
+      const svc = await createMarketIndexRebalanceService(db);
+      await svc.runShadowRebalances();
+
+      const after = await db.all<{ symbol: string; weight: string; removed_at: string | null }>(
+        `SELECT symbol, weight, removed_at FROM market_index_holdings WHERE index_id = 'idx_s' ORDER BY symbol`);
+      expect(after).toEqual(before);
+    });
+
+    it('never stamps last_rebalance_at, which gates the live path', async () => {
+      const svc = await createMarketIndexRebalanceService(db);
+      await svc.runShadowRebalances();
+
+      const idx = await db.get<{ last_rebalance_at: string | null }>(
+        `SELECT last_rebalance_at FROM market_indexes WHERE id = 'idx_s'`);
+      // A shadow run writing this would silently suppress the real rebalance
+      // it is supposed to be rehearsing.
+      expect(idx?.last_rebalance_at).toBeNull();
+    });
+
+    it('marks its rows shadow so they are not read as executed performance', async () => {
+      const svc = await createMarketIndexRebalanceService(db);
+      await svc.runShadowRebalances();
+
+      const rows = await db.all<{ trigger_type: string; rebalance_type: string; pre_holdings: string; post_holdings: string }>(
+        `SELECT trigger_type, rebalance_type, pre_holdings, post_holdings
+           FROM market_index_rebalances WHERE index_id = 'idx_s'`);
+      for (const r of rows) {
+        expect(r.trigger_type).toBe('shadow');
+        expect(r.pre_holdings).toEqual(r.post_holdings);   // nothing moved
+      }
+    });
+
+    it('keeps shadow contribution out of the executed total', async () => {
+      // Attribution rows are only written for symbols that have live
+      // predictions — without these the shadow run records nothing to leak and
+      // the assertions below would pass for the wrong reason.
+      await seedPrediction(db, {
+        id: 'p_sh1', symbol: 'AAPL', direction: 'up', confidence: 0.6,
+        deadline: new Date(Date.now() + 10 * DAY_MS).toISOString(),
+      });
+      await seedPrediction(db, {
+        id: 'p_sh2', symbol: 'MSFT', direction: 'down', confidence: 0.6,
+        deadline: new Date(Date.now() + 10 * DAY_MS).toISOString(),
+      });
+
+      const svc = await createMarketIndexRebalanceService(db);
+      await svc.runShadowRebalances();
+
+      const attrRows = await db.all<{ id: number }>(
+        `SELECT a.id FROM market_prediction_attribution a
+           JOIN market_index_rebalances r ON r.id = a.rebalance_id
+          WHERE r.trigger_type = 'shadow'`);
+      expect(attrRows.length, 'shadow attribution must exist for this to test anything').toBeGreaterThan(0);
+
+      // Give it a computed pnl so it WOULD surface if the summary failed to
+      // separate rehearsals from executed trades.
+      await db.run(
+        `UPDATE market_prediction_attribution SET subsequent_return = 0.1, attribution_pnl = 0.01, computed_at = NOW()
+          WHERE rebalance_id IN (SELECT id FROM market_index_rebalances WHERE trigger_type = 'shadow')`);
+
+      const attr = await createMarketPredictionAttributionService(db);
+      const summary = await attr.getAttributionSummary();
+
+      expect(summary.totals.shadowPositions).toBeGreaterThan(0);   // counted, but apart
+      expect(summary.totals.distinctPositions).toBe(0);            // executed: none
+      expect(summary.totals.totalPnlPct).toBe(0);
+      expect(summary.positions.filter(p => p.shadow).length).toBe(summary.totals.shadowPositions);
     });
   });
 });

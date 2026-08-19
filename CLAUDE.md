@@ -529,6 +529,7 @@ See `.env.example` for the complete list. Key variables:
 | `MARKETS_AUTOMATION` | No | `true` opts in to the token/data-spending markets crons (~20 jobs). Unset = only free deterministic loops run. The `MARKETS_*_DISABLED` flags below are finer overrides within an enabled tier. |
 | `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. Markets LLM calls run on the Settings → "Markets AI model" choice (app_settings `markets_model`, e.g. `sdk:claude-opus-5` for subscription auth); unset falls back to the utility model. |
 | `MARKETS_FETCH_DISABLED` | No | `true` pauses every external markets data fetch (FMP, news, RSS). |
+| `MARKETS_REBALANCE_SHADOW` | No | `true` records what scheduled rebalancing WOULD trade without moving any holding, so prediction→portfolio attribution accrues before anything is risked. Only active while `MARKETS_AUTOREBALANCE_DISABLED=true`; the two are alternatives, not layers. Shadow rows carry `trigger_type='shadow'` and are reported apart from executed P&L in Markets → Learning → Portfolio Impact. |
 | `RADAR_AUTOMATION_DISABLED` | No | `true` disables radar auto-scan + scheduled radar cron. Manual UI scans still work. |
 
 ---
