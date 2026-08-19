@@ -166,13 +166,22 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
       target_symbol: string | null;
       time_horizon_days: number | null;
       prediction_status: string;
-      validated_at: string | null;
-      rebalance_executed_at: string;
+      validated_date: string | null;
+      rebalance_date: string;
+      rebalance_epoch_ms: string | number;
     }>(
+      // Dates are rendered to TEXT and epoch-ms in SQL, never handed over as
+      // timestamptz. node-postgres returns timestamptz as a JS Date, and this
+      // function called .slice(0, 10) on it — "row.rebalance_executed_at.slice
+      // is not a function" killed 39 of 45 rows on every 04:00 sweep since
+      // 2026-04-27, so attribution_pnl was NEVER computed for any prediction.
+      // p.validated_at had the identical problem one line further down.
       `SELECT
          a.id, a.prediction_id, a.rebalance_id, a.weight_change,
-         p.target_symbol, p.time_horizon_days, p.status AS prediction_status, p.validated_at,
-         r.executed_at AS rebalance_executed_at
+         p.target_symbol, p.time_horizon_days, p.status AS prediction_status,
+         TO_CHAR(p.validated_at, 'YYYY-MM-DD') AS validated_date,
+         TO_CHAR(r.executed_at, 'YYYY-MM-DD') AS rebalance_date,
+         (EXTRACT(EPOCH FROM r.executed_at) * 1000)::bigint AS rebalance_epoch_ms
        FROM market_prediction_attribution a
        JOIN market_predictions p ON p.id = a.prediction_id
        JOIN market_index_rebalances r ON r.id = a.rebalance_id
@@ -186,10 +195,9 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
     for (const row of candidates) {
       result.matured_considered++;
       try {
-        const endDate = pickEndDate(row);
-        if (!endDate) continue; // horizon not elapsed yet
-        const startDate = row.rebalance_executed_at.slice(0, 10);
-        const endDateStr = endDate.slice(0, 10);
+        const endDateStr = pickEndDate(row);
+        if (!endDateStr) continue; // horizon not elapsed yet
+        const startDate = row.rebalance_date;
         const symbol = row.target_symbol;
         if (!symbol) { result.skipped_missing_price++; continue; }
 
@@ -228,9 +236,122 @@ export async function createMarketPredictionAttributionService(db: DatabaseAdapt
     return result;
   }
 
+
+  /**
+   * Portfolio-level roll-up: did the prediction signals add or subtract?
+   *
+   * attribution_pnl is stored PER PREDICTION but describes a POSITION's move —
+   * when several predictions informed the same weight change they each carry
+   * the full figure. Summing the column therefore multiplies the real number
+   * (on the 2026-04-27 rebalance one NFLX weight change is credited to ten
+   * predictions, turning +8.0bps into +80.2bps). The roll-up de-duplicates to
+   * one row per (rebalance, symbol) before totalling; `predictions_credited`
+   * keeps the fan-out visible rather than hiding it.
+   */
+  async function getAttributionSummary(): Promise<{
+    positions: Array<{
+      rebalanceId: string; symbol: string; executedAt: string;
+      weightChangePct: number; subsequentReturnPct: number; pnlBps: number;
+      returnLowPct: number; returnHighPct: number;
+      predictionsCredited: number; avgSignalScore: number;
+    }>;
+    totals: {
+      distinctPositions: number; totalPnlPct: number;
+      helped: number; hurt: number;
+      attributedPredictions: number; rawSumPnlPct: number;
+    };
+    coverage: {
+      attributionRows: number; computedRows: number; pendingRows: number;
+      lastRebalanceAt: string | null; rebalanceCount: number;
+    };
+  }> {
+    const positions = await db.all<{
+      rebalance_id: string; symbol: string; executed_at: string;
+      weight_change: string | number; subsequent_return: string | number;
+      attribution_pnl: string | number; predictions_credited: string | number;
+      return_low: string | number; return_high: string | number;
+      avg_signal: string | number | null;
+    }>(
+      `SELECT a.rebalance_id,
+              p.target_symbol AS symbol,
+              TO_CHAR(r.executed_at, 'YYYY-MM-DD') AS executed_at,
+              -- weight_change is constant within a (rebalance, symbol) group:
+              -- it is one position's move. subsequent_return is NOT — each
+              -- contributing prediction has its own horizon and so its own
+              -- measurement end date (CVX 2026-04-27 spans -5.76% to +4.06%).
+              -- Independent MAX()es would splice values from different rows
+              -- into an arithmetically impossible triple, so average instead:
+              -- with weight constant, AVG(pnl) = weight x AVG(return) exactly.
+              -- min/max keep the horizon disagreement visible.
+              AVG(a.weight_change)      AS weight_change,
+              AVG(a.subsequent_return)  AS subsequent_return,
+              AVG(a.attribution_pnl)    AS attribution_pnl,
+              MIN(a.subsequent_return)  AS return_low,
+              MAX(a.subsequent_return)  AS return_high,
+              COUNT(*)                  AS predictions_credited,
+              AVG(a.signal_score)       AS avg_signal
+         FROM market_prediction_attribution a
+         JOIN market_predictions p ON p.id = a.prediction_id
+         JOIN market_index_rebalances r ON r.id = a.rebalance_id
+        WHERE a.attribution_pnl IS NOT NULL
+        GROUP BY a.rebalance_id, p.target_symbol, r.executed_at
+          ORDER BY AVG(a.attribution_pnl) DESC`,
+    );
+
+    const mapped = positions.map(r => ({
+      rebalanceId: r.rebalance_id,
+      symbol: r.symbol,
+      executedAt: r.executed_at,
+      weightChangePct: Number(r.weight_change) * 100,
+      subsequentReturnPct: Number(r.subsequent_return) * 100,
+      pnlBps: Number(r.attribution_pnl) * 10_000,
+      returnLowPct: Number(r.return_low) * 100,
+      returnHighPct: Number(r.return_high) * 100,
+      predictionsCredited: Number(r.predictions_credited),
+      avgSignalScore: r.avg_signal == null ? 0 : Number(r.avg_signal),
+    }));
+
+    const raw = await db.get<{ raw_sum: string | number | null; attributed: string | number }>(
+      `SELECT SUM(attribution_pnl) AS raw_sum, COUNT(*) AS attributed
+         FROM market_prediction_attribution WHERE attribution_pnl IS NOT NULL`,
+    );
+
+    const cov = await db.get<{
+      rows: string | number; computed: string | number; last_rebalance: string | null; rebalances: string | number;
+    }>(
+      `SELECT (SELECT COUNT(*) FROM market_prediction_attribution) AS rows,
+              (SELECT COUNT(*) FROM market_prediction_attribution WHERE attribution_pnl IS NOT NULL) AS computed,
+              (SELECT TO_CHAR(MAX(executed_at), 'YYYY-MM-DD') FROM market_index_rebalances) AS last_rebalance,
+              (SELECT COUNT(*) FROM market_index_rebalances) AS rebalances`,
+    );
+
+    const rows = Number(cov?.rows ?? 0);
+    const computed = Number(cov?.computed ?? 0);
+
+    return {
+      positions: mapped,
+      totals: {
+        distinctPositions: mapped.length,
+        totalPnlPct: mapped.reduce((acc, r) => acc + r.pnlBps, 0) / 100,
+        helped: mapped.filter(r => r.pnlBps > 0).length,
+        hurt: mapped.filter(r => r.pnlBps < 0).length,
+        attributedPredictions: Number(raw?.attributed ?? 0),
+        rawSumPnlPct: Number(raw?.raw_sum ?? 0) * 100,
+      },
+      coverage: {
+        attributionRows: rows,
+        computedRows: computed,
+        pendingRows: rows - computed,
+        lastRebalanceAt: cov?.last_rebalance ?? null,
+        rebalanceCount: Number(cov?.rebalances ?? 0),
+      },
+    };
+  }
+
   return {
     recordAttributionsForRebalance,
     computeMaturedAttributionPnL,
+    getAttributionSummary,
   };
 }
 
@@ -257,23 +378,28 @@ function computeSignalScore(p: PredictionRow, weightChange: number): number {
   return confidence * directionSign(p.predicted_direction) * weightChangeSign(weightChange);
 }
 
+/**
+ * The 'YYYY-MM-DD' at which a prediction's contribution should be measured, or
+ * null while its horizon is still running. Inputs are already normalised by
+ * the query — a text date and an epoch in ms — so nothing here parses a
+ * timestamptz that pg may hand back as a Date.
+ */
 function pickEndDate(row: {
   time_horizon_days: number | null;
   prediction_status: string;
-  validated_at: string | null;
-  rebalance_executed_at: string;
+  validated_date: string | null;
+  rebalance_epoch_ms: string | number;
 }): string | null {
   // Prefer the actual validation date when the prediction has closed.
-  if (row.prediction_status === 'validated' && row.validated_at) {
-    return row.validated_at;
+  if (row.prediction_status === 'validated' && row.validated_date) {
+    return row.validated_date;
   }
   const horizonDays = row.time_horizon_days ?? 30;
-  const rebalance = Date.parse(row.rebalance_executed_at);
-  if (Number.isNaN(rebalance)) return null;
-  const horizonMs = horizonDays * 24 * 3600 * 1000;
-  const maturity = rebalance + horizonMs;
+  const rebalance = Number(row.rebalance_epoch_ms);
+  if (!Number.isFinite(rebalance)) return null;
+  const maturity = rebalance + horizonDays * 24 * 3600 * 1000;
   if (Date.now() < maturity) return null; // not mature yet
-  return new Date(maturity).toISOString();
+  return new Date(maturity).toISOString().slice(0, 10);
 }
 
 /**

@@ -96,6 +96,18 @@ export async function createMarketLearningRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // Portfolio-level roll-up: did the prediction signals add or subtract?
+  // Distinct from the row listing below, which cannot be summed — see
+  // getAttributionSummary for why the raw column double-counts.
+  router.get('/markets/learning/attribution/summary', async (_req, res) => {
+    try {
+      res.json(await attribution.getAttributionSummary());
+    } catch (err) {
+      console.error('[market-learning] Attribution summary error:', err);
+      res.status(500).json({ error: 'Failed to build attribution summary' });
+    }
+  });
+
   // Recent attribution rows for inspection. Defaults to 100, cap 500.
   router.get('/markets/learning/attribution', async (req, res) => {
     try {

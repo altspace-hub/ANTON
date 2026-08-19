@@ -264,3 +264,33 @@ CREATE TABLE IF NOT EXISTS market_historical_prices (
   fetched_at     TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (symbol, price_date, source)
 );
+
+-- ── Prediction -> portfolio attribution ─────────────────────────────────────
+-- executed_at is TIMESTAMPTZ, which pg returns as a JS Date. The sweep used to
+-- call .slice(0, 10) on it (and on predictions.validated_at) and threw on every
+-- row for four months. Keeping the real types here is what makes that testable.
+CREATE TABLE IF NOT EXISTS market_index_rebalances (
+  id                 TEXT PRIMARY KEY,
+  index_id           TEXT NOT NULL,
+  rebalance_type     TEXT DEFAULT 'scheduled',
+  reasoning          TEXT,
+  nav_at_rebalance   NUMERIC,
+  executed_at        TIMESTAMPTZ DEFAULT NOW(),
+  pre_holdings       JSONB,
+  post_holdings      JSONB,
+  trades             JSONB,
+  prediction_signals JSONB DEFAULT '[]'::jsonb,
+  trigger_type       TEXT DEFAULT 'scheduled'
+);
+
+CREATE TABLE IF NOT EXISTS market_prediction_attribution (
+  id                SERIAL PRIMARY KEY,
+  prediction_id     TEXT NOT NULL,
+  rebalance_id      TEXT NOT NULL,
+  signal_score      DOUBLE PRECISION,
+  weight_change     DOUBLE PRECISION,
+  subsequent_return DOUBLE PRECISION,
+  attribution_pnl   DOUBLE PRECISION,
+  computed_at       TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);

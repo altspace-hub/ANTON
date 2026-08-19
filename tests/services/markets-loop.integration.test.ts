@@ -29,6 +29,12 @@
  *      2.5% within three sessions" was graded CORRECT from base rates while
  *      NVDA's largest actual move was -1.94% — settled by prices sitting in
  *      this very table.
+ *   7. The attribution sweep called .slice(0, 10) on r.executed_at and
+ *      p.validated_at — both TIMESTAMPTZ, both handed back as Date. Every
+ *      04:00 run since 2026-04-27 threw "row.rebalance_executed_at.slice is
+ *      not a function" on 39 of 45 rows, so attribution_pnl was never
+ *      computed for a single prediction and the ledger that answers "did our
+ *      signals help the portfolio" stayed empty.
  * Every leg here runs the real service SQL against real PG column types, so
  * a third drift of this class fails the suite instead of freezing the loop.
  *
@@ -54,6 +60,7 @@ import { checkMarketsLoopHealth } from '../../server/services/market-loop-health
 import { createMarketIntelligenceService } from '../../server/services/market-intelligence-service';
 import { createMarketNavEngine } from '../../server/services/market-nav-engine';
 import { createMarketDataService } from '../../server/services/market-data-service';
+import { createMarketPredictionAttributionService } from '../../server/services/market-prediction-attribution-service';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -947,6 +954,117 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
 
       // No atoms seeded → the LLM path bails before calling a model.
       expect(r.method).toBe('unverifiable');
+    });
+  });
+
+  // ── 9. Prediction -> portfolio attribution ───────────────────────────────
+
+  describe('attribution (market-prediction-attribution-service)', () => {
+    /**
+     * Attribution prices come from market_historical_prices, NOT
+     * market_price_normalized — the table syncPricesToHistorical fills. That
+     * sync was itself broken until 2026-08-18, so attribution had no prices to
+     * read even once its own date bug was out of the way.
+     */
+    async function seedHistoricalPrice(symbol: string, priceDate: string, close: number) {
+      await db.run(
+        `INSERT INTO market_historical_prices (symbol, price_date, close, source)
+         VALUES (?, ?, ?, 'test')`, symbol, priceDate, close);
+    }
+
+    async function seedRebalanceAndAttribution(opts: {
+      weightChange: number; horizonDays: number; symbol: string;
+    }) {
+      await db.run(
+        `INSERT INTO market_index_rebalances (id, index_id, rebalance_type, trigger_type, executed_at)
+         VALUES ('reb_t', 'idx_t', 'manual', 'scheduled', NOW() - INTERVAL '40 days')`);
+      await seedPrediction(db, {
+        id: 'p_attr', symbol: opts.symbol, direction: 'up', confidence: 0.6,
+        horizonDays: opts.horizonDays, createdAt: daysAgoIso(41), status: 'active',
+      });
+      await db.run(
+        `INSERT INTO market_prediction_attribution (prediction_id, rebalance_id, signal_score, weight_change)
+         VALUES ('p_attr', 'reb_t', 0.5, ?)`, opts.weightChange);
+    }
+
+    it('computes attribution PnL across TIMESTAMPTZ columns', async () => {
+      await seedRebalanceAndAttribution({ weightChange: 0.03, horizonDays: 10, symbol: 'AAPL' });
+      // Prices bracketing the rebalance and the maturity date.
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(40)), 100);
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(31)), 110);
+
+      const svc = await createMarketPredictionAttributionService(db);
+      const r = await svc.computeMaturedAttributionPnL();
+
+      // Pre-fix this threw on every row and computed nothing.
+      expect(r.errors).toEqual([]);
+      expect(r.pnl_computed).toBe(1);
+
+      const row = await db.get<{ subsequent_return: string; attribution_pnl: string }>(
+        `SELECT subsequent_return, attribution_pnl FROM market_prediction_attribution WHERE prediction_id = 'p_attr'`);
+      expect(Number(row?.subsequent_return)).toBeCloseTo(0.10, 4);   // 100 -> 110
+      expect(Number(row?.attribution_pnl)).toBeCloseTo(0.03 * 0.10, 6);
+    });
+
+    it('rolls up to one row per position instead of once per prediction', async () => {
+      await seedRebalanceAndAttribution({ weightChange: 0.03, horizonDays: 10, symbol: 'AAPL' });
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(40)), 100);
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(31)), 110);
+      // A second prediction informing the SAME weight change.
+      await seedPrediction(db, {
+        id: 'p_attr2', symbol: 'AAPL', direction: 'up', confidence: 0.6,
+        horizonDays: 10, createdAt: daysAgoIso(41), status: 'active',
+      });
+      await db.run(
+        `INSERT INTO market_prediction_attribution (prediction_id, rebalance_id, signal_score, weight_change)
+         VALUES ('p_attr2', 'reb_t', 0.5, 0.03)`);
+
+      const svc = await createMarketPredictionAttributionService(db);
+      await svc.computeMaturedAttributionPnL();
+      const summary = await svc.getAttributionSummary();
+
+      // One position, not two — the naive sum would double it.
+      expect(summary.totals.distinctPositions).toBe(1);
+      expect(summary.totals.attributedPredictions).toBe(2);
+      expect(summary.totals.totalPnlPct).toBeCloseTo(0.03 * 0.10 * 100, 6);
+      expect(summary.totals.rawSumPnlPct).toBeCloseTo(0.03 * 0.10 * 100 * 2, 6);
+      expect(summary.positions[0].predictionsCredited).toBe(2);
+    });
+
+    it('keeps each rolled-up row internally consistent across differing horizons', async () => {
+      // Two predictions on ONE position with different horizons, so their
+      // measurement windows end on different days and their subsequent_returns
+      // disagree in SIGN. Independent MAX()es then splice the largest weight,
+      // the largest return and the largest pnl out of different rows and report
+      // a triple where weight x return does not equal pnl. Real data does this:
+      // CVX on 2026-04-27 spans -5.76% to +4.06% across six predictions.
+      await seedRebalanceAndAttribution({ weightChange: -0.03, horizonDays: 10, symbol: 'AAPL' });
+      await seedPrediction(db, {
+        id: 'p_attr_long', symbol: 'AAPL', direction: 'up', confidence: 0.6,
+        horizonDays: 20, createdAt: daysAgoIso(41), status: 'active',
+      });
+      await db.run(
+        `INSERT INTO market_prediction_attribution (prediction_id, rebalance_id, signal_score, weight_change)
+         VALUES ('p_attr_long', 'reb_t', 0.5, -0.03)`);
+
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(40)), 100);
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(31)), 110);  // +10% at the 10d maturity
+      await seedHistoricalPrice('AAPL', utcDateStr(daysAgoIso(21)), 90);   // -10% at the 20d maturity
+
+      const svc = await createMarketPredictionAttributionService(db);
+      await svc.computeMaturedAttributionPnL();
+      const { positions } = await svc.getAttributionSummary();
+
+      expect(positions).toHaveLength(1);
+      expect(positions[0].predictionsCredited).toBe(2);
+      // The spread must be surfaced, not averaged away silently.
+      expect(positions[0].returnLowPct).toBeCloseTo(-10, 4);
+      expect(positions[0].returnHighPct).toBeCloseTo(10, 4);
+
+      for (const p of positions) {
+        const implied = (p.weightChangePct / 100) * (p.subsequentReturnPct / 100) * 10_000;
+        expect(p.pnlBps).toBeCloseTo(implied, 6);
+      }
     });
   });
 });

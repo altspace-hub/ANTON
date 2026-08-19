@@ -1,12 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, RefreshCw, BarChart2, BookOpen, Users, Zap, Package, Loader2, Check, TrendingUp, Activity } from 'lucide-react';
+import { ArrowLeft, Brain, RefreshCw, BarChart2, BookOpen, Users, Zap, Package, Loader2, Check, TrendingUp, Activity, Scale } from 'lucide-react';
 import { fetchWithAuth, exportMarketIntelligenceModelAnton } from '../../lib/api';
 import MarketDisclaimer from '../../components/shared/MarketDisclaimer';
 
 interface CalibrationEntry {
   bucket_low: number; bucket_high: number; sample_size: number;
   actual_accuracy: number; stated_confidence_avg: number; calibration_error: number; is_overconfident: number;
+}
+
+/**
+ * Prediction -> portfolio attribution. `pnlBps` is a POSITION's contribution;
+ * several predictions can inform one weight change, so the API rolls up to one
+ * row per (rebalance, symbol) before totalling. `predictionsCredited` shows
+ * that fan-out, and rawSumPnlPct is the (inflated) naive sum kept alongside so
+ * the difference is visible rather than silently corrected.
+ */
+interface AttributionPosition {
+  rebalanceId: string; symbol: string; executedAt: string;
+  weightChangePct: number; subsequentReturnPct: number; pnlBps: number;
+  returnLowPct: number; returnHighPct: number;
+  predictionsCredited: number; avgSignalScore: number;
+}
+interface AttributionSummary {
+  positions: AttributionPosition[];
+  totals: {
+    distinctPositions: number; totalPnlPct: number; helped: number; hurt: number;
+    attributedPredictions: number; rawSumPnlPct: number;
+  };
+  coverage: {
+    attributionRows: number; computedRows: number; pendingRows: number;
+    lastRebalanceAt: string | null; rebalanceCount: number;
+  };
 }
 
 interface Narrative {
@@ -40,10 +65,11 @@ export default function MarketLearningPage() {
   const [events, setEvents] = useState<LearningEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportState, setExportState] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [activeTab, setActiveTab] = useState<'backtests' | 'consul' | 'stats'>('backtests');
+  const [activeTab, setActiveTab] = useState<'backtests' | 'consul' | 'stats' | 'attribution'>('backtests');
   const [backtests, setBacktests] = useState<Backtest[]>([]);
   const [consulPerf, setConsulPerf] = useState<ConsulPerformance[]>([]);
   const [learningStats, setLearningStats] = useState<LearningStats | null>(null);
+  const [attribution, setAttribution] = useState<AttributionSummary | null>(null);
   const [tabLoading, setTabLoading] = useState(false);
 
   const handleExport = async () => {
@@ -130,6 +156,9 @@ export default function MarketLearningPage() {
       } else if (tab === 'stats') {
         const res = await fetchWithAuth('/api/markets/learning/stats');
         if (res.ok) setLearningStats(await res.json() as LearningStats);
+      } else if (tab === 'attribution') {
+        const res = await fetchWithAuth('/api/markets/learning/attribution/summary');
+        if (res.ok) setAttribution(await res.json() as AttributionSummary);
       }
     } catch (err) {
       console.error('[MarketLearning] Tab data error:', err);
@@ -259,6 +288,7 @@ export default function MarketLearningPage() {
             { key: 'backtests' as const, label: 'Backtests', icon: TrendingUp },
             { key: 'consul' as const, label: 'Consul Performance', icon: Users },
             { key: 'stats' as const, label: 'Learning Stats', icon: Activity },
+            { key: 'attribution' as const, label: 'Portfolio Impact', icon: Scale },
           ]).map(({ key, label, icon: Icon }) => (
             <button key={key} onClick={() => setActiveTab(key)}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${activeTab === key ? 'bg-adv-teal text-adv-dark' : 'bg-adv-card text-adv-gray hover:text-adv-off-white'}`}
@@ -332,6 +362,87 @@ export default function MarketLearningPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )
+        ) : activeTab === 'attribution' ? (
+          !attribution || attribution.totals.distinctPositions === 0 ? (
+            <p className="text-sm text-adv-gray text-center py-4">
+              No prediction has reached the portfolio yet — attribution is recorded when a rebalance acts on a signal.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {/* Headline: did the signals add or subtract? */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-lg bg-adv-dark p-3">
+                  <p className="text-xs text-adv-gray">Signal contribution</p>
+                  <p className={`text-lg font-semibold ${attribution.totals.totalPnlPct >= 0 ? 'text-adv-green' : 'text-adv-red'}`}>
+                    {attribution.totals.totalPnlPct >= 0 ? '+' : ''}{attribution.totals.totalPnlPct.toFixed(3)}%
+                  </p>
+                </div>
+                <div className="rounded-lg bg-adv-dark p-3">
+                  <p className="text-xs text-adv-gray">Positions</p>
+                  <p className="text-lg font-semibold text-adv-off-white">{attribution.totals.distinctPositions}</p>
+                </div>
+                <div className="rounded-lg bg-adv-dark p-3">
+                  <p className="text-xs text-adv-gray">Helped / hurt</p>
+                  <p className="text-lg font-semibold text-adv-off-white">
+                    <span className="text-adv-green">{attribution.totals.helped}</span>
+                    {' / '}
+                    <span className="text-adv-red">{attribution.totals.hurt}</span>
+                  </p>
+                </div>
+                <div className="rounded-lg bg-adv-dark p-3">
+                  <p className="text-xs text-adv-gray">Last rebalance</p>
+                  <p className="text-lg font-semibold text-adv-off-white">{attribution.coverage.lastRebalanceAt ?? '—'}</p>
+                </div>
+              </div>
+
+              {/* The caveat belongs next to the number, not in a doc nobody opens. */}
+              <p className="text-xs text-adv-gray-med leading-relaxed">
+                Contribution is weight change x subsequent return, rolled up to one row per position.
+                {attribution.totals.attributedPredictions > attribution.totals.distinctPositions && (
+                  <> {attribution.totals.attributedPredictions} predictions informed {attribution.totals.distinctPositions} positions,
+                  so summing per-prediction rows would report {attribution.totals.rawSumPnlPct >= 0 ? '+' : ''}{attribution.totals.rawSumPnlPct.toFixed(3)}% by counting
+                  each position once per prediction.</>
+                )}
+                {attribution.coverage.pendingRows > 0 && <> {attribution.coverage.pendingRows} row(s) still awaiting maturity.</>}
+              </p>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-adv-gray border-b border-adv-dark">
+                      <th className="pb-2 pr-3">Symbol</th>
+                      <th className="pb-2 pr-3">Rebalanced</th>
+                      <th className="pb-2 pr-3 text-right">Weight change</th>
+                      <th className="pb-2 pr-3 text-right">Subsequent return</th>
+                      <th className="pb-2 pr-3 text-right">Contribution</th>
+                      <th className="pb-2 text-right">Predictions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attribution.positions.map((pos) => (
+                      <tr key={`${pos.rebalanceId}-${pos.symbol}`} className="border-b border-adv-dark/50">
+                        <td className="py-1.5 pr-3 text-adv-off-white font-medium">{pos.symbol}</td>
+                        <td className="py-1.5 pr-3 text-adv-gray">{pos.executedAt}</td>
+                        <td className={`py-1.5 pr-3 text-right ${pos.weightChangePct >= 0 ? 'text-adv-green' : 'text-adv-red'}`}>
+                          {pos.weightChangePct >= 0 ? '+' : ''}{pos.weightChangePct.toFixed(2)}%
+                        </td>
+                        <td className="py-1.5 pr-3 text-right text-adv-gray">
+                          {pos.subsequentReturnPct >= 0 ? '+' : ''}{pos.subsequentReturnPct.toFixed(2)}%
+                          {Math.abs(pos.returnHighPct - pos.returnLowPct) > 0.01 && (
+                            <span className="text-adv-gray-med"> ({pos.returnLowPct.toFixed(1)}..{pos.returnHighPct.toFixed(1)})</span>
+                          )}
+                        </td>
+                        <td className={`py-1.5 pr-3 text-right font-medium ${pos.pnlBps >= 0 ? 'text-adv-green' : 'text-adv-red'}`}>
+                          {pos.pnlBps >= 0 ? '+' : ''}{pos.pnlBps.toFixed(1)} bps
+                        </td>
+                        <td className="py-1.5 text-right text-adv-gray">{pos.predictionsCredited}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         ) : (
