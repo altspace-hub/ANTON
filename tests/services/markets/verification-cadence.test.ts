@@ -96,3 +96,46 @@ describe('markets catch-up on host resume', () => {
     expect(src).toMatch(/catchUpRunning/);
   });
 });
+
+describe('markets investigate leg cadence', () => {
+  /** The cron expression the investigation pass is registered under. */
+  function investigationCronExpr(): string {
+    const m = src.match(/cron\.schedule\(\s*'([^']+)'\s*,\s*\(\)\s*=>\s*\{\s*void runInvestigationPass\(/);
+    expect(m, 'runInvestigationPass must be registered on a cron schedule').toBeTruthy();
+    return m![1];
+  }
+
+  it('runs every day, not only on the weekly validation day', () => {
+    // Dispatch + why-chains used to live only inside runPredictionValidation
+    // (Saturdays), so a missed Saturday cost a week and the chain queue drained
+    // at 10 per weekly run.
+    const [, , dom, month, dow] = investigationCronExpr().split(/\s+/);
+    expect(dom).toBe('*');
+    expect(month).toBe('*');
+    expect(dow).toBe('*');
+  });
+
+  it('runs after the verification pass so same-day grades are dispatched', () => {
+    const invHour = Number(investigationCronExpr().split(/\s+/)[1]);
+    const verifyHours = expandHours();
+    expect(verifyHours.some(h => h < invHour), 'a verification slot must precede it').toBe(true);
+  });
+
+  it('has a monotonic net and a boot pass, like verification', () => {
+    expect(src).toMatch(/setInterval\([\s\S]{0,400}?runInvestigationPass\('gap-catchup'\)/);
+    expect(src).toMatch(/runInvestigationPass\('boot-catchup'\)/);
+  });
+
+  it('gates only the paid half on the LLM opt-in', () => {
+    // Dispatch is pure DB work and both creators are idempotent, so it must not
+    // be gated; only the why-chain execution is.
+    expect(src).toMatch(/runInvestigationSweep\(\{ allowLLM: marketsLlmOn \}\)/);
+  });
+});
+
+/** Hours the verification cron fires on. */
+function expandHours(): number[] {
+  const m = src.match(/cron\.schedule\(\s*'([^']+)'\s*,\s*\(\)\s*=>\s*\{\s*void runVerificationPass\(/);
+  const field = m![1].split(/\s+/)[1];
+  return field === '*' ? Array.from({ length: 24 }, (_, i) => i) : field.split(',').map(Number);
+}

@@ -63,6 +63,7 @@ import { createMarketDataService } from '../../server/services/market-data-servi
 import { createMarketPredictionAttributionService } from '../../server/services/market-prediction-attribution-service';
 import { createMarketInvestigationService } from '../../server/services/market-investigation-service';
 import { createWhyChainExecutor } from '../../server/services/market-why-chain-executor';
+import { createMarketWorkflowOrchestrator } from '../../server/services/market-workflow-orchestrator';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -1127,6 +1128,38 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(row?.status).toBe('completed');
       expect(row?.root_cause_type).toBe('inconclusive');
       expect(row?.root_cause_summary).toContain('first insight');
+    });
+
+    it('dispatches and reaps without the model when the LLM tier is off', async () => {
+      // The free half must not be hostage to the paid half: dispatch is pure DB
+      // work and reaping reads levels already on disk, so both run under any
+      // spending tier. Only fresh chains wait for a run that may spend.
+      await seedPrediction(db, {
+        id: 'p_anom', symbol: 'SPY', direction: 'up', confidence: 0.55,
+        status: 'validated', wasCorrect: 0, createdAt: daysAgoIso(20),
+      });
+      await db.run(`UPDATE market_predictions SET brier_score = 0.30 WHERE id = 'p_anom'`);
+      await db.run(
+        `INSERT INTO market_why_chains (id, title, prediction_id, num_levels, status)
+         VALUES ('mwhy_st', 'stalled', 'mpred_st', 3, 'in_progress')`);
+      await db.run(
+        `INSERT INTO market_why_chain_levels (chain_id, level_number, question, answer, key_insight)
+         VALUES ('mwhy_st', 1, 'q', 'a', 'insight')`);
+
+      // The sweep touches neither service; stubs keep the factory happy.
+      const orch = await createMarketWorkflowOrchestrator(
+        db,
+        {} as never,   // computation service — unused by runInvestigationSweep
+        {} as never,   // data service — likewise
+      );
+      const r = await orch.runInvestigationSweep({ allowLLM: false });
+
+      expect(r.llmSkipped).toBe(true);
+      expect(r.chainsExecuted).toBe(0);        // no model call
+      expect(r.chainsReaped).toBe(1);          // but the stalled chain is freed
+      expect(r.dispatched).toBe(1);            // brier 0.30 >= 0.25 anomaly gate
+      const inv = await db.all(`SELECT id FROM market_investigation_tasks WHERE trigger_reference = 'p_anom'`);
+      expect(inv).toHaveLength(1);
     });
 
     it('leaves untouched chains pending rather than reaping them', async () => {

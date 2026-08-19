@@ -230,13 +230,15 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
   /**
    * Execute all pending why-chains.
    */
-  async function executeAllPending(): Promise<{ executed: number; reaped: number; results: Array<{ chainId: string; success: boolean; summary: string }> }> {
-    // Reap first, free of charge. A chain whose levels were written but which
-    // never reached completeChain — the run was interrupted, or a level threw —
-    // is stranded: it has num_levels > 0, so the pending query below can never
-    // select it again, and it stays 'in_progress' forever holding LLM work that
-    // was already paid for. Finalise those from the levels already on disk
-    // rather than re-running the model over them.
+  /**
+   * Finalise chains whose levels were written but which never reached
+   * completeChain — an interrupted run, or a level that threw. They keep
+   * num_levels > 0, so the pending query (num_levels = 0) can never select
+   * them again and they sit 'in_progress' forever holding LLM work that was
+   * already paid for. Reads only levels already on disk, so this costs nothing
+   * and can run under any spending tier.
+   */
+  async function reapStalledChains(): Promise<{ reaped: number }> {
     const stalled = await db.all<{ id: string; num_levels: number }>(
       `SELECT id, num_levels FROM market_why_chains
         WHERE status = 'in_progress' AND num_levels > 0
@@ -262,6 +264,12 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
     }
     if (reaped > 0) console.log(`[why-chain] Reaped ${reaped} stalled chain(s) from existing levels (no LLM cost)`);
 
+
+    return { reaped };
+  }
+
+  async function executeAllPending(): Promise<{ executed: number; reaped: number; results: Array<{ chainId: string; success: boolean; summary: string }> }> {
+    const { reaped } = await reapStalledChains();
     // Cap per run: each chain burns up to MAX_LEVELS LLM calls, and the
     // weekend validation pass can queue dozens of chains at once. The rest
     // stay pending and drain on subsequent runs.
@@ -292,5 +300,5 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
     return { executed: results.length, reaped, results };
   }
 
-  return { executeChain, executeAllPending };
+  return { executeChain, executeAllPending, reapStalledChains };
 }

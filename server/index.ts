@@ -1524,6 +1524,34 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) { console.error(`[markets-verify] ${label} verification error:`, err); }
     }
 
+    // Investigate leg, daily. Dispatching anomalies is pure DB work and both
+    // creators are idempotent on their trigger key, so it runs under any tier;
+    // working the why-chain queue costs up to MAX_LEVELS model calls per chain
+    // and is gated on the LLM opt-in. Previously both lived only inside the
+    // Saturday runPredictionValidation, so a missed Saturday cost a week and
+    // the chain queue drained at 10/run/week.
+    let lastInvestigationPassAt = 0;
+    async function runInvestigationPass(label: string): Promise<void> {
+      lastInvestigationPassAt = Date.now();
+      try {
+        const r = await workflowOrchestrator.runInvestigationSweep({ allowLLM: marketsLlmOn });
+        if (r.dispatched > 0 || r.chainsExecuted > 0 || r.chainsReaped > 0) {
+          console.log(`[markets-investigate] ${label}: dispatched=${r.dispatched} chains_executed=${r.chainsExecuted} reaped=${r.chainsReaped}${r.llmSkipped ? ' (LLM leg skipped)' : ''}`);
+        }
+      } catch (err) { console.error(`[markets-investigate] ${label} failed:`, err); }
+    }
+
+    // 13:00 — after the 12:00 verification pass, so anomalies graded that day
+    // are dispatched the same day rather than waiting for the weekend.
+    cron.schedule('0 13 * * *', () => { void runInvestigationPass('scheduled'); }, MARKET_TZ);
+
+    // Same monotonic net as verification: node-cron skips slots the host sleeps
+    // through, and this workstation sleeps.
+    setInterval(() => {
+      if (Date.now() - lastInvestigationPassAt < 24 * 60 * 60 * 1000) return;
+      void runInvestigationPass('gap-catchup');
+    }, 30 * 60 * 1000).unref();
+
     // Every day, not just weekdays: the tactical band (1-3 day horizons, added
     // 2026-08-14) resolves on Fridays and Saturdays too, and a weekday-only
     // pass left those sitting until Monday. Four passes so a single missed
@@ -1867,6 +1895,9 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         // A restart is the one moment we know the scheduled passes may have
         // been missed, and it costs a single query when nothing is due.
         await runVerificationPass('boot-catchup');
+
+        // 3c. Then dispatch anything that grading just turned into an anomaly.
+        await runInvestigationPass('boot-catchup');
 
         // 4. Check if prediction validation ran this week (should run Saturday) — LLM-spending
         if ((dayOfWeek === 6 || dayOfWeek === 0) && marketsLlmOn) {

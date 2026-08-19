@@ -1029,6 +1029,126 @@ Return ONLY the JSON array, no other text.`;
 
   // ── Prediction Validation Workflow ────────────────────────────────────────
 
+  /**
+   * Create an investigation + why-chain for each validated prediction whose
+   * outcome contradicts its stated confidence.
+   *
+   * Extracted from runPredictionValidation Step 9 so the daily sweep and the
+   * weekly workflow share one implementation — the gate below is subtle enough
+   * that a second copy would drift. Pure DB work: both creators are idempotent
+   * on their trigger key, so re-running costs a lookup per validated
+   * prediction and never a duplicate.
+   */
+  async function dispatchAnomalyInvestigations(): Promise<{
+    dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }>;
+  }> {
+    const validatedPredictions = await db.all<{
+      id: string; confidence: number; was_correct: number;
+      brier_score: number | null; prediction_type: string;
+    }>(
+      "SELECT id, confidence, was_correct, brier_score, prediction_type FROM market_predictions WHERE status = 'validated'"
+    );
+
+    const dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }> = [];
+
+        for (const pred of validatedPredictions) {
+          const conf = Number(pred.confidence) || 0;
+          const brier = pred.brier_score == null ? null : Number(pred.brier_score);
+
+          // The original gates were absolute: conf > 0.7 wrong, or conf < 0.4
+          // right. The three-band pulse prompt caps confidence at 0.40-0.75 and
+          // steers tactical calls into the LOWER half, so live predictions sit
+          // around 0.52-0.60 — neither gate can ever fire, and auto-dispatch
+          // went silent without anything reporting a fault.
+          //
+          // Brier measures the same thing without depending on the generator's
+          // range: it is the squared gap between stated confidence and what
+          // actually happened. ANOMALY_BRIER is 0.25, the score a pure coin
+          // flip stated at 0.50 earns — worse than that means the confidence
+          // was actively misleading, which is precisely the "unexplained
+          // win/loss" this step exists to investigate. The absolute gates are
+          // kept so a future, more confident generator still triggers.
+          const ANOMALY_BRIER = 0.25;
+          const surprising = brier != null && brier >= ANOMALY_BRIER;
+          const highConfWrong = (conf > 0.7 || surprising) && pred.was_correct === 0;
+          const lowConfRight = (conf < 0.4 || surprising) && pred.was_correct === 1;
+
+          if (highConfWrong || lowConfRight) {
+            const anomalyType = highConfWrong ? 'unexpected_failure' : 'unexpected_success';
+            const brierNote = brier == null ? '' : `, brier=${brier.toFixed(2)}`;
+            const anomalyLabel = highConfWrong
+              ? `Prediction failed against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`
+              : `Prediction succeeded against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`;
+
+            // Create investigation
+            const invId = await investigationService.createInvestigation({
+              triggerType: anomalyType,
+              triggerReference: pred.id,
+              title: `Auto-investigation: ${anomalyLabel}`,
+              question: highConfWrong
+                ? `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) fail despite high confidence?`
+                : `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) succeed despite low confidence?`,
+              assignedConsul: 'risk-assessor',
+            });
+
+            // Create why chain linked to prediction and investigation
+            const chainId = await whyChainsService.createChain({
+              title: `Why-chain: ${anomalyLabel}`,
+              investigationId: invId,
+              predictionId: pred.id,
+              direction: highConfWrong ? 'failure_analysis' : 'success_analysis',
+            });
+
+            dispatched.push({ predictionId: pred.id, type: anomalyType, investigationId: invId, whyChainId: chainId });
+          }
+        }
+    return { dispatched };
+  }
+
+  /**
+   * Daily investigate leg: dispatch anomalies, then work the why-chain queue.
+   *
+   * Previously both steps lived only inside runPredictionValidation, which runs
+   * Saturdays — so a missed Saturday cost a week, and the chain queue drained
+   * at 10/run/week. Splitting the cadence lets the free half run every day
+   * while the paid half stays opt-in.
+   *
+   * `allowLLM: false` still dispatches and still reaps stalled chains (both
+   * free), and simply leaves fresh chains pending for a run that may spend.
+   */
+  async function runInvestigationSweep(options?: { allowLLM?: boolean }): Promise<{
+    dispatched: number; chainsExecuted: number; chainsReaped: number; llmSkipped: boolean;
+  }> {
+    const allowLLM = options?.allowLLM !== false;
+    let dispatched = 0;
+    try {
+      dispatched = (await dispatchAnomalyInvestigations()).dispatched.length;
+    } catch (err) {
+      console.error('[investigation-sweep] dispatch failed:', err instanceof Error ? err.message : err);
+    }
+
+    let chainsExecuted = 0;
+    let chainsReaped = 0;
+    try {
+      const { createWhyChainExecutor } = await import('./market-why-chain-executor.js');
+      const executor = await createWhyChainExecutor(db);
+      if (allowLLM) {
+        const r = await executor.executeAllPending();
+        chainsExecuted = r.executed;
+        chainsReaped = r.reaped;
+      } else {
+        // Reaping reads levels already on disk — no model call, so it runs
+        // regardless of the spending tier.
+        const r = await executor.reapStalledChains();
+        chainsReaped = r.reaped;
+      }
+    } catch (err) {
+      console.error('[investigation-sweep] why-chain leg failed:', err instanceof Error ? err.message : err);
+    }
+
+    return { dispatched, chainsExecuted, chainsReaped, llmSkipped: !allowLLM };
+  }
+
   async function runPredictionValidation(): Promise<WorkflowRunResult> {
     const runId = randomUUID();
     const stepResults: WorkflowRunResult['stepResults'] = [];
@@ -1344,60 +1464,7 @@ Return ONLY the JSON array, no other text.`;
 
       // Step 9: Auto-dispatch investigations for unexplained wins/losses
       try {
-        const dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }> = [];
-
-        for (const pred of validatedPredictions) {
-          const conf = Number(pred.confidence) || 0;
-          const brier = pred.brier_score == null ? null : Number(pred.brier_score);
-
-          // The original gates were absolute: conf > 0.7 wrong, or conf < 0.4
-          // right. The three-band pulse prompt caps confidence at 0.40-0.75 and
-          // steers tactical calls into the LOWER half, so live predictions sit
-          // around 0.52-0.60 — neither gate can ever fire, and auto-dispatch
-          // went silent without anything reporting a fault.
-          //
-          // Brier measures the same thing without depending on the generator's
-          // range: it is the squared gap between stated confidence and what
-          // actually happened. ANOMALY_BRIER is 0.25, the score a pure coin
-          // flip stated at 0.50 earns — worse than that means the confidence
-          // was actively misleading, which is precisely the "unexplained
-          // win/loss" this step exists to investigate. The absolute gates are
-          // kept so a future, more confident generator still triggers.
-          const ANOMALY_BRIER = 0.25;
-          const surprising = brier != null && brier >= ANOMALY_BRIER;
-          const highConfWrong = (conf > 0.7 || surprising) && pred.was_correct === 0;
-          const lowConfRight = (conf < 0.4 || surprising) && pred.was_correct === 1;
-
-          if (highConfWrong || lowConfRight) {
-            const anomalyType = highConfWrong ? 'unexpected_failure' : 'unexpected_success';
-            const brierNote = brier == null ? '' : `, brier=${brier.toFixed(2)}`;
-            const anomalyLabel = highConfWrong
-              ? `Prediction failed against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`
-              : `Prediction succeeded against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`;
-
-            // Create investigation
-            const invId = await investigationService.createInvestigation({
-              triggerType: anomalyType,
-              triggerReference: pred.id,
-              title: `Auto-investigation: ${anomalyLabel}`,
-              question: highConfWrong
-                ? `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) fail despite high confidence?`
-                : `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) succeed despite low confidence?`,
-              assignedConsul: 'risk-assessor',
-            });
-
-            // Create why chain linked to prediction and investigation
-            const chainId = await whyChainsService.createChain({
-              title: `Why-chain: ${anomalyLabel}`,
-              investigationId: invId,
-              predictionId: pred.id,
-              direction: highConfWrong ? 'failure_analysis' : 'success_analysis',
-            });
-
-            dispatched.push({ predictionId: pred.id, type: anomalyType, investigationId: invId, whyChainId: chainId });
-          }
-        }
-
+        const { dispatched } = await dispatchAnomalyInvestigations();
         stepResults.push({
           step: 'Auto-Dispatch Investigations',
           status: 'success',
@@ -1706,6 +1773,8 @@ Return ONLY a JSON array.`;
     runDailyIntelligence,
     runIndexRebalance,
     runPredictionValidation,
+    runInvestigationSweep,
+    dispatchAnomalyInvestigations,
     runWeeklyPulse,
     runPredictionCheckpoints,
   };
