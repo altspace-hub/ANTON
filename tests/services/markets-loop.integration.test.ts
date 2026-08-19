@@ -24,6 +24,11 @@
  *      they collapsed onto one conflict key mid-statement → "ON CONFLICT DO
  *      UPDATE command cannot affect row a second time". The catch swallowed
  *      it and market_historical_prices froze at 2026-04-02 for four months.
+ *   6. Binary predictions routed to the LLM by TYPE rather than by whether
+ *      evidence existed. On 2026-08-19 "NVDA posts a daily move exceeding
+ *      2.5% within three sessions" was graded CORRECT from base rates while
+ *      NVDA's largest actual move was -1.94% — settled by prices sitting in
+ *      this very table.
  * Every leg here runs the real service SQL against real PG column types, so
  * a third drift of this class fails the suite instead of freezing the loop.
  *
@@ -835,6 +840,113 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       // Read via RunResult.changes; pg's raw rowCount is not exposed there, and
       // reading it returned 0 even on a successful multi-thousand-row sync.
       expect(synced).toBe(1);
+    });
+  });
+
+  // ── 8. Quantified binary claims settle from prices, not the LLM ──────────
+
+  describe('verify leg — quantified move claims', () => {
+    /**
+     * "posts a daily move exceeding 2.5% within three sessions" is arithmetic.
+     * Routing it to an LLM produced a confident wrong answer derived from
+     * NVDA's typical volatility, with the model itself noting that "no direct
+     * price data was supplied for confirmation". These run the real SQL so a
+     * regression cannot quietly hand the claim back to the model.
+     */
+    const nvdaPred = (deadline: string) => ({
+      id: 'p_move', title: 'NVDA posts a daily move exceeding 2.5% within three sessions',
+      prediction_type: 'binary', target_symbol: 'NVDA', predicted_direction: null,
+      predicted_outcome: 'a daily move exceeding 2.5%', predicted_value: null,
+      confidence: 0.6, created_at: '2026-08-14T00:00:00Z', deadline,
+      verification_attempts: 0,
+    });
+
+    it('grades the claim FALSE when no session exceeded the threshold', async () => {
+      // The real 2026-08-14..18 NVDA closes: largest move is -1.94%.
+      await seedPrice(db, 'NVDA', '2026-08-14', 225.82);
+      await seedPrice(db, 'NVDA', '2026-08-17', 225.33);
+      await seedPrice(db, 'NVDA', '2026-08-18', 220.95);
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction(nvdaPred('2026-08-18') as never);
+
+      expect(r.method).toBe('auto_price');       // never reached the LLM
+      expect(r.wasCorrect).toBe(false);
+      expect(r.explanation).toContain('1.94');
+      expect(r.explanation).toContain('no LLM');
+    });
+
+    it('grades the claim TRUE when a session did exceed it', async () => {
+      await seedPrice(db, 'NVDA', '2026-08-14', 225.82);
+      await seedPrice(db, 'NVDA', '2026-08-17', 225.33);
+      await seedPrice(db, 'NVDA', '2026-08-18', 210.00);   // -6.8%
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction(nvdaPred('2026-08-18') as never);
+
+      expect(r.method).toBe('auto_price');
+      expect(r.wasCorrect).toBe(true);
+    });
+
+    it('is not fooled by duplicate rows for the same session', async () => {
+      // Two feeds carry the same day; a duplicate would inject a fake 0% move
+      // between the real ones and could mask a threshold breach.
+      await seedPrice(db, 'NVDA', '2026-08-14', 225.82);
+      await db.run(
+        `INSERT INTO market_price_normalized (id, symbol, price_date, close, source_id)
+         VALUES ('NVDA_dup', 'NVDA', '2026-08-14', 225.82, 'second_feed')`);
+      await seedPrice(db, 'NVDA', '2026-08-17', 210.00);   // -7.0%
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction(nvdaPred('2026-08-17') as never);
+
+      expect(r.method).toBe('auto_price');
+      expect(r.wasCorrect).toBe(true);
+      expect(r.explanation).toContain('2 closes');   // deduplicated
+    });
+
+    it('grades a quantified claim even when the LLM tier is paused', async () => {
+      // requiresLLMVerification gates BEFORE dispatch. Without an exemption a
+      // quantified binary claim is deferred as "needs LLM" and never reaches
+      // the arithmetic route — making that route unreachable in the free tier,
+      // which is exactly where it matters most.
+      await seedPrice(db, 'NVDA', '2026-08-14', 225.82);
+      await seedPrice(db, 'NVDA', '2026-08-17', 225.33);
+      await seedPrice(db, 'NVDA', '2026-08-18', 220.95);
+      await seedPrediction(db, {
+        id: 'p_move_paused', predictionType: 'binary', symbol: 'NVDA',
+        direction: null, confidence: 0.6,
+        createdAt: '2026-08-14T00:00:00Z', deadline: '2026-08-18T00:00:00Z',
+      });
+      await db.run(
+        `UPDATE market_predictions SET title = ?, predicted_outcome = ? WHERE id = 'p_move_paused'`,
+        'NVDA posts a daily move exceeding 2.5% within three sessions',
+        'a daily move exceeding 2.5%');
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.runAutoVerification({ allowLLM: false });
+
+      expect(r.deferred_llm).toBe(0);       // not parked as an LLM job
+      expect(r.verified).toBe(1);
+      expect(r.incorrect).toBe(1);          // largest move was -1.94%
+    });
+
+    it('defers a non-quantified binary claim to the LLM path', async () => {
+      // No parseable threshold → must NOT be settled arithmetically.
+      await seedPrice(db, 'TSLA', '2026-08-14', 100);
+      await seedPrice(db, 'TSLA', '2026-08-18', 101);
+
+      const verifier = await createPredictionVerifier(db);
+      const r = await verifier.verifyPrediction({
+        id: 'p_event', title: 'Tesla FSD European approval by August 18',
+        prediction_type: 'binary', target_symbol: 'TSLA', predicted_direction: null,
+        predicted_outcome: 'regulatory approval granted', predicted_value: null,
+        confidence: 0.6, created_at: '2026-08-14T00:00:00Z', deadline: '2026-08-18',
+        verification_attempts: 0,
+      } as never);
+
+      // No atoms seeded → the LLM path bails before calling a model.
+      expect(r.method).toBe('unverifiable');
     });
   });
 });

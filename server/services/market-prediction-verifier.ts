@@ -40,6 +40,13 @@ const RETRY_BACKOFF_DAYS = 7;
  *  against validating predictions with a feed frozen by MARKETS_FETCH_DISABLED. */
 export const PRICE_STALENESS_DAYS = 7;
 
+/**
+ * Below this self-reported confidence an LLM verification is treated as no
+ * answer at all. Pairs with the insufficientEvidence flag: the flag catches an
+ * honest model, the floor catches a confidently-vague one.
+ */
+export const LLM_VERIFICATION_MIN_CONFIDENCE = 0.5;
+
 interface VerificationResult {
   predictionId: string;
   wasCorrect: boolean;
@@ -313,9 +320,88 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   }
 
   /**
+   * A binary prediction that quantifies a price move is arithmetic, not a
+   * judgement call — and routing it to the LLM produced exactly the failure
+   * this guards against: on 2026-08-19 "NVDA posts a daily move exceeding
+   * 2.5% within three sessions" was graded CORRECT from base rates ("NVDA's
+   * realized volatility routinely produces 2.5%+ daily swings"), while the
+   * actual largest move in the window was -1.94%. The price data needed to
+   * settle it was in the same database the whole time.
+   *
+   * Parsing stays deliberately narrow: a mis-parse would silently produce a
+   * confident WRONG deterministic grade, which is worse than deferring. Only
+   * an unambiguous "<move> <comparator> <N>%" phrasing matches; everything
+   * else returns null and falls through to the LLM path (which now refuses to
+   * answer without evidence).
+   */
+  function parseDailyMoveClaim(text: string): { thresholdPct: number } | null {
+    const m = /\b(?:daily\s+)?(?:move|swing|change|gain|drop)\s+(?:of\s+)?(?:exceeding|greater\s+than|more\s+than|larger\s+than|above|over|at\s+least)\s+\$?(\d+(?:\.\d+)?)\s*%/i.exec(text);
+    if (!m) return null;
+    const thresholdPct = Number(m[1]);
+    if (!Number.isFinite(thresholdPct) || thresholdPct <= 0 || thresholdPct > 100) return null;
+    return { thresholdPct };
+  }
+
+  /** Closes for a symbol across a window, one row per session, oldest first. */
+  async function getCloses(
+    symbol: string, fromDate: string, toDate: string,
+  ): Promise<Array<{ priceDate: string; close: number }>> {
+    // DISTINCT ON: the same symbol/day arrives from more than one feed, and a
+    // duplicate row would fabricate a 0% session between the real ones.
+    const rows = await db.all<{ price_date: string; close: number }>(
+      `SELECT DISTINCT ON (price_date) price_date, close
+         FROM market_price_normalized
+        WHERE symbol = $1 AND price_date >= $2 AND price_date <= $3
+        ORDER BY price_date ASC, created_at DESC`,
+      symbol, fromDate, toDate
+    );
+    return rows.map(r => ({ priceDate: String(r.price_date).slice(0, 10), close: Number(r.close) }));
+  }
+
+  /**
+   * Settle a quantified move claim from prices. Returns null when the claim
+   * is not of that shape or the window holds too few sessions to judge it.
+   */
+  async function verifyQuantifiedMove(pred: ExpiredPrediction): Promise<VerificationResult | null> {
+    if (!pred.target_symbol) return null;
+    const claim = parseDailyMoveClaim(`${pred.title} ${pred.predicted_outcome ?? ''}`);
+    if (!claim) return null;
+
+    const from = new Date(pred.created_at).toISOString().split('T')[0];
+    const closes = await getCloses(pred.target_symbol, from, pred.deadline);
+    // Two closes are the minimum for one session-over-session move.
+    if (closes.length < 2) return null;
+
+    let maxAbsMove = 0;
+    let onDate = closes[0].priceDate;
+    for (let i = 1; i < closes.length; i++) {
+      const prev = closes[i - 1].close;
+      if (!prev) continue;
+      const move = Math.abs((closes[i].close - prev) / prev) * 100;
+      if (move > maxAbsMove) { maxAbsMove = move; onDate = closes[i].priceDate; }
+    }
+
+    const wasCorrect = maxAbsMove > claim.thresholdPct;
+    return {
+      predictionId: pred.id,
+      wasCorrect,
+      actualOutcome: `largest daily move ${maxAbsMove.toFixed(2)}% vs ${claim.thresholdPct}% threshold`,
+      actualValue: null,
+      method: 'auto_price',
+      verificationConfidence: 0.95,
+      explanation: `${pred.target_symbol}: largest session move over ${closes[0].priceDate}→${closes[closes.length - 1].priceDate} was ${maxAbsMove.toFixed(2)}% (on ${onDate}) against a ${claim.thresholdPct}% threshold — claim ${wasCorrect ? 'met' : 'not met'}. Settled from ${closes.length} closes, no LLM.`,
+      gradedScore: wasCorrect ? 1.0 : 0.0,
+    };
+  }
+
+  /**
    * Verify a binary/event prediction using LLM against recent atoms.
    */
   async function verifyBinary(pred: ExpiredPrediction): Promise<VerificationResult> {
+    // Arithmetic beats judgement: settle quantified price claims from prices.
+    const quantified = await verifyQuantifiedMove(pred);
+    if (quantified) return quantified;
+
     try {
       // Gather recent atoms about the entity
       const recentAtoms = await db.all<{ content: string }>(
@@ -355,7 +441,25 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
           {
             model: verifierModel as import('../../src/lib/types.js').ModelId,
             thinking: 'quick' as import('../../src/lib/types.js').ThinkingLevel,
-            system: 'You verify market predictions. Given a prediction and recent market data, determine if the prediction was correct. Respond ONLY with JSON: { "wasCorrect": true/false, "actualOutcome": "brief description", "explanation": "1-2 sentences", "verificationConfidence": 0.0-1.0 }',
+            system: [
+              'You verify market predictions against evidence.',
+              '',
+              'You grade ONLY from the market intelligence supplied. You must NOT',
+              'infer an outcome from base rates, typical volatility, prior',
+              'probability, or general knowledge of the symbol. If the supplied',
+              'intelligence does not actually say whether the predicted event',
+              'occurred, that is not a "false" - it is insufficient evidence, and',
+              'you must say so. A guess recorded as a verified outcome corrupts',
+              'the accuracy record this system exists to produce.',
+              '',
+              'Respond ONLY with JSON:',
+              '{ "insufficientEvidence": true/false, "wasCorrect": true/false,',
+              '  "actualOutcome": "brief description", "explanation": "1-2 sentences",',
+              '  "verificationConfidence": 0.0-1.0 }',
+              '',
+              'Set insufficientEvidence=true whenever the evidence does not settle',
+              'the question, and leave wasCorrect false in that case.',
+            ].join(String.fromCharCode(10)),
             messages: [{ role: 'user', content: context }],
             maxTokens: 500,
           },
@@ -373,13 +477,31 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       const cleaned = result.text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
+      // An unevidenced answer must not enter the record. 'unverifiable' leaves
+      // the prediction 'expired' and retriable, so a later run with better
+      // atoms can still settle it — whereas a fabricated grade is permanent
+      // and silently feeds calibration.
+      const rawConfidence = Number(parsed.verificationConfidence);
+      const scored = Number.isFinite(rawConfidence) ? rawConfidence : 0.6;
+      if (parsed.insufficientEvidence === true || scored < LLM_VERIFICATION_MIN_CONFIDENCE) {
+        return {
+          predictionId: pred.id,
+          wasCorrect: false,
+          actualOutcome: 'Unverifiable — evidence does not settle the claim',
+          actualValue: null,
+          method: 'unverifiable',
+          verificationConfidence: 0,
+          explanation: `Insufficient evidence to grade (model confidence ${scored.toFixed(2)}): ${parsed.explanation || 'no reason given'}`,
+        };
+      }
+
       return {
         predictionId: pred.id,
         wasCorrect: !!parsed.wasCorrect,
         actualOutcome: parsed.actualOutcome || 'LLM-verified',
         actualValue: null,
         method: 'auto_llm',
-        verificationConfidence: parsed.verificationConfidence || 0.6,
+        verificationConfidence: scored,
         explanation: parsed.explanation || 'Verified via AI analysis of recent market data',
       };
     } catch (err) {
@@ -530,6 +652,12 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
    * missing the symbol/direction needed by verifyDirectional.
    */
   function requiresLLMVerification(pred: ExpiredPrediction): boolean {
+    // A binary claim that quantifies a price move is settled arithmetically by
+    // verifyQuantifiedMove, so it does not need the model. This gate runs
+    // BEFORE dispatch: without the exemption such a prediction is deferred as
+    // "needs LLM" and never reaches the deterministic route at all, which
+    // silently makes that route unreachable whenever the LLM tier is paused.
+    if (pred.target_symbol && parseDailyMoveClaim(`${pred.title} ${pred.predicted_outcome ?? ''}`)) return false;
     if (pred.prediction_type === 'binary' || pred.prediction_type === 'event') return true;
     if (pred.prediction_type === 'directional' || pred.prediction_type === 'price_target') return false;
     // 'timing', 'relative', or unknown types: LLM is the only viable path
