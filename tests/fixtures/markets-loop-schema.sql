@@ -294,3 +294,65 @@ CREATE TABLE IF NOT EXISTS market_prediction_attribution (
   computed_at       TIMESTAMPTZ,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ── Investigations + why-chains ─────────────────────────────────────────────
+-- The auto-dispatch step re-scans EVERY validated prediction on every run, so
+-- creation must be idempotent on (trigger_type, trigger_reference). It was not:
+-- 21 anomalous predictions became 1,419 investigations, 67.6 copies each.
+CREATE TABLE IF NOT EXISTS market_investigation_tasks (
+  id                   TEXT PRIMARY KEY,
+  trigger_type         TEXT NOT NULL,
+  trigger_reference    TEXT,
+  title                TEXT NOT NULL,
+  question             TEXT NOT NULL,
+  status               TEXT DEFAULT 'open',
+  assigned_consul      TEXT,
+  findings             TEXT DEFAULT '[]',
+  atoms_created        TEXT DEFAULT '[]',
+  process_improvements TEXT DEFAULT '[]',
+  root_cause           TEXT,
+  created_at           TIMESTAMPTZ DEFAULT NOW(),
+  completed_at         TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS market_why_chains (
+  id                     TEXT PRIMARY KEY,
+  investigation_id       TEXT,
+  prediction_id          TEXT,
+  title                  TEXT,
+  root_cause_type        TEXT,
+  root_cause_description TEXT,
+  impact_assessment      TEXT,
+  num_levels             INTEGER DEFAULT 0,
+  status                 TEXT DEFAULT 'in_progress',
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  completed_at           TIMESTAMPTZ,
+  direction              TEXT DEFAULT 'failure_analysis',
+  root_cause_reached     INTEGER DEFAULT 0,
+  chain_data             TEXT DEFAULT '[]',
+  root_cause_summary     TEXT,
+  atoms_created          TEXT DEFAULT '[]',
+  correlations_updated   TEXT DEFAULT '[]',
+  signal_weights_updated TEXT DEFAULT '[]',
+  blind_spots_identified TEXT DEFAULT '[]',
+  process_improvements   TEXT DEFAULT '[]',
+  investigation_tasks_spawned TEXT,
+  systemic_impact        TEXT,
+  theses_affected        INTEGER,
+  indexes_affected       INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS market_why_chain_levels (
+  id                     SERIAL PRIMARY KEY,
+  chain_id               TEXT NOT NULL,
+  level_number           INTEGER,
+  question               TEXT,
+  answer                 TEXT,
+  evidence_atoms         TEXT DEFAULT '[]',
+  atom_created           TEXT,
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  level_type             TEXT DEFAULT 'symptom',
+  atoms_created_at_level TEXT DEFAULT '[]',
+  research_performed     TEXT,
+  key_insight            TEXT
+);

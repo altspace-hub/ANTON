@@ -1348,14 +1348,32 @@ Return ONLY the JSON array, no other text.`;
 
         for (const pred of validatedPredictions) {
           const conf = Number(pred.confidence) || 0;
-          const highConfWrong = conf > 0.7 && pred.was_correct === 0;
-          const lowConfRight = conf < 0.4 && pred.was_correct === 1;
+          const brier = pred.brier_score == null ? null : Number(pred.brier_score);
+
+          // The original gates were absolute: conf > 0.7 wrong, or conf < 0.4
+          // right. The three-band pulse prompt caps confidence at 0.40-0.75 and
+          // steers tactical calls into the LOWER half, so live predictions sit
+          // around 0.52-0.60 — neither gate can ever fire, and auto-dispatch
+          // went silent without anything reporting a fault.
+          //
+          // Brier measures the same thing without depending on the generator's
+          // range: it is the squared gap between stated confidence and what
+          // actually happened. ANOMALY_BRIER is 0.25, the score a pure coin
+          // flip stated at 0.50 earns — worse than that means the confidence
+          // was actively misleading, which is precisely the "unexplained
+          // win/loss" this step exists to investigate. The absolute gates are
+          // kept so a future, more confident generator still triggers.
+          const ANOMALY_BRIER = 0.25;
+          const surprising = brier != null && brier >= ANOMALY_BRIER;
+          const highConfWrong = (conf > 0.7 || surprising) && pred.was_correct === 0;
+          const lowConfRight = (conf < 0.4 || surprising) && pred.was_correct === 1;
 
           if (highConfWrong || lowConfRight) {
             const anomalyType = highConfWrong ? 'unexpected_failure' : 'unexpected_success';
+            const brierNote = brier == null ? '' : `, brier=${brier.toFixed(2)}`;
             const anomalyLabel = highConfWrong
-              ? `High-confidence prediction failed (conf=${conf.toFixed(2)})`
-              : `Low-confidence prediction succeeded (conf=${conf.toFixed(2)})`;
+              ? `Prediction failed against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`
+              : `Prediction succeeded against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`;
 
             // Create investigation
             const invId = await investigationService.createInvestigation({

@@ -230,7 +230,38 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
   /**
    * Execute all pending why-chains.
    */
-  async function executeAllPending(): Promise<{ executed: number; results: Array<{ chainId: string; success: boolean; summary: string }> }> {
+  async function executeAllPending(): Promise<{ executed: number; reaped: number; results: Array<{ chainId: string; success: boolean; summary: string }> }> {
+    // Reap first, free of charge. A chain whose levels were written but which
+    // never reached completeChain — the run was interrupted, or a level threw —
+    // is stranded: it has num_levels > 0, so the pending query below can never
+    // select it again, and it stays 'in_progress' forever holding LLM work that
+    // was already paid for. Finalise those from the levels already on disk
+    // rather than re-running the model over them.
+    const stalled = await db.all<{ id: string; num_levels: number }>(
+      `SELECT id, num_levels FROM market_why_chains
+        WHERE status = 'in_progress' AND num_levels > 0
+        ORDER BY created_at ASC LIMIT 50`
+    );
+    let reaped = 0;
+    for (const chain of stalled) {
+      try {
+        const levels = await db.all<{ key_insight: string | null }>(
+          'SELECT key_insight FROM market_why_chain_levels WHERE chain_id = ? ORDER BY level_number ASC',
+          chain.id,
+        );
+        const insights = levels.map(l => l.key_insight).filter((x): x is string => !!x);
+        await whyChainsService.completeChain(chain.id, {
+          rootCauseType: 'inconclusive',
+          rootCauseDescription: `Analysis stopped after ${chain.num_levels} level(s) without a definitive root cause`,
+          rootCauseSummary: insights.join(' → ') || 'No insight recorded',
+        } as Parameters<typeof whyChainsService.completeChain>[1]);
+        reaped++;
+      } catch (err) {
+        console.error(`[why-chain] Reap failed for ${chain.id}:`, err instanceof Error ? err.message : err);
+      }
+    }
+    if (reaped > 0) console.log(`[why-chain] Reaped ${reaped} stalled chain(s) from existing levels (no LLM cost)`);
+
     // Cap per run: each chain burns up to MAX_LEVELS LLM calls, and the
     // weekend validation pass can queue dozens of chains at once. The rest
     // stay pending and drain on subsequent runs.
@@ -243,14 +274,22 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
     const results: Array<{ chainId: string; success: boolean; summary: string }> = [];
 
     for (const chain of pending) {
-      const result = await executeChain(chain.id);
-      results.push({ chainId: chain.id, success: result.success, summary: result.summary });
+      // Per-chain isolation: without it one bad chain aborts the whole batch
+      // and every chain behind it stays pending until the next weekly run.
+      try {
+        const result = await executeChain(chain.id);
+        results.push({ chainId: chain.id, success: result.success, summary: result.summary });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`[why-chain] Chain ${chain.id} failed:`, message);
+        results.push({ chainId: chain.id, success: false, summary: `Failed: ${message}` });
+      }
 
       // Brief pause between chains to avoid API rate limits
       if (pending.length > 1) await new Promise(r => setTimeout(r, 2000));
     }
 
-    return { executed: results.length, results };
+    return { executed: results.length, reaped, results };
   }
 
   return { executeChain, executeAllPending };

@@ -61,6 +61,8 @@ import { createMarketIntelligenceService } from '../../server/services/market-in
 import { createMarketNavEngine } from '../../server/services/market-nav-engine';
 import { createMarketDataService } from '../../server/services/market-data-service';
 import { createMarketPredictionAttributionService } from '../../server/services/market-prediction-attribution-service';
+import { createMarketInvestigationService } from '../../server/services/market-investigation-service';
+import { createWhyChainExecutor } from '../../server/services/market-why-chain-executor';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -1065,6 +1067,81 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
         const implied = (p.weightChangePct / 100) * (p.subsequentReturnPct / 100) * 10_000;
         expect(p.pnlBps).toBeCloseTo(implied, 6);
       }
+    });
+  });
+
+  // ── 10. Investigations + why-chains ──────────────────────────────────────
+
+  describe('auto-dispatch (investigations + why-chains)', () => {
+    /**
+     * The dispatch step scans EVERY validated prediction on every run, not just
+     * the ones validated in that run. Creation therefore has to be idempotent
+     * or the queue refills faster than it drains: by 2026-05-02, 21 anomalous
+     * predictions had produced 1,419 investigations — 67.6 copies each, one
+     * prediction re-investigated 84 times — and 1,051 why-chains, each of which
+     * is a paid LLM job. createChain already guarded against this; investigation
+     * creation did not.
+     */
+    it('returns the existing investigation instead of creating a duplicate', async () => {
+      const svc = await createMarketInvestigationService(db);
+      const args = {
+        triggerType: 'unexpected_failure', triggerReference: 'mpred_x',
+        title: 'Auto-investigation', question: 'Why did it fail?',
+      };
+
+      const first = await svc.createInvestigation(args);
+      const second = await svc.createInvestigation(args);
+      const third = await svc.createInvestigation({ ...args, title: 'Different title' });
+
+      expect(second).toBe(first);
+      expect(third).toBe(first);   // keyed on trigger, not on wording
+      const rows = await db.all(`SELECT id FROM market_investigation_tasks WHERE trigger_reference = 'mpred_x'`);
+      expect(rows).toHaveLength(1);
+    });
+
+    it('still creates unkeyed investigations every time', async () => {
+      const svc = await createMarketInvestigationService(db);
+      const a = await svc.createInvestigation({ triggerType: 'manual', title: 't', question: 'q' });
+      const b = await svc.createInvestigation({ triggerType: 'manual', title: 't', question: 'q' });
+      expect(b).not.toBe(a);   // no trigger_reference → nothing to dedupe on
+    });
+
+    it('reaps a stalled chain from its existing levels without calling the model', async () => {
+      // A chain whose levels were written but which never reached completeChain
+      // is invisible to the pending query (num_levels > 0) and stays
+      // 'in_progress' forever, holding LLM work already paid for.
+      await db.run(
+        `INSERT INTO market_why_chains (id, title, prediction_id, num_levels, status)
+         VALUES ('mwhy_stalled', 'Why-chain: stalled', 'mpred_s', 5, 'in_progress')`);
+      await db.run(
+        `INSERT INTO market_why_chain_levels (chain_id, level_number, question, answer, key_insight)
+         VALUES ('mwhy_stalled', 1, 'q1', 'a1', 'first insight'),
+                ('mwhy_stalled', 2, 'q2', 'a2', 'second insight')`);
+
+      const executor = await createWhyChainExecutor(db);
+      const r = await executor.executeAllPending();
+
+      expect(r.reaped).toBe(1);
+      const row = await db.get<{ status: string; root_cause_type: string; root_cause_summary: string }>(
+        `SELECT status, root_cause_type, root_cause_summary FROM market_why_chains WHERE id = 'mwhy_stalled'`);
+      expect(row?.status).toBe('completed');
+      expect(row?.root_cause_type).toBe('inconclusive');
+      expect(row?.root_cause_summary).toContain('first insight');
+    });
+
+    it('leaves untouched chains pending rather than reaping them', async () => {
+      await db.run(
+        `INSERT INTO market_why_chains (id, title, prediction_id, num_levels, status)
+         VALUES ('mwhy_fresh', 'Why-chain: fresh', 'mpred_f', 0, 'in_progress')`);
+
+      const executor = await createWhyChainExecutor(db);
+      const r = await executor.executeAllPending();
+
+      // num_levels = 0 → real work still to do, not a reap candidate.
+      expect(r.reaped).toBe(0);
+      const row = await db.get<{ status: string }>(
+        `SELECT status FROM market_why_chains WHERE id = 'mwhy_fresh'`);
+      expect(row?.status).toBe('in_progress');
     });
   });
 });

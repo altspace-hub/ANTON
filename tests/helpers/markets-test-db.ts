@@ -54,6 +54,9 @@ export const FIXTURE_TABLES = [
   'market_historical_prices',
   'market_prediction_attribution',
   'market_index_rebalances',
+  'market_why_chain_levels',
+  'market_why_chains',
+  'market_investigation_tasks',
 ] as const;
 
 export interface ProvisionResult {
