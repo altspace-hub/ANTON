@@ -1160,6 +1160,15 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(r.dispatched).toBe(1);            // brier 0.30 >= 0.25 anomaly gate
       const inv = await db.all(`SELECT id FROM market_investigation_tasks WHERE trigger_reference = 'p_anom'`);
       expect(inv).toHaveLength(1);
+
+      // A re-scan must report no NEW work. createInvestigation returns the
+      // existing row, so counting its return value would claim activity every
+      // single day for an anomaly investigated once.
+      const again = await orch.runInvestigationSweep({ allowLLM: false });
+      expect(again.dispatched).toBe(0);
+      expect(again.matched).toBe(1);
+      const invAgain = await db.all(`SELECT id FROM market_investigation_tasks WHERE trigger_reference = 'p_anom'`);
+      expect(invAgain).toHaveLength(1);
     });
 
     it('leaves untouched chains pending rather than reaping them', async () => {

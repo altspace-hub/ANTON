@@ -1041,6 +1041,8 @@ Return ONLY the JSON array, no other text.`;
    */
   async function dispatchAnomalyInvestigations(): Promise<{
     dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }>;
+    /** Subset of `dispatched` that did not already exist. */
+    created: Array<{ predictionId: string; investigationId: string }>;
   }> {
     const validatedPredictions = await db.all<{
       id: string; confidence: number; was_correct: number;
@@ -1050,6 +1052,10 @@ Return ONLY the JSON array, no other text.`;
     );
 
     const dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }> = [];
+    // createInvestigation is idempotent and returns the existing row, so the
+    // call alone cannot tell new work from a re-scan. Without this check the
+    // daily pass logs the same "dispatched=N" forever and reads as activity.
+    const created: Array<{ predictionId: string; investigationId: string }> = [];
 
         for (const pred of validatedPredictions) {
           const conf = Number(pred.confidence) || 0;
@@ -1080,6 +1086,12 @@ Return ONLY the JSON array, no other text.`;
               ? `Prediction failed against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`
               : `Prediction succeeded against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`;
 
+            const preExisting = await db.get<{ id: string }>(
+              `SELECT id FROM market_investigation_tasks
+                WHERE trigger_type = ? AND trigger_reference = ? LIMIT 1`,
+              anomalyType, pred.id,
+            );
+
             // Create investigation
             const invId = await investigationService.createInvestigation({
               triggerType: anomalyType,
@@ -1100,9 +1112,10 @@ Return ONLY the JSON array, no other text.`;
             });
 
             dispatched.push({ predictionId: pred.id, type: anomalyType, investigationId: invId, whyChainId: chainId });
+            if (!preExisting) created.push({ predictionId: pred.id, investigationId: invId });
           }
         }
-    return { dispatched };
+    return { dispatched, created };
   }
 
   /**
@@ -1117,12 +1130,15 @@ Return ONLY the JSON array, no other text.`;
    * free), and simply leaves fresh chains pending for a run that may spend.
    */
   async function runInvestigationSweep(options?: { allowLLM?: boolean }): Promise<{
-    dispatched: number; chainsExecuted: number; chainsReaped: number; llmSkipped: boolean;
+    dispatched: number; matched: number; chainsExecuted: number; chainsReaped: number; llmSkipped: boolean;
   }> {
     const allowLLM = options?.allowLLM !== false;
     let dispatched = 0;
+    let matched = 0;
     try {
-      dispatched = (await dispatchAnomalyInvestigations()).dispatched.length;
+      const d = await dispatchAnomalyInvestigations();
+      dispatched = d.created.length;   // NEW investigations only
+      matched = d.dispatched.length;   // anomalies seen, new or not
     } catch (err) {
       console.error('[investigation-sweep] dispatch failed:', err instanceof Error ? err.message : err);
     }
@@ -1146,7 +1162,7 @@ Return ONLY the JSON array, no other text.`;
       console.error('[investigation-sweep] why-chain leg failed:', err instanceof Error ? err.message : err);
     }
 
-    return { dispatched, chainsExecuted, chainsReaped, llmSkipped: !allowLLM };
+    return { dispatched, matched, chainsExecuted, chainsReaped, llmSkipped: !allowLLM };
   }
 
   async function runPredictionValidation(): Promise<WorkflowRunResult> {

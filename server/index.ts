@@ -1536,7 +1536,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       try {
         const r = await workflowOrchestrator.runInvestigationSweep({ allowLLM: marketsLlmOn });
         if (r.dispatched > 0 || r.chainsExecuted > 0 || r.chainsReaped > 0) {
-          console.log(`[markets-investigate] ${label}: dispatched=${r.dispatched} chains_executed=${r.chainsExecuted} reaped=${r.chainsReaped}${r.llmSkipped ? ' (LLM leg skipped)' : ''}`);
+          console.log(`[markets-investigate] ${label}: new=${r.dispatched} (of ${r.matched} anomalies) chains_executed=${r.chainsExecuted} reaped=${r.chainsReaped}${r.llmSkipped ? ' (LLM leg skipped)' : ''}`);
         }
       } catch (err) { console.error(`[markets-investigate] ${label} failed:`, err); }
     }
