@@ -249,7 +249,8 @@ interface IterationComparison {
 // ── Multi-format export dropdown ─────────────────────────────────────────────
 function ExportDropdown({ label, buildContent, filename, isExporting, doExport }: {
   label: string;
-  buildContent: () => string;
+  /** Receives the target format: a spreadsheet wants different shape to a document. */
+  buildContent: (format: string) => string;
   filename: string;
   isExporting: boolean;
   doExport: (format: string, content: string, metadata?: Record<string, unknown>) => Promise<void>;
@@ -265,7 +266,7 @@ function ExportDropdown({ label, buildContent, filename, isExporting, doExport }
 
   const handleExport = async (format: string) => {
     setOpen(false);
-    const content = buildContent();
+    const content = buildContent(format);
     if (format === 'md') {
       const blob = new Blob([content], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -960,6 +961,155 @@ function GapAssessmentWizardInner() {
   };
 
   // ── Markdown builders (reused for multi-format export) ─────────────────────
+  /**
+   * Cell-safe text for a markdown table.
+   *
+   * The xlsx converter splits rows on a naive `split('|')` with no escape
+   * handling, so a single pipe in free text silently shifts every later column.
+   * Newlines end the row outright. Markdown emphasis is stripped because Excel
+   * has no idea what `**bold**` means and renders the asterisks literally —
+   * which is how "**Framework:** amlr-2024" ended up in a cell.
+   */
+  const cell = (v: unknown, max = 1200): string => {
+    const t = String(v ?? '')
+      .replace(/\r?\n+/g, ' · ')
+      .replace(/\|/g, '/')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/^#+\s*/gm, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    return t.length > max ? t.slice(0, max - 1) + '…' : t;
+  };
+
+  /**
+   * Findings as a spreadsheet rather than a document.
+   *
+   * The document form emits one `###` section per article, and the converter
+   * turns every heading that contains a table into its own sheet — so a
+   * 90-article framework produced a 93-tab workbook that nobody can navigate,
+   * each tab holding a five-cell table and the rest of the prose stacked in
+   * column A. One row per article instead: sortable, filterable, pivotable.
+   */
+  const buildFindingsSpreadsheet = useCallback(() => {
+    const title = assessment?.title || 'Gap Assessment';
+    const docName = (docId: string) => evidenceManifest.find(m => m.docId === docId)?.name || docId;
+    const avg = findings.length > 0
+      ? Math.round(findings.reduce((s2, f) => s2 + (f.numericScore || 0), 0) / findings.length) : 0;
+
+    let md = `# Gap Assessment — ${cell(title)}
+
+`;
+
+    md += `## Score Summary
+
+| Score | Count | Share |
+|---|---|---|
+`;
+    for (const sc of ['red', 'amber', 'yellow', 'green'] as const) {
+      const n = findings.filter(f => f.score === sc).length;
+      const pct = findings.length ? Math.round((n / findings.length) * 100) : 0;
+      md += `| ${sc.charAt(0).toUpperCase() + sc.slice(1)} | ${n} | ${pct}% |
+`;
+    }
+    md += `| Overall | ${findings.length} | ${avg}% |
+
+`;
+
+    md += `## Findings
+
+`;
+    md += `| Article | Title | Score | % | Priority | Documented | Implemented | Tested | Evidenced | Owner assigned | Requirement | Current state | Gaps & recommendations | Evidence refs | Status |
+`;
+    md += `|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+`;
+    for (const f of findings) {
+      const c = f.criteria;
+      const status = [
+        f.overrideKind ? `overridden (${f.overrideKind})` : '',
+        f.carriedForward ? 'carried forward' : '',
+        (f.rubricVersion === null || f.rubricVersion === undefined) ? 'legacy scoring' : '',
+      ].filter(Boolean).join('; ');
+      md += `| ${cell(f.articleId, 40)} | ${cell(f.articleTitle, 120)} | ${f.score} | ${f.numericScore || 0}% | ${f.priority} `
+        + `| ${c?.documented ?? ''} | ${c?.implemented ?? ''} | ${c?.tested ?? ''} | ${c?.evidenced ?? ''} | ${c?.ownerAssigned ?? ''} `
+        + `| ${cell(f.requirement)} | ${cell(f.currentState)} | ${cell(f.notes)} | ${f.evidenceRefs?.length ?? 0} | ${cell(status, 80)} |
+`;
+    }
+
+    const refRows = findings.flatMap(f => (f.evidenceRefs ?? []).map(r => ({ f, r })));
+    if (refRows.length > 0) {
+      md += `
+## Evidence
+
+| Article | Title | Document | Quote |
+|---|---|---|---|
+`;
+      for (const { f, r } of refRows) {
+        const rr = r as unknown as { docId?: string; quote?: string; excerpt?: string; text?: string };
+        md += `| ${cell(f.articleId, 40)} | ${cell(f.articleTitle, 120)} | ${cell(docName(String(rr.docId ?? '')), 120)} `
+          + `| ${cell(rr.quote ?? rr.excerpt ?? rr.text ?? '')} |
+`;
+      }
+    }
+    return md;
+  }, [findings, assessment, evidenceManifest]);
+
+  /**
+   * Roadmap as a spreadsheet. The phases already ARE structured data —
+   * phases[].items[] with owner, effort, priority, deadline and risk — and the
+   * document form flattens that into prose headings, which the converter then
+   * had no table to find in. The result was a single "Output" sheet with 684
+   * lines stacked in column A. One row per action restores the structure that
+   * was there all along.
+   */
+  const buildRoadmapSpreadsheet = useCallback(() => {
+    let md = `# Remediation Roadmap — ${cell(assessment?.title || 'Gap Assessment')}
+
+`;
+    md += `## Actions
+
+`;
+    md += `| Phase | Timeframe | Action | Owner | Effort | Priority | Description | Rationale | Regulatory deadline | Risk if delayed | Resources | Success metrics |
+`;
+    md += `|---|---|---|---|---|---|---|---|---|---|---|---|
+`;
+    for (const phase of roadmap?.phases ?? []) {
+      for (const item of phase.items ?? []) {
+        md += `| ${cell(phase.name, 60)} | ${cell(phase.timeframe, 40)} | ${cell(item.title, 160)} | ${cell(item.owner, 60)} `
+          + `| ${cell(item.effort, 40)} | ${cell(item.priority, 30)} | ${cell(item.description)} | ${cell(item.rationale)} `
+          + `| ${cell(item.regulatoryDeadline, 60)} | ${cell(item.riskIfDelayed)} | ${cell(item.resourceRequirements)} `
+          + `| ${cell(item.successMetrics)} |
+`;
+      }
+    }
+    const summary: Array<[string, unknown]> = [
+      ['Estimated FTE', roadmap?.estimatedFTE],
+      ['Estimated budget', roadmap?.estimatedBudget],
+      ['Governance model', roadmap?.governanceModel],
+    ].filter(([, v]) => v) as Array<[string, unknown]>;
+    if (summary.length > 0) {
+      md += `
+## Roadmap Summary
+
+| Item | Value |
+|---|---|
+`;
+      for (const [k, v] of summary) md += `| ${k} | ${cell(v)} |
+`;
+    }
+    if (roadmap?.keyRisks?.length) {
+      md += `
+## Key Risks
+
+| # | Risk |
+|---|---|
+`;
+      roadmap.keyRisks.forEach((r, i) => { md += `| ${i + 1} | ${cell(r)} |
+`; });
+    }
+    return md;
+  }, [roadmap, assessment]);
+
   const buildFindingsMarkdown = useCallback(() => {
     const title = assessment?.title || 'Gap Assessment';
     const date = new Date().toISOString().slice(0, 10);
@@ -1083,6 +1233,31 @@ function GapAssessmentWizardInner() {
     if (roadmap?.governanceModel) md += `## Governance Model\n${roadmap.governanceModel}\n\n`;
     return md;
   }, [roadmap, assessment]);
+
+  /**
+   * Complete report. For xlsx the per-article sections are replaced by the
+   * wide findings/evidence/roadmap tables — a document wants narrative depth,
+   * a workbook wants one row per thing and a filter across the top.
+   */
+  const buildFullAssessmentSpreadsheet = useCallback(() => {
+    let md = buildFindingsSpreadsheet();
+    if (capabilities.length > 0) {
+      md += `
+## Capability Themes
+
+| Theme | Maturity | Summary |
+|---|---|---|
+`;
+      for (const c of capabilities) {
+        const cc = c as unknown as { theme?: string; name?: string; maturity?: unknown; summary?: unknown; description?: unknown };
+        md += `| ${cell(cc.theme ?? cc.name ?? '', 120)} | ${cell(cc.maturity ?? '', 40)} | ${cell(cc.summary ?? cc.description ?? '')} |
+`;
+      }
+    }
+    if (roadmap) md += `
+` + buildRoadmapSpreadsheet().replace(/^# .*$/m, '');
+    return md;
+  }, [buildFindingsSpreadsheet, buildRoadmapSpreadsheet, capabilities, roadmap]);
 
   const buildFullAssessmentMarkdown = useCallback(() => {
     let md = `# Complete Gap Assessment Report — ${assessment?.title || 'Gap Assessment'}\n\n`;
@@ -2191,7 +2366,7 @@ function GapAssessmentWizardInner() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <ExportDropdown label="Export Findings" buildContent={buildFindingsMarkdown} filename={`findings-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+              <ExportDropdown label="Export Findings" buildContent={(fmt) => (fmt === 'xlsx' ? buildFindingsSpreadsheet() : buildFindingsMarkdown())} filename={`findings-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
               {capabilities.length > 0 ? (
                 <>
                   <button
@@ -2240,7 +2415,7 @@ function GapAssessmentWizardInner() {
                         Cards
                       </button>
                     </div>
-                    <ExportDropdown label="Export" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                    <ExportDropdown label="Export" buildContent={() => buildCapabilityMarkdown()} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                   </>
                 )}
                 <button onClick={runSynthesis} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors">
@@ -2478,7 +2653,7 @@ function GapAssessmentWizardInner() {
                   <button onClick={() => setCurrentStep(5)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Scoring
                   </button>
-                  <ExportDropdown label="Export Capability Report" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <ExportDropdown label="Export Capability Report" buildContent={() => buildCapabilityMarkdown()} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                   {boardSummary ? (
                     <>
                       <button onClick={() => setCurrentStep(7)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
@@ -2539,7 +2714,7 @@ function GapAssessmentWizardInner() {
                   <button onClick={() => setCurrentStep(6)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Capabilities
                   </button>
-                  <ExportDropdown label="Export Board Summary" buildContent={buildBoardMarkdown} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <ExportDropdown label="Export Board Summary" buildContent={() => buildBoardMarkdown()} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                   {roadmap ? (
                     <>
                       <button onClick={() => setCurrentStep(8)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
@@ -2649,7 +2824,7 @@ function GapAssessmentWizardInner() {
                   <button onClick={() => setCurrentStep(7)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Board Summary
                   </button>
-                  <ExportDropdown label="Export Roadmap" buildContent={buildRoadmapMarkdown} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <ExportDropdown label="Export Roadmap" buildContent={(fmt) => (fmt === 'xlsx' ? buildRoadmapSpreadsheet() : buildRoadmapMarkdown())} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                 </div>
               </div>
             )}
@@ -2663,7 +2838,7 @@ function GapAssessmentWizardInner() {
             <div className="flex items-center gap-3 flex-wrap">
               <ExportDropdown
                 label="Export Complete Assessment"
-                buildContent={buildFullAssessmentMarkdown}
+                buildContent={(fmt) => (fmt === 'xlsx' ? buildFullAssessmentSpreadsheet() : buildFullAssessmentMarkdown())}
                 filename={`full-assessment-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`}
                 isExporting={isExporting}
                 doExport={doExport}
