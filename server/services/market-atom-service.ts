@@ -341,6 +341,11 @@ Return ONLY the JSON array, no other text.`;
         messages: [{ role: 'user', content: userPrompt }],
         maxTokens: 8192,
         jsonMode: true,
+        // Backlog extraction is a four-figure queue of one-call-per-item work.
+        // Left at interactive priority it held every subscription slot for
+        // minutes at a time and a person pressing Run in a module was told the
+        // engine had aborted.
+        background: true,
       });
       const responseText = result.text;
 

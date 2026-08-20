@@ -127,7 +127,48 @@ interface ContentBlock {
 // ── Concurrency cap ─────────────────────────────────────────
 
 const MAX_CONCURRENT_SDK_RUNS = 2;
+
+/**
+ * Slots a BACKGROUND run may occupy. One is always held back for interactive
+ * work.
+ *
+ * The subscription engine allows two concurrent runs. Markets backlog
+ * extraction is one LLM call per item and the queue runs to four figures, so a
+ * catch-up pass held both slots continuously for minutes at a time — and a user
+ * who pressed Run in a module got "Operation aborted" while the machine was
+ * demonstrably busy doing something they had not asked for. Background work
+ * yields the last slot rather than competing for it.
+ */
+const MAX_BACKGROUND_SDK_RUNS = MAX_CONCURRENT_SDK_RUNS - 1;
 let activeRuns = 0;
+
+/**
+ * Turn an engine failure into something the reader can act on.
+ *
+ * Every failure used to be reported as "The Claude Code runtime must be
+ * installed and logged in on this machine" — including aborts, upstream 529s
+ * and a saturated engine. That sentence sent people to reinstall a runtime that
+ * was working perfectly, and hid the real cause, which was usually transient.
+ */
+function explainSdkFailure(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes('abort')) {
+    return `SDK engine error: ${msg}. The run was cancelled — usually a timeout, or the engine saturated by background work. Retry, or pick an API model for this run.`;
+  }
+  if (m.includes('529') || m.includes('overloaded')) {
+    return `SDK engine error: ${msg}. Anthropic is overloaded — transient, retry shortly.`;
+  }
+  if (m.includes('rate limit') || m.includes('429')) {
+    return `SDK engine error: ${msg}. The subscription hit a rate limit — wait a moment or pick an API model.`;
+  }
+  if (m.includes('enoent') || m.includes('spawn')) {
+    return `SDK engine error: ${msg}. The Claude Code runtime could not be started — check it is installed and on PATH.`;
+  }
+  if (m.includes('login') || m.includes('auth') || m.includes('unauthor') || m.includes('credential')) {
+    return `SDK engine error: ${msg}. The Claude Code runtime is not signed in on this machine — run 'claude' once to log in.`;
+  }
+  return `SDK engine error: ${msg}.`;
+}
 
 // ── Prompt flattening ───────────────────────────────────────
 
@@ -214,6 +255,10 @@ export async function streamToResponse(
     /** The Settings "Test" button probes the engine BEFORE the user enables
      *  it — that one caller may bypass the enabled gate. Route callers never set this. */
     bypassEnabledCheck?: boolean;
+    /** Scheduled/batch work. Yields the last slot so an interactive run always
+     *  has somewhere to go. Defaults to interactive: a caller must opt IN to
+     *  being deprioritised, so a new code path cannot accidentally starve a user. */
+    background?: boolean;
   },
 ): Promise<void> {
   if (!res.headersSent) {
@@ -235,8 +280,14 @@ export async function streamToResponse(
     res.end();
     return;
   }
-  if (activeRuns >= MAX_CONCURRENT_SDK_RUNS) {
-    sendEvent({ type: 'error', message: `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.` });
+  const slotCap = opts?.background ? MAX_BACKGROUND_SDK_RUNS : MAX_CONCURRENT_SDK_RUNS;
+  if (activeRuns >= slotCap) {
+    sendEvent({
+      type: 'error',
+      message: opts?.background
+        ? `SDK engine busy — background work is capped at ${MAX_BACKGROUND_SDK_RUNS} of ${MAX_CONCURRENT_SDK_RUNS} concurrent runs so interactive requests always keep a slot. It will retry on the next pass.`
+        : `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.`,
+    });
     res.write('data: [DONE]\n\n');
     res.end();
     return;
@@ -339,10 +390,7 @@ export async function streamToResponse(
     // never a thrown exception after headers are out.
     const msg = err instanceof Error ? err.message : 'SDK engine failed to start';
     console.error(`[sdk-engine] error: ${msg}`);
-    sendEvent({
-      type: 'error',
-      message: `SDK engine error: ${msg}. The Claude Code runtime must be installed and logged in on this machine.`,
-    });
+    sendEvent({ type: 'error', message: explainSdkFailure(msg) });
     res.write('data: [DONE]\n\n');
     res.end();
   } finally {
@@ -363,7 +411,7 @@ class CollectingSink implements StreamSink {
 /** One-shot completion through the SDK engine (unified-llm-client sendRequest path). */
 export async function completeText(
   config: SdkStreamConfig,
-  opts?: { bypassEnabledCheck?: boolean },
+  opts?: { bypassEnabledCheck?: boolean; background?: boolean },
 ): Promise<SdkCompletionData> {
   let completion: SdkCompletionData | null = null;
   let errorMessage: string | null = null;

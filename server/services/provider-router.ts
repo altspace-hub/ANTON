@@ -91,6 +91,11 @@ export interface StreamChatConfig {
    *  supports it (Mistral/compat response_format, Ollama format:'json');
    *  Claude callers rely on prompt instructions as before. */
   jsonMode?: boolean;
+  /** Scheduled or batch work rather than something a person is waiting on.
+   *  Only the subscription engines act on it, where concurrency is scarce:
+   *  background runs yield a slot so an interactive request is never starved
+   *  by a queue the user did not start. Defaults to interactive. */
+  background?: boolean;
   /** Seed for reproducible outputs */
   seed?: number;
   /** Database adapter — required for Azure OpenAI config resolution */
@@ -892,7 +897,7 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
         role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
         content: m.content,
       })),
-    });
+    }, { background: config.background === true });
     return { text: data.text, thinking: data.thinking, inputTokens: data.inputTokens, outputTokens: data.outputTokens };
   }
 

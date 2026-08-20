@@ -299,7 +299,10 @@ export async function streamToResponse(
 /** One-shot completion through the Codex engine (unified-llm-client sendRequest path). */
 export async function completeText(
   config: SdkStreamConfig,
-  opts?: { bypassEnabledCheck?: boolean },
+  // `background` is accepted for signature parity with the Claude engine so
+  // provider-router can pass one options object to either. Codex does not
+  // currently reserve a slot for interactive work.
+  opts?: { bypassEnabledCheck?: boolean; background?: boolean },
 ): Promise<SdkCompletionData> {
   let completion: SdkCompletionData | null = null;
   let errorMessage: string | null = null;

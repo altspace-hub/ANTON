@@ -46,6 +46,9 @@ export async function createMarketFundamentalAnalysisService(db: DatabaseAdapter
       system: prompt,
       messages: [{ role: 'user', content: `Analyze ${symbol}:\n\n${context}` }],
       maxTokens: 4096,
+      // Runs as a scheduled batch (up to 8 symbols per pass), so it yields a
+      // subscription slot rather than competing with whoever is at the keyboard.
+      background: true,
     });
 
     // Parse the response
