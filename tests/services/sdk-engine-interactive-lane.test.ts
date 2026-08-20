@@ -26,6 +26,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const sdk = readFileSync(resolve(here, '../../server/services/claude-sdk-client.ts'), 'utf8');
 const router = readFileSync(resolve(here, '../../server/services/provider-router.ts'), 'utf8');
 const atoms = readFileSync(resolve(here, '../../server/services/market-atom-service.ts'), 'utf8');
+const server = readFileSync(resolve(here, '../../server/index.ts'), 'utf8');
 
 describe('interactive lane', () => {
   it('reserves a slot that background work cannot take', () => {
@@ -91,5 +92,44 @@ describe('failure messages', () => {
     const abortBranch = fn.slice(fn.indexOf("includes('abort')"), fn.indexOf("includes('529')"));
     expect(abortBranch).not.toMatch(/installed/);
     expect(abortBranch).not.toMatch(/signed in/);
+  });
+});
+
+describe('restart during an in-flight run', () => {
+  /**
+   * 2026-08-20, second report: the same "Operation aborted" surfaced while the
+   * server log showed a burst of ECONNREFUSED followed by pg-init — the
+   * signature of a restart. The dev server runs `tsx watch server/index.ts`,
+   * so ANY save under server/ tears it down; the run was killed by a file
+   * write four seconds earlier, not by a timeout or a busy engine.
+   *
+   * Sending someone to retry or switch model when an editor killed their
+   * request costs them the time it takes to disprove the wrong hypothesis.
+   */
+  it('records that the process is going down', () => {
+    expect(sdk).toMatch(/let shuttingDown = false/);
+    expect(sdk).toMatch(/export function markSdkEngineShuttingDown/);
+  });
+
+  it('is told by the shutdown handler', () => {
+    const idx = server.indexOf('function shutdown(signal: string)');
+    expect(idx).toBeGreaterThan(-1);
+    expect(server.slice(idx, idx + 900)).toMatch(/markSdkEngineShuttingDown/);
+  });
+
+  it('names the restart instead of guessing, when it knows', () => {
+    const fn = sdk.slice(sdk.indexOf('function explainSdkFailure'), sdk.indexOf('function explainSdkFailure') + 1600);
+    expect(fn).toMatch(/if \(shuttingDown\)/);
+    expect(fn).toMatch(/server restarted/);
+    // And it must not still be blaming the input.
+    expect(fn).toMatch(/Nothing is wrong with the input/);
+  });
+
+  it('mentions a restart even when it cannot be sure', () => {
+    // An abort that arrives before the signal handler runs still deserves the
+    // most likely cause in a watch-mode dev environment.
+    const fn = sdk.slice(sdk.indexOf('function explainSdkFailure'), sdk.indexOf('function explainSdkFailure') + 1600);
+    const generic = fn.slice(fn.indexOf('return `SDK engine error: ${msg}. The run was cancelled'));
+    expect(generic).toMatch(/restarts the dev server/);
   });
 });

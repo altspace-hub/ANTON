@@ -2122,6 +2122,15 @@ const DRAIN_TIMEOUT_MS = 30_000;
 function shutdown(signal: string): void {
   logger.info({ signal }, 'Graceful shutdown initiated');
 
+  // Tell the SDK engine we are going down, so an in-flight run that aborts
+  // reports "the server restarted" rather than guessing at a timeout. Under
+  // `tsx watch` a file save is by far the most common cause of an abort during
+  // development, and sending the user to retry or change model is the wrong
+  // advice for it.
+  void import('./services/claude-sdk-client.js')
+    .then((m) => m.markSdkEngineShuttingDown?.())
+    .catch(() => {});
+
   // ANTON Studio P6 — SIGTERM only the preview dev-servers WE spawned (by their
   // tracked ChildProcess handles). Never taskkill, never kill by name/port.
   void import('./services/coding-preview-service.js')

@@ -143,6 +143,19 @@ const MAX_BACKGROUND_SDK_RUNS = MAX_CONCURRENT_SDK_RUNS - 1;
 let activeRuns = 0;
 
 /**
+ * Set once the process is going down, so an abort can be explained rather than
+ * guessed at.
+ *
+ * In development the server runs under `tsx watch`, which restarts on any file
+ * change under server/ — so the single most common cause of an in-flight run
+ * aborting is not a timeout or a saturated engine, it is somebody saving a
+ * file. Telling the user to retry or switch model when a colleague's editor
+ * killed their request wastes their time on the wrong hypothesis.
+ */
+let shuttingDown = false;
+export function markSdkEngineShuttingDown(): void { shuttingDown = true; }
+
+/**
  * Turn an engine failure into something the reader can act on.
  *
  * Every failure used to be reported as "The Claude Code runtime must be
@@ -153,7 +166,10 @@ let activeRuns = 0;
 function explainSdkFailure(msg: string): string {
   const m = msg.toLowerCase();
   if (m.includes('abort')) {
-    return `SDK engine error: ${msg}. The run was cancelled — usually a timeout, or the engine saturated by background work. Retry, or pick an API model for this run.`;
+    if (shuttingDown) {
+      return `SDK engine error: ${msg}. The server restarted while this run was in flight — in development that is usually a file save triggering the watcher, not a problem with the request. Nothing is wrong with the input: run it again.`;
+    }
+    return `SDK engine error: ${msg}. The run was cancelled — a server restart (a file change under server/ restarts the dev server), a timeout, or the engine saturated by background work. Retry, or pick an API model for this run.`;
   }
   if (m.includes('529') || m.includes('overloaded')) {
     return `SDK engine error: ${msg}. Anthropic is overloaded — transient, retry shortly.`;
