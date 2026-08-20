@@ -1594,6 +1594,47 @@ Return ONLY the JSON array, no other text.`;
             const mo = momResult.output as Record<string, unknown>;
             quantContext = `\nQUANTITATIVE INDICATORS (SPY):\n- RSI(14): ${(mo as { rsi?: number }).rsi?.toFixed(1) ?? 'N/A'}\n- MACD: ${JSON.stringify((mo as { macd?: unknown }).macd).slice(0, 200)}\n`;
           }
+
+          // GARCH(1,1) conditional volatility.
+          //
+          // Confidence was previously formed against momentum alone, which says
+          // where price has been but nothing about how wide the distribution
+          // around the next move is. A directional call at 0.60 means something
+          // different in a quiet tape than in a volatile one, and the Brier
+          // scoring punishes exactly that confusion. The template takes RETURNS,
+          // not prices — feeding it a price series silently models the level
+          // instead of the variance, which is a plausible-looking mistake.
+          const returns: number[] = [];
+          for (let i = 1; i < closes.length; i++) {
+            const prev = closes[i - 1];
+            if (prev > 0) returns.push((closes[i] - prev) / prev);
+          }
+          if (returns.length >= 20) {
+            const garch = await computationService.runTemplate(
+              'garch_volatility', { returns, p: 1, q: 1 }, 'weekly-pulse',
+            );
+            if (garch.success && garch.output) {
+              // Field names verified against a live run rather than assumed —
+              // the template returns params.{omega,alpha,beta}, forecast_1d /
+              // _5d / _20d, persistence and half_life. Guessing these produces
+              // a context line reading "N/A" forever, which nothing surfaces.
+              const g = garch.output as {
+                conditional_volatility?: number[];
+                forecast_1d?: number; forecast_20d?: number;
+                persistence?: number; half_life?: number;
+              };
+              const cv = Array.isArray(g.conditional_volatility) ? g.conditional_volatility : [];
+              const latest = cv.length > 0 ? cv[cv.length - 1] : undefined;
+              // Annualise for readability: a daily sigma of 0.0092 means little
+              // to a reader, 14.7% annualised is immediately legible.
+              const ann = (v?: number) => (typeof v === 'number' ? `${(v * Math.sqrt(252) * 100).toFixed(1)}%` : 'N/A');
+              quantContext += `- GARCH(1,1) volatility (SPY): current ${ann(latest)} annualised`
+                + `, 1-day forecast ${ann(g.forecast_1d)}, 20-day ${ann(g.forecast_20d)}`
+                + `, persistence ${typeof g.persistence === 'number' ? g.persistence.toFixed(3) : 'N/A'}`
+                + `, shock half-life ${typeof g.half_life === 'number' ? `${g.half_life.toFixed(1)} sessions` : 'N/A'}\n`
+                + `  Size confidence to this: a wide or rising distribution should pull directional confidence toward the LOWER half of the 0.40-0.75 range. High persistence means today's volatility regime is likely to hold over a tactical horizon.\n`;
+            }
+          }
         }
       } catch { /* non-fatal — quant context is enrichment */ }
 

@@ -1043,6 +1043,82 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
           newWeight: c.proposedWeight,
         }));
 
+        // Lazy import: the rebalance service is constructed on paths that have
+        // no reason to pull in the Python computation layer.
+        const { createMarketComputationService } = await import('./market-computation-service.js');
+        const computationService = await createMarketComputationService(db);
+
+        // Kelly sizing, recorded alongside each proposed weight — advisory only.
+        //
+        // The weights above come from conviction scores, which say which way to
+        // lean but nothing about how far. Kelly answers that from the edge the
+        // system has actually demonstrated on this symbol, so a name we have
+        // been repeatedly wrong about is sized down even when conviction is
+        // loud. Half-Kelly, because full Kelly assumes the win probability is
+        // known rather than estimated from a handful of resolved predictions,
+        // and is brutal when that estimate is optimistic.
+        //
+        // Shadow mode is the honest place for this: the number is written next
+        // to the proposal so its quality can be judged over time, and nothing
+        // is sized by it until it has earned that.
+        for (const t of trades) {
+          try {
+            const rec = await db.get<{ n: string; wins: string }>(
+              `SELECT COUNT(*)::text AS n,
+                      COUNT(*) FILTER (WHERE was_correct = 1)::text AS wins
+                 FROM market_predictions
+                WHERE target_symbol = ? AND was_correct IS NOT NULL`,
+              t.symbol,
+            );
+            const n = Number(rec?.n ?? 0);
+            // Below this the win rate is noise, and Kelly on noise is a
+            // confident instruction to bet the book.
+            if (n < 5) { (t as Record<string, unknown>).kelly = null; continue; }
+
+            const wins = Number(rec?.wins ?? 0);
+            const p = wins / n;
+            const moves = await db.all<{ pct: string }>(
+              `SELECT ABS((actual_value - predicted_value) / NULLIF(predicted_value, 0))::text AS pct
+                 FROM market_predictions
+                WHERE target_symbol = ? AND actual_value IS NOT NULL AND predicted_value IS NOT NULL`,
+              t.symbol,
+            );
+            const mags = moves.map(m => Number(m.pct)).filter(v => Number.isFinite(v) && v > 0);
+            const avgMove = mags.length > 0 ? mags.reduce((a, b) => a + b, 0) / mags.length : 0.02;
+
+            const k = await computationService.runTemplate('kelly_criterion', {
+              win_probability: p,
+              win_amount: avgMove,
+              loss_amount: avgMove,
+              bankroll: Number(index.current_nav) || 0,
+              fraction_kelly: 0.5,
+            }, 'shadow-rebalance');
+            // Field names verified against a live run: the template returns
+            // full_kelly, half_kelly, position_size, expected_growth,
+            // ruin_probability and edge.
+            const out = k.success ? (k.output as {
+              full_kelly?: number; half_kelly?: number; position_size?: number;
+              expected_growth?: number; ruin_probability?: number; edge?: number;
+            }) : null;
+            (t as Record<string, unknown>).kelly = out
+              ? {
+                  sampleSize: n,
+                  winRate: Number(p.toFixed(3)),
+                  avgMove: Number(avgMove.toFixed(4)),
+                  fullKelly: out.full_kelly ?? null,
+                  suggestedFraction: out.half_kelly ?? null,
+                  positionSize: out.position_size ?? null,
+                  expectedGrowth: out.expected_growth ?? null,
+                  ruinProbability: out.ruin_probability ?? null,
+                  edge: out.edge ?? null,
+                }
+              : null;
+          } catch {
+            // Sizing is advisory — a failure here must not cost the proposal.
+            (t as Record<string, unknown>).kelly = null;
+          }
+        }
+
         const rebalanceId = `shadow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         await db.run(`
           INSERT INTO market_index_rebalances
