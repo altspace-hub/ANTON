@@ -1958,8 +1958,31 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           const daysSincePulse = lastPulse
             ? (now.getTime() - new Date(lastPulse.started_at).getTime()) / 86400000
             : Infinity;
-          if (daysSincePulse > 4 && isWeekday) {
-            console.log(`[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
+
+          // A single missed pulse used to be unrecoverable. The pulse is
+          // scheduled Monday and Thursday — a 3.5-day cadence — so a
+          // "> 4 days since the last success" test can only fire after TWO
+          // consecutive misses. On 2026-08-20 the Thursday run failed at 09:00
+          // (the engine was saturated by backlog work) and this check saw three
+          // days since Monday, declared it fine, and the day's predictions were
+          // simply lost.
+          //
+          // Ask the question that actually matters instead: it is a pulse day
+          // and today has produced no successful pulse. The staleness test is
+          // kept as the backstop for everything else.
+          const isPulseDay = dayOfWeek === 1 || dayOfWeek === 4;
+          const pulseToday = await db.get<{ n: string }>(
+            `SELECT COUNT(*)::text AS n FROM workflow_runs
+              WHERE workflow_id = 'wf_markets_weekly_pulse'
+                AND status IN ('completed', 'success')
+                AND started_at >= CURRENT_DATE`
+          );
+          const missedTodaysPulse = isPulseDay && Number(pulseToday?.n ?? 0) === 0;
+
+          if ((daysSincePulse > 4 || missedTodaysPulse) && isWeekday) {
+            console.log(missedTodaysPulse
+              ? "[markets-catchup] Today's scheduled pulse has not completed — running now"
+              : `[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
             try {
               await workflowOrchestrator.runWeeklyPulse();
               catchUpActions++;

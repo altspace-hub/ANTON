@@ -139,3 +139,23 @@ function expandHours(): number[] {
   const field = m![1].split(/\s+/)[1];
   return field === '*' ? Array.from({ length: 24 }, (_, i) => i) : field.split(',').map(Number);
 }
+
+describe('missed scheduled pulse recovery', () => {
+  it('retries a pulse that failed on its own scheduled day', () => {
+    // The pulse runs Mon+Thu — a 3.5-day cadence — so a "> 4 days since the
+    // last success" test can only fire after TWO consecutive misses. On
+    // 2026-08-20 the Thursday run failed at 09:00, this saw three days since
+    // Monday, called it healthy, and the day's predictions were lost.
+    expect(src).toMatch(/const isPulseDay = dayOfWeek === 1 \|\| dayOfWeek === 4/);
+    expect(src).toMatch(/missedTodaysPulse/);
+    expect(src).toMatch(/daysSincePulse > 4 \|\| missedTodaysPulse/);
+  });
+
+  it('counts only SUCCESSFUL runs when deciding whether today is covered', () => {
+    // A failed run sitting in the table must not read as "the pulse ran".
+    const i = src.indexOf('const pulseToday');
+    const q = src.slice(i, i + 400);
+    expect(q).toMatch(/status IN \('completed', 'success'\)/);
+    expect(q).toMatch(/started_at >= CURRENT_DATE/);
+  });
+});

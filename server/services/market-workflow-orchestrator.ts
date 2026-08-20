@@ -1591,8 +1591,30 @@ Return ONLY the JSON array, no other text.`;
           const closes = spyPrices.map(p => Number(p.close)).reverse();
           const momResult = await computationService.runTemplate('momentum_indicators', { prices: closes }, 'weekly-pulse');
           if (momResult.success && momResult.output) {
-            const mo = momResult.output as Record<string, unknown>;
-            quantContext = `\nQUANTITATIVE INDICATORS (SPY):\n- RSI(14): ${(mo as { rsi?: number }).rsi?.toFixed(1) ?? 'N/A'}\n- MACD: ${JSON.stringify((mo as { macd?: unknown }).macd).slice(0, 200)}\n`;
+            // This line used to stringify a `macd` field and take a substring
+            // of the result. The template returns no such key — it returns
+            // rsi, rsi_signal,
+            // bollinger, rate_of_change and stochastic — so JSON.stringify gave
+            // back the VALUE undefined, and .slice() on it threw. The throw was
+            // swallowed by the outer "quant context is enrichment" catch, which
+            // means quantContext was empty on every pulse ever run: no pulse has
+            // actually seen an indicator, and nothing reported a fault.
+            //
+            // Fields are now read defensively from what the template really
+            // returns, and formatting cannot throw.
+            const mo = momResult.output as {
+              rsi?: number; rsi_signal?: string; rate_of_change?: number;
+              bollinger?: { pct_b?: number; width?: number };
+              stochastic?: { k?: number; d?: number; signal?: string };
+            };
+            const n = (v: unknown, d = 1) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : 'N/A');
+            const parts = [
+              `- RSI(14): ${n(mo.rsi)}${mo.rsi_signal ? ` (${mo.rsi_signal})` : ''}`,
+              `- Rate of change: ${n(mo.rate_of_change, 2)}%`,
+              `- Bollinger %B: ${n(mo.bollinger?.pct_b, 2)} (band width ${n(mo.bollinger?.width, 3)})`,
+              `- Stochastic: %K ${n(mo.stochastic?.k)} / %D ${n(mo.stochastic?.d)}${mo.stochastic?.signal ? ` (${mo.stochastic.signal})` : ''}`,
+            ];
+            quantContext = `\nQUANTITATIVE INDICATORS (SPY):\n${parts.join('\n')}\n`;
           }
 
           // GARCH(1,1) conditional volatility.
@@ -1609,6 +1631,11 @@ Return ONLY the JSON array, no other text.`;
             const prev = closes[i - 1];
             if (prev > 0) returns.push((closes[i] - prev) / prev);
           }
+          // Its own try: these indicators are independent signals, and one
+          // failing to format is not a reason for the other to go missing.
+          // That coupling is exactly what hid this — a throw in the momentum
+          // line above skipped GARCH entirely, silently.
+          try {
           if (returns.length >= 20) {
             const garch = await computationService.runTemplate(
               'garch_volatility', { returns, p: 1, q: 1 }, 'weekly-pulse',
@@ -1635,8 +1662,18 @@ Return ONLY the JSON array, no other text.`;
                 + `  Size confidence to this: a wide or rising distribution should pull directional confidence toward the LOWER half of the 0.40-0.75 range. High persistence means today's volatility regime is likely to hold over a tactical horizon.\n`;
             }
           }
+          } catch (garchErr) {
+            // Loud, not silent. The whole reason this took a week to notice is
+            // that the enclosing catch said nothing.
+            console.warn('[weekly-pulse] GARCH context failed:', garchErr instanceof Error ? garchErr.message : garchErr);
+          }
         }
-      } catch { /* non-fatal — quant context is enrichment */ }
+        if (!quantContext) {
+          console.warn('[weekly-pulse] quant context is EMPTY — the prompt will carry no indicators');
+        }
+      } catch (quantErr) {
+        console.warn('[weekly-pulse] quant context failed:', quantErr instanceof Error ? quantErr.message : quantErr);
+      }
 
       const today = new Date().toISOString().split('T')[0];
       const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
