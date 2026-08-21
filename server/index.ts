@@ -1746,6 +1746,72 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     cron.schedule('0 12 * * *', () => { void runMarketsFreeSweeps('1200-catchup'); }, MARKET_TZ);
     setTimeout(() => { void runMarketsFreeSweeps('startup-catchup'); }, 120_000).unref();
 
+    // ── Self-heal tick ────────────────────────────────────────────────────
+    // Measured on 2026-08-21: this workstation was awake for 80 minutes out of
+    // 901 — asleep 91% of the day. Every fixed-time slot (07:00, 08:00, 12:00,
+    // 13:00, 14:00, 14:30) fell inside a sleep window, so the day produced
+    // nothing at all: no fetch, no atoms, no grading. Scheduling by time of day
+    // does not work on a laptop that is almost never awake at a given time, and
+    // the resume detector below only helps when a resume is long enough to
+    // notice.
+    //
+    // So stop asking "is it 12:00?" and start asking "is there outstanding
+    // work?" — on a short tick, every day including weekends. Whenever the
+    // machine happens to be awake, the free half of the loop catches up.
+    //
+    // Strictly free: these sweeps are DB arithmetic and price comparisons.
+    // Grading and anomaly dispatch are included because a missed grade delays
+    // every downstream signal. Why-chain execution and backlog extraction are
+    // NOT — they spend, and belong on their own cadence.
+    const SELF_HEAL_MS = 20 * 60_000;
+    let selfHealBusy = false;
+    async function selfHealTick(): Promise<void> {
+      if (selfHealBusy) return;
+      selfHealBusy = true;
+      try {
+        // Prices first — NAV and grading both depend on them, so a stale spine
+        // silently disables the two things most worth having. Gated on actual
+        // staleness rather than the clock: fetch only when the newest bar
+        // predates the last completed session, which makes this a no-op on a
+        // machine that is keeping up and a rescue on one that is not.
+        if (marketsFetchOn) {
+          try {
+            const newest = await db.get<{ d: string | null }>(
+              `SELECT TO_CHAR(MAX(published_at), 'YYYY-MM-DD') AS d
+                 FROM market_data_raw WHERE data_type = 'price'`);
+            const today = new Date().toISOString().slice(0, 10);
+            const dow = new Date().getDay();
+            // On a weekend the most recent session is Friday, so only chase a
+            // bar older than that; midweek, anything before today is stale.
+            const staleBefore = dow === 6 || dow === 0
+              ? new Date(Date.now() - (dow === 6 ? 1 : 2) * 86_400_000).toISOString().slice(0, 10)
+              : today;
+            if (!newest?.d || newest.d < staleBefore) {
+              const priceSources = await db.all<{ id: string }>(
+                "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'");
+              for (const src of priceSources) {
+                try { await marketDataService.fetchFromSource(src.id); } catch { /* skip one source */ }
+              }
+              console.log(`[markets-self-heal] price spine was stale (newest ${newest?.d ?? 'none'}) — refreshed`);
+            }
+          } catch (err) {
+            console.warn('[markets-self-heal] price refresh failed:', err instanceof Error ? err.message : err);
+          }
+        }
+
+        await runMarketsFreeSweeps('self-heal');
+        await runVerificationPass('self-heal');
+        // allowLLM:false — dispatch anomalies and reap stalled chains (both
+        // free); leave paid chain execution to the daily pass.
+        await workflowOrchestrator.runInvestigationSweep({ allowLLM: false });
+      } catch (err) {
+        console.error('[markets-self-heal] tick failed:', err instanceof Error ? err.message : err);
+      } finally {
+        selfHealBusy = false;
+      }
+    }
+    setInterval(() => { void selfHealTick(); }, SELF_HEAL_MS).unref();
+
     // Sleep catch-up for the SPENDING phases (2026-08-14): the workstation
     // also sleeps through 07:00 without rebooting, and node-cron never
     // replays missed jobs — the first night of re-enabled automation lost

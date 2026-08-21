@@ -159,3 +159,47 @@ describe('missed scheduled pulse recovery', () => {
     expect(q).toMatch(/started_at >= CURRENT_DATE/);
   });
 });
+
+describe('self-heal tick', () => {
+  /**
+   * Measured 2026-08-21: this host was awake 80 minutes out of 901 — asleep
+   * 91% of the day. Every fixed slot (07:00, 08:00, 12:00, 13:00, 14:00,
+   * 14:30) landed inside a sleep window and the day produced nothing: no
+   * fetch, no atoms, no grading. Time-of-day scheduling cannot work on a
+   * laptop that is almost never awake at any given time.
+   */
+  it('runs on a short interval rather than a wall-clock slot', () => {
+    expect(src).toMatch(/SELF_HEAL_MS/);
+    expect(src).toMatch(/setInterval\(\(\) => \{ void selfHealTick\(\); \}, SELF_HEAL_MS\)/);
+  });
+
+  it('does the free work: sweeps, grading, anomaly dispatch', () => {
+    const i = src.indexOf('async function selfHealTick');
+    const body = src.slice(i, i + 2600);
+    expect(body).toMatch(/runMarketsFreeSweeps\('self-heal'\)/);
+    expect(body).toMatch(/runVerificationPass\('self-heal'\)/);
+    expect(body).toMatch(/runInvestigationSweep\(\{ allowLLM: false \}\)/);
+  });
+
+  it('does NOT spend on every tick', () => {
+    // Backlog extraction is one LLM call per item over a four-figure queue,
+    // and why-chain execution is up to five per chain. Neither belongs on a
+    // 20-minute loop.
+    const i = src.indexOf('async function selfHealTick');
+    const body = src.slice(i, i + 2600);
+    expect(body).not.toMatch(/processBacklog/);
+    expect(body).toMatch(/allowLLM: false/);
+  });
+
+  it('refreshes prices on staleness, not on the clock', () => {
+    const i = src.indexOf('async function selfHealTick');
+    const body = src.slice(i, i + 2600);
+    // NAV and grading both depend on the price spine.
+    expect(body).toMatch(/newest\?\.d \|\| newest\.d < staleBefore/);
+    expect(body).toMatch(/marketsFetchOn/);
+  });
+
+  it('will not stack ticks on a slow pass', () => {
+    expect(src).toMatch(/selfHealBusy/);
+  });
+});
