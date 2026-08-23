@@ -130,7 +130,7 @@ import { createPostMarketMonitoringRoutes } from './routes/post-market-monitorin
 import { createMarketsRoutes } from './routes/markets.js';
 import { createMarketComputationRoutes } from './routes/market-computation.js';
 import { createMarketDataService } from './services/market-data-service.js';
-import { createMarketAtomService } from './services/market-atom-service.js';
+import { createMarketAtomService, planExtractionBatches } from './services/market-atom-service.js';
 import { createMarketThesesRoutes } from './routes/market-theses.js';
 import { createMarketEntitiesRoutes } from './routes/market-entities.js';
 import { createMarketPatternsRoutes } from './routes/market-patterns.js';
@@ -1294,18 +1294,38 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       return Number(row?.count) || 0;
     }
 
+    /**
+     * Drain `limit` raw rows into atoms.
+     *
+     * Batched: items go to the model a dozen at a time (fewer for bulky
+     * fundamentals) instead of one call each. Before this, the drain was one
+     * call per item — 200 a weekday against ~450 arriving — so the queue only
+     * ever grew, and the 500-item gate above then switched news fetching off
+     * for days at a time. The `limit` is a row count, not a call count, so the
+     * same number here now costs roughly a twelfth of the calls.
+     */
     async function processBacklog(limit: number) {
       const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
         "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price') ORDER BY fetched_at ASC LIMIT ?", limit
       );
+      const items = unprocessed.map(row => ({
+        id: row.id,
+        text: row.title ? `${row.title}\n\n${row.content}` : row.content,
+        dataType: row.data_type,
+      }));
+
       let processed = 0;
-      for (const row of unprocessed) {
+      for (const batch of planExtractionBatches(items)) {
         try {
-          const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
-          await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
-          processed++;
-        } catch { /* skip */ }
-        await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          const byId = await marketAtomService.extractAtomsFromRawDataBatch(batch);
+          // Count a document as processed when it actually yielded atoms —
+          // the old per-item counter incremented on "the call did not throw",
+          // which reported success for extractions that returned nothing.
+          for (const item of batch) if ((byId.get(item.id)?.length ?? 0) > 0) processed++;
+        } catch { /* skip — rows are still marked processed below */ }
+        for (const item of batch) {
+          await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', item.id);
+        }
       }
       return processed;
     }
@@ -1327,7 +1347,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         if (marketsThinkingDisabled) {
           console.log('[markets-schedule] Phase 1: backlog processing skipped (MARKETS_THINKING_DISABLED)');
         } else {
-          const processed = await processBacklog(40);
+          const processed = await processBacklog(150);
           console.log(`[markets-schedule] Phase 1 complete — processed ${processed} articles`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 1 error:', err); }
@@ -1342,7 +1362,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         if (marketsThinkingDisabled) {
           console.log('[markets-schedule] Phase 2: backlog processing skipped (MARKETS_THINKING_DISABLED)');
         } else {
-          const processed = await processBacklog(20);
+          const processed = await processBacklog(100);
           console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
@@ -1375,7 +1395,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         if (marketsThinkingDisabled) {
           console.log('[markets-schedule] Phase 4 skipped (MARKETS_THINKING_DISABLED) — daily intelligence + backlog deferred');
         } else {
-          const processed = await processBacklog(40);
+          const processed = await processBacklog(150);
           console.log(`[markets-schedule] Phase 4: processed ${processed} articles, running intelligence...`);
           await workflowOrchestrator.runDailyIntelligence();
           console.log('[markets-schedule] Phase 4 complete');
@@ -1410,7 +1430,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         return;
       }
       try {
-        const processed = await processBacklog(60);
+        const processed = await processBacklog(200);
 
         // Rotating fundamental analysis: 3 companies per night
         // Cycles through all followed companies over ~2 weeks
@@ -1460,8 +1480,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
     });
 
-    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
-    scheduleSpending('0 10 * * 6', async () => {
+    // Phase 7: Weekend Deep Dive (Sat + Sun 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
+    scheduleSpending('0 10 * * 6,0', async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 7 skipped (MARKETS_THINKING_DISABLED)');
@@ -1469,7 +1489,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       }
       try {
         await workflowOrchestrator.runPredictionValidation();
-        const processed = await processBacklog(100);
+        const processed = await processBacklog(400);
 
         // Weekend: analyze up to 8 companies (bigger batch)
         try {
