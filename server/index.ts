@@ -1943,7 +1943,13 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         }
         const backlog = await getBacklogSize();
         if (backlog > 0 && marketsLlmOn) {
-          const processed = await processBacklog(Math.min(backlog, 100));
+          // 400, not 100: the old ceiling was sized when each row cost its own
+          // model call, and it was left behind when the scheduled caps were
+          // raised for batching. At ~12 rows a call this is roughly 33 calls,
+          // less than the 100-row ceiling used to cost, and it matters because
+          // a boot is the one chance to get back under the 500-item fetch gate
+          // — below which news ingestion is switched off entirely.
+          const processed = await processBacklog(Math.min(backlog, 400));
           console.log(`[markets-catchup] Processed ${processed}/${backlog} backlog items`);
           catchUpActions++;
         } else if (backlog > 0) {
