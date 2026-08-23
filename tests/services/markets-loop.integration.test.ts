@@ -65,6 +65,7 @@ import { createMarketInvestigationService } from '../../server/services/market-i
 import { createWhyChainExecutor } from '../../server/services/market-why-chain-executor';
 import { createMarketWorkflowOrchestrator } from '../../server/services/market-workflow-orchestrator';
 import { createMarketIndexRebalanceService } from '../../server/services/market-index-rebalance-service';
+import { createConditionalAccuracyService } from '../../server/services/market-conditional-accuracy-service';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -615,6 +616,59 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       });
       const loud = byLoop(await checkMarketsLoopHealth(db, { windowDays: 7 }), 'prediction_validation');
       expect(loud.pending).toBe(1);
+    });
+
+    /**
+     * 11. The conditional-accuracy roll-up re-scans "validated in the last 7
+     * days" on every run and incremented `total` each time, with nothing
+     * recording that a prediction had already been counted. A daily workflow
+     * would therefore count the same outcome up to seven times, inflating the
+     * sample and dragging accuracy toward whatever the most-rescanned rows
+     * said — silently, since the table is only read through a >= 3
+     * observation filter that the inflation itself would satisfy.
+     */
+    it('counts each validated prediction into conditional accuracy exactly once', async () => {
+      const cond = await createConditionalAccuracyService(db);
+      await seedPrediction(db, {
+        id: 'ca1', status: 'validated', deadline: daysAgoIso(2), createdAt: daysAgoIso(9),
+        symbol: 'TSTA', wasCorrect: 1, validatedAt: daysAgoIso(1), confidence: 0.6,
+      });
+      await cond.capturePredictionFeatures(
+        'ca1', { signal_type: 'weekly_pulse', direction: 'up' } as never, false,
+      );
+
+      // The roll-up loop, run three times over the same window.
+      for (let i = 0; i < 3; i++) {
+        await cond.updateConditionalAccuracy('ca1', true, 0.16, false);
+      }
+
+      const rows = await db.all<{ feature_key: string; total: string; correct: string }>(
+        `SELECT feature_key, total, correct FROM market_conditional_accuracy
+          WHERE scope = 'live' ORDER BY feature_key`,
+      );
+      expect(rows.map((r) => r.feature_key)).toEqual(['direction', 'signal_type']);
+      for (const r of rows) {
+        expect(Number(r.total), `${r.feature_key} total`).toBe(1);
+        expect(Number(r.correct), `${r.feature_key} correct`).toBe(1);
+      }
+
+      // A DIFFERENT prediction must still be counted — the guard is per-row,
+      // not a latch that stops the loop after the first ever prediction.
+      await seedPrediction(db, {
+        id: 'ca2', status: 'validated', deadline: daysAgoIso(2), createdAt: daysAgoIso(9),
+        symbol: 'TSTB', wasCorrect: 0, validatedAt: daysAgoIso(1), confidence: 0.6,
+      });
+      await cond.capturePredictionFeatures(
+        'ca2', { signal_type: 'weekly_pulse', direction: 'down' } as never, false,
+      );
+      await cond.updateConditionalAccuracy('ca2', false, 0.36, false);
+
+      const after = await db.get<{ total: string; correct: string }>(
+        `SELECT total, correct FROM market_conditional_accuracy
+          WHERE scope = 'live' AND feature_key = 'signal_type' AND feature_value = 'weekly_pulse'`,
+      );
+      expect(Number(after?.total)).toBe(2);
+      expect(Number(after?.correct)).toBe(1);
     });
 
     it('rejects the legacy status value at the schema level — the vocabulary the old watchdog filtered on cannot exist', async () => {

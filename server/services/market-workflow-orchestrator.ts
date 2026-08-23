@@ -1602,8 +1602,15 @@ Return ONLY the JSON array, no other text.`;
       const insightsAggregator = await createWhyChainInsightsAggregator(db);
       const pulseInsights = await insightsAggregator.getInsights(30);
 
-      // Fetch latest quant indicators for pulse context
+      // Fetch latest quant indicators for pulse context.
+      //
+      // rsiSignal and volState are also recorded against every prediction this
+      // pulse creates. They are the market state the call was made in, and
+      // without them conditional accuracy has nothing to condition ON — which
+      // is why that table held two rows against 126 graded predictions.
       let quantContext = '';
+      let rsiSignal = 'unknown';
+      let volState = 'unknown';
       try {
         const spyPrices = await db.all<{ close: number }>(
           "SELECT close FROM market_historical_prices WHERE symbol = 'SPY' ORDER BY price_date DESC LIMIT 30"
@@ -1628,6 +1635,7 @@ Return ONLY the JSON array, no other text.`;
               bollinger?: { pct_b?: number; width?: number };
               stochastic?: { k?: number; d?: number; signal?: string };
             };
+            if (mo.rsi_signal) rsiSignal = String(mo.rsi_signal);
             const n = (v: unknown, d = 1) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : 'N/A');
             const parts = [
               `- RSI(14): ${n(mo.rsi)}${mo.rsi_signal ? ` (${mo.rsi_signal})` : ''}`,
@@ -1673,6 +1681,13 @@ Return ONLY the JSON array, no other text.`;
               };
               const cv = Array.isArray(g.conditional_volatility) ? g.conditional_volatility : [];
               const latest = cv.length > 0 ? cv[cv.length - 1] : undefined;
+              // Banded against the 20-day forecast: whether the distribution
+              // is widening or narrowing is the part a directional call at a
+              // given confidence should have been sized to.
+              if (typeof latest === 'number' && typeof g.forecast_20d === 'number' && latest > 0) {
+                const ratio = g.forecast_20d / latest;
+                volState = ratio > 1.1 ? 'rising' : ratio < 0.9 ? 'falling' : 'stable';
+              }
               // Annualise for readability: a daily sigma of 0.0092 means little
               // to a reader, 14.7% annualised is immediately legible.
               const ann = (v?: number) => (typeof v === 'number' ? `${(v * Math.sqrt(252) * 100).toFixed(1)}%` : 'N/A');
@@ -1795,7 +1810,7 @@ Return ONLY a JSON array.`;
         const clampedConf = Math.max(0.3, Math.min(0.8, conf));
 
         try {
-          await thesisService.createPrediction({
+          const predId = await thesisService.createPrediction({
             title,
             description: desc,
             predictionType: 'directional',
@@ -1809,6 +1824,23 @@ Return ONLY a JSON array.`;
             horizon: horizonDays <= 7 ? 'this_week' : horizonDays <= 30 ? 'this_month' : 'this_year',
           });
           created++;
+
+          // The pulse writes 68% of all predictions and recorded NO features,
+          // so every one of its outcomes was invisible to conditional
+          // accuracy. The other path recorded signal_type ('ai' for
+          // everything) and sector ('equity' for 95%), which cannot
+          // discriminate either. These six vary, so an outcome can finally be
+          // attributed to the conditions it was made under.
+          try {
+            await conditionalAccuracyService.capturePredictionFeatures(predId, {
+              signal_type: 'weekly_pulse',
+              horizon_band: horizonDays <= 3 ? 'tactical' : horizonDays <= 21 ? 'swing' : 'position',
+              direction,
+              confidence_band: clampedConf < 0.5 ? 'low' : clampedConf < 0.65 ? 'mid' : 'high',
+              rsi_signal: rsiSignal,
+              vol_state: volState,
+            } as Parameters<typeof conditionalAccuracyService.capturePredictionFeatures>[1], false);
+          } catch { /* enrichment only — never lose a prediction over it */ }
         } catch (err) {
           console.warn(`[weekly-pulse] Failed to create prediction "${title}":`, (err as Error).message);
         }

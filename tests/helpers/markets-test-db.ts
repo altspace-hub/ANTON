@@ -57,6 +57,8 @@ export const FIXTURE_TABLES = [
   'market_why_chain_levels',
   'market_why_chains',
   'market_investigation_tasks',
+  'market_conditional_accuracy',
+  'market_conditional_accuracy_applied',
 ] as const;
 
 export interface ProvisionResult {

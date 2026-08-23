@@ -359,3 +359,25 @@ CREATE TABLE IF NOT EXISTS market_why_chain_levels (
   research_performed     TEXT,
   key_insight            TEXT
 );
+
+-- Conditional accuracy: the aggregates, and the ledger that keeps the roll-up
+-- idempotent (migration 258). Without the ledger the roll-up counts the same
+-- prediction on every pass over its 7-day window.
+CREATE TABLE IF NOT EXISTS market_conditional_accuracy (
+  id              SERIAL PRIMARY KEY,
+  feature_key     TEXT NOT NULL,
+  feature_value   TEXT NOT NULL,
+  scope           TEXT DEFAULT 'live',
+  total           INTEGER NOT NULL DEFAULT 0,
+  correct         INTEGER NOT NULL DEFAULT 0,
+  accuracy        NUMERIC(10,6),
+  avg_brier       NUMERIC(10,6),
+  last_updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (feature_key, feature_value, scope)
+);
+
+CREATE TABLE IF NOT EXISTS market_conditional_accuracy_applied (
+  prediction_id TEXT PRIMARY KEY,
+  scope         TEXT NOT NULL DEFAULT 'live',
+  applied_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

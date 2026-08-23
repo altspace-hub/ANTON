@@ -62,6 +62,19 @@ export async function createConditionalAccuracyService(db: DatabaseAdapter) {
       typeof row.features === 'string' ? JSON.parse(row.features) : (row.features ?? {});
     const scope = isBacktest ? (backtestId ?? 'backtest') : 'live';
 
+    // Idempotence. The caller re-scans "validated in the last 7 days" on every
+    // run, so without this a daily workflow counts the same outcome up to
+    // seven times: `total` inflates and `accuracy` drifts toward whatever the
+    // most-rescanned rows happened to say. Claim the prediction first — if
+    // another pass already has it, this one does nothing.
+    const claimed = await db.get<{ prediction_id: string }>(
+      `INSERT INTO market_conditional_accuracy_applied (prediction_id, scope)
+       VALUES (?, ?) ON CONFLICT (prediction_id) DO NOTHING
+       RETURNING prediction_id`,
+      predictionId, scope,
+    );
+    if (!claimed) return;
+
     for (const [key, value] of Object.entries(features)) {
       if (!value) continue;
       await db.run(
