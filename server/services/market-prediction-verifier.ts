@@ -296,6 +296,20 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
    * Verify a price target prediction.
    */
   async function verifyPriceTarget(pred: ExpiredPrediction): Promise<VerificationResult> {
+    // A price_target row often carries its threshold only in the claim text
+    // ("SPY prints at least one daily close >= 663.00") with predicted_value
+    // left NULL. Those failed as "Missing symbol or target value" on every
+    // retry until the attempt cap, so SPY price targets were never graded.
+    // Parse the level out of the text before giving up.
+    //
+    // Deliberately NOT a directional fallback: "closes above 663" and "goes
+    // up" are different claims. SPY can rise 0.5% (direction correct) without
+    // ever printing 663 (claim false), so grading one as the other would put
+    // a confident wrong answer into the accuracy record.
+    if (!pred.predicted_value) {
+      const deterministic = await verifyDeterministicClaim(pred);
+      if (deterministic) return deterministic;
+    }
     if (!pred.target_symbol || !pred.predicted_value) {
       return { predictionId: pred.id, wasCorrect: false, actualOutcome: 'Unverifiable', actualValue: null, method: 'unverifiable', verificationConfidence: 0, explanation: 'Missing symbol or target value' };
     }
@@ -395,11 +409,194 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
   }
 
   /**
+   * Parse a "closes above N" / "prints at least one daily close >= N" claim.
+   *
+   * Same narrow-match discipline as parseDailyMoveClaim. Negated phrasings
+   * ("does not close above 665") invert the claim, so they are refused
+   * outright rather than graded backwards — deferring beats a confident
+   * wrong answer.
+   */
+  function parseCloseThresholdClaim(text: string): { thresholdPrice: number; inclusive: boolean } | null {
+    if (/\b(?:does\s+not|doesn'?t|won'?t|will\s+not|never|fails?\s+to)\b/i.test(text)) return null;
+    const m = /\bclos(?:es|ed|ing|e)\b[^.]{0,40}?(at\s+or\s+above|greater\s+than\s+or\s+equal\s+to|>=|at\s+least|above|over)\s*\$?(\d+(?:\.\d+)?)/i.exec(text);
+    if (!m) return null;
+    const thresholdPrice = Number(m[2]);
+    if (!Number.isFinite(thresholdPrice) || thresholdPrice <= 0) return null;
+    // "above"/"over" are strict; "at or above", ">=", "at least" include the level.
+    const inclusive = !/^(?:above|over)$/i.test(m[1].trim());
+    return { thresholdPrice, inclusive };
+  }
+
+  /**
+   * Parse a "<cumulative return> <comparator> N%" claim.
+   *
+   * Refuses anything containing "minus": that is the two-symbol spread shape
+   * below, which also contains the words "cumulative return". Grading a
+   * spread claim as a single-symbol return answers a different question.
+   */
+  function parseCumulativeReturnClaim(text: string): { comparator: 'lt' | 'gt'; thresholdPct: number } | null {
+    if (/\bminus\b/i.test(text)) return null;
+    const m = /\bcumulative\s+return\b[^.]{0,80}?(?:is\s+)?(less\s+than|below|under|<|greater\s+than|more\s+than|above|exceeds?|>)\s*\+?(-?\d+(?:\.\d+)?)\s*%/i.exec(text);
+    if (!m) return null;
+    const thresholdPct = Number(m[2]);
+    if (!Number.isFinite(thresholdPct)) return null;
+    const comparator = /^(?:less\s+than|below|under|<)$/i.test(m[1].trim()) ? 'lt' : 'gt';
+    return { comparator, thresholdPct };
+  }
+
+  /**
+   * Parse an "A minus B <n>-day cumulative return < N percentage points" claim.
+   * Carries its own two symbols, so it does not depend on target_symbol.
+   */
+  function parseRelativeSpreadClaim(
+    text: string,
+  ): { symbolA: string; symbolB: string; comparator: 'lt' | 'gt'; thresholdPct: number } | null {
+    const m = /\b([A-Z][A-Z0-9.\-]{0,5})\s+minus\s+([A-Z][A-Z0-9.\-]{0,5})\b[^.]{0,60}?cumulative\s+return\b\s*(?:is\s+)?(less\s+than|below|under|<|greater\s+than|more\s+than|above|exceeds?|>)\s*\+?(-?\d+(?:\.\d+)?)\s*(?:percentage\s+points?|pp\b|%)/i.exec(text);
+    if (!m) return null;
+    const thresholdPct = Number(m[4]);
+    if (!Number.isFinite(thresholdPct)) return null;
+    const comparator = /^(?:less\s+than|below|under|<)$/i.test(m[3].trim()) ? 'lt' : 'gt';
+    return { symbolA: m[1].toUpperCase(), symbolB: m[2].toUpperCase(), comparator, thresholdPct };
+  }
+
+  /** Cumulative return first close → last close, in percent. */
+  function cumulativeReturnPct(closes: Array<{ close: number }>): number | null {
+    if (closes.length < 2) return null;
+    const first = closes[0].close;
+    const last = closes[closes.length - 1].close;
+    if (!first) return null;
+    return ((last - first) / first) * 100;
+  }
+
+  /** The text a claim parser reads: the machine-written outcome, then the title. */
+  function claimText(pred: ExpiredPrediction): string {
+    return `${pred.predicted_outcome ?? ''} ${pred.title}`;
+  }
+
+  /** Settle a "highest close vs a price level" claim from prices. */
+  async function verifyCloseThreshold(pred: ExpiredPrediction): Promise<VerificationResult | null> {
+    if (!pred.target_symbol) return null;
+    const claim = parseCloseThresholdClaim(claimText(pred));
+    if (!claim) return null;
+
+    const created = new Date(pred.created_at).toISOString().split('T')[0];
+    const closes = await getCloses(pred.target_symbol, created, pred.deadline);
+    // The creation-day close was already on the tape when the call was made,
+    // so it cannot satisfy a forecast. Only later sessions count.
+    const candidates = closes.filter(c => c.priceDate > created);
+    if (candidates.length === 0) return null;
+
+    let maxClose = candidates[0].close;
+    let onDate = candidates[0].priceDate;
+    for (const c of candidates) {
+      if (c.close > maxClose) { maxClose = c.close; onDate = c.priceDate; }
+    }
+
+    const op = claim.inclusive ? '>=' : '>';
+    const wasCorrect = claim.inclusive
+      ? maxClose >= claim.thresholdPrice
+      : maxClose > claim.thresholdPrice;
+    return {
+      predictionId: pred.id,
+      wasCorrect,
+      actualOutcome: `highest close ${maxClose.toFixed(2)} vs ${op} ${claim.thresholdPrice.toFixed(2)}`,
+      actualValue: maxClose,
+      method: 'auto_price',
+      verificationConfidence: 0.95,
+      explanation: `${pred.target_symbol}: highest close over ${candidates[0].priceDate}→${candidates[candidates.length - 1].priceDate} was ${maxClose.toFixed(2)} (on ${onDate}) against ${op} ${claim.thresholdPrice.toFixed(2)} — claim ${wasCorrect ? 'met' : 'not met'}. Settled from ${candidates.length} closes, no LLM.`,
+      gradedScore: wasCorrect ? 1.0 : 0.0,
+    };
+  }
+
+  /** Settle a single-symbol cumulative-return threshold claim from prices. */
+  async function verifyCumulativeReturn(pred: ExpiredPrediction): Promise<VerificationResult | null> {
+    if (!pred.target_symbol) return null;
+    const claim = parseCumulativeReturnClaim(claimText(pred));
+    if (!claim) return null;
+
+    const created = new Date(pred.created_at).toISOString().split('T')[0];
+    const closes = await getCloses(pred.target_symbol, created, pred.deadline);
+    const actualPct = cumulativeReturnPct(closes);
+    if (actualPct === null) return null;
+
+    const op = claim.comparator === 'lt' ? '<' : '>';
+    const wasCorrect = claim.comparator === 'lt'
+      ? actualPct < claim.thresholdPct
+      : actualPct > claim.thresholdPct;
+    return {
+      predictionId: pred.id,
+      wasCorrect,
+      actualOutcome: `cumulative return ${actualPct >= 0 ? '+' : ''}${actualPct.toFixed(2)}% vs ${op} ${claim.thresholdPct}%`,
+      actualValue: closes[closes.length - 1].close,
+      method: 'auto_price',
+      verificationConfidence: 0.95,
+      explanation: `${pred.target_symbol}: cumulative return over ${closes[0].priceDate}→${closes[closes.length - 1].priceDate} was ${actualPct >= 0 ? '+' : ''}${actualPct.toFixed(2)}% against ${op} ${claim.thresholdPct}% — claim ${wasCorrect ? 'met' : 'not met'}. Settled from ${closes.length} closes, no LLM.`,
+      gradedScore: wasCorrect ? 1.0 : 0.0,
+    };
+  }
+
+  /** Settle an "A minus B cumulative return" spread claim from prices. */
+  async function verifyRelativeSpread(pred: ExpiredPrediction): Promise<VerificationResult | null> {
+    const claim = parseRelativeSpreadClaim(claimText(pred));
+    if (!claim) return null;
+
+    const created = new Date(pred.created_at).toISOString().split('T')[0];
+    const [closesA, closesB] = await Promise.all([
+      getCloses(claim.symbolA, created, pred.deadline),
+      getCloses(claim.symbolB, created, pred.deadline),
+    ]);
+    const retA = cumulativeReturnPct(closesA);
+    const retB = cumulativeReturnPct(closesB);
+    if (retA === null || retB === null) return null;
+
+    const spread = retA - retB;
+    const op = claim.comparator === 'lt' ? '<' : '>';
+    const wasCorrect = claim.comparator === 'lt'
+      ? spread < claim.thresholdPct
+      : spread > claim.thresholdPct;
+    return {
+      predictionId: pred.id,
+      wasCorrect,
+      actualOutcome: `${claim.symbolA}-${claim.symbolB} spread ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}pp vs ${op} ${claim.thresholdPct}pp`,
+      actualValue: null,
+      method: 'auto_price',
+      verificationConfidence: 0.95,
+      explanation: `${claim.symbolA} ${retA >= 0 ? '+' : ''}${retA.toFixed(2)}% minus ${claim.symbolB} ${retB >= 0 ? '+' : ''}${retB.toFixed(2)}% = ${spread >= 0 ? '+' : ''}${spread.toFixed(2)}pp over ${closesA[0].priceDate}→${closesA[closesA.length - 1].priceDate}, against ${op} ${claim.thresholdPct}pp — claim ${wasCorrect ? 'met' : 'not met'}. Settled from prices, no LLM.`,
+      gradedScore: wasCorrect ? 1.0 : 0.0,
+    };
+  }
+
+  /**
+   * Try every deterministic claim shape, most specific first.
+   *
+   * The spread parser MUST run before the plain cumulative-return one: a
+   * spread claim also contains the words "cumulative return", so the plain
+   * parser would match it and grade one symbol's return instead of the
+   * difference between two.
+   */
+  async function verifyDeterministicClaim(pred: ExpiredPrediction): Promise<VerificationResult | null> {
+    return (await verifyQuantifiedMove(pred))
+        ?? (await verifyRelativeSpread(pred))
+        ?? (await verifyCumulativeReturn(pred))
+        ?? (await verifyCloseThreshold(pred));
+  }
+
+  /** Whether any deterministic parser recognises this claim (no DB access). */
+  function hasDeterministicClaim(pred: ExpiredPrediction): boolean {
+    const text = claimText(pred);
+    if (parseRelativeSpreadClaim(text)) return true;
+    if (!pred.target_symbol) return false;
+    return parseDailyMoveClaim(text) !== null
+        || parseCumulativeReturnClaim(text) !== null
+        || parseCloseThresholdClaim(text) !== null;
+  }
+
+  /**
    * Verify a binary/event prediction using LLM against recent atoms.
    */
   async function verifyBinary(pred: ExpiredPrediction): Promise<VerificationResult> {
     // Arithmetic beats judgement: settle quantified price claims from prices.
-    const quantified = await verifyQuantifiedMove(pred);
+    const quantified = await verifyDeterministicClaim(pred);
     if (quantified) return quantified;
 
     try {
@@ -584,9 +781,19 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
         continue;
       }
 
-      // Apply the verification — use graded score for better calibration
+      // Brier is a proper scoring rule: it is only meaningful against the
+      // actual BINARY outcome. This used to score against gradedScore, the
+      // partial-credit curve (1.0 / 0.7 / 0.3 / 0.0), which shrinks every
+      // forecast-to-outcome distance and flatters the result — a wrong call
+      // at 0.60 confidence scored (0.60-0.30)^2 = 0.09 instead of 0.36.
+      // Across the first 28 validated predictions that reported an average
+      // 0.101 where the truth was 0.253, turning a record fractionally WORSE
+      // than a coin flip (0.25) into one that appeared to beat it 2.5x.
+      // gradedScore keeps its real jobs: deciding wasCorrect (a right
+      // direction with a weak move still counts) and the "Grade: 70%" line
+      // in the explanation. It must never re-enter this calculation.
       const predicted = pred.confidence;
-      const actual = result.gradedScore ?? (result.wasCorrect ? 1 : 0);
+      const actual = result.wasCorrect ? 1 : 0;
       const brierScore = (predicted - actual) ** 2;
 
       await db.run(`
@@ -652,12 +859,13 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
    * missing the symbol/direction needed by verifyDirectional.
    */
   function requiresLLMVerification(pred: ExpiredPrediction): boolean {
-    // A binary claim that quantifies a price move is settled arithmetically by
-    // verifyQuantifiedMove, so it does not need the model. This gate runs
+    // A claim that quantifies a price move, a close level, a cumulative
+    // return or a two-symbol spread is settled arithmetically, so it does not
+    // need the model — whatever its declared type. This gate runs
     // BEFORE dispatch: without the exemption such a prediction is deferred as
     // "needs LLM" and never reaches the deterministic route at all, which
     // silently makes that route unreachable whenever the LLM tier is paused.
-    if (pred.target_symbol && parseDailyMoveClaim(`${pred.title} ${pred.predicted_outcome ?? ''}`)) return false;
+    if (hasDeterministicClaim(pred)) return false;
     if (pred.prediction_type === 'binary' || pred.prediction_type === 'event') return true;
     if (pred.prediction_type === 'directional' || pred.prediction_type === 'price_target') return false;
     // 'timing', 'relative', or unknown types: LLM is the only viable path

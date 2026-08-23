@@ -102,6 +102,10 @@ interface PredictionSeed {
   validatedAt?: string | null;
   attempts?: number;
   lastAttemptAt?: string | null;
+  /** Override the generated title — the deterministic claim parsers read it. */
+  title?: string;
+  /** Override the generated outcome — the parsers read this first. */
+  predictedOutcome?: string;
 }
 
 async function seedPrediction(db: DatabaseAdapter, p: PredictionSeed): Promise<void> {
@@ -114,11 +118,11 @@ async function seedPrediction(db: DatabaseAdapter, p: PredictionSeed): Promise<v
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     p.id,
     p.thesisId ?? null,
-    `Test prediction ${p.id}`,
+    p.title ?? `Test prediction ${p.id}`,
     'integration-suite seed',
     p.predictionType ?? 'directional',
     p.symbol ?? null,
-    'test outcome',
+    p.predictedOutcome ?? 'test outcome',
     p.predictedValue ?? null,
     p.direction === undefined ? 'up' : p.direction,
     p.confidence ?? 0.5,
@@ -328,6 +332,139 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       const near = await verifier.findNearExpiry(2);
       expect(near.map((n) => n.id)).toEqual(['n1']);
     });
+
+    /**
+     * 8. Brier was scored against gradedScore — the partial-credit curve
+     * (1.0 / 0.7 / 0.3 / 0.0) — instead of the binary outcome. Every
+     * forecast-to-outcome distance shrank, so a wrong call at 0.60 stored
+     * (0.60-0.30)^2 = 0.09 rather than 0.36. Across the first 28 validated
+     * predictions the reported average was 0.101 against a true 0.253, which
+     * flipped "fractionally worse than a coin flip" into "2.5x better".
+     *
+     * The pre-existing v1/v2 cases could not catch it: both moved far enough
+     * (+10%, +5%) to earn a FULL-credit 1.0/0.0, where graded and binary
+     * scoring agree. The bug only shows on a sub-threshold move, which is
+     * what these two cases seed.
+     */
+    it('scores Brier against the binary outcome, not the partial-credit grade', async () => {
+      const verifier = await createPredictionVerifier(db);
+      const created = daysAgoIso(6);
+
+      // b1 — predicted UP, actual +0.8%: inside the ±1.5% flat band, so
+      // wasCorrect stays true on direction but gradedScore is 0.7.
+      // Brier must be (0.8 - 1)^2 = 0.04, NOT (0.8 - 0.7)^2 = 0.01.
+      await seedPrediction(db, {
+        id: 'b1', symbol: 'TSTP', direction: 'up', confidence: 0.8,
+        deadline: daysAgoIso(1), createdAt: created,
+      });
+      await seedPrice(db, 'TSTP', utcDateStr(created), 100);
+      await seedPrice(db, 'TSTP', utcDateStr(daysAgoIso(1)), 100.8);
+
+      // b2 — predicted UP, actual -0.9%: wrong direction but a negligible
+      // move, so gradedScore is 0.3. Brier must be (0.6 - 0)^2 = 0.36,
+      // NOT (0.6 - 0.3)^2 = 0.09.
+      await seedPrediction(db, {
+        id: 'b2', symbol: 'TSTQ', direction: 'up', confidence: 0.6,
+        deadline: daysAgoIso(1), createdAt: created,
+      });
+      await seedPrice(db, 'TSTQ', utcDateStr(created), 100);
+      await seedPrice(db, 'TSTQ', utcDateStr(daysAgoIso(1)), 99.1);
+
+      await verifier.runAutoVerification({ allowLLM: false });
+
+      const b1 = await db.get<{ was_correct: number; brier_score: string; actual_outcome: string }>(
+        `SELECT was_correct, brier_score, actual_outcome FROM market_predictions WHERE id = 'b1'`,
+      );
+      const b2 = await db.get<{ was_correct: number; brier_score: string }>(
+        `SELECT was_correct, brier_score FROM market_predictions WHERE id = 'b2'`,
+      );
+
+      // Guard the guard: if these ever stop landing on partial credit the
+      // assertions below pass vacuously against the old code too.
+      expect(b1?.actual_outcome).toContain('0.8%');
+      expect(b1?.was_correct).toBe(1);
+      expect(b2?.was_correct).toBe(0);
+
+      expect(Number(b1?.brier_score)).toBeCloseTo(0.04, 6);
+      expect(Number(b2?.brier_score)).toBeCloseTo(0.36, 6);
+    }, 25_000);
+
+    /**
+     * 9. Three claim shapes that carry their threshold only in the text sat
+     * ungraded for days, retried to the attempt cap:
+     *   • price_target rows with predicted_value NULL ("SPY prints at least
+     *     one daily close >= 663.00") failed as "Missing symbol or target
+     *     value" — SPY price targets were never graded at all;
+     *   • binary rows quantifying a cumulative return or a two-symbol spread
+     *     went to the LLM, which correctly refused for lack of evidence,
+     *     while the prices that settle them sat in this table.
+     * None is a directional call: SPY can rise without printing 663, so a
+     * directional fallback would record a confident wrong answer.
+     */
+    it('settles close-level, cumulative-return and spread claims from prices alone', async () => {
+      const verifier = await createPredictionVerifier(db);
+      const created = daysAgoIso(4);
+      const end = daysAgoIso(1);
+
+      // c1 — close-level claim on a price_target row with NO predicted_value.
+      // Highest close after creation is 664 → never reaches 665 → not met.
+      await seedPrediction(db, {
+        id: 'c1', predictionType: 'price_target', symbol: 'TSTR', direction: 'up',
+        predictedValue: null, confidence: 0.7, deadline: end, createdAt: created,
+        title: 'TSTR closes above 665 within three sessions',
+        predictedOutcome: 'TSTR prints at least one daily close >= 665.00',
+      });
+      await seedPrice(db, 'TSTR', utcDateStr(created), 700);   // creation day: ignored
+      await seedPrice(db, 'TSTR', utcDateStr(daysAgoIso(2)), 660);
+      await seedPrice(db, 'TSTR', utcDateStr(end), 664);
+
+      // c2 — cumulative-return claim on a binary row: 100 → 100.9 is +0.9%,
+      // which IS less than +1.5% → claim met.
+      await seedPrediction(db, {
+        id: 'c2', predictionType: 'binary', symbol: 'TSTS', direction: 'flat',
+        confidence: 0.65, deadline: end, createdAt: created,
+        title: 'TSTS does not rally more than 1.5% within three sessions',
+        predictedOutcome: 'TSTS cumulative return is less than +1.5%',
+      });
+      await seedPrice(db, 'TSTS', utcDateStr(created), 100);
+      await seedPrice(db, 'TSTS', utcDateStr(end), 100.9);
+
+      // c3 — spread claim: TSTT +4% minus TSTU +1% = +3.0pp, which is NOT
+      // < +2.0pp → claim not met.
+      await seedPrediction(db, {
+        id: 'c3', predictionType: 'binary', symbol: 'TSTT', direction: 'flat',
+        confidence: 0.55, deadline: end, createdAt: created,
+        title: 'TSTT does not outperform TSTU by more than 2% over three days',
+        predictedOutcome: 'TSTT minus TSTU 3-day cumulative return < +2.0 percentage points',
+      });
+      await seedPrice(db, 'TSTT', utcDateStr(created), 100);
+      await seedPrice(db, 'TSTT', utcDateStr(end), 104);
+      await seedPrice(db, 'TSTU', utcDateStr(created), 200);
+      await seedPrice(db, 'TSTU', utcDateStr(end), 202);
+
+      // allowLLM:false is the point — every one of these must settle on the
+      // free deterministic path. Anything deferred here proves it did not.
+      const summary = await verifier.runAutoVerification({ allowLLM: false });
+      expect(summary.deferred_llm).toBe(0);
+
+      const rows = await db.all<{
+        id: string; status: string; was_correct: number;
+        brier_score: string; actual_outcome: string;
+      }>(`SELECT id, status, was_correct, brier_score, actual_outcome
+            FROM market_predictions WHERE id IN ('c1','c2','c3') ORDER BY id`);
+      expect(rows.map((r) => r.status)).toEqual(['validated', 'validated', 'validated']);
+
+      const [c1, c2, c3] = rows;
+      expect(c1.was_correct).toBe(0);                    // 664 never reached 665
+      expect(c1.actual_outcome).toContain('664.00');     // and NOT the 700 creation-day close
+      expect(Number(c1.brier_score)).toBeCloseTo(0.49, 6);
+
+      expect(c2.was_correct).toBe(1);                    // +0.9% < +1.5%
+      expect(c2.actual_outcome).toContain('+0.90%');
+
+      expect(c3.was_correct).toBe(0);                    // +3.0pp is not < +2.0pp
+      expect(c3.actual_outcome).toContain('+3.00pp');
+    }, 25_000);
   });
 
   // ── 2. Apply leg ──────────────────────────────────────────────────────────
