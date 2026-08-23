@@ -633,6 +633,9 @@ Return ONLY the JSON array, no other text.`;
 
         const createdTheses: string[] = [];
         const createdPredictions: string[] = [];
+        // Counted so the drop rate is visible: a generator that keeps writing
+        // claims spot has already settled is a prompt problem, not a one-off.
+        let skippedUnfalsifiable = 0;
 
         for (const t of generatedTheses.slice(0, 4)) {
           const thesisId = await thesisService.createThesis({
@@ -660,6 +663,7 @@ Return ONLY the JSON array, no other text.`;
             // Step 9b: Cross-metric validation + confidence adjustment
             let effectiveConfidence = p.confidence ?? 0.5;
             let validationFlags: string[] = [];
+            let unfalsifiable = false;
             try {
               const { createCrossMetricValidator } = await import('./market-cross-metric-validator.js');
               const validator = await createCrossMetricValidator(db);
@@ -670,13 +674,26 @@ Return ONLY the JSON array, no other text.`;
                 title: p.title,
                 description: p.description ?? '',
                 predictionType: p.prediction_type,
+                predictedOutcome: p.predicted_outcome,
               });
               effectiveConfidence = validation.adjustedConfidence;
               validationFlags = validation.flags;
+              unfalsifiable = !validation.falsifiable;
               if (validation.flags.length > 0) {
                 console.log(`[orchestrator] Prediction "${p.title}" validated: coherence=${validation.coherenceScore.toFixed(2)}, confidence ${(p.confidence ?? 0.5).toFixed(2)}→${effectiveConfidence.toFixed(2)}, flags: ${validation.flags.join('; ')}`);
               }
             } catch { /* non-fatal */ }
+
+            // A claim the spot price has already satisfied forecasts nothing,
+            // and once stored it is indistinguishable from a real call: it
+            // grades CORRECT, lifts the hit rate and improves the Brier score
+            // without the system having predicted anything. Drop it here —
+            // the only place it can still be told apart.
+            if (unfalsifiable) {
+              console.log(`[orchestrator] Prediction "${p.title}" DROPPED as unfalsifiable — ${validationFlags.find(f => f.startsWith('UNFALSIFIABLE:')) ?? 'already true at spot'}`);
+              skippedUnfalsifiable++;
+              continue;
+            }
 
             const predId = await thesisService.createPrediction({
               thesisId,
@@ -712,7 +729,11 @@ Return ONLY the JSON array, no other text.`;
         stepResults.push({
           step: 'Auto Thesis Generation',
           status: 'success',
-          output: { thesesCreated: createdTheses.length, predictionsCreated: createdPredictions.length },
+          output: {
+            thesesCreated: createdTheses.length,
+            predictionsCreated: createdPredictions.length,
+            predictionsSkippedUnfalsifiable: skippedUnfalsifiable,
+          },
         });
         stepsCompleted++;
       } catch (err) {

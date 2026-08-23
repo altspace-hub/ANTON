@@ -12,6 +12,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { isClaimAlreadySettled } from './market-claim-parsers.js';
 
 export interface ValidationResult {
   coherenceScore: number;        // 0 = totally incoherent, 1 = fully coherent
@@ -19,7 +20,22 @@ export interface ValidationResult {
   conflicts: ConflictDetail[];
   flags: string[];               // Human-readable warnings
   pass: boolean;                 // true = OK to publish, false = needs review
+  /**
+   * false = the claim was ALREADY true at the price it was written against,
+   * so it forecasts nothing. Unlike `pass` (advisory, and currently unread by
+   * the orchestrator) this is a hard block: the caller must not publish.
+   */
+  falsifiable: boolean;
+  /** Why it was judged unfalsifiable, for the log. */
+  falsifiabilityReason?: string;
 }
+
+/**
+ * How much room a price claim must still have to travel to count as a
+ * forecast. Set to zero this only rejects claims spot has already satisfied;
+ * a small positive margin also rejects the ones a rounding error away.
+ */
+export const FALSIFIABILITY_MARGIN_PCT = 0.5;
 
 interface ConflictDetail {
   type: 'directional' | 'financial_coherence' | 'regime' | 'atom_conflict';
@@ -65,6 +81,8 @@ export async function createCrossMetricValidator(db: DatabaseAdapter) {
     title: string;
     description: string;
     predictionType?: string;
+    /** The machine-written outcome, where a quantified threshold usually sits. */
+    predictedOutcome?: string | null;
   }): Promise<ValidationResult> {
     const conflicts: ConflictDetail[] = [];
     const flags: string[] = [];
@@ -228,13 +246,45 @@ export async function createCrossMetricValidator(db: DatabaseAdapter) {
       }
     }
 
+    // ── Check 5: falsifiability ─────────────────────────────────────────
+    // A claim the spot price already satisfies is not a forecast. Three of
+    // the first 33 graded predictions asked whether SPY would close above
+    // 663-665 while it traded at 765-778; all three graded CORRECT and lifted
+    // the hit rate from 50.0% to 54.5% between them. Nothing downstream can
+    // tell such a claim from a real one, so it has to be stopped here.
+    let falsifiable = true;
+    let falsifiabilityReason: string | undefined;
+    if (symbol) {
+      const spot = await db.get<{ close: number }>(
+        `SELECT close FROM market_price_normalized
+          WHERE symbol = $1 ORDER BY price_date DESC LIMIT 1`,
+        symbol,
+      );
+      const spotPrice = Number(spot?.close);
+      if (Number.isFinite(spotPrice) && spotPrice > 0) {
+        const verdict = isClaimAlreadySettled(
+          `${prediction.predictedOutcome ?? ''} ${prediction.title} ${prediction.description}`,
+          spotPrice,
+          FALSIFIABILITY_MARGIN_PCT,
+        );
+        if (verdict.trivial) {
+          falsifiable = false;
+          falsifiabilityReason = `${symbol}: ${verdict.reason}`;
+          flags.push(`UNFALSIFIABLE: ${falsifiabilityReason}`);
+        }
+      }
+      // No price for the symbol → cannot judge, so do not block. A missing
+      // spine is a different failure and blocking on it would silently stop
+      // prediction generation for every newly-followed instrument.
+    }
+
     // ── Calculate final scores ──────────────────────────────────────────
     const cappedPenalty = Math.min(totalPenalty, 50); // Max 50% penalty
     const adjustedConfidence = Math.max(0.15, prediction.confidence * (1 - cappedPenalty / 100));
     const coherenceScore = Math.max(0, 1 - cappedPenalty / 100);
     const pass = conflicts.filter(c => c.severity === 'high').length === 0;
 
-    return { coherenceScore, adjustedConfidence, conflicts, flags, pass };
+    return { coherenceScore, adjustedConfidence, conflicts, flags, pass, falsifiable, falsifiabilityReason };
   }
 
   return { validatePrediction };

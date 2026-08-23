@@ -11,6 +11,12 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import {
+  parseDailyMoveClaim,
+  parseCloseThresholdClaim,
+  parseCumulativeReturnClaim,
+  parseRelativeSpreadClaim,
+} from './market-claim-parsers.js';
 
 interface ExpiredPrediction {
   id: string;
@@ -333,28 +339,6 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     };
   }
 
-  /**
-   * A binary prediction that quantifies a price move is arithmetic, not a
-   * judgement call — and routing it to the LLM produced exactly the failure
-   * this guards against: on 2026-08-19 "NVDA posts a daily move exceeding
-   * 2.5% within three sessions" was graded CORRECT from base rates ("NVDA's
-   * realized volatility routinely produces 2.5%+ daily swings"), while the
-   * actual largest move in the window was -1.94%. The price data needed to
-   * settle it was in the same database the whole time.
-   *
-   * Parsing stays deliberately narrow: a mis-parse would silently produce a
-   * confident WRONG deterministic grade, which is worse than deferring. Only
-   * an unambiguous "<move> <comparator> <N>%" phrasing matches; everything
-   * else returns null and falls through to the LLM path (which now refuses to
-   * answer without evidence).
-   */
-  function parseDailyMoveClaim(text: string): { thresholdPct: number } | null {
-    const m = /\b(?:daily\s+)?(?:move|swing|change|gain|drop)\s+(?:of\s+)?(?:exceeding|greater\s+than|more\s+than|larger\s+than|above|over|at\s+least)\s+\$?(\d+(?:\.\d+)?)\s*%/i.exec(text);
-    if (!m) return null;
-    const thresholdPct = Number(m[1]);
-    if (!Number.isFinite(thresholdPct) || thresholdPct <= 0 || thresholdPct > 100) return null;
-    return { thresholdPct };
-  }
 
   /** Closes for a symbol across a window, one row per session, oldest first. */
   async function getCloses(
@@ -408,56 +392,8 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     };
   }
 
-  /**
-   * Parse a "closes above N" / "prints at least one daily close >= N" claim.
-   *
-   * Same narrow-match discipline as parseDailyMoveClaim. Negated phrasings
-   * ("does not close above 665") invert the claim, so they are refused
-   * outright rather than graded backwards — deferring beats a confident
-   * wrong answer.
-   */
-  function parseCloseThresholdClaim(text: string): { thresholdPrice: number; inclusive: boolean } | null {
-    if (/\b(?:does\s+not|doesn'?t|won'?t|will\s+not|never|fails?\s+to)\b/i.test(text)) return null;
-    const m = /\bclos(?:es|ed|ing|e)\b[^.]{0,40}?(at\s+or\s+above|greater\s+than\s+or\s+equal\s+to|>=|at\s+least|above|over)\s*\$?(\d+(?:\.\d+)?)/i.exec(text);
-    if (!m) return null;
-    const thresholdPrice = Number(m[2]);
-    if (!Number.isFinite(thresholdPrice) || thresholdPrice <= 0) return null;
-    // "above"/"over" are strict; "at or above", ">=", "at least" include the level.
-    const inclusive = !/^(?:above|over)$/i.test(m[1].trim());
-    return { thresholdPrice, inclusive };
-  }
 
-  /**
-   * Parse a "<cumulative return> <comparator> N%" claim.
-   *
-   * Refuses anything containing "minus": that is the two-symbol spread shape
-   * below, which also contains the words "cumulative return". Grading a
-   * spread claim as a single-symbol return answers a different question.
-   */
-  function parseCumulativeReturnClaim(text: string): { comparator: 'lt' | 'gt'; thresholdPct: number } | null {
-    if (/\bminus\b/i.test(text)) return null;
-    const m = /\bcumulative\s+return\b[^.]{0,80}?(?:is\s+)?(less\s+than|below|under|<|greater\s+than|more\s+than|above|exceeds?|>)\s*\+?(-?\d+(?:\.\d+)?)\s*%/i.exec(text);
-    if (!m) return null;
-    const thresholdPct = Number(m[2]);
-    if (!Number.isFinite(thresholdPct)) return null;
-    const comparator = /^(?:less\s+than|below|under|<)$/i.test(m[1].trim()) ? 'lt' : 'gt';
-    return { comparator, thresholdPct };
-  }
 
-  /**
-   * Parse an "A minus B <n>-day cumulative return < N percentage points" claim.
-   * Carries its own two symbols, so it does not depend on target_symbol.
-   */
-  function parseRelativeSpreadClaim(
-    text: string,
-  ): { symbolA: string; symbolB: string; comparator: 'lt' | 'gt'; thresholdPct: number } | null {
-    const m = /\b([A-Z][A-Z0-9.\-]{0,5})\s+minus\s+([A-Z][A-Z0-9.\-]{0,5})\b[^.]{0,60}?cumulative\s+return\b\s*(?:is\s+)?(less\s+than|below|under|<|greater\s+than|more\s+than|above|exceeds?|>)\s*\+?(-?\d+(?:\.\d+)?)\s*(?:percentage\s+points?|pp\b|%)/i.exec(text);
-    if (!m) return null;
-    const thresholdPct = Number(m[4]);
-    if (!Number.isFinite(thresholdPct)) return null;
-    const comparator = /^(?:less\s+than|below|under|<)$/i.test(m[3].trim()) ? 'lt' : 'gt';
-    return { symbolA: m[1].toUpperCase(), symbolB: m[2].toUpperCase(), comparator, thresholdPct };
-  }
 
   /** Cumulative return first close → last close, in percent. */
   function cumulativeReturnPct(closes: Array<{ close: number }>): number | null {

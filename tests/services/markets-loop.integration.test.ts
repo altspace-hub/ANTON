@@ -580,6 +580,43 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       }
     });
 
+    /**
+     * 10. The pending count treated every past-deadline non-'validated' row as
+     * outstanding work, including 145 'expired_legacy' and 49 'archived' rows
+     * the verifier can never pick up again (findExpired selects only 'active'
+     * and 'expired'). That reported 287 pending against a system with nothing
+     * actually stuck — enough permanent noise to bury the one row that is.
+     */
+    it('counts only genuinely retriable predictions as pending, not closed legacy rows', async () => {
+      await seedWorkflowRun(db, { id: 'wr_t', status: 'completed', startedAt: daysAgoIso(1) });
+      await seedPrediction(db, {
+        id: 't_val', status: 'validated', deadline: daysAgoIso(2), createdAt: daysAgoIso(10),
+        wasCorrect: 1, validatedAt: daysAgoIso(1), symbol: 'TSTA',
+      });
+      // Closed for good — past deadline, ungraded, never retriable.
+      for (const [id, status] of [
+        ['t_leg', 'expired_legacy'], ['t_arch', 'archived'],
+        ['t_vleg', 'validated_legacy'], ['t_can', 'cancelled'],
+      ] as const) {
+        await seedPrediction(db, {
+          id, status, deadline: daysAgoIso(30), createdAt: daysAgoIso(60), symbol: 'TSTA',
+        });
+      }
+
+      const quiet = byLoop(await checkMarketsLoopHealth(db, { windowDays: 7 }), 'prediction_validation');
+      expect(quiet.pending).toBe(0);
+      expect(quiet.stale).toBe(false);
+
+      // A real stuck row — 'expired', under the attempt cap — must still count,
+      // otherwise the exclusion has silenced the alarm rather than cleaned it.
+      await seedPrediction(db, {
+        id: 't_stuck', status: 'expired', deadline: daysAgoIso(3), createdAt: daysAgoIso(10),
+        symbol: 'TSTA', attempts: 1,
+      });
+      const loud = byLoop(await checkMarketsLoopHealth(db, { windowDays: 7 }), 'prediction_validation');
+      expect(loud.pending).toBe(1);
+    });
+
     it('rejects the legacy status value at the schema level — the vocabulary the old watchdog filtered on cannot exist', async () => {
       // Pins WHY Wave-1C switched the filter to 'completed': the CHECK
       // constraint forbids 'success', so status='success' matches zero rows
