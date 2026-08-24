@@ -18,7 +18,7 @@ import { createMarketIntelligenceService } from './market-intelligence-service.j
 import { createMarketThesisService } from './market-thesis-service.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
-import { createConditionalAccuracyService } from './market-conditional-accuracy-service.js';
+import { createConditionalAccuracyService, confidenceBand } from './market-conditional-accuracy-service.js';
 import { createMarketPatternService } from './market-pattern-service.js';
 import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
@@ -1860,7 +1860,7 @@ Return ONLY a JSON array.`;
               signal_type: 'weekly_pulse',
               horizon_band: horizonDays <= 3 ? 'tactical' : horizonDays <= 21 ? 'swing' : 'position',
               direction,
-              confidence_band: clampedConf < 0.5 ? 'low' : clampedConf < 0.65 ? 'mid' : 'high',
+              confidence_band: confidenceBand(clampedConf),
               rsi_signal: rsiSignal,
               vol_state: volState,
             } as Parameters<typeof conditionalAccuracyService.capturePredictionFeatures>[1], false);
