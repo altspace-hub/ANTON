@@ -391,6 +391,93 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
     }, 25_000);
 
     /**
+     * 13. findExpired selected on `deadline < NOW()`, so a prediction whose
+     * deadline is TODAY became eligible at 00:01 — before that session had
+     * closed and before its bar existed. The window it graded on therefore
+     * ended short of the window the claim names: a band claim with a
+     * 2026-08-24 deadline settled "held" from two closes ending 2026-08-21.
+     * 15 rows had been graded that way.
+     */
+    it('does not grade a prediction whose deadline day is still in progress', async () => {
+      const verifier = await createPredictionVerifier(db);
+      const todayIso = new Date().toISOString();
+
+      // Deadline TODAY: the session has not closed, so this must wait.
+      await seedPrediction(db, {
+        id: 'e_today', symbol: 'TSTY', direction: 'up', confidence: 0.6,
+        deadline: todayIso, createdAt: daysAgoIso(5),
+      });
+      // Deadline YESTERDAY: that day is over, so this must be picked up.
+      await seedPrediction(db, {
+        id: 'e_yday', symbol: 'TSTZ', direction: 'up', confidence: 0.6,
+        deadline: daysAgoIso(1), createdAt: daysAgoIso(5),
+      });
+      for (const sym of ['TSTY', 'TSTZ']) {
+        await seedPrice(db, sym, utcDateStr(daysAgoIso(5)), 100);
+        await seedPrice(db, sym, utcDateStr(daysAgoIso(1)), 110);
+      }
+
+      const expired = await verifier.findExpired();
+      const ids = expired.map((e) => e.id);
+      expect(ids).toContain('e_yday');
+      expect(ids).not.toContain('e_today');
+    });
+
+    /**
+     * 12. A band claim sat ungraded on 2026-08-24: "All SPY closes through
+     * 2026-08-24 are between 745 and 790". It carried predicted_direction
+     * 'flat', so a directional fallback would have graded "did SPY go
+     * sideways" — a different question. One close outside the corridor breaks
+     * the claim however the window ends, which is what these two cases pin.
+     */
+    it('settles a close-band claim on the whole window, not just its endpoints', async () => {
+      const verifier = await createPredictionVerifier(db);
+      const created = daysAgoIso(4);
+      const end = daysAgoIso(1);
+
+      // d1 — every close after creation stays inside 745-790: claim holds.
+      await seedPrediction(db, {
+        id: 'd1', predictionType: 'price_target', symbol: 'TSTV', direction: 'flat',
+        predictedValue: null, confidence: 0.6, deadline: end, createdAt: created,
+        title: 'TSTV has no daily close outside 745-790 through the window',
+        predictedOutcome: 'All TSTV closes through the window are between 745 and 790',
+      });
+      await seedPrice(db, 'TSTV', utcDateStr(created), 700);   // creation day: ignored
+      await seedPrice(db, 'TSTV', utcDateStr(daysAgoIso(2)), 760);
+      await seedPrice(db, 'TSTV', utcDateStr(end), 785);
+
+      // d2 — same band, but one session pokes above it and the window still
+      // ENDS inside. Endpoint-only grading would call this correct.
+      await seedPrediction(db, {
+        id: 'd2', predictionType: 'price_target', symbol: 'TSTW', direction: 'flat',
+        predictedValue: null, confidence: 0.6, deadline: end, createdAt: created,
+        title: 'TSTW has no daily close outside 745-790 through the window',
+        predictedOutcome: 'All TSTW closes through the window are between 745 and 790',
+      });
+      await seedPrice(db, 'TSTW', utcDateStr(created), 760);
+      await seedPrice(db, 'TSTW', utcDateStr(daysAgoIso(2)), 812);  // the breach
+      await seedPrice(db, 'TSTW', utcDateStr(end), 770);            // back inside
+
+      const summary = await verifier.runAutoVerification({ allowLLM: false });
+      expect(summary.deferred_llm).toBe(0);
+
+      const rows = await db.all<{
+        id: string; status: string; was_correct: number; actual_outcome: string; brier_score: string;
+      }>(`SELECT id, status, was_correct, actual_outcome, brier_score
+            FROM market_predictions WHERE id IN ('d1','d2') ORDER BY id`);
+      expect(rows.map((r) => r.status)).toEqual(['validated', 'validated']);
+
+      const [d1, d2] = rows;
+      expect(d1.was_correct).toBe(1);
+      expect(d1.actual_outcome).toContain('760.00-785.00');   // and NOT the 700 creation close
+      expect(Number(d1.brier_score)).toBeCloseTo(0.16, 6);    // (0.6 - 1)^2
+
+      expect(d2.was_correct).toBe(0);                          // the 812 breach decides it
+      expect(d2.actual_outcome).toContain('812.00');
+      expect(Number(d2.brier_score)).toBeCloseTo(0.36, 6);     // (0.6 - 0)^2
+    }, 25_000);
+
+    /**
      * 9. Three claim shapes that carry their threshold only in the text sat
      * ungraded for days, retried to the attempt cap:
      *   • price_target rows with predicted_value NULL ("SPY prints at least

@@ -23,6 +23,7 @@
 export type ClaimComparator = 'lt' | 'gt';
 
 export interface CloseThresholdClaim { thresholdPrice: number; inclusive: boolean }
+export interface CloseRangeClaim { low: number; high: number }
 export interface CumulativeReturnClaim { comparator: ClaimComparator; thresholdPct: number }
 export interface RelativeSpreadClaim {
   symbolA: string; symbolB: string; comparator: ClaimComparator; thresholdPct: number;
@@ -59,6 +60,28 @@ export function parseCloseThresholdClaim(text: string): CloseThresholdClaim | nu
   // "above"/"over" are strict; "at or above", ">=", "at least" include the level.
   const inclusive = !/^(?:above|over)$/i.test(m[1].trim());
   return { thresholdPrice, inclusive };
+}
+
+/**
+ * "All SPY closes through 2026-08-24 are between 745 and 790"
+ *
+ * A band claim, not a directional one. The row that raised this carried
+ * predicted_direction 'flat', but grading it as "did SPY go sideways" answers
+ * a different question: the claim is about every close staying inside a
+ * corridor, and one excursion breaks it however the week ends up.
+ *
+ * Only the positive "between X and Y" phrasing matches. The equivalent
+ * negated form ("no daily close outside 745-790") is left alone — inverting a
+ * negation is exactly where a mis-parse would flip a grade.
+ */
+export function parseCloseRangeClaim(text: string): CloseRangeClaim | null {
+  const m = /\bclos(?:es|ed|ing|e)\b[^.]{0,60}?\bbetween\s+\$?(\d+(?:\.\d+)?)\s+and\s+\$?(\d+(?:\.\d+)?)/i.exec(text);
+  if (!m) return null;
+  const low = Number(m[1]);
+  const high = Number(m[2]);
+  if (!Number.isFinite(low) || !Number.isFinite(high)) return null;
+  if (low <= 0 || high <= low) return null;
+  return { low, high };
 }
 
 /**

@@ -1781,8 +1781,23 @@ Return ONLY a JSON array.`;
         console.log(`[weekly-pulse] Sample:`, JSON.stringify(predictions[0]).slice(0, 300));
       }
 
+      // Symbols the price spine actually covers.
+      //
+      // The pulse is free to name any ticker it likes, and a prediction on a
+      // symbol with no price rows can NEVER be graded: it expires, retries
+      // three times against a table that has nothing to say, and settles as
+      // permanent unverifiable weight in the record. Seven were sitting in
+      // that state on 2026-08-24 (DXY x2, VIX x2, VLO, WBD, YETI) — index
+      // tickers the spine holds under other names, plus equities outside the
+      // followed set. Fetched once per pulse rather than per prediction.
+      const coveredRows = await db.all<{ symbol: string }>(
+        'SELECT DISTINCT symbol FROM market_price_normalized',
+      );
+      const covered = new Set(coveredRows.map(r => r.symbol.toUpperCase()));
+
       let created = 0;
       let skipped = 0;
+      let skippedNoPrices = 0;
       for (const p of predictions) {
         // Flexible field mapping — LLMs return varying field names
         const symbol = (p.target_symbol || p.symbol || p.ticker || '') as string;
@@ -1801,6 +1816,15 @@ Return ONLY a JSON array.`;
         if (!title || !symbol || !direction || direction === 'undefined') {
           skipped++;
           console.log(`[weekly-pulse] Skipped: "${(title || 'untitled').slice(0, 40)}" — symbol=${symbol || 'NONE'} direction=${direction || 'NONE'} | fields: ${Object.keys(p).join(',')}`);
+          continue;
+        }
+
+        // No price rows means no grade, ever. Dropping it here costs one
+        // prediction; keeping it costs a row that sits unverifiable forever
+        // and quietly pads the "past deadline" count.
+        if (!covered.has(symbol.toUpperCase())) {
+          skippedNoPrices++;
+          console.log(`[weekly-pulse] Skipped "${title.slice(0, 40)}" — ${symbol} has no rows in the price spine, so it could never be graded`);
           continue;
         }
 
@@ -1849,6 +1873,10 @@ Return ONLY a JSON array.`;
       stepResults.predictions_created = created;
       stepResults.predictions_parsed = predictions.length;
       stepResults.predictions_skipped = skipped;
+      // Reported separately from malformed-row skips: a rising count here is a
+      // coverage problem (the pulse wants a ticker the spine lacks), not a
+      // parsing one, and the two want different fixes.
+      stepResults.predictions_skipped_no_prices = skippedNoPrices;
       // Include sample for debugging
       if (predictions.length > 0 && created === 0) {
         stepResults.debug_sample = predictions[0];

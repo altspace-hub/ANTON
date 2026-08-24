@@ -14,6 +14,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import {
   parseDailyMoveClaim,
   parseCloseThresholdClaim,
+  parseCloseRangeClaim,
   parseCumulativeReturnClaim,
   parseRelativeSpreadClaim,
 } from './market-claim-parsers.js';
@@ -96,7 +97,15 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       FROM market_predictions
       WHERE (
           status = 'active'
-          AND COALESCE(deadline, created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval) < NOW()
+          -- CURRENT_DATE, not NOW(): a deadline of "today" is already in the
+          -- past at 00:01, but today's session has not closed and its bar does
+          -- not exist yet. Grading then settles the claim on a SHORT window —
+          -- a band claim with a 2026-08-24 deadline was graded "held" from two
+          -- closes ending 2026-08-21, three sessions before the window it
+          -- names actually finished. 15 rows had been settled this way.
+          -- Waiting for the deadline DAY to end costs at most a day and makes
+          -- the window the claim's own.
+          AND COALESCE(deadline, created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval) < CURRENT_DATE
         )
         OR (
           status = 'expired' AND was_correct IS NULL
@@ -444,6 +453,44 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     };
   }
 
+  /** Settle an "every close stays between X and Y" band claim from prices. */
+  async function verifyCloseRange(pred: ExpiredPrediction): Promise<VerificationResult | null> {
+    if (!pred.target_symbol) return null;
+    const claim = parseCloseRangeClaim(claimText(pred));
+    if (!claim) return null;
+
+    const created = new Date(pred.created_at).toISOString().split('T')[0];
+    const closes = await getCloses(pred.target_symbol, created, pred.deadline);
+    // Same rule as the threshold shape: the creation-day close was already on
+    // the tape, so only sessions that were still unknown when the call was
+    // made can settle it. Here that cuts the other way — an already-printed
+    // close could FALSIFY the band — which is the more reason to be
+    // consistent about it rather than pick whichever is convenient.
+    const candidates = closes.filter(c => c.priceDate > created);
+    if (candidates.length === 0) return null;
+
+    let lo = candidates[0].close;
+    let hi = candidates[0].close;
+    let breachDate = '';
+    for (const c of candidates) {
+      if (c.close < lo) lo = c.close;
+      if (c.close > hi) hi = c.close;
+      if ((c.close < claim.low || c.close > claim.high) && !breachDate) breachDate = c.priceDate;
+    }
+
+    const wasCorrect = lo >= claim.low && hi <= claim.high;
+    return {
+      predictionId: pred.id,
+      wasCorrect,
+      actualOutcome: `closes spanned ${lo.toFixed(2)}-${hi.toFixed(2)} vs the ${claim.low}-${claim.high} band`,
+      actualValue: candidates[candidates.length - 1].close,
+      method: 'auto_price',
+      verificationConfidence: 0.95,
+      explanation: `${pred.target_symbol}: closes over ${candidates[0].priceDate}→${candidates[candidates.length - 1].priceDate} spanned ${lo.toFixed(2)}-${hi.toFixed(2)} against a ${claim.low}-${claim.high} band — claim ${wasCorrect ? 'held' : `broken first on ${breachDate}`}. Settled from ${candidates.length} closes, no LLM.`,
+      gradedScore: wasCorrect ? 1.0 : 0.0,
+    };
+  }
+
   /** Settle a single-symbol cumulative-return threshold claim from prices. */
   async function verifyCumulativeReturn(pred: ExpiredPrediction): Promise<VerificationResult | null> {
     if (!pred.target_symbol) return null;
@@ -514,6 +561,7 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     return (await verifyQuantifiedMove(pred))
         ?? (await verifyRelativeSpread(pred))
         ?? (await verifyCumulativeReturn(pred))
+        ?? (await verifyCloseRange(pred))
         ?? (await verifyCloseThreshold(pred));
   }
 
@@ -524,6 +572,7 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     if (!pred.target_symbol) return false;
     return parseDailyMoveClaim(text) !== null
         || parseCumulativeReturnClaim(text) !== null
+        || parseCloseRangeClaim(text) !== null
         || parseCloseThresholdClaim(text) !== null;
   }
 

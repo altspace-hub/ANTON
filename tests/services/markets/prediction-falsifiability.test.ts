@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../../../server/db/database.js';
 import {
   isClaimAlreadySettled,
   parseCloseThresholdClaim,
+  parseCloseRangeClaim,
 } from '../../../server/services/market-claim-parsers.js';
 import {
   createCrossMetricValidator,
@@ -152,5 +153,51 @@ describe('cross-metric validator — falsifiability gate', () => {
       predictedOutcome: 'SPY closes the window below where it started',
     });
     expect(r.falsifiable).toBe(true);
+  });
+});
+
+/**
+ * 2026-08-24: a fourth claim shape turned up stuck. "All SPY closes through
+ * 2026-08-24 are between 745 and 790" is a BAND claim — every close has to
+ * stay inside a corridor, and one excursion breaks it however the week ends.
+ * It carried predicted_direction 'flat', so grading it directionally would
+ * have answered "did SPY go sideways", a different question with a different
+ * answer.
+ */
+describe('parseCloseRangeClaim', () => {
+  const REAL = 'All SPY closes through 2026-08-24 are between 745 and 790';
+
+  it('parses the claim that actually sat ungraded', () => {
+    expect(parseCloseRangeClaim(REAL)).toEqual({ low: 745, high: 790 });
+  });
+
+  it('accepts decimals and a dollar sign', () => {
+    expect(parseCloseRangeClaim('SPY closes between $745.50 and $790.25'))
+      .toEqual({ low: 745.5, high: 790.25 });
+  });
+
+  it('refuses a reversed or degenerate band', () => {
+    expect(parseCloseRangeClaim('SPY closes between 790 and 745')).toBeNull();
+    expect(parseCloseRangeClaim('SPY closes between 745 and 745')).toBeNull();
+    expect(parseCloseRangeClaim('SPY closes between 0 and 790')).toBeNull();
+  });
+
+  it('leaves the negated phrasing alone rather than inverting it', () => {
+    // "no daily close outside 745-790" means the same thing, but inverting a
+    // negation is exactly where a mis-parse flips a grade.
+    expect(parseCloseRangeClaim('SPY has no daily close outside 745-790')).toBeNull();
+  });
+
+  it('does not collide with the threshold shape', () => {
+    const threshold = 'SPY prints at least one daily close >= 663.00';
+    expect(parseCloseRangeClaim(threshold)).toBeNull();
+    expect(parseCloseThresholdClaim(REAL)).toBeNull();
+  });
+
+  it('is not treated as already-settled from spot alone', () => {
+    // A band claim is about closes that have not happened yet, so no spot
+    // price can settle it at creation.
+    expect(isClaimAlreadySettled(REAL, 765).trivial).toBe(false);
+    expect(isClaimAlreadySettled(REAL, 900).trivial).toBe(false);
   });
 });
