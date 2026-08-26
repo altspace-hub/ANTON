@@ -66,6 +66,7 @@ import { createWhyChainExecutor } from '../../server/services/market-why-chain-e
 import { createMarketWorkflowOrchestrator } from '../../server/services/market-workflow-orchestrator';
 import { createMarketIndexRebalanceService } from '../../server/services/market-index-rebalance-service';
 import { createConditionalAccuracyService } from '../../server/services/market-conditional-accuracy-service';
+import { createSchedulePhaseRecorder } from '../../server/services/market-schedule-recorder';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -389,6 +390,83 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(Number(b1?.brier_score)).toBeCloseTo(0.04, 6);
       expect(Number(b2?.brier_score)).toBeCloseTo(0.36, 6);
     }, 25_000);
+
+    /**
+     * 14. On 2026-08-26 markets LLM work was found dead for 33 hours: atom
+     * extraction, daily intelligence and the pulse had stopped after Monday's
+     * 23:00 phase while grading and price fetching carried on, so nothing
+     * looked broken from outside. The scheduler's only output was the
+     * terminal, that scrollback had been cleared, and the restart that fixed
+     * it destroyed the evidence. market_schedule_runs had existed since
+     * migration 074 with exactly the right columns and had never been written
+     * to.
+     *
+     * The distinction that was missing is 'hung' versus 'never fired' — a
+     * stuck await and a dead cron are different bugs, and from the database
+     * they looked identical. These cases pin all four states apart.
+     */
+    it('records each scheduler phase so a hang, a throw and a no-show look different', async () => {
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+
+      // 1. A phase that completes.
+      await recordPhase('ok-phase', async () => { /* did its work */ });
+
+      // 2. A phase that throws. recordPhase must NOT rethrow — a throwing cron
+      //    callback is an unhandled rejection, and the row already says what
+      //    happened.
+      await expect(
+        recordPhase('throwing-phase', async () => { throw new Error('boom from the phase'); }),
+      ).resolves.toBeUndefined();
+
+      // 3. A phase still running: started, never closed. Left in flight
+      //    deliberately — this is the signature Monday's outage would have had.
+      let release: (() => void) | undefined;
+      const hung = recordPhase('hung-phase', () => new Promise<void>((resolve) => { release = resolve; }));
+
+      const rows = await db.all<{
+        phase: string; status: string; completed_at: string | null; error: string | null;
+      }>(`SELECT phase, status, completed_at, error FROM market_schedule_runs ORDER BY phase`);
+
+      expect(rows.map((r) => r.phase)).toEqual(['hung-phase', 'ok-phase', 'throwing-phase']);
+
+      const byPhase = Object.fromEntries(rows.map((r) => [r.phase, r]));
+      expect(byPhase['ok-phase'].status).toBe('completed');
+      expect(byPhase['ok-phase'].completed_at).not.toBeNull();
+      expect(byPhase['ok-phase'].error).toBeNull();
+
+      expect(byPhase['throwing-phase'].status).toBe('failed');
+      expect(byPhase['throwing-phase'].completed_at).not.toBeNull();
+      expect(byPhase['throwing-phase'].error).toContain('boom from the phase');
+
+      // The whole point: a hang is visible as 'running' with no completion.
+      expect(byPhase['hung-phase'].status).toBe('running');
+      expect(byPhase['hung-phase'].completed_at).toBeNull();
+
+      // 4. A phase that never fired leaves no row at all — distinguishable
+      //    from the hung one, which was the missing signal.
+      expect(rows.some((r) => r.phase === 'never-scheduled')).toBe(false);
+
+      release?.();
+      await hung;
+      const after = await db.get<{ status: string }>(
+        `SELECT status FROM market_schedule_runs WHERE phase = 'hung-phase'`,
+      );
+      expect(after?.status).toBe('completed');
+    });
+
+    it('never lets bookkeeping failure stop the phase it is observing', async () => {
+      // A db double whose INSERT always fails: the phase must still run.
+      const brokenDb = {
+        get: async () => { throw new Error('table is gone'); },
+        run: async () => { throw new Error('table is gone'); },
+        all: async () => [],
+      } as unknown as DatabaseAdapter;
+
+      let ran = false;
+      const { recordPhase } = createSchedulePhaseRecorder(brokenDb);
+      await expect(recordPhase('resilient', async () => { ran = true; })).resolves.toBeUndefined();
+      expect(ran).toBe(true);
+    });
 
     /**
      * 13. findExpired selected on `deadline < NOW()`, so a prediction whose

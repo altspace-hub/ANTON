@@ -381,3 +381,18 @@ CREATE TABLE IF NOT EXISTS market_conditional_accuracy_applied (
   scope         TEXT NOT NULL DEFAULT 'live',
   applied_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Scheduler phase bookkeeping (migration 074, wired up 2026-08-26). Separates
+-- "hung" (status still 'running') from "never fired" (no row) -- the two
+-- failure modes that looked identical when the only output was the terminal.
+CREATE TABLE IF NOT EXISTS market_schedule_runs (
+  id            SERIAL PRIMARY KEY,
+  phase         TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'running',
+  started_at    TIMESTAMPTZ DEFAULT NOW(),
+  completed_at  TIMESTAMPTZ,
+  items_fetched INTEGER DEFAULT 0,
+  atoms_created INTEGER DEFAULT 0,
+  error         TEXT,
+  metadata      JSONB DEFAULT '{}'::jsonb
+);

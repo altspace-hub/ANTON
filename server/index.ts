@@ -131,6 +131,7 @@ import { createMarketsRoutes } from './routes/markets.js';
 import { createMarketComputationRoutes } from './routes/market-computation.js';
 import { createMarketDataService } from './services/market-data-service.js';
 import { createMarketAtomService, planExtractionBatches } from './services/market-atom-service.js';
+import { createSchedulePhaseRecorder } from './services/market-schedule-recorder.js';
 import { createMarketThesesRoutes } from './routes/market-theses.js';
 import { createMarketEntitiesRoutes } from './routes/market-entities.js';
 import { createMarketPatternsRoutes } from './routes/market-patterns.js';
@@ -1282,9 +1283,13 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       `[markets-schedule] Automation tiers — free deterministic loops: ON | LLM phases: ${marketsLlmOn ? 'ON' : 'OFF'} | external data fetch: ${marketsFetchOn ? 'ON' : 'OFF'}` +
       (marketsAutomation ? '' : ' (set MARKETS_AUTOMATION=true to enable the token/data-spending crons)'),
     );
+    // Phase bookkeeping lives in its own module so it can be tested; see
+    // market-schedule-recorder.ts for why it exists at all.
+    const { recordPhase } = createSchedulePhaseRecorder(db);
+
     /** Register a cron only when the token/data-spending tier is opted in. */
-    const scheduleSpending = (expr: string, fn: () => Promise<void>): void => {
-      if (marketsAutomation) cron.schedule(expr, fn, MARKET_TZ);
+    const scheduleSpending = (expr: string, phase: string, fn: () => Promise<void>): void => {
+      if (marketsAutomation) cron.schedule(expr, () => recordPhase(phase, fn), MARKET_TZ);
     };
 
     // ── Sustainable schedule: fetch less, process more, quality over speed ──
@@ -1331,7 +1336,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     }
 
     // Phase 1: Morning Intelligence (07:00 CET) — fetch + LLM (opt-in)
-    scheduleSpending('0 7 * * 1-5', async () => {
+    scheduleSpending('0 7 * * 1-5', 'phase1-morning-intelligence', async () => {
       console.log('[markets-schedule] Phase 1: Morning Intelligence');
       try {
         await marketAtomService.applyAtomDecay();
@@ -1354,7 +1359,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // Phase 2: Pre-Open (14:30 CET) — light fetch + process (opt-in)
-    scheduleSpending('30 14 * * 1-5', async () => {
+    scheduleSpending('30 14 * * 1-5', 'phase2-pre-open', async () => {
       console.log('[markets-schedule] Phase 2: Pre-Open');
       try {
         const backlog = await getBacklogSize();
@@ -1369,7 +1374,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // Phase 3: Market Open (15:45 CET) — prices only, external fetch (opt-in)
-    scheduleSpending('45 15 * * 1-5', async () => {
+    scheduleSpending('45 15 * * 1-5', 'phase3-market-open', async () => {
       console.log('[markets-schedule] Phase 3: Market Open');
       if (marketsFetchDisabled) {
         console.log('[markets-schedule] Phase 3 skipped (MARKETS_FETCH_DISABLED)');
@@ -1387,7 +1392,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // Phase 4: Mid-Day Intelligence (18:00 CET) — THE main cycle, fetch + LLM (opt-in)
-    scheduleSpending('0 18 * * 1-5', async () => {
+    scheduleSpending('0 18 * * 1-5', 'phase4-midday-intelligence', async () => {
       console.log('[markets-schedule] Phase 4: Mid-Day Intelligence');
       try {
         const backlog = await getBacklogSize();
@@ -1423,7 +1428,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     }, MARKET_TZ);
 
     // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis, LLM (opt-in)
-    scheduleSpending('0 23 * * 1-5', async () => {
+    scheduleSpending('0 23 * * 1-5', 'phase6-post-market', async () => {
       console.log('[markets-schedule] Phase 6: Post-Market Processing + Fundamental Analysis');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 6 skipped (MARKETS_THINKING_DISABLED)');
@@ -1481,7 +1486,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // Phase 7: Weekend Deep Dive (Sat + Sun 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
-    scheduleSpending('0 10 * * 6,0', async () => {
+    scheduleSpending('0 10 * * 6,0', 'phase7-weekend-deep-dive', async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 7 skipped (MARKETS_THINKING_DISABLED)');
@@ -1504,7 +1509,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET), LLM (opt-in)
-    scheduleSpending('0 9 * * 1,4', async () => {
+    scheduleSpending('0 9 * * 1,4', 'phase8-weekly-pulse', async () => {
       console.log('[markets-schedule] Phase 8: Weekly Pulse Predictions');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 8 skipped (MARKETS_THINKING_DISABLED)');
@@ -1597,7 +1602,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     }, 15 * 60 * 1000).unref();
 
     // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00) — external fetch (opt-in)
-    scheduleSpending('0 14,16,18,20,22 * * 1-5', async () => {
+    scheduleSpending('0 14,16,18,20,22 * * 1-5', 'intraday-price-refresh', async () => {
       if (marketsFetchDisabled) return;
       try {
         const priceSources = await db.all<{ id: string }>(
@@ -1839,7 +1844,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     // catch-up (which only fires on restart) never got its chance. At 12:30
     // on weekdays, if nothing has been extracted yet today, run one
     // Phase-1-sized pass so a slept-through morning self-heals.
-    scheduleSpending('30 12 * * 1-5', async () => {
+    scheduleSpending('30 12 * * 1-5', 'midday-extraction-topup', async () => {
       try {
         if (marketsThinkingDisabled) return;
         const extractedToday = await db.get<{ n: number | string }>(
@@ -1855,7 +1860,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00 — external fetch (opt-in)
-    scheduleSpending('0 8,15,21 * * 1-5', async () => {
+    scheduleSpending('0 8,15,21 * * 1-5', 'news-fetch', async () => {
       if (marketsFetchDisabled) return;
       const backlog = await getBacklogSize();
       if (backlog > 1000) {

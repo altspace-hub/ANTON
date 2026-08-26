@@ -59,6 +59,7 @@ export const FIXTURE_TABLES = [
   'market_investigation_tasks',
   'market_conditional_accuracy',
   'market_conditional_accuracy_applied',
+  'market_schedule_runs',
 ] as const;
 
 export interface ProvisionResult {
