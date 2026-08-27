@@ -396,3 +396,19 @@ CREATE TABLE IF NOT EXISTS market_schedule_runs (
   error         TEXT,
   metadata      JSONB DEFAULT '{}'::jsonb
 );
+
+-- Atoms, for the decay pass. valid_until is TEXT on purpose: that is the real
+-- column type, and comparing it to NOW() is what threw on every Phase 1 run
+-- from the PostgreSQL migration until 2026-08-27.
+CREATE TABLE IF NOT EXISTS market_atoms (
+  id               TEXT PRIMARY KEY,
+  content          TEXT,
+  atom_type        TEXT,
+  confidence       DOUBLE PRECISION,
+  category         TEXT,
+  valid_until      TEXT,
+  is_active        INTEGER DEFAULT 1,
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW(),
+  decay_applied_at TIMESTAMPTZ
+);

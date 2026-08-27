@@ -67,6 +67,7 @@ import { createMarketWorkflowOrchestrator } from '../../server/services/market-w
 import { createMarketIndexRebalanceService } from '../../server/services/market-index-rebalance-service';
 import { createConditionalAccuracyService } from '../../server/services/market-conditional-accuracy-service';
 import { createSchedulePhaseRecorder } from '../../server/services/market-schedule-recorder';
+import { createMarketAtomService } from '../../server/services/market-atom-service';
 import {
   provisionMarketsTestDb,
   teardownMarketsTestDb,
@@ -390,6 +391,84 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(Number(b1?.brier_score)).toBeCloseTo(0.04, 6);
       expect(Number(b2?.brier_score)).toBeCloseTo(0.36, 6);
     }, 25_000);
+
+    /**
+     * 15. applyAtomDecay had NEVER completed. Its first statement compared
+     * valid_until — a TEXT column — against NOW(), which PostgreSQL refuses,
+     * so it threw every morning, Phase 1's catch swallowed it, and the phase
+     * reported success in 0.10s without reaching the backlog processing on
+     * the next line. On 2026-08-27, 0 of 161,569 atoms had ever been
+     * deactivated and 134,946 were older than 90 days at full confidence.
+     *
+     * Three properties have to hold together, and each one failed differently
+     * before: the comparison must not throw on the real column (which holds
+     * bare dates, full ISO timestamps, and at least one impossible date), the
+     * pass must be set-based rather than 161k round-trips, and it must be
+     * idempotent so a daily cadence does not compound the decay to zero.
+     */
+    it('ages atoms without throwing on the real shapes valid_until holds', async () => {
+      const atoms = await createMarketAtomService(db);
+      const iso = (d: string) => d;
+
+      // The three formats the live column actually contains, plus a control.
+      await db.run(
+        `INSERT INTO market_atoms (id, atom_type, confidence, valid_until, is_active, created_at)
+         VALUES ('a_plain','fact',0.9,?,1,NOW() - INTERVAL '2 days'),
+                ('a_isoZ','fact',0.9,?,1,NOW() - INTERVAL '2 days'),
+                ('a_impossible','fact',0.9,'2025-04-31',1,NOW() - INTERVAL '2 days'),
+                ('a_future','fact',0.9,?,1,NOW() - INTERVAL '2 days'),
+                ('a_null','fact',0.9,NULL,1,NOW() - INTERVAL '2 days')`,
+        iso('2020-01-01'), iso('2020-01-01T23:59:59Z'), iso('2999-01-01'),
+      );
+
+      // Must not throw — this is the whole bug.
+      const first = await atoms.applyAtomDecay();
+
+      const state = async (id: string) => db.get<{ is_active: number; confidence: string; decay_applied_at: string | null }>(
+        `SELECT is_active, confidence, decay_applied_at FROM market_atoms WHERE id = ?`, id,
+      );
+
+      // Past validity, in every format including the impossible date.
+      expect((await state('a_plain'))?.is_active).toBe(0);
+      expect((await state('a_isoZ'))?.is_active).toBe(0);
+      expect((await state('a_impossible'))?.is_active).toBe(0);
+      // Not yet due, and no validity at all: both survive the expiry pass.
+      expect((await state('a_future'))?.is_active).toBe(1);
+      expect((await state('a_null'))?.is_active).toBe(1);
+      expect(first.expired).toBe(3);
+
+      // Decay actually moved the survivors: 2 days at a 90-day half-life.
+      const decayedConf = Number((await state('a_future'))?.confidence);
+      expect(decayedConf).toBeCloseTo(0.9 * Math.pow(0.5, 2 / 90), 3);
+      expect(decayedConf).toBeLessThan(0.9);
+      expect((await state('a_future'))?.decay_applied_at).not.toBeNull();
+    }, 20_000);
+
+    it('is idempotent, so a daily cadence does not compound decay to zero', async () => {
+      const atoms = await createMarketAtomService(db);
+      await db.run(
+        `INSERT INTO market_atoms (id, atom_type, confidence, is_active, created_at)
+         VALUES ('i1','fact',0.9,1,NOW() - INTERVAL '30 days')`,
+      );
+
+      await atoms.applyAtomDecay();
+      const once = Number((await db.get<{ confidence: string }>(
+        `SELECT confidence FROM market_atoms WHERE id = 'i1'`))?.confidence);
+
+      // 30 days at a 90-day half-life.
+      expect(once).toBeCloseTo(0.9 * Math.pow(0.5, 30 / 90), 3);
+
+      // Running again moments later must barely move it. The OLD arithmetic
+      // multiplied the current confidence by the decay for the atom's whole
+      // life again, which would land near 0.9 * 0.5^(60/90) here and reach
+      // zero within a week of daily runs.
+      await atoms.applyAtomDecay();
+      const twice = Number((await db.get<{ confidence: string }>(
+        `SELECT confidence FROM market_atoms WHERE id = 'i1'`))?.confidence);
+
+      expect(twice).toBeCloseTo(once, 4);
+      expect(twice).toBeGreaterThan(0.9 * Math.pow(0.5, 45 / 90));
+    }, 20_000);
 
     /**
      * 14. On 2026-08-26 markets LLM work was found dead for 33 hours: atom

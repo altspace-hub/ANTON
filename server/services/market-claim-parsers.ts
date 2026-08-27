@@ -117,6 +117,37 @@ export function parseRelativeSpreadClaim(text: string): RelativeSpreadClaim | nu
   };
 }
 
+/** Does any deterministic parser recognise this claim? */
+export function hasParseableClaim(text: string): boolean {
+  return parseDailyMoveClaim(text) !== null
+      || parseRelativeSpreadClaim(text) !== null
+      || parseCumulativeReturnClaim(text) !== null
+      || parseCloseRangeClaim(text) !== null
+      || parseCloseThresholdClaim(text) !== null;
+}
+
+/**
+ * Does this claim look like it is trying to be quantitative — a comparator
+ * and a number — as opposed to a qualitative event claim?
+ *
+ * The distinction matters because the two want opposite treatment. "Tesla FSD
+ * European approval granted" has no arithmetic in it and the model path is
+ * the honest way to settle it. "abs(SPY 2026-08-25 close / 2026-08-20 close
+ * - 1) < 2.5%" is pure arithmetic that a parser should settle — and when no
+ * parser knows the phrasing it goes to the model instead, which correctly
+ * refuses for want of evidence, and the prediction sits ungraded forever.
+ *
+ * Deliberately loose: this only decides whether to DEMAND a parser, and the
+ * caller pairs it with hasParseableClaim. A false positive costs a rejected
+ * prediction the generator can rephrase; a false negative costs another
+ * permanently unverifiable row.
+ */
+export function looksQuantitative(text: string): boolean {
+  const hasComparator = /(<=|>=|<|>|\bat least\b|\bat most\b|\babove\b|\bbelow\b|\bless than\b|\bmore than\b|\bgreater than\b|\bexceed(?:s|ing)?\b|\bbetween\b|\bwithin\b)/i.test(text);
+  const hasNumber = /\d/.test(text);
+  return hasComparator && hasNumber;
+}
+
 /**
  * Is this claim already true at the price it was written against?
  *

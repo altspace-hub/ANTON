@@ -201,3 +201,93 @@ describe('parseCloseRangeClaim', () => {
     expect(isClaimAlreadySettled(REAL, 900).trivial).toBe(false);
   });
 });
+
+/**
+ * 2026-08-27: three MORE unparseable shapes turned up in a single morning —
+ * an absolute return magnitude, a |A - B| spread, and a negated floor. That
+ * made six distinct phrasings in four days against three parsers, each new
+ * one sitting permanently ungraded until it got code written for it.
+ *
+ * A claim nothing can settle is worse than one that is already true: it does
+ * not grade CORRECT, it simply never grades, retries to the attempt cap and
+ * becomes permanent unverifiable weight in the record. Writing parsers for
+ * whatever the generator invents is a race that cannot be won.
+ *
+ * These are the real stored claim texts.
+ */
+describe('gradeability gate', () => {
+  const base = {
+    targetSymbol: 'SPY',
+    predictedDirection: null,
+    predictedValue: null,
+    confidence: 0.6,
+    description: '',
+    predictionType: 'binary',
+  };
+
+  const UNGRADEABLE = [
+    'abs(SPY 2026-08-25 close / 2026-08-20 close - 1) < 2.5%',
+    '|QQQ return - SPY return| < 1.5pp over the 3-session window',
+    'No daily close below 750.00 through 2026-08-26',
+  ];
+
+  it('refuses the three phrasings that actually piled up', async () => {
+    const validator = await createCrossMetricValidator(dbWithSpot(765));
+    for (const outcome of UNGRADEABLE) {
+      const r = await validator.validatePrediction({ ...base, title: 'quantified claim', predictedOutcome: outcome });
+      expect(r.gradeable, outcome).toBe(false);
+      expect(r.flags.some((f) => f.startsWith('UNGRADEABLE:')), outcome).toBe(true);
+    }
+  });
+
+  it('accepts every shape the grader actually speaks', async () => {
+    const validator = await createCrossMetricValidator(dbWithSpot(600));
+    const supported = [
+      'SPY prints at least one daily close >= 663.00 by 2026-08-21',
+      'All SPY closes through 2026-08-24 are between 745 and 790',
+      'SPY cumulative return is less than +1.5%',
+      'XLE minus SPY 3-day cumulative return < +2.0 percentage points',
+      'SPY posts a daily move exceeding 2.5% within three sessions',
+    ];
+    for (const outcome of supported) {
+      const r = await validator.validatePrediction({ ...base, title: 'quantified claim', predictedOutcome: outcome });
+      expect(r.gradeable, outcome).toBe(true);
+    }
+  });
+
+  it('leaves qualitative event claims alone', async () => {
+    const validator = await createCrossMetricValidator(dbWithSpot(765));
+    // No arithmetic to follow, so the model path is the honest route. The gate
+    // must not quietly end the system's ability to make event predictions.
+    const r = await validator.validatePrediction({
+      ...base,
+      targetSymbol: 'TSLA',
+      title: 'Tesla FSD European approval by August 18',
+      predictedOutcome: 'regulatory approval granted',
+    });
+    expect(r.gradeable).toBe(true);
+  });
+
+  it('lets a structured route stand in for a parseable phrasing', async () => {
+    const validator = await createCrossMetricValidator(dbWithSpot(765));
+    // Same unreadable arithmetic, but a direction the price grader can use.
+    const directional = await validator.validatePrediction({
+      ...base,
+      predictionType: 'directional',
+      predictedDirection: 'up',
+      title: 'quantified claim',
+      predictedOutcome: UNGRADEABLE[0],
+    });
+    expect(directional.gradeable).toBe(true);
+
+    // And a real price_target carries its level in predicted_value.
+    const priceTarget = await validator.validatePrediction({
+      ...base,
+      predictionType: 'price_target',
+      predictedValue: 812,
+      title: 'quantified claim',
+      predictedOutcome: UNGRADEABLE[0],
+    });
+    expect(priceTarget.gradeable).toBe(true);
+  });
+});

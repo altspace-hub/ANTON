@@ -1552,6 +1552,40 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
             console.error('[markets-verify] Calibration check failed:', calErr instanceof Error ? calErr.message : calErr);
           }
         }
+        // Conditional-accuracy roll-up, on the same cadence as the grading it
+        // consumes. It used to live only in the weekly validation workflow,
+        // so predictions were graded daily and aggregated never: on
+        // 2026-08-27 the table held 0 rows against 44 graded predictions, and
+        // getConditionalAccuracy — which needs 3 observations before it
+        // returns anything — had never had a single row to return.
+        //
+        // Selecting on the applied ledger rather than a time window means
+        // this also backfills whatever earlier grading left behind, and
+        // migration 258's claim check makes re-running it free of charge.
+        try {
+          const { createConditionalAccuracyService } = await import('./services/market-conditional-accuracy-service.js');
+          const conditional = await createConditionalAccuracyService(db);
+          const pending = await db.all<{ id: string; was_correct: number; brier_score: string | null }>(`
+            SELECT p.id, p.was_correct, p.brier_score
+              FROM market_predictions p
+              LEFT JOIN market_conditional_accuracy_applied ap ON ap.prediction_id = p.id
+             WHERE p.status = 'validated' AND p.was_correct IS NOT NULL
+               AND p.features IS NOT NULL AND p.features::text <> '{}'
+               AND ap.prediction_id IS NULL
+             ORDER BY p.validated_at
+             LIMIT 500
+          `);
+          for (const row of pending) {
+            await conditional.updateConditionalAccuracy(
+              row.id, row.was_correct === 1, Number(row.brier_score) || 0, false,
+            );
+          }
+          if (pending.length > 0) {
+            console.log(`[markets-verify] Conditional accuracy: rolled up ${pending.length} newly graded prediction(s)`);
+          }
+        } catch (condErr) {
+          console.error('[markets-verify] Conditional accuracy roll-up failed:', condErr instanceof Error ? condErr.message : condErr);
+        }
       } catch (err) { console.error(`[markets-verify] ${label} verification error:`, err); }
     }
 

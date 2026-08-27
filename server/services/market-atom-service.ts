@@ -627,51 +627,96 @@ Return ONLY the JSON array.`;
   };
   const DECAY_THRESHOLD = 0.05;
 
+  /**
+   * Half-life map rendered as SQL, so the decay runs in the database instead
+   * of a row-at-a-time loop. Built from HALF_LIVES rather than written out
+   * twice — the two drifting apart would decay atoms at a rate nothing in the
+   * code claims. Interpolation is safe here and only here: these are
+   * compile-time constants in this file, never user input.
+   */
+  const HALF_LIFE_SQL = `CASE atom_type ${Object.entries(HALF_LIVES)
+    .map(([type, days]) => `WHEN '${type}' THEN ${Number(days)}`)
+    .join(' ')} ELSE 30 END`;
+
+  /**
+   * Age atoms: expire what is past its stated validity, decay the rest toward
+   * zero on a per-type half-life, and deactivate whatever falls through the
+   * floor.
+   *
+   * 2026-08-27: this had never once completed. Its first statement compared
+   * `valid_until` — a TEXT column — against NOW(), which PostgreSQL refuses
+   * ("operator does not exist: text < timestamp with time zone"). It threw
+   * every morning, Phase 1's catch swallowed it, and the phase reported
+   * success in 0.10s while never reaching the backlog processing on the next
+   * line. Every one of 161,569 atoms was still active at full confidence,
+   * 134,946 of them older than 90 days.
+   *
+   * Three things had to change together:
+   *
+   * 1. The comparison. valid_until holds both 'YYYY-MM-DD' and full ISO
+   *    'YYYY-MM-DDTHH:MM:SSZ', and at least one impossible date ('2025-04-31'
+   *    — April has 30 days), so ::date and to_date() both throw on real rows.
+   *    ISO dates sort lexicographically in date order, so comparing TEXT to
+   *    TEXT is correct AND cannot throw. The prefix regex keeps anything
+   *    unparseable out rather than guessing at it.
+   *
+   * 2. The loop. It SELECTed every active atom (161k rows, measured at 53s)
+   *    and issued one UPDATE per row. Even with the throw fixed that is hours
+   *    of round-trips against the pool. It is now three set-based statements.
+   *
+   * 3. Idempotence. The old arithmetic multiplied the CURRENT confidence by
+   *    the decay for the atom's WHOLE life, which is right once and wrong
+   *    every time after — daily runs would zero everything within a week.
+   *    Decay is memoryless, so decaying by the time since the last decay
+   *    (migration 259's decay_applied_at, falling back to created_at)
+   *    composes exactly to decay from creation, at any cadence.
+   */
   async function applyAtomDecay() {
-    // Deactivate atoms past their valid_until date
+    // 1. Expire atoms past their stated validity. TEXT-to-TEXT: no cast, so
+    //    no malformed value in the column can throw. A row whose validity ends
+    //    later TODAY sorts after the bare date and correctly does not expire.
     const expired = await db.run(`
       UPDATE market_atoms SET is_active = 0, updated_at = NOW()
-      WHERE is_active = 1 AND valid_until IS NOT NULL AND valid_until < NOW()
+       WHERE is_active = 1
+         AND valid_until ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+         AND valid_until < TO_CHAR(NOW(), 'YYYY-MM-DD')
     `);
 
-    // Apply per-type half-life decay to remaining active atoms
-    const activeAtoms = await db.all<{
-      id: string; atom_type: string; confidence: number; created_at: string;
-    }>(
-      "SELECT id, atom_type, confidence, created_at FROM market_atoms WHERE is_active = 1 AND confidence > 0"
-    );
+    // 2. Decay everything still active. The 0.001 guard keeps the write set
+    //    small; an atom too fresh to have moved keeps its NULL
+    //    decay_applied_at, so the next run measures from creation as it should.
+    const decayed = await db.run(`
+      UPDATE market_atoms a
+         SET confidence = sub.new_confidence,
+             decay_applied_at = NOW(),
+             updated_at = NOW()
+        FROM (
+          SELECT id,
+                 confidence * POWER(
+                   0.5,
+                   (EXTRACT(EPOCH FROM (NOW() - COALESCE(decay_applied_at, created_at))) / 86400.0)
+                   / ${HALF_LIFE_SQL}
+                 ) AS new_confidence
+            FROM market_atoms
+           WHERE is_active = 1 AND confidence > 0
+        ) sub
+       WHERE a.id = sub.id
+         AND ABS(a.confidence - sub.new_confidence) > 0.001
+    `);
 
-    let decayedCount = 0;
-    let deactivatedCount = 0;
+    // 3. Retire whatever has fallen through the floor.
+    const deactivated = await db.run(`
+      UPDATE market_atoms SET is_active = 0, updated_at = NOW()
+       WHERE is_active = 1 AND confidence < ${Number(DECAY_THRESHOLD)}
+    `);
 
-    for (const atom of activeAtoms) {
-      const halfLife = HALF_LIVES[atom.atom_type] ?? 30;
-      const ageMs = Date.now() - new Date(atom.created_at).getTime();
-      const ageDays = ageMs / (1000 * 60 * 60 * 24);
-      const newConfidence = atom.confidence * Math.pow(0.5, ageDays / halfLife);
-
-      if (newConfidence < DECAY_THRESHOLD) {
-        await db.run(
-          "UPDATE market_atoms SET is_active = 0, confidence = ?, updated_at = NOW() WHERE id = ?",
-          newConfidence, atom.id
-        );
-        deactivatedCount++;
-      } else if (Math.abs(newConfidence - atom.confidence) > 0.001) {
-        await db.run(
-          "UPDATE market_atoms SET confidence = ?, updated_at = NOW() WHERE id = ?",
-          newConfidence, atom.id
-        );
-        decayedCount++;
-      }
-    }
-
-    console.log(`[market-atoms] Decay applied: ${expired.changes ?? 0} expired, ${decayedCount} decayed, ${deactivatedCount} deactivated below threshold`);
-
-    return {
+    const result = {
       expired: expired.changes ?? 0,
-      decayed: decayedCount,
-      deactivated: deactivatedCount,
+      decayed: decayed.changes ?? 0,
+      deactivated: deactivated.changes ?? 0,
     };
+    console.log(`[market-atoms] Decay applied: ${result.expired} expired, ${result.decayed} decayed, ${result.deactivated} deactivated below threshold`);
+    return result;
   }
 
   // ── Recent atoms for dashboard ───────────────────────────────────────────

@@ -12,7 +12,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
-import { isClaimAlreadySettled } from './market-claim-parsers.js';
+import { isClaimAlreadySettled, hasParseableClaim, looksQuantitative } from './market-claim-parsers.js';
 
 export interface ValidationResult {
   coherenceScore: number;        // 0 = totally incoherent, 1 = fully coherent
@@ -28,6 +28,19 @@ export interface ValidationResult {
   falsifiable: boolean;
   /** Why it was judged unfalsifiable, for the log. */
   falsifiabilityReason?: string;
+  /**
+   * false = nothing can ever settle this claim. Also a hard block.
+   *
+   * Six distinct claim phrasings appeared in four days — an absolute return
+   * magnitude, a |A - B| spread, a negated floor, and three others — each
+   * needing its own parser and each sitting permanently ungraded until it got
+   * one. Writing parsers for whatever the generator invents is a race that
+   * cannot be won; requiring the generator to speak a language the grader
+   * already understands can be.
+   */
+  gradeable: boolean;
+  /** Why it was judged ungradeable, for the log. */
+  gradeabilityReason?: string;
 }
 
 /**
@@ -83,6 +96,8 @@ export async function createCrossMetricValidator(db: DatabaseAdapter) {
     predictionType?: string;
     /** The machine-written outcome, where a quantified threshold usually sits. */
     predictedOutcome?: string | null;
+    /** Present on a real price_target; its absence is what forces a text parse. */
+    predictedValue?: number | null;
   }): Promise<ValidationResult> {
     const conflicts: ConflictDetail[] = [];
     const flags: string[] = [];
@@ -278,13 +293,44 @@ export async function createCrossMetricValidator(db: DatabaseAdapter) {
       // prediction generation for every newly-followed instrument.
     }
 
+    // ── Check 6: gradeability ───────────────────────────────────────────
+    // A claim nothing can settle is as useless as one that is already true,
+    // and less obvious: it does not grade CORRECT, it simply never grades,
+    // retries to the attempt cap and sits as permanent unverifiable weight.
+    //
+    // The test is narrow on purpose. A qualitative event claim ("regulatory
+    // approval granted") carries no arithmetic and the model path is the
+    // honest way to settle it — those pass untouched. What is refused is a
+    // claim that reaches for arithmetic the grader cannot follow: a
+    // comparator and a number, with no parser that recognises the phrasing
+    // and no structured route either. Those are the ones that piled up.
+    const claimText = `${prediction.predictedOutcome ?? ''} ${prediction.title} ${prediction.description}`;
+    const hasDirectionalRoute = Boolean(symbol && prediction.predictedDirection);
+    const hasPriceTargetRoute = Boolean(symbol && typeof prediction.predictedValue === 'number');
+    let gradeable = true;
+    let gradeabilityReason: string | undefined;
+    if (
+      !hasDirectionalRoute
+      && !hasPriceTargetRoute
+      && looksQuantitative(claimText)
+      && !hasParseableClaim(claimText)
+    ) {
+      gradeable = false;
+      gradeabilityReason =
+        'quantified claim in a phrasing no price parser recognises, and no direction or target value to fall back on';
+      flags.push(`UNGRADEABLE: ${gradeabilityReason}`);
+    }
+
     // ── Calculate final scores ──────────────────────────────────────────
     const cappedPenalty = Math.min(totalPenalty, 50); // Max 50% penalty
     const adjustedConfidence = Math.max(0.15, prediction.confidence * (1 - cappedPenalty / 100));
     const coherenceScore = Math.max(0, 1 - cappedPenalty / 100);
     const pass = conflicts.filter(c => c.severity === 'high').length === 0;
 
-    return { coherenceScore, adjustedConfidence, conflicts, flags, pass, falsifiable, falsifiabilityReason };
+    return {
+      coherenceScore, adjustedConfidence, conflicts, flags, pass,
+      falsifiable, falsifiabilityReason, gradeable, gradeabilityReason,
+    };
   }
 
   return { validatePrediction };

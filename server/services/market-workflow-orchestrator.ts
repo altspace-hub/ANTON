@@ -607,8 +607,34 @@ TIME HORIZON RULES (CRITICAL — we grade every band, so spread deliberately):
 - Across the whole batch aim for at least 2 tactical, at least 3 swing, and 1-2 position predictions.
 - For "event" theses: the deadline must match the event date (use earnings dates from context when present).
 - Position predictions need concrete, checkable success criteria — not vibes.
-- Include a specific price target or percentage move where possible (e.g., "SPY above 550 by date")
 - Predictions must be testable with daily price data — vague directional calls are not useful
+
+PREDICTED_OUTCOME PHRASING (CRITICAL — anything else cannot be graded):
+Our grader settles claims from a price table. It understands the shapes below
+and nothing else. A quantified claim in any other phrasing is REJECTED at
+creation, so the thesis loses that prediction entirely. Use one of these:
+
+  1. Direction   "<SYM> moves up|down|flat within <N> days"
+  2. Close level "<SYM> prints at least one daily close >= <price>"
+                 (or "at or above" / "above" — one close crossing settles it)
+  3. Close band  "All <SYM> closes through <YYYY-MM-DD> are between <lo> and <hi>"
+  4. Cumulative  "<SYM> cumulative return is less than +<N>%"
+                 (also "greater than", and negative thresholds)
+  5. Spread      "<A> minus <B> cumulative return < +<N> percentage points"
+  6. Daily move  "<SYM> posts a daily move exceeding <N>%"
+
+Rules that follow from how the grader reads them:
+- Do NOT negate. "No daily close below 750" is refused; say "All X closes are
+  between 750 and <upper>" instead. Inverting a negation is where a grader
+  silently flips an answer, so it will not try.
+- Do NOT write arithmetic. "abs(SPY 08-25 close / 08-20 close - 1) < 2.5%" and
+  "|QQQ return - SPY return| < 1.5pp" are unreadable to it; use shape 4 or 5.
+- A price_target MUST also set predicted_value to the numeric level.
+- Purely qualitative event claims ("regulatory approval granted") are fine and
+  exempt — they carry no arithmetic and are judged on evidence instead. The
+  rejection is only for claims that reach for numbers the grader cannot follow.
+- Never state a level the price has ALREADY passed: a claim that is true when
+  written is not a forecast and is also rejected.
 - Today is ${new Date().toISOString().split('T')[0]}
 
 Return ONLY the JSON array, no other text.`;
@@ -626,6 +652,7 @@ Return ONLY the JSON array, no other text.`;
           predictions?: Array<{
             title: string; description: string; prediction_type?: string;
             target_symbol?: string; predicted_outcome: string; predicted_direction?: string;
+            predicted_value?: number;
             confidence?: number; time_horizon_days?: number; deadline?: string;
             key_assumptions?: string[];
           }>;
@@ -636,6 +663,7 @@ Return ONLY the JSON array, no other text.`;
         // Counted so the drop rate is visible: a generator that keeps writing
         // claims spot has already settled is a prompt problem, not a one-off.
         let skippedUnfalsifiable = 0;
+        let skippedUngradeable = 0;
 
         for (const t of generatedTheses.slice(0, 4)) {
           const thesisId = await thesisService.createThesis({
@@ -664,6 +692,7 @@ Return ONLY the JSON array, no other text.`;
             let effectiveConfidence = p.confidence ?? 0.5;
             let validationFlags: string[] = [];
             let unfalsifiable = false;
+            let ungradeable = false;
             try {
               const { createCrossMetricValidator } = await import('./market-cross-metric-validator.js');
               const validator = await createCrossMetricValidator(db);
@@ -675,10 +704,12 @@ Return ONLY the JSON array, no other text.`;
                 description: p.description ?? '',
                 predictionType: p.prediction_type,
                 predictedOutcome: p.predicted_outcome,
+                predictedValue: p.predicted_value ?? null,
               });
               effectiveConfidence = validation.adjustedConfidence;
               validationFlags = validation.flags;
               unfalsifiable = !validation.falsifiable;
+              ungradeable = !validation.gradeable;
               if (validation.flags.length > 0) {
                 console.log(`[orchestrator] Prediction "${p.title}" validated: coherence=${validation.coherenceScore.toFixed(2)}, confidence ${(p.confidence ?? 0.5).toFixed(2)}→${effectiveConfidence.toFixed(2)}, flags: ${validation.flags.join('; ')}`);
               }
@@ -692,6 +723,16 @@ Return ONLY the JSON array, no other text.`;
             if (unfalsifiable) {
               console.log(`[orchestrator] Prediction "${p.title}" DROPPED as unfalsifiable — ${validationFlags.find(f => f.startsWith('UNFALSIFIABLE:')) ?? 'already true at spot'}`);
               skippedUnfalsifiable++;
+              continue;
+            }
+
+            // A claim nothing can settle never grades at all: it retries to
+            // the attempt cap and sits as permanent unverifiable weight. Six
+            // phrasings arrived in four days; the generator is told the
+            // shapes the grader speaks, and this refuses the rest.
+            if (ungradeable) {
+              console.log(`[orchestrator] Prediction "${p.title}" DROPPED as ungradeable — ${validationFlags.find(f => f.startsWith('UNGRADEABLE:')) ?? 'no parser and no structured route'}`);
+              skippedUngradeable++;
               continue;
             }
 
@@ -733,6 +774,7 @@ Return ONLY the JSON array, no other text.`;
             thesesCreated: createdTheses.length,
             predictionsCreated: createdPredictions.length,
             predictionsSkippedUnfalsifiable: skippedUnfalsifiable,
+            predictionsSkippedUngradeable: skippedUngradeable,
           },
         });
         stepsCompleted++;
