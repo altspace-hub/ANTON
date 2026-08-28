@@ -1,0 +1,38 @@
+{
+  "id": "mifir-2014",
+  "name": "MiFIR — Markets in Financial Instruments Regulation",
+  "shortName": "MiFIR",
+  "reference": "Regulation (EU) No 600/2014",
+  "applicationDate": "2018-01-03",
+  "articleCount": 4,
+  "themes": [
+    "Reporting",
+    "Transparency"
+  ],
+  "articles": [
+    {
+      "id": "Art.3",
+      "title": "Pre-Trade Transparency for Trading Venues",
+      "theme": "Transparency",
+      "requirement": "Market operators and investment firms operating a trading venue must make public current bid and offer prices and the depth of trading interest at those prices, continuously during normal trading hours."
+    },
+    {
+      "id": "Art.23",
+      "title": "Trading Obligation for Shares",
+      "theme": "Transparency",
+      "requirement": "Investment firms must ensure trades in shares admitted to trading on a regulated market take place on a regulated market, MTF, systematic internaliser or equivalent third-country venue."
+    },
+    {
+      "id": "Art.26",
+      "title": "Transaction Reporting",
+      "theme": "Reporting",
+      "requirement": "Investment firms executing transactions in financial instruments must report complete and accurate details to the competent authority as quickly as possible, and no later than the close of the following working day."
+    },
+    {
+      "id": "Art.35",
+      "title": "Non-Discriminatory Access to a CCP",
+      "theme": "Transparency",
+      "requirement": "CCPs must accept to clear financial instruments on a non-discriminatory and transparent basis, including as to collateral requirements and fees, regardless of the venue on which the transaction is executed."
+    }
+  ]
+}
