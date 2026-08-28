@@ -656,7 +656,7 @@
       "chapter": "V",
       "section": null,
       "theme": "Reporting Obligations & Information Sharing",
-      "requirement": "High-value goods dealers must report cash transactions >=EUR 10,000 to FIU regardless of suspicion; applies to goods listed in Annex IV"
+      "requirement": "Persons trading in high-value goods must report to the FIU all sales of specified goods acquired for NON-COMMERCIAL purposes: motor vehicles at a price of at least EUR 250,000, and watercraft or aircraft at a price of at least EUR 7,500,000. Credit and financial institutions servicing the purchase or transfer of ownership of those goods must report such transactions too. Reporting within the deadlines set by the FIU."
     },
     {
       "id": "Art.75",
@@ -704,7 +704,7 @@
       "chapter": "VIII",
       "section": null,
       "theme": "Anonymous Instruments & Cash Limits",
-      "requirement": "EU-wide limit of EUR 10,000 on cash payments; applies to all persons trading in goods; Member States may set lower limits; identification required for cash transactions >=EUR 3,000"
+      "requirement": "EU-wide limit of EUR 10,000 on cash payments accepted or made by persons trading in goods or providing services, whether in one operation or several that appear linked. Member States may set lower limits (notified to the Commission within 3 months); existing lower national limits continue to apply. Does not apply to payments between natural persons acting non-professionally, or to payments/deposits at credit institutions, e-money issuers and payment service providers."
     },
     {
       "id": "Art.81",
