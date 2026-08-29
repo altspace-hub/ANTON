@@ -12,6 +12,8 @@
  */
 
 import { readdir, stat, readFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import AdmZip from 'adm-zip';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
@@ -32,16 +34,51 @@ async function getModTime(filePath) {
   }
 }
 
+/** Fields build-pack.mjs injects; they differ on every build and mean nothing. */
+const ENVELOPE_FIELDS = ['format_version', 'created_at', 'generator'];
+
+/**
+ * A bundle is stale when its contents disagree with the JSON beside it.
+ *
+ * This used to compare mtimes, which git does not preserve. That is wrong in
+ * both directions: a fresh clone looks uniformly up to date, and a checkout
+ * looks uniformly stale. The second is merely wasteful — it once rebuilt 20
+ * unchanged bundles, changing nothing but a timestamp inside each zip. The
+ * first is the one that costs something: installBundledPack reads the bundle,
+ * not the JSON, so a bundle left behind by an edit ships the old data and
+ * nothing says so.
+ */
 async function isStale(slug) {
   const packDir = join(PACKS_DIR, slug);
   const antonPath = join(packDir, `${slug}.anton`);
-  const antonMtime = await getModTime(antonPath);
-  if (antonMtime === 0) return true; // missing
+  if (!existsSync(antonPath)) return true;
 
-  const sourceFiles = ['manifest.json', 'entities.json', 'relationships.json', 'aliases.json'];
-  for (const file of sourceFiles) {
-    const mtime = await getModTime(join(packDir, file));
-    if (mtime > antonMtime) return true; // source newer than bundle
+  let bundled;
+  try {
+    const zip = new AdmZip(antonPath);
+    bundled = {};
+    for (const entry of zip.getEntries()) {
+      bundled[entry.entryName] = JSON.parse(zip.readAsText(entry));
+    }
+  } catch {
+    return true; // unreadable or not a zip — rebuild it
+  }
+
+  for (const file of ['manifest.json', 'entities.json', 'relationships.json', 'aliases.json']) {
+    const filePath = join(packDir, file);
+    const present = existsSync(filePath);
+    let inBundle = bundled[file];
+    if (!present) {
+      if (inBundle !== undefined) return true; // file removed since the build
+      continue;
+    }
+    if (inBundle === undefined) return true;   // file added since the build
+    const onDisk = JSON.parse(await readFile(filePath, 'utf8'));
+    if (file === 'manifest.json') {
+      inBundle = { ...inBundle };
+      for (const k of ENVELOPE_FIELDS) delete inBundle[k];
+    }
+    if (JSON.stringify(inBundle) !== JSON.stringify(onDisk)) return true;
   }
   return false;
 }
