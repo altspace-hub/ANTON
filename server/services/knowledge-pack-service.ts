@@ -623,10 +623,31 @@ export async function createKnowledgePackService(db: DatabaseAdapter) {
     const packDir = path.join(BUNDLED_PACKS_DIR, slug);
     if (!fs.existsSync(packDir)) throw new Error(`Bundled pack '${slug}' not found`);
 
-    // Prefer the pre-built .anton file; fall back to building from JSON sources
+    // There is no fallback to the JSON sources: this reads the pre-built bundle
+    // and nothing else. listBundledPacks only needs manifest.json, so a pack
+    // whose bundle was never built is still offered for install and fails here.
     const antonFile = path.join(packDir, `${slug}.anton`);
     if (!fs.existsSync(antonFile)) {
-      throw new Error(`Bundled pack '${slug}' is missing its .anton file. Run: node data/knowledge-packs/build-pack.mjs ${slug}`);
+      // Two audiences, two messages. The person who chose the pack cannot build
+      // it and should not be handed a shell command — and they will read this
+      // text, because safeError only genericises when NODE_ENV=production and
+      // `pnpm start` does not set it. The build instruction goes to the log,
+      // where whoever can act on it is looking.
+      let name = slug;
+      try {
+        const manifest = JSON.parse(
+          fs.readFileSync(path.join(packDir, 'manifest.json'), 'utf-8')
+        ) as PackManifest;
+        if (manifest.display_name) name = manifest.display_name;
+      } catch { /* no readable manifest — the slug names it well enough */ }
+      console.error(
+        `[knowledge-packs] '${slug}' ships without its .anton bundle; `
+        + `build it with: node data/knowledge-packs/build-pack.mjs ${slug}`
+      );
+      throw new Error(
+        `The "${name}" knowledge pack is incomplete in this installation: `
+        + `its data file was not included in this build, so there is nothing to install.`
+      );
     }
     const buffer = fs.readFileSync(antonFile);
     return importBundle(buffer, userId);
