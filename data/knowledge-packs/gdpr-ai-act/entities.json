@@ -36,7 +36,9 @@
     "metadata": {
       "regulation": "GDPR",
       "article_number": 5,
-      "topic": "processing-principles"
+      "topic": "processing-principles",
+      "source_quote": "Regulation (EU) 2016/679 Art. 5: \"Personal data shall be: (a) processed lawfully, fairly and in a transparent manner in relation to the data subject (‘lawfulness, fairness and transparency’);\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a5",
@@ -62,7 +64,9 @@
       "regulation": "GDPR",
       "article_number": 9,
       "topic": "special-categories",
-      "aml_relevance": "PEP screening may involve political opinions data"
+      "aml_relevance": "PEP screening may involve political opinions data",
+      "source_quote": "Regulation (EU) 2016/679 Art. 9: \"Processing of personal data revealing racial or ethnic origin, political opinions, religious or philosophical beliefs, or trade union membership, and the processing of genetic data, biometric data for the purpose of uniquely identifying a natural person, data concerning health or data concerning a natural person's sex life or sexual orientation shall be prohibited. 2.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a9",
@@ -87,7 +91,9 @@
       "regulation": "GDPR",
       "article_number": 17,
       "topic": "right-to-erasure",
-      "aml_conflict": "AML 5-year record retention overrides erasure requests"
+      "aml_conflict": "AML 5-year record retention overrides erasure requests",
+      "source_quote": "Regulation (EU) 2016/679 Art. 17: \"Paragraphs 1 and 2 shall not apply to the extent that processing is necessary: (a) for exercising the right of freedom of expression and information;\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a17",
@@ -100,7 +106,9 @@
       "regulation": "GDPR",
       "article_number": 22,
       "topic": "automated-decisions",
-      "ai_relevance": "Intersects with EU AI Act high-risk AI classification for credit scoring and fraud detection"
+      "ai_relevance": "Intersects with EU AI Act high-risk AI classification for credit scoring and fraud detection",
+      "source_quote": "Regulation (EU) 2016/679 Art. 22: \"The data subject shall have the right not to be subject to a decision based solely on automated processing, including profiling, which produces legal effects concerning him or her or similarly significantly affects him or her. 2.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a22",
@@ -112,7 +120,9 @@
     "metadata": {
       "regulation": "GDPR",
       "article_number": 25,
-      "topic": "privacy-by-design"
+      "topic": "privacy-by-design",
+      "source_quote": "Regulation (EU) 2016/679 Art. 25: \"The controller shall implement appropriate technical and organisational measures for ensuring that, by default, only personal data which are necessary for each specific purpose of the processing are processed.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a25",
@@ -124,7 +134,9 @@
     "metadata": {
       "regulation": "GDPR",
       "article_number": 28,
-      "topic": "dpa-processor"
+      "topic": "dpa-processor",
+      "source_quote": "Regulation (EU) 2016/679 Art. 28: \"Processing by a processor shall be governed by a contract or other legal act under Union or Member State law, that is binding on the processor with regard to the controller and that sets out the subject-matter and duration of the processing, the nature and purpose of the processing, the type of personal data and categories of data subjects and the obligations and rights of the controller.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a28",
@@ -137,7 +149,9 @@
       "regulation": "GDPR",
       "article_number": 30,
       "topic": "ropa",
-      "threshold": "≥250 employees or high-risk processing"
+      "threshold": "≥250 employees or high-risk processing",
+      "source_quote": "Regulation (EU) 2016/679 Art. 30: \"Each controller and, where applicable, the controller's representative, shall maintain a record of processing activities under its responsibility.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a30",
@@ -149,7 +163,9 @@
     "metadata": {
       "regulation": "GDPR",
       "article_number": 32,
-      "topic": "security-processing"
+      "topic": "security-processing",
+      "source_quote": "Regulation (EU) 2016/679 Art. 32: \"In assessing the appropriate level of security account shall be taken in particular of the risks that are presented by processing, in particular from accidental or unlawful destruction, loss, alteration, unauthorised disclosure of, or access to personal data transmitted, stored or otherwise processed. 3.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a32",
@@ -162,7 +178,9 @@
       "regulation": "GDPR",
       "article_number": 33,
       "topic": "breach-notification-authority",
-      "deadline": "72 hours"
+      "deadline": "72 hours",
+      "source_quote": "Regulation (EU) 2016/679 Art. 33: \"In the case of a personal data breach, the controller shall without undue delay and, where feasible, not later than 72 hours after having become aware of it, notify the personal data breach to the supervisory authority competent in accordance with Article 55, unless the personal data breach is unlikely to result in a risk to the rights and freedoms of natural persons.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a33",
@@ -174,7 +192,9 @@
     "metadata": {
       "regulation": "GDPR",
       "article_number": 35,
-      "topic": "dpia"
+      "topic": "dpia",
+      "source_quote": "Regulation (EU) 2016/679 Art. 35: \"Where a type of processing in particular using new technologies, and taking into account the nature, scope, context and purposes of the processing, is likely to result in a high risk to the rights and freedoms of natural persons, the controller shall, prior to the processing, carry out an assessment of the impact of the envisaged processing operations on the protection of personal data.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a35",
@@ -187,7 +207,9 @@
       "regulation": "GDPR",
       "article_number": 37,
       "topic": "dpo",
-      "financial_entities": "typically mandatory"
+      "financial_entities": "typically mandatory",
+      "source_quote": "Regulation (EU) 2016/679 Art. 37: \"The controller and the processor shall designate a data protection officer in any case where: (a) the processing is carried out by a public authority or body, except for courts acting in their judicial capacity;\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a37",
@@ -212,7 +234,9 @@
     "metadata": {
       "regulation": "GDPR",
       "article_number": 85,
-      "topic": "journalism-research-exemption"
+      "topic": "journalism-research-exemption",
+      "source_quote": "Regulation (EU) 2016/679 Art. 85: \"Member States shall by law reconcile the right to the protection of personal data pursuant to this Regulation with the right to freedom of expression and information, including processing for journalistic purposes and the purposes of academic, artistic or literary expression.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "gdpr-a85",
@@ -225,7 +249,9 @@
       "regulation": "EU AI Act",
       "article_number": 5,
       "topic": "prohibited-ai",
-      "applies_from": "2025-02-02"
+      "applies_from": "2025-02-02",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 5: \"The following AI practices shall be prohibited:\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a5",
@@ -249,7 +275,9 @@
     "metadata": {
       "regulation": "EU AI Act",
       "article_number": 9,
-      "topic": "ai-risk-management"
+      "topic": "ai-risk-management",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 9: \"A risk management system shall be established, implemented, documented and maintained in relation to high-risk AI systems. 2.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a9",
@@ -273,7 +301,9 @@
     "metadata": {
       "regulation": "EU AI Act",
       "article_number": 11,
-      "topic": "technical-documentation"
+      "topic": "technical-documentation",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 11: \"The technical documentation of a high-risk AI system shall be drawn up before that system is placed on the market or put into service and shall be kept up-to date.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a11",
@@ -285,7 +315,9 @@
     "metadata": {
       "regulation": "EU AI Act",
       "article_number": 13,
-      "topic": "transparency-logging"
+      "topic": "transparency-logging",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 13: \"High-risk AI systems shall be designed and developed in such a way as to ensure that their operation is sufficiently transparent to enable deployers to interpret a system’s output and use it appropriately.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a13",
@@ -297,7 +329,9 @@
     "metadata": {
       "regulation": "EU AI Act",
       "article_number": 14,
-      "topic": "human-oversight"
+      "topic": "human-oversight",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 14: \"High-risk AI systems shall be designed and developed in such a way, including with appropriate human-machine interface tools, that they can be effectively overseen by natural persons during the period in which they are in use. 2.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a14",
@@ -309,7 +343,9 @@
     "metadata": {
       "regulation": "EU AI Act",
       "article_number": 26,
-      "topic": "deployer-obligations"
+      "topic": "deployer-obligations",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 26: \"Deployers of high-risk AI systems shall take appropriate technical and organisational measures to ensure they use such systems in accordance with the instructions for use accompanying the systems, pursuant to paragraphs 3 and 6.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a26",
@@ -321,7 +357,9 @@
     "metadata": {
       "regulation": "EU AI Act",
       "article_number": 43,
-      "topic": "conformity-assessment"
+      "topic": "conformity-assessment",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 43: \"In demonstrating the compliance of a high-risk AI system with the requirements set out in Section 2, the provider shall follow the conformity assessment procedure set out in Annex VII where: (a) harmonised standards referred to in Article 40 do not exist, and common specifications referred to in Article 41 are not available;\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a43",
@@ -359,7 +397,9 @@
       "regulation": "EU AI Act",
       "article_number": 55,
       "topic": "gpai-systemic-risk",
-      "threshold": "≥10^25 FLOPs training compute"
+      "threshold": "≥10^25 FLOPs training compute",
+      "source_quote": "Regulation (EU) 2024/1689 Art. 55: \"In addition to the obligations listed in Articles 53 and 54, providers of general-purpose AI models with systemic risk shall: (a) perform model evaluation in accordance with standardised protocols and tools reflecting the state of the art, including conducting and documenting adversarial testing of the model with a view to identifying and mitigating systemic risks;\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "ai-act-a55",
