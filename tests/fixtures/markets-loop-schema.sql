@@ -66,7 +66,10 @@ CREATE TABLE IF NOT EXISTS market_predictions (
   features                      JSONB DEFAULT '{}'::jsonb,
   verification_attempts         INTEGER NOT NULL DEFAULT 0,    -- migration 156
   last_verification_attempt_at  TIMESTAMPTZ,
-  last_verification_failure     TEXT
+  last_verification_failure     TEXT,
+  -- Written by the recalibration service; NEVER a copy of confidence. NULL
+  -- means the stated band had too few graded examples to speak for itself.
+  calibrated_confidence  DOUBLE PRECISION
 );
 
 -- The retry-sweep partial index from migration 156 (kept so the predicate the

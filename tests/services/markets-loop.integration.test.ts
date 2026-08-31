@@ -1102,6 +1102,91 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
 
   // ── 5. NAV engine (market-nav-engine) ─────────────────────────────────────
 
+  // ── Confidence recalibration ───────────────────────────────────────────────
+  describe('confidence recalibration (market-confidence-recalibration)', () => {
+    /** n graded predictions in one confidence band, `correct` of them right. */
+    async function seedBand(prefix: string, confidence: number, n: number, correct: number) {
+      for (let i = 0; i < n; i++) {
+        await seedPrediction(db, {
+          id: `${prefix}_${i}`, symbol: 'AAPL', direction: 'up',
+          confidence, status: 'validated',
+          wasCorrect: i < correct ? 1 : 0,
+          createdAt: daysAgoIso(40),
+        });
+      }
+    }
+
+    it('maps a band with enough evidence to its observed accuracy', async () => {
+      const { measureCalibration } =
+        await import('../../server/services/market-confidence-recalibration.js');
+      // 60 graded at 0.55 stated, 30 correct → 50% observed against a stated 55%.
+      await seedBand('cal_mid', 0.55, 60, 30);
+
+      const report = await measureCalibration(db);
+      const band = report.bands.find(b => b.low === 0.4)!;
+      expect(band.graded).toBe(60);
+      expect(band.observed_accuracy).toBeCloseTo(0.5, 6);
+      expect(band.applied).toBe(true);
+      // Shrunk toward the base rate, so it sits between the two, not on 0.5.
+      expect(band.calibrated).not.toBeNull();
+      expect(band.calibrated!).toBeGreaterThan(0);
+      expect(band.calibrated!).toBeLessThan(1);
+    });
+
+    it('refuses to map a band that has too few graded examples', async () => {
+      // THIS is the guard that keeps recalibration from becoming overfitting:
+      // the live 0.8–1.0 band has eight graded predictions, and mapping from
+      // eight observations would be noise wearing a probability's clothes.
+      // A unit test with a hand-built report cannot check this — the flag has
+      // to come from measureCalibration reading a real table.
+      const { measureCalibration, MIN_BUCKET_SAMPLES } =
+        await import('../../server/services/market-confidence-recalibration.js');
+      await seedBand('cal_hi', 0.85, 5, 1);
+
+      const report = await measureCalibration(db);
+      const band = report.bands.find(b => b.low === 0.8)!;
+      expect(band.graded).toBe(5);
+      expect(band.graded).toBeLessThan(MIN_BUCKET_SAMPLES);
+      expect(band.observed_accuracy).toBeCloseTo(0.2, 6);   // it MEASURED it
+      expect(band.applied).toBe(false);                      // and declined to use it
+      expect(band.calibrated).toBeNull();
+    });
+
+    it('writes calibrated_confidence without touching the stated confidence', async () => {
+      // The raw number is the only record of what the model believed, and the
+      // before/after question dies the moment it is overwritten in place.
+      const { applyCalibration } =
+        await import('../../server/services/market-confidence-recalibration.js');
+      await seedBand('cal_base', 0.55, 40, 18);
+      await seedPrediction(db, {
+        id: 'cal_open', symbol: 'AAPL', direction: 'up', confidence: 0.55,
+        status: 'active', createdAt: daysAgoIso(2),
+      });
+
+      const r = await applyCalibration(db);
+      expect(r.updated).toBeGreaterThanOrEqual(1);
+
+      const row = await db.get<{ confidence: string; calibrated_confidence: number | null }>(
+        `SELECT confidence, calibrated_confidence FROM market_predictions WHERE id = 'cal_open'`);
+      expect(Number(row?.confidence)).toBeCloseTo(0.55, 6);         // untouched
+      expect(row?.calibrated_confidence).not.toBeNull();
+      expect(row?.calibrated_confidence).not.toBeCloseTo(0.55, 6);  // and genuinely different
+    });
+
+    it('leaves graded predictions alone', async () => {
+      // Their confidence is part of the record their Brier score was computed
+      // from; restating it afterwards would rewrite history.
+      const { applyCalibration } =
+        await import('../../server/services/market-confidence-recalibration.js');
+      await seedBand('cal_done', 0.55, 40, 18);
+
+      await applyCalibration(db);
+      const row = await db.get<{ calibrated_confidence: number | null }>(
+        `SELECT calibrated_confidence FROM market_predictions WHERE id = 'cal_done_0'`);
+      expect(row?.calibrated_confidence).toBeNull();
+    });
+  });
+
   describe('NAV engine (market-nav-engine)', () => {
     /** An index with one holding: 10 shares carried at 100. */
     async function seedIndex() {
