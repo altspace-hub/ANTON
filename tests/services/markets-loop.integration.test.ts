@@ -1587,10 +1587,13 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       await db.run(
         `INSERT INTO market_why_chains (id, title, prediction_id, num_levels, status)
          VALUES ('mwhy_stalled', 'Why-chain: stalled', 'mpred_s', 5, 'in_progress')`);
+      // `answer` holds the level's finding. This used to write a `key_insight`
+      // column that exists in no migration — the fixture invented it, so the
+      // test passed while production threw 42703 on every sweep.
       await db.run(
-        `INSERT INTO market_why_chain_levels (chain_id, level_number, question, answer, key_insight)
-         VALUES ('mwhy_stalled', 1, 'q1', 'a1', 'first insight'),
-                ('mwhy_stalled', 2, 'q2', 'a2', 'second insight')`);
+        `INSERT INTO market_why_chain_levels (chain_id, level_number, question, answer)
+         VALUES ('mwhy_stalled', 1, 'q1', 'first insight'),
+                ('mwhy_stalled', 2, 'q2', 'second insight')`);
 
       const executor = await createWhyChainExecutor(db);
       const r = await executor.executeAllPending();
@@ -1616,8 +1619,8 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
         `INSERT INTO market_why_chains (id, title, prediction_id, num_levels, status)
          VALUES ('mwhy_st', 'stalled', 'mpred_st', 3, 'in_progress')`);
       await db.run(
-        `INSERT INTO market_why_chain_levels (chain_id, level_number, question, answer, key_insight)
-         VALUES ('mwhy_st', 1, 'q', 'a', 'insight')`);
+        `INSERT INTO market_why_chain_levels (chain_id, level_number, question, answer)
+         VALUES ('mwhy_st', 1, 'q', 'insight')`);
 
       // The sweep touches neither service; stubs keep the factory happy.
       const orch = await createMarketWorkflowOrchestrator(

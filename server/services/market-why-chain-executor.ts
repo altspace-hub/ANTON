@@ -247,11 +247,18 @@ export async function createWhyChainExecutor(db: DatabaseAdapter) {
     let reaped = 0;
     for (const chain of stalled) {
       try {
-        const levels = await db.all<{ key_insight: string | null }>(
-          'SELECT key_insight FROM market_why_chain_levels WHERE chain_id = ? ORDER BY level_number ASC',
+        // `key_insight` is a field in the LLM's JSON response, not a column:
+        // market_why_chain_levels (migration 053) stores question / answer /
+        // evidence_atoms / atom_created. Selecting it threw 42703 on every
+        // chain, every sweep, so this reaper — the thing written to rescue
+        // interrupted chains — had never once succeeded, and the chains it
+        // exists for stayed 'in_progress' indefinitely. `answer` is the
+        // level's finding.
+        const levels = await db.all<{ answer: string | null }>(
+          'SELECT answer FROM market_why_chain_levels WHERE chain_id = ? ORDER BY level_number ASC',
           chain.id,
         );
-        const insights = levels.map(l => l.key_insight).filter((x): x is string => !!x);
+        const insights = levels.map(l => l.answer).filter((x): x is string => !!x);
         await whyChainsService.completeChain(chain.id, {
           rootCauseType: 'inconclusive',
           rootCauseDescription: `Analysis stopped after ${chain.num_levels} level(s) without a definitive root cause`,

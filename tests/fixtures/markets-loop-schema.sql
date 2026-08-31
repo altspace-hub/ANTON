@@ -356,8 +356,13 @@ CREATE TABLE IF NOT EXISTS market_why_chain_levels (
   created_at             TIMESTAMPTZ DEFAULT NOW(),
   level_type             TEXT DEFAULT 'symptom',
   atoms_created_at_level TEXT DEFAULT '[]',
-  research_performed     TEXT,
-  key_insight            TEXT
+  research_performed     TEXT
+  -- NO key_insight. It was here, and in no migration anywhere, so this fixture
+  -- described a table production does not have. The reaper was written against
+  -- that shape, its test passed against that shape, and in production the
+  -- SELECT threw 42703 on every sweep — nine chains sat 'in_progress'
+  -- indefinitely while the suite stayed green. key_insight is a field in the
+  -- LLM's JSON response, never a column; the level's finding is `answer`.
 );
 
 -- Conditional accuracy: the aggregates, and the ledger that keeps the roll-up
