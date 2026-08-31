@@ -1746,6 +1746,44 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       }
     }
 
+    /**
+     * M8 — rebuild the two prediction portfolios from the live prediction set.
+     *
+     * Deliberately NOT gated behind MARKETS_AUTOREBALANCE_DISABLED. That flag
+     * pauses runScheduledRebalances, the conviction-driven rebalancer that was
+     * stopped on effectiveness grounds, and it should stay paused until that
+     * question is settled. This is a different mechanism doing a different job:
+     * it takes no view of its own, spends no tokens, and calls no external API.
+     * It mechanically mirrors whatever the predictions currently say into two
+     * paper books so their curves can be compared. Silencing it with the older
+     * flag would leave the measurement off precisely while the thing it
+     * measures is under review.
+     *
+     * Its own switch, MARKETS_PREDICTION_ALLOCATOR_DISABLED, exists so it can
+     * be stopped without touching anything else.
+     */
+    async function sweepPredictionAllocation(): Promise<void> {
+      if (String(process.env.MARKETS_PREDICTION_ALLOCATOR_DISABLED || '').toLowerCase() === 'true') return;
+      try {
+        const { allocateFromPredictions } = await import('./services/market-prediction-allocator.js');
+        for (const [indexId, weighting] of [
+          ['midx_pred_equal', 'equal'],
+          ['midx_pred_conf', 'confidence'],
+        ] as const) {
+          const exists = await db.get('SELECT id FROM market_indexes WHERE id = ? AND status = ?', indexId, 'active');
+          if (!exists) continue;   // portfolio not created on this instance
+          const r = await allocateFromPredictions(db, indexId, weighting);
+          console.log(
+            `[markets-prediction-alloc] ${indexId} (${weighting}): `
+            + `${r.positions_opened} position(s) from ${r.predictions_considered} prediction(s)`
+            + `${r.skipped_no_price > 0 ? `, ${r.skipped_no_price} unpriceable` : ''}`,
+          );
+        }
+      } catch (err) {
+        console.error('[markets-prediction-alloc] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }
+
     async function sweepScheduledRebalance(): Promise<void> {
       if (marketsAutorebalanceDisabled) return;
       try {
@@ -1780,11 +1818,12 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     // Run every free sweep once (catch-up entrypoint). Each has its own
     // try/catch so one failure never blocks the rest.
     async function runMarketsFreeSweeps(trigger: string): Promise<void> {
-      console.log(`[markets-free-sweeps] running M1-M7 (trigger: ${trigger})`);
+      console.log(`[markets-free-sweeps] running M1-M8 (trigger: ${trigger})`);
       await sweepPatternWeightFeedback();
       await sweepAttributionPnL();
       await sweepThesisLifecycle();
       await sweepInvestigationLifecycle();
+      await sweepPredictionAllocation();
       await sweepScheduledRebalance();
       await sweepShadowRebalance();
       await sweepBacklogTriage();
