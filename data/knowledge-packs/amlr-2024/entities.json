@@ -113,7 +113,7 @@
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-22",
     "canonical_name": "Beneficial Ownership Identification — Art. 22 AMLR",
-    "description": "Obliged entities must identify and verify the beneficial owner of legal entities as part of CDD (Art. 22 AMLR). ≥25% ownership or control threshold for companies. No percentage threshold applies to trusts/foundations — all persons in the trust structure must be identified.",
+    "description": "Obliged entities must identify and verify the beneficial owner of legal entities as part of CDD (Art. 22 AMLR). 25% or more ownership or control threshold for companies. No percentage threshold applies to trusts/foundations — all persons in the trust structure must be identified.",
     "metadata": {
       "article": "22",
       "threshold_pct": 25,
@@ -331,7 +331,7 @@
     "entity_type": "concept",
     "entity_id": "DEF-BeneficialOwner",
     "canonical_name": "Beneficial Owner (BO)",
-    "description": "Natural person(s) who ultimately own or control a legal entity or arrangement. For legal entities: ≥25% ownership or control threshold. For trusts and similar arrangements: NO percentage threshold — settlor, all trustees, protector, all beneficiaries, and any person exercising effective control must be identified.",
+    "description": "Natural person(s) who ultimately own or control a legal entity or arrangement. For legal entities: 25% or more ownership or control threshold. For trusts and similar arrangements: NO percentage threshold — settlor, all trustees, protector, all beneficiaries, and any person exercising effective control must be identified.",
     "metadata": {
       "article": "2",
       "threshold_pct_companies": 25,
@@ -339,7 +339,8 @@
       "cross_references": [
         "OBL-UBO",
         "DEF-Trust"
-      ]
+      ],
+      "threshold_comparator": "greater_than"
     }
   },
   {
@@ -386,10 +387,13 @@
     "ref_id": "DEF-NRA",
     "entity_type": "concept",
     "entity_id": "DEF-NRA",
-    "canonical_name": "National Risk Assessment (NRA)",
+    "canonical_name": "AMLD6 Art. 8 — National Risk Assessment",
     "description": "Member State assessment of ML/TF risks in their jurisdiction. Must be published and communicated to obliged entities. Must inform entity-level BWRA.",
     "metadata": {
-      "article": "8"
+      "article": "8",
+      "regulation": "AMLD6 2024/1640",
+      "source_quote": "Directive (EU) 2024/1640 Art. 8: \"Each Member State shall carry out a national risk assessment to identify, assess, understand and mitigate the risks of money laundering and terrorist financing, and the risks of non-implementation and evasion of targeted financial sanctions affecting it.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amld6-2024.txt"
     }
   },
   {
@@ -543,17 +547,19 @@
     "ref_id": "OBL-GROUP",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-15",
-    "canonical_name": "Group-Level Compliance — Art. 15 AMLR",
+    "canonical_name": "AMLR Art. 16 — Group-Wide Requirements",
     "description": "Parent undertakings must implement group-wide AML/CFT policies and procedures. Subsidiaries in third countries must apply group standards where local law permits; where it does not, parent must notify home state supervisor.",
     "metadata": {
-      "article": "15",
-      "chapter": "II",
+      "article": "16",
       "obligation_type": "shall",
       "obligation_type_note": "Art. 15: parent undertakings shall implement group-wide policies",
       "cross_references": [
         "AMLR-Art-12",
         "OBL-SANC"
-      ]
+      ],
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 16: \"To this end, a parent undertaking shall perform a group-wide risk assessment, taking into account the business-wide risk assessment performed by all branches and subsidiaries of the group, and establish and implement group-wide policies, procedures and controls, including on data protection and on information sharing within the group for AML/CFT purposes and to ensure that employees within the group are aware of the requirements arising from this Regulation.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
@@ -689,14 +695,15 @@
     "ref_id": "AMLR-A4",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-4-exemptions",
-    "canonical_name": "AMLR Art. 4 — Limited-Activity Exemptions",
+    "canonical_name": "AMLR Art. 6 — Exemptions for Certain Financial Activities",
     "description": "Member States may exempt natural or legal persons that carry out financial activity on an occasional or very limited basis from AMLR obligations, where strict low-risk criteria are met. Exemptions must be notified to the Commission.",
     "metadata": {
-      "article": "4",
-      "chapter": "I",
+      "article": "6",
       "regulation": "AMLR 2024/1624",
       "obligation_type": "may",
-      "obligation_type_note": "Art. 4: Member States MAY exempt limited-activity persons"
+      "obligation_type_note": "Art. 4: Member States MAY exempt limited-activity persons",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 6: \"With the exception of persons engaged in the activity of money remittance as defined in Article 4, point (22), of Directive (EU) 2015/2366, Member States may decide to exempt legal or natural persons that engage in a financial activity as listed in Annex I, points (2) to (12), (14) and (15), to Directive 2013/36/EU on an occasional or very limited basis where there is little risk of money laundering or terrorist financing from the requirements set out in this Regulation, provided that all of the following criteria are met: (a) the financial activity is limited in absolute terms; (b) the financial activity is limited on a transaction basis; (c) the financial activity is not the main activity of such persons; (d) the financial activity is ancillary and directly related to the main activity of such persons; (e) the main activity of such persons is not an activity referred to in Article 3, point (3)(a) to (d) or (g) of this Regulation; (f) the financial activity is provided only to the customers of the main activity of such persons and is not generally offered to the public.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
@@ -715,25 +722,27 @@
     "ref_id": "AMLR-A7",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-7-SNRA",
-    "canonical_name": "AMLR Art. 7 — Supranational Risk Assessment",
-    "description": "The Commission shall conduct a supranational risk assessment of the ML/TF risks affecting the internal market every two years. The SNRA identifies cross-border risks and sector-specific vulnerabilities. Obliged entities must take the SNRA into account in their BWRA.",
+    "canonical_name": "AMLD6 Art. 7 — Union-Level Risk Assessment",
+    "description": "The Commission shall assess the money-laundering, terrorist-financing and sanctions-evasion risks affecting the internal market and cross-border activities. The report is due by 10 July 2028 and is updated every four years thereafter. It identifies cross-border risks and sectoral vulnerabilities; obliged entities must take it into account in their business-wide risk assessment under AMLR Art. 10.",
     "metadata": {
       "article": "7",
-      "chapter": "II",
-      "regulation": "AMLR 2024/1624",
-      "frequency": "biennial"
+      "regulation": "AMLD6 2024/1640",
+      "frequency": "quadrennial",
+      "source_quote": "Directive (EU) 2024/1640 Art. 7: \"The Commission shall conduct an assessment of the risks of money laundering and terrorist financing and of non-implementation and evasion of targeted financial sanctions affecting the internal market and relating to cross-border activities.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amld6-2024.txt"
     }
   },
   {
     "ref_id": "AMLR-A9",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-9-sectorrisk",
-    "canonical_name": "AMLR Art. 9 — Sector-Specific Risk Assessments",
-    "description": "AMLA shall conduct sector-specific risk assessments to identify ML/TF risks to which specific categories of obliged entities are exposed. These sector assessments inform supervisory approaches, RTS development, and the calibration of supervisory intensity.",
+    "canonical_name": "AMLD6 Art. 8 — Sectoral Risk Assessments",
+    "description": "Member States may conduct ad hoc sectoral risk assessments in addition to the national risk assessment, where the risk situation so requires. The Commission may recommend that a Member State carry one out. Sectoral findings inform the risk factors obliged entities must reflect in their own risk assessments.",
     "metadata": {
-      "article": "9",
-      "chapter": "II",
-      "regulation": "AMLR 2024/1624"
+      "article": "8",
+      "regulation": "AMLD6 2024/1640",
+      "source_quote": "Directive (EU) 2024/1640 Art. 8: \"Where Member States consider that the risk situation so requires, they may review the national risk assessment more frequently or conduct ad hoc sectoral risk assessments.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amld6-2024.txt"
     }
   },
   {
@@ -771,36 +780,42 @@
     "ref_id": "AMLR-A14",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-14-mitigation",
-    "canonical_name": "AMLR Art. 14 — Risk Mitigation Policies and Controls",
+    "canonical_name": "AMLR Art. 9 — Internal Policies, Procedures and Controls",
     "description": "Obliged entities must establish and maintain policies, controls, and procedures to mitigate ML/TF risks identified in their BWRA. The nature and extent of controls must be proportionate to identified risks, and must be reviewed regularly.",
     "metadata": {
-      "article": "14",
+      "article": "9",
       "chapter": "II",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 9: \"The policies, procedures and controls referred to in the first subparagraph shall be proportionate to the nature of the business, including its risks and complexity, and the size of the obliged entity and shall cover all the activities of the obliged entity that fall under the scope of this Regulation. 2.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.14 to Art.9 by reading the article; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A16",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-16-groupthird",
-    "canonical_name": "AMLR Art. 16 — Group Policies in Third Countries",
+    "canonical_name": "AMLR Art. 17 — Branches and Subsidiaries in Third Countries",
     "description": "Where group subsidiaries or branches are established in third countries with less stringent AML/CFT requirements, the group parent must ensure those entities apply EU-standard measures to the extent permitted by local law. Impediments must be notified to the home Member State supervisor.",
     "metadata": {
-      "article": "16",
+      "article": "17",
       "chapter": "II",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 17: \"Where branches or subsidiaries of obliged entities are located in third countries where the minimum AML/CFT requirements are less strict than those set out in this Regulation, the parent undertaking shall ensure that those branches or subsidiaries comply with the requirements laid down in this Regulation, including requirements concerning data protection, or equivalent. 2.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.16 to Art.17 against the Official Journal text; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A19",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-19-screening",
-    "canonical_name": "AMLR Art. 19 — Employee Screening",
+    "canonical_name": "AMLR Art. 13 — Integrity of Employees",
     "description": "Obliged entities must screen employees involved in AML/CFT compliance functions for integrity and competence. Includes pre-employment background checks and ongoing assessment. Ensures staff in sensitive positions are not themselves involved in criminal activity.",
     "metadata": {
-      "article": "19",
+      "article": "13",
       "chapter": "II",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 13: \"The intensity of the subsequent assessments shall be determined on the basis of the tasks entrusted to the person and risks associated with the function they perform. 2.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.19 to Art.13 by reading the article; quote verbatim"
     }
   },
   {
@@ -808,7 +823,7 @@
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-22-BOIdent",
     "canonical_name": "AMLR Art. 22 — Identification of Beneficial Owners",
-    "description": "Obliged entities must identify and verify the beneficial owner(s) of legal entities and legal arrangements as part of CDD. For companies: ≥25% ownership or control threshold identifies the beneficial owner. Where no natural person is identified at that threshold, the senior managing officials must be identified as the (substitute) BO. For trusts and similar arrangements: no percentage threshold applies — settlor, all trustees, protector, all beneficiaries, and any natural person exercising effective control must be identified.",
+    "description": "Obliged entities must identify and verify the beneficial owner(s) of legal entities and legal arrangements as part of CDD. For companies: 25% or more ownership or control threshold identifies the beneficial owner. Where no natural person is identified at that threshold, the senior managing officials must be identified as the (substitute) BO. For trusts and similar arrangements: no percentage threshold applies — settlor, all trustees, protector, all beneficiaries, and any natural person exercising effective control must be identified.",
     "metadata": {
       "article": "22",
       "chapter": "III",
@@ -822,92 +837,105 @@
         "AMLR-A23",
         "AMLR-A24",
         "DEF-BO"
-      ]
+      ],
+      "threshold_comparator": "greater_than"
     }
   },
   {
     "ref_id": "AMLR-A23",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-23-BOVerif",
-    "canonical_name": "AMLR Art. 23 — Beneficial Ownership Verification",
+    "canonical_name": "AMLR Art. 22 — Identification and Verification of Customers and Beneficial Owners",
     "description": "Sets out the measures obliged entities must take to verify BO identity, including consulting national BO registers, collecting documents, and applying risk-based independent verification. Where BO cannot be verified, the business relationship must not be established or continued.",
     "metadata": {
-      "article": "23",
+      "article": "22",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 22: \"For the purposes of identifying the beneficial owner of a legal entity or of a legal arrangement, obliged entities shall collect the information referred to in Article 62(1), second subparagraph, point (a).\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.23 to Art.22 by reading the article; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A24",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-24-trusts",
-    "canonical_name": "AMLR Art. 24 — Legal Arrangements (Trusts)",
+    "canonical_name": "AMLR Art. 58 — Beneficial Owners of Express Trusts",
     "description": "Specific CDD requirements for customers that are express trusts or similar legal arrangements. Trustees must identify themselves as trustees. All natural persons in the trust structure — settlor, trustees, protector, beneficiaries, and persons exercising effective control — must be identified and verified.",
     "metadata": {
-      "article": "24",
+      "article": "58",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 58: \"The beneficial owners of express trusts shall be all the following natural persons: (a) the settlors;\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.24 to Art.58 against the Official Journal text; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A26",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-26-timing",
-    "canonical_name": "AMLR Art. 26 — Timing of CDD",
+    "canonical_name": "AMLR Art. 23 — Timing of Verification",
     "description": "CDD must generally be completed before establishing a business relationship or executing a transaction. In limited circumstances and for lower-risk situations, verification of identity may be completed during the course of establishing the relationship, provided transactions are restricted until CDD is complete.",
     "metadata": {
-      "article": "26",
+      "article": "23",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 23: \"Verification of the identity of the customer, the beneficial owner, and of any persons pursuant to Article 20(1), points (h) and (i), shall take place before the establishment of a business relationship or the carrying out of an occasional transaction.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.26 to Art.23 by reading the article; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A27",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-27-existing",
-    "canonical_name": "AMLR Art. 27 — Existing Customers",
+    "canonical_name": "AMLR Art. 26 — Ongoing Monitoring of the Business Relationship",
     "description": "Obliged entities must apply CDD measures to existing customers at appropriate intervals, in particular when customer circumstances change. Risk-based approach governs the timing and frequency of periodic reviews. Higher-risk customers require more frequent reassessment.",
     "metadata": {
-      "article": "27",
+      "article": "26",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 26: \"In the context of the ongoing monitoring referred to in paragraph 1, obliged entities shall ensure that the relevant documents, data or information of the customer are kept up to date.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.27 to Art.26 by reading the article; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A29",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-29-agents",
-    "canonical_name": "AMLR Art. 29 — CDD by Agents and Distributors",
+    "canonical_name": "AMLR Art. 18 — Outsourcing",
     "description": "Where obliged entities appoint agents or distributors to perform CDD on their behalf, ultimate responsibility for compliance failures remains with the principal entity. Clear contractual arrangements, training, and oversight of agents are required.",
     "metadata": {
-      "article": "29",
-      "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "article": "18",
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 18: \"The obliged entity shall remain fully liable for any action, whether an act of commission or omission, connected to the outsourced tasks that are carried out by service providers.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
     "ref_id": "AMLR-A30",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-30-fintime",
-    "canonical_name": "AMLR Art. 30 — Timing for Financial Sector",
+    "canonical_name": "AMLR Art. 23 — Account Opening Before Verification (Financial Sector)",
     "description": "Financial sector-specific rules allow credit and financial institutions to open accounts before identity verification is complete, provided that transactions are restricted until verification is finalized. Applicable only where ML/TF risk is assessed as low and strict conditions are met.",
     "metadata": {
-      "article": "30",
-      "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "article": "23",
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 23: \"By way of derogation from paragraph 1 of this Article, a credit institution or financial institution may open an account, including accounts that permit transactions in transferable securities, as may be required by a customer provided that there are adequate safeguards in place to ensure that transactions are not carried out by the customer or on its behalf until full compliance with the customer due diligence measures laid down in Article 20(1), points (a) and (b), is obtained.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
     "ref_id": "AMLR-A32",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-32-SDDconds",
-    "canonical_name": "AMLR Art. 32 — Conditions for Simplified CDD",
+    "canonical_name": "AMLR Art. 33 — Simplified Due Diligence Measures",
     "description": "Specifies the conditions under which simplified due diligence measures may be applied: the customer or product must exhibit low-risk characteristics as listed in Annex I, no ML/TF suspicion may exist, and the customer must not be a PEP or from a high-risk third country.",
     "metadata": {
-      "article": "32",
+      "article": "33",
       "chapter": "III",
       "regulation": "AMLR 2024/1624",
-      "reference": "Annex I"
+      "reference": "Annex I",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 33: \"However, obliged entities shall carry out sufficient monitoring of the transactions and business relationship to enable the detection of unusual or suspicious transactions. 2.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.32 to Art.33 by reading the article; quote verbatim"
     }
   },
   {
@@ -927,12 +955,14 @@
     "ref_id": "AMLR-A35",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-35-eddtrig",
-    "canonical_name": "AMLR Art. 35 — EDD Trigger Situations",
+    "canonical_name": "AMLR Art. 34 — Scope of Application of Enhanced Due Diligence",
     "description": "Specifies circumstances requiring enhanced due diligence beyond standard CDD: customers from high-risk third countries, PEPs, complex/large/unusual transactions with no apparent economic purpose, business relationships with non-face-to-face elements in higher-risk contexts.",
     "metadata": {
-      "article": "35",
+      "article": "34",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 34: \"In the cases referred to in Articles 29, 30, 31 and 36 to 46, as well as in other cases of higher risk that are identified by obliged entities pursuant to Article 20(2), second subparagraph, obliged entities shall apply enhanced due diligence measures to manage and mitigate such risks appropriately. 2.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.35 to Art.34 by reading the article; quote verbatim"
     }
   },
   {
@@ -951,12 +981,13 @@
     "ref_id": "AMLR-A37",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-37-eddmeas",
-    "canonical_name": "AMLR Art. 37 — EDD Specific Measures",
+    "canonical_name": "AMLR Art. 34 — Enhanced Due Diligence Measures",
     "description": "Details the specific additional measures in EDD situations: obtaining additional information on the customer, BO, and source of wealth/funds; obtaining senior management approval before establishing or continuing the relationship; enhanced and more frequent monitoring of transactions.",
     "metadata": {
-      "article": "37",
-      "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "article": "34",
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 34: \"With the exception of the cases covered by Section 2 of this Chapter, in cases of higher risk as referred to in paragraph 1 of this Article, obliged entities shall apply enhanced due diligence measures, proportionate to the higher risks identified, which may include the following measures:\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
@@ -994,24 +1025,27 @@
     "ref_id": "AMLR-A41",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-41-newtech",
-    "canonical_name": "AMLR Art. 41 — New Technologies Risk",
+    "canonical_name": "AMLR Art. 10 — New Products and Technologies Risk Assessment",
     "description": "Obliged entities must identify and assess ML/TF risks arising from new products, business practices, delivery mechanisms, and technologies before launch, including anonymity-enhancing tools. AMLA may issue guidance on emerging technology risks.",
     "metadata": {
-      "article": "41",
-      "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "article": "10",
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 10: \"Prior to the launch of new products, services or business practices, including the use of new delivery channels and new or developing technologies, in conjunction with new or pre-existing products and services or before starting to provide an existing service or product to a new customer segment or in a new geographical area, obliged entities shall identify and assess, in particular, the related money laundering and terrorist financing risks and take appropriate measures to manage and mitigate those risks.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
     "ref_id": "AMLR-A42",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-42-shellbank",
-    "canonical_name": "AMLR Art. 42 — Prohibition on Shell Bank Relationships",
+    "canonical_name": "AMLR Art. 39 — Prohibition on Correspondent Relationships with Shell Institutions",
     "description": "Credit institutions are prohibited from entering into or continuing correspondent banking relationships with shell banks. Obliged entities must not engage in relationships with financial institutions that permit their accounts to be used by shell banks.",
     "metadata": {
-      "article": "42",
+      "article": "39",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 39: \"Credit institutions and financial institutions shall not enter into, or continue, a correspondent relationship with a shell institution.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.42 to Art.39 against the Official Journal text; quote verbatim"
     }
   },
   {
@@ -1055,24 +1089,28 @@
     "ref_id": "AMLR-A47",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-47-PEPfam",
-    "canonical_name": "AMLR Art. 47 — PEP Family Members and Close Associates",
+    "canonical_name": "AMLR Art. 46 — PEP Family Members and Close Associates",
     "description": "Enhanced scrutiny must be applied to family members (spouse/partner, children and their partners, parents) and known close associates of PEPs. Obliged entities must take reasonable steps to identify PEP relationships at onboarding and on an ongoing basis.",
     "metadata": {
-      "article": "47",
+      "article": "46",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 46: \"The measures referred to in Articles 42, 44 and 45 shall also apply to family members or persons known to be close associates of politically exposed persons.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.47 to Art.46 against the Official Journal text; quote verbatim"
     }
   },
   {
     "ref_id": "AMLR-A48",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-48-lifeins",
-    "canonical_name": "AMLR Art. 48 — Life Insurance PEP Beneficiaries",
+    "canonical_name": "AMLR Art. 44 — PEPs as Insurance Policy Beneficiaries",
     "description": "Life insurance and investment-related insurance undertakings must check whether policy beneficiaries and their beneficial owners are PEPs. A PEP beneficiary triggers senior management notification and enhanced scrutiny at payout or assignment of the policy.",
     "metadata": {
-      "article": "48",
+      "article": "44",
       "chapter": "III",
-      "regulation": "AMLR 2024/1624"
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 44: \"Obliged entities shall take reasonable measures to determine whether the beneficiaries of a life or other investment-related insurance policy or, where relevant, the beneficial owner of the beneficiary are politically exposed persons.\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.48 to Art.44 against the Official Journal text; quote verbatim"
     }
   },
   {
@@ -1115,24 +1153,26 @@
     "ref_id": "AMLR-A53",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-53-protection",
-    "canonical_name": "AMLR Art. 53 — Good-Faith Reporting Protection",
+    "canonical_name": "AMLR Art. 72 — Good-Faith Reporting Protection",
     "description": "Obliged entities and their employees who report suspicions to FIUs in good faith are protected from civil, criminal, administrative, and professional liability, even if the suspicion proves unfounded. Member States must ensure effective legal and employment protection against retaliation.",
     "metadata": {
-      "article": "53",
-      "chapter": "IV",
-      "regulation": "AMLR 2024/1624"
+      "article": "72",
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 72: \"Disclosure of information to the FIU in good faith by an obliged entity or by an employee or director of such an obliged entity in accordance with Articles 69 and 70 shall not constitute a breach of any restriction on disclosure of information imposed by contract or by any legislative, regulatory or administrative provision, and shall not involve the obliged entity or its directors or employees in liability of any kind even in circumstances where they were not precisely aware of the underlying criminal activity and regardless of whether illegal activity actually occurred.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {
     "ref_id": "AMLR-A54",
     "entity_type": "obligation",
     "entity_id": "AMLR-Art-54-FIUcoop",
-    "canonical_name": "AMLR Art. 54 — Cooperation with FIUs",
+    "canonical_name": "AMLR Art. 69 — Provision of Information to the FIU",
     "description": "Obliged entities must promptly provide additional information to FIUs upon request, following SAR filing or as part of ongoing investigations. Must grant access to records and documentation within the scope of the request.",
     "metadata": {
-      "article": "54",
-      "chapter": "IV",
-      "regulation": "AMLR 2024/1624"
+      "article": "69",
+      "regulation": "AMLR 2024/1624",
+      "source_quote": "Regulation (EU) 2024/1624 Art. 69: \"Obliged entities, and, where applicable, their directors and employees, shall cooperate fully with the FIU by promptly: (a) reporting to the FIU, on their own initiative, where the obliged entity knows, suspects or has reasonable grounds to suspect that funds or activities, regardless of the amount involved, are the proceeds of criminal activity or are related to terrorist financing or criminal activity and by responding to requests by the FIU for additional information in such cases; (b) providing the FIU, at its request, with all necessary information, including information on transaction records, within the deadlines imposed.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from data/sources/amlr-2024-1624.txt"
     }
   },
   {

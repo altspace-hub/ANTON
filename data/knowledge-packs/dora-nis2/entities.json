@@ -49,7 +49,9 @@
       "regulation": "DORA",
       "article_number": 6,
       "chapter": 2,
-      "topic": "ict-risk-framework"
+      "topic": "ict-risk-framework",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 6: \"Financial entities shall have a sound, comprehensive and well-documented ICT risk management framework as part of their overall risk management system, which enables them to address ICT risk quickly, efficiently and comprehensively and to ensure a high level of digital operational resilience. 2.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a6",
@@ -62,7 +64,9 @@
       "regulation": "DORA",
       "article_number": 7,
       "chapter": 2,
-      "topic": "ict-systems"
+      "topic": "ict-systems",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 7: \"ICT systems, protocols and tools In order to address and manage ICT risk, financial entities shall use and maintain updated ICT systems, protocols and tools that are: (a) appropriate to the magnitude of operations supporting the conduct of their activities, in accordance with the proportionality principle as referred to in Article 4;\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a7",
@@ -75,7 +79,9 @@
       "regulation": "DORA",
       "article_number": 8,
       "chapter": 2,
-      "topic": "risk-identification"
+      "topic": "risk-identification",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 8: \"As part of the ICT risk management framework referred to in Article 6(1), financial entities shall identify, classify and adequately document all ICT supported business functions, roles and responsibilities, the information assets and ICT assets supporting those functions, and their roles and dependencies in relation to ICT risk.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a8",
@@ -88,7 +94,9 @@
       "regulation": "DORA",
       "article_number": 9,
       "chapter": 2,
-      "topic": "protection-prevention"
+      "topic": "protection-prevention",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 9: \"For the purposes of adequately protecting ICT systems and with a view to organising response measures, financial entities shall continuously monitor and control the security and functioning of ICT systems and tools and shall minimise the impact of ICT risk on ICT systems through the deployment of appropriate ICT security tools, policies and procedures. 2.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a9",
@@ -101,7 +109,9 @@
       "regulation": "DORA",
       "article_number": 10,
       "chapter": 2,
-      "topic": "detection"
+      "topic": "detection",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 10: \"Financial entities shall have in place mechanisms to promptly detect anomalous activities, in accordance with Article 17, including ICT network performance issues and ICT-related incidents, and to identify potential material single points of failure.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a10",
@@ -114,7 +124,9 @@
       "regulation": "DORA",
       "article_number": 11,
       "chapter": 2,
-      "topic": "bcp-drp"
+      "topic": "bcp-drp",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 11: \"As part of their comprehensive ICT risk management, financial entities shall: (a) test the ICT business continuity plans and the ICT response and recovery plans in relation to ICT systems supporting all functions at least yearly, as well as in the event of any substantive changes to ICT systems supporting critical or important functions;\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a11",
@@ -127,7 +139,9 @@
       "regulation": "DORA",
       "article_number": 12,
       "chapter": 2,
-      "topic": "backup-recovery"
+      "topic": "backup-recovery",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 12: \"Financial entities shall set up backup systems that can be activated in accordance with the backup policies and procedures, as well as restoration and recovery procedures and methods.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a12",
@@ -140,7 +154,9 @@
       "regulation": "DORA",
       "article_number": 13,
       "chapter": 2,
-      "topic": "lessons-learned"
+      "topic": "lessons-learned",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 13: \"Financial entities shall have in place capabilities and staff to gather information on vulnerabilities and cyber threats, ICT-related incidents, in particular cyber-attacks, and analyse the impact they are likely to have on their digital operational resilience. 2.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a13",
@@ -153,7 +169,9 @@
       "regulation": "DORA",
       "article_number": 14,
       "chapter": 2,
-      "topic": "communication"
+      "topic": "communication",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 14: \"As part of the ICT risk management framework referred to in Article 6(1), financial entities shall have in place crisis communication plans enabling a responsible disclosure of, at least, major ICT-related incidents or vulnerabilities to clients and counterparts as well as to the public, as appropriate. 2.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a14",
@@ -195,7 +213,9 @@
       "regulation": "DORA",
       "article_number": 19,
       "chapter": 3,
-      "topic": "voluntary-notification"
+      "topic": "voluntary-notification",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 19: \"Financial entities may, on a voluntary basis, notify significant cyber threats to the relevant competent authority when they deem the threat to be of relevance to the financial system, service users or clients.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a19",
@@ -261,7 +281,9 @@
       "regulation": "DORA",
       "article_number": 28,
       "chapter": 5,
-      "topic": "tprm-general"
+      "topic": "tprm-general",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 28: \"The management body shall, on the basis of an assessment of the overall risk profile of the financial entity and the scale and complexity of the business services, regularly review the risks identified in respect to contractual arrangements on the use of ICT services supporting critical or important functions. 3.\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a28",
@@ -287,7 +309,9 @@
       "regulation": "DORA",
       "article_number": 30,
       "chapter": 5,
-      "topic": "contractual-provisions"
+      "topic": "contractual-provisions",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 30: \"The rights and obligations of the financial entity and of the ICT third-party service provider shall be clearly allocated and set out in writing.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a30",
@@ -300,7 +324,9 @@
       "regulation": "DORA",
       "article_number": 31,
       "chapter": 5,
-      "topic": "ctpp-designation"
+      "topic": "ctpp-designation",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 31: \"The ESAs, through the Joint Committee and upon recommendation from the Oversight Forum established pursuant to Article 32(1), shall: (a) designate the ICT third-party service providers that are critical for financial entities, following an assessment that takes into account the criteria specified in paragraph 2;\"",
+      "source_verified": "2026-08-29 — extracted verbatim from the Official Journal text"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a31",
@@ -324,13 +350,15 @@
     "description": "Lead overseer can request information and documents, conduct investigations including on-site inspections of CTPPs, impose periodic penalty payments. CTPPs outside EU with significant EU presence can be required to establish EU subsidiary.",
     "metadata": {
       "regulation": "DORA",
-      "article_number": 33,
       "chapter": 5,
-      "topic": "lead-overseer-powers"
+      "topic": "lead-overseer-powers",
+      "article": "35",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 35: \"For the purposes of carrying out the duties laid down in this Section, the Lead Overseer shall have the following powers in respect of the critical ICT third-party service providers: (a) to request all relevant information and documentation in accordance with Article 37;\"",
+      "source_verified": "2026-08-29 — reference corrected from Art.33 to Art.35 against the Official Journal text; quote verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a33",
-    "canonical_name": "DORA Article 33 — Powers of Lead Overseer"
+    "canonical_name": "DORA Article 35 — Powers of the Lead Overseer"
   },
   {
     "ref_id": "dora-a45",
@@ -365,7 +393,9 @@
       "regulation": "DORA",
       "article_number": 50,
       "chapter": 7,
-      "topic": "sanctions-penalties"
+      "topic": "sanctions-penalties",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 50: \"Competent authorities shall have all supervisory, investigatory and sanctioning powers necessary to fulfil their duties under this Regulation. 2.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a50",
@@ -379,7 +409,9 @@
       "article_number": 64,
       "chapter": 9,
       "topic": "entry-into-force",
-      "applies_from": "2025-01-17"
+      "applies_from": "2025-01-17",
+      "source_quote": "Regulation (EU) 2022/2554 Art. 64: \"This Regulation shall be binding in its entirety and directly applicable in all Member States.\"",
+      "source_verified": "2026-08-29 — reference confirmed by article title; quote extracted verbatim"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a64",
