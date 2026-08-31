@@ -85,7 +85,7 @@ Before transacting with third-country VASPs:
 ### Standard CDD (Art. 16 AMLR / EBA crypto guidelines)
 All CASP clients require:
 - Identity verification: legal name, DOB, address, ID document
-- For legal entities: UBO identification and verification (>25% ownership)
+- For legal entities: UBO identification and verification (25% or more ownership — AMLR Art. 52(1) is inclusive)
 - Purpose and intended nature of business relationship
 - Source of funds inquiry (enhanced for crypto-to-crypto business)
 - Ongoing monitoring: transaction behaviour consistent with risk profile
