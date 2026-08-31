@@ -1161,6 +1161,62 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(r.dailyReturn).toBeCloseTo(0.10, 6);
     });
 
+    /** Benchmark closes, in the table the NAV engine actually reads. */
+    async function seedBenchmarkPrices(symbol: string, rows: Array<[string, number]>) {
+      await db.run(`UPDATE market_indexes SET benchmark_symbol = ? WHERE id = 'idx_t'`, symbol);
+      for (const [date, close] of rows) {
+        await db.run(
+          `INSERT INTO market_historical_prices (symbol, price_date, close, adjusted_close)
+           VALUES (?, ?, ?, ?)`, symbol, date, close, close);
+      }
+    }
+
+    it('measures the index against its benchmark, from the same baseline', async () => {
+      // The index runs 1000 → 1100 (+10%). SPY runs 400 → 420 (+5%) over the
+      // same two sessions. Excess is the difference, and the baseline for both
+      // legs is the index's FIRST nav row — otherwise the two returns are
+      // measured over different windows and the subtraction is meaningless.
+      await seedIndex();
+      await seedNav([['2026-08-14', 1000]]);
+      await seedBar('bar_fri', '2026-08-14', 100);
+      await seedBar('bar_mon', '2026-08-17', 110);
+      await seedBenchmarkPrices('SPY', [['2026-08-14', 400], ['2026-08-17', 420]]);
+
+      const engine = await createMarketNavEngine(db);
+      await engine.calculateDailyNav('idx_t', '2026-08-17');
+
+      const row = await db.get<{ benchmark_value: string; benchmark_return: number; excess_return: number }>(
+        `SELECT benchmark_value, benchmark_return, excess_return
+           FROM market_index_nav_history WHERE index_id='idx_t' AND nav_date='2026-08-17'`);
+      expect(Number(row?.benchmark_value)).toBeCloseTo(420, 6);
+      expect(Number(row?.benchmark_return)).toBeCloseTo(0.05, 6);
+      expect(Number(row?.excess_return)).toBeCloseTo(0.05, 6);   // +10% index − +5% benchmark
+    });
+
+    it('leaves the benchmark NULL rather than zero when it cannot be priced', async () => {
+      // Two live indexes are benchmarked to symbols with no price rows at all
+      // (ANTON ESG 20 → ESGU, ANTON Sweden 100 → OMXS30). Defaulting those to 0
+      // would publish "we matched the benchmark" in a performance view when the
+      // truth is that no comparison exists. NULL is the only honest answer, and
+      // the NAV itself must still be written.
+      await seedIndex();
+      await seedNav([['2026-08-14', 1000]]);
+      await seedBar('bar_fri', '2026-08-14', 100);
+      await seedBar('bar_mon', '2026-08-17', 110);
+      await db.run(`UPDATE market_indexes SET benchmark_symbol = 'ESGU' WHERE id = 'idx_t'`);
+
+      const engine = await createMarketNavEngine(db);
+      const r = await engine.calculateDailyNav('idx_t', '2026-08-17');
+
+      expect(r.written).toBe(true);
+      const row = await db.get<{ nav_value: string; benchmark_return: number | null; excess_return: number | null }>(
+        `SELECT nav_value, benchmark_return, excess_return
+           FROM market_index_nav_history WHERE index_id='idx_t' AND nav_date='2026-08-17'`);
+      expect(Number(row?.nav_value)).toBeCloseTo(1100, 6);
+      expect(row?.benchmark_return).toBeNull();
+      expect(row?.excess_return).toBeNull();
+    });
+
     it('measures a repair against the previous session, not the row it replaces', async () => {
       await seedIndex();
       await seedNav([['2026-08-14', 1000], ['2026-08-17', 1000]]); // phantom flat Monday

@@ -202,6 +202,12 @@ CREATE TABLE IF NOT EXISTS market_indexes (
   weighting_method   TEXT NOT NULL DEFAULT 'equal',
   total_return       NUMERIC(16,6) DEFAULT 0.0,
   current_nav        NUMERIC(16,6) DEFAULT 1000.0,
+  -- The benchmark the index is measured against. Production has had this
+  -- column all along; the fixture did not, so any code reading it could not be
+  -- exercised here at all — which is the mirror image of the key_insight
+  -- problem and just as blinding. Adding it let the NAV engine's benchmark leg
+  -- be tested instead of merely typechecked.
+  benchmark_symbol   TEXT,
   currency           TEXT DEFAULT 'USD',
   drawdown_alert     TEXT,
   -- Gates the LIVE rebalance path. Shadow runs must never write it, so the
@@ -232,6 +238,14 @@ CREATE TABLE IF NOT EXISTS market_index_nav_history (
   nav_value         NUMERIC(16,6) NOT NULL,
   daily_return      NUMERIC(10,6),
   cumulative_return DOUBLE PRECISION,
+  -- The benchmark leg. Production has carried these since the table was
+  -- created and nothing ever wrote them, so every index reported a return with
+  -- no answer to "compared to what". They are NULLABLE on purpose: two live
+  -- indexes are benchmarked to symbols with no price rows (ESGU, OMXS30), and
+  -- a zero there would read as "matched the benchmark" rather than "unknown".
+  benchmark_value   NUMERIC(16,6),
+  benchmark_return  DOUBLE PRECISION,
+  excess_return     DOUBLE PRECISION,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 

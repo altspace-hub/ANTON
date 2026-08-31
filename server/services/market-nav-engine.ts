@@ -55,6 +55,66 @@ function getApproximateFxRate(currency: string | null): number {
 
 // ── Factory ──────────────────────────────────────────────────────────────────
 
+/**
+ * The benchmark leg of a NAV point: where the benchmark stood on this date,
+ * what it has returned since the index's first NAV point, and the difference.
+ *
+ * Returns nulls rather than zeros when the benchmark cannot be priced, and that
+ * distinction is the whole point. Two of the six live indexes are benchmarked
+ * to symbols with no rows in market_historical_prices at all — ANTON ESG 20
+ * against ESGU and ANTON Sweden 100 against OMXS30 — so a zero here would read
+ * as "the benchmark went nowhere and we matched it" when the truth is "we have
+ * no idea". A null column is honest; a zero is a fabricated comparison in a
+ * document about performance.
+ */
+async function computeBenchmarkLeg(
+  db: DatabaseAdapter,
+  indexId: string,
+  navDate: string,
+  cumulativeReturn: number,
+): Promise<{ benchmarkValue: number | null; benchmarkReturn: number | null; excessReturn: number | null }> {
+  const none = { benchmarkValue: null, benchmarkReturn: null, excessReturn: null };
+
+  const idx = await db.get<{ benchmark_symbol: string | null }>(
+    'SELECT benchmark_symbol FROM market_indexes WHERE id = ?', indexId,
+  );
+  const symbol = idx?.benchmark_symbol;
+  if (!symbol) return none;
+
+  // The date the index's own series starts — the baseline both legs are
+  // measured from, so the two returns are comparable.
+  const first = await db.get<{ nav_date: string }>(
+    'SELECT nav_date FROM market_index_nav_history WHERE index_id = ? ORDER BY nav_date ASC LIMIT 1',
+    indexId,
+  );
+  const baseDate = first?.nav_date ?? navDate;
+
+  // Backward lookup on both ends: a benchmark does not print on a weekend or
+  // a holiday, and the index's NAV date may be one.
+  const closeOnOrBefore = async (date: string): Promise<number | null> => {
+    const row = await db.get<{ close: number | string | null }>(
+      `SELECT COALESCE(adjusted_close, close) AS close
+         FROM market_historical_prices
+        WHERE symbol = ? AND price_date <= ?
+        ORDER BY price_date DESC LIMIT 1`,
+      symbol, date,
+    );
+    const v = row?.close == null ? null : Number(row.close);
+    return v != null && Number.isFinite(v) && v > 0 ? v : null;
+  };
+
+  const baseClose = await closeOnOrBefore(baseDate);
+  const nowClose = await closeOnOrBefore(navDate);
+  if (baseClose == null || nowClose == null) return none;
+
+  const benchmarkReturn = (nowClose - baseClose) / baseClose;
+  return {
+    benchmarkValue: nowClose,
+    benchmarkReturn,
+    excessReturn: cumulativeReturn - benchmarkReturn,
+  };
+}
+
 export async function createMarketNavEngine(db: DatabaseAdapter) {
 
   /**
@@ -225,6 +285,13 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
       ? (totalValue - inceptionNav.nav_value) / inceptionNav.nav_value
       : 0;
 
+    // Benchmark leg. Without it the NAV series says how the index moved but
+    // not whether that was any good — which is the only question a portfolio
+    // view exists to answer. benchmark_value / benchmark_return /
+    // excess_return were on the table from the start and nothing ever wrote
+    // them, so every index read 0.02% cumulative against a blank column.
+    const bench = await computeBenchmarkLeg(db, indexId, navDate, cumulativeReturn);
+
     // Record NAV — upsert: delete the existing entry for navDate then insert
     await db.run(
       'DELETE FROM market_index_nav_history WHERE index_id = ? AND nav_date = ?',
@@ -232,9 +299,12 @@ export async function createMarketNavEngine(db: DatabaseAdapter) {
     );
 
     await db.run(`
-      INSERT INTO market_index_nav_history (index_id, nav_date, nav_value, daily_return, cumulative_return)
-      VALUES (?, ?, ?, ?, ?)
-    `, indexId, navDate, totalValue, dailyReturn, cumulativeReturn);
+      INSERT INTO market_index_nav_history
+        (index_id, nav_date, nav_value, daily_return, cumulative_return,
+         benchmark_value, benchmark_return, excess_return)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, indexId, navDate, totalValue, dailyReturn, cumulativeReturn,
+       bench.benchmarkValue, bench.benchmarkReturn, bench.excessReturn);
 
     // Update index record — "current" only when this IS the current session.
     if (isLatestSession) {
