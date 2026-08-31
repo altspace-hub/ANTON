@@ -4,51 +4,202 @@
   "shortName": "MiFID II",
   "reference": "Directive 2014/65/EU",
   "applicationDate": "2018-01-03",
-  "articleCount": 35,
+  "articleCount": 31,
   "themes": [
     "Authorization",
     "Governance",
     "Conduct of Business",
     "Best Execution",
     "Transparency",
-        "Investor Protection",
+    "Investor Protection",
     "Reporting"
   ],
   "articles": [
-    {"id":"Art.1","title":"Scope","theme":"Authorization","requirement":"Applies to investment firms, market operators, data reporting services providers, and third-country firms providing investment services within the Union."},
-    {"id":"Art.5","title":"Requirement for authorisation","theme":"Authorization","requirement":"Investment firms must be authorised by the competent authority of their home Member State before providing investment services or performing investment activities."},
-    {"id":"Art.7","title":"Conditions for authorisation","theme":"Authorization","requirement":"Competent authorities shall grant authorisation only if satisfied that the applicant meets requirements relating to initial capital, management, organisation, shareholders, and programme of operations."},
-    {"id":"Art.9","title":"Management body","theme":"Governance","requirement":"Members of the management body must be of sufficiently good repute and possess sufficient knowledge, skills, and experience. The management body must define and oversee the firm's strategy and risk framework."},
-    {"id":"Art.10","title":"Shareholders and members with qualifying holdings","theme":"Authorization","requirement":"Competent authorities must be informed of any natural or legal person proposing to acquire a qualifying holding, and must assess the suitability of the proposed acquirer."},
-    {"id":"Art.16","title":"Organisational requirements","theme":"Governance","requirement":"Investment firms must have sound governance arrangements including clear organisational structure, effective risk management, adequate internal control mechanisms, and appropriate remuneration policies."},
-    {"id":"Art.17","title":"Algorithmic trading","theme":"Governance","requirement":"Investment firms engaged in algorithmic trading must have effective systems and risk controls, notify competent authorities, and ensure algorithms do not contribute to disorderly markets."},
-    {"id":"Art.18","title":"Trading process and finalisation of transactions in MTFs and OTFs","theme":"Transparency","requirement":"Operators of MTFs and OTFs must establish transparent and non-discretionary rules for fair and orderly trading, objective criteria for efficient execution of orders, and access requirements."},
-    {"id":"Art.21","title":"Obligation to make public regular reports","theme":"Transparency","requirement":"Market operators must make public information on the quality of execution of transactions on their venues, including details about speed, likelihood of execution, and costs."},
-    {"id":"Art.23","title":"Obligation to trade on regulated markets, MTFs, or OTFs","theme":"Transparency","requirement":"Investment firms must ensure trades in shares admitted to trading on a regulated market take place on a regulated market, MTF, systematic internaliser, or equivalent third-country venue."},
-    {"id":"Art.24","title":"General principles and information to clients","theme":"Conduct of Business","requirement":"Investment firms must act honestly, fairly, and professionally in the best interest of clients. All information to clients must be fair, clear, and not misleading."},
-    {"id":"Art.25","title":"Assessment of suitability and appropriateness","theme":"Investor Protection","requirement":"When providing investment advice or portfolio management, firms must obtain information about the client's knowledge, experience, financial situation, and investment objectives to assess suitability."},
-    {"id":"Art.26","title":"Provision of services through another investment firm","theme":"Conduct of Business","requirement":"Where an investment firm receives instructions through another firm, the receiving firm may rely on client information transmitted, but responsibility for suitability remains allocated per agreement."},
-    {"id":"Art.27","title":"Obligation to execute orders on terms most favourable to the client","theme":"Best Execution","requirement":"Investment firms must take all sufficient steps to obtain the best possible result for clients (best execution) taking into account price, costs, speed, likelihood of execution, settlement size, and nature of the order."},
-    {"id":"Art.28","title":"Client order handling rules","theme":"Best Execution","requirement":"Investment firms must implement procedures for prompt, fair, and expeditious execution of client orders relative to other client orders and the firm's own-account trading interests."},
-    {"id":"Art.29","title":"Obligations of firms employing tied agents","theme":"Conduct of Business","requirement":"Investment firms using tied agents remain fully and unconditionally responsible for the agents' acts and must ensure they disclose the capacity in which they act."},
-    {"id":"Art.30","title":"Transactions with eligible counterparties","theme":"Investor Protection","requirement":"Investment firms may enter into transactions with eligible counterparties without being bound by certain conduct of business or best execution obligations, provided the counterparty agrees."},
-    {"id":"Art.31","title":"Monitoring of compliance with MTF and OTF rules","theme":"Governance","requirement":"Investment firms and market operators operating MTFs or OTFs must monitor compliance with their rules, report breaches, and notify competent authorities of significant rule violations."},
-    {"id":"Art.33","title":"Direct electronic access","theme":"Governance","requirement":"Investment firms providing direct electronic access to trading venues must have systems and controls to ensure proper assessment of client suitability and prevent market disorder."},
-    {"id":"Art.34","title":"General clearing member services","theme":"Governance","requirement":"Investment firms acting as general clearing members must have effective systems and controls to ensure clearing services are applied only to suitable persons meeting clear criteria."},
-    {"id":"Art.35","title":"Non-discriminatory access to clearing and benchmarks","theme":"Transparency","requirement":"CCPs must accept to clear financial instruments on a non-discriminatory and transparent basis, including those traded on different venues."},
-    {"id":"Art.39","title":"SME growth markets","theme":"Transparency","requirement":"MTF operators may apply to have the MTF registered as an SME growth market, provided it meets requirements for issuer admission and ongoing disclosure tailored to SMEs."},
-    {"id":"Art.44","title":"Pre-trade transparency for MTFs and OTFs — equity","theme":"Transparency","requirement":"Market operators and investment firms operating MTFs must make public current bid and offer prices and depth of trading interest for equity instruments."},
-    {"id":"Art.48","title":"Resilience, circuit breakers, and electronic trading","theme":"Governance","requirement":"Regulated markets must have effective systems, procedures, and arrangements to ensure orderly trading, including resilience of trading systems and circuit breaker mechanisms."},
-    {"id":"Art.50","title":"Admission of financial instruments to trading","theme":"Authorization","requirement":"Regulated markets must have clear, transparent, and non-discriminatory rules for the admission of financial instruments to trading."},
-    {"id":"Art.56","title":"Suspension and removal of instruments from trading","theme":"Transparency","requirement":"Competent authorities may require suspension or removal of a financial instrument from trading where the instrument no longer complies with rules or there is a threat to investor protection or market integrity."},
-    {"id":"Art.58","title":"Position reporting by categories of position holders","theme":"Reporting","requirement":"Member States shall ensure that investment firms and market operators operating a trading venue which trade commodity derivatives report to the competent authority a breakdown of positions held by all persons."},
-    {"id":"Art.59","title":"Position reporting by categories of position holders","theme":"Reporting","requirement":"Investment firms trading in commodity derivatives must report to the competent authority daily details of their own and their clients' positions, classified by category of position holder."},
-    {"id":"Art.65","title":"Transaction reporting","theme":"Reporting","requirement":"Investment firms must report to the competent authority complete and accurate details of executed transactions as quickly as possible and no later than the close of the following working day."},
-    {"id":"Art.66","title":"Data reporting services","theme":"Reporting","requirement":"Data reporting services providers (ARMs, APAs, CTPs) must be authorised and must comply with organisational requirements ensuring accurate, complete, and timely data publication."},
-    {"id":"Art.69","title":"Supervisory powers","theme":"Authorization","requirement":"Competent authorities must have all supervisory and investigatory powers necessary, including the power to access documents, require information, carry out inspections, and suspend marketing or trading."},
-    {"id":"Art.70","title":"Sanctions","theme":"Authorization","requirement":"Member States must provide for effective, proportionate, and dissuasive administrative sanctions and measures for breaches, including fines up to EUR 5M for natural persons and EUR 5M or 10% of turnover for legal persons."},
-    {"id":"Art.73","title":"Cooperation between competent authorities","theme":"Authorization","requirement":"Competent authorities of different Member States must cooperate and exchange information for supervisory purposes, including information about breaches and suspicious activities."},
-    {"id":"Art.76","title":"Exchange of information with ESMA","theme":"Reporting","requirement":"Competent authorities must provide ESMA with information necessary for the performance of its duties, including information on authorisations, supervisory activities, and enforcement."},
-    {"id":"Art.79","title":"Professional secrecy","theme":"Authorization","requirement":"All persons working for competent authorities are bound by professional secrecy, with information received used only for the purposes of supervisory duties."}
+    {
+      "id": "Art.1",
+      "title": "Scope",
+      "theme": "Authorization",
+      "requirement": "Applies to investment firms, market operators, data reporting services providers, and third-country firms providing investment services within the Union."
+    },
+    {
+      "id": "Art.5",
+      "title": "Requirement for authorisation",
+      "theme": "Authorization",
+      "requirement": "Investment firms must be authorised by the competent authority of their home Member State before providing investment services or performing investment activities."
+    },
+    {
+      "id": "Art.7",
+      "title": "Conditions for authorisation",
+      "theme": "Authorization",
+      "requirement": "Competent authorities shall grant authorisation only if satisfied that the applicant meets requirements relating to initial capital, management, organisation, shareholders, and programme of operations."
+    },
+    {
+      "id": "Art.9",
+      "title": "Management body",
+      "theme": "Governance",
+      "requirement": "Members of the management body must be of sufficiently good repute and possess sufficient knowledge, skills, and experience. The management body must define and oversee the firm's strategy and risk framework."
+    },
+    {
+      "id": "Art.10",
+      "title": "Shareholders and members with qualifying holdings",
+      "theme": "Authorization",
+      "requirement": "Competent authorities must be informed of any natural or legal person proposing to acquire a qualifying holding, and must assess the suitability of the proposed acquirer."
+    },
+    {
+      "id": "Art.16",
+      "title": "Organisational requirements",
+      "theme": "Governance",
+      "requirement": "Investment firms must have sound governance arrangements including clear organisational structure, effective risk management, adequate internal control mechanisms, and appropriate remuneration policies."
+    },
+    {
+      "id": "Art.17",
+      "title": "Algorithmic trading",
+      "theme": "Governance",
+      "requirement": "Investment firms engaged in algorithmic trading must have effective systems and risk controls, notify competent authorities, and ensure algorithms do not contribute to disorderly markets."
+    },
+    {
+      "id": "Art.18",
+      "title": "Trading process and finalisation of transactions in MTFs and OTFs",
+      "theme": "Transparency",
+      "requirement": "Operators of MTFs and OTFs must establish transparent and non-discretionary rules for fair and orderly trading, objective criteria for efficient execution of orders, and access requirements."
+    },
+    {
+      "id": "Art.21",
+      "title": "Review of Authorisation Conditions",
+      "theme": "Transparency",
+      "requirement": "Investment firms must comply at all times with the conditions for initial authorisation; competent authorities must establish methods to monitor compliance and require firms to notify material changes."
+    },
+    {
+      "id": "Art.24",
+      "title": "General principles and information to clients",
+      "theme": "Conduct of Business",
+      "requirement": "Investment firms must act honestly, fairly, and professionally in the best interest of clients. All information to clients must be fair, clear, and not misleading."
+    },
+    {
+      "id": "Art.25",
+      "title": "Assessment of suitability and appropriateness",
+      "theme": "Investor Protection",
+      "requirement": "When providing investment advice or portfolio management, firms must obtain information about the client's knowledge, experience, financial situation, and investment objectives to assess suitability."
+    },
+    {
+      "id": "Art.26",
+      "title": "Provision of services through another investment firm",
+      "theme": "Conduct of Business",
+      "requirement": "Where an investment firm receives instructions through another firm, the receiving firm may rely on client information transmitted, but responsibility for suitability remains allocated per agreement."
+    },
+    {
+      "id": "Art.27",
+      "title": "Obligation to execute orders on terms most favourable to the client",
+      "theme": "Best Execution",
+      "requirement": "Investment firms must take all sufficient steps to obtain the best possible result for clients (best execution) taking into account price, costs, speed, likelihood of execution, settlement size, and nature of the order."
+    },
+    {
+      "id": "Art.28",
+      "title": "Client order handling rules",
+      "theme": "Best Execution",
+      "requirement": "Investment firms must implement procedures for prompt, fair, and expeditious execution of client orders relative to other client orders and the firm's own-account trading interests."
+    },
+    {
+      "id": "Art.29",
+      "title": "Obligations of firms employing tied agents",
+      "theme": "Conduct of Business",
+      "requirement": "Investment firms using tied agents remain fully and unconditionally responsible for the agents' acts and must ensure they disclose the capacity in which they act."
+    },
+    {
+      "id": "Art.30",
+      "title": "Transactions with eligible counterparties",
+      "theme": "Investor Protection",
+      "requirement": "Investment firms may enter into transactions with eligible counterparties without being bound by certain conduct of business or best execution obligations, provided the counterparty agrees."
+    },
+    {
+      "id": "Art.31",
+      "title": "Monitoring of compliance with MTF and OTF rules",
+      "theme": "Governance",
+      "requirement": "Investment firms and market operators operating MTFs or OTFs must monitor compliance with their rules, report breaches, and notify competent authorities of significant rule violations."
+    },
+    {
+      "id": "Art.33",
+      "title": "SME Growth Markets",
+      "theme": "Governance",
+      "requirement": "Operators of an MTF may apply to have it registered as an SME growth market, subject to requirements on the proportion of SME issuers, admission criteria, disclosure and periodic financial reporting."
+    },
+    {
+      "id": "Art.34",
+      "title": "Freedom to Provide Investment Services",
+      "theme": "Governance",
+      "requirement": "Investment firms authorised in one Member State may provide investment services and activities in any other Member State without further authorisation, subject to passport notification."
+    },
+    {
+      "id": "Art.39",
+      "title": "Establishment of a Branch by Third-Country Firms",
+      "theme": "Transparency",
+      "requirement": "A Member State may require a third-country firm intending to provide investment services to retail or elective professional clients in its territory to establish a branch, subject to authorisation conditions."
+    },
+    {
+      "id": "Art.48",
+      "title": "Resilience, circuit breakers, and electronic trading",
+      "theme": "Governance",
+      "requirement": "Regulated markets must have effective systems, procedures, and arrangements to ensure orderly trading, including resilience of trading systems and circuit breaker mechanisms."
+    },
+    {
+      "id": "Art.51",
+      "title": "Admission of Instruments to Trading",
+      "theme": "Authorization",
+      "requirement": "Regulated markets must have clear, transparent, and non-discriminatory rules for the admission of financial instruments to trading."
+    },
+    {
+      "id": "Art.52",
+      "title": "Suspension and Removal from Trading",
+      "theme": "Transparency",
+      "requirement": "Competent authorities may require suspension or removal of a financial instrument from trading where the instrument no longer complies with rules or there is a threat to investor protection or market integrity."
+    },
+    {
+      "id": "Art.58",
+      "title": "Position reporting by categories of position holders",
+      "theme": "Reporting",
+      "requirement": "Member States shall ensure that investment firms and market operators operating a trading venue which trade commodity derivatives report to the competent authority a breakdown of positions held by all persons."
+    },
+    {
+      "id": "Art.59",
+      "title": "Authorisation of Data Reporting Services Providers",
+      "theme": "Reporting",
+      "requirement": "Provision of data reporting services (APA, CTP, ARM) as a regular occupation or business requires prior authorisation; Member States must maintain a register of all authorised providers."
+    },
+    {
+      "id": "Art.66",
+      "title": "Organisational Requirements for ARMs",
+      "theme": "Reporting",
+      "requirement": "Approved reporting mechanisms must have adequate policies to report the information required under MiFIR Article 26 as quickly as possible, sound security mechanisms, and systems to check transaction reports for completeness and for errors caused by the ARM itself."
+    },
+    {
+      "id": "Art.69",
+      "title": "Supervisory powers",
+      "theme": "Authorization",
+      "requirement": "Competent authorities must have all supervisory and investigatory powers necessary, including the power to access documents, require information, carry out inspections, and suspend marketing or trading."
+    },
+    {
+      "id": "Art.70",
+      "title": "Sanctions",
+      "theme": "Authorization",
+      "requirement": "Member States must provide for effective, proportionate, and dissuasive administrative sanctions and measures for breaches, including fines up to EUR 5M for natural persons and EUR 5M or 10% of turnover for legal persons."
+    },
+    {
+      "id": "Art.76",
+      "title": "Professional Secrecy",
+      "theme": "Authorization",
+      "requirement": "All persons working for competent authorities are bound by professional secrecy, with information received used only for the purposes of supervisory duties."
+    },
+    {
+      "id": "Art.79",
+      "title": "Cooperation Between Competent Authorities",
+      "theme": "Authorization",
+      "requirement": "Competent authorities of different Member States must cooperate and exchange information for supervisory purposes, including information about breaches and suspicious activities."
+    },
+    {
+      "id": "Art.87",
+      "title": "Cooperation and Exchange of Information with ESMA",
+      "theme": "Reporting",
+      "requirement": "Competent authorities must provide ESMA with information necessary for the performance of its duties, including information on authorisations, supervisory activities, and enforcement."
+    }
   ]
 }

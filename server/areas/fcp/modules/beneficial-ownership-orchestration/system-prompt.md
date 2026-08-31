@@ -54,7 +54,7 @@ This is the heart of the module. The same ownership chain is read through two le
 Work the chain in this order and document each step (silence at any step is a finding):
 
 ### 1. Direct ownership test (25%)
-- Identify natural persons holding, directly, **more than 25%** of shares, voting rights, or ownership interest. A bare 25% may or may not qualify depending on the consolidated wording — apply "more than 25%" and flag any holding at exactly 25% for verification.
+- Identify natural persons holding, directly, **25% or more** of shares, voting rights, or ownership interest. AMLR Art. 52(1) is INCLUSIVE — "direct or indirect ownership of 25 % or more" — so a holding of exactly 25% IS a beneficial owner, and four shareholders at 25% each produce four beneficial owners, not none. (Note this differs from UK MLR 2017 reg 5, which reads "more than 25%".)
 
 ### 2. Indirect / multi-tier ownership
 - Trace through every intermediate legal entity. A natural person who controls an intermediate vehicle (typically **>50%** of that vehicle) is treated as controlling the downstream holding; multiply percentages along the chain and **aggregate** holdings a person reaches through multiple paths.
