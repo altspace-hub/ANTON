@@ -24,6 +24,8 @@ import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { createWhyChainInsightsAggregator } from './market-why-chain-insights.js';
+import { trustedSince } from './market-learning-window.js';
+import { clampWeight, WEIGHT_FLOOR, WEIGHT_CEILING } from './market-pattern-weight-feedback-service.js';
 
 // ── Step Timeout ────────────────────────────────────────────────────────────────
 
@@ -596,7 +598,24 @@ Also for each thesis, include a "predictions" array with 1-2 testable prediction
 - target_symbol (string, optional): ticker if applicable
 - predicted_outcome (string): the expected outcome
 - predicted_direction (string, optional): "up" | "down" | "flat"
-- confidence (number 0-1): prediction confidence
+- confidence (number 0-1): P(this call is correct). A claim about the WORLD.
+- evidence_quality (number 0-1): how much informative evidence you actually
+  found. A claim about your INPUTS, not about the market. These are separate
+  axes and must not be collapsed:
+    * 0.9 confidence 0.2 evidence_quality — a strong hunch with nothing behind
+      it. Say this when you have it; do not launder it into a middling
+      confidence.
+    * 0.55 confidence 0.9 evidence_quality — solid, specific evidence that
+      genuinely points to a near-coinflip. This is a GOOD prediction.
+    * 0.55 confidence 0.15 evidence_quality — you found nothing usable. This
+      is an abstention, and reporting it as one is more valuable than a
+      manufactured view. Do not pad the confidence to look decisive.
+  Report low evidence_quality freely. It is filtered on, not penalised, and a
+  confidence number with no evidence behind it is the specific failure this
+  field exists to catch.
+- evidence_basis (string): one sentence naming the concrete evidence this
+  rests on, so the score above can be audited. If evidence_quality is low, say
+  plainly what was missing.
 - time_horizon_days (number): days until testable
 - deadline (string): ISO date YYYY-MM-DD when this should be checked
 
@@ -654,6 +673,7 @@ Return ONLY the JSON array, no other text.`;
             target_symbol?: string; predicted_outcome: string; predicted_direction?: string;
             predicted_value?: number;
             confidence?: number; time_horizon_days?: number; deadline?: string;
+            evidence_quality?: number; evidence_basis?: string;
             key_assumptions?: string[];
           }>;
         }>;
@@ -745,6 +765,12 @@ Return ONLY the JSON array, no other text.`;
               predictedOutcome: p.predicted_outcome,
               predictedDirection: p.predicted_direction,
               confidence: effectiveConfidence,
+              // Passed through unmodified and NOT defaulted. A generator that
+              // omits the field genuinely did not report one, and storing NULL
+              // keeps "never reported" distinguishable from "reported as low" —
+              // which is the whole point of adding a second channel.
+              evidenceQuality: p.evidence_quality,
+              evidenceBasis: p.evidence_basis,
               timeHorizonDays: p.time_horizon_days ?? 14,
               deadline: p.deadline,
               keyAssumptions: [...(p.key_assumptions ?? []), ...(validationFlags.length ? [`[Validation: ${validationFlags.join('; ')}]`] : [])],
@@ -1274,8 +1300,15 @@ Return ONLY the JSON array, no other text.`;
       // Step 2: Prediction accuracy stats — query validated predictions from DB
       let validatedPredictions: Array<{ id: string; confidence: number; was_correct: number; brier_score: number | null; prediction_type: string }> = [];
       try {
+        // Trusted window only. These rows feed accuracy stats, the calibration
+        // curve AND the signal-weight optimizer below; grading defects repaired
+        // in mid-August make anything older an unreliable label in both
+        // directions. See market-learning-window.ts.
         validatedPredictions = await db.all<{ id: string; confidence: number; was_correct: number; brier_score: number | null; prediction_type: string }>(
-          "SELECT id, confidence, was_correct, brier_score, prediction_type FROM market_predictions WHERE status = 'validated'"
+          `SELECT id, confidence, was_correct, brier_score, prediction_type
+             FROM market_predictions
+            WHERE status = 'validated' AND validated_at >= ?`,
+          trustedSince()
         );
         const predictionsForStats = validatedPredictions.map(p => ({
           id: p.id, confidence: p.confidence, was_correct: p.was_correct === 1,
@@ -1344,8 +1377,9 @@ Return ONLY the JSON array, no other text.`;
           JOIN market_thesis_atoms mta ON mta.thesis_id = mp.thesis_id
           JOIN market_atoms ma ON ma.id = mta.atom_id
           WHERE mp.status = 'validated' AND mp.was_correct IS NOT NULL
+            AND mp.validated_at >= ?
           LIMIT 2000
-        `);
+        `, trustedSince());
 
         // Group by atom_type → build signal outcomes
         const signalMap = new Map<string, Array<{ predicted: number; actual: number }>>();
@@ -1386,12 +1420,22 @@ Return ONLY the JSON array, no other text.`;
             const output = result.output as { optimized_weights?: Record<string, number> };
             if (output.optimized_weights) {
               for (const [signalType, newWeight] of Object.entries(output.optimized_weights)) {
+                // Clamp. This INSERT was previously unbounded, which is how
+                // price_target reached 0.000 — an absorbing state under the
+                // multiplicative updates every other writer uses — and
+                // directional 0.088, despite being the only claim type with a
+                // real sample and a real edge.
+                const weight = clampWeight(Number(newWeight));
+                if (weight === null) {
+                  console.warn(`[prediction-validation] skipped non-finite weight for ${signalType}`);
+                  continue;
+                }
                 await db.run(`
                   INSERT INTO market_signal_weights (signal_type, category, weight, last_calibrated_at, updated_at)
                   VALUES (?, 'general', ?, NOW(), NOW())
                   ON CONFLICT (signal_type, category) DO UPDATE SET
                     weight = EXCLUDED.weight, last_calibrated_at = NOW(), updated_at = NOW()
-                `, signalType, newWeight);
+                `, signalType, weight);
               }
             }
           } catch { /* non-fatal — weight persistence is best-effort */ }
@@ -1403,9 +1447,10 @@ Return ONLY the JSON array, no other text.`;
           const whyInsights = await insightsAgg.getInsights(30);
           for (const adj of whyInsights.signalAdjustments) {
             await db.run(`
-              UPDATE market_signal_weights SET weight = GREATEST(0.3, weight * ?)
-              WHERE signal_type = ? AND updated_at < NOW() - INTERVAL '1 day'
-            `, adj.reliabilityMultiplier, adj.signalType);
+              UPDATE market_signal_weights
+                 SET weight = LEAST(?, GREATEST(?, weight * ?))
+               WHERE signal_type = ? AND updated_at < NOW() - INTERVAL '1 day'
+            `, WEIGHT_CEILING, WEIGHT_FLOOR, adj.reliabilityMultiplier, adj.signalType);
           }
           if (whyInsights.signalAdjustments.length > 0) {
             console.log(`[prediction-validation] Applied ${whyInsights.signalAdjustments.length} why-chain signal adjustments`);

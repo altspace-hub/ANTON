@@ -69,7 +69,12 @@ CREATE TABLE IF NOT EXISTS market_predictions (
   last_verification_failure     TEXT,
   -- Written by the recalibration service; NEVER a copy of confidence. NULL
   -- means the stated band had too few graded examples to speak for itself.
-  calibrated_confidence  DOUBLE PRECISION
+  calibrated_confidence  DOUBLE PRECISION,
+  -- migration 261: the second channel. evidence_quality is a claim about the
+  -- INPUTS (how much informative evidence was found), where confidence is a
+  -- claim about the world. NULL means "not reported", never zero.
+  evidence_quality       DOUBLE PRECISION,
+  evidence_basis         TEXT
 );
 
 -- The retry-sweep partial index from migration 156 (kept so the predicate the

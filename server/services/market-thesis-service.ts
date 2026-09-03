@@ -227,23 +227,40 @@ Predictions: ${thesis.predictions.length}`,
     predictedValue?: number;
     predictedDirection?: string;
     confidence?: number;
+    /**
+     * How much informative evidence was found, 0-1 — a claim about the INPUTS,
+     * where `confidence` is a claim about the world. Left undefined when the
+     * caller has no reading; it is stored NULL rather than defaulted, because a
+     * fabricated evidence score is worse than an absent one. See migration 261.
+     */
+    evidenceQuality?: number;
+    /** Short free text naming the evidence, so a low score can be audited. */
+    evidenceBasis?: string;
     timeHorizonDays?: number;
     deadline?: string;
     keyAssumptions?: string[];
     horizon?: string;
   }) {
     const id = `mpred_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // Clamp rather than trust: the value arrives from an LLM and a score
+    // outside [0,1] would silently poison every stratified read of it.
+    const evidenceQuality =
+      typeof params.evidenceQuality === 'number' && Number.isFinite(params.evidenceQuality)
+        ? Math.min(1, Math.max(0, params.evidenceQuality))
+        : null;
     await db.run(`
       INSERT INTO market_predictions (id, thesis_id, title, description, prediction_type,
                                        target_entity, target_symbol, predicted_outcome,
                                        predicted_value, predicted_direction, confidence,
+                                       evidence_quality, evidence_basis,
                                        time_horizon_days, deadline, key_assumptions, horizon)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, id, params.thesisId ?? null, params.title, params.description,
        params.predictionType ?? 'directional',
        params.targetEntity ?? null, params.targetSymbol ?? null,
        params.predictedOutcome, params.predictedValue ?? null,
        params.predictedDirection ?? null, params.confidence ?? 0.5,
+       evidenceQuality, params.evidenceBasis ?? null,
        params.timeHorizonDays ?? null, params.deadline ?? null,
        JSON.stringify(params.keyAssumptions ?? []),
        params.horizon ?? 'this_month');

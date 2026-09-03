@@ -51,7 +51,7 @@
  * (runAutoVerification({ allowLLM: false }) defers binary/event predictions),
  * pattern feedback and calibration are pure SQL/arithmetic.
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { PostgresAdapter } from '../../server/db/adapters/postgresql-adapter';
 import type { DatabaseAdapter } from '../../server/db/database';
 import { createPredictionVerifier, MAX_VERIFICATION_ATTEMPTS } from '../../server/services/market-prediction-verifier';
@@ -769,13 +769,19 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(wmap.signal).toBeCloseTo(0.3, 6);
       expect(wmap.insight).toBeCloseTo(0.85, 6);
 
-      // Symbol-grain overrides: 0.5 + accuracy × 0.5.
+      // Symbol-grain overrides: 1.0 + (accuracy − 0.5) × 0.6, symmetric about
+      // a coin flip. Both symbols here are below 0.5 so both still lose
+      // weight — but less sharply than the old one-directional
+      // `0.5 + accuracy × 0.5`, which could never return weight at all and
+      // had driven 8 of 13 live symbols onto the floor by 31 August 2026.
+      //   TSTC 0.2 → 1.0 − 0.18 = 0.82   (was 0.60)
+      //   TSTD 0.4 → 1.0 − 0.06 = 0.94   (was 0.70)
       const overrides = await db.all<{ symbol: string; weight_multiplier: string }>(
         `SELECT symbol, weight_multiplier FROM market_symbol_weight_overrides ORDER BY symbol`,
       );
       expect(overrides.map((o) => [o.symbol, Number(o.weight_multiplier)])).toEqual([
-        ['TSTC', 0.6],
-        ['TSTD', 0.7],
+        ['TSTC', 0.82],
+        ['TSTD', 0.94],
       ]);
 
       // THE audit-trail assertion that was missing for 182 patterns: every
@@ -786,7 +792,7 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(adjRows).toHaveLength(8);
       const symbolAdj = adjRows.find((a) => a.signal_type === 'symbol_override' && a.category === 'TSTC');
       expect(symbolAdj).toBeDefined();
-      expect(Number(symbolAdj!.weight_after)).toBeCloseTo(0.6, 6);
+      expect(Number(symbolAdj!.weight_after)).toBeCloseTo(0.82, 6);
 
       // Idempotency marker set on ALL considered patterns (incl. the skip).
       const unstamped = await db.get<{ n: number }>(
@@ -1104,13 +1110,33 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
 
   // ── Confidence recalibration ───────────────────────────────────────────────
   describe('confidence recalibration (market-confidence-recalibration)', () => {
+    // Pin the trusted window so these tests do not silently change meaning the
+    // next time the production cutoff moves forward. Everything seeded below is
+    // graded on WINDOW_IN unless a test deliberately puts it outside.
+    const PINNED_SINCE = '2026-01-01';
+    const WINDOW_IN = '2026-06-01T12:00:00Z';   // inside the pinned window
+    const WINDOW_OUT = '2025-11-01T12:00:00Z';  // before it
+    let priorSince: string | undefined;
+    beforeEach(() => {
+      priorSince = process.env.MARKETS_TRUSTED_SINCE;
+      process.env.MARKETS_TRUSTED_SINCE = PINNED_SINCE;
+    });
+    afterEach(() => {
+      if (priorSince === undefined) delete process.env.MARKETS_TRUSTED_SINCE;
+      else process.env.MARKETS_TRUSTED_SINCE = priorSince;
+    });
+
     /** n graded predictions in one confidence band, `correct` of them right. */
-    async function seedBand(prefix: string, confidence: number, n: number, correct: number) {
+    async function seedBand(
+      prefix: string, confidence: number, n: number, correct: number,
+      validatedAt: string = WINDOW_IN,
+    ) {
       for (let i = 0; i < n; i++) {
         await seedPrediction(db, {
           id: `${prefix}_${i}`, symbol: 'AAPL', direction: 'up',
           confidence, status: 'validated',
           wasCorrect: i < correct ? 1 : 0,
+          validatedAt,
           createdAt: daysAgoIso(40),
         });
       }
@@ -1123,7 +1149,7 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       await seedBand('cal_mid', 0.55, 60, 30);
 
       const report = await measureCalibration(db);
-      const band = report.bands.find(b => b.low === 0.4)!;
+      const band = report.bands.find(b => b.low === 0.5)!;
       expect(band.graded).toBe(60);
       expect(band.observed_accuracy).toBeCloseTo(0.5, 6);
       expect(band.applied).toBe(true);
@@ -1133,18 +1159,37 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(band.calibrated!).toBeLessThan(1);
     });
 
+    it('ignores gradings made before the trusted window', async () => {
+      // The defect this guards: pooling every graded prediction ever made
+      // includes the era whose VERIFIER was broken. On live data that pulled
+      // the 0.60–0.80 band to 0.3806 (the broken era scored it 28%) while the
+      // trusted window had it at 73%, and applying that map moved Brier from
+      // 0.2384 to 0.2557 — worse than the coin flip it already beat.
+      const { measureCalibration } =
+        await import('../../server/services/market-confidence-recalibration.js');
+      await seedBand('cal_in', 0.55, 40, 32, WINDOW_IN);    // 80% correct, counted
+      await seedBand('cal_old', 0.55, 60, 6, WINDOW_OUT);   // 10% correct, must not count
+
+      const report = await measureCalibration(db);
+      expect(report.total_graded).toBe(40);                  // not 100
+      const band = report.bands.find(b => b.low === 0.5)!;
+      expect(band.graded).toBe(40);
+      // If the excluded rows leaked in, observed would collapse toward 0.38.
+      expect(band.observed_accuracy).toBeCloseTo(0.8, 6);
+    });
+
     it('refuses to map a band that has too few graded examples', async () => {
       // THIS is the guard that keeps recalibration from becoming overfitting:
-      // the live 0.8–1.0 band has eight graded predictions, and mapping from
-      // eight observations would be noise wearing a probability's clothes.
-      // A unit test with a hand-built report cannot check this — the flag has
-      // to come from measureCalibration reading a real table.
+      // mapping a probability from a handful of observations is noise wearing
+      // a probability's clothes. A unit test with a hand-built report cannot
+      // check this — the flag has to come from measureCalibration reading a
+      // real table.
       const { measureCalibration, MIN_BUCKET_SAMPLES } =
         await import('../../server/services/market-confidence-recalibration.js');
       await seedBand('cal_hi', 0.85, 5, 1);
 
       const report = await measureCalibration(db);
-      const band = report.bands.find(b => b.low === 0.8)!;
+      const band = report.bands.find(b => b.low === 0.65)!;
       expect(band.graded).toBe(5);
       expect(band.graded).toBeLessThan(MIN_BUCKET_SAMPLES);
       expect(band.observed_accuracy).toBeCloseTo(0.2, 6);   // it MEASURED it
@@ -1152,11 +1197,36 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       expect(band.calibrated).toBeNull();
     });
 
+    it('declines to write anything when the mapping does not beat the stated number', async () => {
+      // A well-calibrated band has nothing to correct, so the mapping cannot
+      // earn its threshold and must leave every prediction alone. Without this
+      // guard the loop writes a "correction" that is pure churn — which is how
+      // the pooled version came to make live forecasts measurably worse.
+      const { applyCalibration } =
+        await import('../../server/services/market-confidence-recalibration.js');
+      await seedBand('cal_ok', 0.55, 40, 22);   // 55% observed against 0.55 stated
+      await seedPrediction(db, {
+        id: 'cal_untouched', symbol: 'AAPL', direction: 'up', confidence: 0.55,
+        status: 'active', createdAt: daysAgoIso(2),
+      });
+
+      const r = await applyCalibration(db);
+      expect(r.applied).toBe(false);
+      expect(r.updated).toBe(0);
+      expect(r.reason).toContain('below the');
+
+      const row = await db.get<{ calibrated_confidence: number | null }>(
+        `SELECT calibrated_confidence FROM market_predictions WHERE id = 'cal_untouched'`);
+      expect(row?.calibrated_confidence).toBeNull();
+    });
+
     it('writes calibrated_confidence without touching the stated confidence', async () => {
       // The raw number is the only record of what the model believed, and the
       // before/after question dies the moment it is overwritten in place.
       const { applyCalibration } =
         await import('../../server/services/market-confidence-recalibration.js');
+      // 45% observed against 0.55 stated — a gap wide enough that correcting
+      // it clears MIN_BRIER_IMPROVEMENT and the write actually happens.
       await seedBand('cal_base', 0.55, 40, 18);
       await seedPrediction(db, {
         id: 'cal_open', symbol: 'AAPL', direction: 'up', confidence: 0.55,
@@ -1164,6 +1234,7 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       });
 
       const r = await applyCalibration(db);
+      expect(r.applied).toBe(true);
       expect(r.updated).toBeGreaterThanOrEqual(1);
 
       const row = await db.get<{ confidence: string; calibrated_confidence: number | null }>(
@@ -1180,7 +1251,12 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
         await import('../../server/services/market-confidence-recalibration.js');
       await seedBand('cal_done', 0.55, 40, 18);
 
-      await applyCalibration(db);
+      const r = await applyCalibration(db);
+      // Without this the assertion below passes for the wrong reason: if the
+      // mapping had declined, NOTHING would be written anywhere and a graded
+      // row being untouched would prove nothing about "open predictions only".
+      expect(r.applied).toBe(true);
+
       const row = await db.get<{ calibrated_confidence: number | null }>(
         `SELECT calibrated_confidence FROM market_predictions WHERE id = 'cal_done_0'`);
       expect(row?.calibrated_confidence).toBeNull();

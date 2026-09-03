@@ -1784,6 +1784,43 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       }
     }
 
+    /**
+     * M9 — confidence recalibration.
+     *
+     * Free: pure arithmetic over already-graded predictions, no LLM, no
+     * external call. Safe under MARKETS_THINKING_DISABLED.
+     *
+     * The routine measures itself before it writes anything and declines when
+     * the mapping does not beat leaving stated confidence alone, so scheduling
+     * it is not the same as committing to apply it. On the current sample it
+     * measures, declines, and logs why. It starts applying on its own once the
+     * mapping earns it.
+     */
+    async function sweepConfidenceRecalibration(): Promise<void> {
+      if (String(process.env.MARKETS_RECALIBRATION_DISABLED || '').toLowerCase() === 'true') return;
+      try {
+        const { applyCalibration } = await import('./services/market-confidence-recalibration.js');
+        const r = await applyCalibration(db);
+        if (r.applied) {
+          console.log(
+            `[markets-recalibration] applied to ${r.updated} open prediction(s)`
+            + ` (Brier ${r.report.brier_stated?.toFixed(4)} → ${r.report.brier_calibrated?.toFixed(4)}`
+            + `, ${r.report.total_graded} graded since ${r.report.since})`,
+          );
+        } else {
+          console.log(
+            `[markets-recalibration] declined — ${r.reason}`
+            + ` (${r.report.total_graded} graded since ${r.report.since};`
+            + ` stated ${r.report.brier_stated?.toFixed(4)},`
+            + ` calibrated ${r.report.brier_calibrated?.toFixed(4)},`
+            + ` flat ${r.report.brier_flat?.toFixed(4)})`,
+          );
+        }
+      } catch (err) {
+        console.error('[markets-recalibration] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }
+
     async function sweepScheduledRebalance(): Promise<void> {
       if (marketsAutorebalanceDisabled) return;
       try {
@@ -1818,11 +1855,14 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     // Run every free sweep once (catch-up entrypoint). Each has its own
     // try/catch so one failure never blocks the rest.
     async function runMarketsFreeSweeps(trigger: string): Promise<void> {
-      console.log(`[markets-free-sweeps] running M1-M8 (trigger: ${trigger})`);
+      console.log(`[markets-free-sweeps] running M1-M9 (trigger: ${trigger})`);
       await sweepPatternWeightFeedback();
       await sweepAttributionPnL();
       await sweepThesisLifecycle();
       await sweepInvestigationLifecycle();
+      // Before allocation so a calibrated number, once the mapping earns its
+      // keep, is fresh for anything downstream that chooses to read it.
+      await sweepConfidenceRecalibration();
       await sweepPredictionAllocation();
       await sweepScheduledRebalance();
       await sweepShadowRebalance();
@@ -1834,6 +1874,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     cron.schedule('0 4 * * *', () => { void sweepAttributionPnL(); }, MARKET_TZ);
     cron.schedule('0 5 * * *', () => { void sweepThesisLifecycle(); }, MARKET_TZ);
     cron.schedule('30 5 * * *', () => { void sweepInvestigationLifecycle(); }, MARKET_TZ);
+    cron.schedule('45 5 * * *', () => { void sweepConfidenceRecalibration(); }, MARKET_TZ);
     cron.schedule('0 6 * * *', () => { void sweepScheduledRebalance(); }, MARKET_TZ);
     cron.schedule('15 6 * * *', () => { void sweepShadowRebalance(); }, MARKET_TZ);
     cron.schedule('30 6 * * *', () => { void sweepBacklogTriage(); }, MARKET_TZ);
