@@ -1775,8 +1775,15 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           const r = await allocateFromPredictions(db, indexId, weighting);
           console.log(
             `[markets-prediction-alloc] ${indexId} (${weighting}): `
-            + `${r.positions_opened} position(s) from ${r.predictions_considered} prediction(s)`
-            + `${r.skipped_no_price > 0 ? `, ${r.skipped_no_price} unpriceable` : ''}`,
+            + `${r.long_positions} long / ${r.short_positions} short `
+            + `from ${r.predictions_considered} prediction(s), `
+            + `net ${(r.net_exposure * 100).toFixed(0)}% gross ${(r.gross_exposure * 100).toFixed(0)}%`
+            + `${r.skipped_no_price > 0 ? `, ${r.skipped_no_price} unpriceable` : ''}`
+            // Reported every run, not buried: 'flat' is the most accurate
+            // bucket and is deliberately untraded, so its absence from the
+            // book must stay visible rather than looking like a dropped call.
+            + `${r.flat_not_expressible > 0 ? `, ${r.flat_not_expressible} flat not expressible` : ''}`
+            + `${r.offsetting_symbols > 0 ? `, ${r.offsetting_symbols} offsetting` : ''}`,
           );
         }
       } catch (err) {
