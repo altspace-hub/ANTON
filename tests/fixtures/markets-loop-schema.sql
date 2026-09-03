@@ -421,8 +421,15 @@ CREATE TABLE IF NOT EXISTS market_schedule_runs (
   items_fetched INTEGER DEFAULT 0,
   atoms_created INTEGER DEFAULT 0,
   error         TEXT,
-  metadata      JSONB DEFAULT '{}'::jsonb
+  metadata      JSONB DEFAULT '{}'::jsonb,
+  -- Migration 263. The unique index below is the mechanism that stops a slot
+  -- from being run twice when cron and the catch-up tick both think it is due,
+  -- so the fixture must carry it or the claim tests would pass against a table
+  -- that cannot actually enforce the thing they assert.
+  slot_at       TIMESTAMPTZ
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_market_schedule_runs_phase_slot
+  ON market_schedule_runs (phase, slot_at);
 
 -- Atoms, for the decay pass. valid_until is TEXT on purpose: that is the real
 -- column type, and comparing it to NOW() is what threw on every Phase 1 run

@@ -30,7 +30,11 @@ import type { DatabaseAdapter } from '../db/database.js';
 const MAX_ERROR_CHARS = 2000;
 
 export interface SchedulePhaseRecorder {
-  recordPhase(phase: string, fn: () => Promise<void>): Promise<void>;
+  /**
+   * Run `fn` under the recorder. Resolves true when the work ran, false when it
+   * was skipped because another caller already claimed the same slot.
+   */
+  recordPhase(phase: string, fn: () => Promise<void>, slotAt?: Date): Promise<boolean>;
 }
 
 export function createSchedulePhaseRecorder(db: DatabaseAdapter): SchedulePhaseRecorder {
@@ -40,14 +44,41 @@ export function createSchedulePhaseRecorder(db: DatabaseAdapter): SchedulePhaseR
    * Bookkeeping never breaks the work it observes: if the INSERT or either
    * UPDATE fails, the phase still runs and still completes. A recorder that
    * can take down the scheduler is worse than no recorder.
+   *
+   * `slotAt` (2026-09-03) additionally makes the row a CLAIM on one scheduled
+   * occurrence. Two callers now race for every slot — the cron callback and the
+   * catch-up tick that covers cron failing to fire at all — and the unique
+   * index from migration 263 decides between them: the loser's INSERT returns
+   * no row and it skips the work rather than doing it twice. For the LLM phases
+   * a double run means paying twice and writing two sets of predictions for one
+   * slot, so this distinction is load-bearing rather than tidy.
+   *
+   * Note the asymmetry with the fail-open rule above, which is deliberate: an
+   * INSERT that THROWS still runs the phase (a broken recorder must not stop
+   * the loop), while an INSERT that succeeds with no row means someone else
+   * holds the slot and the work genuinely should not happen.
    */
-  async function recordPhase(phase: string, fn: () => Promise<void>): Promise<void> {
+  async function recordPhase(phase: string, fn: () => Promise<void>, slotAt?: Date): Promise<boolean> {
     let runId: number | null = null;
     try {
-      const row = await db.get<{ id: number }>(
-        `INSERT INTO market_schedule_runs (phase, status) VALUES (?, 'running') RETURNING id`,
-        phase,
-      );
+      const row = slotAt
+        ? await db.get<{ id: number }>(
+            `INSERT INTO market_schedule_runs (phase, status, slot_at)
+             VALUES (?, 'running', ?)
+             ON CONFLICT (phase, slot_at) DO NOTHING
+             RETURNING id`,
+            phase, slotAt.toISOString(),
+          )
+        : await db.get<{ id: number }>(
+            `INSERT INTO market_schedule_runs (phase, status) VALUES (?, 'running') RETURNING id`,
+            phase,
+          );
+      if (slotAt && !row) {
+        // Claimed elsewhere. Debug-level on purpose: on a healthy host this is
+        // the normal outcome of every catch-up tick and would otherwise bury
+        // the log in noise.
+        return false;
+      }
       runId = row?.id ?? null;
     } catch (err) {
       console.warn(
@@ -84,6 +115,7 @@ export function createSchedulePhaseRecorder(db: DatabaseAdapter): SchedulePhaseR
       // an unhandled rejection, and the row already records what happened.
       console.error(`[markets-schedule] ${phase} threw:`, message);
     }
+    return true;
   }
 
   return { recordPhase };

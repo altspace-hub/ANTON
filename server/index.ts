@@ -132,6 +132,7 @@ import { createMarketComputationRoutes } from './routes/market-computation.js';
 import { createMarketDataService } from './services/market-data-service.js';
 import { createMarketAtomService, planExtractionBatches } from './services/market-atom-service.js';
 import { createSchedulePhaseRecorder } from './services/market-schedule-recorder.js';
+import { previousSlotFor, selectCatchUpPhase } from './services/market-schedule-slots.js';
 import { createMarketThesesRoutes } from './routes/market-theses.js';
 import { createMarketEntitiesRoutes } from './routes/market-entities.js';
 import { createMarketPatternsRoutes } from './routes/market-patterns.js';
@@ -1287,9 +1288,121 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     // market-schedule-recorder.ts for why it exists at all.
     const { recordPhase } = createSchedulePhaseRecorder(db);
 
+    // ── Slot claiming + catch-up (2026-09-03) ──────────────────────────────
+    // A scheduled slot that does not fire is lost for good. Over 08-31..09-03,
+    // 12 of 54 due slots were missed (77.8% delivery), and the misses cluster
+    // by TIME rather than by phase: at 18:00 two separate registrations
+    // (phase4-midday-intelligence and intraday-price-refresh) are co-fated on
+    // all four days, which no per-phase defect can produce.
+    //
+    // Three causes, and only the first two are understood:
+    //
+    //   1. The host froze. Windows Modern Standby 09-02 16:30:23 -> 19:08:27
+    //      (Kernel-Power 506/507) swallowed that day's 18:00; the 25H2 update
+    //      reboots swallowed 09-03's. Worth knowing: Modern Standby is NOT
+    //      governed by the "lid close = do nothing / idle sleep = Never"
+    //      settings, so those being correct proves nothing.
+    //   2. node-cron never replays. node_modules/node-cron 4.2.1
+    //      dist/esm/scheduler/runner.js advances past any slot whose timer
+    //      callback lands even one second late — `while (expectedNextExecution
+    //      < currentDate) { logger.warn('missed execution'); ... }` — then runs
+    //      only on an exact-second match. The sole trace is a console warning
+    //      nobody keeps.
+    //   3. Six of the twelve are still unexplained. 09-02 12:30, 14:00, 14:30,
+    //      15:00, 15:45 and 09-03 07:00 were missed while an independent
+    //      `*/30 * * * *` node-cron heartbeat in the SAME process fired within
+    //      290 ms at the identical minutes, and the markets phases left no rows
+    //      and no side effects — no fetches, no atoms.
+    //
+    // Not knowing (3) is the point. Every phase is now registered twice over:
+    // on cron, which fires it on time when cron works, and in a registry the
+    // tick below sweeps for slots that came and went unclaimed. A suspend, a
+    // dropped timer, a restart straddling the slot and whatever (3) turns out
+    // to be all present identically — an unclaimed slot — and are all covered
+    // by the same sweep. Migration 263's unique index on (phase, slot_at)
+    // decides the race between the two callers, so a slot still runs exactly
+    // once however many of them think it is due.
+    //
+    // This is the conclusion the free half of the loop already reached on
+    // 2026-08-21 ("stop asking is it 12:00 and start asking is there
+    // outstanding work"), finally applied to the spending half — the half that
+    // generates predictions, and so the half whose silence starves the learning
+    // loop while every dashboard still looks healthy.
+    interface PhaseOptions {
+      /** How stale a missed slot may be and still be worth running, in minutes. */
+      catchUpWithinMin?: number;
+      /**
+       * Consulted ONLY by the catch-up tick, never by cron: has this phase's
+       * work already happened by some other route today?
+       *
+       * A missed slot is worth rescuing; repeating work that already happened
+       * is not. The phases that mint predictions are the ones where this
+       * matters, because a second batch on the same symbols enters the accuracy
+       * record as independent observations when it is nothing of the kind —
+       * commit 2d973f8f had to delete 13 such rows for exactly this reason
+       * ("9 of 13 duplicated the 09:00 batch by symbol and direction"). The
+       * boot and resume catch-ups already run daily intelligence on their own
+       * heartbeat, so without this the slot catch-up would double it.
+       */
+      alreadyDone?: () => Promise<boolean>;
+    }
+    interface CatchUpPhase {
+      expr: string;
+      phase: string;
+      run: () => Promise<void>;
+      catchUpWithinMin: number;
+      alreadyDone?: () => Promise<boolean>;
+    }
+    const catchUpPhases: CatchUpPhase[] = [];
+    /** Long enough to rescue a morning slot before lunch; short enough that a
+     *  machine woken at midnight does not fire a whole day of stale phases. */
+    const DEFAULT_CATCH_UP_MIN = 6 * 60;
+
+    /** True when a workflow of this id completed today (Europe/Stockholm). */
+    const workflowRanToday = async (workflowId: string): Promise<boolean> => {
+      const row = await db.get<{ n: number | string }>(
+        `SELECT COUNT(*) AS n FROM workflow_runs
+          WHERE workflow_id = ? AND status = 'completed' AND started_at >= CURRENT_DATE`,
+        workflowId,
+      );
+      return Number(row?.n ?? 0) > 0;
+    };
+
+    /**
+     * Register a phase on cron AND in the catch-up registry. The cron callback
+     * resolves its own slot so it claims the same row the catch-up would, which
+     * is what stops the two from doubling up.
+     */
+    const registerPhase = (
+      expr: string,
+      phase: string,
+      fn: () => Promise<void>,
+      opts: PhaseOptions = {},
+    ): void => {
+      catchUpPhases.push({
+        expr,
+        phase,
+        run: fn,
+        catchUpWithinMin: opts.catchUpWithinMin ?? DEFAULT_CATCH_UP_MIN,
+        alreadyDone: opts.alreadyDone,
+      });
+      cron.schedule(expr, () => {
+        // Short lookback: at fire time the slot IS now. If cron is running so
+        // late that no slot resolves, fall through to an unclaimed row rather
+        // than skipping the work — the pre-263 behaviour.
+        const slot = previousSlotFor(expr, new Date(), MARKET_TZ.timezone, 5);
+        void recordPhase(phase, fn, slot ?? undefined);
+      }, MARKET_TZ);
+    };
+
     /** Register a cron only when the token/data-spending tier is opted in. */
-    const scheduleSpending = (expr: string, phase: string, fn: () => Promise<void>): void => {
-      if (marketsAutomation) cron.schedule(expr, () => recordPhase(phase, fn), MARKET_TZ);
+    const scheduleSpending = (
+      expr: string,
+      phase: string,
+      fn: () => Promise<void>,
+      opts: PhaseOptions = {},
+    ): void => {
+      if (marketsAutomation) registerPhase(expr, phase, fn, opts);
     };
 
     // ── Sustainable schedule: fetch less, process more, quality over speed ──
@@ -1406,12 +1519,28 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           console.log('[markets-schedule] Phase 4 complete');
         }
       } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
-    });
+    // The boot and resume catch-ups run daily intelligence on their own 24-hour
+    // heartbeat, so by the time a missed 18:00 slot is noticed the day's cycle
+    // may already have happened — as it had on 2026-09-03, at 12:21, while the
+    // 18:00 slot sat unclaimed. Rescuing the slot then would mint a second
+    // batch of predictions over the same symbols and file them in the accuracy
+    // record as independent observations.
+    }, { alreadyDone: () => workflowRanToday('wf_markets_daily_intelligence') });
 
     // Phase 5: Market Close (22:15 CET) — EOD prices + NAV. Stays registered
     // always: the NAV/leaderboard/checkpoint legs are free deterministic
     // in-DB work. Only the external fetch leg requires the automation opt-in.
-    cron.schedule('15 22 * * 1-5', async () => {
+    //
+    // Registered through registerPhase rather than a bare cron since
+    // 2026-09-03. It was the one phase writing no market_schedule_runs row at
+    // all, so a missing NAV was indistinguishable from a NAV that ran and found
+    // nothing — the precise blind spot that let ANTON Sweden 100 drop out of
+    // the series for three sessions unnoticed. It is also the phase that stamps
+    // the two prediction portfolios, which currently have no NAV history at
+    // all, so a silent miss here costs the measurement the books exist for.
+    // Twelve-hour catch-up window: a NAV row written late the next morning is
+    // vastly better than a permanent hole in the daily spine.
+    registerPhase('15 22 * * 1-5', 'phase5-market-close', async () => {
       console.log('[markets-schedule] Phase 5: Market Close + NAV');
       try {
         if (marketsFetchOn) await marketDataService.fetchAllSources();
@@ -1425,7 +1554,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         } catch { /* non-fatal */ }
         console.log('[markets-schedule] Phase 5 complete — NAV calculated + prices synced');
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
-    }, MARKET_TZ);
+    }, { catchUpWithinMin: 12 * 60 });
 
     // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis, LLM (opt-in)
     scheduleSpending('0 23 * * 1-5', 'phase6-post-market', async () => {
@@ -1506,7 +1635,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
-    });
+    // 26 hours, the most generous window of any phase. Phase 7 is the only
+    // caller of runPredictionValidation, which re-derives the claim-type
+    // signal weights; migration 262 reset those to neutral on 31 August and
+    // they cannot move again until this runs. Missing a weekend costs a week.
+    }, { catchUpWithinMin: 26 * 60 });
 
     // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET), LLM (opt-in)
     scheduleSpending('0 9 * * 1,4', 'phase8-weekly-pulse', async () => {
@@ -1519,7 +1652,9 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         await workflowOrchestrator.runWeeklyPulse();
         console.log('[markets-schedule] Phase 8 complete');
       } catch (err) { console.error('[markets-schedule] Phase 8 error:', err); }
-    });
+    // Same reasoning as Phase 4: the pulse mints predictions, so a rescued slot
+    // must not duplicate a pulse that already ran by another route today.
+    }, { alreadyDone: () => workflowRanToday('wf_markets_weekly_pulse') });
 
     // Auto-verification of expired predictions. Stays registered always:
     // directional/price-target grading is free (pure price comparison). LLM
@@ -1646,7 +1781,10 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
       } catch { /* silent */ }
-    });
+      // 90 minutes: slots are two hours apart, so a missed refresh is worth
+      // rescuing only until the next one supersedes it. Fetching the 14:00
+      // prices at 20:00 buys nothing and spends an API call.
+    }, { catchUpWithinMin: 90 });
 
     // ── Free (no-LLM, no-fetch) repair sweeps M1-M3/M5-M7 ────────────────
     // Extracted into named functions (2026-07-17) so the same idempotent bodies
@@ -1958,6 +2096,64 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     }
     setInterval(() => { void selfHealTick(); }, SELF_HEAL_MS).unref();
 
+    // ── Slot catch-up tick ────────────────────────────────────────────────
+    // The counterpart to the self-heal tick, for the phases that cannot be
+    // made work-driven because they cost money: ask every five minutes whether
+    // any phase's most recent due slot came and went without a run, and if so
+    // run it. Deliberately on setInterval — the whole point is that this must
+    // survive whatever stopped node-cron on 2026-09-02, and setInterval kept
+    // ticking through the entire six-hour window in which cron fired nothing.
+    //
+    // ONE phase per tick, oldest slot first. A machine that wakes to several
+    // overdue phases would otherwise start them together, and the SDK engine
+    // caps concurrency at 2 and throws over the cap — so a stampede would not
+    // just be expensive, it would fail. Five minutes apart is slow enough to
+    // be safe and fast enough that a full backlog clears within the half hour.
+    //
+    // Each phase's own window (catchUpWithinMin) decides what is still worth
+    // doing: re-fetching prices from six hours ago is waste, re-running the
+    // morning intelligence pass at lunchtime is the whole point.
+    const CATCH_UP_TICK_MS = 5 * 60_000;
+    let catchUpBusy = false;
+    async function slotCatchUpTick(): Promise<void> {
+      if (catchUpBusy) return;
+      catchUpBusy = true;
+      try {
+        const now = new Date();
+        const isSlotClaimed = async (phase: string, slot: Date): Promise<boolean> => {
+          const row = await db.get<{ n: number | string }>(
+            'SELECT COUNT(*) AS n FROM market_schedule_runs WHERE phase = ? AND slot_at = ?',
+            phase, slot.toISOString(),
+          );
+          return Number(row?.n ?? 0) > 0; // ran, or is running
+        };
+        const { chosen, skippedAlreadyDone, alsoOverdue } =
+          await selectCatchUpPhase(catchUpPhases, now, MARKET_TZ.timezone, isSlotClaimed);
+
+        for (const skipped of skippedAlreadyDone) {
+          console.log(
+            `[markets-catchup] ${skipped.phase} slot ${skipped.slot.toISOString()} was missed, but its work already ran today — skipping rather than duplicating it`,
+          );
+        }
+        if (!chosen) return;
+
+        const lateMin = Math.round((now.getTime() - chosen.slot.getTime()) / 60_000);
+        console.log(
+          `[markets-catchup] ${chosen.entry.phase} slot ${chosen.slot.toISOString()} never ran (${lateMin} min late) — running it now` +
+          (alsoOverdue > 0 ? `; ${alsoOverdue} more overdue, one per tick` : ''),
+        );
+        // recordPhase re-checks the claim atomically, so a cron that fires the
+        // same slot in this window still wins or loses cleanly.
+        const ran = await recordPhase(chosen.entry.phase, chosen.entry.run, chosen.slot);
+        if (!ran) console.log(`[markets-catchup] ${chosen.entry.phase} slot was claimed elsewhere first — skipped`);
+      } catch (err) {
+        console.error('[markets-catchup] slot catch-up tick failed:', err instanceof Error ? err.message : err);
+      } finally {
+        catchUpBusy = false;
+      }
+    }
+    setInterval(() => { void slotCatchUpTick(); }, CATCH_UP_TICK_MS).unref();
+
     // Sleep catch-up for the SPENDING phases (2026-08-14): the workstation
     // also sleeps through 07:00 without rebooting, and node-cron never
     // replays missed jobs — the first night of re-enabled automation lost
@@ -1996,7 +2192,9 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
       } catch { /* silent */ }
-    });
+      // Four hours: news accumulates rather than expiring, so a late fetch
+      // still feeds the backlog the extraction phases drain.
+    }, { catchUpWithinMin: 4 * 60 });
 
     // Event trigger check 3x per day (not hourly)
     cron.schedule('0 9,16,22 * * 1-5', async () => {

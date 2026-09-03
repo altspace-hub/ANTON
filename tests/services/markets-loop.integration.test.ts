@@ -495,7 +495,7 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       //    happened.
       await expect(
         recordPhase('throwing-phase', async () => { throw new Error('boom from the phase'); }),
-      ).resolves.toBeUndefined();
+      ).resolves.toBe(true); // true = the work ran; only a lost slot claim is false
 
       // 3. A phase still running: started, never closed. Left in flight
       //    deliberately — this is the signature Monday's outage would have had.
@@ -543,8 +543,66 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
 
       let ran = false;
       const { recordPhase } = createSchedulePhaseRecorder(brokenDb);
-      await expect(recordPhase('resilient', async () => { ran = true; })).resolves.toBeUndefined();
+      await expect(recordPhase('resilient', async () => { ran = true; })).resolves.toBe(true);
       expect(ran).toBe(true);
+    });
+
+    /**
+     * 2026-09-03. node-cron stopped firing while the process stayed alive: in a
+     * six-hour window on 09-02 the host was demonstrably awake (Windows logged
+     * no standby session; the 20-minute setInterval heartbeat ticked 18
+     * consecutive times) and five separate cron jobs fired nothing at all,
+     * leaving no rows and no side effects. The repair adds a setInterval
+     * catch-up that runs any slot which came and went unclaimed.
+     *
+     * That makes two callers race for every slot, and for the LLM phases a
+     * double run means paying twice and writing two sets of predictions for one
+     * occurrence. These pin the claim that prevents it.
+     */
+    it('runs a scheduled slot exactly once even when two callers both think it is due', async () => {
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      const slot = new Date('2026-09-03T05:00:00.000Z'); // 07:00 Europe/Stockholm
+      let runs = 0;
+
+      // The cron callback gets there first.
+      const first = await recordPhase('slot-claim-phase', async () => { runs++; }, slot);
+      // The catch-up tick, having decided the same slot was missed, tries too.
+      const second = await recordPhase('slot-claim-phase', async () => { runs++; }, slot);
+
+      expect(first).toBe(true);
+      expect(second).toBe(false); // lost the claim, so it did NOT do the work
+      expect(runs).toBe(1);
+
+      const rows = await db.all<{ n: string }>(
+        `SELECT COUNT(*) AS n FROM market_schedule_runs WHERE phase = 'slot-claim-phase'`,
+      );
+      expect(Number(rows[0].n)).toBe(1);
+    });
+
+    it('treats a different slot of the same phase as separate work', async () => {
+      // The guard must key on the occurrence, not the phase name — otherwise a
+      // phase would run once and never again.
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      let runs = 0;
+      await recordPhase('two-slot-phase', async () => { runs++; }, new Date('2026-09-03T05:00:00.000Z'));
+      await recordPhase('two-slot-phase', async () => { runs++; }, new Date('2026-09-04T05:00:00.000Z'));
+      expect(runs).toBe(2);
+    });
+
+    it('still runs the work when no slot is supplied, and does not block on NULLs', async () => {
+      // Pre-263 callers pass no slot. NULLs are distinct in a Postgres unique
+      // index, so repeated slotless runs must not collide with each other —
+      // if they did, the recorder's fail-open contract would be broken for
+      // every caller that has not been migrated.
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      let runs = 0;
+      await recordPhase('slotless-phase', async () => { runs++; });
+      await recordPhase('slotless-phase', async () => { runs++; });
+      expect(runs).toBe(2);
+      const rows = await db.all<{ n: string }>(
+        `SELECT COUNT(*) AS n FROM market_schedule_runs WHERE phase = 'slotless-phase' AND slot_at IS NULL`,
+      );
+      expect(Number(rows[0].n)).toBe(2);
     });
 
     /**
