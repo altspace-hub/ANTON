@@ -66,7 +66,7 @@ import { createWhyChainExecutor } from '../../server/services/market-why-chain-e
 import { createMarketWorkflowOrchestrator } from '../../server/services/market-workflow-orchestrator';
 import { createMarketIndexRebalanceService } from '../../server/services/market-index-rebalance-service';
 import { createConditionalAccuracyService } from '../../server/services/market-conditional-accuracy-service';
-import { createSchedulePhaseRecorder } from '../../server/services/market-schedule-recorder';
+import { createSchedulePhaseRecorder, MAX_SLOT_ATTEMPTS } from '../../server/services/market-schedule-recorder';
 import { createMarketAtomService } from '../../server/services/market-atom-service';
 import {
   provisionMarketsTestDb,
@@ -587,6 +587,99 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       await recordPhase('two-slot-phase', async () => { runs++; }, new Date('2026-09-03T05:00:00.000Z'));
       await recordPhase('two-slot-phase', async () => { runs++; }, new Date('2026-09-04T05:00:00.000Z'));
       expect(runs).toBe(2);
+    });
+
+    /**
+     * 2026-09-04, the sequel. The slot claim added the day before worked exactly
+     * as designed and made things worse in one specific way: phase4 fired on a
+     * wake at 19:06, found no network (the laptop was out at dinner; WLAN had
+     * dropped at 16:10 and did not return until 22:18:07), produced nothing, and
+     * CLAIMED the slot. Before the claim existed the slot was merely lost; after
+     * it, the slot was lost AND marked done, so the catch-up would never come
+     * back for it — even though the network returned four seconds after the run
+     * gave up, well inside the phase's six-hour window.
+     *
+     * A slot is now owed until it is done, not until it is attempted.
+     */
+    it('retries a slot whose attempt failed', async () => {
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      const slot = new Date('2026-09-04T16:00:00.000Z'); // 18:00 Europe/Stockholm
+      let runs = 0;
+
+      const first = await recordPhase('retryable-phase', async () => {
+        runs++;
+        throw new Error('no network');
+      }, slot);
+      const second = await recordPhase('retryable-phase', async () => { runs++; }, slot);
+
+      expect(first).toBe(true);
+      expect(second).toBe(true); // the failed attempt did not hold the slot
+      expect(runs).toBe(2);
+
+      // Still exactly one row: the unique index means a retry UPDATEs in place.
+      const rows = await db.all<{ status: string; metadata: { attempts?: number } }>(
+        `SELECT status, metadata FROM market_schedule_runs WHERE phase = 'retryable-phase'`,
+      );
+      expect(rows).toHaveLength(1);
+      expect(rows[0].status).toBe('completed');
+      expect(rows[0].metadata.attempts).toBe(2);
+    });
+
+    it('never retries a slot that completed', async () => {
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      const slot = new Date('2026-09-04T16:00:00.000Z');
+      let runs = 0;
+      await recordPhase('done-phase', async () => { runs++; }, slot);
+      const again = await recordPhase('done-phase', async () => { runs++; }, slot);
+      expect(again).toBe(false);
+      expect(runs).toBe(1);
+    });
+
+    it('stops retrying at the attempt cap rather than burning a cycle every tick', async () => {
+      // Retries are new spend. A permanently-broken phase must not re-run every
+      // five minutes for the whole of its catch-up window.
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      const slot = new Date('2026-09-04T16:00:00.000Z');
+      let runs = 0;
+      for (let i = 0; i < MAX_SLOT_ATTEMPTS; i++) {
+        await recordPhase('capped-phase', async () => {
+          runs++;
+          throw new Error('still broken');
+        }, slot);
+      }
+      expect(runs).toBe(MAX_SLOT_ATTEMPTS);
+
+      const overCap = await recordPhase('capped-phase', async () => { runs++; }, slot);
+      expect(overCap).toBe(false);
+      expect(runs).toBe(MAX_SLOT_ATTEMPTS);
+
+      const row = await db.get<{ status: string; metadata: { attempts?: number } }>(
+        `SELECT status, metadata FROM market_schedule_runs WHERE phase = 'capped-phase'`,
+      );
+      expect(row?.status).toBe('failed');
+      expect(row?.metadata.attempts).toBe(MAX_SLOT_ATTEMPTS);
+    });
+
+    it('does not retry a slot that is still running', async () => {
+      // A wall-clock "it has been running too long" rule would be unsafe on a
+      // machine that suspends: the 2026-09-04 cycle measured 3h11m of wall clock
+      // against about seven seconds of CPU, so any threshold short enough to
+      // catch a real orphan would double-run a merely sleeping one.
+      const { recordPhase } = createSchedulePhaseRecorder(db);
+      const slot = new Date('2026-09-04T16:00:00.000Z');
+      let release: (() => void) | undefined;
+      let runs = 0;
+      const inFlight = recordPhase('inflight-phase', () => new Promise<void>((resolve) => {
+        runs++;
+        release = resolve;
+      }), slot);
+
+      const concurrent = await recordPhase('inflight-phase', async () => { runs++; }, slot);
+      expect(concurrent).toBe(false);
+      expect(runs).toBe(1);
+
+      release?.();
+      await inFlight;
     });
 
     it('still runs the work when no slot is supplied, and does not block on NULLs', async () => {

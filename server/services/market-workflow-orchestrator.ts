@@ -16,6 +16,8 @@ import { createMarketInvestigationService } from './market-investigation-service
 import { createMarketWhyChainsService } from './market-why-chains-service.js';
 import { createMarketIntelligenceService } from './market-intelligence-service.js';
 import { createMarketThesisService } from './market-thesis-service.js';
+import { promptSlot, promptSlotObject } from './market-prompt-slot.js';
+import { dailyIntelligenceOutcome } from './market-run-outcome.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 import { createConditionalAccuracyService, confidenceBand } from './market-conditional-accuracy-service.js';
@@ -169,8 +171,17 @@ export async function createMarketWorkflowOrchestrator(
       await db.run(`
         UPDATE workflow_runs SET status = ?, completed_at = NOW(), error_message = ? WHERE id = ?
       `, status, error ?? null, runId);
-    } catch {
-      // non-fatal
+    } catch (err) {
+      // Bookkeeping must not take down the run, so this stays non-fatal — but
+      // it must not be SILENT. workflow_runs.status carries a CHECK constraint
+      // (pending/running/completed/failed/cancelled/awaiting_approval/rejected),
+      // and a value outside it is rejected here. Swallowed quietly, that turns a
+      // run into one stuck at 'running' forever, which reads as a hang and is
+      // strictly worse than the degradation it was trying to record.
+      console.error(
+        `[markets-workflow] could not set run ${runId} to '${status}':`,
+        err instanceof Error ? err.message : err,
+      );
     }
 
     // Workflow failure alerting
@@ -443,7 +454,7 @@ export async function createMarketWorkflowOrchestrator(
         const prompt = readPrompt('market-macro-brief');
         const signalSummary = stepResults.find(s => s.step === 'Signal Scanner')?.output;
         const llmResult = await withTimeout(
-          callLLM(prompt, `Signal scan results:\n${JSON.stringify(signalSummary).slice(0, 4000)}`, 'think_hard', true),
+          callLLM(prompt, `Signal scan results:\n${promptSlot(signalSummary, 4000, 'Signal Scanner')}`, 'think_hard', true),
           LLM_TIMEOUT, 'AI Macro Brief'
         );
         stepResults.push({ step: 'AI Macro Brief', status: 'success', output: { summary: llmResult.slice(0, 500) } });
@@ -472,14 +483,20 @@ export async function createMarketWorkflowOrchestrator(
         const indicatorOutput = stepResults.find(s => s.step === 'Compute Indicators')?.output;
         const correlationOutput = stepResults.find(s => s.step === 'Refresh Correlation Map')?.output;
 
-        const consulContext = JSON.stringify({
-          signals: signalScanOutput,
-          macroBrief: macroBriefOutput,
-          quantIndicators: indicatorOutput,
-          correlations: correlationOutput,
-          date: new Date().toISOString().slice(0, 10),
-          goalsAndValues: goalsContext || undefined,
-        }).slice(0, 6000);
+        // JSON.stringify DROPS a key whose value is undefined, so a failed
+        // producer step used to vanish from this blob entirely. On 2026-09-04,
+        // with Signal Scanner and AI Macro Brief both dead, all four consuls
+        // were handed `{"date":"2026-09-04"}` and nothing recorded that two of
+        // their three inputs were missing. Crash-safe, and therefore worse than
+        // a crash: each consul answered confidently from nothing.
+        const consulContext = promptSlotObject({
+          signals: { value: signalScanOutput, producer: 'Signal Scanner' },
+          macroBrief: { value: macroBriefOutput, producer: 'AI Macro Brief' },
+          quantIndicators: { value: indicatorOutput, producer: 'Compute Indicators' },
+          correlations: { value: correlationOutput, producer: 'Refresh Correlation Map' },
+          date: { value: new Date().toISOString().slice(0, 10), producer: 'clock' },
+          goalsAndValues: { value: goalsContext || undefined, producer: 'Goals & Values layer' },
+        }, 6000);
 
         const consulResults: Array<{ consul: string; status: string; summary?: string }> = [];
 
@@ -568,7 +585,7 @@ CONSUL ANALYSIS:
 ${consulSummaries.slice(0, 3000)}
 
 SIGNAL SUMMARY:
-${JSON.stringify(signalOutput).slice(0, 1500)}
+${promptSlot(signalOutput, 1500, 'Signal Scanner')}
 ${insights.promptContext}
 
 QUANTITATIVE INDICATORS:
@@ -865,6 +882,32 @@ Return ONLY the JSON array, no other text.`;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         stepResults.push({ step: 'Prediction Rebalance Check', status: 'error', error: errMsg });
+      }
+
+      // ── Did the run do the thing it exists to do? ──────────────────────
+      // Auto Thesis Generation is the only step that writes theses and
+      // predictions, so a run whose thesis step did not succeed produced
+      // nothing, whatever the other ten steps managed. Reporting that as
+      // 'completed' is what let 30 such runs pass unnoticed since March, and it
+      // defeats every downstream check twice over: the same-day dedup guard at
+      // the top of this function and the scheduler's alreadyDone gate both count
+      // 'completed' runs, so a barren run blocks the retry that would have
+      // salvaged the day.
+      //
+      // 'failed' is the existing vocabulary, deliberately — no new status value,
+      // so no CHECK migration, no third copy of the vocabulary to drift, and
+      // every reader that already handles 'failed' handles this correctly on the
+      // day it ships.
+      //
+      // A thesis step that SUCCEEDED while creating nothing stays 'completed':
+      // that is the model declining to call anything, which is a judgement
+      // rather than a fault, and re-running would only ask it the same question
+      // again. Only an actual step failure is retryable.
+      const outcome = dailyIntelligenceOutcome(stepResults);
+      if (outcome.status === 'failed') {
+        console.error(`[daily-intelligence] run ${runId} produced no theses or predictions — ${outcome.reason}`);
+        await updateRun(runId, 'failed', outcome.reason.slice(0, 500));
+        return { runId, status: 'failed', stepsCompleted, stepResults };
       }
 
       await updateRun(runId, 'completed');
@@ -1348,7 +1391,7 @@ Return ONLY the JSON array, no other text.`;
         const prompt = readPrompt('market-investigation');
         const accuracyOutput = stepResults.find(s => s.step === 'Prediction Accuracy Stats')?.output;
         const llmResult = await withTimeout(
-          callLLM(prompt, `Analyze prediction failures using 5-Whys methodology:\n${JSON.stringify(accuracyOutput).slice(0, 4000)}`, 'think_hard'),
+          callLLM(prompt, `Analyze prediction failures using 5-Whys methodology:\n${promptSlot(accuracyOutput, 4000, 'Prediction Accuracy Stats')}`, 'think_hard'),
           LLM_TIMEOUT, '5-Whys Analysis'
         );
         stepResults.push({ step: '5-Whys Analysis', status: 'success', output: { analysis: llmResult.slice(0, 500) } });

@@ -131,7 +131,7 @@ import { createMarketsRoutes } from './routes/markets.js';
 import { createMarketComputationRoutes } from './routes/market-computation.js';
 import { createMarketDataService } from './services/market-data-service.js';
 import { createMarketAtomService, planExtractionBatches } from './services/market-atom-service.js';
-import { createSchedulePhaseRecorder } from './services/market-schedule-recorder.js';
+import { createSchedulePhaseRecorder, retryableSlotSql } from './services/market-schedule-recorder.js';
 import { previousSlotFor, selectCatchUpPhase } from './services/market-schedule-slots.js';
 import { createMarketThesesRoutes } from './routes/market-theses.js';
 import { createMarketEntitiesRoutes } from './routes/market-entities.js';
@@ -1515,10 +1515,22 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         } else {
           const processed = await processBacklog(150);
           console.log(`[markets-schedule] Phase 4: processed ${processed} articles, running intelligence...`);
-          await workflowOrchestrator.runDailyIntelligence();
+          const result = await workflowOrchestrator.runDailyIntelligence();
+          if (result.status === 'failed') {
+            // The result used to be discarded here, so the recorder could only
+            // ever see success and the slot could never be retried. Rethrown so
+            // recordPhase marks the slot 'failed' and the catch-up tick can come
+            // back for it — which is the whole point: on 2026-09-04 the 18:00
+            // cycle died with no network at 22:18:03, the WiFi returned four
+            // seconds later, and nothing tried again.
+            throw new Error(`daily intelligence run ${result.runId} produced nothing`);
+          }
           console.log('[markets-schedule] Phase 4 complete');
         }
-      } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
+      } catch (err) {
+        console.error('[markets-schedule] Phase 4 error:', err);
+        throw err instanceof Error ? err : new Error(String(err));
+      }
     // The boot and resume catch-ups run daily intelligence on their own 24-hour
     // heartbeat, so by the time a missed 18:00 slot is noticed the day's cycle
     // may already have happened — as it had on 2026-09-03, at 12:21, while the
@@ -2121,11 +2133,17 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       try {
         const now = new Date();
         const isSlotClaimed = async (phase: string, slot: Date): Promise<boolean> => {
+          // Not "does a row exist" but "is a row holding this slot" — a failed
+          // attempt with retries left is still owed. The predicate is the
+          // recorder's, shared rather than restated, because the recorder makes
+          // the real decision atomically and a gate that disagreed with it would
+          // either churn on slots it cannot claim or silently skip slots it can.
           const row = await db.get<{ n: number | string }>(
-            'SELECT COUNT(*) AS n FROM market_schedule_runs WHERE phase = ? AND slot_at = ?',
+            `SELECT COUNT(*) AS n FROM market_schedule_runs
+              WHERE phase = ? AND slot_at = ? AND NOT (${retryableSlotSql()})`,
             phase, slot.toISOString(),
           );
-          return Number(row?.n ?? 0) > 0; // ran, or is running
+          return Number(row?.n ?? 0) > 0; // completed, running, or out of attempts
         };
         const { chosen, skippedAlreadyDone, alsoOverdue } =
           await selectCatchUpPhase(catchUpPhases, now, MARKET_TZ.timezone, isSlotClaimed);

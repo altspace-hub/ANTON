@@ -29,6 +29,44 @@ import type { DatabaseAdapter } from '../db/database.js';
 /** Longest error text kept; the column is unbounded but a stack dump is not useful. */
 const MAX_ERROR_CHARS = 2000;
 
+/**
+ * How many times one slot may be attempted before it is left alone.
+ *
+ * Retries are new spend that did not exist before: every retried slot is at
+ * least one more paid LLM cycle. Three is enough to ride out a transient
+ * failure (an expired credit balance being topped up, a network that comes back
+ * when the laptop gets home) without a permanently-broken phase burning a cycle
+ * every five minutes for the whole of its catch-up window.
+ */
+export const MAX_SLOT_ATTEMPTS = 3;
+
+/**
+ * SQL predicate identifying a slot that is still owed: it was attempted, the
+ * attempt failed, and it has attempts left.
+ *
+ * Exported so the recorder's claim and the catch-up's gate ask exactly the same
+ * question. If they drifted, the tick would either pick slots it cannot claim
+ * (noisy) or skip slots it could (a silent regression of the whole feature).
+ *
+ * `qualifier` exists because ON CONFLICT DO UPDATE must name the table to refer
+ * to the existing row, while a plain WHERE must not.
+ *
+ * Note what is NOT retryable: a row still 'running'. The tempting rule is to
+ * treat one as orphaned after some number of hours, and on this machine that is
+ * unsafe — it suspends constantly, and a suspended run's WALL clock bears no
+ * relation to its work. The 2026-09-04 cycle measured 3h11m wall against about
+ * seven seconds of CPU. A wall-clock threshold short enough to catch a real
+ * orphan would double-run a merely sleeping one, and double-running the LLM
+ * phases is exactly what the slot claim exists to prevent. Proving orphanhood
+ * needs a per-process runner token; until that exists, a row left 'running' by
+ * a killed process holds its slot until the window passes, which is no worse
+ * than the behaviour before slots existed at all.
+ */
+export function retryableSlotSql(qualifier?: string): string {
+  const q = qualifier ? `${qualifier}.` : '';
+  return `${q}status = 'failed' AND COALESCE((${q}metadata->>'attempts')::int, 1) < ${MAX_SLOT_ATTEMPTS}`;
+}
+
 export interface SchedulePhaseRecorder {
   /**
    * Run `fn` under the recorder. Resolves true when the work ran, false when it
@@ -63,9 +101,24 @@ export function createSchedulePhaseRecorder(db: DatabaseAdapter): SchedulePhaseR
     try {
       const row = slotAt
         ? await db.get<{ id: number }>(
-            `INSERT INTO market_schedule_runs (phase, status, slot_at)
-             VALUES (?, 'running', ?)
-             ON CONFLICT (phase, slot_at) DO NOTHING
+            // The claim and the retry are one statement. On conflict Postgres
+            // takes a row lock, so a second caller waits and then re-evaluates
+            // the WHERE against the committed row — two callers can never both
+            // win. DO UPDATE ... WHERE that matches nothing returns no row, which
+            // is the same "someone else holds this" answer DO NOTHING gave.
+            `INSERT INTO market_schedule_runs (phase, status, slot_at, metadata)
+             VALUES (?, 'running', ?, '{"attempts":1}'::jsonb)
+             ON CONFLICT (phase, slot_at) DO UPDATE
+                SET status = 'running',
+                    started_at = NOW(),
+                    completed_at = NULL,
+                    error = NULL,
+                    metadata = jsonb_set(
+                      COALESCE(market_schedule_runs.metadata, '{}'::jsonb),
+                      '{attempts}',
+                      to_jsonb(COALESCE((market_schedule_runs.metadata->>'attempts')::int, 1) + 1)
+                    )
+              WHERE ${retryableSlotSql('market_schedule_runs')}
              RETURNING id`,
             phase, slotAt.toISOString(),
           )
