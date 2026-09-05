@@ -746,9 +746,12 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
       // Across the first 28 validated predictions that reported an average
       // 0.101 where the truth was 0.253, turning a record fractionally WORSE
       // than a coin flip (0.25) into one that appeared to beat it 2.5x.
-      // gradedScore keeps its real jobs: deciding wasCorrect (a right
-      // direction with a weak move still counts) and the "Grade: 70%" line
-      // in the explanation. It must never re-enter this calculation.
+      // gradedScore's remaining job is reporting: the "Grade: 70%" line in the
+      // explanation. It no longer decides wasCorrect either — until 2026-09-05
+      // a right direction with a weak move "still counted", which is how one
+      // move came to score two opposite predictions correct. Partial credit is
+      // a description of a near miss, not a claim that the call was right, and
+      // it must never re-enter either the binary or this calculation.
       const predicted = pred.confidence;
       const actual = result.wasCorrect ? 1 : 0;
       const brierScore = (predicted - actual) ** 2;

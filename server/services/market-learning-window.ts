@@ -64,22 +64,20 @@ const log = childLogger('market-learning-window');
  * The date the grading path became trustworthy. Graded predictions validated
  * before this are excluded from every learning loop.
  *
- * Moved from 2026-08-14 to 2026-09-05 when the directional grader's
- * self-contradiction was fixed (see above). This is the module's own rule
- * applied to itself: it moves only when a new measurement defect is found and
- * fixed, and only forward.
+ * It briefly moved to 2026-09-05 when the directional grader's
+ * self-contradiction was found, and moved back the same day once migration 264
+ * restated the affected gradings under the corrected rule. That is the reason
+ * the cutoff can stay here: the grading-rule defect was repaired in the DATA,
+ * not merely quarantined, so the era it touched is trustworthy again.
  *
- * The cost is deliberate and worth stating plainly: it empties the trusted
- * sample, so every loop goes quiet until fresh gradings accumulate — about
- * three weeks, at the rate the previous window filled. That is the honest
- * position. The alternative is to keep learning from grades in which two
- * contradictory predictions about the same outcome were both marked correct,
- * and a correction derived from a broken instrument is worse than no
- * correction. The 211 historical gradings are NOT deleted, and because the
- * observed move is stored in `actual_outcome` they can be restated under the
- * new rule later if that is judged worth the cascade it sets off.
+ * 2026-08-14 remains the floor because the six defects listed above were NOT
+ * repaired retroactively and cannot be: a prediction graded against a stale
+ * price, or over a zero-length weekend window, has a wrong observed move
+ * recorded, and no amount of reclassifying that move recovers the right one.
+ * The grading rule could be restated from stored data; the measurements
+ * themselves cannot.
  */
-export const DEFAULT_TRUSTED_SINCE = '2026-09-05';
+export const DEFAULT_TRUSTED_SINCE = '2026-08-14';
 
 let warnedInvalid = false;
 
