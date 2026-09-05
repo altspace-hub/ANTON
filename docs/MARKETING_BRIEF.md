@@ -16,7 +16,6 @@ This document is the canonical brief for a marketing deck / landing page coverin
 | Asset | Path | Format | Notes |
 |---|---|---|---|
 | **ANTON mark** | `public/anton-logo.svg` | SVG, 32×32 | Rounded-square (8px radius), `#0D7D6C` fill, white "A" in Inter Bold 18pt. The primary brand mark. Locked across all themes. |
-| **AdviSense mark** | `public/advisense-logo.svg` | SVG | Sister brand for advisory engagements. |
 | **FutureChain mark** | `design_handoff_companion_app/from_claude_design/uploads/fc logo.png` | PNG | Coloured FC mark. |
 | **FutureChain mark, white** | `design_handoff_companion_app/from_claude_design/uploads/fc logo white.png` | PNG | For dark surfaces. |
 | **FTC globe** | `design_handoff_companion_app/from_claude_design/uploads/ftc logo globe.png` | PNG | The globe / network glyph that pairs with the FC mark. |
@@ -595,7 +594,7 @@ These aren't blocking, but they sharpen the page:
 
 1. **Single product or product family?** Recommendation: present as one company with two products (ANTON workspace + FutureChain rail) and four apps (Companion / Business / Pay / Comm). Marketing site has tabs for each.
 2. **Sell to firms or sell to professionals?** Recommendation: lead with the individual professional, mention firm pricing in the footer / contact path.
-3. **Where does AdviSense fit?** AdviSense is our consulting brand (the people who use ANTON to deliver client work). On the marketing site it should appear as "ANTON is built and operated by AdviSense" in the about footer.
+3. **Corporate identity — SETTLED 2026-09-05.** There is one company and two things it makes: **FutureChain**, the settlement chain, and **ANTON**, the AI workspace and its apps. No second brand appears anywhere — not in a footer, not as a sister mark, not as "built and operated by". The entity of record is FutureChain AB (Sweden, LEI 6367009JTS73D5NH6087), which is what the live site's footer already carries.
 4. **Open source or closed source?** Currently closed-source-but-transparent. The architecture is public via CLAUDE.md. We are not yet ready to claim "open source" as a marketing axis.
 
 ---
