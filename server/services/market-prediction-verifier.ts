@@ -11,6 +11,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { gradeDirectional, type Direction } from './market-direction-grading.js';
 import {
   parseDailyMoveClaim,
   parseCloseThresholdClaim,
@@ -32,6 +33,8 @@ interface ExpiredPrediction {
   created_at: string;
   thesis_id: string | null;
   verification_attempts?: number;
+  /** Drives the flat band, which scales with the horizon. Null → the default. */
+  time_horizon_days: number | null;
 }
 
 /**
@@ -93,7 +96,7 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
                COALESCE(deadline, created_at + (COALESCE(time_horizon_days, 30) || ' days')::interval),
                'YYYY-MM-DD'
              ) AS deadline,
-             created_at, thesis_id, verification_attempts
+             created_at, thesis_id, verification_attempts, time_horizon_days
       FROM market_predictions
       WHERE (
           status = 'active'
@@ -249,51 +252,20 @@ export async function createPredictionVerifier(db: DatabaseAdapter) {
     const endPrice = endBar.close;
 
     const pctChange = ((endPrice - startPrice) / startPrice) * 100;
-    const absPctChange = Math.abs(pctChange);
-    const flatThreshold = 1.5; // ±1.5% considered "flat" (was 3% — too aggressive)
 
-    let actualDirection: string;
-    if (pctChange > flatThreshold) actualDirection = 'up';
-    else if (pctChange < -flatThreshold) actualDirection = 'down';
-    else actualDirection = 'flat';
+    // One classification of what happened, and a prediction is correct when it
+    // named it. Until 2026-09-05 this was graded two different ways: 'flat' had
+    // to land inside the band, while 'up'/'down' needed only the right sign —
+    // so a +0.2% move scored an 'up' call AND a 'flat' call correct, which
+    // cannot both be true. See market-direction-grading.ts for the measurement
+    // that fell out of it, and for why the band now scales with the horizon.
+    const { actualDirection, wasCorrect, gradedScore, bandPct } = gradeDirectional(
+      pred.predicted_direction as Direction,
+      pctChange,
+      pred.time_horizon_days,
+    );
 
-    // Grading curve: directional predictions get partial/full credit
-    // instead of binary correct/wrong
-    let wasCorrect: boolean;
-    let gradedScore: number; // 0.0 to 1.0
-
-    if (pred.predicted_direction === 'flat') {
-      // Flat prediction: correct if within threshold
-      wasCorrect = actualDirection === 'flat';
-      gradedScore = wasCorrect ? 1.0 : (absPctChange < 3 ? 0.5 : 0.0);
-    } else {
-      // Directional prediction (up/down)
-      const directionCorrect = (pred.predicted_direction === 'up' && pctChange > 0)
-                            || (pred.predicted_direction === 'down' && pctChange < 0);
-      const strongMove = absPctChange > flatThreshold;
-
-      if (directionCorrect && strongMove) {
-        // Clear correct direction + beyond threshold
-        wasCorrect = true;
-        gradedScore = 1.0;
-      } else if (directionCorrect && !strongMove) {
-        // Correct direction but small move (within flat zone)
-        // Partial credit — direction was right, magnitude was weak
-        wasCorrect = true;
-        gradedScore = 0.7;
-      } else if (!directionCorrect && absPctChange <= flatThreshold) {
-        // Wrong direction but move was negligible (essentially flat)
-        // Slight penalty — call was wrong but barely
-        wasCorrect = false;
-        gradedScore = 0.3;
-      } else {
-        // Wrong direction with clear move
-        wasCorrect = false;
-        gradedScore = 0.0;
-      }
-    }
-
-    const explanation = `${pred.target_symbol}: ${startPrice.toFixed(2)} → ${endPrice.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%) over ${startBar.priceDate}→${endBar.priceDate}. Predicted: ${pred.predicted_direction}, Actual: ${actualDirection}. Grade: ${(gradedScore * 100).toFixed(0)}%`;
+    const explanation = `${pred.target_symbol}: ${startPrice.toFixed(2)} → ${endPrice.toFixed(2)} (${pctChange >= 0 ? '+' : ''}${pctChange.toFixed(1)}%) over ${startBar.priceDate}→${endBar.priceDate}. Predicted: ${pred.predicted_direction}, Actual: ${actualDirection} (±${bandPct.toFixed(2)}% band over ${pred.time_horizon_days ?? 'default'}d). Grade: ${(gradedScore * 100).toFixed(0)}%`;
 
     return {
       predictionId: pred.id,

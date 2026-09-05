@@ -353,11 +353,15 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       const verifier = await createPredictionVerifier(db);
       const created = daysAgoIso(6);
 
-      // b1 — predicted UP, actual +0.8%: inside the ±1.5% flat band, so
-      // wasCorrect stays true on direction but gradedScore is 0.7.
-      // Brier must be (0.8 - 1)^2 = 0.04, NOT (0.8 - 0.7)^2 = 0.01.
+      // b1 — predicted UP, actual +0.8% over a 14-day horizon: inside the
+      // ±1.5% band, so the market did NOT go up in the sense the system
+      // measures. wasCorrect is false and gradedScore is 0.7 — the partial
+      // credit lives in the score, never in the binary.
+      // Brier must be (0.8 - 0)^2 = 0.64, NOT (0.8 - 0.7)^2 = 0.01.
+      // (Before 2026-09-05 this row scored wasCorrect = true, which is the
+      // contradiction that fix: a +0.8% move made 'up' AND 'flat' correct.)
       await seedPrediction(db, {
-        id: 'b1', symbol: 'TSTP', direction: 'up', confidence: 0.8,
+        id: 'b1', symbol: 'TSTP', direction: 'up', confidence: 0.8, horizonDays: 14,
         deadline: daysAgoIso(1), createdAt: created,
       });
       await seedPrice(db, 'TSTP', utcDateStr(created), 100);
@@ -367,13 +371,27 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       // move, so gradedScore is 0.3. Brier must be (0.6 - 0)^2 = 0.36,
       // NOT (0.6 - 0.3)^2 = 0.09.
       await seedPrediction(db, {
-        id: 'b2', symbol: 'TSTQ', direction: 'up', confidence: 0.6,
+        id: 'b2', symbol: 'TSTQ', direction: 'up', confidence: 0.6, horizonDays: 14,
         deadline: daysAgoIso(1), createdAt: created,
       });
       await seedPrice(db, 'TSTQ', utcDateStr(created), 100);
       await seedPrice(db, 'TSTQ', utcDateStr(daysAgoIso(1)), 99.1);
 
+      // b3 — predicted UP, actual +3.0%: clears the band, so this is the clean
+      // hit. Keeps the outcome = 1 branch covered now that b1 is a miss.
+      // Brier must be (0.7 - 1)^2 = 0.09.
+      await seedPrediction(db, {
+        id: 'b3', symbol: 'TSTR', direction: 'up', confidence: 0.7, horizonDays: 14,
+        deadline: daysAgoIso(1), createdAt: created,
+      });
+      await seedPrice(db, 'TSTR', utcDateStr(created), 100);
+      await seedPrice(db, 'TSTR', utcDateStr(daysAgoIso(1)), 103);
+
       await verifier.runAutoVerification({ allowLLM: false });
+
+      const b3 = await db.get<{ was_correct: number; brier_score: string }>(
+        `SELECT was_correct, brier_score FROM market_predictions WHERE id = 'b3'`,
+      );
 
       const b1 = await db.get<{ was_correct: number; brier_score: string; actual_outcome: string }>(
         `SELECT was_correct, brier_score, actual_outcome FROM market_predictions WHERE id = 'b1'`,
@@ -385,11 +403,13 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       // Guard the guard: if these ever stop landing on partial credit the
       // assertions below pass vacuously against the old code too.
       expect(b1?.actual_outcome).toContain('0.8%');
-      expect(b1?.was_correct).toBe(1);
+      expect(b1?.was_correct).toBe(0); // inside the band — not "up"
       expect(b2?.was_correct).toBe(0);
+      expect(b3?.was_correct).toBe(1); // cleared the band
 
-      expect(Number(b1?.brier_score)).toBeCloseTo(0.04, 6);
+      expect(Number(b1?.brier_score)).toBeCloseTo(0.64, 6);
       expect(Number(b2?.brier_score)).toBeCloseTo(0.36, 6);
+      expect(Number(b3?.brier_score)).toBeCloseTo(0.09, 6);
     }, 25_000);
 
     /**

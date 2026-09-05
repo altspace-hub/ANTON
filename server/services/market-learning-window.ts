@@ -18,6 +18,17 @@
  *   • 2d783cbf  NAV stamped a phantom flat session when prices hadn't landed
  *   • 1fd9d70f  NAV freshness guard was inert
  *
+ * And a seventh, found on 5 September, which is why the cutoff moved again:
+ *
+ *   • the directional grader contradicted itself. 'flat' predictions were
+ *     graded against a +/-1.5% band while 'up'/'down' were graded on the sign
+ *     alone, so a +0.2% move scored an 'up' call AND a 'flat' call correct.
+ *     `was_correct` did not describe the world; it described which bucket had
+ *     been guessed. Over the previous window, 45 of 80 graded up/down calls
+ *     resolved on moves the same code classified as flat, and 25 of them
+ *     scored correct — restating the window from 67.8% to 37.3% accuracy, and
+ *     Brier from 0.2238 to 0.2604.
+ *
  * A `was_correct` written before those fixes is not a measurement, it is the
  * output of a broken instrument — wrong in BOTH directions by an unknown
  * amount. The split is stark: 92 graded before the boundary at 28.3%
@@ -52,8 +63,23 @@ const log = childLogger('market-learning-window');
 /**
  * The date the grading path became trustworthy. Graded predictions validated
  * before this are excluded from every learning loop.
+ *
+ * Moved from 2026-08-14 to 2026-09-05 when the directional grader's
+ * self-contradiction was fixed (see above). This is the module's own rule
+ * applied to itself: it moves only when a new measurement defect is found and
+ * fixed, and only forward.
+ *
+ * The cost is deliberate and worth stating plainly: it empties the trusted
+ * sample, so every loop goes quiet until fresh gradings accumulate — about
+ * three weeks, at the rate the previous window filled. That is the honest
+ * position. The alternative is to keep learning from grades in which two
+ * contradictory predictions about the same outcome were both marked correct,
+ * and a correction derived from a broken instrument is worse than no
+ * correction. The 211 historical gradings are NOT deleted, and because the
+ * observed move is stored in `actual_outcome` they can be restated under the
+ * new rule later if that is judged worth the cascade it sets off.
  */
-export const DEFAULT_TRUSTED_SINCE = '2026-08-14';
+export const DEFAULT_TRUSTED_SINCE = '2026-09-05';
 
 let warnedInvalid = false;
 

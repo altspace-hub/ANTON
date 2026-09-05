@@ -134,7 +134,10 @@ describe('trusted measurement window', () => {
   it('defaults to the date the grading path was repaired', () => {
     delete process.env.MARKETS_TRUSTED_SINCE;
     expect(trustedSince()).toBe(DEFAULT_TRUSTED_SINCE);
-    expect(DEFAULT_TRUSTED_SINCE).toBe('2026-08-14');
+    // Moved 2026-09-05 when the directional grader's self-contradiction was
+    // fixed: 'flat' was graded against a band while 'up'/'down' were graded on
+    // the sign, so one move could score two opposite predictions correct.
+    expect(DEFAULT_TRUSTED_SINCE).toBe('2026-09-05');
   });
 
   it('accepts a valid override', () => {
