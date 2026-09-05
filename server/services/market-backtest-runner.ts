@@ -167,9 +167,9 @@ Return ONLY the JSON array.` }],
       const prompt = `Based on these market signals from the last week, generate 2-3 investment theses with testable predictions.\n\nSIGNALS:\n${atomContext.slice(0, 3000)}\n\nReturn JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]\nReturn ONLY the JSON array.`;
       try {
         const { callChat } = await import('./provider-router.js');
-        const { getRoutedUtilityModel } = await import('./utility-model.js');
+        const { getMarketsModel } = await import('./markets-model-store.js');
         const result = await callChat({
-          model: await getRoutedUtilityModel(db),
+          model: await getMarketsModel(db),
           system: 'You are an investment analyst generating testable predictions from market signals. Output only valid JSON.',
           messages: [{ role: 'user', content: prompt }], maxTokens: 2048,
         });

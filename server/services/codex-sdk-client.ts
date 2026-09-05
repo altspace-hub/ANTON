@@ -115,10 +115,23 @@ let codexFactoryImpl: CodexFactory | null = null;
 export function setCodexFactoryForTests(impl: CodexFactory | null): void {
   codexFactoryImpl = impl;
 }
+/**
+ * Imported ONCE at server boot, promise cached — a request-time first-import
+ * deadlocks the event loop under `tsx watch` with an open stdin (see the
+ * identical pattern + rationale in claude-sdk-client.ts).
+ */
+let codexModulePromise: Promise<CodexFactory> | null = null;
+function startCodexImport(): Promise<CodexFactory> {
+  codexModulePromise ??= import('@openai/codex-sdk')
+    .then((mod) => (options: Parameters<CodexFactory>[0]) => new mod.Codex(options) as unknown as CodexLike);
+  return codexModulePromise;
+}
+// Boot-time warmup. On failure, reset so the next run retries and surfaces the error.
+startCodexImport().catch(() => { codexModulePromise = null; });
+
 async function resolveCodexFactory(): Promise<CodexFactory> {
   if (codexFactoryImpl) return codexFactoryImpl;
-  const mod = await import('@openai/codex-sdk');
-  return (options) => new mod.Codex(options) as unknown as CodexLike;
+  return startCodexImport();
 }
 
 const SIGN_IN_HINT =
@@ -286,7 +299,10 @@ export async function streamToResponse(
 /** One-shot completion through the Codex engine (unified-llm-client sendRequest path). */
 export async function completeText(
   config: SdkStreamConfig,
-  opts?: { bypassEnabledCheck?: boolean },
+  // `background` is accepted for signature parity with the Claude engine so
+  // provider-router can pass one options object to either. Codex does not
+  // currently reserve a slot for interactive work.
+  opts?: { bypassEnabledCheck?: boolean; background?: boolean },
 ): Promise<SdkCompletionData> {
   let completion: SdkCompletionData | null = null;
   let errorMessage: string | null = null;

@@ -12,6 +12,13 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { MAX_VERIFICATION_ATTEMPTS } from './market-prediction-verifier.js';
 
+/**
+ * Prediction statuses the verifier can never pick up again. findExpired
+ * selects only 'active' and 'expired', so anything else past its deadline is
+ * closed for good and must not be counted as outstanding work.
+ */
+export const TERMINAL_STATUSES = ['expired_legacy', 'validated_legacy', 'archived', 'cancelled'] as const;
+
 export interface LoopHealth {
   loop: string;
   pending: number;
@@ -56,10 +63,17 @@ export async function checkMarketsLoopHealth(
   // pick them up again, so counting them as pending would hold this loop
   // "stale" forever through quiet windows. COALESCE guards pre-migration
   // NULL attempt counts (NULL >= MAX is NULL, which would wrongly exclude).
+  //
+  // TERMINAL_STATUSES are excluded for the same reason. findExpired selects
+  // only status 'active' or 'expired', so 'expired_legacy' (pre-restart) and
+  // 'archived' (deliberately retired) can never re-enter verification. They
+  // were 194 rows of permanent backlog here — enough to bury a genuinely
+  // stuck new prediction, which is the only thing this number should report.
   {
     const pending = num(await db.get(
       `SELECT COUNT(*)::int AS n FROM market_predictions
        WHERE status != 'validated' AND deadline IS NOT NULL AND deadline < NOW()
+         AND status NOT IN (${TERMINAL_STATUSES.map(s => `'${s}'`).join(', ')})
          AND NOT (status = 'expired' AND COALESCE(verification_attempts, 0) >= ${MAX_VERIFICATION_ATTEMPTS})`));
     const recent = num(await db.get(
       `SELECT COUNT(*)::int AS n FROM market_predictions

@@ -127,7 +127,64 @@ interface ContentBlock {
 // ── Concurrency cap ─────────────────────────────────────────
 
 const MAX_CONCURRENT_SDK_RUNS = 2;
+
+/**
+ * Slots a BACKGROUND run may occupy. One is always held back for interactive
+ * work.
+ *
+ * The subscription engine allows two concurrent runs. Markets backlog
+ * extraction is one LLM call per item and the queue runs to four figures, so a
+ * catch-up pass held both slots continuously for minutes at a time — and a user
+ * who pressed Run in a module got "Operation aborted" while the machine was
+ * demonstrably busy doing something they had not asked for. Background work
+ * yields the last slot rather than competing for it.
+ */
+const MAX_BACKGROUND_SDK_RUNS = MAX_CONCURRENT_SDK_RUNS - 1;
 let activeRuns = 0;
+
+/**
+ * Set once the process is going down, so an abort can be explained rather than
+ * guessed at.
+ *
+ * In development the server runs under `tsx watch`, which restarts on any file
+ * change under server/ — so the single most common cause of an in-flight run
+ * aborting is not a timeout or a saturated engine, it is somebody saving a
+ * file. Telling the user to retry or switch model when a colleague's editor
+ * killed their request wastes their time on the wrong hypothesis.
+ */
+let shuttingDown = false;
+export function markSdkEngineShuttingDown(): void { shuttingDown = true; }
+
+/**
+ * Turn an engine failure into something the reader can act on.
+ *
+ * Every failure used to be reported as "The Claude Code runtime must be
+ * installed and logged in on this machine" — including aborts, upstream 529s
+ * and a saturated engine. That sentence sent people to reinstall a runtime that
+ * was working perfectly, and hid the real cause, which was usually transient.
+ */
+function explainSdkFailure(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes('abort')) {
+    if (shuttingDown) {
+      return `SDK engine error: ${msg}. The server restarted while this run was in flight — in development that is usually a file save triggering the watcher, not a problem with the request. Nothing is wrong with the input: run it again.`;
+    }
+    return `SDK engine error: ${msg}. The run was cancelled — a server restart (a file change under server/ restarts the dev server), a timeout, or the engine saturated by background work. Retry, or pick an API model for this run.`;
+  }
+  if (m.includes('529') || m.includes('overloaded')) {
+    return `SDK engine error: ${msg}. Anthropic is overloaded — transient, retry shortly.`;
+  }
+  if (m.includes('rate limit') || m.includes('429')) {
+    return `SDK engine error: ${msg}. The subscription hit a rate limit — wait a moment or pick an API model.`;
+  }
+  if (m.includes('enoent') || m.includes('spawn')) {
+    return `SDK engine error: ${msg}. The Claude Code runtime could not be started — check it is installed and on PATH.`;
+  }
+  if (m.includes('login') || m.includes('auth') || m.includes('unauthor') || m.includes('credential')) {
+    return `SDK engine error: ${msg}. The Claude Code runtime is not signed in on this machine — run 'claude' once to log in.`;
+  }
+  return `SDK engine error: ${msg}.`;
+}
 
 // ── Prompt flattening ───────────────────────────────────────
 
@@ -184,10 +241,26 @@ let queryImpl: QueryFn | null = null;
 export function setSdkQueryImplForTests(impl: QueryFn | null): void {
   queryImpl = impl;
 }
+/**
+ * The SDK package is imported ONCE, at server boot, and the promise cached.
+ * A request-time first-import is forbidden here: under `tsx watch` with an
+ * open stdin — i.e. every interactive `pnpm run dev` — the first dynamic
+ * import of a not-yet-cached package after boot deadlocks the whole event
+ * loop (main thread parked in the module-loader wait; 2026-08-13 diagnosis).
+ * Boot-time imports are safe, so the ~0.3s / 1.2 MB cost moves to startup.
+ */
+let sdkModulePromise: Promise<QueryFn> | null = null;
+function startSdkImport(): Promise<QueryFn> {
+  sdkModulePromise ??= import('@anthropic-ai/claude-agent-sdk')
+    .then((mod) => mod.query as unknown as QueryFn);
+  return sdkModulePromise;
+}
+// Boot-time warmup. On failure, reset so the next run retries and surfaces the error.
+startSdkImport().catch(() => { sdkModulePromise = null; });
+
 async function resolveQuery(): Promise<QueryFn> {
   if (queryImpl) return queryImpl;
-  const mod = await import('@anthropic-ai/claude-agent-sdk');
-  return mod.query as unknown as QueryFn;
+  return startSdkImport();
 }
 
 export async function streamToResponse(
@@ -198,6 +271,10 @@ export async function streamToResponse(
     /** The Settings "Test" button probes the engine BEFORE the user enables
      *  it — that one caller may bypass the enabled gate. Route callers never set this. */
     bypassEnabledCheck?: boolean;
+    /** Scheduled/batch work. Yields the last slot so an interactive run always
+     *  has somewhere to go. Defaults to interactive: a caller must opt IN to
+     *  being deprioritised, so a new code path cannot accidentally starve a user. */
+    background?: boolean;
   },
 ): Promise<void> {
   if (!res.headersSent) {
@@ -219,8 +296,14 @@ export async function streamToResponse(
     res.end();
     return;
   }
-  if (activeRuns >= MAX_CONCURRENT_SDK_RUNS) {
-    sendEvent({ type: 'error', message: `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.` });
+  const slotCap = opts?.background ? MAX_BACKGROUND_SDK_RUNS : MAX_CONCURRENT_SDK_RUNS;
+  if (activeRuns >= slotCap) {
+    sendEvent({
+      type: 'error',
+      message: opts?.background
+        ? `SDK engine busy — background work is capped at ${MAX_BACKGROUND_SDK_RUNS} of ${MAX_CONCURRENT_SDK_RUNS} concurrent runs so interactive requests always keep a slot. It will retry on the next pass.`
+        : `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.`,
+    });
     res.write('data: [DONE]\n\n');
     res.end();
     return;
@@ -244,6 +327,7 @@ export async function streamToResponse(
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
 
   try {
+    console.log(`[sdk-engine] run → model=${underlying} thinking=${config.thinking}`);
     const query = await resolveQuery();
     sendEvent({ type: 'stream_start', messageId: randomUUID() });
 
@@ -292,6 +376,7 @@ export async function streamToResponse(
           sendEvent({ type: 'usage', ...usageData, thinkingTokens: 0 });
         } else {
           const detail = result.errors?.length ? ` — ${result.errors.join('; ')}` : '';
+          console.warn(`[sdk-engine] run failed (${result.subtype})${detail}`);
           sendEvent({
             type: 'error',
             message: `SDK engine run failed (${result.subtype})${detail}. If this mentions authentication, run \`claude\` once on this machine and log in.`,
@@ -301,6 +386,12 @@ export async function streamToResponse(
       // system/assistant envelope messages carry nothing this engine needs.
     }
 
+    if (currentText) {
+      // input_tokens alone is misleading here: most of the prompt lands in the
+      // cache fields (a 27k-char run logged "2 in" without them).
+      const cached = usageData.cacheReadTokens + usageData.cacheCreationTokens;
+      console.log(`[sdk-engine] run complete — ${usageData.inputTokens + cached} in (${cached} cached) / ${usageData.outputTokens} out tokens`);
+    }
     if (currentThinking) contentBlocks.push({ type: 'thinking', content: currentThinking });
     if (currentText) contentBlocks.push({ type: 'text', content: currentText });
     sendEvent({ type: 'stream_end', contentBlocks, sourceManifest: config.sourceManifest });
@@ -314,10 +405,8 @@ export async function streamToResponse(
     // Mirror claude-client's contract: failures surface as an SSE error event,
     // never a thrown exception after headers are out.
     const msg = err instanceof Error ? err.message : 'SDK engine failed to start';
-    sendEvent({
-      type: 'error',
-      message: `SDK engine error: ${msg}. The Claude Code runtime must be installed and logged in on this machine.`,
-    });
+    console.error(`[sdk-engine] error: ${msg}`);
+    sendEvent({ type: 'error', message: explainSdkFailure(msg) });
     res.write('data: [DONE]\n\n');
     res.end();
   } finally {
@@ -338,7 +427,7 @@ class CollectingSink implements StreamSink {
 /** One-shot completion through the SDK engine (unified-llm-client sendRequest path). */
 export async function completeText(
   config: SdkStreamConfig,
-  opts?: { bypassEnabledCheck?: boolean },
+  opts?: { bypassEnabledCheck?: boolean; background?: boolean },
 ): Promise<SdkCompletionData> {
   let completion: SdkCompletionData | null = null;
   let errorMessage: string | null = null;

@@ -204,8 +204,15 @@ export async function createMarketGraphService(db: DatabaseAdapter) {
     let relationshipsCreated = 0;
 
     for (const atom of atoms) {
+      // market_atoms.entities is JSONB (migration 056) — the pg driver hands
+      // back an already-parsed array. JSON.parse on it threw for EVERY atom
+      // and the catch-continue silently built an empty graph forever.
       let entities: Array<{ type: string; id: string; name?: string }>;
-      try { entities = JSON.parse(atom.entities); } catch { continue; }
+      if (typeof atom.entities === 'string') {
+        try { entities = JSON.parse(atom.entities); } catch { continue; }
+      } else {
+        entities = atom.entities as unknown as Array<{ type: string; id: string; name?: string }>;
+      }
       if (!Array.isArray(entities) || entities.length === 0) continue;
 
       // Ensure all entities exist

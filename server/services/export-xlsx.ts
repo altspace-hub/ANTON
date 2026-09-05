@@ -181,6 +181,11 @@ function resolveXlsxStyle(brand?: BrandConfig | null) {
 const RAG_GREEN = { bgColor: '1A4731', fgColor: '27AE60' };
 const RAG_AMBER = { bgColor: '4A3900', fgColor: 'F5A623' };
 const RAG_ORANGE = { bgColor: '4A2700', fgColor: 'E67E22' };
+// Four-band scales (the Gap Assessor scores red / amber / yellow / green) need a
+// tone between amber and green. Without it 'yellow' matched nothing and those
+// rows rendered as plain alternating fill — on the AMLR run that was a fifth of
+// all findings silently uncoloured while red and amber stood out.
+const RAG_YELLOW = { bgColor: '4A4200', fgColor: 'D4C122' };
 const RAG_RED   = { bgColor: '4A1010', fgColor: 'E74C3C' };
 
 type RagColor = { bgColor: string; fgColor: string };
@@ -189,7 +194,7 @@ type RagColor = { bgColor: string; fgColor: string };
 const RAG_ABSOLUTE: Record<string, RagColor> = {
   '🟢': RAG_GREEN, '🟡': RAG_AMBER, '🟠': RAG_ORANGE, '🔴': RAG_RED,
   '✅': RAG_GREEN, '❌': RAG_RED,
-  green: RAG_GREEN, amber: RAG_AMBER, red: RAG_RED,
+  green: RAG_GREEN, amber: RAG_AMBER, yellow: RAG_YELLOW, red: RAG_RED,
   // Compliance
   compliant: RAG_GREEN,
   'non-compliant': RAG_RED,
@@ -466,7 +471,14 @@ function styleDataRow(
   numeric: Array<{ value: number; numFmt: string } | null> = [],
 ) {
   const isAlt = rowIndex % 2 === 0;
-  row.height = 20;
+  // Cells already carry wrapText, but a fixed height clips every wrapped line
+  // after the first — so a column holding a requirement or a recommendation
+  // showed one truncated line and looked broken. Leave the height unset when a
+  // cell is long enough to wrap and let Excel auto-fit it; keep the compact
+  // 20px for ordinary short rows so dense tables stay dense.
+  const hasLongCell = row.values instanceof Array
+    && (row.values as unknown[]).some((v) => typeof v === 'string' && v.length > 60);
+  if (!hasLongCell) row.height = 20;
   for (let col = 1; col <= colCount; col++) {
     const cell = row.getCell(col);
     const num = numeric[col - 1];

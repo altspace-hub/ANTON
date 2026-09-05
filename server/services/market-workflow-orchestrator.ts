@@ -16,14 +16,18 @@ import { createMarketInvestigationService } from './market-investigation-service
 import { createMarketWhyChainsService } from './market-why-chains-service.js';
 import { createMarketIntelligenceService } from './market-intelligence-service.js';
 import { createMarketThesisService } from './market-thesis-service.js';
+import { promptSlot, promptSlotObject } from './market-prompt-slot.js';
+import { dailyIntelligenceOutcome } from './market-run-outcome.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
-import { createConditionalAccuracyService } from './market-conditional-accuracy-service.js';
+import { createConditionalAccuracyService, confidenceBand } from './market-conditional-accuracy-service.js';
 import { createMarketPatternService } from './market-pattern-service.js';
 import type { TemporalReasoningService } from './temporal-reasoning.js';
 import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { createWhyChainInsightsAggregator } from './market-why-chain-insights.js';
+import { trustedSince } from './market-learning-window.js';
+import { clampWeight, WEIGHT_FLOOR, WEIGHT_CEILING } from './market-pattern-weight-feedback-service.js';
 
 // ── Step Timeout ────────────────────────────────────────────────────────────────
 
@@ -37,7 +41,10 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, stepName: string)
 }
 
 const COMPUTATION_TIMEOUT = 60_000;  // 60s for computation steps
-const LLM_TIMEOUT = 120_000;        // 120s for LLM/AI steps
+// 300s for LLM/AI steps — generous enough for the sdk:/codex: subscription
+// engines, whose runtime spawn adds seconds before the first token and whose
+// reasoning models think longer than the old 120s allowed.
+const LLM_TIMEOUT = 300_000;
 const FETCH_TIMEOUT = 120_000;      // 120s for data fetching (17 sources)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -121,11 +128,12 @@ export async function createMarketWorkflowOrchestrator(
       }
       return text;
     }
-    // Fall back to existing callChat (provider-agnostic; honor the configured provider)
+    // Fall back to existing callChat (provider-agnostic; honor the configured
+    // markets model — Settings → "Markets AI model", else the utility model)
     const { callChat } = await import('./provider-router.js');
-    const { getRoutedUtilityModel } = await import('./utility-model.js');
+    const { getMarketsModel } = await import('./markets-model-store.js');
     const result = await callChat({
-      model: await getRoutedUtilityModel(db),
+      model: await getMarketsModel(db),
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,
@@ -134,15 +142,27 @@ export async function createMarketWorkflowOrchestrator(
     return result.text;
   }
 
-  // Helper: record workflow run
+  // Helper: record workflow run. UPSERT on id: callers record the same run
+  // twice (start = 'running', end = 'completed'/'failed') — a plain INSERT
+  // collided on the PK for the second write and was swallowed, leaving e.g.
+  // every weekly-pulse row stuck 'running' forever in the workflows UI.
   async function recordRun(runId: string, workflowId: string, status: string, error?: string): Promise<void> {
     try {
+      // completed_at is a TEXT column (SQLite heritage) — NOW() must be cast
+      // or the CASE branches mismatch and the whole INSERT errors out.
       await db.run(`
         INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id, error_message)
         VALUES (?, ?, 'market-orchestrator', ?, 'system', ?)
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          error_message = EXCLUDED.error_message,
+          completed_at = CASE WHEN EXCLUDED.status IN ('completed', 'failed')
+                              THEN NOW()::text ELSE workflow_runs.completed_at END
       `, runId, workflowId, status, error ?? null);
-    } catch {
-      // workflow_runs table may not exist
+    } catch (err) {
+      // Non-fatal (the run itself must never die on bookkeeping), but LOUD:
+      // this catch silently ate a type-mismatch bug for a full day.
+      console.warn(`[orchestrator] recordRun failed for ${runId} (${status}): ${err instanceof Error ? err.message : err}`);
     }
   }
 
@@ -151,8 +171,17 @@ export async function createMarketWorkflowOrchestrator(
       await db.run(`
         UPDATE workflow_runs SET status = ?, completed_at = NOW(), error_message = ? WHERE id = ?
       `, status, error ?? null, runId);
-    } catch {
-      // non-fatal
+    } catch (err) {
+      // Bookkeeping must not take down the run, so this stays non-fatal — but
+      // it must not be SILENT. workflow_runs.status carries a CHECK constraint
+      // (pending/running/completed/failed/cancelled/awaiting_approval/rejected),
+      // and a value outside it is rejected here. Swallowed quietly, that turns a
+      // run into one stuck at 'running' forever, which reads as a hang and is
+      // strictly worse than the degradation it was trying to record.
+      console.error(
+        `[markets-workflow] could not set run ${runId} to '${status}':`,
+        err instanceof Error ? err.message : err,
+      );
     }
 
     // Workflow failure alerting
@@ -425,7 +454,7 @@ export async function createMarketWorkflowOrchestrator(
         const prompt = readPrompt('market-macro-brief');
         const signalSummary = stepResults.find(s => s.step === 'Signal Scanner')?.output;
         const llmResult = await withTimeout(
-          callLLM(prompt, `Signal scan results:\n${JSON.stringify(signalSummary).slice(0, 4000)}`, 'think_hard', true),
+          callLLM(prompt, `Signal scan results:\n${promptSlot(signalSummary, 4000, 'Signal Scanner')}`, 'think_hard', true),
           LLM_TIMEOUT, 'AI Macro Brief'
         );
         stepResults.push({ step: 'AI Macro Brief', status: 'success', output: { summary: llmResult.slice(0, 500) } });
@@ -454,14 +483,20 @@ export async function createMarketWorkflowOrchestrator(
         const indicatorOutput = stepResults.find(s => s.step === 'Compute Indicators')?.output;
         const correlationOutput = stepResults.find(s => s.step === 'Refresh Correlation Map')?.output;
 
-        const consulContext = JSON.stringify({
-          signals: signalScanOutput,
-          macroBrief: macroBriefOutput,
-          quantIndicators: indicatorOutput,
-          correlations: correlationOutput,
-          date: new Date().toISOString().slice(0, 10),
-          goalsAndValues: goalsContext || undefined,
-        }).slice(0, 6000);
+        // JSON.stringify DROPS a key whose value is undefined, so a failed
+        // producer step used to vanish from this blob entirely. On 2026-09-04,
+        // with Signal Scanner and AI Macro Brief both dead, all four consuls
+        // were handed `{"date":"2026-09-04"}` and nothing recorded that two of
+        // their three inputs were missing. Crash-safe, and therefore worse than
+        // a crash: each consul answered confidently from nothing.
+        const consulContext = promptSlotObject({
+          signals: { value: signalScanOutput, producer: 'Signal Scanner' },
+          macroBrief: { value: macroBriefOutput, producer: 'AI Macro Brief' },
+          quantIndicators: { value: indicatorOutput, producer: 'Compute Indicators' },
+          correlations: { value: correlationOutput, producer: 'Refresh Correlation Map' },
+          date: { value: new Date().toISOString().slice(0, 10), producer: 'clock' },
+          goalsAndValues: { value: goalsContext || undefined, producer: 'Goals & Values layer' },
+        }, 6000);
 
         const consulResults: Array<{ consul: string; status: string; summary?: string }> = [];
 
@@ -550,7 +585,7 @@ CONSUL ANALYSIS:
 ${consulSummaries.slice(0, 3000)}
 
 SIGNAL SUMMARY:
-${JSON.stringify(signalOutput).slice(0, 1500)}
+${promptSlot(signalOutput, 1500, 'Signal Scanner')}
 ${insights.promptContext}
 
 QUANTITATIVE INDICATORS:
@@ -580,19 +615,62 @@ Also for each thesis, include a "predictions" array with 1-2 testable prediction
 - target_symbol (string, optional): ticker if applicable
 - predicted_outcome (string): the expected outcome
 - predicted_direction (string, optional): "up" | "down" | "flat"
-- confidence (number 0-1): prediction confidence
+- confidence (number 0-1): P(this call is correct). A claim about the WORLD.
+- evidence_quality (number 0-1): how much informative evidence you actually
+  found. A claim about your INPUTS, not about the market. These are separate
+  axes and must not be collapsed:
+    * 0.9 confidence 0.2 evidence_quality — a strong hunch with nothing behind
+      it. Say this when you have it; do not launder it into a middling
+      confidence.
+    * 0.55 confidence 0.9 evidence_quality — solid, specific evidence that
+      genuinely points to a near-coinflip. This is a GOOD prediction.
+    * 0.55 confidence 0.15 evidence_quality — you found nothing usable. This
+      is an abstention, and reporting it as one is more valuable than a
+      manufactured view. Do not pad the confidence to look decisive.
+  Report low evidence_quality freely. It is filtered on, not penalised, and a
+  confidence number with no evidence behind it is the specific failure this
+  field exists to catch.
+- evidence_basis (string): one sentence naming the concrete evidence this
+  rests on, so the score above can be audited. If evidence_quality is low, say
+  plainly what was missing.
 - time_horizon_days (number): days until testable
 - deadline (string): ISO date YYYY-MM-DD when this should be checked
 
-TIME HORIZON RULES (CRITICAL — we need fast learning feedback):
-- DEFAULT to 7-14 day horizons. We are in a learning phase and need rapid validation cycles.
-- For "macro" or "sector" theses: 7-14 days with specific price-level predictions
-- For "investment" (company-specific): 7-21 days, NOT 30-180 days
-- For "event" theses: deadline must match the event date
-- For "contrarian" theses: 14-30 days maximum
-- EVERY prediction MUST have time_horizon_days <= 21 unless tied to a specific future event
-- Include a specific price target or percentage move where possible (e.g., "SPY above 550 by date")
+TIME HORIZON RULES (CRITICAL — we grade every band, so spread deliberately):
+- Three bands: TACTICAL = 1-3 days (fast feedback, specific price level or % move),
+  SWING = 5-21 days (earnings windows, momentum, mean reversion),
+  POSITION = 30-180 days (structural theses: AI capex, rates path, energy transition).
+- Across the whole batch aim for at least 2 tactical, at least 3 swing, and 1-2 position predictions.
+- For "event" theses: the deadline must match the event date (use earnings dates from context when present).
+- Position predictions need concrete, checkable success criteria — not vibes.
 - Predictions must be testable with daily price data — vague directional calls are not useful
+
+PREDICTED_OUTCOME PHRASING (CRITICAL — anything else cannot be graded):
+Our grader settles claims from a price table. It understands the shapes below
+and nothing else. A quantified claim in any other phrasing is REJECTED at
+creation, so the thesis loses that prediction entirely. Use one of these:
+
+  1. Direction   "<SYM> moves up|down|flat within <N> days"
+  2. Close level "<SYM> prints at least one daily close >= <price>"
+                 (or "at or above" / "above" — one close crossing settles it)
+  3. Close band  "All <SYM> closes through <YYYY-MM-DD> are between <lo> and <hi>"
+  4. Cumulative  "<SYM> cumulative return is less than +<N>%"
+                 (also "greater than", and negative thresholds)
+  5. Spread      "<A> minus <B> cumulative return < +<N> percentage points"
+  6. Daily move  "<SYM> posts a daily move exceeding <N>%"
+
+Rules that follow from how the grader reads them:
+- Do NOT negate. "No daily close below 750" is refused; say "All X closes are
+  between 750 and <upper>" instead. Inverting a negation is where a grader
+  silently flips an answer, so it will not try.
+- Do NOT write arithmetic. "abs(SPY 08-25 close / 08-20 close - 1) < 2.5%" and
+  "|QQQ return - SPY return| < 1.5pp" are unreadable to it; use shape 4 or 5.
+- A price_target MUST also set predicted_value to the numeric level.
+- Purely qualitative event claims ("regulatory approval granted") are fine and
+  exempt — they carry no arithmetic and are judged on evidence instead. The
+  rejection is only for claims that reach for numbers the grader cannot follow.
+- Never state a level the price has ALREADY passed: a claim that is true when
+  written is not a forecast and is also rejected.
 - Today is ${new Date().toISOString().split('T')[0]}
 
 Return ONLY the JSON array, no other text.`;
@@ -610,13 +688,19 @@ Return ONLY the JSON array, no other text.`;
           predictions?: Array<{
             title: string; description: string; prediction_type?: string;
             target_symbol?: string; predicted_outcome: string; predicted_direction?: string;
+            predicted_value?: number;
             confidence?: number; time_horizon_days?: number; deadline?: string;
+            evidence_quality?: number; evidence_basis?: string;
             key_assumptions?: string[];
           }>;
         }>;
 
         const createdTheses: string[] = [];
         const createdPredictions: string[] = [];
+        // Counted so the drop rate is visible: a generator that keeps writing
+        // claims spot has already settled is a prompt problem, not a one-off.
+        let skippedUnfalsifiable = 0;
+        let skippedUngradeable = 0;
 
         for (const t of generatedTheses.slice(0, 4)) {
           const thesisId = await thesisService.createThesis({
@@ -644,6 +728,8 @@ Return ONLY the JSON array, no other text.`;
             // Step 9b: Cross-metric validation + confidence adjustment
             let effectiveConfidence = p.confidence ?? 0.5;
             let validationFlags: string[] = [];
+            let unfalsifiable = false;
+            let ungradeable = false;
             try {
               const { createCrossMetricValidator } = await import('./market-cross-metric-validator.js');
               const validator = await createCrossMetricValidator(db);
@@ -654,13 +740,38 @@ Return ONLY the JSON array, no other text.`;
                 title: p.title,
                 description: p.description ?? '',
                 predictionType: p.prediction_type,
+                predictedOutcome: p.predicted_outcome,
+                predictedValue: p.predicted_value ?? null,
               });
               effectiveConfidence = validation.adjustedConfidence;
               validationFlags = validation.flags;
+              unfalsifiable = !validation.falsifiable;
+              ungradeable = !validation.gradeable;
               if (validation.flags.length > 0) {
                 console.log(`[orchestrator] Prediction "${p.title}" validated: coherence=${validation.coherenceScore.toFixed(2)}, confidence ${(p.confidence ?? 0.5).toFixed(2)}→${effectiveConfidence.toFixed(2)}, flags: ${validation.flags.join('; ')}`);
               }
             } catch { /* non-fatal */ }
+
+            // A claim the spot price has already satisfied forecasts nothing,
+            // and once stored it is indistinguishable from a real call: it
+            // grades CORRECT, lifts the hit rate and improves the Brier score
+            // without the system having predicted anything. Drop it here —
+            // the only place it can still be told apart.
+            if (unfalsifiable) {
+              console.log(`[orchestrator] Prediction "${p.title}" DROPPED as unfalsifiable — ${validationFlags.find(f => f.startsWith('UNFALSIFIABLE:')) ?? 'already true at spot'}`);
+              skippedUnfalsifiable++;
+              continue;
+            }
+
+            // A claim nothing can settle never grades at all: it retries to
+            // the attempt cap and sits as permanent unverifiable weight. Six
+            // phrasings arrived in four days; the generator is told the
+            // shapes the grader speaks, and this refuses the rest.
+            if (ungradeable) {
+              console.log(`[orchestrator] Prediction "${p.title}" DROPPED as ungradeable — ${validationFlags.find(f => f.startsWith('UNGRADEABLE:')) ?? 'no parser and no structured route'}`);
+              skippedUngradeable++;
+              continue;
+            }
 
             const predId = await thesisService.createPrediction({
               thesisId,
@@ -671,6 +782,12 @@ Return ONLY the JSON array, no other text.`;
               predictedOutcome: p.predicted_outcome,
               predictedDirection: p.predicted_direction,
               confidence: effectiveConfidence,
+              // Passed through unmodified and NOT defaulted. A generator that
+              // omits the field genuinely did not report one, and storing NULL
+              // keeps "never reported" distinguishable from "reported as low" —
+              // which is the whole point of adding a second channel.
+              evidenceQuality: p.evidence_quality,
+              evidenceBasis: p.evidence_basis,
               timeHorizonDays: p.time_horizon_days ?? 14,
               deadline: p.deadline,
               keyAssumptions: [...(p.key_assumptions ?? []), ...(validationFlags.length ? [`[Validation: ${validationFlags.join('; ')}]`] : [])],
@@ -696,7 +813,12 @@ Return ONLY the JSON array, no other text.`;
         stepResults.push({
           step: 'Auto Thesis Generation',
           status: 'success',
-          output: { thesesCreated: createdTheses.length, predictionsCreated: createdPredictions.length },
+          output: {
+            thesesCreated: createdTheses.length,
+            predictionsCreated: createdPredictions.length,
+            predictionsSkippedUnfalsifiable: skippedUnfalsifiable,
+            predictionsSkippedUngradeable: skippedUngradeable,
+          },
         });
         stepsCompleted++;
       } catch (err) {
@@ -760,6 +882,32 @@ Return ONLY the JSON array, no other text.`;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         stepResults.push({ step: 'Prediction Rebalance Check', status: 'error', error: errMsg });
+      }
+
+      // ── Did the run do the thing it exists to do? ──────────────────────
+      // Auto Thesis Generation is the only step that writes theses and
+      // predictions, so a run whose thesis step did not succeed produced
+      // nothing, whatever the other ten steps managed. Reporting that as
+      // 'completed' is what let 30 such runs pass unnoticed since March, and it
+      // defeats every downstream check twice over: the same-day dedup guard at
+      // the top of this function and the scheduler's alreadyDone gate both count
+      // 'completed' runs, so a barren run blocks the retry that would have
+      // salvaged the day.
+      //
+      // 'failed' is the existing vocabulary, deliberately — no new status value,
+      // so no CHECK migration, no third copy of the vocabulary to drift, and
+      // every reader that already handles 'failed' handles this correctly on the
+      // day it ships.
+      //
+      // A thesis step that SUCCEEDED while creating nothing stays 'completed':
+      // that is the model declining to call anything, which is a judgement
+      // rather than a fault, and re-running would only ask it the same question
+      // again. Only an actual step failure is retryable.
+      const outcome = dailyIntelligenceOutcome(stepResults);
+      if (outcome.status === 'failed') {
+        console.error(`[daily-intelligence] run ${runId} produced no theses or predictions — ${outcome.reason}`);
+        await updateRun(runId, 'failed', outcome.reason.slice(0, 500));
+        return { runId, status: 'failed', stepsCompleted, stepResults };
       }
 
       await updateRun(runId, 'completed');
@@ -1013,6 +1161,142 @@ Return ONLY the JSON array, no other text.`;
 
   // ── Prediction Validation Workflow ────────────────────────────────────────
 
+  /**
+   * Create an investigation + why-chain for each validated prediction whose
+   * outcome contradicts its stated confidence.
+   *
+   * Extracted from runPredictionValidation Step 9 so the daily sweep and the
+   * weekly workflow share one implementation — the gate below is subtle enough
+   * that a second copy would drift. Pure DB work: both creators are idempotent
+   * on their trigger key, so re-running costs a lookup per validated
+   * prediction and never a duplicate.
+   */
+  async function dispatchAnomalyInvestigations(): Promise<{
+    dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }>;
+    /** Subset of `dispatched` that did not already exist. */
+    created: Array<{ predictionId: string; investigationId: string }>;
+  }> {
+    const validatedPredictions = await db.all<{
+      id: string; confidence: number; was_correct: number;
+      brier_score: number | null; prediction_type: string;
+    }>(
+      "SELECT id, confidence, was_correct, brier_score, prediction_type FROM market_predictions WHERE status = 'validated'"
+    );
+
+    const dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }> = [];
+    // createInvestigation is idempotent and returns the existing row, so the
+    // call alone cannot tell new work from a re-scan. Without this check the
+    // daily pass logs the same "dispatched=N" forever and reads as activity.
+    const created: Array<{ predictionId: string; investigationId: string }> = [];
+
+        for (const pred of validatedPredictions) {
+          const conf = Number(pred.confidence) || 0;
+          const brier = pred.brier_score == null ? null : Number(pred.brier_score);
+
+          // The original gates were absolute: conf > 0.7 wrong, or conf < 0.4
+          // right. The three-band pulse prompt caps confidence at 0.40-0.75 and
+          // steers tactical calls into the LOWER half, so live predictions sit
+          // around 0.52-0.60 — neither gate can ever fire, and auto-dispatch
+          // went silent without anything reporting a fault.
+          //
+          // Brier measures the same thing without depending on the generator's
+          // range: it is the squared gap between stated confidence and what
+          // actually happened. ANOMALY_BRIER is 0.25, the score a pure coin
+          // flip stated at 0.50 earns — worse than that means the confidence
+          // was actively misleading, which is precisely the "unexplained
+          // win/loss" this step exists to investigate. The absolute gates are
+          // kept so a future, more confident generator still triggers.
+          const ANOMALY_BRIER = 0.25;
+          const surprising = brier != null && brier >= ANOMALY_BRIER;
+          const highConfWrong = (conf > 0.7 || surprising) && pred.was_correct === 0;
+          const lowConfRight = (conf < 0.4 || surprising) && pred.was_correct === 1;
+
+          if (highConfWrong || lowConfRight) {
+            const anomalyType = highConfWrong ? 'unexpected_failure' : 'unexpected_success';
+            const brierNote = brier == null ? '' : `, brier=${brier.toFixed(2)}`;
+            const anomalyLabel = highConfWrong
+              ? `Prediction failed against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`
+              : `Prediction succeeded against its stated confidence (conf=${conf.toFixed(2)}${brierNote})`;
+
+            const preExisting = await db.get<{ id: string }>(
+              `SELECT id FROM market_investigation_tasks
+                WHERE trigger_type = ? AND trigger_reference = ? LIMIT 1`,
+              anomalyType, pred.id,
+            );
+
+            // Create investigation
+            const invId = await investigationService.createInvestigation({
+              triggerType: anomalyType,
+              triggerReference: pred.id,
+              title: `Auto-investigation: ${anomalyLabel}`,
+              question: highConfWrong
+                ? `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) fail despite high confidence?`
+                : `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) succeed despite low confidence?`,
+              assignedConsul: 'risk-assessor',
+            });
+
+            // Create why chain linked to prediction and investigation
+            const chainId = await whyChainsService.createChain({
+              title: `Why-chain: ${anomalyLabel}`,
+              investigationId: invId,
+              predictionId: pred.id,
+              direction: highConfWrong ? 'failure_analysis' : 'success_analysis',
+            });
+
+            dispatched.push({ predictionId: pred.id, type: anomalyType, investigationId: invId, whyChainId: chainId });
+            if (!preExisting) created.push({ predictionId: pred.id, investigationId: invId });
+          }
+        }
+    return { dispatched, created };
+  }
+
+  /**
+   * Daily investigate leg: dispatch anomalies, then work the why-chain queue.
+   *
+   * Previously both steps lived only inside runPredictionValidation, which runs
+   * Saturdays — so a missed Saturday cost a week, and the chain queue drained
+   * at 10/run/week. Splitting the cadence lets the free half run every day
+   * while the paid half stays opt-in.
+   *
+   * `allowLLM: false` still dispatches and still reaps stalled chains (both
+   * free), and simply leaves fresh chains pending for a run that may spend.
+   */
+  async function runInvestigationSweep(options?: { allowLLM?: boolean }): Promise<{
+    dispatched: number; matched: number; chainsExecuted: number; chainsReaped: number; llmSkipped: boolean;
+  }> {
+    const allowLLM = options?.allowLLM !== false;
+    let dispatched = 0;
+    let matched = 0;
+    try {
+      const d = await dispatchAnomalyInvestigations();
+      dispatched = d.created.length;   // NEW investigations only
+      matched = d.dispatched.length;   // anomalies seen, new or not
+    } catch (err) {
+      console.error('[investigation-sweep] dispatch failed:', err instanceof Error ? err.message : err);
+    }
+
+    let chainsExecuted = 0;
+    let chainsReaped = 0;
+    try {
+      const { createWhyChainExecutor } = await import('./market-why-chain-executor.js');
+      const executor = await createWhyChainExecutor(db);
+      if (allowLLM) {
+        const r = await executor.executeAllPending();
+        chainsExecuted = r.executed;
+        chainsReaped = r.reaped;
+      } else {
+        // Reaping reads levels already on disk — no model call, so it runs
+        // regardless of the spending tier.
+        const r = await executor.reapStalledChains();
+        chainsReaped = r.reaped;
+      }
+    } catch (err) {
+      console.error('[investigation-sweep] why-chain leg failed:', err instanceof Error ? err.message : err);
+    }
+
+    return { dispatched, matched, chainsExecuted, chainsReaped, llmSkipped: !allowLLM };
+  }
+
   async function runPredictionValidation(): Promise<WorkflowRunResult> {
     const runId = randomUUID();
     const stepResults: WorkflowRunResult['stepResults'] = [];
@@ -1059,8 +1343,15 @@ Return ONLY the JSON array, no other text.`;
       // Step 2: Prediction accuracy stats — query validated predictions from DB
       let validatedPredictions: Array<{ id: string; confidence: number; was_correct: number; brier_score: number | null; prediction_type: string }> = [];
       try {
+        // Trusted window only. These rows feed accuracy stats, the calibration
+        // curve AND the signal-weight optimizer below; grading defects repaired
+        // in mid-August make anything older an unreliable label in both
+        // directions. See market-learning-window.ts.
         validatedPredictions = await db.all<{ id: string; confidence: number; was_correct: number; brier_score: number | null; prediction_type: string }>(
-          "SELECT id, confidence, was_correct, brier_score, prediction_type FROM market_predictions WHERE status = 'validated'"
+          `SELECT id, confidence, was_correct, brier_score, prediction_type
+             FROM market_predictions
+            WHERE status = 'validated' AND validated_at >= ?`,
+          trustedSince()
         );
         const predictionsForStats = validatedPredictions.map(p => ({
           id: p.id, confidence: p.confidence, was_correct: p.was_correct === 1,
@@ -1100,7 +1391,7 @@ Return ONLY the JSON array, no other text.`;
         const prompt = readPrompt('market-investigation');
         const accuracyOutput = stepResults.find(s => s.step === 'Prediction Accuracy Stats')?.output;
         const llmResult = await withTimeout(
-          callLLM(prompt, `Analyze prediction failures using 5-Whys methodology:\n${JSON.stringify(accuracyOutput).slice(0, 4000)}`, 'think_hard'),
+          callLLM(prompt, `Analyze prediction failures using 5-Whys methodology:\n${promptSlot(accuracyOutput, 4000, 'Prediction Accuracy Stats')}`, 'think_hard'),
           LLM_TIMEOUT, '5-Whys Analysis'
         );
         stepResults.push({ step: '5-Whys Analysis', status: 'success', output: { analysis: llmResult.slice(0, 500) } });
@@ -1129,8 +1420,9 @@ Return ONLY the JSON array, no other text.`;
           JOIN market_thesis_atoms mta ON mta.thesis_id = mp.thesis_id
           JOIN market_atoms ma ON ma.id = mta.atom_id
           WHERE mp.status = 'validated' AND mp.was_correct IS NOT NULL
+            AND mp.validated_at >= ?
           LIMIT 2000
-        `);
+        `, trustedSince());
 
         // Group by atom_type → build signal outcomes
         const signalMap = new Map<string, Array<{ predicted: number; actual: number }>>();
@@ -1171,12 +1463,22 @@ Return ONLY the JSON array, no other text.`;
             const output = result.output as { optimized_weights?: Record<string, number> };
             if (output.optimized_weights) {
               for (const [signalType, newWeight] of Object.entries(output.optimized_weights)) {
+                // Clamp. This INSERT was previously unbounded, which is how
+                // price_target reached 0.000 — an absorbing state under the
+                // multiplicative updates every other writer uses — and
+                // directional 0.088, despite being the only claim type with a
+                // real sample and a real edge.
+                const weight = clampWeight(Number(newWeight));
+                if (weight === null) {
+                  console.warn(`[prediction-validation] skipped non-finite weight for ${signalType}`);
+                  continue;
+                }
                 await db.run(`
                   INSERT INTO market_signal_weights (signal_type, category, weight, last_calibrated_at, updated_at)
                   VALUES (?, 'general', ?, NOW(), NOW())
                   ON CONFLICT (signal_type, category) DO UPDATE SET
                     weight = EXCLUDED.weight, last_calibrated_at = NOW(), updated_at = NOW()
-                `, signalType, newWeight);
+                `, signalType, weight);
               }
             }
           } catch { /* non-fatal — weight persistence is best-effort */ }
@@ -1188,9 +1490,10 @@ Return ONLY the JSON array, no other text.`;
           const whyInsights = await insightsAgg.getInsights(30);
           for (const adj of whyInsights.signalAdjustments) {
             await db.run(`
-              UPDATE market_signal_weights SET weight = GREATEST(0.3, weight * ?)
-              WHERE signal_type = ? AND updated_at < NOW() - INTERVAL '1 day'
-            `, adj.reliabilityMultiplier, adj.signalType);
+              UPDATE market_signal_weights
+                 SET weight = LEAST(?, GREATEST(?, weight * ?))
+               WHERE signal_type = ? AND updated_at < NOW() - INTERVAL '1 day'
+            `, WEIGHT_CEILING, WEIGHT_FLOOR, adj.reliabilityMultiplier, adj.signalType);
           }
           if (whyInsights.signalAdjustments.length > 0) {
             console.log(`[prediction-validation] Applied ${whyInsights.signalAdjustments.length} why-chain signal adjustments`);
@@ -1328,42 +1631,7 @@ Return ONLY the JSON array, no other text.`;
 
       // Step 9: Auto-dispatch investigations for unexplained wins/losses
       try {
-        const dispatched: Array<{ predictionId: string; type: string; investigationId: string; whyChainId: string }> = [];
-
-        for (const pred of validatedPredictions) {
-          const conf = Number(pred.confidence) || 0;
-          const highConfWrong = conf > 0.7 && pred.was_correct === 0;
-          const lowConfRight = conf < 0.4 && pred.was_correct === 1;
-
-          if (highConfWrong || lowConfRight) {
-            const anomalyType = highConfWrong ? 'unexpected_failure' : 'unexpected_success';
-            const anomalyLabel = highConfWrong
-              ? `High-confidence prediction failed (conf=${conf.toFixed(2)})`
-              : `Low-confidence prediction succeeded (conf=${conf.toFixed(2)})`;
-
-            // Create investigation
-            const invId = await investigationService.createInvestigation({
-              triggerType: anomalyType,
-              triggerReference: pred.id,
-              title: `Auto-investigation: ${anomalyLabel}`,
-              question: highConfWrong
-                ? `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) fail despite high confidence?`
-                : `Why did prediction ${pred.id} (type=${pred.prediction_type}, confidence=${conf.toFixed(2)}) succeed despite low confidence?`,
-              assignedConsul: 'risk-assessor',
-            });
-
-            // Create why chain linked to prediction and investigation
-            const chainId = await whyChainsService.createChain({
-              title: `Why-chain: ${anomalyLabel}`,
-              investigationId: invId,
-              predictionId: pred.id,
-              direction: highConfWrong ? 'failure_analysis' : 'success_analysis',
-            });
-
-            dispatched.push({ predictionId: pred.id, type: anomalyType, investigationId: invId, whyChainId: chainId });
-          }
-        }
-
+        const { dispatched } = await dispatchAnomalyInvestigations();
         stepResults.push({
           step: 'Auto-Dispatch Investigations',
           status: 'success',
@@ -1464,8 +1732,15 @@ Return ONLY the JSON array, no other text.`;
       const insightsAggregator = await createWhyChainInsightsAggregator(db);
       const pulseInsights = await insightsAggregator.getInsights(30);
 
-      // Fetch latest quant indicators for pulse context
+      // Fetch latest quant indicators for pulse context.
+      //
+      // rsiSignal and volState are also recorded against every prediction this
+      // pulse creates. They are the market state the call was made in, and
+      // without them conditional accuracy has nothing to condition ON — which
+      // is why that table held two rows against 126 graded predictions.
       let quantContext = '';
+      let rsiSignal = 'unknown';
+      let volState = 'unknown';
       try {
         const spyPrices = await db.all<{ close: number }>(
           "SELECT close FROM market_historical_prices WHERE symbol = 'SPY' ORDER BY price_date DESC LIMIT 30"
@@ -1474,14 +1749,124 @@ Return ONLY the JSON array, no other text.`;
           const closes = spyPrices.map(p => Number(p.close)).reverse();
           const momResult = await computationService.runTemplate('momentum_indicators', { prices: closes }, 'weekly-pulse');
           if (momResult.success && momResult.output) {
-            const mo = momResult.output as Record<string, unknown>;
-            quantContext = `\nQUANTITATIVE INDICATORS (SPY):\n- RSI(14): ${(mo as { rsi?: number }).rsi?.toFixed(1) ?? 'N/A'}\n- MACD: ${JSON.stringify((mo as { macd?: unknown }).macd).slice(0, 200)}\n`;
+            // This line used to stringify a `macd` field and take a substring
+            // of the result. The template returns no such key — it returns
+            // rsi, rsi_signal,
+            // bollinger, rate_of_change and stochastic — so JSON.stringify gave
+            // back the VALUE undefined, and .slice() on it threw. The throw was
+            // swallowed by the outer "quant context is enrichment" catch, which
+            // means quantContext was empty on every pulse ever run: no pulse has
+            // actually seen an indicator, and nothing reported a fault.
+            //
+            // Fields are now read defensively from what the template really
+            // returns, and formatting cannot throw.
+            const mo = momResult.output as {
+              rsi?: number; rsi_signal?: string; rate_of_change?: number;
+              bollinger?: { pct_b?: number; width?: number };
+              stochastic?: { k?: number; d?: number; signal?: string };
+            };
+            if (mo.rsi_signal) rsiSignal = String(mo.rsi_signal);
+            const n = (v: unknown, d = 1) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : 'N/A');
+            const parts = [
+              `- RSI(14): ${n(mo.rsi)}${mo.rsi_signal ? ` (${mo.rsi_signal})` : ''}`,
+              `- Rate of change: ${n(mo.rate_of_change, 2)}%`,
+              `- Bollinger %B: ${n(mo.bollinger?.pct_b, 2)} (band width ${n(mo.bollinger?.width, 3)})`,
+              `- Stochastic: %K ${n(mo.stochastic?.k)} / %D ${n(mo.stochastic?.d)}${mo.stochastic?.signal ? ` (${mo.stochastic.signal})` : ''}`,
+            ];
+            quantContext = `\nQUANTITATIVE INDICATORS (SPY):\n${parts.join('\n')}\n`;
+          }
+
+          // GARCH(1,1) conditional volatility.
+          //
+          // Confidence was previously formed against momentum alone, which says
+          // where price has been but nothing about how wide the distribution
+          // around the next move is. A directional call at 0.60 means something
+          // different in a quiet tape than in a volatile one, and the Brier
+          // scoring punishes exactly that confusion. The template takes RETURNS,
+          // not prices — feeding it a price series silently models the level
+          // instead of the variance, which is a plausible-looking mistake.
+          const returns: number[] = [];
+          for (let i = 1; i < closes.length; i++) {
+            const prev = closes[i - 1];
+            if (prev > 0) returns.push((closes[i] - prev) / prev);
+          }
+          // Its own try: these indicators are independent signals, and one
+          // failing to format is not a reason for the other to go missing.
+          // That coupling is exactly what hid this — a throw in the momentum
+          // line above skipped GARCH entirely, silently.
+          try {
+          if (returns.length >= 20) {
+            const garch = await computationService.runTemplate(
+              'garch_volatility', { returns, p: 1, q: 1 }, 'weekly-pulse',
+            );
+            if (garch.success && garch.output) {
+              // Field names verified against a live run rather than assumed —
+              // the template returns params.{omega,alpha,beta}, forecast_1d /
+              // _5d / _20d, persistence and half_life. Guessing these produces
+              // a context line reading "N/A" forever, which nothing surfaces.
+              const g = garch.output as {
+                conditional_volatility?: number[];
+                forecast_1d?: number; forecast_20d?: number;
+                persistence?: number; half_life?: number;
+              };
+              const cv = Array.isArray(g.conditional_volatility) ? g.conditional_volatility : [];
+              const latest = cv.length > 0 ? cv[cv.length - 1] : undefined;
+              // Banded against the 20-day forecast: whether the distribution
+              // is widening or narrowing is the part a directional call at a
+              // given confidence should have been sized to.
+              if (typeof latest === 'number' && typeof g.forecast_20d === 'number' && latest > 0) {
+                const ratio = g.forecast_20d / latest;
+                volState = ratio > 1.1 ? 'rising' : ratio < 0.9 ? 'falling' : 'stable';
+              }
+              // Annualise for readability: a daily sigma of 0.0092 means little
+              // to a reader, 14.7% annualised is immediately legible.
+              const ann = (v?: number) => (typeof v === 'number' ? `${(v * Math.sqrt(252) * 100).toFixed(1)}%` : 'N/A');
+              quantContext += `- GARCH(1,1) volatility (SPY): current ${ann(latest)} annualised`
+                + `, 1-day forecast ${ann(g.forecast_1d)}, 20-day ${ann(g.forecast_20d)}`
+                + `, persistence ${typeof g.persistence === 'number' ? g.persistence.toFixed(3) : 'N/A'}`
+                + `, shock half-life ${typeof g.half_life === 'number' ? `${g.half_life.toFixed(1)} sessions` : 'N/A'}\n`
+                + `  Size confidence to this: a wide or rising distribution should pull directional confidence toward the LOWER half of the 0.40-0.75 range. High persistence means today's volatility regime is likely to hold over a tactical horizon.\n`;
+            }
+          }
+          } catch (garchErr) {
+            // Loud, not silent. The whole reason this took a week to notice is
+            // that the enclosing catch said nothing.
+            console.warn('[weekly-pulse] GARCH context failed:', garchErr instanceof Error ? garchErr.message : garchErr);
           }
         }
-      } catch { /* non-fatal — quant context is enrichment */ }
+        if (!quantContext) {
+          console.warn('[weekly-pulse] quant context is EMPTY — the prompt will carry no indicators');
+        }
+      } catch (quantErr) {
+        console.warn('[weekly-pulse] quant context failed:', quantErr instanceof Error ? quantErr.message : quantErr);
+      }
 
       const today = new Date().toISOString().split('T')[0];
       const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
+
+      // Holdings context: the rebalancer only consumes predictions whose
+      // target_symbol is actually held (target_symbol IN (held symbols)), so a
+      // forecast on an unheld ETF can never influence the portfolio no matter
+      // how good it is. On 2026-08-19 only 30 of 92 live predictions named a
+      // held symbol — two thirds of the work was unreachable by construction.
+      // Surfacing the book here lets the analyst cover names that can act.
+      const heldRows = await db.all<{ symbol: string; name: string | null }>(
+        `SELECT DISTINCT h.symbol, h.name
+           FROM market_index_holdings h
+           JOIN market_indexes i ON i.id = h.index_id
+          WHERE h.removed_at IS NULL AND i.status = 'active'
+          ORDER BY h.symbol`
+      );
+      const heldSymbols = heldRows.map(r => r.symbol);
+      const holdingsContext = heldSymbols.length === 0 ? '' : `
+CURRENT PORTFOLIO HOLDINGS (${heldSymbols.length} symbols across the active indexes):
+${heldSymbols.join(', ')}
+
+A prediction only reaches the portfolio if its target_symbol is one of the
+above. Devote AT LEAST HALF of your predictions to these names, and use the
+ETF universe for the macro reads that frame them. Do not force a call on a
+holding you have no evidence for — coverage matters less than being right.
+`;
 
       const userMessage = `Today is ${dayName}, ${today}.
 
@@ -1490,10 +1875,13 @@ ${atomContext.slice(0, 3000)}
 ${trackContext}
 ${pulseInsights.promptContext}
 ${quantContext}
-
-Generate 5-8 short-term directional predictions on liquid ETFs/indices with 7-14 day deadlines.
+${holdingsContext}
+Generate 8-12 directional predictions spread across THREE horizon bands (this mix is mandatory):
+- 3-4 TACTICAL: time_horizon_days 1-3 (next-session moves, event reactions)
+- 4-5 SWING: time_horizon_days 7-21 (earnings windows, rotation, mean reversion)
+- 2-3 POSITION: time_horizon_days 30-90 (structural trends: rates path, AI capex, energy cycle)
 FEWER predictions with HIGHER conviction. Only predict when evidence is strong.
-All deadlines must be between ${new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]} and ${new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]}.
+Today is ${new Date().toISOString().split('T')[0]}.
 Include a specific price target or percentage move where possible (e.g., "SPY above 550").
 
 Return ONLY a JSON array.`;
@@ -1523,8 +1911,23 @@ Return ONLY a JSON array.`;
         console.log(`[weekly-pulse] Sample:`, JSON.stringify(predictions[0]).slice(0, 300));
       }
 
+      // Symbols the price spine actually covers.
+      //
+      // The pulse is free to name any ticker it likes, and a prediction on a
+      // symbol with no price rows can NEVER be graded: it expires, retries
+      // three times against a table that has nothing to say, and settles as
+      // permanent unverifiable weight in the record. Seven were sitting in
+      // that state on 2026-08-24 (DXY x2, VIX x2, VLO, WBD, YETI) — index
+      // tickers the spine holds under other names, plus equities outside the
+      // followed set. Fetched once per pulse rather than per prediction.
+      const coveredRows = await db.all<{ symbol: string }>(
+        'SELECT DISTINCT symbol FROM market_price_normalized',
+      );
+      const covered = new Set(coveredRows.map(r => r.symbol.toUpperCase()));
+
       let created = 0;
       let skipped = 0;
+      let skippedNoPrices = 0;
       for (const p of predictions) {
         // Flexible field mapping — LLMs return varying field names
         const symbol = (p.target_symbol || p.symbol || p.ticker || '') as string;
@@ -1546,12 +1949,22 @@ Return ONLY a JSON array.`;
           continue;
         }
 
-        const horizonDays = Math.max(7, Math.min(14, horizon));
+        // No price rows means no grade, ever. Dropping it here costs one
+        // prediction; keeping it costs a row that sits unverifiable forever
+        // and quietly pads the "past deadline" count.
+        if (!covered.has(symbol.toUpperCase())) {
+          skippedNoPrices++;
+          console.log(`[weekly-pulse] Skipped "${title.slice(0, 40)}" — ${symbol} has no rows in the price spine, so it could never be graded`);
+          continue;
+        }
+
+        // Bands: tactical 1-3d / swing 5-21d / position 30-90d (pulse caps at 90).
+        const horizonDays = Math.max(1, Math.min(90, horizon));
         const deadlineDate = new Date(Date.now() + horizonDays * 86400000).toISOString().split('T')[0];
         const clampedConf = Math.max(0.3, Math.min(0.8, conf));
 
         try {
-          await thesisService.createPrediction({
+          const predId = await thesisService.createPrediction({
             title,
             description: desc,
             predictionType: 'directional',
@@ -1562,9 +1975,26 @@ Return ONLY a JSON array.`;
             timeHorizonDays: horizonDays,
             deadline: deadlineDate,
             keyAssumptions: [...assumptions, '[source:weekly_pulse]'],
-            horizon: horizonDays <= 7 ? 'this_week' : 'this_month',
+            horizon: horizonDays <= 7 ? 'this_week' : horizonDays <= 30 ? 'this_month' : 'this_year',
           });
           created++;
+
+          // The pulse writes 68% of all predictions and recorded NO features,
+          // so every one of its outcomes was invisible to conditional
+          // accuracy. The other path recorded signal_type ('ai' for
+          // everything) and sector ('equity' for 95%), which cannot
+          // discriminate either. These six vary, so an outcome can finally be
+          // attributed to the conditions it was made under.
+          try {
+            await conditionalAccuracyService.capturePredictionFeatures(predId, {
+              signal_type: 'weekly_pulse',
+              horizon_band: horizonDays <= 3 ? 'tactical' : horizonDays <= 21 ? 'swing' : 'position',
+              direction,
+              confidence_band: confidenceBand(clampedConf),
+              rsi_signal: rsiSignal,
+              vol_state: volState,
+            } as Parameters<typeof conditionalAccuracyService.capturePredictionFeatures>[1], false);
+          } catch { /* enrichment only — never lose a prediction over it */ }
         } catch (err) {
           console.warn(`[weekly-pulse] Failed to create prediction "${title}":`, (err as Error).message);
         }
@@ -1573,6 +2003,10 @@ Return ONLY a JSON array.`;
       stepResults.predictions_created = created;
       stepResults.predictions_parsed = predictions.length;
       stepResults.predictions_skipped = skipped;
+      // Reported separately from malformed-row skips: a rising count here is a
+      // coverage problem (the pulse wants a ticker the spine lacks), not a
+      // parsing one, and the two want different fixes.
+      stepResults.predictions_skipped_no_prices = skippedNoPrices;
       // Include sample for debugging
       if (predictions.length > 0 && created === 0) {
         stepResults.debug_sample = predictions[0];
@@ -1580,7 +2014,7 @@ Return ONLY a JSON array.`;
       }
       stepsCompleted.push('predictions_created');
 
-      console.log(`[weekly-pulse] Created ${created}/${predictions.length} predictions with 7-14 day horizons`);
+      console.log(`[weekly-pulse] Created ${created}/${predictions.length} predictions across tactical/swing/position horizons`);
 
       await recordRun(runId, 'wf_markets_weekly_pulse', 'completed');
       return { runId, status: 'completed', stepsCompleted, stepResults };
@@ -1668,6 +2102,8 @@ Return ONLY a JSON array.`;
     runDailyIntelligence,
     runIndexRebalance,
     runPredictionValidation,
+    runInvestigationSweep,
+    dispatchAnomalyInvestigations,
     runWeeklyPulse,
     runPredictionCheckpoints,
   };

@@ -1,7 +1,8 @@
-import { getAnthropicUtilityModel } from './utility-model.js';
+import { getMarketsModel } from './markets-model-store.js';
+import { callChat } from './provider-router.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { PgNotifyService } from './pg-notify-service.js';
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { dateOffsetLiteral, ilike } from '../db/dialect-helpers.js';
 
 // Optional PG notify service — set via setNotifyService() from server/index.ts
@@ -54,6 +55,64 @@ const MARKET_ATOM_TAXONOMY = `
   prediction — Forward-looking claim with measurable outcome and timeframe
   outcome — Verified result of a prior prediction (confirmed, partially_confirmed, refuted)
 `.trim();
+
+/** Per-document content ceiling for an extraction prompt. */
+const MAX_ITEM_CHARS = 8000;
+
+/**
+ * Total prompt characters one batched extraction call may carry, and the most
+ * documents it may hold. News has a 602-character median, so the item ceiling
+ * binds there (a dozen articles ≈ 7k chars) while the character budget binds
+ * on fundamentals (5k–13k each), which batch one or two at a time.
+ */
+export const EXTRACTION_BATCH_CHAR_BUDGET = 12_000;
+export const EXTRACTION_BATCH_MAX_ITEMS = 12;
+
+/**
+ * Group raw rows into extraction batches.
+ *
+ * Batches never mix data types: the prompt names the type, and a news article
+ * and a balance sheet want different reading. Order within a type is
+ * preserved, so the oldest-first drain in processBacklog stays oldest-first.
+ * An item larger than the whole budget still gets its own batch rather than
+ * being dropped.
+ */
+export function planExtractionBatches<T extends { text: string; dataType: string }>(
+  items: T[], charBudget = EXTRACTION_BATCH_CHAR_BUDGET, maxItems = EXTRACTION_BATCH_MAX_ITEMS,
+): T[][] {
+  const batches: T[][] = [];
+  let current: T[] = [];
+  let chars = 0;
+  let type: string | null = null;
+
+  for (const item of items) {
+    const size = Math.min(item.text.length, MAX_ITEM_CHARS);
+    const typeChanged = type !== null && item.dataType !== type;
+    if (current.length > 0 && (typeChanged || current.length >= maxItems || chars + size > charBudget)) {
+      batches.push(current);
+      current = [];
+      chars = 0;
+    }
+    current.push(item);
+    chars += size;
+    type = item.dataType;
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
+}
+
+const ATOM_FIELD_SPEC = `- content (string): the atomic fact/signal/insight
+- atom_type (string): fact, signal, insight, event, prediction, or outcome
+- confidence (number 0-1): how reliable this is
+- category (string): equity, macro, sector, commodity, fx, crypto, or general
+- subcategory (string, optional): more specific categorization
+- sentiment (string): bullish, bearish, neutral, or mixed
+- temporal_type (string): point, range, ongoing, or recurring
+- entities (array): [{type: "company"|"sector"|"index"|"currency"|"commodity", id: string, name: string}]
+- valid_until (string or null): ISO date when this becomes stale
+- decay_rate (number): daily confidence decay (0.01-0.2)
+- tags (string array): relevant tags
+- importance_score (integer 0-100): market impact importance. 90-100: war/nuclear/systemic. 80-90: central bank rate decisions. 70-80: major earnings surprises, trade war. 60-70: sector events. 50-60: company events. 40-50: routine data. 30-40: commentary. 20-30: minor announcements.`;
 
 const EXTRACTION_SYSTEM_PROMPT = `You are a financial market intelligence analyst. Extract structured knowledge atoms from market data.
 
@@ -308,42 +367,34 @@ export async function createMarketAtomService(db: DatabaseAdapter, client?: Anth
 
   // ── AI Extraction ────────────────────────────────────────────────────────
 
+  // Extraction goes through callChat (provider-router), which dispatches on
+  // the configured markets model — API providers, ollama:, compat:, and the
+  // sdk:/codex: subscription engines all work. No Anthropic client needed
+  // (the old no-client early-return silently consumed raw rows with zero
+  // atoms whenever the service was built without a client).
   async function extractAtomsFromRawData(rawDataId: string, rawContent: string, dataType: string): Promise<string[]> {
-    if (!client) {
-      console.warn('[market-atoms] No Anthropic client — skipping AI extraction');
-      return [];
-    }
-
     try {
-      const userPrompt = `Extract market knowledge atoms from this ${dataType} data:\n\n${rawContent.slice(0, 8000)}
+      const userPrompt = `Extract market knowledge atoms from this ${dataType} data:\n\n${rawContent.slice(0, MAX_ITEM_CHARS)}
 
 Return a JSON array of atoms with these fields:
-- content (string): the atomic fact/signal/insight
-- atom_type (string): fact, signal, insight, event, prediction, or outcome
-- confidence (number 0-1): how reliable this is
-- category (string): equity, macro, sector, commodity, fx, crypto, or general
-- subcategory (string, optional): more specific categorization
-- sentiment (string): bullish, bearish, neutral, or mixed
-- temporal_type (string): point, range, ongoing, or recurring
-- entities (array): [{type: "company"|"sector"|"index"|"currency"|"commodity", id: string, name: string}]
-- valid_until (string or null): ISO date when this becomes stale
-- decay_rate (number): daily confidence decay (0.01-0.2)
-- tags (string array): relevant tags
-- importance_score (integer 0-100): market impact importance. 90-100: war/nuclear/systemic. 80-90: central bank rate decisions. 70-80: major earnings surprises, trade war. 60-70: sector events. 50-60: company events. 40-50: routine data. 30-40: commentary. 20-30: minor announcements.
+${ATOM_FIELD_SPEC}
 
 Return ONLY the JSON array, no other text.`;
 
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 8192,
+      const extractionModel = await getMarketsModel(db);
+      const result = await callChat({
+        model: extractionModel,
         system: EXTRACTION_SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
+        maxTokens: 8192,
+        jsonMode: true,
+        // Backlog extraction is a four-figure queue of one-call-per-item work.
+        // Left at interactive priority it held every subscription slot for
+        // minutes at a time and a person pressing Run in a module was told the
+        // engine had aborted.
+        background: true,
       });
-
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
+      const responseText = result.text;
 
       // Parse JSON (strip markdown fences, handle truncated responses)
       let cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
@@ -357,34 +408,133 @@ Return ONLY the JSON array, no other text.`;
       }
       const atoms = JSON.parse(cleaned) as RawAtomExtraction[];
 
-      const createdIds: string[] = [];
-
-      for (const raw of atoms) {
-        if (!raw.content) continue; // Skip atoms with null/empty content
-        const id = await createAtom({
-          content: raw.content,
-          atomType: raw.atom_type,
-          confidence: raw.confidence,
-          category: raw.category,
-          subcategory: raw.subcategory,
-          sentiment: raw.sentiment,
-          temporalType: raw.temporal_type,
-          entities: raw.entities,
-          validUntil: raw.valid_until ?? undefined,
-          decayRate: raw.decay_rate,
-          tags: raw.tags,
-          rawDataId,
-          extractionMethod: 'ai',
-          extractionModel: await getAnthropicUtilityModel(db),
-          importanceScore: raw.importance_score,
-        });
-        createdIds.push(id);
-      }
-
-      return createdIds;
+      return persistExtractedAtoms(atoms, rawDataId, extractionModel);
     } catch (err) {
       console.error('[market-atoms] AI extraction failed:', err);
       return [];
+    }
+  }
+
+  /** Write one document's extracted atoms, keeping their provenance link. */
+  async function persistExtractedAtoms(
+    atoms: RawAtomExtraction[], rawDataId: string, extractionModel: string,
+  ): Promise<string[]> {
+    const createdIds: string[] = [];
+    for (const raw of atoms) {
+      if (!raw.content) continue; // Skip atoms with null/empty content
+      const id = await createAtom({
+        content: raw.content,
+        atomType: raw.atom_type,
+        confidence: raw.confidence,
+        category: raw.category,
+        subcategory: raw.subcategory,
+        sentiment: raw.sentiment,
+        temporalType: raw.temporal_type,
+        entities: raw.entities,
+        validUntil: raw.valid_until ?? undefined,
+        decayRate: raw.decay_rate,
+        tags: raw.tags,
+        rawDataId,
+        extractionMethod: 'ai',
+        extractionModel,
+        importanceScore: raw.importance_score,
+      });
+      createdIds.push(id);
+    }
+    return createdIds;
+  }
+
+  /**
+   * Extract atoms for several raw rows in ONE model call.
+   *
+   * Why: the backlog drained at one call per item — 200 items a weekday
+   * against ~450 arriving — so it never caught up, and the 500-item fetch gate
+   * in the schedule then switched news ingestion off for days at a time. The
+   * items themselves are small (news has a 602-character median), so a dozen
+   * of them cost less context than the 8,000-char budget a single call already
+   * allowed. Batching raises the drain by roughly the batch size at no extra
+   * call cost.
+   *
+   * Returns rawDataId → created atom ids. A document the model omits comes
+   * back with an empty array, exactly as a failed single extraction would.
+   */
+  async function extractAtomsFromRawDataBatch(
+    items: Array<{ id: string; text: string; dataType: string }>,
+  ): Promise<Map<string, string[]>> {
+    const out = new Map<string, string[]>(items.map(i => [i.id, [] as string[]]));
+    if (items.length === 0) return out;
+    // One item has no batching to do, and the single-document prompt is the
+    // better-tested path — use it rather than a one-element batch.
+    if (items.length === 1) {
+      out.set(items[0].id, await extractAtomsFromRawData(items[0].id, items[0].text, items[0].dataType));
+      return out;
+    }
+
+    const extractionModel = await getMarketsModel(db);
+    const docs = items
+      .map((it, i) => `=== DOCUMENT ${i} (${it.dataType}) ===\n${it.text.slice(0, MAX_ITEM_CHARS)}`)
+      .join('\n\n');
+
+    const userPrompt = `Extract market knowledge atoms from each of the ${items.length} documents below.
+
+${docs}
+
+Return ONLY a JSON array with one entry per document, no other text:
+[{"source": 0, "atoms": [ ... ]}, {"source": 1, "atoms": [ ... ]}, ...]
+
+"source" is the DOCUMENT number the atoms came from. Include an entry for
+every document, with an empty atoms array if it holds nothing worth keeping.
+Never merge facts from different documents into one atom.
+
+Each atom has these fields:
+${ATOM_FIELD_SPEC}`;
+
+    try {
+      const result = await callChat({
+        model: extractionModel,
+        system: EXTRACTION_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userPrompt }],
+        // A batch returns every document's atoms in one response, so the
+        // single-item ceiling would truncate it mid-array.
+        maxTokens: 16384,
+        jsonMode: true,
+        background: true,
+      });
+
+      let cleaned = result.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      if (cleaned.startsWith('[') && !cleaned.endsWith(']')) {
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (lastBrace > 0) cleaned = cleaned.slice(0, lastBrace + 1) + ']';
+      }
+      const groups = JSON.parse(cleaned) as Array<{ source?: number; atoms?: RawAtomExtraction[] }>;
+      if (!Array.isArray(groups)) throw new Error('batch response was not an array');
+
+      let missing = 0;
+      const seen = new Set<number>();
+      for (const g of groups) {
+        const idx = Number(g?.source);
+        // An out-of-range or duplicated index would attach atoms to the wrong
+        // source document, which is worse than losing them: provenance is what
+        // makes an atom auditable.
+        if (!Number.isInteger(idx) || idx < 0 || idx >= items.length || seen.has(idx)) { missing++; continue; }
+        seen.add(idx);
+        const atoms = Array.isArray(g.atoms) ? g.atoms : [];
+        out.set(items[idx].id, await persistExtractedAtoms(atoms, items[idx].id, extractionModel));
+      }
+      const unanswered = items.length - seen.size;
+      if (missing || unanswered) {
+        console.warn(`[market-atoms] batch of ${items.length}: ${unanswered} document(s) unanswered, ${missing} entr(ies) discarded for a bad source index`);
+      }
+      return out;
+    } catch (err) {
+      // Fall back to one call per item rather than consuming the whole batch
+      // with nothing to show for it — processBacklog marks rows processed
+      // either way, so a swallowed batch failure would lose them silently.
+      console.error('[market-atoms] batch extraction failed, falling back to per-item:', err);
+      for (const it of items) {
+        out.set(it.id, await extractAtomsFromRawData(it.id, it.text, it.dataType));
+      }
+      return out;
     }
   }
 
@@ -395,8 +545,6 @@ Return ONLY the JSON array, no other text.`;
    * Fundamental atoms have slower decay rates than news-derived atoms.
    */
   async function extractAtomsFromFundamentals(symbol: string, dataType: string, data: unknown): Promise<string[]> {
-    if (!client) return [];
-
     const prompt = `Extract market knowledge atoms from this ${dataType} data for ${symbol}.
 
 Focus on:
@@ -418,19 +566,16 @@ Return a JSON array of atoms with: content, atom_type, confidence, category, sub
 Return ONLY the JSON array.`;
 
     try {
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 8192,
+      const extractionModel = await getMarketsModel(db);
+      const result = await callChat({
+        model: extractionModel,
         system: 'You are an expert financial analyst extracting fundamental insights into structured market atoms. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
+        maxTokens: 8192,
+        jsonMode: true,
       });
 
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
-
-      let cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      let cleaned = result.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
       // Handle truncated JSON arrays
       if (cleaned.startsWith('[') && !cleaned.endsWith(']')) {
         const lastBrace = cleaned.lastIndexOf('}');
@@ -454,7 +599,7 @@ Return ONLY the JSON array.`;
           decayRate: raw.decay_rate ?? 0.02,
           tags: raw.tags || ['fundamental'],
           extractionMethod: 'ai',
-          extractionModel: await getAnthropicUtilityModel(db),
+          extractionModel,
           importanceScore: raw.importance_score,
         });
         createdIds.push(id);
@@ -482,51 +627,96 @@ Return ONLY the JSON array.`;
   };
   const DECAY_THRESHOLD = 0.05;
 
+  /**
+   * Half-life map rendered as SQL, so the decay runs in the database instead
+   * of a row-at-a-time loop. Built from HALF_LIVES rather than written out
+   * twice — the two drifting apart would decay atoms at a rate nothing in the
+   * code claims. Interpolation is safe here and only here: these are
+   * compile-time constants in this file, never user input.
+   */
+  const HALF_LIFE_SQL = `CASE atom_type ${Object.entries(HALF_LIVES)
+    .map(([type, days]) => `WHEN '${type}' THEN ${Number(days)}`)
+    .join(' ')} ELSE 30 END`;
+
+  /**
+   * Age atoms: expire what is past its stated validity, decay the rest toward
+   * zero on a per-type half-life, and deactivate whatever falls through the
+   * floor.
+   *
+   * 2026-08-27: this had never once completed. Its first statement compared
+   * `valid_until` — a TEXT column — against NOW(), which PostgreSQL refuses
+   * ("operator does not exist: text < timestamp with time zone"). It threw
+   * every morning, Phase 1's catch swallowed it, and the phase reported
+   * success in 0.10s while never reaching the backlog processing on the next
+   * line. Every one of 161,569 atoms was still active at full confidence,
+   * 134,946 of them older than 90 days.
+   *
+   * Three things had to change together:
+   *
+   * 1. The comparison. valid_until holds both 'YYYY-MM-DD' and full ISO
+   *    'YYYY-MM-DDTHH:MM:SSZ', and at least one impossible date ('2025-04-31'
+   *    — April has 30 days), so ::date and to_date() both throw on real rows.
+   *    ISO dates sort lexicographically in date order, so comparing TEXT to
+   *    TEXT is correct AND cannot throw. The prefix regex keeps anything
+   *    unparseable out rather than guessing at it.
+   *
+   * 2. The loop. It SELECTed every active atom (161k rows, measured at 53s)
+   *    and issued one UPDATE per row. Even with the throw fixed that is hours
+   *    of round-trips against the pool. It is now three set-based statements.
+   *
+   * 3. Idempotence. The old arithmetic multiplied the CURRENT confidence by
+   *    the decay for the atom's WHOLE life, which is right once and wrong
+   *    every time after — daily runs would zero everything within a week.
+   *    Decay is memoryless, so decaying by the time since the last decay
+   *    (migration 259's decay_applied_at, falling back to created_at)
+   *    composes exactly to decay from creation, at any cadence.
+   */
   async function applyAtomDecay() {
-    // Deactivate atoms past their valid_until date
+    // 1. Expire atoms past their stated validity. TEXT-to-TEXT: no cast, so
+    //    no malformed value in the column can throw. A row whose validity ends
+    //    later TODAY sorts after the bare date and correctly does not expire.
     const expired = await db.run(`
       UPDATE market_atoms SET is_active = 0, updated_at = NOW()
-      WHERE is_active = 1 AND valid_until IS NOT NULL AND valid_until < NOW()
+       WHERE is_active = 1
+         AND valid_until ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+         AND valid_until < TO_CHAR(NOW(), 'YYYY-MM-DD')
     `);
 
-    // Apply per-type half-life decay to remaining active atoms
-    const activeAtoms = await db.all<{
-      id: string; atom_type: string; confidence: number; created_at: string;
-    }>(
-      "SELECT id, atom_type, confidence, created_at FROM market_atoms WHERE is_active = 1 AND confidence > 0"
-    );
+    // 2. Decay everything still active. The 0.001 guard keeps the write set
+    //    small; an atom too fresh to have moved keeps its NULL
+    //    decay_applied_at, so the next run measures from creation as it should.
+    const decayed = await db.run(`
+      UPDATE market_atoms a
+         SET confidence = sub.new_confidence,
+             decay_applied_at = NOW(),
+             updated_at = NOW()
+        FROM (
+          SELECT id,
+                 confidence * POWER(
+                   0.5,
+                   (EXTRACT(EPOCH FROM (NOW() - COALESCE(decay_applied_at, created_at))) / 86400.0)
+                   / ${HALF_LIFE_SQL}
+                 ) AS new_confidence
+            FROM market_atoms
+           WHERE is_active = 1 AND confidence > 0
+        ) sub
+       WHERE a.id = sub.id
+         AND ABS(a.confidence - sub.new_confidence) > 0.001
+    `);
 
-    let decayedCount = 0;
-    let deactivatedCount = 0;
+    // 3. Retire whatever has fallen through the floor.
+    const deactivated = await db.run(`
+      UPDATE market_atoms SET is_active = 0, updated_at = NOW()
+       WHERE is_active = 1 AND confidence < ${Number(DECAY_THRESHOLD)}
+    `);
 
-    for (const atom of activeAtoms) {
-      const halfLife = HALF_LIVES[atom.atom_type] ?? 30;
-      const ageMs = Date.now() - new Date(atom.created_at).getTime();
-      const ageDays = ageMs / (1000 * 60 * 60 * 24);
-      const newConfidence = atom.confidence * Math.pow(0.5, ageDays / halfLife);
-
-      if (newConfidence < DECAY_THRESHOLD) {
-        await db.run(
-          "UPDATE market_atoms SET is_active = 0, confidence = ?, updated_at = NOW() WHERE id = ?",
-          newConfidence, atom.id
-        );
-        deactivatedCount++;
-      } else if (Math.abs(newConfidence - atom.confidence) > 0.001) {
-        await db.run(
-          "UPDATE market_atoms SET confidence = ?, updated_at = NOW() WHERE id = ?",
-          newConfidence, atom.id
-        );
-        decayedCount++;
-      }
-    }
-
-    console.log(`[market-atoms] Decay applied: ${expired.changes ?? 0} expired, ${decayedCount} decayed, ${deactivatedCount} deactivated below threshold`);
-
-    return {
+    const result = {
       expired: expired.changes ?? 0,
-      decayed: decayedCount,
-      deactivated: deactivatedCount,
+      decayed: decayed.changes ?? 0,
+      deactivated: deactivated.changes ?? 0,
     };
+    console.log(`[market-atoms] Decay applied: ${result.expired} expired, ${result.decayed} decayed, ${result.deactivated} deactivated below threshold`);
+    return result;
   }
 
   // ── Recent atoms for dashboard ───────────────────────────────────────────
@@ -552,6 +742,7 @@ Return ONLY the JSON array.`;
     addRelationship,
     getRelationships,
     extractAtomsFromRawData,
+    extractAtomsFromRawDataBatch,
     extractAtomsFromFundamentals,
     applyAtomDecay,
     getRecentAtoms,

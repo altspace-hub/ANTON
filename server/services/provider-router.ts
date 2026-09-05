@@ -26,6 +26,10 @@
 import type { Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import { getProviderFromModelId } from './model-adapter.js';
+// Static on purpose: a request-time first dynamic import deadlocks the event
+// loop under `tsx watch` with an open stdin (see claude-sdk-client.ts).
+import { completeText as sdkEngineCompleteText } from './claude-sdk-client.js';
+import { completeText as codexEngineCompleteText } from './codex-sdk-client.js';
 import { streamMistral, type MistralStreamParams } from './adapters/mistralAdapter.js';
 import { streamOpenAI } from './adapters/openaiAdapter.js';
 import { streamGemini } from './adapters/geminiAdapter.js';
@@ -87,6 +91,11 @@ export interface StreamChatConfig {
    *  supports it (Mistral/compat response_format, Ollama format:'json');
    *  Claude callers rely on prompt instructions as before. */
   jsonMode?: boolean;
+  /** Scheduled or batch work rather than something a person is waiting on.
+   *  Only the subscription engines act on it, where concurrency is scarce:
+   *  background runs yield a slot so an interactive request is never starved
+   *  by a queue the user did not start. Defaults to interactive. */
+  background?: boolean;
   /** Seed for reproducible outputs */
   seed?: number;
   /** Database adapter — required for Azure OpenAI config resolution */
@@ -870,6 +879,26 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       tools: config.tools,
     });
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+  }
+
+  // ── Subscription execution engines (non-streaming) ──
+  // sdk:<model> / codex:<model> run through the Claude Agent SDK / Codex SDK
+  // subprocess on this machine's subscription sign-in — no API key. Like the
+  // API branches, failures (engine disabled, not signed in, run error) throw.
+  // jsonMode/tools are not forwarded: the engines are text-only, same as the
+  // Anthropic branch which also carries JSON expectations in the prompt.
+  if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+    const completeText = provider === 'anthropic_sdk' ? sdkEngineCompleteText : codexEngineCompleteText;
+    const data = await completeText({
+      model: modelId,
+      thinking: (config.thinkingLevel ?? 'quick') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+      system: config.system,
+      messages: config.messages.map(m => ({
+        role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: m.content,
+      })),
+    }, { background: config.background === true });
+    return { text: data.text, thinking: data.thinking, inputTokens: data.inputTokens, outputTokens: data.outputTokens };
   }
 
   throw new Error(`Non-streaming not implemented for provider: ${provider}`);

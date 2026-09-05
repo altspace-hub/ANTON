@@ -33,31 +33,70 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Supports Claude tiers + any custom model ID (Azure, Mistral, OpenAI, etc.)
 export type GapModelTier = 'sonnet' | 'opus' | string;
 
+/**
+ * Resolve a stored tier or model id to the model + reasoning budget to run with.
+ *
+ * 'sonnet' and 'opus' are legacy aliases from when the wizard offered exactly
+ * two choices; assessments saved before 2026-08-19 still carry them, so they
+ * keep resolving. Everything else is a real model id from the shared selector,
+ * including subscription engines (sdk:/codex: prefixed).
+ *
+ * Matching is by FAMILY rather than exact id. The alias branch used to be the
+ * only way to get 'investigate' thinking and the larger synthesis budget, so
+ * picking Claude by its actual id — 'claude-opus-4-8' rather than 'opus' —
+ * would silently drop to the generic branch and assess with less reasoning than
+ * the same model selected the old way. Prefixes are stripped first so
+ * 'sdk:claude-opus-5' is recognised as Opus.
+ */
 function getModelConfig(tier: GapModelTier) {
-  if (tier === 'opus') {
+  const bare = String(tier).replace(/^(sdk|codex):/, '');
+  const isOpus = tier === 'opus' || /(^|[-/])opus/i.test(bare);
+  const isSonnet = tier === 'sonnet' || /(^|[-/])sonnet/i.test(bare);
+  // Any other Claude — Fable, Haiku, or a family that does not exist yet.
+  // sdk:claude-fable-5 is one of three models the subscription engine actually
+  // offers today, and without this branch it would assess at think_hard/64K
+  // while its two siblings got investigate/128K, for no reason a user could
+  // see. Output budget stays conservative because the family is unknown;
+  // reasoning depth does not, because it is still Claude.
+  const isOtherClaude = !isOpus && !isSonnet && /^claude[-.]/i.test(bare);
+
+  // Aliases resolve to the current default of their family; a real id is used
+  // verbatim so the selector's choice is honoured exactly.
+  if (isOpus) {
     return {
-      model: 'claude-opus-4-8' as string,
+      model: (tier === 'opus' ? 'claude-opus-4-8' : String(tier)) as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 16000,
       maxTokensSynthesis: 128_000,
     };
   }
-  if (tier === 'sonnet') {
+  if (isSonnet) {
     return {
-      model: 'claude-sonnet-4-6' as string,
+      model: (tier === 'sonnet' ? 'claude-sonnet-4-6' : String(tier)) as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 40000,
       maxTokensSynthesis: 128_000,
     };
   }
-  // Custom model ID (Azure, Mistral, OpenAI, etc.)
+  if (isOtherClaude) {
+    return {
+      model: String(tier),
+      thinkingLevel: 'investigate' as string,
+      maxTokensBatch: 16000,
+      maxTokensSynthesis: 128_000,
+    };
+  }
+  // Any other model — Azure, Mistral, OpenAI, Gemini, Ollama, OpenAI-compatible.
   return {
-    model: tier,
+    model: String(tier),
     thinkingLevel: 'think_hard' as string,
     maxTokensBatch: 16384,
     maxTokensSynthesis: 64000,
   };
 }
+
+/** Exposed for tests: the resolution above is easy to regress silently. */
+export const __getModelConfig = getModelConfig;
 
 // callChat from provider-router replaces the old streamCollect helper.
 // It handles Anthropic, Mistral, OpenAI, Gemini, and Ollama in a single call.
