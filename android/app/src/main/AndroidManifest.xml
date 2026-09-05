@@ -74,11 +74,6 @@
 
         </activity>
 
-        <!-- Foreground service for long-running voice sessions (NGO offline path) -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="microphone"
-            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -133,8 +128,6 @@
     </queries>
 
     <!-- Long-running voice sessions on offline NGO deployments (spec §8.7 fallback) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- mDNS LAN discovery (spec §5.1 Mode A) -->

@@ -43,6 +43,24 @@ android {
         }
     }
 }
+// ─── release guards (added 2026-09-05) ──────────────────────────────────────
+// `signingConfig` above is applied only `if (hasKeystore)`. Without this check
+// a release build on a machine with no keystore.properties still SUCCEEDS and
+// writes an UNSIGNED artifact to the usual output path — which is exactly the
+// file a tired operator uploads. Fail at configuration time instead.
+gradle.taskGraph.whenReady { graph ->
+    def wantsRelease = graph.allTasks.any { t ->
+        t.project == project && t.name.toLowerCase().contains('release') &&
+        (t.name.startsWith('assemble') || t.name.startsWith('bundle'))
+    }
+    if (!wantsRelease) return
+    if (!hasKeystore) {
+        throw new GradleException(
+            "Release build requested but ${keystorePropertiesFile} is missing.\n" +
+            "  An unsigned release artifact cannot be uploaded to Play and must never\n" +
+            "  be shipped. Copy keystore.properties.example, fill it in, and retry.")
+    }
+}
 
 repositories {
     flatDir{
