@@ -5,9 +5,10 @@
   dependency on the help site's stylesheet or navigation, so it drops into any static
   site generator or CMS.
 
-  Two rendered copies exist and MUST NOT drift from this file:
+  Rendered copies exist and MUST NOT drift from this file:
     - docs/help/privacy.html    — the in-product copy, served at /help/privacy.html
     - docs/legal/privacy-policy.html — self-contained HTML, for hosting as-is
+    - docs/legal/anton-privacy.html  — styled for futurechain.solutions/anton/privacy
 
   tests/docs/privacy-policy-consistency.test.ts pins the substantive claims across all
   three. A legal document that says different things at different URLs is worse than
@@ -23,7 +24,7 @@
 
 **For ANTON and the ANTON apps — Companion, Comm, Pay, Business and Agent.**
 
-Version 1.0 · Last updated 29 July 2026
+Version 1.1 · Last updated 5 September 2026
 
 ---
 
@@ -104,11 +105,22 @@ If you use a wallet, a payment you send is signed on your device and broadcast t
 > **This is public and permanent.** Anyone can read it, and it cannot be deleted, edited
 > or withdrawn — not by you, and not by us.
 >
-> What is written on-chain includes the amount and fee, the sender and recipient
-> addresses, the payer's name, and any reference or message you attach — in the clear,
-> *not* encrypted. For transfers of €1,000 or more, where transfer-of-funds rules require
-> it, the originator's postal address is included too. Payments below that threshold omit
-> the address.
+> What is public includes the amount and fee, the sender and recipient addresses, the
+> time, and the block it settled in.
+
+A payment also carries a structured **ISO 20022 message** alongside it, containing the
+payer's name, any reference you attach, and — for transfers of €1,000 or more, where
+transfer-of-funds rules require it — the originator's postal address. Two things about that message
+matter, and both are easy to get wrong:
+
+- **It is not encrypted.** The protocol field it travels in is named `encrypted_data`, which
+  is a misnomer. Treat anything you put in a payment reference as readable by whoever handles
+  the payment.
+- **Today it is discarded after screening.** The node that settles your payment reads the
+  message to run compliance screening, then drops it: it is not written to the public ledger
+  and is not retrievable afterwards — not by us, not by the recipient, not by you. If a node
+  operator later enables message storage, the message becomes retrievable by readers the
+  recipient has authorised, and this policy will be updated before that happens.
 
 Reading your balance or history sends your wallet address to the node you have
 configured, which lets that node's operator associate the address with your IP address.
