@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
+import { checkFolderPath } from '../lib/folder-guard.js';
 import { safeError } from '../lib/error-response.js';
 
 export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
@@ -35,7 +36,14 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
       };
       if (!label?.trim()) return res.status(400).json({ error: 'label is required' });
       if (!entryPath?.trim()) return res.status(400).json({ error: 'path is required' });
-      if (!fs.existsSync(entryPath)) return res.status(400).json({ error: `Path does not exist: ${entryPath}` });
+      // The path is read from the request body and is later handed to
+      // indexFolder(), which recurses it and writes every document into
+      // document_chunks — from where POST /api/rag/search returns it. existsSync
+      // is not an authorisation check: enforce the same ALLOWED_FOLDER_PATHS
+      // whitelist the folder browser uses (CLAUDE.md pattern 6).
+      const guard = checkFolderPath(entryPath);
+      if (!guard.ok) return res.status(403).json({ error: guard.error });
+      if (!fs.existsSync(guard.resolved)) return res.status(400).json({ error: `Path does not exist: ${entryPath}` });
 
       const id = randomUUID();
       const now = new Date().toISOString();
@@ -105,6 +113,11 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
       const entry = await db.get(`SELECT * FROM knowledge_library WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
       if (!entry) return res.status(404).json({ error: 'Not found' });
       const folderPath = entry.path as string;
+      // Re-check on every index, not just at create time: rows written before
+      // this guard existed (or while ALLOWED_FOLDER_PATHS was wider) must not
+      // become a standing licence to re-read a folder that is now out of scope.
+      const guard = checkFolderPath(folderPath);
+      if (!guard.ok) return res.status(403).json({ error: guard.error });
       if (!fs.existsSync(folderPath)) return res.status(400).json({ error: `Path does not exist: ${folderPath}` });
 
       const result = await indexFolder(db, folderPath);

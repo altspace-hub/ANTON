@@ -3,6 +3,7 @@ import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
+import { checkFolderPath } from '../lib/folder-guard.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Validates a folder path: must be absolute and must not contain path traversal sequences. */
@@ -24,6 +25,15 @@ export async function createRagRoutes(db: DatabaseAdapter) {
     const { folderPath } = req.body as { folderPath: string };
     if (!validateFolderPath(folderPath)) {
       res.status(400).json({ error: 'Valid absolute folder path required' });
+      return;
+    }
+    // "Absolute and no .." is not authorisation — C:\Users\someone\Documents
+    // satisfies it. indexFolder() recurses this path and writes every document
+    // into document_chunks, which POST /api/rag/search reads back, so the same
+    // ALLOWED_FOLDER_PATHS whitelist the folder browser enforces applies here.
+    const guard = checkFolderPath(folderPath);
+    if (!guard.ok) {
+      res.status(403).json({ error: guard.error });
       return;
     }
     try {
@@ -67,7 +77,11 @@ export async function createRagRoutes(db: DatabaseAdapter) {
       res.status(400).json({ error: 'query and folderPaths required' });
       return;
     }
-    const results = retrieveChunks(db, query, folderPaths, topK, minScore);
+    // retrieveChunks is async: without the await this handler serialised a
+    // Promise (`{}`) instead of the hits — the missing-await class CLAUDE.md
+    // calls out. Only whitelisted folders can be indexed, so what comes back
+    // here is already scoped by the guard on POST /api/rag/index.
+    const results = await retrieveChunks(db, query, folderPaths, topK, minScore);
     res.json(results);
   });
 

@@ -5,21 +5,14 @@ import path from 'path';
 import fs from 'fs-extra';
 import { validate } from '../lib/validate.js';
 import { FolderBrowseSchema, FolderRegisterSchema, FolderIndexSchema } from '../lib/schemas.js';
+// The whitelist check used to live here as a private copy. It now lives in
+// server/lib/folder-guard.ts so the knowledge-read path (knowledge-resolver,
+// knowledge-library, the RAG indexer) enforces the SAME rule — those paths had
+// no check at all. Same semantics as before, including the uploads/outputs
+// fallback when ALLOWED_FOLDER_PATHS is unset.
+import { isFolderPathAllowed } from '../lib/folder-guard.js';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
-
-/** Resolve the list of allowed base directories from the environment. */
-function getAllowedBases(): string[] {
-  const raw = process.env.ALLOWED_FOLDER_PATHS || './uploads,./outputs';
-  return raw.split(',').map(p => path.resolve(p.trim()));
-}
-
-/** Return true if the resolved path is within one of the allowed bases. */
-function isPathAllowed(resolvedPath: string): boolean {
-  return getAllowedBases().some(
-    base => resolvedPath === base || resolvedPath.startsWith(base + path.sep)
-  );
-}
 
 function getUserId(req: unknown): string {
   return (req as { user?: { id?: string } }).user?.id ?? 'default';
@@ -37,7 +30,7 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      if (!isPathAllowed(path.resolve(dirPath))) {
+      if (!isFolderPathAllowed(dirPath)) {
         res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
@@ -77,7 +70,7 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      if (!isPathAllowed(path.resolve(folderPath))) {
+      if (!isFolderPathAllowed(folderPath)) {
         res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
@@ -136,7 +129,7 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      if (!isPathAllowed(path.resolve(folderPath))) {
+      if (!isFolderPathAllowed(folderPath)) {
         res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }

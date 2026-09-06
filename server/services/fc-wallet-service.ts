@@ -110,9 +110,27 @@ export async function createFCWalletService(
 ) {
   // ─── Read path (unchanged from the stub) ──────────────────────────
 
+  /** Columns safe to hand to a caller that may serialise the row into an
+   *  HTTP response. Deliberately EXCLUDES the at-rest key material added
+   *  by migrations 210/211 — privkey_encrypted, privkey_iv,
+   *  mnemonic_encrypted, mnemonic_iv (and pubkey, which nothing reads
+   *  here). `getWallets()` is the list feed behind
+   *  GET /api/futurechain/wallets, GET /api/app/org/:id/wallet and the
+   *  public gateway /balance route; a `SELECT *` here shipped the
+   *  encrypted privkey AND the BIP-39 mnemonic ciphertext to every one of
+   *  those responses, which on a default SOLO install is an offline-
+   *  crackable copy of the wallet. Ciphertext is still key material —
+   *  never put it on the wire. Do NOT restore `SELECT *`: if a caller
+   *  needs the privkey it must go through getDecryptedPrivkey(), which
+   *  reads the columns itself and writes an audit record. */
+  const PUBLIC_WALLET_COLUMNS =
+    'id, name, wallet_file_name, address, wallet_type, owner_wallet_address, agent_id, ' +
+    'balance_raw, balance_ftc, utxo_count, balance_updated_at, is_active, ' +
+    'created_at, updated_at, sdk_schema_version';
+
   async function getWallets() {
     return await db.all<WalletRow>(
-      'SELECT * FROM fc_wallets WHERE is_active = TRUE ORDER BY wallet_type, created_at',
+      `SELECT ${PUBLIC_WALLET_COLUMNS} FROM fc_wallets WHERE is_active = TRUE ORDER BY wallet_type, created_at`,
     );
   }
   async function getHumanWallet() {

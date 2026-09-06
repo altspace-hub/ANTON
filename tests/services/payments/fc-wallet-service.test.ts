@@ -92,7 +92,15 @@ describe('refreshBalances', () => {
     await svc.refreshBalances();
     expect(mockDb.calls[0].sql).toContain('UPDATE fc_wallets SET balance_updated_at = NOW()');
     expect(mockDb.calls[0].sql).toContain('WHERE is_active = TRUE');
-    // After UPDATE, getWallets is called
-    expect(mockDb.calls[1].sql).toContain('SELECT * FROM fc_wallets');
+    // After UPDATE, getWallets is called. It must NOT be a `SELECT *`: the
+    // rows it returns are serialised straight into GET /api/futurechain/wallets
+    // and GET /api/app/org/:id/wallet, and fc_wallets carries the at-rest
+    // privkey + mnemonic ciphertext (migrations 210/211). See
+    // tests/routes/fc-key-material-leak.test.ts for the response-shape guard.
+    expect(mockDb.calls[1].sql).toContain('FROM fc_wallets');
+    expect(mockDb.calls[1].sql).not.toContain('SELECT *');
+    for (const secret of ['privkey_encrypted', 'privkey_iv', 'mnemonic_encrypted', 'mnemonic_iv']) {
+      expect(mockDb.calls[1].sql).not.toContain(secret);
+    }
   });
 });

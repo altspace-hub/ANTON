@@ -20,6 +20,9 @@ import { cacheSession, isOnline, queueMessage } from '../services/offline';
 import ChatBubble from '../components/ChatBubble';
 import SuggestionChips from '../components/SuggestionChips';
 import ModelPickerSheet from '../components/ModelPickerSheet';
+import ReportSheet, { type ReportSubmission } from '../components/ReportSheet';
+import { saveReport, formatReportForSharing } from '../services/reports';
+import { reportStrings } from '../services/report-strings';
 import { Ico, Spinner, ErrorPill } from '../components/ui';
 
 interface Props {
@@ -68,9 +71,20 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
   const [modelId, setModelIdState] = useState<string | null>(getSelectedModel());
   const [modelLabel, setModelLabel] = useState<string>('Default');
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
+  // Which assistant turn the user is reporting (null = the sheet is closed).
+  // Holding the message rather than just its id keeps the reported text and
+  // the id from drifting apart if the list re-renders under the open sheet.
+  const [reportTarget, setReportTarget] = useState<Message | null>(null);
+  const [reportSaved, setReportSaved] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const reportToastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const identity = getIdentity();
+  const rs = reportStrings(identity?.preferredLanguage);
+
+  // Clear the "report saved" timer on unmount — leaving the chat mid-toast
+  // would otherwise setState on an unmounted page.
+  useEffect(() => () => { if (reportToastRef.current) clearTimeout(reportToastRef.current); }, []);
 
   // Load org name + branding
   useEffect(() => {
@@ -274,6 +288,43 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
         timestamp: Date.now(),
       }];
     });
+  }
+
+  /**
+   * Report the AI's response.
+   *
+   * Play's generated-content policy needs an in-app reporting route; this is
+   * it. The privacy contract is the one stated in services/reports.ts — the
+   * report is written to this device and nothing is transmitted. The share
+   * sheet at the end is the USER escalating, carrying exactly what they ticked
+   * to include; dismissing it is not an error, the report is already saved.
+   */
+  function submitReport(sub: ReportSubmission) {
+    const target = reportTarget;
+    setReportTarget(null);
+    if (!target) return;
+    const report = saveReport({
+      modelId,
+      modelLabel,
+      moduleId: moduleId || undefined,
+      sessionId,
+      messageId: target.id,
+      category: sub.category,
+      note: sub.note || undefined,
+      // The ONLY route by which conversation text enters a report.
+      includedResponseText: sub.includeResponse ? target.content : undefined,
+    });
+    setReportSaved(true);
+    if (reportToastRef.current) clearTimeout(reportToastRef.current);
+    reportToastRef.current = setTimeout(() => setReportSaved(false), 3500);
+    const text = formatReportForSharing(report);
+    void (async () => {
+      try {
+        const nav = navigator as Navigator & { share?: (d: { title?: string; text: string }) => Promise<void> };
+        if (nav.share) await nav.share({ title: rs.shareTitle, text });
+        else await navigator.clipboard?.writeText(text);
+      } catch { /* dismissed or unsupported — the report is saved either way */ }
+    })();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -549,6 +600,25 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
                   timestamp={msg.timestamp}
                   isError={msg.isError}
                 />
+                {/* Report affordance — Play requires an in-app way to report
+                    what the model generated. Errors are ours, not the model's,
+                    and the user's own turns are not AI content, so it sits on
+                    assistant turns only. Deliberately low-contrast: present on
+                    every response, shouting on none. */}
+                {msg.role === 'assistant' && !msg.isError && (
+                  <div className="-mt-4 flex justify-end">
+                    <button
+                      onClick={() => setReportTarget(msg)}
+                      aria-label={rs.title}
+                      title={rs.title}
+                      className="flex items-center gap-1 rounded-full px-2 transition active:opacity-60"
+                      style={{ minHeight: 32, color: 'var(--color-text-faint)' }}
+                    >
+                      <Ico name="flag" size={13} />
+                      <span className="text-[0.6875rem] font-medium">{rs.action}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -639,6 +709,29 @@ export default function ChatPage({ orgId, sessionId, moduleId, onSessionCreated,
         onClose={() => setModelPickerOpen(false)}
         onSelect={(id, label) => applyModel(id, label)}
       />
+
+      <ReportSheet
+        open={reportTarget !== null}
+        modelLabel={modelLabel}
+        responsePreview={reportTarget ? reportTarget.content.slice(0, 400) : undefined}
+        lang={identity?.preferredLanguage}
+        onCancel={() => setReportTarget(null)}
+        onSubmit={submitReport}
+      />
+
+      {reportSaved && (
+        <div
+          role="status"
+          className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center px-6"
+        >
+          <span
+            className="rounded-full px-4 py-2 text-xs font-medium shadow-lg"
+            style={{ background: 'var(--color-text)', color: 'var(--color-bg)' }}
+          >
+            {rs.saved}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

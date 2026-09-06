@@ -16,7 +16,7 @@ import {
   fetchEnrollment, completeEnrollment, parsePairingLink, validateServerUrl,
   type EnrollmentPackage,
 } from '../services/enrollment';
-import type { ParsedPairingLink } from '../services/pairing-url';
+import { describeInlinePackage, type ParsedPairingLink } from '../services/pairing-url';
 import { createMeshTransport } from '../services/transports/mesh';
 import { getDeviceX25519Keypair, ensureDeviceKeypair } from '../services/identity';
 import { addInstance, listInstances, setActiveInstanceAsync } from '../services/instances';
@@ -40,20 +40,32 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  // An inline-package pairing link that is waiting for the human to confirm.
+  // See applyParams() for why nothing pairs without passing through here.
+  const [pendingLink, setPendingLink] = useState<ParsedPairingLink | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Deep-link / query-string handler.
   // ANL2: also subscribe to Capacitor's appUrlOpen so a deep link tapped
   // while the app is already in memory still pre-fills the form.
-  // Inline-package URLs (anton://enroll?pkg=…) auto-pair without ever
-  // showing the form, since the package itself carries everything.
   useEffect(() => {
     function applyParams(url: string) {
       const parsed = parsePairingLink(url);
       if (!parsed) return;
       if (parsed.inlinePackage) {
-        // Mesh inline-package URL — auto-pair right away.
-        void doPair(parsed);
+        // A ?pkg= link carries a COMPLETE enrollment package, so pairing from
+        // it needs nothing further from the user — which is exactly why it must
+        // not happen on its own. MainActivity is exported and anton:// is
+        // BROWSABLE, so ANY app or web page on the device can fire this link.
+        // This used to call doPair() straight from the deep-link handler: one
+        // tap on a hostile link silently bound the phone to the attacker's
+        // instance (which can then push approvals to it and receive whatever
+        // the user captures) and made it the ACTIVE instance. validateMeshPackage
+        // does not save us — it only proves the (ed_pk, x_pk, binding_sig)
+        // triple is self-consistent, which whoever generated the package
+        // trivially satisfies. Only a human can judge WHOSE instance this is,
+        // so park it and show them.
+        setPendingLink(parsed);
         return;
       }
       if (parsed.server) setServerUrl(parsed.server);
@@ -103,10 +115,16 @@ export default function JoinPage({ onJoined, onBack }: Props) {
   function handleScanResult(raw: string) {
     const parsed = parsePairingLink(raw);
     if (parsed) {
-      if (!parsed.inlinePackage) {
-        setServerUrl(parsed.server);
-        setToken(parsed.token);
+      if (parsed.inlinePackage) {
+        // Same gate as the deep-link path. A camera scan is deliberate, but the
+        // user still cannot see what is inside the QR — a swapped sticker or a
+        // QR shown on someone else's screen is indistinguishable until the
+        // instance name + contact hash are on screen next to a Pair button.
+        setPendingLink(parsed);
+        return;
       }
+      setServerUrl(parsed.server);
+      setToken(parsed.token);
       // Auto-pair on scan
       void doPair(parsed);
       return;
@@ -127,7 +145,13 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       // package, so we don't need a reachable server URL — the phone routes
       // the completion call through the relay using the pinned x_pk.
       if ('inlinePackage' in input && input.inlinePackage) {
-        await doEnrollment('', input.inlinePackage as unknown as EnrollmentPackage);
+        // doEnrollment returns false when it stopped short — waiting for the
+        // 6-digit code, or refusing a bad mesh package. Reporting "Connected ✓"
+        // and navigating away in those cases (which is what happened before)
+        // told the user they were paired when they were not, and hid a refusal.
+        const paired = await doEnrollment('', input.inlinePackage as unknown as EnrollmentPackage);
+        if (!paired) return;
+        setPendingLink(null);
         await success();
         setStatus('Connected ✓');
         setTimeout(onJoined, 600);
@@ -156,10 +180,11 @@ export default function JoinPage({ onJoined, onBack }: Props) {
       // Auto-detect: try enrollment first; fall back to legacy join on 404
       const inferredKind = kind ?? await detectKind(server, rawToken);
       if (inferredKind === 'enroll') {
-        await doEnrollment(server, rawToken);
+        if (!await doEnrollment(server, rawToken)) return;   // see note above
       } else {
         await doLegacyJoin(server, rawToken);
       }
+      setPendingLink(null);
       await success();
       setStatus('Connected ✓');
       setTimeout(onJoined, 600);
@@ -172,7 +197,10 @@ export default function JoinPage({ onJoined, onBack }: Props) {
     }
   }
 
-  async function doEnrollment(server: string, tOrPkg: string | EnrollmentPackage): Promise<void> {
+  /** Returns true only when a device certificate was actually issued. False
+   *  means we stopped short on purpose (waiting for the OOB code, or refusing
+   *  the package) and the caller must NOT report success. */
+  async function doEnrollment(server: string, tOrPkg: string | EnrollmentPackage): Promise<boolean> {
     setStatus('Pairing securely…');
     // The caller passes either a token (fetch the package from the server) or
     // an already-resolved package (inline-package QR — mesh transport, no
@@ -186,7 +214,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
     if (pkg.requires_confirmation_code && !confirmationCode.trim()) {
       setNeedCodePrompt(true);
       setStatus('Enter the 6-digit code your admin gave you.');
-      return;
+      return false;
     }
     setStatus(`Pairing with ${pkg.instance_display_name ?? 'instance'}…`);
 
@@ -205,7 +233,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         } else {
           setStatus(`Pairing refused — invalid mesh package`);
         }
-        return;
+        return false;
       }
     }
 
@@ -283,6 +311,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         setStatus('Paired without biometric — high-severity approvals will fail until set up.');
       }
     }
+    return true;
   }
 
   async function doLegacyJoin(server: string, t: string): Promise<void> {
@@ -349,6 +378,55 @@ export default function JoinPage({ onJoined, onBack }: Props) {
     return 'join';
   }
 
+  // Summary of the parked inline package, for the confirm card. Every value in
+  // it is claimed by the package, not verified — that is precisely why a human
+  // has to read it.
+  const pendingInfo = pendingLink?.inlinePackage ? describeInlinePackage(pendingLink.inlinePackage) : null;
+
+  // Hoisted out of the manual-entry section: the OOB code is also needed on the
+  // confirm card. Before, it rendered ONLY under `mode === 'manual'`, so an
+  // inline-package pair that required a code set needCodePrompt and then had
+  // nowhere to show the input — a dead end with no way forward.
+  const codePrompt = needCodePrompt ? (
+    <div
+      className="rounded-[var(--radius-r2)] p-3.5"
+      style={{ background: 'var(--color-accent-soft)', border: '1px solid var(--color-accent-dim)' }}
+    >
+      <SectionLabel className="mb-2" style={{ color: 'var(--color-accent)' }}>
+        Confirmation code
+      </SectionLabel>
+      <div className="flex justify-between gap-1.5">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-[var(--radius-r1)] py-2.5 text-center font-mono font-bold"
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text)',
+              fontSize: '1.375rem',
+              letterSpacing: '0.1em',
+            }}
+          >
+            {confirmationCode[i] || ''}
+          </div>
+        ))}
+      </div>
+      <input
+        value={confirmationCode}
+        onChange={(e) => setConfirmationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+        placeholder="Tap and type the code"
+        inputMode="numeric"
+        maxLength={6}
+        className="mt-2 w-full rounded-[var(--radius-r2)] px-4 py-2.5 text-center text-sm focus:outline-none"
+        style={{ background: 'var(--color-surface)', border: '1px solid var(--color-accent-dim)', color: 'var(--color-text-body)' }}
+      />
+      <p className="mt-2 text-[0.6875rem] leading-relaxed text-[var(--color-text-muted)]">
+        Admin reads this aloud. Required so the QR can't be hijacked between scan and pair.
+      </p>
+    </div>
+  ) : null;
+
   return (
     <div
       className="safe-top safe-bottom flex min-h-dvh flex-col"
@@ -378,7 +456,71 @@ export default function JoinPage({ onJoined, onBack }: Props) {
           confirm with a 6-digit code if needed.
         </p>
 
+        {/* Confirm card — the ONLY way an inline-package link/QR can pair.
+            Deliberately replaces the scan + manual UI so there is one question
+            on screen: is this the instance my admin is showing me? */}
+        {pendingInfo && pendingLink && (
+          <div
+            className="mt-5 rounded-[var(--radius-r3)] p-4"
+            data-testid="pair-confirm"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-accent-dim)' }}
+          >
+            <SectionLabel className="mb-2" style={{ color: 'var(--color-accent)' }}>
+              Confirm this pairing
+            </SectionLabel>
+            <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">
+              A link or QR is asking to pair this phone with the ANTON below. Check it against
+              your admin's screen — pairing lets that instance send you approvals and receive
+              what you capture.
+            </p>
+            <dl className="mt-3 space-y-1.5">
+              {[
+                { k: 'Instance',     v: pendingInfo.instanceName, mono: false },
+                { k: 'Contact hash', v: pendingInfo.contactHash ?? 'not stated', mono: true },
+                { k: 'Reached via',  v: pendingInfo.reachVia ?? 'not stated', mono: true },
+                { k: 'Connection',   v: pendingInfo.transport === 'mesh'
+                    ? 'Encrypted relay (mesh)'
+                    : pendingInfo.transport === 'public_https' ? 'Direct HTTPS' : 'not stated',
+                  mono: false },
+                ...(pendingInfo.boundRole ? [{ k: 'Joins as', v: pendingInfo.boundRole, mono: false }] : []),
+              ].map(({ k, v, mono }) => (
+                <div key={k} className="flex items-baseline justify-between gap-3 text-xs">
+                  <dt className="shrink-0 text-[var(--color-text-muted)]">{k}</dt>
+                  <dd
+                    className={`min-w-0 break-all text-right font-semibold text-[var(--color-text)] ${mono ? 'font-mono' : ''}`}
+                  >
+                    {v}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            {codePrompt && <div className="mt-3">{codePrompt}</div>}
+            <div className="mt-4 flex gap-2">
+              <Btn
+                variant="ghost"
+                block
+                disabled={loading}
+                onClick={() => { setPendingLink(null); setNeedCodePrompt(false); setStatus(null); setError(null); }}
+              >
+                Cancel
+              </Btn>
+              <Btn
+                variant="primary"
+                block
+                disabled={loading}
+                onClick={() => void doPair(pendingLink)}
+                icon={loading
+                  ? <Spinner size="sm" tone="on-accent" />
+                  : <Ico name="shieldCheck" color="currentColor" size={15} />}
+              >
+                {loading ? 'Pairing…' : 'Pair'}
+              </Btn>
+            </div>
+          </div>
+        )}
+
         {/* Mode toggle */}
+        {!pendingLink && (<>
         <div
           className="mt-5 flex overflow-hidden rounded-[var(--radius-r2)]"
           style={{ border: '1px solid var(--color-border)' }}
@@ -483,47 +625,10 @@ export default function JoinPage({ onJoined, onBack }: Props) {
                 style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
               />
             </div>
-            {needCodePrompt && (
-              <div
-                className="rounded-[var(--radius-r2)] p-3.5"
-                style={{ background: 'var(--color-accent-soft)', border: '1px solid var(--color-accent-dim)' }}
-              >
-                <SectionLabel className="mb-2" style={{ color: 'var(--color-accent)' }}>
-                  Confirmation code
-                </SectionLabel>
-                <div className="flex justify-between gap-1.5">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 rounded-[var(--radius-r1)] py-2.5 text-center font-mono font-bold"
-                      style={{
-                        background: 'var(--color-surface)',
-                        border: '1px solid var(--color-border)',
-                        color: 'var(--color-text)',
-                        fontSize: '1.375rem',
-                        letterSpacing: '0.1em',
-                      }}
-                    >
-                      {confirmationCode[i] || ''}
-                    </div>
-                  ))}
-                </div>
-                <input
-                  value={confirmationCode}
-                  onChange={(e) => setConfirmationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Tap and type the code"
-                  inputMode="numeric"
-                  maxLength={6}
-                  className="mt-2 w-full rounded-[var(--radius-r2)] px-4 py-2.5 text-center text-sm focus:outline-none"
-                  style={{ background: 'var(--color-surface)', border: '1px solid var(--color-accent-dim)', color: 'var(--color-text-body)' }}
-                />
-                <p className="mt-2 text-[0.6875rem] leading-relaxed text-[var(--color-text-muted)]">
-                  Admin reads this aloud. Required so the QR can't be hijacked between scan and pair.
-                </p>
-              </div>
-            )}
+            {codePrompt}
           </div>
         )}
+        </>)}
 
         {/* Status / error */}
         {status && (
@@ -574,6 +679,9 @@ export default function JoinPage({ onJoined, onBack }: Props) {
           </span>
         </div>
 
+        {/* Hidden while a link is awaiting confirmation — that card carries its
+            own Pair button, and this one pairs from the (empty) form fields. */}
+        {!pendingLink && (
         <Btn
           variant="primary"
           block
@@ -586,6 +694,7 @@ export default function JoinPage({ onJoined, onBack }: Props) {
         >
           {loading ? 'Connecting…' : 'Pair'}
         </Btn>
+        )}
 
         {/* "How pairing works" — collapsed-explanation card */}
         <div

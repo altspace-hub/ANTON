@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import { readdirSync, statSync, existsSync } from 'fs';
 import type { DatabaseAdapter } from '../../db/database.js';
+import { checkFolderPath } from '../../lib/folder-guard.js';
 import { chunkText } from './chunker.js';
 import { tokenise, computeTermFrequencies } from './bm25.js';
 
@@ -40,6 +41,15 @@ export async function indexFolder(
   db: DatabaseAdapter,
   folderPath: string,
 ): Promise<{ documents: number; chunks: number }> {
+  // Last line of defence for the whitelist. Four routes reach this function
+  // (rag, knowledge-library, engagements x2) and every one of them takes the
+  // folder from a request body; whatever lands in document_chunks is later
+  // served back by POST /api/rag/search. Checking here means a new caller
+  // cannot forget. Throws (rather than returning empty) so the caller reports
+  // a refusal instead of silently claiming a successful index of 0 documents.
+  const guard = checkFolderPath(folderPath);
+  if (!guard.ok) throw new Error(`Folder access not permitted by ALLOWED_FOLDER_PATHS: ${guard.error}`);
+
   if (!existsSync(folderPath)) throw new Error(`Folder not found: ${folderPath}`);
 
   // Mark as indexing

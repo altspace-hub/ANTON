@@ -47,7 +47,11 @@ router.post('/import', async (req: Request, res: Response) => {
   try {
     const config: ImportConfig = req.body;
 
-    // If database source, inject DB instance
+    // If database source, hand the importer ANTON's DB handle so it can LOOK UP the
+    // configured connection. It is not the query target: importFromDatabase runs the
+    // query through that connection's own driver, under the connection guards. Do not
+    // "simplify" this back into running config.query on `db` — that made an
+    // unauthenticated request body arbitrary SQL against ANTON's own tables.
     if (config.source === 'database') {
       config.db = db;
     }

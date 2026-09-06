@@ -43,20 +43,24 @@
                 <data android:scheme="anton" android:host="join" />
             </intent-filter>
 
-            <!-- HTTPS deep link: an instance can serve a pairing page at
-                 https://<host>/anton/enroll?server=...&token=... and that
-                 link will route into the app once installed. autoVerify
-                 makes the link "verified" without a chooser dialog when the
-                 instance hosts /.well-known/assetlinks.json (left to the
-                 instance operator). -->
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" />
-                <data android:pathPrefix="/anton/enroll" />
-                <data android:pathPrefix="/anton/join" />
-            </intent-filter>
+            <!-- NO https App Link filter here, deliberately. Do not "restore" one.
+                 There used to be an autoVerify intent filter for scheme https
+                 with two pathPrefixes and NO android:host. Android's data-element
+                 merge rule is that when a filter names no host, the port and ALL
+                 path attributes are ignored — so that filter did not match
+                 /anton/enroll, it matched EVERY https URI on the device, putting
+                 Companion in the chooser for every web link (a Play-review flag
+                 as well as a phishing surface). autoVerify could never succeed
+                 either: verification needs a domain to fetch
+                 /.well-known/assetlinks.json from, and there is none — every
+                 deployment's pairing host is the operator's own
+                 (APP_GATEWAY_PUBLIC_URL), unknown at build time. Pairing links
+                 are minted as anton://enroll?... (see
+                 src/pages/AppGatewayPage.tsx), which the custom-scheme filters
+                 above already handle. If a hosted deployment ever wants true App
+                 Links, add a filter with that deployment's explicit android:host
+                 and serve assetlinks.json from it.
+                 Guarded by tests/android/manifest-deep-links.test.ts. -->
 
             <!-- Share target — receive text / urls / images from the OS share sheet (spec §8.5) -->
             <intent-filter>

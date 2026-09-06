@@ -7,7 +7,25 @@
 import { randomUUID } from 'crypto';
 import { nanoid } from 'nanoid';
 import type { DatabaseAdapter } from '../db/database.js';
-import type { Dataset } from './data-transformer.js';
+import type { Column, Dataset } from './data-transformer.js';
+import { assertSqlIdentifier, quoteSqlIdentifier, uniqueSqlIdentifiers } from '../lib/sql-identifier.js';
+
+/**
+ * A persisted column: the dataset's own (logical) name plus the physical column it
+ * occupies in the storage table.
+ *
+ * The two differ because a dataset column name comes from a CSV header row and is
+ * arbitrary text — `inferSchema` takes `Object.entries(firstRow)` keys verbatim — while
+ * the physical name is concatenated into CREATE TABLE / INSERT and so must be a strict
+ * identifier. Persisting the mapping is what lets `load()` return the user's original
+ * headers after the table was created under a normalised name.
+ *
+ * `storageName` is optional so rows written before this mapping existed still load: for
+ * them the logical name IS the physical name (see load()).
+ */
+interface StoredColumn extends Column {
+  storageName?: string;
+}
 
 export interface StoredDataset {
   id: string;
@@ -57,13 +75,44 @@ export async function createDatasetStore(db: DatabaseAdapter) {
         expiresAt = expiry.toISOString();
       }
 
+      // Map every dataset column onto a safe physical column name BEFORE any of it
+      // reaches SQL. The names arrive from a spreadsheet header row, so a header of
+      //   x"); DROP TABLE users; --
+      // used to be concatenated straight into the CREATE TABLE below — and, because
+      // these statements carry no bind values, pg dispatches them over the simple
+      // protocol, which happily runs the stacked DROP. Normalising here (rather than
+      // rejecting) keeps a messy spreadsheet importable.
+      const storageNames = uniqueSqlIdentifiers(dataset.columns.map(col => col.name));
+      const storedColumns: StoredColumn[] = dataset.columns.map((col, i) => ({
+        ...col,
+        storageName: storageNames[i],
+      }));
+      // VALIDATED, NOT QUOTED — and the difference is load-bearing.
+      //
+      // tableName is generated here as `dataset_${nanoid}` and nanoid's default
+      // alphabet is mixed-case, so ~99.8% of these names contain capitals. An
+      // unquoted CREATE lets PostgreSQL fold the identifier to lowercase, and the
+      // equally-unquoted SELECT in load() folds the same way and matches. Quoting
+      // it would ask for the mixed-case name verbatim — correct for tables created
+      // AFTER the change, and a 42P01 "relation does not exist" for every dataset
+      // saved before it. That regression was caught in review against a real
+      // PostgreSQL, not in CI, because the dev database has no dataset rows.
+      //
+      // assertSqlIdentifier still refuses anything outside [A-Za-z_][A-Za-z0-9_]{0,62},
+      // so no quote, semicolon, paren or comment introducer can reach the SQL and
+      // the injection this file was hardened against stays closed. COLUMN names,
+      // which come from a CSV header and are genuinely attacker-influenced, are
+      // still quoted below — they are created and read in the same statement shapes,
+      // so no folding asymmetry exists there.
+      const quotedTable = assertSqlIdentifier(tableName, 'dataset table name');
+
       // Create table for dataset rows
-      const columnDefs = dataset.columns.map(col => `${col.name} TEXT`).join(', ');
-      await db.run(`CREATE TABLE ${tableName} (${columnDefs})`);
+      const columnDefs = storageNames.map(name => `${quoteSqlIdentifier(name, 'column name')} TEXT`).join(', ');
+      await db.run(`CREATE TABLE ${quotedTable} (${columnDefs})`);
 
       // Insert rows
       if (dataset.rows.length > 0) {
-        const columnNames = dataset.columns.map(col => col.name).join(', ');
+        const columnNames = storageNames.map(name => quoteSqlIdentifier(name, 'column name')).join(', ');
         const placeholders = dataset.columns.map(() => '?').join(', ');
         await db.transaction(async (txDb) => {
           for (const row of dataset.rows) {
@@ -71,7 +120,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
               const val = row[col.name];
               return val === null || val === undefined ? null : JSON.stringify(val);
             });
-            await txDb.run(`INSERT INTO ${tableName} (${columnNames}) VALUES (${placeholders})`, ...values);
+            await txDb.run(`INSERT INTO ${quotedTable} (${columnNames}) VALUES (${placeholders})`, ...values);
           }
         });
       }
@@ -88,7 +137,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
       `, id,
         options.name,
         options.description || null,
-        JSON.stringify(dataset.columns),
+        JSON.stringify(storedColumns),
         dataset.rows.length,
         sizeBytes,
         options.userId,
@@ -133,15 +182,21 @@ export async function createDatasetStore(db: DatabaseAdapter) {
         return null;
       }
 
-      // Load rows from storage table
-      const rows = await db.all(`SELECT * FROM ${meta.storage_path}`) as Array<Record<string, string | null>>;
+      // Load rows from storage table. storage_path is generated by save() and is
+      // always `dataset_<nanoid>`, but it round-trips through the database, so it is
+      // re-validated here rather than trusted — quoteSqlIdentifier fails closed.
+      const rows = await db.all(
+        `SELECT * FROM ${assertSqlIdentifier(meta.storage_path, 'dataset table name')}`,
+      ) as Array<Record<string, string | null>>;
 
-      // Deserialize JSON-encoded values
-      const columns = JSON.parse(meta.schema);
+      // Deserialize JSON-encoded values. Read each value by its PHYSICAL column name
+      // and hand it back under the dataset's own name; rows written before the mapping
+      // existed have no storageName, and for those the two are the same.
+      const columns = JSON.parse(meta.schema) as StoredColumn[];
       const deserializedRows = rows.map((row: Record<string, string | null>) => {
         const obj: Record<string, unknown> = {};
         for (const col of columns) {
-          const val = row[col.name];
+          const val = row[col.storageName ?? col.name];
           obj[col.name] = val ? JSON.parse(val) : null;
         }
         return obj;
@@ -200,7 +255,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
 
       // Drop storage table
       try {
-        await db.run(`DROP TABLE IF EXISTS ${meta.storage_path}`);
+        await db.run(`DROP TABLE IF EXISTS ${assertSqlIdentifier(meta.storage_path, 'dataset table name')}`);
       } catch (err) {
         console.error(`[dataset-store] Failed to drop table ${meta.storage_path}:`, err);
       }
@@ -224,7 +279,7 @@ export async function createDatasetStore(db: DatabaseAdapter) {
 
       for (const ds of expired) {
         try {
-          await db.exec(`DROP TABLE IF EXISTS "${ds.storage_path}"`);
+          await db.exec(`DROP TABLE IF EXISTS ${assertSqlIdentifier(ds.storage_path, 'dataset table name')}`);
           await db.run('DELETE FROM datasets WHERE id = ?', ds.id);
           deleted++;
         } catch (err) {

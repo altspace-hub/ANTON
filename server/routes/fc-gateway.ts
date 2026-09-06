@@ -9,17 +9,36 @@ export async function createFCGatewayRoutes(db: DatabaseAdapter) {
 
   // ── Admin routes (session auth, /api/futurechain/gateway/*) ──────────
 
+  /** Project the gateway config row for an HTTP response.
+   *  `api_key` is the bearer credential for the whole public gateway
+   *  (/api/gateway/pay can move funds) — it is dropped and replaced by
+   *  the masked `api_key_display` the UI actually renders. Both config
+   *  routes previously spread the raw row, so the plaintext key sat next
+   *  to its own mask in every response; the mask was cosmetic. The only
+   *  endpoint that may return the key in full is regenerate-key, which
+   *  shows it once at the moment the operator mints it.
+   *  Do NOT re-add a `...config` spread here. */
+  function publicGatewayConfig(config: Record<string, unknown>) {
+    const { api_key, ...rest } = config;
+    const key = String(api_key ?? '');
+    return {
+      ...rest,
+      api_key_display:
+        key.length > 8 ? `gw_${'*'.repeat(8)}...${key.slice(-8)}`
+        : key.length > 0 ? `gw_${'*'.repeat(8)}`
+        : '',
+    };
+  }
+
   adminRouter.get('/futurechain/gateway/config', async (_req, res) => {
     try {
       const config = (await svc.getConfig()) ?? {};
-      // Mask API key for display
-      const key = String(config.api_key ?? '');
-      res.json({ ...config, api_key_display: key.length > 8 ? `gw_${'*'.repeat(8)}...${key.slice(-8)}` : key });
+      res.json(publicGatewayConfig(config));
     } catch (err) { res.status(500).json({ error: 'Failed to get config' }); }
   });
 
   adminRouter.put('/futurechain/gateway/config', async (req, res) => {
-    try { const config = await svc.updateConfig(req.body); res.json(config); }
+    try { const config = await svc.updateConfig(req.body); res.json(publicGatewayConfig(config ?? {})); }
     catch (err) { res.status(500).json({ error: 'Failed to update config' }); }
   });
 
