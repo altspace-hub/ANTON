@@ -151,8 +151,13 @@ the paired instance, which **may forward them to an LLM provider**.
    Companion can answer "all encrypted in transit = **Yes**."
 3. **Push token rows are conditional.** FCM/APNs is gated off by default in Pay/Comm/Companion. If push
    is **not** in the launch build, delete the push-token rows; if it is, keep them (Shared = Google/Apple).
-4. **Privacy-policy URL.** All four forms require a public privacy-policy URL — blocked on the
-   `terms.futurechain.eu` DNS + page deploy (your existing operator item).
+4. **Privacy-policy URL.** All four forms require a public privacy-policy URL. **Updated 2026-09-06:**
+   `terms.futurechain.eu` was never brought up and does not resolve on public DNS, so the in-app
+   Terms/Privacy links were dead in every build — including the consent the wallet-creation gate
+   blocks on. The apps now point at `futurechain.solutions/anton/{privacy,terms}`, and the pages
+   themselves are drafted at `docs/legal/anton-privacy.html` / `anton-terms.html`. Still yours:
+   publish them, and fill the `[OPERATOR]` blocks (controller identity, log retention, push transfer
+   mechanism) that are marked visibly in the rendered pages.
 5. **Don't claim forward secrecy** for Comm — but the reason changed on 2026-07-26, and the
    old one is now misleading. This item used to read "(static-DH crypto)". The ratchet has
    since shipped and been device-verified: `ratchet.ts` / `ratchet-session.ts` /
@@ -174,4 +179,14 @@ the paired instance, which **may forward them to an LLM provider**.
    answer is "local wipe + uninstall," with the on-chain-immutability caveat. Use Play's
    "data isn't collected" / local-deletion phrasing accordingly.
 
-*Generated from a code audit (workflow `wqk9bwypu`); evidence file:line refs are in the run output.*
+7. **ANTON Agent is deliberately absent from this document.** Every count here says four apps, and
+   that is correct for the launch: Agent is descoped (see `docs/PLAY_FINANCIAL_FEATURES.md` and the
+   staged launch roadmap). It has no listing, no Data Safety answers, and no reviewable feature — a
+   three-screen shell. This note exists so the next person working the checklist does not discover a
+   fifth app at submission time and fill its form from memory. If Agent is ever funded into the
+   launch, it needs its own section here: balance display only, no key custody, no broadcast.
+
+---
+
+*Generated from a code audit (workflow `wqk9bwypu`); evidence file:line refs are in the run output.
+Sections 4 and 7 updated 2026-09-06.*
