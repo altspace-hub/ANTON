@@ -1,5 +1,18 @@
 apply plugin: 'com.android.application'
 
+// Load release-signing config from keystore.properties (gitignored).
+// Hoisted to project scope 2026-09-06: the release guard at the bottom of this
+// file needs `hasKeystore` and `keystorePropertiesFile`, and loading them inside
+// signingConfigs.release left both undefined — the guard threw
+// "Could not get unknown property 'hasKeystore'" and NO release build of this
+// app could be produced at all.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+def hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.futurechain.anton.companion"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -17,21 +30,24 @@ android {
         }
     }
     signingConfigs {
-        release {
-            def keystoreProperties = new Properties()
-            def keystorePropertiesFile = rootProject.file('keystore.properties')
-            if (keystorePropertiesFile.exists()) {
-                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
+        if (hasKeystore) {
+            release {
+                // NB: resolved against the APP MODULE dir, not rootProject. These two apps keep
+                // their keystore inside android*/ (so '../x.keystore' means android*/x.keystore),
+                // whereas pay/comm/business keep theirs at the repo root. Using rootProject.file
+                // here silently pointed one directory too high and failed validateSigningRelease.
+                storeFile file(keystoreProperties['storeFile'] as String)
+                storePassword keystoreProperties['storePassword'] as String
+                keyAlias keystoreProperties['keyAlias'] as String
+                keyPassword keystoreProperties['keyPassword'] as String
             }
         }
     }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
             // ANM7: tighten release block — disable debuggable, drop unused
             // resources alongside R8's code shrinking. Without these the
             // released APK ships ~30% larger and is debuggable on prod

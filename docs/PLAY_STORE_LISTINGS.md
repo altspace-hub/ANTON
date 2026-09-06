@@ -243,6 +243,7 @@ app at submission time and write its listing from memory.
 | Feature graphic, 1024×500 | **missing** |
 | Phone screenshots, 2–8 | raw captures exist; see the note below |
 | Privacy policy public URL | **missing** — `/anton/privacy` is now referenced by the apps but is not yet served |
+| Account-deletion public URL | **missing** — page drafted at `docs/legal/anton-delete-data.html`; Play requires it reachable with no install and no sign-in. Required because Comm holds a push registration on the relay (see Data Safety §6) |
 | Data Safety form | drafted in `PLAY_DATA_SAFETY_DECLARATIONS.md` (Agent absent) |
 | Financial Features declaration | drafted in `PLAY_FINANCIAL_FEATURES.md` |
 | Content rating questionnaire | not started |

@@ -175,9 +175,26 @@ the paired instance, which **may forward them to an LLM provider**.
    Verified 2026-07-29 that no user-facing string or marketing copy claims it: the reset chip
    says "Secure session was repaired", and the only "forward secrecy" occurrences in the tree
    are code comments. Keep it that way until both (a) and (b) are closed.
-6. **Account deletion wording.** There is no server-side account to delete (self-custody); the deletion
-   answer is "local wipe + uninstall," with the on-chain-immutability caveat. Use Play's
-   "data isn't collected" / local-deletion phrasing accordingly.
+6. **Account deletion wording.** Nearly true, with one exception that has to be stated exactly.
+   There is no server-side *account* in any of the four apps — no username, no password, no
+   profile. For Pay, Business and Companion the deletion answer really is "local wipe +
+   uninstall," with the on-chain-immutability caveat.
+
+   **Comm is the exception.** The relay holds a durable `comm_push_tokens` row keyed by
+   `routing_id = sha256(pubkey)[0..16]` (`relay/migrations/003_comm_push_tokens.sql`). That is
+   server-side state tied to an identity, and Play's account-deletion policy is written broadly
+   enough to reach it. Two things follow:
+
+   - Sign-out now calls `/comm/push/unregister` *before* `clearIdentity()`, so the row is deleted
+     as part of the in-app deletion (fixed 2026-09-06; `src/comm/__tests__/signout-deletion.test.ts`).
+     Before that fix, deleting yourself in the app left the row behind indefinitely.
+   - The **account-deletion URL** in Play Console must be filled for every listing.
+     `docs/legal/anton-delete-data.html` is the drafted page; it needs a public URL before
+     submission. Play requires it to be reachable without installing the app or signing in.
+
+   The relay's undelivered-message mailbox is *not* in this category: it is in-memory only, capped
+   at 100 messages per recipient with a 7-day TTL (`relay/src/comm-registry.ts`), never written to
+   disk, and unreadable by us. It needs disclosing, not deleting.
 
 7. **ANTON Agent is deliberately absent from this document.** Every count here says four apps, and
    that is correct for the launch: Agent is descoped (see `docs/PLAY_FINANCIAL_FEATURES.md` and the

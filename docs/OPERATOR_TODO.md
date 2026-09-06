@@ -22,8 +22,10 @@ Full context in `docs/GO_LIVE_CHECKLIST.md` (2026-06-11 section).
 
 ## 🔑 Do first among the quick ones — irreplaceable
 
-- [ ] **Back up the 4 release keystores + `.env`.** They exist ONLY on the build
-      machine (gitignored, never committed — verified). Lose one → you can never
+- [~] **Back up the release keystores + `.env`.** PARTIALLY DONE (2026-07-17). Four of
+      the five signing keys now have an off-machine copy; **ANTON Agent's key was created
+      2026-07-29, after that backup, and exists on this machine only.** `.env` is still
+      local-only. Lose one → you can never
       update that app on Play. Copy `anton-{pay,comm,business}-release.keystore` +
       `android/anton-release.keystore` + their `keystore.properties` + `.env` to an
       encrypted offline drive. Recipe: `docs/SESSION_HANDOVER_2026-06-10.md §0`.
