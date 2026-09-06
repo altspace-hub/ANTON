@@ -1,7 +1,9 @@
 # Operator To-Do — ANTON / FutureChain Launch (early July 2026)
 
 **Your personal action list.** These are the items only *you* (operator/legal) can
-do — engineering is on track and not blocking. Ordered by lead time: legal first
+do. Engineering is not blocking with one exception, and it is a real one: **ANTON Pay
+cannot be built for Play until you create the Google Cloud project** — see the
+Play-submission section below. Ordered by lead time: legal first
 (longest pole), then the one-time secret/backup items, then the launch-day infra.
 Full context in `docs/GO_LIVE_CHECKLIST.md` (2026-06-11 section).
 
@@ -62,6 +64,68 @@ Full context in `docs/GO_LIVE_CHECKLIST.md` (2026-06-11 section).
       (+ Comm), drop `google-services.json` per app, set `FCM_SERVICE_ACCOUNT_JSON`
       on the gateway. (The dispatch code is now complete — being finished this
       session — so this becomes pure config.) Runbook: `docs/FCM_OPERATOR_RUNBOOK.md`.
+
+---
+
+## 📦 Play submission — what actually blocks it (checked 2026-09-06)
+
+The whole release chain was run from HEAD for all five apps today, which had not been
+done since 2026-06-11. Result: **four of the five produce a signed AAB; Pay does not.**
+
+| App | Signed AAB today | Signer | Blocking |
+|---|---|---|---|
+| Comm | ✅ 17.12 MB | `127f6e69b88a2fda` | — |
+| Companion | ✅ 16.07 MB | `6e7de640853ce78f` | was broken until today (fixed) |
+| Agent | ✅ 14.65 MB | `8afb85d46aa5e0ad` | was broken until today (fixed); in/out of launch is your call |
+| Business | ✅ 4.85 MB | `ca01cc63ef4dbf82` | — |
+| **Pay** | ❌ **fails at configure time** | — | **`google_cloud_project_number` is still `0`** |
+
+**Pay's failure is the build refusing to lie.** The gate is deliberate: with the
+placeholder project number, Play Integrity attestation is a no-op, the JS layer falls
+back to dev tokens, and Bahnhof rejects those in production — so Send would be dead in
+a shipped build while looking completely normal. Create the Google Cloud project, put
+the real number in `android-pay/app/src/main/res/values/strings.xml` and the matching
+`GOOGLE_CLOUD_PROJECT_NUMBER` on Bahnhof, and confirm `BAHNHOF_DEV_ATTESTATION_ALLOWED`
+is unset in production. **Until that number exists, Pay cannot be built for Play at all.**
+
+### Hard blockers that are yours alone
+
+- [ ] **Store art — nothing exists yet.** Per app: icon 512×512 32-bit PNG, feature
+      graphic 1024×500, and 2–8 phone screenshots. `android-*/play/screenshots/` holds
+      only a README. This is the long pole; everything else here is hours, this is days.
+      **Screenshots need padding, not cropping** — the Xperia captures are 1096×2560
+      (2.34:1) and Play rejects anything taller than 2:1. Pad to 1280×2560.
+      Before capturing Business, set the merchant currency to SEK (the test profile is a
+      Swedish AB showing USD) and ring a few sales dated today so Statistics is not empty.
+- [ ] **Publish the three legal pages and fill their `[OPERATOR]` blocks.**
+      `docs/legal/anton-privacy.html`, `anton-terms.html`, `anton-delete-data.html`.
+      All three need public URLs before submission; the privacy and deletion URLs are
+      fields in the Play Console form, not optional. The deletion page must be reachable
+      **without installing the app and without signing in**.
+- [ ] **Play Console, per app:** create the record, Data Safety form
+      (`docs/PLAY_DATA_SAFETY_DECLARATIONS.md`), Financial Features declaration
+      (`docs/PLAY_FINANCIAL_FEATURES.md`), content rating questionnaire (not started),
+      and App access demo credentials for Companion (and Agent, if it launches).
+- [ ] **Enrol every app in Play App Signing at first upload.** This also shrinks the
+      keystore-loss risk below: with Play App Signing the local key becomes an *upload*
+      key, which Google can reset. The app signing key cannot.
+- [ ] **Back up `android-agent/anton-agent-release.keystore`.** The 2026-07-17 import
+      covered four of the five keys; Agent's was created 2026-07-29, after it, and exists
+      on this machine only. I did not add it to the repo — putting key material anywhere
+      is your decision, not mine. It is the one item on this page whose loss is permanent.
+- [ ] **Decide whether ANTON Agent is in the launch.** It is documented as descoped, and
+      as of today it builds and signs cleanly. If it stays out, nothing to do; if it comes
+      in, it needs its own Data Safety section, listing copy and store art.
+
+### Not blocking submission, but known
+
+- `versionCode` is `1` in all five. Correct for a first upload; it must be bumped by +1
+  for every subsequent upload, including internal-track builds. Never reuse one.
+- The **E2E Cross-Browser** workflow is still red on `main` (green on branches) — the job
+  starts the server with no `DATABASE_URL`. It is a CI-config issue and touches none of
+  the phone apps, but it is the one red signal on the default branch.
+- Push dispatch is still stubbed and no `google-services.json` exists for any app. Push
+  scope at launch remains a decision rather than a task.
 
 ## ✅ Verification before go/no-go
 
