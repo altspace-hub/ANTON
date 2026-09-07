@@ -1,4 +1,10 @@
--- Migration 265: give fc_wallets an owner.
+-- Migration 267: give fc_wallets an owner.
+--
+-- Renumbered from 265 on 2026-09-07 — three owner migrations were authored in one
+-- sitting and all took that prefix, which ci.yml's uniqueness gate rejects. Instances
+-- that already applied it as `265_fc_wallets_owner` will re-run it under the new id;
+-- ADD COLUMN IF NOT EXISTS, CREATE INDEX IF NOT EXISTS and COMMENT ON are all
+-- idempotent, so it is a no-op, and the orphaned 265 row is harmless history.
 --
 -- ── The hole ────────────────────────────────────────────────────────────────
 --

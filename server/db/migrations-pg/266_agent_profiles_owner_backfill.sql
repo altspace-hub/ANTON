@@ -1,4 +1,12 @@
--- 265_agent_profiles_owner_backfill.sql
+-- 266_agent_profiles_owner_backfill.sql
+--
+-- Renumbered from 265 on 2026-09-07: three owner migrations were authored in one
+-- sitting and all took the prefix 265. The runner keys on the full basename and did
+-- not care, but ci.yml's "Migration prefixes are unique" gate exits 1 on a collision,
+-- before tsc runs. Instances that applied this file under its old name carry
+-- `265_agent_profiles_owner_backfill` in schema_migrations and will run it again under
+-- the new id — a no-op: the UPDATE matches nothing once created_by is set, and the
+-- DEFAULT and index are both idempotent. The orphaned 265 row is harmless history.
 --
 -- agent_profiles.created_by has existed since migration 111 (DEFAULT 'default'), but
 -- nothing ever wrote it: createAgent()'s INSERT column list omitted it, so every agent
