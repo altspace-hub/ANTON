@@ -275,23 +275,41 @@ export async function getAuditLog(
 /**
  * Get comprehensive audit statistics
  */
-export async function getAuditStats(db: DatabaseAdapter) {
+export async function getAuditStats(db: DatabaseAdapter, scope: AuditOwnerScope = UNSCOPED) {
   const today = new Date().toISOString().split('T')[0];
   const thisMonth = today.substring(0, 7);
 
+  // Every one of the five queries takes the predicate. Four of them had no WHERE at
+  // all, hence the `WHERE 1=1` — ownerFilter always emits a fragment starting ` AND `,
+  // which is deliberate (see middleware/ownership.ts) so that removing a condition
+  // later cannot silently turn a scoped query into an unscoped one.
   return {
-    totalCalls: ((await db.get('SELECT COUNT(*) as c FROM audit_log')) as { c: number } | undefined)?.c ?? 0,
+    totalCalls: ((await db.get(
+      `SELECT COUNT(*) as c FROM audit_log WHERE 1=1${scope.sql}`,
+      ...scope.params,
+    )) as { c: number } | undefined)?.c ?? 0,
     callsToday: (
-      await db.get('SELECT COUNT(*) as c FROM audit_log WHERE timestamp >= ?', today + 'T00:00:00') as { c: number }
+      await db.get(
+        `SELECT COUNT(*) as c FROM audit_log WHERE timestamp >= ?${scope.sql}`,
+        today + 'T00:00:00', ...scope.params,
+      ) as { c: number }
     ).c,
     costThisMonth: (
-      await db.get('SELECT COALESCE(SUM(estimated_cost_usd),0) as c FROM audit_log WHERE timestamp >= ?', thisMonth + '-01') as { c: number }
+      await db.get(
+        `SELECT COALESCE(SUM(estimated_cost_usd),0) as c FROM audit_log WHERE timestamp >= ?${scope.sql}`,
+        thisMonth + '-01', ...scope.params,
+      ) as { c: number }
     ).c,
     byModel: await db.all(
-        'SELECT model, COUNT(*) as calls, SUM(estimated_cost_usd) as total_cost FROM audit_log GROUP BY model ORDER BY calls DESC'
+        `SELECT model, COUNT(*) as calls, SUM(estimated_cost_usd) as total_cost
+           FROM audit_log WHERE 1=1${scope.sql} GROUP BY model ORDER BY calls DESC`,
+        ...scope.params,
       ),
     byModule: await db.all(
-        'SELECT module_id, COUNT(*) as calls FROM audit_log WHERE module_id IS NOT NULL GROUP BY module_id ORDER BY calls DESC LIMIT 10'
+        `SELECT module_id, COUNT(*) as calls
+           FROM audit_log WHERE module_id IS NOT NULL${scope.sql}
+          GROUP BY module_id ORDER BY calls DESC LIMIT 10`,
+        ...scope.params,
       ),
   };
 }

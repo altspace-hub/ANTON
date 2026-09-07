@@ -67,6 +67,21 @@ export type SearchScope =
 export const INSTANCE_WIDE_SEARCH: SearchScope = { kind: 'instance' };
 
 /**
+ * For a caller that is authenticated in a DIFFERENT identity namespace than
+ * `sessions.user_id` — today that is the companion app, whose `req.appUser` is a
+ * `connected_users` row and never a desktop user. Such a caller has a legitimate
+ * claim on the instance's shared reference material and no claim at all on anyone's
+ * verbatim session output, which is exactly what `'none'` yields: unowned content
+ * types pass, `session_output` is dropped on the vector path and never queried on
+ * the keyword one.
+ *
+ * Named for the same reason as INSTANCE_WIDE_SEARCH — so the decision is greppable,
+ * and so nobody reaches for `{ kind: 'user', userId: appUser.id }`, which happens to
+ * match nothing today but only because the two id spaces do not collide yet.
+ */
+export const NO_OWNED_CONTENT: SearchScope = { kind: 'none' };
+
+/**
  * Derive the scope from an authenticated request. Delegates to `scopesToOwner`
  * (middleware/ownership.ts) so solo/admin behaviour has ONE definition — anyone
  * changing that rule must not have to find a second copy here.

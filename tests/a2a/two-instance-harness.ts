@@ -44,6 +44,10 @@ const { Client } = pg;
 // 64 hex chars — a fixed throwaway key for test-only at-rest encryption.
 process.env.ENCRYPTION_KEY ??= 'a2a0c0de0000000000000000000000000000000000000000000000000000beef';
 process.env.ALLOW_PRIVATE_P2P = 'true';
+// middleware/auth.ts refuses to load without this — a module-level throw, not a
+// per-request check, so it fires even though the harness runs in solo mode and never
+// verifies a token. Same reason ENCRYPTION_KEY is set above: read at import time.
+process.env.JWT_SECRET ??= 'a2a-test-only-jwt-secret-not-used-for-signing-in-solo-mode';
 
 // ── Isolated database provisioning ───────────────────────────────────────────
 
@@ -235,11 +239,19 @@ export async function startInstance(name: string, dbUrl: string): Promise<A2AIns
   const { createAgentRoutes } = await import('../../server/routes/agents.js');
   const { createMissionDelegationRoutes } = await import('../../server/routes/mission-delegation.js');
   const { createMessageQueueService } = await import('../../server/services/message-queue-service.js');
+  const { createAuthMiddleware } = await import('../../server/middleware/auth.js');
 
   const db: DatabaseAdapter = new PostgresAdapter({ connectionString: dbUrl, maxConnections: 5 });
 
   const app = express();
   app.use(express.json({ limit: '10mb' }));
+  // Production mounts authMiddleware ahead of every route factory (server/index.ts).
+  // The harness used to skip it, so `req.user` was undefined here and nowhere else —
+  // which is why routes that now require a principal (POST /agents refuses to create
+  // an agent no owner predicate could ever match) answered 401 only under test. With
+  // DEPLOYMENT_MODE unset this is solo mode, so it simply stamps the solo operator,
+  // exactly as a real single-user instance does.
+  app.use(await createAuthMiddleware(db));
   app.use('/api', await createCommunityRoutes(db));
   app.use('/api', await createP2PRoutes(db));
   app.use('/api', await createAgentRoutes(db));

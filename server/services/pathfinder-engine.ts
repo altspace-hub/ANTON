@@ -28,7 +28,7 @@ import { getProviderFromModelId } from './model-adapter.js';
 import { getThinkingConfig } from '../config/model-capabilities.js';
 import { getBingSearchApiKey, searchBing } from './bing-search.js';
 import { estimateTokens, estimateCost } from './token-estimator.js';
-import { hybridSearch, type HybridSearchResult } from './hybrid-search.js';
+import { hybridSearch, type HybridSearchResult, type SearchScope } from './hybrid-search.js';
 import { createPortalSearchEngine } from './portals/portal-search-engine.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -286,10 +286,20 @@ function enrichQuery(query: string, context?: SearchContext): string {
 /**
  * Search local knowledge sources (knowledge atoms, checkpoints, session outputs)
  * using hybrid BM25+vector search. Returns results as WebSource[] with sourceType='local'.
+ *
+ * `scope` is threaded down from the route rather than derived here, and it is required
+ * for a specific reason: this is the one hybridSearch call in the engine with NO
+ * contentTypes filter, so `session_output` is in range and a Pathfinder answer would
+ * otherwise cite another user's chat verbatim, with a title, in team mode. Deriving it
+ * from the `userId` the dispatchers already carry would be wrong in the other
+ * direction — solo installs hold sessions written before ownership existed, whose
+ * user_id is NULL, and scoping those would delete the operator's own history from
+ * their own search results.
  */
 async function searchLocalKnowledge(
   db: DatabaseAdapter,
   query: string,
+  scope: SearchScope,
   topK = 3,
 ): Promise<WebSource[]> {
   try {
@@ -298,6 +308,7 @@ async function searchLocalKnowledge(
       topK: topK + 2, // fetch extra so we can filter
       minSimilarity: 0.5, // higher threshold — only genuinely relevant results
       includeDocumentChunks: true,
+      scope,
     });
 
     // Keyword overlap filter — discard results that share no significant words with the query
@@ -617,20 +628,21 @@ async function runSearchStep(
   searchMode: SearchMode,
   userLocation: string | undefined,
   localTopK: number,
+  scope: SearchScope,
   signal?: AbortSignal,
 ): Promise<{ searchResult: ModelResult; localResults: WebSource[] }> {
   if (getActiveSearchProvider() === 'anthropic' && anthropic) {
     callbacks.onModelStart(SEARCH_MODEL.modelId, 'Web Search');
     const [searchResult, localResults] = await Promise.all([
       dispatchSingleModel(enrichedQuery, SEARCH_MODEL, documentContext, anthropic, searchMode, userLocation, signal),
-      searchLocalKnowledge(db, query, localTopK),
+      searchLocalKnowledge(db, query, scope, localTopK),
     ]);
     callbacks.onModelComplete(searchResult);
     return { searchResult, localResults };
   }
   const [searchResult, localResults] = await Promise.all([
     dispatchBingSearch(db, enrichedQuery, callbacks, signal),
-    searchLocalKnowledge(db, query, localTopK),
+    searchLocalKnowledge(db, query, scope, localTopK),
   ]);
   return { searchResult, localResults };
 }
@@ -1032,6 +1044,7 @@ export async function dispatchQuickSearch(
   db: DatabaseAdapter,
   query: string,
   userId: string,
+  scope: SearchScope,
   threadId: string | null,
   documentContext: string,
   anthropic: Anthropic | null,
@@ -1060,7 +1073,7 @@ export async function dispatchQuickSearch(
   // Step 1: web search (provider-aware) + local knowledge in parallel
   const { searchResult, localResults } = await runSearchStep(
     db, query, enrichedQuery, documentContext, anthropic, callbacks,
-    searchMode, context?.userLocation, 3, signal,
+    searchMode, context?.userLocation, 3, scope, signal,
   );
 
   if (searchResult.status === 'error') {
@@ -1121,6 +1134,7 @@ export async function dispatchThoroughSearch(
   db: DatabaseAdapter,
   query: string,
   userId: string,
+  scope: SearchScope,
   threadId: string | null,
   documentContext: string,
   anthropic: Anthropic | null,
@@ -1144,7 +1158,7 @@ export async function dispatchThoroughSearch(
   // Step 1: web search (provider-aware) + local knowledge
   const { searchResult, localResults } = await runSearchStep(
     db, query, enrichedQuery, documentContext, anthropic, callbacks,
-    searchMode, context?.userLocation, 5, signal,
+    searchMode, context?.userLocation, 5, scope, signal,
   );
 
   if (searchResult.status === 'error') {
@@ -1230,6 +1244,7 @@ export async function dispatchDeepSearch(
   db: DatabaseAdapter,
   query: string,
   userId: string,
+  scope: SearchScope,
   threadId: string | null,
   documentContext: string,
   anthropic: Anthropic | null,
@@ -1253,7 +1268,7 @@ export async function dispatchDeepSearch(
   // Step 1: web search (provider-aware) + local knowledge
   const { searchResult, localResults } = await runSearchStep(
     db, query, enrichedQuery, documentContext, anthropic, callbacks,
-    searchMode, context?.userLocation, 5, signal,
+    searchMode, context?.userLocation, 5, scope, signal,
   );
 
   if (searchResult.status === 'error') {
