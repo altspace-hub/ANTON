@@ -51,6 +51,7 @@ d('mission credential vault — cross-tenant access', () => {
   const bob = `u_test_bob_${randomUUID()}`;
   let bobsCredential = '';
   const created: string[] = [];
+  let seededIdentity = false;
 
   let originalMode: string | undefined;
 
@@ -63,6 +64,25 @@ d('mission credential vault — cross-tenant access', () => {
       await db.run(
         'INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)',
         id, `${name}-${id.slice(-8)}`, 'x', 'analyst');
+    }
+
+    // create / rotate / delete call resolveCallerIdentity(db, undefined) first, which is
+    // a liveness check on the instance's community identity — not an authorisation check
+    // (mission-identity.ts says so itself), but it answers 409 when the instance has
+    // never been activated and short-circuits before any ownership logic runs. This
+    // machine happened to have a real identity row, so four cases passed locally for the
+    // wrong reason and CI, on a fresh database, returned 409 for all of them. Seed the
+    // precondition rather than assert around it, and only remove what we created — the
+    // row on a developer's machine is their real community identity.
+    const existingIdentity = await db.get<{ id: string }>(
+      "SELECT id FROM community_identity WHERE user_id = 'default'");
+    seededIdentity = !existingIdentity;
+    if (seededIdentity) {
+      await db.run(
+        `INSERT INTO community_identity (id, contact_hash, display_name, public_key, user_id)
+         VALUES (?, ?, ?, ?, 'default')`,
+        `ci_test_${randomUUID()}`, `ANTON-TEST-${randomUUID().slice(0, 8)}`,
+        'test identity', 'test-public-key');
     }
 
     const { createCredentialVault } = await import('../../server/services/missions/mission-credential-vault.js');
@@ -92,6 +112,9 @@ d('mission credential vault — cross-tenant access', () => {
     }
     for (const u of [alice, bob]) {
       await db.run('DELETE FROM users WHERE id = ?', u).catch(() => {});
+    }
+    if (seededIdentity) {
+      await db.run("DELETE FROM community_identity WHERE user_id = 'default'").catch(() => {});
     }
     await db.close();
   });
