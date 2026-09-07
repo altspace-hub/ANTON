@@ -585,31 +585,31 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
   // Enrolment (enable / confirm / disable) lives in createAuthMfaRoutes below:
   // those read req.user and this router is mounted BEFORE authMiddleware.
 
-  // POST /api/auth/mfa/verify — verify TOTP during login (called after password check)
-  router.post('/auth/mfa/verify', async (req, res) => {
-    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
-    const { userId, token: totpToken } = req.body as { userId?: string; token?: string };
-    if (!userId || !totpToken) { res.status(400).json({ error: 'userId and token required' }); return; }
-    if (!/^\d{6}$/.test(totpToken)) { res.status(400).json({ error: 'Token must be 6 digits' }); return; }
-
-    try {
-      const user = await db.get('SELECT mfa_secret FROM users WHERE id = ? AND mfa_enabled = 1', userId) as { mfa_secret: string } | undefined;
-      if (!user?.mfa_secret) { res.status(400).json({ error: 'MFA not enabled for this user' }); return; }
-
-      const speakeasy = await import('speakeasy');
-      const verified = speakeasy.default.totp.verify({
-        secret: user.mfa_secret,
-        encoding: 'base32',
-        token: totpToken,
-        window: 1,
-      });
-
-      res.json({ verified });
-    } catch (err) {
-      console.error('[auth] MFA verify error:', err);
-      res.status(500).json({ error: 'MFA verification failed' });
-    }
-  });
+  // POST /auth/mfa/verify USED TO LIVE HERE. It is deleted, not moved, and it must not
+  // come back in this router.
+  //
+  // It took { userId, token } with no session, answered `res.json({ verified })`, and
+  // nothing else. This router is mounted at index.ts:469, ahead of authMiddleware (556),
+  // csrfProtection (565) and userLimiter (568), and the only path-scoped limiters are
+  // login / forgot-password / reset-password (291-293) — so the endpoint was
+  // unauthenticated, unthrottled and un-CSRF'd. It also wrote no login_attempts row, so
+  // the 5-in-15-minutes username lockout that caps code guessing on the login path never
+  // saw it. With speakeasy's window:1 accepting three live codes out of 10^6, that is a
+  // second factor brute-forceable off-path in minutes, and the winning code replays
+  // straight into POST /auth/login, which verifies with identical parameters.
+  //
+  // The lines were byte-identical on main, where they were harmless: main never mounted
+  // createAuthMfaRoutes, so mfa_enabled had no write path and the query below could not
+  // match a row. Adding enrolment and login enforcement is what armed it — a dormant
+  // endpoint became a live bypass without being edited, which is the failure mode worth
+  // remembering here.
+  //
+  // Deleting it costs nothing: it had no caller in src/, tests/ or any companion app.
+  // Login verifies the second factor inline (see the mfaOn block above), which is
+  // authenticated by the password check, rate-limited, logged, and answers 401 on a bad
+  // code rather than 200. Note that mounting authLimiter on this path would NOT have
+  // fixed it: rate-limit.ts sets skipSuccessfulRequests, and a wrong guess returned
+  // HTTP 200, so every guess would have been skipped as a success.
 
   return router;
 }

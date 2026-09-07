@@ -204,3 +204,48 @@ describe('login enforces the second factor', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('there is no off-login TOTP oracle', () => {
+  // POST /auth/mfa/verify took { userId, token } with no session and answered
+  // `{ verified }` with HTTP 200 either way. It lived in the PRE-AUTH router — mounted
+  // ahead of authMiddleware, csrfProtection and userLimiter — and wrote no
+  // login_attempts row, so the 5-in-15-minutes lockout never saw it. speakeasy's
+  // window:1 accepts three live codes out of 10^6, and a winning code replays straight
+  // into /auth/login. It had no caller anywhere, so it was deleted rather than guarded.
+  //
+  // The lines were byte-identical on main and harmless there: main never mounted
+  // createAuthMfaRoutes, so mfa_enabled had no write path. Enrolment plus login
+  // enforcement is what armed them. That is why this is asserted rather than assumed —
+  // a route can become exploitable without being edited.
+
+  it('POST /auth/mfa/verify is not routed at all', async () => {
+    user.mfa_enabled = 1; user.mfa_secret = MFA_SECRET;
+    const res = await post('/auth/mfa/verify', { userId: user.id, token: await currentTotp() });
+    // 404, not 400/401: the handler must be absent, not merely refusing this input.
+    expect(res.status).toBe(404);
+  });
+
+  it('a correct code proves nothing without the password', async () => {
+    // The property that actually matters, stated independently of the route's shape:
+    // holding a live TOTP must never yield a session on its own.
+    user.mfa_enabled = 1; user.mfa_secret = MFA_SECRET;
+    const res = await post('/auth/mfa/verify', { userId: user.id, token: await currentTotp() });
+    expect(res.status).toBe(404);
+    expect(runs.some((r) => r.sql.includes('INSERT INTO user_sessions'))).toBe(false);
+    // And it must not even read the secret — an oracle that only leaks "enabled or not"
+    // is still an oracle.
+    expect(runs.some((r) => r.sql.includes('mfa_secret') && r.sql.includes('SELECT'))).toBe(false);
+  });
+
+  it('the pre-auth router exposes no /auth/mfa/* path whatsoever', () => {
+    // Guards the whole prefix, not the one filename: re-adding any unauthenticated MFA
+    // endpoint to createAuthRoutes reopens this, and the next one may not be called
+    // "verify". Read from source because the mount order is the actual defect surface.
+    const src = readFileSync(join(process.cwd(), 'server/routes/auth.ts'), 'utf8');
+    const preAuth = src.slice(0, src.indexOf('export function createAuthMfaRoutes'));
+    const routed = [...preAuth.matchAll(/router\.(get|post|put|patch|delete)\(\s*'([^']+)'/g)]
+      .map((m) => m[2])
+      .filter((p) => p.startsWith('/auth/mfa'));
+    expect(routed, `pre-auth router must expose no /auth/mfa/* route, found: ${routed.join(', ')}`).toEqual([]);
+  });
+});
