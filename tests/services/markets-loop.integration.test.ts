@@ -689,10 +689,30 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       const slot = new Date('2026-09-04T16:00:00.000Z');
       let release: (() => void) | undefined;
       let runs = 0;
+
+      // Wait for the slot to be genuinely held before racing it.
+      //
+      // recordPhase claims the slot with `await db.get(INSERT …)` and only calls fn
+      // once that has committed — so the work body starting IS the signal that the
+      // claim succeeded. Without this wait the test asserted about a precondition it
+      // had not established: the first call had only run as far as its own first
+      // await, and if the second INSERT reached PostgreSQL first it legitimately won
+      // the slot, making `concurrent` true. The recorder was right and the test was
+      // wrong, which is the worst way round.
+      //
+      // It failed on CI 2026-09-07 and once locally under full-suite load, passing
+      // 66/66 in isolation — the signature of a race decided by machine load.
+      // Reproduced deterministically by delaying the first claim's INSERT by 150ms:
+      // the old body failed on this exact assertion every time, this one passed.
+      let claimed!: () => void;
+      const slotHeld = new Promise<void>((resolve) => { claimed = resolve; });
+
       const inFlight = recordPhase('inflight-phase', () => new Promise<void>((resolve) => {
         runs++;
         release = resolve;
+        claimed();
       }), slot);
+      await slotHeld;
 
       const concurrent = await recordPhase('inflight-phase', async () => { runs++; }, slot);
       expect(concurrent).toBe(false);
