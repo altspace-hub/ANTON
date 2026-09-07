@@ -28,6 +28,8 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createMissionDelegation } from '../services/missions/mission-delegation.js';
 import { resolveCallerIdentity } from '../services/missions/mission-identity.js';
 import { safeError } from '../lib/error-response.js';
+import { createMissionOwnerGuard, createMissionOwnerGuardVia, createMissionTaskGuard } from './mission-access.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 function sendIdentityError(res: import('express').Response, err: unknown): void {
   const msg = safeError(err);
@@ -38,6 +40,38 @@ function sendIdentityError(res: import('express').Response, err: unknown): void 
 
 export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
   const router = Router();
+
+  // ── Guards ────────────────────────────────────────────────────────────
+  //
+  // Attached per route because this router interleaves '/missions/:id/…' with the
+  // collection paths '/missions/delegations/inbound' and '/missions/p2p/receive',
+  // which a router.use('/missions/:id', …) would capture with id='delegations'.
+  //
+  // The delegation routes split by DIRECTION, and getting that backwards either
+  // leaves a hole or breaks federation:
+  //   • OUTBOUND (send / cancel / approve / reject) acts on a delegation this
+  //     instance created, so it has a local mission and a local owner to check.
+  //   • INBOUND (accept / decline / submit-result) acts on work a PEER sent us.
+  //     missions.mission_delegations.mission_id is NULL on those rows until they
+  //     are accepted, so there is no owner to compare against — an owner guard
+  //     would 404 the entire inbox. A role gate is the only control available.
+  const missionOwner = createMissionOwnerGuard(db);
+  const taskInMission = createMissionTaskGuard(db);
+  const delegationOwner = createMissionOwnerGuardVia(db, {
+    table: 'missions.mission_delegations',
+    idParam: 'dId',
+    notFoundMessage: 'Delegation not found',
+  });
+  // Read path only: an accepted inbound delegation is attributed through
+  // sub_mission_id instead of mission_id, and a row with neither is a pending
+  // inbound one, which falls back to the same role gate the inbox listing uses.
+  const delegationReader = createMissionOwnerGuardVia(db, {
+    table: 'missions.mission_delegations',
+    idParam: 'dId',
+    fallbackMissionColumn: 'sub_mission_id',
+    notFoundMessage: 'Delegation not found',
+    onUnattributed: requireAdminOrSolo,
+  });
   let _service: Awaited<ReturnType<typeof createMissionDelegation>> | null = null;
   async function service(): Promise<Awaited<ReturnType<typeof createMissionDelegation>>> {
     if (!_service) _service = await createMissionDelegation(db);
@@ -68,7 +102,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
 
   // ── Outbound: create + send ────────────────────────────────────────────
 
-  router.post('/missions/:id/tasks/:taskId/delegate', async (req, res) => {
+  router.post('/missions/:id/tasks/:taskId/delegate', missionOwner, taskInMission, async (req, res) => {
     try {
       const schema = z.object({
         peer_contact_hash: z.string().min(8).max(200),
@@ -93,7 +127,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
 
   // Phase B1 — delegate a sub-graph (a connected set of tasks) as one unit.
   // Mission-scoped, not task-scoped: brief.tasks carries the sub-graph.
-  router.post('/missions/:id/delegate-graph', async (req, res) => {
+  router.post('/missions/:id/delegate-graph', missionOwner, async (req, res) => {
     try {
       const schema = z.object({
         peer_contact_hash: z.string().min(8).max(200),
@@ -120,7 +154,10 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
 
   // Phase B2 — rank connected peers as delegation targets (capability +
   // trust aware). Optional ?q= focuses the capability match.
-  router.get('/missions/delegations/peer-suggestions', async (req, res) => {
+  // Returns community_connections rows — the same dataset index.ts gates with
+  // app.use('/api/community', requireAdminOrSolo). A non-admin now gets 403 here, which
+  // CreateDelegationModal swallows into an empty peer list rather than an error.
+  router.get('/missions/delegations/peer-suggestions', requireAdminOrSolo, async (req, res) => {
     try {
       const q = typeof req.query.q === 'string' ? req.query.q : undefined;
       const s = await service();
@@ -131,7 +168,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/send', async (req, res) => {
+  router.post('/missions/delegations/:dId/send', delegationOwner, async (req, res) => {
     try {
       try { await resolveCallerIdentity(db, undefined); }
       catch (err) { sendIdentityError(res, err); return; }
@@ -143,7 +180,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/cancel', async (req, res) => {
+  router.post('/missions/delegations/:dId/cancel', delegationOwner, async (req, res) => {
     try {
       const schema = z.object({ reason: z.string().max(500).optional() }).strict();
       const parsed = schema.safeParse(req.body ?? {});
@@ -159,7 +196,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/approve', async (req, res) => {
+  router.post('/missions/delegations/:dId/approve', delegationOwner, async (req, res) => {
     try {
       let identity;
       try { identity = await resolveCallerIdentity(db, undefined); }
@@ -172,7 +209,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/reject', async (req, res) => {
+  router.post('/missions/delegations/:dId/reject', delegationOwner, async (req, res) => {
     try {
       const schema = z.object({ reason: z.string().min(1).max(500) }).strict();
       const parsed = schema.safeParse(req.body);
@@ -190,7 +227,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
 
   // ── Inbound: list + accept/decline + submit-result ─────────────────────
 
-  router.get('/missions/delegations/inbound', async (_req, res) => {
+  router.get('/missions/delegations/inbound', requireAdminOrSolo, async (_req, res) => {
     try {
       const s = await service();
       const items = await s.listInbound();
@@ -200,7 +237,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/accept', async (req, res) => {
+  router.post('/missions/delegations/:dId/accept', requireAdminOrSolo, async (req, res) => {
     try {
       const schema = z.object({ create_sub_mission: z.boolean().optional() }).strict();
       const parsed = schema.safeParse(req.body ?? {});
@@ -216,7 +253,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/decline', async (req, res) => {
+  router.post('/missions/delegations/:dId/decline', requireAdminOrSolo, async (req, res) => {
     try {
       const schema = z.object({ reason: z.string().max(500).optional() }).strict();
       const parsed = schema.safeParse(req.body ?? {});
@@ -232,7 +269,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/delegations/:dId/submit-result', async (req, res) => {
+  router.post('/missions/delegations/:dId/submit-result', requireAdminOrSolo, async (req, res) => {
     try {
       const schema = z.object({
         payload: z.record(z.string(), z.unknown()),
@@ -316,7 +353,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
 
   // ── Listings ───────────────────────────────────────────────────────────
 
-  router.get('/missions/:id/delegations', async (req, res) => {
+  router.get('/missions/:id/delegations', missionOwner, async (req, res) => {
     try {
       const s = await service();
       const delegations = await s.listMissionDelegations(String(req.params.id));
@@ -326,7 +363,7 @@ export function createMissionDelegationRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.get('/missions/delegations/:dId', async (req, res) => {
+  router.get('/missions/delegations/:dId', delegationReader, async (req, res) => {
     try {
       const s = await service();
       const delegation = await s.getDelegation(String(req.params.dId));
