@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MODEL_CAPABILITIES, getThinkingConfig, estimateCost as capEstimateCost } from '../../server/config/model-capabilities';
 import { MODEL_REGISTRY } from '../../server/types/modelAdapter';
 import { estimateCost as teEstimateCost } from '../../server/services/token-estimator';
+import { anthropicEffort } from '../../server/services/thinking-map';
 
 /**
  * Guards the "duplicated registries drift" class flagged in the 2026-05-30 audit
@@ -71,7 +72,25 @@ describe('getThinkingConfig', () => {
     expect(getThinkingConfig('claude-opus-4-8', 'quick')).toMatchObject({ thinkingType: 'adaptive', effort: 'low' });
     expect(getThinkingConfig('claude-opus-4-8', 'think')).toMatchObject({ thinkingType: 'adaptive', effort: 'medium' });
     expect(getThinkingConfig('claude-opus-4-8', 'think_hard')).toMatchObject({ thinkingType: 'adaptive', effort: 'high' });
-    expect(getThinkingConfig('claude-opus-4-8', 'investigate')).toMatchObject({ thinkingType: 'adaptive', effort: 'max' });
+    expect(getThinkingConfig('claude-opus-4-8', 'investigate')).toMatchObject({ thinkingType: 'adaptive', effort: 'xhigh' });
+    expect(getThinkingConfig('claude-opus-4-8', 'deep_investigate')).toMatchObject({ thinkingType: 'adaptive', effort: 'max' });
+  });
+
+  it('shares one effort ladder with thinking-map — the effort a run gets no longer depends on the route', () => {
+    // Two maps used to coexist and disagreed on plan_first ('high' here, 'max'
+    // there). Every adaptive Anthropic id, every level: one answer.
+    const adaptiveIds = ['claude-fable-5-1', 'claude-fable-5', 'claude-opus-5', 'claude-sonnet-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-opus-4-6', 'claude-sonnet-4-6'];
+    const levels = ['quick', 'think', 'think_hard', 'investigate', 'plan_first', 'deep_investigate'] as const;
+    for (const id of adaptiveIds) {
+      for (const level of levels) {
+        const cfg = getThinkingConfig(id, level);
+        expect(cfg.thinkingType, `${id}/${level}`).toBe('adaptive');
+        expect(cfg.effort, `${id}/${level}`).toBe(anthropicEffort(level, id));
+      }
+    }
+    // and the clamp is real: Sonnet 4.6 has no xhigh rung
+    expect(getThinkingConfig('claude-sonnet-4-6', 'investigate').effort).toBe('max');
+    expect(getThinkingConfig('claude-fable-5-1', 'investigate').effort).toBe('xhigh');
   });
 
   it('falls back to a sane default for an unknown ANTON level', () => {

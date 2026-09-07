@@ -53,6 +53,7 @@ const CHIP_INACTIVE = 'border-border bg-adv-dark text-adv-gray hover:border-adv-
 const MODEL_OPTIONS: { value: ModelId; label: string }[] = [
   { value: 'claude-opus-5', label: 'Opus 5' },
   { value: 'claude-sonnet-5', label: 'Sonnet 5' },
+  { value: 'claude-fable-5-1', label: 'Fable 5.1' },
   { value: 'claude-fable-5', label: 'Fable 5' },
   { value: 'claude-opus-4-8', label: 'Opus 4.8' },
   { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },

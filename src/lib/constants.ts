@@ -3522,6 +3522,17 @@ export const MODELS: ModelInfo[] = [
     costTier: 2,
   },
   {
+    id: 'claude-fable-5-1',
+    label: 'Claude Fable 5.1',
+    description: 'Newest Claude — the Mythos-class tier above Opus. 1M context, 128k output, xhigh effort for long agentic work. Adaptive thinking only. Pricing assumed equal to Fable 5.',
+    inputCostPer1M: 10,
+    outputCostPer1M: 50,
+    maxOutput: 128000,
+    provider: 'anthropic',
+    contextWindow: 1000000,
+    costTier: 3,
+  },
+  {
     id: 'claude-fable-5',
     label: 'Claude Fable 5',
     description: 'Most powerful Claude — a new tier above Opus. 1M context, 128k output. For the hardest reasoning and long-horizon agentic work. Note: ~2× Opus pricing. Adaptive thinking only. Knowledge cutoff Jan 2026.',

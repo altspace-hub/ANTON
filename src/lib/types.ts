@@ -6,6 +6,7 @@
 
 export type ModelId =
   // Anthropic Claude — latest first
+  | 'claude-fable-5-1'             // 2026-09-07 — Fable 5.1, Mythos-class; adaptive only, xhigh effort
   | 'claude-fable-5'               // 2026-06-10 — top tier above Opus, adaptive only
   | 'claude-opus-5'                // 2026-07-24 — Claude 5 Opus, adaptive only
   | 'claude-sonnet-5'              // 2026-07-24 — Claude 5 Sonnet, adaptive only
