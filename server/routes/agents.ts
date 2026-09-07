@@ -298,7 +298,12 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const { query } = req.body as { query: string };
       if (!query) { res.status(400).json({ error: 'query required' }); return; }
-      const match = await processor.routeQuery(query);
+      // routeQuery's own docstring says "the authenticated route (POST /api/agents/route)
+      // passes it" — it did not. Without the scope this hands back another tenant's agent
+      // NAME and ID: the enumeration listAgents refuses, reached by the side door.
+      // /agents/public/route below deliberately passes nothing, because a storefront is
+      // meant to be instance-wide.
+      const match = await processor.routeQuery(query, ownerFilter(req, 'created_by'));
       res.json({ success: true, match });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
@@ -483,18 +488,31 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const { message, conversationId } = req.body as { message: string; conversationId?: string };
       if (!message) { res.status(400).json({ error: 'message required' }); return; }
+      // The most consequential per-agent route to have missed the guard: a query runs the
+      // agent's system prompt AND its connectors, so unguarded it executes another
+      // tenant's rest_api and database connectors through the vault credentials those
+      // connectors resolve, and returns the output. Reading their config was the lesser
+      // half of what this exposed.
+      await loadOwnedAgent(req, req.params.id);
       const result = await processor.processQuery(req.params.id, message, { conversationId, source: 'direct' });
       res.json({ success: true, ...result });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // ── Stats ──────────────────────────────────────────────────────────
 
   router.get('/agents/:id/stats', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       const stats = await service.getAgentStats(req.params.id);
       res.json({ success: true, stats });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   return router;
