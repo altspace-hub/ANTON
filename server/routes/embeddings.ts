@@ -13,7 +13,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { hybridSearch, findSimilar } from '../services/hybrid-search.js';
+import { hybridSearch, findSimilar, INSTANCE_WIDE_SEARCH, searchScopeForRequest } from '../services/hybrid-search.js';
 import { getEmbeddingAdapter, isZeroVector } from '../services/embedding-adapter.js';
 import { resetVectorStore } from '../services/vector-store-adapter.js';
 import { backfillKnowledgeAtoms, backfillCheckpoints, embedModuleDescriptions } from '../services/embedding-pipeline.js';
@@ -43,6 +43,8 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         contentTypes: ['knowledge_atom'],
         topK: topK * 2, // Over-fetch for post-filtering
         minSimilarity: 0.2,
+        // Atoms carry no owner column — institutional memory is shared by design.
+        scope: INSTANCE_WIDE_SEARCH,
       });
 
       // Enrich with authoritative DB metadata
@@ -137,6 +139,8 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         contentTypes: ['checkpoint'],
         topK,
         minSimilarity: 0.3,
+        // checkpoint_decisions carries no owner column either.
+        scope: INSTANCE_WIDE_SEARCH,
       });
 
       res.json({
@@ -430,7 +434,13 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
       };
       if (!contentType || !contentId) return res.status(400).json({ error: 'contentType and contentId required' });
 
-      const results = await findSimilar(db, { contentType, contentId, topK });
+      // contentType comes from the request body, so unlike the two searches above this
+      // one CAN name an owned type. Request-derived scope, not INSTANCE_WIDE_SEARCH:
+      // findSimilar scopes the SEED as well as the results, which is what stops a caller
+      // pointing at someone else's session output and mining its neighbours.
+      const results = await findSimilar(db, {
+        contentType, contentId, topK, scope: searchScopeForRequest(req),
+      });
 
       res.json({
         results: results.map(r => ({

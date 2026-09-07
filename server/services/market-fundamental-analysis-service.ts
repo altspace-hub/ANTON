@@ -36,16 +36,19 @@ export async function createMarketFundamentalAnalysisService(db: DatabaseAdapter
     if (metrics) context += `### Key Metrics\n${metrics.content.slice(0, 3000)}\n\n`;
     if (estimates) context += `### Analyst Estimates\n${estimates.content.slice(0, 2000)}\n\n`;
 
-    // Call Claude Sonnet for deep analysis (provider-routed; the previous
-    // literal 'claude-sonnet-4-5-20250514' is not a real Anthropic model id
-    // and errored even for Claude users — registry id is ...-20250929)
+    // Deep analysis on the configured markets model (Settings → "Markets AI
+    // model", falls back to the utility model).
     const prompt = readPrompt('market-fundamental-analyst');
-    const { callChat, mapModelToProvider } = await import('./provider-router.js');
+    const { callChat } = await import('./provider-router.js');
+    const { getMarketsModel } = await import('./markets-model-store.js');
     const result = await callChat({
-      model: mapModelToProvider('claude-sonnet-4-5-20250929'),
+      model: await getMarketsModel(db),
       system: prompt,
       messages: [{ role: 'user', content: `Analyze ${symbol}:\n\n${context}` }],
       maxTokens: 4096,
+      // Runs as a scheduled batch (up to 8 symbols per pass), so it yields a
+      // subscription slot rather than competing with whoever is at the keyboard.
+      background: true,
     });
 
     // Parse the response

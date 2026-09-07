@@ -9,7 +9,19 @@ import path from 'path';
 // Companion App's vite.config.app.ts.
 const isCapacitorBuild = process.env.CAPACITOR_BUILD === '1';
 
+// The user-facing version. Kept equal to android-comm's `versionName` on
+// purpose: this is the number a person compares against the Play listing, and
+// two different answers to "what version am I running" is worse than one that
+// needs bumping in two places. services/enrollment.ts already reached for
+// `__APP_VERSION__` behind a typeof guard — it never existed, so every
+// enrollment silently reported no version at all.
+const APP_VERSION = '1.0.0';
+
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+  },
   plugins: [
     react(),
     tailwindcss(),

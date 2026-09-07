@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+
+        <!-- FCM-pushed notifications use the ANTON chevron, not the app icon. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
+
+        <!-- NFC tap-to-pay (2026-07-17): emulate a read-only NDEF Type-4 tag that
+             presents the sale's futurechain:pay URI when a customer taps their
+             ANTON Pay phone. The service answers SELECT/READ only (writes are
+             rejected). category="other" keeps it out of the default-wallet role. -->
+        <service
+            android:name=".plugins.FcNdefHostApduService"
+            android:exported="true"
+            android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter>
+                <action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.nfc.cardemulation.host_apdu_service"
+                android:resource="@xml/apduservice" />
+        </service>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Camera only — the barcode and certificate scanners are pure web and call
+         getUserMedia({ video: { facingMode: 'environment' } }) with no audio track
+         (BarcodeScanOverlay.tsx, CertScanOverlay.tsx). RECORD_AUDIO used to be
+         declared here; it was inherited from the Comm manifest this file was
+         cloned from and nothing in this app ever asked for a microphone. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Reminders. POST_NOTIFICATIONS is Android 13+; the plugin asks at runtime.
+         SCHEDULE_EXACT_ALARM gates the AlarmManager path the LocalNotifications
+         plugin uses for far-future reminders.
+
+         NOTE for the Play submission: USE_EXACT_ALARM is a restricted permission
+         granted only to apps whose CORE function is an alarm clock or calendar.
+         A business reminder is unlikely to qualify, and declaring it invites a
+         policy rejection. If Play objects, drop USE_EXACT_ALARM and keep
+         SCHEDULE_EXACT_ALARM (which is user-grantable), or move reminders to
+         inexact alarms. Left declared for now because scheduling does use it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- Deliberately NOT declared, having been removed on 2026-07-29:
+         ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, READ_MEDIA_IMAGES,
+         READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE, RECORD_AUDIO.
+
+         All six arrived with the clone from android-comm, which really does have
+         an event location picker and a photo library. This app has neither: there
+         is no Geolocation plugin registered in capacitor.plugins.json and not one
+         reference to geolocation, image picking or audio capture anywhere under
+         src/business. Each one would have obliged a Data Safety declaration and a
+         prominent-disclosure justification for data the app never touches — on a
+         merchant payments app, which is exactly where a reviewer looks hardest.
+
+         Add one back only alongside the feature that needs it. -->
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- NFC tap-to-pay (HCE presenter). required=false so non-NFC phones still
+         install and use the QR path. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+    <uses-feature android:name="android.hardware.nfc.hce" android:required="false" />
+</manifest>

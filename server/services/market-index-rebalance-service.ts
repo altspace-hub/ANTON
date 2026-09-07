@@ -776,11 +776,15 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
     const index = await db.get<IndexRow>('SELECT * FROM market_indexes WHERE id = ?', indexId);
     if (!index) throw new Error(`Index ${indexId} not found`);
 
+    // market_indexes.universe is JSONB (migration 056) — the pg driver hands
+    // back an already-parsed array; JSON.parse on it threw, so screening
+    // always saw an empty universe and rebalances proposed no candidates.
     let universe: string[] = [];
-    try {
-      universe = JSON.parse(index.universe || '[]');
-    } catch {
-      universe = [];
+    const rawUniverse = index.universe as unknown;
+    if (Array.isArray(rawUniverse)) {
+      universe = rawUniverse as string[];
+    } else if (typeof rawUniverse === 'string') {
+      try { universe = JSON.parse(rawUniverse || '[]'); } catch { universe = []; }
     }
 
     if (universe.length === 0) {
@@ -975,6 +979,173 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
   }
 
   // ── Run Scheduled Rebalances ─────────────────────────────────────────────
+
+  /**
+   * Shadow rebalance: compute what the signals WOULD do, record it, move
+   * nothing.
+   *
+   * Scheduled rebalancing has been off since 2026-04-27, so predictions have
+   * had no route to the portfolio and the attribution ledger has one data
+   * point. Shadow mode reopens the measurement without committing holdings:
+   * the proposal, the would-be trades and the prediction→weight attribution
+   * are all recorded, so the Portfolio Impact readout fills with counterfactual
+   * contribution that can be judged before anything is risked.
+   *
+   * Two things it deliberately does NOT do:
+   *   • touch market_index_holdings — nothing moves, so pre and post snapshots
+   *     are identical by construction;
+   *   • touch market_indexes.last_rebalance_at — that field gates the LIVE
+   *     path, and a shadow run writing it would silently suppress the real
+   *     rebalance it is supposed to be rehearsing.
+   *
+   * Cadence comes from the index's own rebalance_frequency, measured against
+   * the last SHADOW run, so the simulation matches what live would have done.
+   * That makes evidence accrue at the real rate — monthly for most indexes —
+   * rather than manufacturing daily rows that only look like data.
+   */
+  async function runShadowRebalances(): Promise<{
+    checked: number; proposed: Array<{ indexId: string; rebalanceId: string; trades: number }>;
+  }> {
+    const activeIndexes = await db.all<IndexRow>(
+      "SELECT * FROM market_indexes WHERE status = 'active'"
+    );
+    const proposed: Array<{ indexId: string; rebalanceId: string; trades: number }> = [];
+
+    for (const index of activeIndexes) {
+      try {
+        const threshold = FREQUENCY_DAYS[index.rebalance_frequency] ?? 30;
+        const last = await db.get<{ days_since: number | null }>(
+          `SELECT ${daysDiff(db.dialect, 'NOW()', 'MAX(executed_at)')} AS days_since
+             FROM market_index_rebalances
+            WHERE index_id = ? AND trigger_type = 'shadow'`,
+          index.id,
+        );
+        const daysSince = last?.days_since == null ? null : Math.floor(Number(last.days_since));
+        if (daysSince !== null && daysSince < threshold) continue;
+
+        const proposal = await generateRebalanceProposal(index.id);
+        const actionable = proposal.proposedChanges.filter(c => c.action !== 'hold');
+        if (actionable.length === 0) continue;
+
+        const holdings = await db.all<HoldingRow>(
+          'SELECT * FROM market_index_holdings WHERE index_id = ? AND removed_at IS NULL ORDER BY weight DESC',
+          index.id,
+        );
+        // Identical pre/post: the whole point is that nothing moved.
+        const snapshot = JSON.stringify(holdings.map(h => ({
+          symbol: h.symbol, weight: h.weight, shares: h.shares,
+        })));
+
+        const trades = actionable.map(c => ({
+          symbol: c.symbol,
+          action: c.action === 'remove' ? 'sell' : c.action === 'add' ? 'buy' : 'adjust',
+          oldWeight: holdings.find(h => h.symbol === c.symbol)?.weight ?? 0,
+          newWeight: c.proposedWeight,
+        }));
+
+        // Lazy import: the rebalance service is constructed on paths that have
+        // no reason to pull in the Python computation layer.
+        const { createMarketComputationService } = await import('./market-computation-service.js');
+        const computationService = await createMarketComputationService(db);
+
+        // Kelly sizing, recorded alongside each proposed weight — advisory only.
+        //
+        // The weights above come from conviction scores, which say which way to
+        // lean but nothing about how far. Kelly answers that from the edge the
+        // system has actually demonstrated on this symbol, so a name we have
+        // been repeatedly wrong about is sized down even when conviction is
+        // loud. Half-Kelly, because full Kelly assumes the win probability is
+        // known rather than estimated from a handful of resolved predictions,
+        // and is brutal when that estimate is optimistic.
+        //
+        // Shadow mode is the honest place for this: the number is written next
+        // to the proposal so its quality can be judged over time, and nothing
+        // is sized by it until it has earned that.
+        for (const t of trades) {
+          try {
+            const rec = await db.get<{ n: string; wins: string }>(
+              `SELECT COUNT(*)::text AS n,
+                      COUNT(*) FILTER (WHERE was_correct = 1)::text AS wins
+                 FROM market_predictions
+                WHERE target_symbol = ? AND was_correct IS NOT NULL`,
+              t.symbol,
+            );
+            const n = Number(rec?.n ?? 0);
+            // Below this the win rate is noise, and Kelly on noise is a
+            // confident instruction to bet the book.
+            if (n < 5) { (t as Record<string, unknown>).kelly = null; continue; }
+
+            const wins = Number(rec?.wins ?? 0);
+            const p = wins / n;
+            const moves = await db.all<{ pct: string }>(
+              `SELECT ABS((actual_value - predicted_value) / NULLIF(predicted_value, 0))::text AS pct
+                 FROM market_predictions
+                WHERE target_symbol = ? AND actual_value IS NOT NULL AND predicted_value IS NOT NULL`,
+              t.symbol,
+            );
+            const mags = moves.map(m => Number(m.pct)).filter(v => Number.isFinite(v) && v > 0);
+            const avgMove = mags.length > 0 ? mags.reduce((a, b) => a + b, 0) / mags.length : 0.02;
+
+            const k = await computationService.runTemplate('kelly_criterion', {
+              win_probability: p,
+              win_amount: avgMove,
+              loss_amount: avgMove,
+              bankroll: Number(index.current_nav) || 0,
+              fraction_kelly: 0.5,
+            }, 'shadow-rebalance');
+            // Field names verified against a live run: the template returns
+            // full_kelly, half_kelly, position_size, expected_growth,
+            // ruin_probability and edge.
+            const out = k.success ? (k.output as {
+              full_kelly?: number; half_kelly?: number; position_size?: number;
+              expected_growth?: number; ruin_probability?: number; edge?: number;
+            }) : null;
+            (t as Record<string, unknown>).kelly = out
+              ? {
+                  sampleSize: n,
+                  winRate: Number(p.toFixed(3)),
+                  avgMove: Number(avgMove.toFixed(4)),
+                  fullKelly: out.full_kelly ?? null,
+                  suggestedFraction: out.half_kelly ?? null,
+                  positionSize: out.position_size ?? null,
+                  expectedGrowth: out.expected_growth ?? null,
+                  ruinProbability: out.ruin_probability ?? null,
+                  edge: out.edge ?? null,
+                }
+              : null;
+          } catch {
+            // Sizing is advisory — a failure here must not cost the proposal.
+            (t as Record<string, unknown>).kelly = null;
+          }
+        }
+
+        const rebalanceId = `shadow_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await db.run(`
+          INSERT INTO market_index_rebalances
+            (id, index_id, rebalance_type, trigger_type, pre_holdings, post_holdings, trades, reasoning, nav_at_rebalance)
+          VALUES (?, ?, 'shadow', 'shadow', ?, ?, ?, ?, ?)
+        `, rebalanceId, index.id, snapshot, snapshot, JSON.stringify(trades),
+           `SHADOW (not executed): ${trades.length} trade(s) the signals would have made.`,
+           index.current_nav);
+
+        try {
+          const { createMarketPredictionAttributionService } =
+            await import('./market-prediction-attribution-service.js');
+          const attribution = await createMarketPredictionAttributionService(db);
+          await attribution.recordAttributionsForRebalance(rebalanceId, trades);
+        } catch (err) {
+          console.warn(`[shadow-rebalance] attribution failed for ${rebalanceId}:`,
+            err instanceof Error ? err.message : err);
+        }
+
+        proposed.push({ indexId: index.id, rebalanceId, trades: trades.length });
+      } catch (err) {
+        console.error(`[shadow-rebalance] failed for ${index.id}:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    return { checked: activeIndexes.length, proposed };
+  }
 
   async function runScheduledRebalances(): Promise<{ checked: number; rebalanced: string[] }> {
     const activeIndexes = await db.all<IndexRow>(
@@ -1204,6 +1375,7 @@ export async function createMarketIndexRebalanceService(db: DatabaseAdapter) {
   return {
     shouldRebalance,
     generateRebalanceProposal,
+    runShadowRebalances,
     evaluateHoldings,
     screenUniverse,
     rankCandidates,

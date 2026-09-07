@@ -56,6 +56,16 @@ export async function createMarketWhyChainsService(db: DatabaseAdapter) {
     predictionId?: string;
     direction?: string;
   }) {
+    // One chain per prediction: the weekly validation pass re-scans ALL
+    // validated predictions, so without this guard the same prediction
+    // spawns a fresh (and paid) chain on every run, forever.
+    if (params.predictionId) {
+      const existing = await db.get<{ id: string }>(
+        'SELECT id FROM market_why_chains WHERE prediction_id = ? LIMIT 1',
+        params.predictionId,
+      );
+      if (existing) return existing.id;
+    }
     const id = `mwhy_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await db.run(`
       INSERT INTO market_why_chains (id, title, investigation_id, prediction_id, direction)

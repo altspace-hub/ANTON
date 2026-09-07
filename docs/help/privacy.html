@@ -66,7 +66,7 @@
       <div class="eyebrow">Reference</div>
       <h1>Privacy policy</h1>
       <p class="lead">For ANTON and the ANTON apps &mdash; Companion, Comm, Pay,
-      Business and Agent. Version 1.0, last updated 29&nbsp;July&nbsp;2026.</p>
+      Business and Agent. Version 1.1, last updated 5&nbsp;September&nbsp;2026.</p>
     </div>
 
     <div class="callout">
@@ -163,12 +163,24 @@
     <div class="callout callout--warn">
       <p><strong>This is public and permanent.</strong> Anyone can read it, and it cannot be
       deleted, edited or withdrawn &mdash; not by you, and not by us.</p>
-      <p>What is written on-chain includes the amount and fee, the sender and recipient
-      addresses, the payer's name, and any reference or message you attach &mdash; in the
-      clear, <em>not</em> encrypted. For transfers of &euro;1,000 or more, where
-      transfer-of-funds rules require it, the originator's postal address is included too.
-      Payments below that threshold omit the address.</p>
+      <p>What is public includes the amount and fee, the sender and recipient
+      addresses, the time, and the block it settled in.</p>
     </div>
+    <p>A payment also carries a structured ISO&nbsp;20022 message alongside it, containing
+    the payer's name, any reference you attach, and &mdash; for transfers of &euro;1,000 or
+    more, where transfer-of-funds rules require it &mdash; the originator's postal
+    address. Two things about that message matter, and both are easy to get wrong:</p>
+    <ul>
+      <li><strong>It is not encrypted.</strong> The protocol field it travels in is named
+      <code>encrypted_data</code>, which is a misnomer. Treat anything you put in a payment
+      reference as readable by whoever handles the payment.</li>
+      <li><strong>Today it is discarded after screening.</strong> The node that settles your
+      payment reads the message to run compliance screening, then drops it: it is not written
+      to the public ledger and is not retrievable afterwards &mdash; not by us, not by the
+      recipient, not by you. If a node operator later enables message storage, the message
+      becomes retrievable by readers the recipient has authorised, and this policy will be
+      updated before that happens.</li>
+    </ul>
     <p>Reading your balance or history sends your wallet address to the node you have
     configured, which lets that node's operator associate the address with your IP address.
     You can point the app at a different node, including one you run yourself.</p>

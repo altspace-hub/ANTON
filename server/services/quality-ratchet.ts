@@ -40,11 +40,15 @@ Respond ONLY with valid JSON:
 
 export async function createQualityRatchet(db: DatabaseAdapter) {
 
-  // Auto-heal: ensure score_reasoning column exists (backward-compatible with older DBs)
+  // Auto-heal: ensure score_reasoning column exists (backward-compatible with
+  // older DBs). Was a pragma_table_info query — SQLite-only, errored on
+  // PostgreSQL on every boot and the catch silently disabled this guard.
   try {
-    const cols = await db.all("SELECT name FROM pragma_table_info('quality_scores')") as Array<{ name: string }>;
-    const colNames = cols.map((c) => c.name);
-    if (!colNames.includes('score_reasoning')) {
+    const col = await db.get<{ c: number | string }>(
+      `SELECT COUNT(*) AS c FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'quality_scores' AND column_name = 'score_reasoning'`
+    );
+    if (Number(col?.c ?? 0) === 0) {
       await db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
     }
   } catch { /* table might not exist yet — init.ts will create it */ }

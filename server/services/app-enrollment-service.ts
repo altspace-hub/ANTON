@@ -124,14 +124,94 @@ function makeConfirmationCode(): string {
 
 // ── Privkey encryption at rest (Phase H fix H2) ─────────────────────────
 // AES-256-GCM keyed off process.env.INSTANCE_KEY_ENCRYPTION_KEY (32-byte
-// hex). When the env var is missing, fall back to plaintext storage AND
-// log a one-time warning.
+// hex == 64 hex characters).
+//
+// There are THREE states here and they must NOT be collapsed into two
+// (launch audit 2026-09-06, HIGH):
+//   unset            → the documented degraded dev mode: privkey stored
+//                      plaintext in instance_identity.privkey + one-time warn.
+//   set and valid    → encrypt (normal production behaviour).
+//   set but unusable → OPERATOR ERROR. Throw, and never write or read key
+//                      material in that state.
+//
+// Until this fix the third case returned null exactly like the first, so a
+// typo, a stray `0x` prefix, a truncated paste or a trailing newline silently
+// downgraded the instance's Ed25519 signing identity to PLAINTEXT in Postgres.
+// From the outside that is indistinguishable from the encrypted case — phones
+// pair normally — and the only signal was one console.warn per process, worded
+// identically to the "not set" case. Anyone who can read that single row (a
+// pg_dump in a backup bucket, a read replica, a DBA) can then mint device
+// certificates and impersonate the instance to every paired phone. A warning
+// is not a control; refusing to touch the identity is.
+//
+// Two things a later reader might otherwise "clean up" — don't:
+//  1. The explicit regex. Buffer.from(x, 'hex') TRUNCATES at the first non-hex
+//     character rather than throwing, which is exactly what made a malformed
+//     key look like an absent one under the old decoded-length check.
+//  2. The absence of .trim(). The same env var is decoded independently in
+//     server/services/mesh/bootstrap.ts and server/lib/portal-key-cipher.ts,
+//     neither of which trims. Accepting a whitespace-padded value HERE only
+//     would let this module encrypt material those modules cannot decrypt.
+//     A padded value is an operator error and is reported as one.
 
-function getEncryptionKey(): Buffer | null {
-  const k = process.env.INSTANCE_KEY_ENCRYPTION_KEY;
-  if (!k) return null;
-  const buf = Buffer.from(k, 'hex');
-  return buf.length === 32 ? buf : null;
+/** Thrown when INSTANCE_KEY_ENCRYPTION_KEY is present but unusable. A named
+ *  type so callers and tests can tell operator misconfiguration apart from a
+ *  genuine crypto failure. */
+export class InstanceKeyConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InstanceKeyConfigError';
+  }
+}
+
+/** Exactly 32 bytes, hex-encoded. */
+const KEY_HEX_RE = /^[0-9a-fA-F]{64}$/;
+
+let loggedKeyConfigError = false;
+
+/**
+ * Resolve the at-rest encryption key.
+ *   null   → env var absent: degraded plaintext mode (see warnPlaintextOnce)
+ *   Buffer → usable 32-byte key
+ *   throws → env var present but unusable (operator error, fail closed)
+ *
+ * Never logs or echoes the value — it IS the key. Only its length is reported,
+ * which is what the operator needs to spot a truncated or padded paste.
+ */
+/**
+ * Exported so evidence-pack/signer.ts can share it rather than keeping its own
+ * copy. The copy is how this bug survived: signer.ts carried a comment saying it
+ * mirrored this function, and mirrored the OLD two-state version, so a malformed
+ * key still fell through to writing the Ed25519 private key in plaintext — into
+ * the very same instance_identity row. One resolver, one behaviour.
+ */
+export function getEncryptionKey(): Buffer | null {
+  const raw = process.env.INSTANCE_KEY_ENCRYPTION_KEY;
+  // Undefined, or `INSTANCE_KEY_ENCRYPTION_KEY=` with nothing after it, means
+  // "not configured" — the documented degraded mode, unchanged.
+  if (raw === undefined || raw === '') return null;
+  if (!KEY_HEX_RE.test(raw)) {
+    const detail = /^[0-9a-fA-F]*$/.test(raw)
+      ? `${raw.length} characters (expected exactly 64)`
+      : `${raw.length} characters, at least one of them not a hex digit`;
+    // The throw is the control; this log exists because in production
+    // safeError() reduces the HTTP body to "An error occurred", so the server
+    // log is the only place an operator can see WHY pairing stopped working.
+    if (!loggedKeyConfigError) {
+      loggedKeyConfigError = true;
+      console.error(
+        `[app-enrollment] CONFIG ERROR: INSTANCE_KEY_ENCRYPTION_KEY is set but unusable — ${detail}. `
+        + 'Instance-identity operations (pairing, signing) are refused until it is fixed. '
+        + 'Generate one with `openssl rand -hex 32`, or unset the variable to accept plaintext storage.',
+      );
+    }
+    throw new InstanceKeyConfigError(
+      `INSTANCE_KEY_ENCRYPTION_KEY is set but unusable — ${detail}. `
+      + 'Refusing to touch the instance identity: a wrong key must never fall back to '
+      + 'storing the Ed25519 private key in plaintext.',
+    );
+  }
+  return Buffer.from(raw, 'hex');
 }
 
 function encryptPrivkey(plaintextHex: string): { encrypted: Buffer; iv: Buffer } | null {
@@ -146,6 +226,8 @@ function encryptPrivkey(plaintextHex: string): { encrypted: Buffer; iv: Buffer }
 }
 
 function decryptPrivkey(encrypted: Buffer, iv: Buffer): string {
+  // getEncryptionKey() throws on a malformed key — a wrong key must never
+  // reach the "no key" branch and be handled like an absent one.
   const key = getEncryptionKey();
   if (!key) throw new Error('INSTANCE_KEY_ENCRYPTION_KEY missing — cannot decrypt instance privkey');
   // Last 16 bytes are the GCM auth tag
@@ -153,8 +235,21 @@ function decryptPrivkey(encrypted: Buffer, iv: Buffer): string {
   const ciphertext = encrypted.subarray(0, encrypted.length - 16);
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
   decipher.setAuthTag(tag);
-  const dec = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-  return dec.toString('hex');
+  try {
+    const dec = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    return dec.toString('hex');
+  } catch (err) {
+    // GCM tag mismatch. Overwhelmingly this means INSTANCE_KEY_ENCRYPTION_KEY
+    // was CHANGED after this row was written. There is no safe fallback: in
+    // particular the caller must never end up treating the ciphertext as if it
+    // were the plaintext privkey, so we rethrow rather than degrade.
+    throw new Error(
+      'instance_identity.privkey_encrypted failed to decrypt (AES-GCM authentication failed) — '
+      + 'INSTANCE_KEY_ENCRYPTION_KEY does not match the key this row was written with. '
+      + 'Restore the original key; losing it means re-pairing every Companion device.',
+      { cause: err },
+    );
+  }
 }
 
 let warnedNoEncKey = false;
@@ -195,6 +290,9 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
             enc.encrypted, enc.iv,
           );
         } else {
+          // Reachable ONLY when the env var is genuinely unset — a malformed
+          // one throws out of encryptPrivkey rather than leaving the row
+          // plaintext and warning about it.
           warnPlaintextOnce();
         }
       } else {
@@ -221,7 +319,9 @@ export function createAppEnrollmentService(db: DatabaseAdapter) {
        VALUES ('singleton', ?, ?, ?, ?, ?, ?)
        ON CONFLICT (singleton) DO NOTHING`,
       pubkeyHex,
-      enc ? null : privkeyHex,         // plaintext only when no key set
+      // Plaintext only when the env var is genuinely UNSET. A set-but-broken
+      // key never reaches here: encryptPrivkey() above throws first.
+      enc ? null : privkeyHex,
       enc?.encrypted ?? null,
       enc?.iv ?? null,
       displayName, contactHash,

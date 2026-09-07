@@ -135,9 +135,16 @@ controls and rate limits).</p>
 
 <h2>6. Public blockchain data</h2>
 <p>Transaction records on the FutureChain network are public and permanent.
-Payment details you attach to a transaction are encrypted so that only the
-recipient can read them, but the existence, time, and amounts of
-transactions are publicly visible forever. Think before you transact.</p>
+The existence, time, amounts and addresses of transactions are publicly
+visible forever.</p>
+<p>A payment also carries a structured ISO&nbsp;20022 message containing your
+name as payer and any reference you attach. <strong>That message is not
+encrypted</strong> &mdash; the protocol field it travels in,
+<code>encrypted_data</code>, is misleadingly named &mdash; and the node that
+settles the payment reads it to run compliance screening. Today that node
+discards it afterwards, so it is not retrievable by anyone, including the
+recipient. Treat anything you write into a payment reference as readable by
+whoever handles the payment, and never put a secret in one.</p>
 
 <h2>7. No warranty; limitation of liability</h2>
 <p>The Apps and Services are provided <strong>"as is"</strong> and "as

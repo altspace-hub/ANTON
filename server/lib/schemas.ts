@@ -5,6 +5,11 @@ import { z } from 'zod';
 export const LoginSchema = z.object({
   username: z.string().min(1).max(100).trim(),
   password: z.string().min(1).max(1000),
+  // Second factor, only required for an account with users.mfa_enabled set. It has to
+  // be declared here: validate() replaces req.body with the PARSED object, and a Zod
+  // object strips unknown keys — an undeclared mfaToken would silently never reach the
+  // login handler, which is how you ship an MFA check that always sees "no code given".
+  mfaToken: z.string().regex(/^\d{6}$/, 'MFA code must be 6 digits').optional(),
 });
 
 export const ForgotPasswordSchema = z.object({

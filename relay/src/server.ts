@@ -61,6 +61,11 @@ import {
   type RateLimitConfig,
 } from './limits.js';
 import {
+  classifyHttpPath,
+  httpBucketKey,
+  parseTrustedProxyIps,
+} from './http-limits.js';
+import {
   verifyHelloComm,
   CommHelloVerificationError,
   CommHelloError,
@@ -82,7 +87,7 @@ import { canonicalizeRelayUrl } from './canonical-url.js';
 import { bytesToHex } from './primitives.js';
 import { MetricsRegistry } from './metrics.js';
 import { createRegistryDb, type RegistryDb } from './registry/db.js';
-import { dispatch as dispatchRegistry } from './registry/routes.js';
+import { dispatch as dispatchRegistry, CORS_HEADERS } from './registry/routes.js';
 import { CommPush, loadCommPushConfig } from './comm-push.js';
 import { ADMIN_UI_HTML } from './admin-ui.js';
 import { handleLegalRequest } from './legal-pages.js';
@@ -116,6 +121,27 @@ export interface RelayServerConfig {
   helloRateLimit?: RateLimitConfig;
   /** ENVELOPE per-session rate-limit config. Default: 200/s, capacity 200. */
   envelopeRateLimit?: RateLimitConfig;
+  /**
+   * Per-source budget for the HTTP registry + push surface (/v1/*,
+   * /comm/push/*). Default: 240 burst, 60/s refill — orders of magnitude
+   * above any real client, low enough to bound a flood. /healthz,
+   * /metrics, /admin and the legal pages are exempt (see http-limits.ts).
+   */
+  httpRateLimit?: RateLimitConfig;
+  /**
+   * Per-source budget for POST /v1/admin/login. Default: 5 burst, one
+   * token per 20s — the slow refill IS the lockout on the shared operator
+   * password. Do not raise this to match httpRateLimit; the whole point is
+   * that a password oracle gets a different budget from a search query.
+   */
+  adminLoginRateLimit?: RateLimitConfig;
+  /**
+   * Literal addresses of reverse proxies whose X-Forwarded-For header may
+   * be believed when deriving the HTTP rate-limit bucket. Loopback is
+   * always trusted (the documented Caddy-on-the-same-box deployment).
+   * Defaults to RELAY_TRUSTED_PROXY_IPS (comma-separated).
+   */
+  trustedProxyIps?: string[];
   /** Audit log destination. Path string or pre-built logger. */
   audit?: AuditLogger;
   /**
@@ -161,6 +187,10 @@ export class RelayServer {
   private commRegistry: ContactRegistry;
   private helloRateLimiter: RateLimiter;
   private envelopeRateLimiter: RateLimiter;
+  /** HTTP budgets — the WS path has had these since Phase 1.8; /v1/* had none. */
+  private httpRateLimiter: RateLimiter;
+  private adminLoginRateLimiter: RateLimiter;
+  private trustedProxies: ReadonlySet<string>;
   private connections = new Map<string, ConnState>();
   private reaperTimer: NodeJS.Timeout | null = null;
 
@@ -199,6 +229,13 @@ export class RelayServer {
       commLimits: rawCfg.commLimits ?? DEFAULT_COMM_LIMITS,
       helloRateLimit: rawCfg.helloRateLimit ?? { capacity: 5, refillPerSec: 5 },
       envelopeRateLimit: rawCfg.envelopeRateLimit ?? { capacity: 200, refillPerSec: 200 },
+      httpRateLimit: rawCfg.httpRateLimit ?? { capacity: 240, refillPerSec: 60 },
+      // 5 tries, then one per 20s. A human operator never hits this; an
+      // online guesser gets ~3 attempts a minute per source instead of as
+      // many as the socket will carry.
+      adminLoginRateLimit: rawCfg.adminLoginRateLimit ?? { capacity: 5, refillPerSec: 0.05 },
+      trustedProxyIps: rawCfg.trustedProxyIps
+        ?? [...parseTrustedProxyIps(process.env.RELAY_TRUSTED_PROXY_IPS)],
       audit,
       helloGraceSec: rawCfg.helloGraceSec ?? 30,
       reaperIntervalMs: rawCfg.reaperIntervalMs ?? 1000,
@@ -209,6 +246,12 @@ export class RelayServer {
     this.commRegistry = new ContactRegistry(this.cfg.commLimits);
     this.helloRateLimiter = new RateLimiter(this.cfg.helloRateLimit);
     this.envelopeRateLimiter = new RateLimiter(this.cfg.envelopeRateLimit);
+    this.httpRateLimiter = new RateLimiter(this.cfg.httpRateLimit);
+    this.adminLoginRateLimiter = new RateLimiter(this.cfg.adminLoginRateLimit);
+    // Re-validate the configured proxy addresses through the same parser as
+    // the env var, so an injected bad literal is dropped rather than
+    // silently never matching req.socket.remoteAddress.
+    this.trustedProxies = parseTrustedProxyIps(this.cfg.trustedProxyIps.join(','));
   }
 
   /** Operational counters — exposed at /metrics. */
@@ -249,6 +292,11 @@ export class RelayServer {
       );
       httpServer.on('request', (req, res) => {
         const url = req.url ?? '/';
+        // Per-source HTTP budget, applied BEFORE any routing so a flood is
+        // rejected without reaching the registry DB or the operator-password
+        // compare. This is the limiter admin-login.ts's header promised and
+        // that never landed; the /v1/* dispatcher below has none of its own.
+        if (!this.allowHttpRequest(req, res, url)) return;
         if (req.method === 'GET' && (url === '/healthz' || url === '/healthz/')) {
           const snap = this.metrics.snapshot(this.match.sessionCount(), this.match.instanceCount());
           res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
@@ -420,6 +468,56 @@ export class RelayServer {
     const addr = this.httpServer?.address();
     if (addr && typeof addr === 'object') return addr.port;
     return this.cfg.port;
+  }
+
+  // ── HTTP rate limiting ────────────────────────────────────────────
+
+  /**
+   * Draw one token for this request. Returns true to continue routing,
+   * false when the response (429) has already been written.
+   *
+   * Ops routes are exempt on purpose — see http-limits.ts. Everything that
+   * reaches Postgres or the operator password draws from a budget, and the
+   * budget is keyed on the real client address (X-Forwarded-For, but only
+   * from a trusted proxy) so the documented behind-Caddy deployment does
+   * not collapse every caller in the world into one bucket.
+   */
+  private allowHttpRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    url: string,
+  ): boolean {
+    const cls = classifyHttpPath(url);
+    if (cls === 'exempt') return true;
+    const isLogin = cls === 'admin_login';
+    const key = httpBucketKey(req, this.trustedProxies);
+    const limiter = isLogin ? this.adminLoginRateLimiter : this.httpRateLimiter;
+    if (limiter.consume(key)) return true;
+
+    this.metrics.httpRateLimited();
+    this.cfg.audit.emit({
+      type: 'rate_limited',
+      source: key,
+      reason: isLogin ? 'http_admin_login' : 'http_request',
+    });
+    // Same shape as every other /v1/* error body, and with the CORS headers
+    // the Comm App's webview needs — a 429 the browser turns into an opaque
+    // network error is a support ticket nobody can diagnose.
+    const cfg = isLogin ? this.cfg.adminLoginRateLimit : this.cfg.httpRateLimit;
+    const retryAfterSec = cfg.refillPerSec > 0 ? Math.ceil(1 / cfg.refillPerSec) : 60;
+    const body = JSON.stringify({
+      error: 'rate_limited',
+      message: 'Too many requests from this source. Retry later.',
+    });
+    res.writeHead(429, {
+      'content-type': 'application/json; charset=utf-8',
+      'content-length': Buffer.byteLength(body),
+      'cache-control': 'no-store',
+      'retry-after': String(retryAfterSec),
+      ...CORS_HEADERS,
+    });
+    res.end(body);
+    return false;
   }
 
   // ── Connection lifecycle ──────────────────────────────────────────
@@ -846,6 +944,11 @@ export class RelayServer {
     // 3. GC idle rate-limit buckets and proof-replay cache.
     this.helloRateLimiter.reap(60);
     this.envelopeRateLimiter.reap(60);
+    // reap() only evicts buckets that are back at FULL capacity, so this
+    // cannot hand an attacker a fresh budget: a drained admin-login bucket
+    // refills at 0.05/s and stays tracked for the ~100s it takes to fill.
+    this.httpRateLimiter.reap(60);
+    this.adminLoginRateLimiter.reap(60);
     this.reapProofReplayCache(now);
 
     // 4. Reap stale Comm-mailbox entries (7-day TTL).

@@ -1115,6 +1115,14 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               <Cpu className="h-4 w-4 shrink-0" />
               {!sidebarCollapsed && 'Computation'}
             </NavLink>
+            <NavLink
+              to="/markets/dead-letters"
+              className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+              title={sidebarCollapsed ? 'Step Failures' : undefined}
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && 'Step Failures'}
+            </NavLink>
           </>
         )}
 

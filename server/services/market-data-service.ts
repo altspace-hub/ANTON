@@ -373,6 +373,52 @@ export async function createMarketDataService(db: DatabaseAdapter) {
 
   // ── Provider Adapters ────────────────────────────────────────────────────
 
+  /**
+   * Statuses that mean the PROVIDER refused the account, not that one symbol is
+   * missing from an otherwise working feed.
+   *
+   * 402 is the one that prompted this: EODHD's free tier allows 20 requests a day and
+   * the config asks for exactly 20 symbols, so the first fetch cycle spends the quota
+   * and every later cycle that day is refused outright.
+   */
+  const PROVIDER_REFUSAL_STATUSES = new Set([401, 402, 403, 429]);
+
+  /**
+   * Turns "ingested nothing because the provider said no" into a recorded error.
+   *
+   * The per-symbol loops below `continue` past a bad response, which is right for one
+   * delisted ticker and wrong for an account-level refusal: the adapter returns 0, the
+   * wrapper sees no exception, and market_data_sources gets last_fetch_status='success'
+   * with a fresh last_fetch_at. Both EODHD sources sat like that for two days while
+   * every request 402'd — "success", zero items, no error, nothing to alert on.
+   *
+   * This is the THIRD instance of the shape in this file. fetchEODHD carries a comment
+   * about a feed that "reported success daily" while its newest bar aged two and a half
+   * weeks, and the earnings-calendar call carries one about a 404 that "read as a
+   * successful zero-item fetch forever". Hence a shared tracker rather than a third
+   * one-off.
+   *
+   * Deliberately narrow: it only fires when NOTHING was ingested. A partial fetch —
+   * some symbols refused, others fine — stays a success, because the data that did
+   * arrive is real and failing the whole source would discard it.
+   */
+  function createRefusalTracker(provider: string) {
+    const seen = new Map<number, number>();
+    return {
+      note(status: number): void {
+        if (PROVIDER_REFUSAL_STATUSES.has(status)) seen.set(status, (seen.get(status) ?? 0) + 1);
+      },
+      assertNotRefused(ingested: number): void {
+        if (ingested > 0 || seen.size === 0) return;
+        const detail = [...seen.entries()].map(([status, count]) => `HTTP ${status} x${count}`).join(', ');
+        throw new Error(
+          `${provider} refused every request and nothing was ingested (${detail}). ` +
+          'Check the account plan or daily quota.',
+        );
+      },
+    };
+  }
+
   async function fetchAlphaVantage(sourceId: string, config: Record<string, unknown>): Promise<number> {
     const apiKey = config.api_key_env
       ? process.env[config.api_key_env as string]
@@ -526,6 +572,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
   }
 
   async function fetchFMP(sourceId: string, config: Record<string, unknown>): Promise<number> {
+    const refusals = createRefusalTracker('FMP');
     const apiKey = config.api_key_env
       ? process.env[config.api_key_env as string]
       : (config.api_key as string | undefined);
@@ -541,7 +588,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
-        if (!response.ok) continue;
+        if (!response.ok) { refusals.note(response.status); continue; }
         const rawData = await response.json() as Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }> | { historical?: Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }> };
         const historical = Array.isArray(rawData) ? rawData : (rawData.historical ?? []);
         for (const day of historical.slice(0, 30)) {
@@ -574,6 +621,8 @@ export async function createMarketDataService(db: DatabaseAdapter) {
             });
             ingested++;
           }
+        } else {
+          refusals.note(response.status);
         }
       } catch { /* skip */ }
 
@@ -595,6 +644,8 @@ export async function createMarketDataService(db: DatabaseAdapter) {
             });
             ingested++;
           }
+        } else {
+          refusals.note(response.status);
         }
       } catch { /* skip */ }
     } else if (dataType === 'stock_news') {
@@ -642,7 +693,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
-        if (!response.ok) continue;
+        if (!response.ok) { refusals.note(response.status); continue; }
         const profiles = await response.json() as Array<Record<string, unknown>>;
         for (const profile of profiles) {
           await ingestRawData({
@@ -777,12 +828,30 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       try {
         const from = new Date().toISOString().slice(0, 10);
         const toDate = new Date(Date.now() + 28 * 86400000).toISOString().slice(0, 10);
-        const url = `https://financialmodelingprep.com/stable/earning-calendar?from=${from}&to=${toDate}&apikey=${apiKey}`;
+        // NB: 'earnings-calendar' (plural) — the singular path 404s with an
+        // empty body, which read as a "successful" zero-item fetch forever.
+        const url = `https://financialmodelingprep.com/stable/earnings-calendar?from=${from}&to=${toDate}&apikey=${apiKey}`;
         const resp = await fetch(url);
         await incrementFmpCount();
-        if (resp.ok) {
+        if (!resp.ok) {
+          refusals.note(resp.status);
+          console.warn(`[market-data] FMP earnings-calendar HTTP ${resp.status}`);
+        } else {
           const events = await resp.json() as Array<{ symbol: string; date: string; eps: number; epsEstimated: number; revenue: number; revenueEstimated: number }>;
-          for (const evt of (events ?? []).slice(0, 50)) {
+          // Prioritise symbols we actually hold or track — the raw calendar
+          // is thousands of micro-caps and slice(0,50) grabbed an arbitrary
+          // window of them. Tracked-first, then fill remaining slots.
+          const tracked = new Set(
+            (await db.all<{ symbol: string }>(
+              'SELECT DISTINCT symbol FROM market_index_holdings WHERE removed_at IS NULL'
+            )).map((r) => r.symbol.toUpperCase())
+          );
+          const all = events ?? [];
+          const prioritised = [
+            ...all.filter((e) => tracked.has((e.symbol ?? '').toUpperCase())),
+            ...all.filter((e) => !tracked.has((e.symbol ?? '').toUpperCase())),
+          ];
+          for (const evt of prioritised.slice(0, 50)) {
             await ingestRawData({
               sourceId, dataType: 'earnings_calendar', symbol: evt.symbol,
               title: `${evt.symbol} earnings ${evt.date}`,
@@ -796,12 +865,14 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       } catch { /* skip */ }
     }
 
+    refusals.assertNotRefused(ingested);
     return ingested;
   }
 
   // ── EODHD (End of Day Historical Data) ────────────────────────────────────
 
   async function fetchEODHD(sourceId: string, config: Record<string, unknown>): Promise<number> {
+    const refusals = createRefusalTracker('EODHD');
     const apiKey = config.api_key_env
       ? process.env[config.api_key_env as string]
       : (config.api_key as string | undefined);
@@ -825,10 +896,26 @@ export async function createMarketDataService(db: DatabaseAdapter) {
 
       try {
         const response = await fetch(url);
-        if (!response.ok) { console.warn(`[market-data] EODHD ${ticker}: HTTP ${response.status}`); continue; }
+        if (!response.ok) {
+          refusals.note(response.status);
+          console.warn(`[market-data] EODHD ${ticker}: HTTP ${response.status}`);
+          continue;
+        }
         const days = await response.json() as Array<{ date: string; open: number; high: number; low: number; close: number; adjusted_close: number; volume: number }>;
 
-        for (const day of (days ?? []).slice(0, 10)) {
+        // EODHD returns the window ASCENDING (oldest first) — unlike FMP and
+        // Alpha Vantage, which return newest first. A plain .slice(0, 10) here
+        // therefore kept the OLDEST ten bars and discarded every recent one:
+        // the feed reported success daily while the newest stored bar sat at
+        // 2026-07-31 for two and a half weeks, which silently froze NAV for
+        // every index priced off it. Sort explicitly rather than trusting the
+        // provider's order, so this cannot regress if the API changes.
+        const RECENT_BARS = 10;
+        const recent = [...(days ?? [])]
+          .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+          .slice(0, RECENT_BARS);
+
+        for (const day of recent) {
           await ingestRawData({
             sourceId, dataType: 'price', symbol: ticker,
             title: `${ticker} ${day.date}`,
@@ -843,6 +930,10 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       }
     }
 
+    // Nothing ingested AND the provider refused us: record it as an error rather than
+    // a zero-item success. Deliberately does NOT deactivate the source — a daily quota
+    // resets, and a source that switches itself off needs a human to switch it back on.
+    refusals.assertNotRefused(ingested);
     return ingested;
   }
 
@@ -1079,7 +1170,16 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     try {
       const result = await db.run(`
         INSERT INTO market_historical_prices (symbol, price_date, open, high, low, close, volume)
-        SELECT symbol, price_date::date, open, high, low, close, volume
+        -- DISTINCT ON is load-bearing, not tidiness. The same symbol/day arrives
+        -- from more than one source (e.g. mds_fmp_prices AND mds_fmp_sp100_b1 —
+        -- 2668 such pairs as of 2026-08-18), and because this INSERT omits
+        -- the source column, every duplicate collapses onto the SAME conflict key in a
+        -- single statement. Postgres rejects that outright with "ON CONFLICT DO
+        -- UPDATE command cannot affect row a second time", the catch below
+        -- swallowed it, and market_historical_prices stopped advancing on
+        -- 2026-04-02. Newest write wins.
+        SELECT DISTINCT ON (symbol, price_date::date)
+               symbol, price_date::date, open, high, low, close, volume
         FROM market_price_normalized
         WHERE price_date::date > (
           -- price_date is a TEXT column (ISO date strings); cast to date so the
@@ -1087,6 +1187,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           -- cannot be matched") and the outer date comparison stays date-vs-date.
           SELECT COALESCE(MAX(price_date::date), '2020-01-01'::date) FROM market_historical_prices
         )
+        ORDER BY symbol, price_date::date, created_at DESC
         -- market_historical_prices' only UNIQUE is (symbol, price_date, source)
         -- — there is no unique on (symbol, price_date) alone (just a plain index),
         -- so a 2-column ON CONFLICT raised "no unique or exclusion constraint
@@ -1097,7 +1198,10 @@ export async function createMarketDataService(db: DatabaseAdapter) {
           close = EXCLUDED.close, high = EXCLUDED.high, low = EXCLUDED.low,
           open = EXCLUDED.open, volume = EXCLUDED.volume
       `);
-      const synced = (result as { rowCount?: number })?.rowCount ?? 0;
+      // RunResult exposes `changes`, not pg's raw `rowCount` — reading the
+      // latter reported 0 synced rows even when thousands were written, which
+      // silences the log line below and makes a working sync look dead.
+      const synced = result?.changes ?? 0;
       if (synced > 0) console.log(`[market-data] Synced ${synced} prices to historical table`);
       return synced;
     } catch (err) {

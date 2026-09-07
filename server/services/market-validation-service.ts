@@ -1,5 +1,6 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { dateOffsetLiteral } from '../db/dialect-helpers.js';
+import { trustedSince } from './market-learning-window.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,15 +159,18 @@ export async function createMarketValidationService(db: DatabaseAdapter) {
   async function updateSignalWeights() {
     // Get atom types that contributed to validated predictions via theses
     const signalStats = await db.all<{ signal_type: string; category: string; total: number; correct: number }>(
+      // Trusted window only — grading defects repaired in mid-August make
+      // older labels unreliable in both directions. See market-learning-window.ts.
       `SELECT ma.atom_type as signal_type, ma.category,
               COUNT(DISTINCT mp.id) as total,
               SUM(CASE WHEN mp.was_correct = 1 THEN 1 ELSE 0 END) as correct
        FROM market_predictions mp
        JOIN market_thesis_atoms mta ON mp.thesis_id = mta.thesis_id
        JOIN market_atoms ma ON mta.atom_id = ma.id
-       WHERE mp.status = 'validated'
+       WHERE mp.status = 'validated' AND mp.validated_at >= ?
        GROUP BY ma.atom_type, ma.category
-       HAVING total >= 3`
+       HAVING total >= 3`,
+      trustedSince()
     );
 
     for (const stat of signalStats) {

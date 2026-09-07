@@ -618,6 +618,8 @@ async function executeStep(
         connectionId: step.config.dataConnectionId,
         query: step.config.importQuery ? resolveTemplate(step.config.importQuery, ctx) : undefined,
         preview: step.config.preview,
+        // ANTON's handle, for the connection LOOKUP only — the query itself runs
+        // against dataConnectionId's own database via its driver. See importFromDatabase.
         db: step.config.importSource === 'database' ? db : undefined,
       };
 

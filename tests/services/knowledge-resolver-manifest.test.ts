@@ -54,17 +54,29 @@ describe('resolveKnowledgeSources — sourceDetails content hashing (1.6)', () =
   });
 
   it('hashes local-folder document content', async () => {
-    const config = {
-      modes: {
-        localFolder: { enabled: true, folderPaths: [tmpDir], recursive: false },
-      },
-    } as unknown as KnowledgeSourceConfig;
+    // localFolder mode now enforces ALLOWED_FOLDER_PATHS (server/lib/folder-guard.ts)
+    // — an unlisted folder is refused unread, which is the point of that guard.
+    // This case is about hashing, not authorisation, so whitelist the fixture
+    // dir for the duration. Do NOT "fix" a future failure here by weakening the
+    // guard; whitelist the path instead, exactly as a real operator would.
+    const savedAllowed = process.env.ALLOWED_FOLDER_PATHS;
+    process.env.ALLOWED_FOLDER_PATHS = tmpDir;
+    try {
+      const config = {
+        modes: {
+          localFolder: { enabled: true, folderPaths: [tmpDir], recursive: false },
+        },
+      } as unknown as KnowledgeSourceConfig;
 
-    const resolved = await resolveKnowledgeSources(config, []);
-    const detail = resolved.sourceDetails?.find((d) => d.type === 'local_file');
-    expect(detail).toBeTruthy();
-    expect(detail!.sha256).toBe(sha(FILE_CONTENT));
-    expect(detail!.contentHashed).toBe(true);
+      const resolved = await resolveKnowledgeSources(config, []);
+      const detail = resolved.sourceDetails?.find((d) => d.type === 'local_file');
+      expect(detail).toBeTruthy();
+      expect(detail!.sha256).toBe(sha(FILE_CONTENT));
+      expect(detail!.contentHashed).toBe(true);
+    } finally {
+      if (savedAllowed === undefined) delete process.env.ALLOWED_FOLDER_PATHS;
+      else process.env.ALLOWED_FOLDER_PATHS = savedAllowed;
+    }
   });
 
   it('lists Claude built-in knowledge + web_search tool as not hashable (honest limitation)', async () => {

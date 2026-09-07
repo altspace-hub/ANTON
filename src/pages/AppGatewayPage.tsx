@@ -12,7 +12,7 @@ import {
 import { getAuthHeader } from '@/lib/api';
 // PairDeviceTab uses this to encode the mesh enrollment package inline in
 // the QR — see the `transport === 'mesh'` branch in generate().
-import { encodeBase64UrlJson } from '../app/services/pairing-url';
+import { buildInlinePairingUrl } from '../app/services/pairing-url';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -695,14 +695,12 @@ function PairDeviceTab({ orgId }: { orgId: string }) {
       // because the phone DOES need to reach the server directly.
       let url: string;
       if (result.transport === 'mesh') {
-        const inlinePkg = {
-          ...result,
-          // Optional human label so the UI can show "paired with X"
-          // before the completion succeeds. The phone never resolves it.
-          server_label: window.location.host,
-        };
-        const enc = encodeBase64UrlJson(inlinePkg);
-        url = `anton://enroll?pkg=${enc}`;
+        // buildInlinePairingUrl strips confirmation_code before encoding.
+        // Spreading `result` straight into the QR used to embed the 6-digit
+        // out-of-band code in the QR itself, which made it worthless against
+        // exactly the attack it exists for (a QR photographed or swapped
+        // between issue and scan). The admin still sees the code below.
+        url = buildInlinePairingUrl(result, window.location.host);
       } else {
         const serverUrl = window.location.origin;
         url = `anton://enroll?server=${encodeURIComponent(serverUrl)}&token=${encodeURIComponent(result.token)}`;

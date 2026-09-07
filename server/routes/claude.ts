@@ -54,6 +54,58 @@ import { computeRunCostUsd } from '../services/run-cost.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
+/**
+ * Abort a stream that has STALLED, not one that is merely taking a while.
+ *
+ * The per-thinking-level ceilings were applied as absolute wall-clock limits:
+ * a run was killed at the ceiling even while it was streaming tokens the whole
+ * way. A model-validation prompt of 77k characters with two structured output
+ * formats exceeds the 300s `think` ceiling comfortably — so it started, did
+ * real work, and was cut off mid-answer with "Operation aborted". The bigger
+ * and more valuable the request, the more reliably it failed.
+ *
+ * The ceilings were tuned for time to FIRST token ("runtime spawn adds seconds
+ * before first token"), which is what they govern here. Once output is flowing,
+ * only silence is a fault: each write resets an idle window. A generous
+ * absolute ceiling remains as a backstop against a genuinely wedged stream.
+ *
+ * Returns a stop() for the caller's finally block.
+ */
+function armIdleAbort(
+  res: { write: (chunk: string) => boolean; on: (ev: string, fn: () => void) => unknown },
+  abort: () => void,
+  opts: { firstTokenMs: number; idleMs?: number; ceilingMs?: number },
+): () => void {
+  const idleMs = opts.idleMs ?? 180_000;        // silence AFTER output began
+  const ceilingMs = opts.ceilingMs ?? 1_800_000; // 30 min hard backstop
+  let stopped = false;
+  let idleTimer: NodeJS.Timeout;
+
+  const ceilingTimer = setTimeout(() => { if (!stopped) abort(); }, ceilingMs);
+  idleTimer = setTimeout(() => { if (!stopped) abort(); }, opts.firstTokenMs);
+
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    clearTimeout(idleTimer);
+    clearTimeout(ceilingTimer);
+  };
+
+  // Every byte written to the client is evidence the run is alive.
+  const originalWrite = res.write.bind(res);
+  res.write = (chunk: string): boolean => {
+    if (!stopped) {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { if (!stopped) abort(); }, idleMs);
+    }
+    return originalWrite(chunk);
+  };
+
+  res.on('close', stop);
+  res.on('finish', stop);
+  return stop;
+}
+
 export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   const router = Router();
   const checkBudget = await createBudgetMiddleware(db);
@@ -1155,6 +1207,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         req.on('close', () => sdkAbort.abort());
         // Runtime spawn adds seconds before first token — same shape as the
         // API path's per-thinking-level ceilings, one notch more generous.
+        // These govern TIME TO FIRST TOKEN, which is what they were tuned for.
         const sdkTimeouts: Record<string, number> = {
           quick: 180_000,
           think: 300_000,
@@ -1163,9 +1216,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           plan_first: 600_000,
           deep_investigate: 600_000,
         };
-        const sdkTimeoutId = setTimeout(() => sdkAbort.abort(), sdkTimeouts[thinking as string] || 420_000);
-        res.on('close', () => clearTimeout(sdkTimeoutId));
-        res.on('finish', () => clearTimeout(sdkTimeoutId));
+        const stopSdkTimers = armIdleAbort(res, () => sdkAbort.abort(), {
+          firstTokenMs: sdkTimeouts[thinking as string] || 420_000,
+        });
 
         const engineStream = provider === 'anthropic_sdk' ? sdkStreamToResponse : codexStreamToResponse;
         try {
@@ -1183,7 +1236,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             onComplete,
           );
         } finally {
-          clearTimeout(sdkTimeoutId);
+          stopSdkTimers();
         }
       } else if (provider === 'anthropic') {
         // Use existing Anthropic streaming.
@@ -1211,9 +1264,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       };
       const baseTimeout = Number(process.env.CLAUDE_REQUEST_TIMEOUT_MS) || thinkingTimeouts[thinking as string] || 300_000;
       const timeoutMs = Math.max(baseTimeout, thinkingTimeouts[thinking as string] || 300_000);
-      const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
-      res.on('close', () => clearTimeout(timeoutId));
-      res.on('finish', () => clearTimeout(timeoutId));
+      // Same idle semantics as the SDK path: this ceiling is a time-to-first-token
+      // budget, not a cap on how long a healthy answer may take to write.
+      const stopApiTimers = armIdleAbort(res, () => abortController.abort(), { firstTokenMs: timeoutMs });
 
       try {
       // IRE branch: route to iterative reasoning engine when explicitly enabled
@@ -1290,7 +1343,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         recordFailure(status);
         throw streamErr;
       } finally {
-        clearTimeout(timeoutId);
+        stopApiTimers();
       }
       } else {
         // Non-Anthropic providers: set SSE headers, stream, then finalize

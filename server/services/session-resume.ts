@@ -131,10 +131,19 @@ export async function createSessionResumeService(db: DatabaseAdapter) {
   }
 
   /**
-   * Delete a snapshot.
+   * Delete a snapshot, but only if it belongs to `sessionId`.
+   *
+   * The session_id is part of the predicate, not merely of the caller's URL: the
+   * route's ownership gate can only vouch for :sessionId, and a snapshot id is an
+   * independently guessable key. Deleting by snapshot id alone (as this did) let a
+   * team-mode caller pair their own session with another tenant's snapshot id and
+   * destroy it. There is deliberately no delete-by-id-alone variant left to call.
    */
-  async function deleteSnapshot(snapshotId: string): Promise<boolean> {
-    const result = await db.run('DELETE FROM session_snapshots WHERE id = ?', snapshotId);
+  async function deleteSnapshotForSession(snapshotId: string, sessionId: string): Promise<boolean> {
+    const result = await db.run(
+      'DELETE FROM session_snapshots WHERE id = ? AND session_id = ?',
+      snapshotId, sessionId,
+    );
     return result.changes > 0;
   }
 
@@ -245,7 +254,7 @@ ${messageText}`;
     getLatestSnapshot,
     getSnapshot,
     listSnapshots,
-    deleteSnapshot,
+    deleteSnapshotForSession,
     buildResumeContext,
     autoGenerateSnapshot,
   };

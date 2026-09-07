@@ -278,3 +278,143 @@ version in the lockfile, not the parent's declared range.)
 `socket.io-parser` was one of the ten bare `>=` floors flagged on 07-25; it is now bounded.
 Nine remain (`protobufjs`, `hono`, `@hono/node-server`, `@xmldom/xmldom`, `tmp`,
 `@grpc/grpc-js`, `find-my-way`, `ws`, `form-data`) — still a tracked follow-up.
+
+## Addendum — 2026-09-03 (5 blocking HIGH advisories; both fixes semver-compatible)
+
+The gate went red on the first CI run after a three-day gap — **5 high paths across 2
+packages**, all published against modules already in the tree, none related to the branch's
+own changes. Both fixes stayed inside the range their parents already declare, so neither
+needed a new override shape.
+
+| Package | Advisory | Was | Fix | Path |
+|---|---|---|---|---|
+| `fast-uri` ×4 | GHSA-5jgf-p345-68v8 (host confusion, skipped IDN canonicalization on scheme-relative refs, `>=3.1.3 <3.1.6`), GHSA-f65p-4m7j-42xc (SSRF via malformed IPv6 normalization, `>=3.0.0 <3.1.6`), GHSA-fph4-wmhf-6fwf (SSRF via repeated hostname percent-decoding, `>=3.1.2 <3.1.6`), GHSA-jqff-g426-hqxp (host confusion via percent-encoded scheme normalization, `>=3.0.0 <3.1.6`) | override `>=3.1.5 <4.0.0`, resolved 3.1.5 | **floor raised → `>=3.1.6 <4.0.0`** (same bounded shape; resolves 3.1.7, still inside the `^3.0.1` ajv declares) | `.>ajv>fast-uri` — same reachability as the 08-12 entry: ajv-formats URI validation of remote portal capability descriptors |
+| `mysql2` | GHSA-3f6p-5ww8-9rcr — auth plugin downgrade to `mysql_clear_password` leaks plaintext credentials (CWE-522), `<3.22.0` | direct `^3.17.3`, **resolved 3.18.2** | **direct bump → `^3.22.0`** (resolves 3.24.3) | `.>mysql2` — reachable: `server/services/db-drivers/mysql-driver.ts` and `workflow-executor.ts` connect to a user-configured MySQL/MariaDB host with credentials from the vault. A hostile or on-path server can request the downgrade and harvest them in plaintext |
+
+### The mysql2 finding is the fourth instance of the same lesson
+
+`^3.17.3` already permitted the patched 3.22.0 — the *declared range* was never wrong, the
+*lockfile resolution* was stale at 3.18.2. This is exactly the 08-12 correction to the 06-11
+`express-rate-limit` / `ip-address` entry, and the 07-25 note before it: **audit the resolved
+version, not the declared range.** The floor is raised to `^3.22.0` anyway so a future
+`pnpm install` cannot silently resolve back below the patch line.
+
+### Bare-floor cleanup
+
+No change this batch. Nine unbounded `>=` floors remain (`protobufjs`, `hono`,
+`@hono/node-server`, `@xmldom/xmldom`, `tmp`, `@grpc/grpc-js`, `find-my-way`, `ws`,
+`form-data`) — still a tracked follow-up. `pnpm.auditConfig.ignoreGhsas` remains **empty**;
+accepted-with-reason state remains **None**.
+
+---
+
+## Addendum — 2026-09-06 (the gate was green because the manifest was wrong)
+
+This batch fixed no new advisory. It fixed the **gate's ability to see one**.
+
+`xlsx@0.18.5` carries two HIGH advisories — **CVE-2023-30533** (GHSA-4r6h-8v6p-xvw6,
+prototype pollution when reading crafted files, CVSS 7.8) and **CVE-2024-22363**
+(GHSA-5pgg-2g8v-p4x9, ReDoS, CVSS 7.5). Neither had ever appeared in this document,
+because both CI gates run `pnpm audit --prod`, and `xlsx` was declared in
+**`devDependencies`** — while the Express server imported it to parse user uploads:
+
+| Call site (named, not line-numbered — these files churn) | Entry point |
+|---|---|
+| `server/services/text-extractor.ts` → `extractXlsx()` — `XLSX.read(buffer, {type:'buffer'})` | `server/routes/files.ts` allows `.xlsx` in the multer `fileFilter`, then hands the uploaded bytes to `extractTextFromFile()` |
+| `server/services/data-importer.ts` → `importExcel()` — `xlsx.readFile(path)` | data-import flows |
+
+`--prod` walks the `dependencies` tree only. The gate was therefore green **because** the
+package was misfiled, not because the tree was clean — the failure mode this file exists to
+prevent, arriving through the manifest instead of through an override.
+
+The misfiling was also a latent production break: `pnpm install --prod` would not install
+`xlsx` at all, so `pnpm start` (which runs the TS sources under tsx) would throw
+`ERR_MODULE_NOT_FOUND` on the first spreadsheet upload.
+
+### No fix exists on npm — but one exists
+
+`pnpm view xlsx versions` ends at **0.18.5**, and `pnpm audit` prints `Patched versions:
+<0.0.0` (its notation for "no patch on the registry"). That is not the whole story: both
+advisories' own text says so explicitly —
+
+> "A non-vulnerable version cannot be found via npm, as the repository hosted on GitHub and
+> the npm package `xlsx` are no longer maintained. Version 0.19.3 [resp. 0.20.2] can be
+> downloaded via https://cdn.sheetjs.com/."
+
+SheetJS left the registry after 0.18.5 and publishes to its own CDN. So the honest options
+were an accepted-with-reason entry, replacing the parser, or taking the vendor's own
+remediation. We took the remediation:
+
+```jsonc
+"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"   // dependencies
+```
+
+0.20.3 is the newest CDN build (0.20.4 / 0.21.0 are 404) and clears both fix lines
+(≥0.19.3 and ≥0.20.2). **`pnpm.auditConfig.ignoreGhsas` stays empty; accepted-with-reason
+stays None.** Nothing was suppressed.
+
+### Why this is a real green and not a second hiding place
+
+The obvious worry is that `pnpm audit` simply cannot see a URL-pinned dependency, in which
+case moving to the CDN would re-hide the package rather than fix it. That was tested, not
+assumed: pinning the CDN's **0.19.2** tarball and re-running the gate reproduces both
+advisories against `.>xlsx` and exits 1. `pnpm audit` resolves URL deps by name+version and
+still applies advisories to them. The green on 0.20.3 is earned.
+
+### Reachability, checked rather than asserted
+
+- **Reachable, and the reason this mattered:** the upload path. `files.ts` accepts `.xlsx`
+  from any authenticated user and `text-extractor.extractXlsx()` calls `XLSX.read()` on the
+  bytes — attacker-controlled input straight into the vulnerable parser. The advisories'
+  carve-out ("workflows that do not read arbitrary files ... are unaffected") does **not**
+  apply to us. Verified working end-to-end on both 0.18.5 and 0.20.3.
+- **Not currently reachable:** `data-importer.importExcel()`. `xlsx.readFile()` throws
+  `Cannot access file …` under the server's own loader, because the ESM build (`xlsx.mjs`,
+  selected by the `import` condition) bundles no `fs` and nothing calls `XLSX.set_fs(fs)`.
+  This is **pre-existing and identical on 0.18.5** — it is not a regression from the pin,
+  and it is left alone here as a separate defect. Anyone fixing it (by calling `set_fs`)
+  should know they are *opening* a path to this parser, not just restoring a feature.
+
+### Upgrade is behaviour-neutral on our call sites
+
+0.18.5 and 0.20.3 were run side by side against the exact API surface ANTON uses —
+`read({type:'buffer',cellDates:true})`, `utils.sheet_to_csv({blankrows:false})`,
+`readFile`, `utils.sheet_to_json({header,defval})`. Identical output, including date
+rendering (`alpha,1/15/26,12.5`) and blank-row suppression.
+
+### Two adjacent items in the same commit
+
+1. **`tiktoken` had the identical misfiling** and was moved to `dependencies`. It is a
+   static top-level import in `server/services/token-estimator.ts` and `chunker.ts`, which
+   `server/routes/audit.ts`, `routes/pathfinder.ts`, `knowledge-resolver.ts` and
+   `pathfinder-engine.ts` import statically — so unlike xlsx this one would have failed at
+   **boot** under `--prod`, not on first use. It carries no advisories; this is a
+   correctness fix, and it is what the new guard test found.
+2. **`@types/xlsx@0.0.36` removed.** npm deprecates it outright ("xlsx provides its own type
+   definitions, so you don't need @types/xlsx installed!"), and it depended on
+   `xlsx: 0.18.5` — so it was the one remaining thing pulling the vulnerable build into the
+   tree after the pin. `npx tsc -b` is clean without it; xlsx ships `types/index.d.ts`.
+
+### Residual risks a reviewer should weigh
+
+- **Install now depends on `cdn.sheetjs.com`.** If that host is unreachable,
+  `pnpm install --frozen-lockfile` fails outright — a harder failure than a red audit. If
+  this proves flaky in CI, the fallback is to vendor the tarball in-repo and pin a `file:`
+  specifier.
+- **No integrity hash.** pnpm records URL deps as `resolution: {tarball: …}` with no
+  `integrity` field, so a swapped tarball would install undetected. Registry deps do not
+  have this gap. Vendoring would also close this.
+
+### Guard
+
+`tests/lint/runtime-deps-classification.test.ts` pins both halves: (1) nothing under
+`server/` may be imported from a `devDependency` — the general invariant that failed here;
+(2) `xlsx` must be pinned to a `cdn.sheetjs.com` tarball ≥ 0.20.2. The second matters
+because the URL *looks* like something to tidy up, and "tidying" it back to `^0.18.5`
+reintroduces both CVEs while `pnpm audit` reports them as unfixable — one `ignoreGhsas`
+entry away from being buried permanently.
+
+> **Review trigger (dated).** Revisit when **either**: SheetJS resumes publishing to npm,
+> **or** a CDN build newer than 0.20.3 appears (check `https://cdn.sheetjs.com/xlsx-<v>/`).
+> Re-check at the next quarterly dependency sweep regardless. **Owner:** repo maintainer
+> (`daniel.bardun@gmail.com`).

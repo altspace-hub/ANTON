@@ -3,6 +3,6 @@
   "label": "Threat-Path Methodology",
   "category": "methodology",
   "applicableAreas": ["risk", "fcp", "compliance", "audit", "operations"],
-  "description": "Codifies the universal seven-stage causal chain at the heart of the Risk Atlas: Exposure → Threat Path → Vulnerability → Inherent → Controls (Prevent/Detect/Respond) → Residual → Appetite. Generalised from the Advisense CASP BWRA methodology; equivalent to ISO 31000 Bowtie, NIST CSF (Identify→Protect→Detect→Respond→Recover), and FMEA/HAZOP at structural level.",
+  "description": "Codifies the universal seven-stage causal chain at the heart of the Risk Atlas: Exposure → Threat Path → Vulnerability → Inherent → Controls (Prevent/Detect/Respond) → Residual → Appetite. Generalised from the CASP business-wide risk assessment methodology; equivalent to ISO 31000 Bowtie, NIST CSF (Identify→Protect→Detect→Respond→Recover), and FMEA/HAZOP at structural level.",
   "tags": ["risk", "methodology", "bowtie", "iso-31000", "threat-path", "atlas", "bwra"]
 }

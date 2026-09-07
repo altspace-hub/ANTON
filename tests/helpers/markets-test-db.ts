@@ -47,6 +47,20 @@ export const FIXTURE_TABLES = [
   'market_signal_weight_adjustments',
   'workflow_runs',
   'market_confidence_calibration',
+  'market_index_nav_history',
+  'market_index_holdings',
+  'market_indexes',
+  'market_data_raw',
+  'market_historical_prices',
+  'market_prediction_attribution',
+  'market_index_rebalances',
+  'market_why_chain_levels',
+  'market_why_chains',
+  'market_investigation_tasks',
+  'market_conditional_accuracy',
+  'market_conditional_accuracy_applied',
+  'market_schedule_runs',
+  'market_atoms',
 ] as const;
 
 export interface ProvisionResult {

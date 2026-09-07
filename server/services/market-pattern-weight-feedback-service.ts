@@ -19,8 +19,17 @@
 //
 // Multiplier bounds:
 //   • [0.5, 1.1] per application (never stronger than halve, cap upside gentle).
-//   • Weight floor 0.3 enforced at the UPDATE (matches existing floor in
-//     market-workflow-orchestrator.ts).
+//   • Weights clamped to [0.3, 1.5] on write, both directions.
+//
+// The loop must be able to give weight BACK. deriveFromSymbolFailure
+// originally emitted `0.5 + accuracy * 0.5`, which tops out at exactly 1.0 —
+// so no multiplier it could produce ever exceeded 1 and overrides could only
+// fall. By 31 August 2026, 8 of 13 symbols sat at the 0.300 floor and VIXY had
+// been cut six times in fourteen days while running 73% accuracy, the best
+// instrument in the set. A one-directional loop converges on every symbol
+// pinned at the floor, which carries exactly as much information as no
+// weighting at all, and it arrives there regardless of what the symbols
+// deserve. The multiplier is now symmetric about a coin flip.
 //
 // See BEEHIVE_PROTOCOL_SPEC.md §11 adjacent — similar defensive design for
 // feedback pipelines that run automatically without a human per batch.
@@ -30,11 +39,25 @@ import { childLogger } from '../lib/logger.js';
 
 const log = childLogger('market-pattern-feedback');
 
-const WEIGHT_FLOOR = 0.3;
+/**
+ * Weight bounds, exported so every writer to market_signal_weights shares
+ * them. The orchestrator's signal_weight_optimizer used to INSERT its raw
+ * output with no clamp at all, which is how price_target reached 0.000 and
+ * directional 0.088 — both below this floor, and 0.000 is an absorbing state
+ * under multiplicative update: nothing multiplied by zero ever recovers.
+ */
+export const WEIGHT_FLOOR = 0.3;
+export const WEIGHT_CEILING = 1.5;
 const MIN_MULTIPLIER = 0.5;
 const MAX_MULTIPLIER = 1.1;
 
-interface PatternRow {
+/** Clamp any candidate weight into the shared bounds; non-finite → null. */
+export function clampWeight(value: number): number | null {
+  if (!Number.isFinite(value)) return null;
+  return Math.min(WEIGHT_CEILING, Math.max(WEIGHT_FLOOR, value));
+}
+
+export interface PatternRow {
   id: string;
   pattern_type: string;
   title: string;
@@ -52,7 +75,7 @@ interface PatternRow {
  *   • 'symbol'  → writes to market_symbol_weight_overrides at (symbol) — the
  *                 proper grain for symbol_failure_cluster patterns (M1.1).
  */
-type PendingAdjustment =
+export type PendingAdjustment =
   | {
       kind: 'signal';
       pattern_id: string;
@@ -153,7 +176,12 @@ export type MarketPatternWeightFeedbackService = Awaited<ReturnType<typeof creat
 
 // ── Translation: pattern → weight adjustments ─────────────────────────────
 
-function deriveAdjustments(pattern: PatternRow): PendingAdjustment[] {
+/**
+ * Pattern → weight deltas. Exported for test: this is the layer where a sign
+ * error turns a working loop into one that can only decay, and that is not
+ * observable from applyPatternFeedback's summary counts.
+ */
+export function deriveAdjustments(pattern: PatternRow): PendingAdjustment[] {
   const metadata = parseMetadata(pattern.metadata);
   switch (pattern.pattern_type) {
     case 'directional_bias':      return deriveFromDirectionalBias(pattern, metadata);
@@ -214,8 +242,27 @@ function deriveFromSymbolFailure(pattern: PatternRow, meta: Record<string, unkno
   const accuracy = toFiniteNumber(meta.accuracy) ?? 0;
   const total = toFiniteNumber(meta.total) ?? 0;
   if (!symbol || total < 3) return [];
-  const multiplier = clamp(0.5 + accuracy * 0.5, MIN_MULTIPLIER, MAX_MULTIPLIER);
-  const rationale = `symbol_failure_cluster on ${symbol} (${Math.round(accuracy * 100)}% accuracy over ${total} predictions) → symbol-grain override`;
+  // Symmetric about a coin flip: below 50% the symbol loses weight, above it
+  // the symbol GAINS weight back. The previous form (0.5 + accuracy * 0.5)
+  // topped out at exactly 1.0, so every multiplier it could emit was ≤1 and
+  // the override could only ever ratchet down — VIXY went 1.000 → 0.373 over
+  // six cycles while running 73% accuracy, the best instrument in the set,
+  // because a detector that fires on volume kept flagging it and nothing
+  // could ever give the weight back. A loop with no path upward converges on
+  // every symbol pinned at the floor, which is the same as no weighting at
+  // all, and it gets there whether or not the symbols deserve it.
+  //
+  // 0.5 is the reference rather than the system's own base rate: for a
+  // directional call, beating a coin flip is the absolute standard, and
+  // grading against a moving average of ourselves would let the whole book
+  // drift while every symbol still looked "average".
+  //
+  // The 0.6 damping keeps this gentler than deriveFromDirectionalBias, which
+  // hits a whole axis at once; a symbol override multiplies every future
+  // prediction on that ticker, so it compounds faster.
+  const multiplier = clamp(1.0 + (accuracy - 0.5) * 0.6, MIN_MULTIPLIER, MAX_MULTIPLIER);
+  const direction = multiplier < 1 ? 'down-weight' : 'restore weight';
+  const rationale = `symbol_failure_cluster on ${symbol} (${Math.round(accuracy * 100)}% accuracy over ${total} predictions) → ${direction}, symbol-grain override`;
   return [
     { kind: 'symbol', pattern_id: pattern.id, pattern_type: pattern.pattern_type, symbol, multiplier, rationale },
   ];
@@ -241,7 +288,9 @@ async function applySignalWeightAdjustment(
     adj.signal_type, adj.category,
   );
   const weightBefore = row ? Number(row.weight) : 1.0;
-  const weightAfter = Math.max(WEIGHT_FLOOR, weightBefore * adj.multiplier);
+  // Clamped both ways now that multipliers can exceed 1.0 — recovery must be
+  // possible, but a run of good cycles must not compound without bound.
+  const weightAfter = clampWeight(weightBefore * adj.multiplier) ?? WEIGHT_FLOOR;
 
   // INSERT-or-UPDATE via the unique constraint on (signal_type, category)
   await db.run(
@@ -287,7 +336,9 @@ async function applySymbolOverrideAdjustment(
     adj.symbol,
   );
   const weightBefore = row ? Number(row.weight_multiplier) : 1.0;
-  const weightAfter = Math.max(WEIGHT_FLOOR, weightBefore * adj.multiplier);
+  // Clamped both ways now that multipliers can exceed 1.0 — recovery must be
+  // possible, but a run of good cycles must not compound without bound.
+  const weightAfter = clampWeight(weightBefore * adj.multiplier) ?? WEIGHT_FLOOR;
 
   await db.run(
     `INSERT INTO market_symbol_weight_overrides

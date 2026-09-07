@@ -13,10 +13,124 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 import { getEmbeddingAdapter, isZeroVector } from './embedding-adapter.js';
-import { getVectorStore } from './vector-store-adapter.js';
+import { getVectorStore, type VectorSearchResult } from './vector-store-adapter.js';
 import { retrieveChunks } from './rag/retriever.js';
+
+// ── Owner scoping ──────────────────────────────────────────────────────────
+//
+// Search is the one surface that can undo every other ownership guard on the
+// instance: routes/sessions.ts refuses another user's session by id, and this
+// service used to hand back 4000 characters of the same assistant output to
+// anybody who guessed a keyword (2026-09 team-mode audit, "search" finding 2).
+// The predicate lives HERE rather than in each route because /api/search,
+// /api/embeddings/*, the Pathfinder engine and the companion-app gateway all
+// call the same two functions; a per-route filter would have to be written four
+// times and forgotten once.
+//
+// `scope` is a REQUIRED option for exactly that reason. A default would be an
+// unscoped default — the very thing being fixed — and TypeScript then lets a new
+// call site ship without anyone deciding whose material it may read.
+//
+// WHAT IS SCOPED, AND WHAT DELIBERATELY IS NOT. Only `session_output` maps to a
+// row with an owner: embeddings.content_id is a messages.id, and messages join
+// sessions, which has user_id. The other embedded content types have no owner
+// dimension in the schema at all — knowledge_atoms, checkpoint_decisions and
+// knowledge_pack_entity rows carry none, and document_chunks are keyed by
+// folder_path from the instance-wide indexed_folders list. They are shared
+// reference material by design (that is what "institutional memory" means here),
+// so this file cannot and does not pretend to isolate them. Do not read a scoped
+// hybridSearch as "fully tenant-isolated" — it means "no other user's verbatim
+// session output".
+
+/**
+ * Whose material one search may read.
+ *
+ *   'instance' — no filtering. Solo mode (one human, and rows written before
+ *                ownership existed carry a NULL user_id), an admin, or an
+ *                internal caller that only ever asks for unowned content types.
+ *   'user'     — team-mode principal: only outputs from their own sessions.
+ *   'none'     — team mode with no identity. Matches nothing; fail closed.
+ */
+export type SearchScope =
+  | { kind: 'instance' }
+  | { kind: 'user'; userId: string }
+  | { kind: 'none' };
+
+/**
+ * The explicit "there is nothing to filter by" scope. Named and exported so the
+ * call sites that legitimately search instance-wide material are greppable, and
+ * so passing it is a visible decision rather than an omitted argument.
+ */
+export const INSTANCE_WIDE_SEARCH: SearchScope = { kind: 'instance' };
+
+/**
+ * For a caller that is authenticated in a DIFFERENT identity namespace than
+ * `sessions.user_id` — today that is the companion app, whose `req.appUser` is a
+ * `connected_users` row and never a desktop user. Such a caller has a legitimate
+ * claim on the instance's shared reference material and no claim at all on anyone's
+ * verbatim session output, which is exactly what `'none'` yields: unowned content
+ * types pass, `session_output` is dropped on the vector path and never queried on
+ * the keyword one.
+ *
+ * Named for the same reason as INSTANCE_WIDE_SEARCH — so the decision is greppable,
+ * and so nobody reaches for `{ kind: 'user', userId: appUser.id }`, which happens to
+ * match nothing today but only because the two id spaces do not collide yet.
+ */
+export const NO_OWNED_CONTENT: SearchScope = { kind: 'none' };
+
+/**
+ * Derive the scope from an authenticated request. Delegates to `scopesToOwner`
+ * (middleware/ownership.ts) so solo/admin behaviour has ONE definition — anyone
+ * changing that rule must not have to find a second copy here.
+ */
+export function searchScopeForRequest(req: OwnedRequest): SearchScope {
+  if (!scopesToOwner(req)) return INSTANCE_WIDE_SEARCH;
+  const userId = req.user?.id;
+  return userId ? { kind: 'user', userId } : { kind: 'none' };
+}
+
+/** Embedded content types whose rows belong to exactly one user. See the note above. */
+const OWNED_CONTENT_TYPES = new Set(['session_output']);
+
+/**
+ * Drop rows of an owned content type that the scope may not read.
+ *
+ * Applied to vector-store hits, which come back from the `embeddings` table with
+ * no join to `sessions`. The keyword path pushes the same predicate into its SQL
+ * instead — a row the caller may not see is better never loaded — but the vector
+ * store is a shared adapter with its own backends, so post-filtering is the
+ * narrow fix here rather than threading ownership through two vector stores.
+ */
+async function filterOwnedByScope<T extends { content_type: string; content_id: string }>(
+  db: DatabaseAdapter,
+  rows: T[],
+  scope: SearchScope,
+): Promise<T[]> {
+  if (scope.kind === 'instance') return rows;
+  const owned = rows.filter((r) => OWNED_CONTENT_TYPES.has(r.content_type));
+  if (owned.length === 0) return rows;
+  const unowned = rows.filter((r) => !OWNED_CONTENT_TYPES.has(r.content_type));
+  if (scope.kind === 'none') return unowned;
+
+  const ids = [...new Set(owned.map((r) => r.content_id))];
+  const placeholders = ids.map(() => '?').join(',');
+  // INNER JOIN, not LEFT: a message whose session row is gone, or whose session
+  // has a NULL user_id (written before ownership was enforced), is not
+  // attributable to this caller and stays hidden in team mode — the same
+  // fail-closed choice ownership.ts documents for unattributed rows.
+  const visibleRows = await db.all<{ id: string }>(
+    `SELECT m.id
+       FROM messages m
+       JOIN sessions s ON s.id = m.session_id
+      WHERE m.id IN (${placeholders}) AND s.user_id = ?`,
+    ...ids, scope.userId,
+  );
+  const visible = new Set(visibleRows.map((r) => r.id));
+  return rows.filter((r) => !OWNED_CONTENT_TYPES.has(r.content_type) || visible.has(r.content_id));
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -41,6 +155,13 @@ export interface HybridSearchOptions {
   minSimilarity?: number;     // For vector results (default: 0.3)
   folderPaths?: string[];     // For document_chunk BM25 search
   includeDocumentChunks?: boolean;
+  /**
+   * Whose material this search may read. REQUIRED — see the "Owner scoping"
+   * note at the top of this file. Build it with `searchScopeForRequest(req)` on
+   * any request-driven path; `INSTANCE_WIDE_SEARCH` only where the caller has
+   * established there is no owner to filter by.
+   */
+  scope: SearchScope;
 }
 
 // RRF constant (k=60 is standard)
@@ -59,6 +180,7 @@ export async function hybridSearch(
     minSimilarity = 0.3,
     folderPaths = [],
     includeDocumentChunks = true,
+    scope,
   } = options;
 
   const embeddingAdapter = getEmbeddingAdapter();
@@ -74,13 +196,19 @@ export async function hybridSearch(
       : Promise.resolve([]),
   ]);
 
-  // Vector search across embeddings table
-  const vectorResults = await vectorStore.search({
-    queryVector,
-    topK: topK * 2,
-    contentTypes,
-    minSimilarity,
-  });
+  // Vector search across embeddings table. Over-fetch then scope: the store has
+  // no owner dimension, so another user's outputs are removed here before they
+  // reach RRF, the snippet builder or the caller.
+  const vectorResults: VectorSearchResult[] = await filterOwnedByScope(
+    db,
+    await vectorStore.search({
+      queryVector,
+      topK: topK * 2,
+      contentTypes,
+      minSimilarity,
+    }),
+    scope,
+  );
 
   // ── BM25 keyword search on knowledge_atoms (SQL LIKE fallback) ───────────
   const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);
@@ -90,7 +218,7 @@ export async function hybridSearch(
   // even when its embedding failed (no key / Ollama down) or predates the
   // session_output write path. Vector hits on embedded outputs share the
   // same `session_output:<message_id>` key and fuse via RRF below.
-  const keywordSessionOutputs = await searchSessionOutputsKeyword(db, query, topK * 2, contentTypes);
+  const keywordSessionOutputs = await searchSessionOutputsKeyword(db, query, topK * 2, contentTypes, scope);
 
   // ── Build ranked lists ───────────────────────────────────────────────────
 
@@ -244,10 +372,21 @@ export async function findSimilar(
     contentId: string;
     topK?: number;
     sameTypeOnly?: boolean;
+    /** Whose material may be read. Same contract as HybridSearchOptions.scope. */
+    scope: SearchScope;
   },
 ): Promise<HybridSearchResult[]> {
   const vectorStore = getVectorStore(db);
   const embeddingAdapter = getEmbeddingAdapter();
+
+  // The SEED is scoped too, not just the results. contentType/contentId come
+  // straight from the request body, so an unscoped seed lets a caller point at
+  // another user's session output and mine it indirectly: the neighbours it
+  // returns are chosen by that output's own vector.
+  const seedVisible = await filterOwnedByScope(
+    db, [{ content_type: params.contentType, content_id: params.contentId }], params.scope,
+  );
+  if (seedVisible.length === 0) return [];
 
   // Get the source item's text from the embeddings table
   const row = await db.get(
@@ -259,12 +398,12 @@ export async function findSimilar(
   const queryVector = await embeddingAdapter.embed(row.content_text);
   const contentTypes = params.sameTypeOnly ? [params.contentType] : undefined;
 
-  const results = await vectorStore.search({
+  const results = await filterOwnedByScope(db, await vectorStore.search({
     queryVector,
     topK: (params.topK ?? 10) + 1, // +1 to exclude self
     contentTypes,
     minSimilarity: 0.4,
-  });
+  }), params.scope);
 
   // Exclude self
   const filtered = results.filter(r => !(r.content_type === params.contentType && r.content_id === params.contentId));
@@ -411,9 +550,12 @@ async function searchSessionOutputsKeyword(
   db: DatabaseAdapter,
   query: string,
   limit: number,
-  contentTypes?: string[],
+  contentTypes: string[] | undefined,
+  scope: SearchScope,
 ): Promise<SessionOutputKeywordRow[]> {
   if (contentTypes && !contentTypes.includes('session_output')) return [];
+  // Team mode with no identity: no rows, and no query either.
+  if (scope.kind === 'none') return [];
 
   const words = [...new Set(
     query
@@ -427,6 +569,16 @@ async function searchSessionOutputsKeyword(
     const hitExpr = words.map(() => `(CASE WHEN LOWER(m.content) LIKE ? THEN 1 ELSE 0 END)`).join(' + ');
     const whereExpr = words.map(() => `LOWER(m.content) LIKE ?`).join(' OR ');
     const patterns = words.map((w) => `%${w}%`);
+    // The owner predicate is pushed into SQL rather than applied afterwards so a
+    // row the caller may not see is never loaded into memory or logged — the same
+    // property assertOwned relies on. `s.user_id = ?` also turns the LEFT JOIN
+    // into an effective INNER one for a scoped caller: a message whose session is
+    // missing, or whose session predates ownership (NULL user_id), is not
+    // attributable to them and stays hidden. Solo and admin keep the LEFT JOIN
+    // and see everything, which is why those legacy rows do not vanish from the
+    // operator's own machine.
+    const ownerSql = scope.kind === 'user' ? ' AND s.user_id = ?' : '';
+    const ownerParams = scope.kind === 'user' ? [scope.userId] : [];
     // sessions has no area_id column — area lives in the embedding metadata
     // (vector path) only; the keyword path reports it as NULL.
     const rows = await db.all(
@@ -437,10 +589,10 @@ async function searchSessionOutputsKeyword(
               (${hitExpr}) AS hits
        FROM messages m
        LEFT JOIN sessions s ON s.id = m.session_id
-       WHERE m.role = 'assistant' AND LENGTH(m.content) >= 200 AND (${whereExpr})
+       WHERE m.role = 'assistant' AND LENGTH(m.content) >= 200 AND (${whereExpr})${ownerSql}
        ORDER BY hits DESC, m.created_at DESC
        LIMIT ?`,
-      ...patterns, ...patterns, limit,
+      ...patterns, ...patterns, ...ownerParams, limit,
     ) as SessionOutputKeywordRow[];
     return rows.map((r) => ({ ...r, hits: Number(r.hits) }));
   } catch (err) {

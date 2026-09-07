@@ -3,6 +3,21 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { createTaskDelegationService } from '../services/task-delegation-service.js';
 
+/**
+ * The values PATCH /community/connections/:id/delegation may write.
+ *
+ * delegation_trust_level: the three the contact editor offers
+ * (src/pages/community/CommunityContactsPage.tsx:436-438) and the two that
+ * task-auto-processor.ts:102 treats as "process without asking".
+ * import_policy: the same three the sibling PATCH .../policy route already
+ * validates (routes/community.ts:1121) — kept identical on purpose; if one list
+ * grows, the other must too, or the two routes disagree about the same column.
+ */
+const TRUST_LEVELS = ['manual', 'trusted', 'auto'] as const;
+type TrustLevel = typeof TRUST_LEVELS[number];
+const IMPORT_POLICIES = ['auto_accept', 'ask_first', 'block'] as const;
+type ImportPolicy = typeof IMPORT_POLICIES[number];
+
 export async function createTaskDelegationRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const service = await createTaskDelegationService(db);
@@ -95,6 +110,25 @@ export async function createTaskDelegationRoutes(db: DatabaseAdapter): Promise<R
       const sets: string[] = [];
       const vals: unknown[] = [];
       const trust = trustLevel ?? delegation_trust_level;
+      // Both columns are enums that other code branches on, and this handler used to
+      // write whatever string arrived. delegation_trust_level decides whether an
+      // INBOUND task from that contact is processed without human review
+      // (task-auto-processor.ts:101 — 'auto' | 'trusted' auto-process) and import_policy
+      // decides whether a peer's pushed knowledge is accepted (p2p.ts:47,
+      // structured-message-handler.ts:55). A typo'd or crafted value is stored in a
+      // NOT NULL column that every reader then compares against literals, so the
+      // contact silently drops to whatever the reader's fallback happens to be —
+      // different per reader, and invisible in the UI, which renders only the three
+      // known options. Reject instead, the same way the sibling
+      // PATCH /community/connections/:id/policy already validates importPolicy.
+      // Falsy (absent / null / '') still means "leave unchanged", as the writes below
+      // have always done — only a supplied value has to be one of the known ones.
+      if (trust && !TRUST_LEVELS.includes(trust as TrustLevel)) {
+        return res.status(400).json({ error: `Invalid trust level. Expected one of: ${TRUST_LEVELS.join(', ')}` });
+      }
+      if (import_policy && !IMPORT_POLICIES.includes(import_policy as ImportPolicy)) {
+        return res.status(400).json({ error: `Invalid import policy. Expected one of: ${IMPORT_POLICIES.join(', ')}` });
+      }
       if (trust) { sets.push('delegation_trust_level = ?'); vals.push(trust); }
       if (policy) { sets.push('delegation_policy = ?'); vals.push(JSON.stringify(policy)); }
       const importPol = import_policy;

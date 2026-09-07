@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete your ANTON data — ANTON · FutureChain</title>
+<meta name="description" content="How to delete your data and your identity in the ANTON apps, what deletion reaches, and what it cannot.">
+<style>
+  :root{
+    --ground:#0b1118; --raised:#131b25; --raised-2:#18222e; --rule:#1f2a37;
+    --ink:#d6dee7; --ink-dim:#8a98a8; --ink-faint:#5a6878;
+    --accent:#6ba3dd; --accent-soft:#4a7fb5; --accent-glow:rgba(107,163,221,.13);
+    --gold:#d9b36c; --warn:#e8703f;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    --measure:64ch; --gutter:clamp(20px,5vw,64px);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ground:#eef2f5; --raised:#ffffff; --raised-2:#f6f9fb; --rule:#d3dce4;
+      --ink:#17222e; --ink-dim:#556677; --ink-faint:#7d8b9a;
+      --accent:#1a4f8e; --accent-soft:#143d6f; --accent-glow:rgba(26,79,142,.09);
+      --gold:#8a6512; --warn:#b0431a;
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#eef2f5; --raised:#ffffff; --raised-2:#f6f9fb; --rule:#d3dce4;
+    --ink:#17222e; --ink-dim:#556677; --ink-faint:#7d8b9a;
+    --accent:#1a4f8e; --accent-soft:#143d6f; --accent-glow:rgba(26,79,142,.09);
+    --gold:#8a6512; --warn:#b0431a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+       font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:clamp(40px,7vw,88px) var(--gutter) 120px}
+  a{color:var(--accent)} a:hover{color:var(--accent-soft)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+           color:var(--ink-faint)}
+  h1{font-size:clamp(30px,5vw,42px);line-height:1.15;letter-spacing:-.02em;margin:14px 0 0;
+     text-wrap:balance}
+  h2{font-size:20px;line-height:1.3;margin:52px 0 12px;letter-spacing:-.01em;
+     padding-top:20px;border-top:1px solid var(--rule)}
+  h3{font-size:16.5px;margin:30px 0 8px;color:var(--ink)}
+  p,li{color:var(--ink-dim)} p{margin:0 0 14px} li{margin-bottom:8px}
+  strong{color:var(--ink)}
+  .meta{font-family:var(--mono);font-size:13px;color:var(--ink-faint);margin-top:14px}
+  .lede{font-size:18px;color:var(--ink);margin-top:26px}
+  .note{background:var(--raised);border:1px solid var(--rule);border-left:3px solid var(--accent);
+        border-radius:8px;padding:18px 20px;margin:20px 0}
+  .note.warn{border-left-color:var(--warn)}
+  .note.todo{border-left-color:var(--gold);background:var(--raised-2)}
+  .note p:last-child{margin-bottom:0}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:15px;display:block;
+        overflow-x:auto;white-space:normal}
+  th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--rule);vertical-align:top}
+  th{font-family:var(--mono);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;
+     color:var(--ink-faint);font-weight:500}
+  td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+  code{font-family:var(--mono);font-size:13.5px;color:var(--ink);
+       background:var(--accent-glow);padding:1px 5px;border-radius:3px}
+  .foot{margin-top:64px;padding-top:22px;border-top:1px solid var(--rule);
+        font-family:var(--mono);font-size:12.5px;color:var(--ink-faint)}
+  ul{padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="eyebrow">ANTON &middot; FutureChain</div>
+<h1>Delete your data</h1>
+<div class="meta">Version 1.0 &middot; Draft for counsel &middot; 6 September 2026</div>
+<p class="meta">Applies to ANTON Comm, ANTON Pay, ANTON Business and ANTON Companion.</p>
+
+<div class="note todo">
+  <p><strong>Before publishing:</strong> confirm the request mailbox in &sect;5 is monitored and
+  that the controller identity matches the one filled into the Privacy Policy. This page must be
+  reachable <strong>without installing any app and without signing in</strong> &mdash; that is a
+  Google Play requirement for the account-deletion URL, not a stylistic preference.</p>
+</div>
+
+<p class="lede">The ANTON apps are built so that deletion is something you carry out yourself, on
+your own device, without asking us. This page explains what each app deletes, what survives
+deletion, and how to ask us to remove the little that is not in your hands.</p>
+
+<h2>1. The short version</h2>
+
+<p>None of the four apps has an account on our servers in the ordinary sense &mdash; there is no
+username, no password, and no profile we hold about you. What identifies you is a keypair your
+phone generates and keeps. Deleting it on the device <em>is</em> the deletion.</p>
+
+<p>Two things are exceptions, and we would rather name them than let you discover them:</p>
+
+<ul>
+  <li><strong>ANTON Comm registers a push token with our relay</strong> so that a message can wake
+  your phone. That is a durable record on our infrastructure. Signing out deletes it.</li>
+  <li><strong>Payments confirmed on the FutureChain ledger cannot be deleted by anyone</strong>,
+  ourselves included. That is what a ledger is. See &sect;4.</li>
+</ul>
+
+<h2>2. Deleting in the app</h2>
+
+<table>
+  <thead><tr><th>App</th><th>Where</th><th>What it removes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>ANTON&nbsp;Comm</td>
+      <td>Settings &rarr; Sign out</td>
+      <td>Your identity key (including the copy held in the Android Keystore), every message,
+      contact, group and draft on the device, and the push registration held on our relay.
+      Confirmation is required, and without your recovery phrase the action cannot be undone.</td>
+    </tr>
+    <tr>
+      <td>ANTON&nbsp;Pay</td>
+      <td>Settings &rarr; Reset app</td>
+      <td>The wallet key, the recovery phrase, locally held transaction history, and your tax and
+      profile settings. Your on-chain balance is not affected &mdash; it belongs to the key, so
+      restoring the recovery phrase reaches it again. Resetting without a backup is permanent loss
+      of those funds.</td>
+    </tr>
+    <tr>
+      <td>ANTON&nbsp;Business</td>
+      <td>Settings &rarr; Reset</td>
+      <td>Merchant configuration, the watch-only wallet address, the item catalogue, and the
+      receipt and Z-report ledger stored on the till. Read &sect;3 first if you trade in Sweden.</td>
+    </tr>
+    <tr>
+      <td>ANTON&nbsp;Companion</td>
+      <td>Settings &rarr; Unpair this device</td>
+      <td>The device certificate and session token, and the device&rsquo;s entry on the ANTON
+      instance you paired with. Content created through Companion lives on that instance, which
+      you or your organisation operate &mdash; delete it there.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Uninstalling the app afterwards clears anything the operating system still holds for it,
+including the hardware-backed key material in the Android Keystore.</p>
+
+<div class="note">
+  <p><strong>Uninstalling on its own is enough for Pay, Business and Companion</strong> &mdash;
+  they hold nothing on our servers. For Comm, sign out <em>before</em> uninstalling if you can:
+  the push registration is deleted by a request your phone signs with the identity key, so once
+  the app is gone that request can no longer be made. If you have already uninstalled, use
+  &sect;5 and we will remove it for you.</p>
+</div>
+
+<h2>3. What deletion does not reach</h2>
+
+<h3>Your own record-keeping obligations</h3>
+
+<p>If you use ANTON Business as a till, Swedish bookkeeping law (<em>bokf&ouml;ringslagen</em>
+5 kap. and SKVFS 2021:17) requires <strong>you</strong> to retain receipt and journal data for
+seven years. Deleting the app does not discharge that duty, and we hold no copy to fall back on.
+Export your SIE 4 file and receipt archive before you reset.</p>
+
+<h3>Copies held by the people you dealt with</h3>
+
+<p>A message you sent is on the recipient&rsquo;s phone. A receipt you issued is in the
+customer&rsquo;s wallet. Deleting your copy does not delete theirs, and we have no way to reach
+into someone else&rsquo;s device.</p>
+
+<h3>Undelivered messages in transit</h3>
+
+<p>When a Comm message cannot be delivered immediately, the relay holds the encrypted envelope
+<strong>in memory</strong> for up to seven days (or 100 messages per recipient, whichever comes
+first) and then discards it. It is never written to disk, and we cannot read it &mdash; we hold no
+key for it. It disappears on its own; nothing needs to be requested.</p>
+
+<h2>4. The ledger</h2>
+
+<p>A payment confirmed on the FutureChain ledger is permanent and public. Neither you nor we can
+edit or erase it. This is inherent to how a ledger works, not a policy we could choose to
+change.</p>
+
+<p>What the ledger holds is an address, an amount and a time &mdash; not your name. The link
+between an address and a person lives on your device, and deleting the app breaks it on our side
+of the world. It does not break it for anyone who already knows the address is yours.</p>
+
+<p>We think this is a limitation you are entitled to know about before you use the apps rather
+than when you ask us to delete something. The Privacy Policy states it in the same terms.</p>
+
+<h2>5. Asking us to delete something</h2>
+
+<p>Write to <a href="mailto:info@futurechain.solutions">info@futurechain.solutions</a> with the
+subject <strong>Deletion request</strong>. Tell us which app, and &mdash; if the request concerns
+a Comm push registration &mdash; the routing identifier shown under Settings &rarr; About, so we
+can find the right row.</p>
+
+<div class="note warn">
+  <p>We never need your recovery phrase or any private key, and we will never ask for one. Anybody
+  who does is trying to take your funds or your identity. Do not put a recovery phrase in an
+  email, to us or to anyone.</p>
+</div>
+
+<p>We answer deletion requests within <strong>30 days</strong>, as Art. 12(3) GDPR requires. If a
+request concerns data we do not hold, we will say so plainly and point at where it does live
+rather than simply closing the request.</p>
+
+<p>You may also complain to your supervisory authority. In Sweden that is
+<a href="https://www.imy.se">Integritetsskyddsmyndigheten (IMY)</a>.</p>
+
+<h2>6. Deleting the app is not deleting your money</h2>
+
+<p>This has its own heading because it is the mistake that costs people the most. In Pay and
+Business your funds are held by a key, not by an account with us. If you delete the app without
+having written down the recovery phrase, the key is gone and <strong>no one &mdash; not you, not
+us, not the ledger &mdash; can restore access to those funds</strong>. There is no password reset
+in self-custody. Back up the phrase first, then delete.</p>
+
+<div class="foot">
+  Companion pages: <a href="./anton-privacy.html">Privacy Policy</a> &middot;
+  <a href="./anton-terms.html">Terms of Service</a>.
+  Canonical source: <code>docs/legal/anton-delete-data.html</code>.
+</div>
+
+</div>
+</body>
+</html>

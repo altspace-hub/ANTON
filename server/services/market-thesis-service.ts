@@ -1,4 +1,3 @@
-import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { PgNotifyService } from './pg-notify-service.js';
 import Anthropic from '@anthropic-ai/sdk';
@@ -176,15 +175,15 @@ export async function createMarketThesisService(db: DatabaseAdapter, client?: An
   // ── AI Scoring ───────────────────────────────────────────────────────────
 
   async function scoreThesisWithAI(thesisId: string): Promise<{ score: number; analysis: string } | null> {
-    if (!client) return null;
-
     const thesis = await getThesis(thesisId);
     if (!thesis) return null;
 
     try {
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 2048,
+      const { callChat } = await import('./provider-router.js');
+      const { getMarketsModel } = await import('./markets-model-store.js');
+      const message = await callChat({
+        model: await getMarketsModel(db),
+        maxTokens: 2048,
         system: `You are a financial analysis quality assessor. Score investment theses on a 0-1 scale.
 Consider: clarity of thesis, quality of evidence, falsifiability of predictions, risk awareness, time horizon appropriateness.
 Return JSON: { "score": 0.0-1.0, "analysis": "brief assessment", "strengths": [...], "weaknesses": [...] }`,
@@ -204,12 +203,7 @@ Predictions: ${thesis.predictions.length}`,
         }],
       });
 
-      let text = '';
-      for (const block of message.content) {
-        if (block.type === 'text') text += block.text;
-      }
-
-      const cleaned = text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
+      const cleaned = message.text.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
       const result = JSON.parse(cleaned) as { score: number; analysis: string };
 
       await updateThesis(thesisId, { aiScore: result.score, aiAnalysis: result.analysis });
@@ -233,23 +227,40 @@ Predictions: ${thesis.predictions.length}`,
     predictedValue?: number;
     predictedDirection?: string;
     confidence?: number;
+    /**
+     * How much informative evidence was found, 0-1 — a claim about the INPUTS,
+     * where `confidence` is a claim about the world. Left undefined when the
+     * caller has no reading; it is stored NULL rather than defaulted, because a
+     * fabricated evidence score is worse than an absent one. See migration 261.
+     */
+    evidenceQuality?: number;
+    /** Short free text naming the evidence, so a low score can be audited. */
+    evidenceBasis?: string;
     timeHorizonDays?: number;
     deadline?: string;
     keyAssumptions?: string[];
     horizon?: string;
   }) {
     const id = `mpred_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // Clamp rather than trust: the value arrives from an LLM and a score
+    // outside [0,1] would silently poison every stratified read of it.
+    const evidenceQuality =
+      typeof params.evidenceQuality === 'number' && Number.isFinite(params.evidenceQuality)
+        ? Math.min(1, Math.max(0, params.evidenceQuality))
+        : null;
     await db.run(`
       INSERT INTO market_predictions (id, thesis_id, title, description, prediction_type,
                                        target_entity, target_symbol, predicted_outcome,
                                        predicted_value, predicted_direction, confidence,
+                                       evidence_quality, evidence_basis,
                                        time_horizon_days, deadline, key_assumptions, horizon)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, id, params.thesisId ?? null, params.title, params.description,
        params.predictionType ?? 'directional',
        params.targetEntity ?? null, params.targetSymbol ?? null,
        params.predictedOutcome, params.predictedValue ?? null,
        params.predictedDirection ?? null, params.confidence ?? 0.5,
+       evidenceQuality, params.evidenceBasis ?? null,
        params.timeHorizonDays ?? null, params.deadline ?? null,
        JSON.stringify(params.keyAssumptions ?? []),
        params.horizon ?? 'this_month');

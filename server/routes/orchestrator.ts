@@ -780,12 +780,17 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
     try {
       const { detectPatterns, recordPatternDetection } = await import('../services/orchestrator-pattern-engine.js');
       const patterns = await detectPatterns(db);
-      const recorded: string[] = [];
+      // `patterns_recorded` counted non-null proposal IDs, but this call site
+      // always passes briefingId=null, so no proposal is ever created and the
+      // count was structurally always 0 — success and total failure looked
+      // identical to anyone reading this response.
+      let recorded = 0;
+      let failed = 0;
       for (const p of patterns.slice(0, 5)) {
-        const pid = await recordPatternDetection(db, p, null);
-        if (pid) recorded.push(pid);
+        const r = await recordPatternDetection(db, p, null);
+        if (r.ok) recorded++; else failed++;
       }
-      res.json({ patterns_detected: patterns.length, patterns_recorded: recorded.length, patterns });
+      res.json({ patterns_detected: patterns.length, patterns_recorded: recorded, patterns_failed: failed, patterns });
     } catch (err) {
       console.error('[orchestrator] pattern detect error:', err);
       res.status(500).json({ error: safeError(err) });

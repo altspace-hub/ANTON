@@ -33,13 +33,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Runtime-dep audit — HARD GATE (2026-06-11, refreshed 2026-06-21). All
-      # high/critical runtime advisories are patched (direct bumps + pnpm.overrides;
-      # 2026-06-21 added nodemailer>=9.0.1 + ws>=8.21.0 + form-data>=4.0.6; see
-      # docs/SECURITY_CVE_TRIAGE.md). `pnpm audit --prod --audit-level=high`
+      # Runtime-dep audit — HARD GATE (2026-06-11, refreshed 2026-06-21,
+      # 2026-09-06). All high/critical runtime advisories are patched (direct
+      # bumps + pnpm.overrides; 2026-06-21 added nodemailer>=9.0.1 + ws>=8.21.0 +
+      # form-data>=4.0.6; 2026-09-06 pinned xlsx to an off-registry patched build;
+      # see docs/SECURITY_CVE_TRIAGE.md). `pnpm audit --prod --audit-level=high`
       # exits 0, so continue-on-error is removed: a NEW runtime high/critical
       # CVE now fails this job. Residual low/moderate advisories are below the
       # gate threshold and intentionally not blocked.
+      #
+      # `--prod` only audits what the manifest calls a runtime dependency, so this
+      # gate is exactly as honest as package.json. A server-imported package filed
+      # under devDependencies is invisible here — that is how xlsx's two HIGH
+      # advisories went unseen until 2026-09-06. The invariant is now enforced by
+      # tests/lint/runtime-deps-classification.test.ts, not by reviewer vigilance.
       - name: Run security audit (runtime deps)
         run: pnpm audit --prod --audit-level=high
 

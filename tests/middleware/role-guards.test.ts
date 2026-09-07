@@ -14,7 +14,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
-import { requireAdminOrSolo, requireAdmin, requireAuth, isTeamMode } from '../../server/middleware/role-guards.js';
+import { requireAdminOrSolo, requireAdmin, requireAuth, requireRole, isTeamMode, isUserRole } from '../../server/middleware/role-guards.js';
 
 function ctx(user?: { id: string; username: string; role: string }) {
   const req = { user } as unknown as Request;
@@ -104,6 +104,64 @@ describe('requireAdmin is strict in every mode', () => {
     const { req, res, next } = ctx(VIEWER);
     requireAdmin(req, res, next);
     expect(res.status).toHaveBeenCalledWith(403);
+  });
+});
+
+describe('requireRole fails CLOSED on a role it does not know', () => {
+  // The guard used to read `ROLE_LEVELS[req.user.role] < ROLE_LEVELS[role]`. For a role
+  // outside the three that is `undefined < 2` — false — so the check passed and an
+  // UNRECOGNISED role outranked admin. users.role has no CHECK constraint and
+  // POST /api/admin/users took any string, so 'member' was one provisioning call away
+  // from full /api/admin/* access.
+  const UNKNOWN = ['member', 'user', 'superuser', 'owner', '', 'Admin'];
+
+  it('403s every unknown role on requireRole(\'admin\')', () => {
+    process.env.DEPLOYMENT_MODE = 'team';
+    for (const role of UNKNOWN) {
+      const { req, res, next } = ctx({ id: 'x', username: 'x', role });
+      requireRole('admin')(req, res, next);
+      expect(next, `role ${JSON.stringify(role)} must not pass`).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(403);
+    }
+  });
+
+  it('403s an unknown role even on the LOWEST rung', () => {
+    // 'viewer' is the floor, so an unknown role passing here would still be an
+    // unprovisioned account being treated as provisioned.
+    process.env.DEPLOYMENT_MODE = 'team';
+    const { req, res, next } = ctx({ id: 'x', username: 'x', role: 'member' });
+    requireRole('viewer')(req, res, next);
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+  });
+
+  it('still lets the real hierarchy through — admin ≥ analyst ≥ viewer', () => {
+    process.env.DEPLOYMENT_MODE = 'team';
+    const pass: Array<[string, 'admin' | 'analyst' | 'viewer']> = [
+      ['admin', 'admin'], ['admin', 'analyst'], ['admin', 'viewer'],
+      ['analyst', 'analyst'], ['analyst', 'viewer'], ['viewer', 'viewer'],
+    ];
+    for (const [have, need] of pass) {
+      const { req, res, next } = ctx({ id: 'x', username: 'x', role: have });
+      requireRole(need)(req, res, next);
+      expect(next, `${have} should satisfy requireRole('${need}')`).toHaveBeenCalled();
+    }
+    const { req, res, next } = ctx(VIEWER);
+    requireRole('admin')(req, res, next);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('leaves the solo operator alone — they are stamped role:\'admin\'', () => {
+    delete process.env.DEPLOYMENT_MODE;
+    const { req, res, next } = ctx(SOLO);
+    requireRole('admin')(req, res, next);
+    expect(next).toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('isUserRole recognises exactly the three roles', () => {
+    expect(['viewer', 'analyst', 'admin'].every(isUserRole)).toBe(true);
+    expect([...UNKNOWN, null, undefined, 1, {}].some(isUserRole)).toBe(false);
   });
 });
 

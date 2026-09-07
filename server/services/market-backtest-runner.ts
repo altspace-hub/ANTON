@@ -3,6 +3,7 @@
 import type AnthropicSDK from '@anthropic-ai/sdk';
 import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
+import { isTradingDay } from './market-calendar.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 
 interface BacktestConfig {
@@ -28,16 +29,10 @@ interface PriceAtom {
   sentiment: string; confidence: number; importance: number; symbol: string;
 }
 
-const US_HOLIDAYS = new Set([
-  '2024-01-01','2024-01-15','2024-02-19','2024-03-29','2024-05-27','2024-06-19','2024-07-04','2024-09-02','2024-11-28','2024-12-25',
-  '2025-01-01','2025-01-20','2025-02-17','2025-04-18','2025-05-26','2025-06-19','2025-07-04','2025-09-01','2025-11-27','2025-12-25',
-  '2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
-]);
-
-function isTradingDay(d: string): boolean {
-  const day = new Date(d).getDay();
-  return day !== 0 && day !== 6 && !US_HOLIDAYS.has(d);
-}
+// The holiday list used to live here, privately, which is why the LIVE scheduler ran
+// session-bound phases on market holidays for as long as it did — the backtester knew
+// and nothing else could. It now lives in services/market-calendar.ts and both import it,
+// so the simulation and the live path cannot drift apart on what a trading day is.
 function getTradingDays(start: string, end: string): string[] {
   const days: string[] = [], cur = new Date(start), e = new Date(end);
   while (cur <= e) { const s = cur.toISOString().slice(0, 10); if (isTradingDay(s)) days.push(s); cur.setDate(cur.getDate() + 1); }
@@ -167,9 +162,9 @@ Return ONLY the JSON array.` }],
       const prompt = `Based on these market signals from the last week, generate 2-3 investment theses with testable predictions.\n\nSIGNALS:\n${atomContext.slice(0, 3000)}\n\nReturn JSON array: [{"title":"...","description":"...","thesis_type":"investment|macro|sector","confidence":0.5-0.9,"predictions":[{"title":"...","target_symbol":"...","predicted_direction":"up|down","confidence":0.4-0.9,"time_horizon_days":5}]}]\nReturn ONLY the JSON array.`;
       try {
         const { callChat } = await import('./provider-router.js');
-        const { getRoutedUtilityModel } = await import('./utility-model.js');
+        const { getMarketsModel } = await import('./markets-model-store.js');
         const result = await callChat({
-          model: await getRoutedUtilityModel(db),
+          model: await getMarketsModel(db),
           system: 'You are an investment analyst generating testable predictions from market signals. Output only valid JSON.',
           messages: [{ role: 'user', content: prompt }], maxTokens: 2048,
         });

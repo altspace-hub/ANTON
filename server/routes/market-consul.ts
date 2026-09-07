@@ -6,7 +6,6 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { runDeliberation, listCouncilMembers } from '../services/market-consul-service.js';
-import { getClient } from '../services/claude-client.js';
 import { safeError } from '../lib/error-response.js';
 
 export function createMarketConsulRoutes(db: DatabaseAdapter): Router {
@@ -25,11 +24,10 @@ export function createMarketConsulRoutes(db: DatabaseAdapter): Router {
         res.status(400).json({ error: 'subject and context required' });
         return;
       }
-      const client = getClient();
-      const result = await runDeliberation(db, client, {
+      const result = await runDeliberation(db, {
         subject,
         context,
-        model: b.model,
+        model: typeof b.model === 'string' && b.model.length > 0 ? b.model : undefined,
         consulIds: Array.isArray(b.consulIds) ? b.consulIds : undefined,
       });
       res.json(result);

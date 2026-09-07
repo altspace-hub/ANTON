@@ -151,8 +151,13 @@ the paired instance, which **may forward them to an LLM provider**.
    Companion can answer "all encrypted in transit = **Yes**."
 3. **Push token rows are conditional.** FCM/APNs is gated off by default in Pay/Comm/Companion. If push
    is **not** in the launch build, delete the push-token rows; if it is, keep them (Shared = Google/Apple).
-4. **Privacy-policy URL.** All four forms require a public privacy-policy URL — blocked on the
-   `terms.futurechain.eu` DNS + page deploy (your existing operator item).
+4. **Privacy-policy URL.** All four forms require a public privacy-policy URL. **Updated 2026-09-06:**
+   `terms.futurechain.eu` was never brought up and does not resolve on public DNS, so the in-app
+   Terms/Privacy links were dead in every build — including the consent the wallet-creation gate
+   blocks on. The apps now point at `futurechain.solutions/anton/{privacy,terms}`, and the pages
+   themselves are drafted at `docs/legal/anton-privacy.html` / `anton-terms.html`. Still yours:
+   publish them, and fill the `[OPERATOR]` blocks (controller identity, log retention, push transfer
+   mechanism) that are marked visibly in the rendered pages.
 5. **Don't claim forward secrecy** for Comm — but the reason changed on 2026-07-26, and the
    old one is now misleading. This item used to read "(static-DH crypto)". The ratchet has
    since shipped and been device-verified: `ratchet.ts` / `ratchet-session.ts` /
@@ -170,8 +175,35 @@ the paired instance, which **may forward them to an LLM provider**.
    Verified 2026-07-29 that no user-facing string or marketing copy claims it: the reset chip
    says "Secure session was repaired", and the only "forward secrecy" occurrences in the tree
    are code comments. Keep it that way until both (a) and (b) are closed.
-6. **Account deletion wording.** There is no server-side account to delete (self-custody); the deletion
-   answer is "local wipe + uninstall," with the on-chain-immutability caveat. Use Play's
-   "data isn't collected" / local-deletion phrasing accordingly.
+6. **Account deletion wording.** Nearly true, with one exception that has to be stated exactly.
+   There is no server-side *account* in any of the four apps — no username, no password, no
+   profile. For Pay, Business and Companion the deletion answer really is "local wipe +
+   uninstall," with the on-chain-immutability caveat.
 
-*Generated from a code audit (workflow `wqk9bwypu`); evidence file:line refs are in the run output.*
+   **Comm is the exception.** The relay holds a durable `comm_push_tokens` row keyed by
+   `routing_id = sha256(pubkey)[0..16]` (`relay/migrations/003_comm_push_tokens.sql`). That is
+   server-side state tied to an identity, and Play's account-deletion policy is written broadly
+   enough to reach it. Two things follow:
+
+   - Sign-out now calls `/comm/push/unregister` *before* `clearIdentity()`, so the row is deleted
+     as part of the in-app deletion (fixed 2026-09-06; `src/comm/__tests__/signout-deletion.test.ts`).
+     Before that fix, deleting yourself in the app left the row behind indefinitely.
+   - The **account-deletion URL** in Play Console must be filled for every listing.
+     `docs/legal/anton-delete-data.html` is the drafted page; it needs a public URL before
+     submission. Play requires it to be reachable without installing the app or signing in.
+
+   The relay's undelivered-message mailbox is *not* in this category: it is in-memory only, capped
+   at 100 messages per recipient with a 7-day TTL (`relay/src/comm-registry.ts`), never written to
+   disk, and unreadable by us. It needs disclosing, not deleting.
+
+7. **ANTON Agent is deliberately absent from this document.** Every count here says four apps, and
+   that is correct for the launch: Agent is descoped (see `docs/PLAY_FINANCIAL_FEATURES.md` and the
+   staged launch roadmap). It has no listing, no Data Safety answers, and no reviewable feature — a
+   three-screen shell. This note exists so the next person working the checklist does not discover a
+   fifth app at submission time and fill its form from memory. If Agent is ever funded into the
+   launch, it needs its own section here: balance display only, no key custody, no broadcast.
+
+---
+
+*Generated from a code audit (workflow `wqk9bwypu`); evidence file:line refs are in the run output.
+Sections 4 and 7 updated 2026-09-06.*

@@ -13,6 +13,8 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createMissionBudget } from '../services/missions/mission-budget.js';
 import { resolveCallerIdentity } from '../services/missions/mission-identity.js';
 import { safeError } from '../lib/error-response.js';
+import { createMissionOwnerGuard, createMissionOwnerGuardVia } from './mission-access.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 function sendIdentityError(res: import('express').Response, err: unknown): void {
   const msg = safeError(err);
@@ -23,6 +25,16 @@ function sendIdentityError(res: import('express').Response, err: unknown): void 
 
 export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
   const router = Router();
+
+  // Per-route, not router.use('/missions/:id', …): that would capture
+  // /missions/payments/:paymentId with id='payments' and 404 every approve.
+  const missionOwner = createMissionOwnerGuard(db);
+  const paymentOwner = createMissionOwnerGuardVia(db, {
+    table: 'missions.mission_payments',
+    idParam: 'paymentId',
+    notFoundMessage: 'Payment not found',
+  });
+
   // The factory is async — but Express Router doesn't await on registration.
   // We resolve the budget service lazily on first use.
   let _budget: Awaited<ReturnType<typeof createMissionBudget>> | null = null;
@@ -33,7 +45,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
 
   // ── Get / update per-mission financial settings ────────────────────────
 
-  router.get('/missions/:id/financial-settings', async (req, res) => {
+  router.get('/missions/:id/financial-settings', missionOwner, async (req, res) => {
     try {
       const b = await budget();
       const settings = await b.getMissionFinancialSettings(String(req.params.id));
@@ -43,7 +55,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.put('/missions/:id/financial-settings', async (req, res) => {
+  router.put('/missions/:id/financial-settings', missionOwner, async (req, res) => {
     try {
       const schema = z.object({
         financial_budget_max: z.number().min(0).optional(),
@@ -67,7 +79,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
 
   // ── Propose a payment ──────────────────────────────────────────────────
 
-  router.post('/missions/:id/payments/propose', async (req, res) => {
+  router.post('/missions/:id/payments/propose', missionOwner, async (req, res) => {
     try {
       const schema = z.object({
         task_id: z.string().optional(),
@@ -102,7 +114,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
 
   // ── Approve / cancel ───────────────────────────────────────────────────
 
-  router.post('/missions/payments/:paymentId/approve', async (req, res) => {
+  router.post('/missions/payments/:paymentId/approve', paymentOwner, async (req, res) => {
     try {
       let identity: Awaited<ReturnType<typeof resolveCallerIdentity>>;
       try { identity = await resolveCallerIdentity(db, undefined); }
@@ -115,7 +127,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/payments/:paymentId/cancel', async (req, res) => {
+  router.post('/missions/payments/:paymentId/cancel', paymentOwner, async (req, res) => {
     try {
       const schema = z.object({ reason: z.string().max(500).optional() }).strict();
       const parsed = schema.safeParse(req.body ?? {});
@@ -133,7 +145,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
 
   // ── Listing + audit ────────────────────────────────────────────────────
 
-  router.get('/missions/:id/payments', async (req, res) => {
+  router.get('/missions/:id/payments', missionOwner, async (req, res) => {
     try {
       const b = await budget();
       const payments = await b.listMissionPayments(String(req.params.id));
@@ -143,7 +155,7 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.get('/missions/payments/:paymentId', async (req, res) => {
+  router.get('/missions/payments/:paymentId', paymentOwner, async (req, res) => {
     try {
       const b = await budget();
       const payment = await b.getPayment(String(req.params.paymentId));
@@ -157,7 +169,10 @@ export function createMissionPaymentRoutes(db: DatabaseAdapter): Router {
 
   // ── Worker tick (executes ready payments) ──────────────────────────────
 
-  router.post('/missions/payments/run-pending', async (_req, res) => {
+  // Instance-wide: settles every due payment on the box regardless of owner, so it
+  // is an operator action, not a per-mission one. The 60s tick at index.ts calls the
+  // same service directly and is unaffected.
+  router.post('/missions/payments/run-pending', requireAdminOrSolo, async (_req, res) => {
     try {
       const b = await budget();
       const result = await b.runPendingExecutions();
