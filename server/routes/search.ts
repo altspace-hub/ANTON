@@ -2,7 +2,7 @@ import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { semanticSearch, keywordSearch, getChunkContext } from '../services/semantic-search.js';
-import { hybridSearch, findSimilar, embedAndStore } from '../services/hybrid-search.js';
+import { hybridSearch, findSimilar, embedAndStore, searchScopeForRequest } from '../services/hybrid-search.js';
 import { getVectorStore } from '../services/vector-store-adapter.js';
 
 export async function createSearchRoutes(db: DatabaseAdapter) {
@@ -32,6 +32,9 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
         topK: topK || 10,
         folderPaths: folderPaths || [],
         minSimilarity,
+        // Without this, a keyword is enough to read any colleague's assistant
+        // output in team mode — the side door around sessions.ts's own guard.
+        scope: searchScopeForRequest(req),
       });
       res.json({ results, count: results.length });
     } catch (error) {
@@ -58,7 +61,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       if (!contentType || !contentId) {
         return res.status(400).json({ error: 'contentType and contentId are required' });
       }
-      const results = await findSimilar(db, { contentType, contentId, topK, sameTypeOnly });
+      const results = await findSimilar(db, { contentType, contentId, topK, sameTypeOnly, scope: searchScopeForRequest(req) });
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Find similar error:', error);

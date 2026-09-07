@@ -1,0 +1,62 @@
+-- Migration 265: give fc_wallets an owner.
+--
+-- ── The hole ────────────────────────────────────────────────────────────────
+--
+-- fc_wallets (migration 081) has id, name, wallet_file_name, address,
+-- wallet_type, owner_wallet_address, agent_id, balances, is_active — and NO user
+-- column. `owner_wallet_address` is not one: it points at another WALLET (an agent
+-- wallet's human parent), not at a person, so it cannot express "which account may
+-- spend this".
+--
+-- Without such a column no tenant predicate was even writable, and the routes
+-- matched: GET /api/futurechain/wallets listed every wallet on the instance, and
+-- POST /api/futurechain/wallets/:id/unlock resolved the wallet by id ALONE and
+-- minted a signing session for it. That session is the only spend gate in real
+-- mode (routes/fc-transactions.ts), and keys are server-custodial — so on a
+-- DEPLOYMENT_MODE=team install any authenticated user, role 'viewer' included,
+-- could list somebody else's wallet, unlock it, and submit a transaction that the
+-- server signed with the owner's decrypted private key. Real FTC, no relationship
+-- to the wallet asserted anywhere in the chain.
+--
+-- ── The column ──────────────────────────────────────────────────────────────
+--
+-- Named owner_user_id to match risk_atlases.owner_user_id, the guard this codebase
+-- already models per-row ownership on. NOT foreign-keyed to users: deleting an
+-- account must not cascade away a wallet holding a balance, and the same reasoning
+-- as file_uploads (migration 253) applies — the attribution record outlives the
+-- account.
+--
+-- ── What happens to EXISTING rows: nothing. Deliberately. ───────────────────
+--
+-- The column is NULLABLE and there is NO backfill. Say plainly what that means for
+-- wallets that already exist:
+--
+--   • SOLO (the default, and every install that has ever created a wallet here):
+--     unchanged. ownership.ts short-circuits scoping in solo mode, so the single
+--     operator keeps seeing, unlocking and spending every wallet on their machine.
+--     A backfill would be invisible there anyway.
+--   • TEAM, admin: unchanged — admins are never scoped, by design, so support and
+--     recovery paths keep working and an admin can attribute a legacy wallet with
+--     UPDATE fc_wallets SET owner_user_id = '<user id>' WHERE id = '<wallet id>'.
+--   • TEAM, non-admin: a pre-existing wallet is UNATTRIBUTED and therefore
+--     invisible and un-unlockable to them. That is the documented fail-closed
+--     policy in middleware/ownership.ts, and it is the right way round here: the
+--     failure mode of guessing wrong is somebody spending money that is not theirs.
+--
+-- Why not backfill to SOLO_USER_ID ('solo')? On a solo install it changes no access
+-- decision (solo is unscoped either way), and on a team install it would invent an
+-- owner: 'solo' is not a row in users, so the wallets would appear attributed while
+-- belonging to nobody — which reads as "already handled" to the next person and is
+-- strictly worse than an honest NULL. NULL and 'solo' fail an owner check
+-- identically; only NULL says why.
+--
+-- NOT NULL was never an option either: PostgreSQL rejects ADD COLUMN ... NOT NULL
+-- without a default on a non-empty table, and a default would be the same invented
+-- owner. The real fix for a team install with legacy wallets is the UPDATE above,
+-- run knowingly by an admin — not a guess made by a migration.
+ALTER TABLE fc_wallets ADD COLUMN IF NOT EXISTS owner_user_id TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_fc_wallets_owner_user ON fc_wallets(owner_user_id);
+
+COMMENT ON COLUMN fc_wallets.owner_user_id IS
+  'User id (users.id / SOLO_USER_ID) allowed to list, unlock and spend this wallet. NULL means unattributed — a wallet created before ownership was recorded: visible in solo mode and to team admins, withheld from team non-admins. Not a FK: deleting an account must not cascade away a wallet.';

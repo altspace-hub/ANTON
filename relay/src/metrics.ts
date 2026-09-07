@@ -23,6 +23,7 @@ export interface MetricsSnapshot {
   sessions_opened_total: number;
   sessions_closed_total: number;
   rate_limited_total: number;
+  http_rate_limited_total: number;
   ws_connections_opened_total: number;
   ws_connections_closed_total: number;
 }
@@ -37,6 +38,7 @@ export class MetricsRegistry {
     sessions_opened: 0,
     sessions_closed: 0,
     rate_limited: 0,
+    http_rate_limited: 0,
     ws_connections_opened: 0,
     ws_connections_closed: 0,
   };
@@ -55,6 +57,10 @@ export class MetricsRegistry {
   sessionOpened(): void { this.counters.sessions_opened++; }
   sessionClosed(): void { this.counters.sessions_closed++; }
   rateLimited(): void { this.counters.rate_limited++; }
+  /** An HTTP request (/v1/* or /comm/push/*) was rejected with 429.
+   *  Counted apart from the WS limiter so a spike in operator-login
+   *  guessing is visible to Prometheus rather than buried in one total. */
+  httpRateLimited(): void { this.counters.http_rate_limited++; }
   wsOpened(): void { this.counters.ws_connections_opened++; }
   wsClosed(): void { this.counters.ws_connections_closed++; }
 
@@ -71,6 +77,7 @@ export class MetricsRegistry {
       sessions_opened_total: this.counters.sessions_opened,
       sessions_closed_total: this.counters.sessions_closed,
       rate_limited_total: this.counters.rate_limited,
+      http_rate_limited_total: this.counters.http_rate_limited,
       ws_connections_opened_total: this.counters.ws_connections_opened,
       ws_connections_closed_total: this.counters.ws_connections_closed,
     };
@@ -123,6 +130,10 @@ export class MetricsRegistry {
     lines.push('# HELP anton_relay_rate_limited_total Requests rejected by the rate limiter (HELLO or ENVELOPE).');
     lines.push('# TYPE anton_relay_rate_limited_total counter');
     lines.push(`anton_relay_rate_limited_total ${s.rate_limited_total}`);
+
+    lines.push('# HELP anton_relay_http_rate_limited_total HTTP requests rejected with 429 (/v1/* and /comm/push/*).');
+    lines.push('# TYPE anton_relay_http_rate_limited_total counter');
+    lines.push(`anton_relay_http_rate_limited_total ${s.http_rate_limited_total}`);
 
     lines.push('# HELP anton_relay_ws_connections_opened_total Total WS connections accepted since boot.');
     lines.push('# TYPE anton_relay_ws_connections_opened_total counter');

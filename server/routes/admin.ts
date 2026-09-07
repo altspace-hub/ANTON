@@ -2,12 +2,31 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import { requireRole } from '../middleware/auth.js';
+// From role-guards, not auth.js: auth.ts throws at module load when JWT_SECRET is
+// unset, and re-exporting the guard drags that boot requirement into every importer of
+// this file (that is why role-guards.ts was split out in the first place).
+import { requireRole, USER_ROLES, isUserRole } from '../middleware/role-guards.js';
 import * as budgetManager from '../services/budget-manager.js';
 import { safeError } from '../lib/error-response.js';
 
 export async function createAdminRoutes(db: DatabaseAdapter) {
   const router = Router();
+
+  /**
+   * users.role is written from request input on two routes below and read by every
+   * requireRole check. It was passed straight through, and the column has no CHECK
+   * constraint, so an admin provisioning a service account with a natural-looking
+   * role:'member' created a row no guard understood. requireRole now fails closed on
+   * such a row, but the row should never exist: allowlisted here for the same reason
+   * school_role is a few lines further down — a value compared with === against
+   * literals must be one of those literals or it fails silently and looks like a
+   * missing permission rather than a typo.
+   */
+  const rejectUnknownRole = (role: unknown, res: import('express').Response): boolean => {
+    if (isUserRole(role)) return false;
+    res.status(400).json({ error: `role must be one of ${USER_ROLES.join(', ')}` });
+    return true;
+  };
 
   // GET /api/admin/users — list all users (admin only)
   router.get('/admin/users', requireRole('admin'), async (_req, res) => {
@@ -31,6 +50,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       monthly_token_budget?: number;
     };
     if (!username || !password) { res.status(400).json({ error: 'username and password required' }); return; }
+    if (rejectUnknownRole(role, res)) return;
     const hash = await bcrypt.hash(password, 10);
     const id = randomUUID();
     try {
@@ -58,6 +78,8 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
     // Allowlisted rather than passed through: the value is compared with === against
     // literals in school.ts, so a typo ('Teacher', 'teachers') fails silently and looks
     // exactly like a missing permission. Explicit null clears the role.
+    if (role !== undefined && rejectUnknownRole(role, res)) return;
+
     const SCHOOL_ROLES = ['student', 'teacher', 'school_admin'] as const;
     if (school_role !== undefined && school_role !== null
         && !SCHOOL_ROLES.includes(school_role as typeof SCHOOL_ROLES[number])) {

@@ -127,6 +127,51 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       return;
     }
 
+    // ── Second factor ──────────────────────────────────────────────────────
+    //
+    // Runs after the password check and BEFORE any token is issued: a factor checked
+    // after the session exists is not a factor. Until 2026-09 this was missing
+    // entirely — /auth/mfa/* could not even be reached to enrol (see
+    // createAuthMfaRoutes), and login never read users.mfa_enabled, so an account that
+    // somehow had MFA on still logged in with the password alone.
+    //
+    // Only accounts that opted in are affected: mfa_enabled defaults to 0 and there was
+    // no write path before the enrolment routes were mounted, so no existing row here
+    // changes behaviour.
+    const mfaOn = user.mfa_enabled === true || Number(user.mfa_enabled) === 1;
+    if (mfaOn) {
+      const { mfaToken } = req.body as { mfaToken?: string };
+      const secret = typeof user.mfa_secret === 'string' ? user.mfa_secret : null;
+      const failMfa = async (message: string, detail: string) => {
+        // Recorded as a failed attempt so the 5-in-15-minutes lockout above also caps
+        // code guessing; otherwise MFA would be the one unthrottled credential.
+        await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 0)', username, ipAddress);
+        logSecurityEvent(db, {
+          eventType: 'failed_login', userId: user.id as string, ipAddress,
+          details: detail, severity: 'medium',
+        });
+        res.status(401).json({ error: message, mfaRequired: true });
+      };
+      if (!secret) {
+        // mfa_enabled with no secret cannot be verified. Fail closed: treating it as
+        // "no MFA" would make clearing the secret column a bypass.
+        await failMfa('MFA is enabled but not fully set up — ask an administrator to reset it', `MFA enabled without a secret for user: ${username}`);
+        return;
+      }
+      if (!mfaToken) {
+        await failMfa('MFA code required', `MFA code missing for user: ${username}`);
+        return;
+      }
+      const speakeasy = await import('speakeasy');
+      const mfaOk = speakeasy.default.totp.verify({
+        secret, encoding: 'base32', token: mfaToken, window: 1, // 30s clock drift
+      });
+      if (!mfaOk) {
+        await failMfa('Invalid MFA code', `Invalid MFA code for user: ${username}`);
+        return;
+      }
+    }
+
     // Record successful attempt
     await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
 
@@ -535,7 +580,56 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     res.json({ token: entry.token });
   });
 
-  // ── AUTH-03: TOTP / MFA endpoints ──────────────────────────────────────────
+  // ── AUTH-03: TOTP / MFA — login-time verification ─────────────────────────
+  //
+  // Enrolment (enable / confirm / disable) lives in createAuthMfaRoutes below:
+  // those read req.user and this router is mounted BEFORE authMiddleware.
+
+  // POST /api/auth/mfa/verify — verify TOTP during login (called after password check)
+  router.post('/auth/mfa/verify', async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
+    const { userId, token: totpToken } = req.body as { userId?: string; token?: string };
+    if (!userId || !totpToken) { res.status(400).json({ error: 'userId and token required' }); return; }
+    if (!/^\d{6}$/.test(totpToken)) { res.status(400).json({ error: 'Token must be 6 digits' }); return; }
+
+    try {
+      const user = await db.get('SELECT mfa_secret FROM users WHERE id = ? AND mfa_enabled = 1', userId) as { mfa_secret: string } | undefined;
+      if (!user?.mfa_secret) { res.status(400).json({ error: 'MFA not enabled for this user' }); return; }
+
+      const speakeasy = await import('speakeasy');
+      const verified = speakeasy.default.totp.verify({
+        secret: user.mfa_secret,
+        encoding: 'base32',
+        token: totpToken,
+        window: 1,
+      });
+
+      res.json({ verified });
+    } catch (err) {
+      console.error('[auth] MFA verify error:', err);
+      res.status(500).json({ error: 'MFA verification failed' });
+    }
+  });
+
+  return router;
+}
+
+/**
+ * MFA enrolment — a SEPARATE router, mounted in index.ts BELOW authMiddleware.
+ *
+ * These three endpoints read req.user. createAuthRoutes above is mounted ~90 lines
+ * ABOVE the middleware that stamps it (index.ts), because /auth/login and the OAuth
+ * callbacks have to be reachable with no session — so every call to
+ * /auth/mfa/enable|confirm|disable answered 401 "Authentication required" to a fully
+ * authenticated admin, and MFA could not be turned on by anybody on any instance.
+ *
+ * Keep the mount below authMiddleware. Folding these routes back into createAuthRoutes
+ * for tidiness silently disables MFA enrolment again, and the symptom (a 401 on a
+ * request that carried a valid session) reads like a token bug, not a mount-order bug.
+ */
+export function createAuthMfaRoutes(db: DatabaseAdapter): Router {
+  const router = Router();
+  const IS_TEAM_MODE = process.env.DEPLOYMENT_MODE === 'team';
 
   // POST /api/auth/mfa/enable — generate a TOTP secret and return QR code URL
   router.post('/auth/mfa/enable', async (req, res) => {
@@ -637,32 +731,6 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     } catch (err) {
       console.error('[auth] MFA disable error:', err);
       res.status(500).json({ error: 'Failed to disable MFA' });
-    }
-  });
-
-  // POST /api/auth/mfa/verify — verify TOTP during login (called after password check)
-  router.post('/auth/mfa/verify', async (req, res) => {
-    if (!IS_TEAM_MODE) { res.status(400).json({ error: 'MFA is only available in team mode' }); return; }
-    const { userId, token: totpToken } = req.body as { userId?: string; token?: string };
-    if (!userId || !totpToken) { res.status(400).json({ error: 'userId and token required' }); return; }
-    if (!/^\d{6}$/.test(totpToken)) { res.status(400).json({ error: 'Token must be 6 digits' }); return; }
-
-    try {
-      const user = await db.get('SELECT mfa_secret FROM users WHERE id = ? AND mfa_enabled = 1', userId) as { mfa_secret: string } | undefined;
-      if (!user?.mfa_secret) { res.status(400).json({ error: 'MFA not enabled for this user' }); return; }
-
-      const speakeasy = await import('speakeasy');
-      const verified = speakeasy.default.totp.verify({
-        secret: user.mfa_secret,
-        encoding: 'base32',
-        token: totpToken,
-        window: 1,
-      });
-
-      res.json({ verified });
-    } catch (err) {
-      console.error('[auth] MFA verify error:', err);
-      res.status(500).json({ error: 'MFA verification failed' });
     }
   });
 

@@ -70,6 +70,31 @@ export function assertSqlIdentifier(name: unknown, what = 'identifier'): string 
 }
 
 /**
+ * Validate a table name that may be schema-qualified (`missions.credential_vault`),
+ * leaving it UNQUOTED for the caller to concatenate.
+ *
+ * ANTON's later pillars put their tables in their own PostgreSQL schemas — `missions.*`,
+ * and the same pattern elsewhere — so a security helper that only accepts a bare name
+ * cannot be pointed at them, which is how a guard ends up hand-rolled a second time.
+ *
+ * The dot is NOT a hole: the name is split first and every part goes through
+ * `assertSqlIdentifier`, so `missions.x; DROP TABLE users` fails on the second part
+ * exactly as a bare name would. At most two parts — PostgreSQL also allows
+ * `database.schema.table` but ANTON never writes it, and accepting a third part would
+ * only widen what a call site can pass for no benefit.
+ */
+export function assertSqlTableName(name: unknown, what = 'table name'): string {
+  if (typeof name !== 'string' || name.length === 0) {
+    throw new Error(`Unsafe SQL ${what}: expected a table name.`);
+  }
+  const parts = name.split('.');
+  if (parts.length > 2) {
+    throw new Error(`Unsafe SQL ${what}: at most one schema qualifier is allowed.`);
+  }
+  return parts.map((part) => assertSqlIdentifier(part, what)).join('.');
+}
+
+/**
  * Validate and double-quote an identifier for use in SQL we generate.
  * The doubling of embedded quotes is unreachable given the validation above; it stays so
  * that loosening SAFE_IDENTIFIER later cannot silently produce an injectable quote.

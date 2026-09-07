@@ -42,7 +42,7 @@ import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
 import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
-import { createAuthRoutes } from './routes/auth.js';
+import { createAuthRoutes, createAuthMfaRoutes } from './routes/auth.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createCompliancePolicyRoutes } from './routes/compliance-policy.js';
 import { createAnalyticsRouter } from './routes/analytics.js';
@@ -567,6 +567,13 @@ app.use('/api', csrfProtection);
 // Apply per-user rate limiter to all authenticated API routes
 app.use('/api', userLimiter);
 
+// MFA enrolment — deliberately mounted HERE and not with the rest of the auth router
+// at line ~469. Those routes have to be reachable without a session (login, OAuth
+// callbacks); these three read req.user, which only exists below authMiddleware, so up
+// there they answered 401 to every caller and MFA could never be enabled. Moving this
+// line above authMiddleware breaks MFA enrolment again, silently.
+app.use('/api', createAuthMfaRoutes(db));
+
 app.use('/api', await createHealthRouter(db));
 app.use('/api', createIntelligenceHealthRoutes(db)); // Wave 3.9: honest background-intelligence status
 app.use('/', await createMetricsRouter(db)); // OBS-03: Prometheus /metrics — mounted at root, not /api
@@ -642,6 +649,31 @@ app.use('/api', await createSchoolRoutes(db));
 app.use('/api', await createNewsRoutes(db, anthropic));
 app.use('/api', await createFinanceRoutes(db, anthropic));
 app.use('/api', await createTravelRoutes(db, anthropic));
+// Community — the pillar is SINGLE-IDENTITY-PER-INSTANCE by design, not by oversight.
+// community_identity holds exactly one row (`user_id TEXT NOT NULL DEFAULT 'default'
+// UNIQUE`, migrations-pg/077:18) and every query in routes/community.ts pins
+// user_id / owner_user_id / creator_user_id to that 'default' sentinel, because the
+// contact hash, the Ed25519 signing key and the X25519 E2E key that peers verify
+// belong to the INSTANCE — a peer ANTON has no way to address one colleague inside
+// another instance, so there is no per-user identity to bind to.
+//
+// The consequence in team mode is impersonation, not a data-scoping bug: every
+// authenticated user would read the one shared mailbox, accept connection requests,
+// re-point payment_address / agent_wallet_address (the addresses contacts pay), and
+// send mail SIGNED AS the instance, with the recipient attributing it to whoever
+// activated the identity. So the pillar is admin-only on a shared install.
+//
+// requireAdminOrSolo is a no-op in solo mode (the default: one operator, whom
+// authMiddleware stamps role:'admin' anyway), so nothing changes on a laptop.
+//
+// Scoped to the '/api/community' PREFIX, exactly like /api/futurechain/gateway below
+// — a middleware on '/api' here would 403 non-admins across every route mounted after
+// this line. It MUST stay ABOVE every router that serves /community/* paths
+// (community.ts here, plus task-delegation, community-signing, delegation-compliance
+// and community-projects further down): Express runs middleware in registration order,
+// so a community router mounted ABOVE this line would never reach the guard.
+// tests/routes/community-team-gate.test.ts pins that ordering.
+app.use('/api/community', requireAdminOrSolo);
 app.use('/api', await createCommunityRoutes(db));
 // Beehive — multi-party reasoning sessions across N ANTONs (Phase 1: lifecycle only)
 const { createBeehiveRoutes } = await import('./routes/beehive.js');

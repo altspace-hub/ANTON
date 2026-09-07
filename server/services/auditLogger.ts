@@ -203,6 +203,24 @@ export async function logAuditEvent(db: DatabaseAdapter, event: GeneralAuditEven
 }
 
 /**
+ * A row-ownership predicate produced by `ownerFilter(req, 'user_id')`
+ * (server/middleware/ownership.ts): ` AND user_id = ?` plus its parameter in team mode
+ * for a non-admin, and two empty values for solo and for admins.
+ *
+ * Structurally typed rather than imported so this service stays free of express and of
+ * the middleware layer. The default is unscoped, because these functions are also the
+ * shape any future server-side caller would reach for — but every ROUTE must pass one:
+ * an audit list that quietly returns every tenant's rows is the bug that made this
+ * parameter necessary.
+ */
+export interface AuditOwnerScope {
+  sql: string;
+  params: readonly unknown[];
+}
+
+const UNSCOPED: AuditOwnerScope = { sql: '', params: [] };
+
+/**
  * Get audit log entries with filtering
  */
 export async function getAuditLog(
@@ -214,7 +232,8 @@ export async function getAuditLog(
     endDate?: string;
     limit?: number;
     offset?: number;
-  } = {}
+  } = {},
+  scope: AuditOwnerScope = UNSCOPED,
 ) {
   let query = 'SELECT * FROM audit_log WHERE 1=1';
   const params: unknown[] = [];
@@ -235,6 +254,11 @@ export async function getAuditLog(
     query += ' AND timestamp <= ?';
     params.push(filters.endDate);
   }
+
+  // Appended after the caller's filters and before ORDER BY, so the bound values stay
+  // in placeholder order.
+  query += scope.sql;
+  params.push(...scope.params);
 
   query += ' ORDER BY timestamp DESC';
   query += ' LIMIT ?';

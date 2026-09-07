@@ -6,8 +6,15 @@
  * operatorId is self-declared and ends up in the audit trail; v0.1
  * doesn't try to attest who actually has the password.
  *
- * Login is rate-limited at the route level (Step 6's HTTP rate limiter
- * — added in a separate cut) so brute-forcing the password is bounded.
+ * Login IS rate-limited, but not here: RelayServer.allowHttpRequest()
+ * (server.ts) draws an `admin_login`-class token before this handler is
+ * ever reached — 5 tries per source, then one per 20s, which is the
+ * lockout. That check lives in the request handler rather than in this
+ * file so a flood costs no DB round-trip and no password compare. If you
+ * move or reorder that call, this endpoint becomes an unbounded online
+ * oracle against a single shared password again; the comment that used to
+ * sit here claimed a limiter that had never been written, which is how it
+ * stayed unbounded for a whole release.
  *
  * If RELAY_OPERATOR_PASSWORD or RELAY_OPERATOR_JWT_SECRET are unset,
  * the endpoint returns 503 — admin auth is opt-in like the rest of

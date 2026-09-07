@@ -19,8 +19,23 @@ export interface AgentProfile {
   connectors: string; availability_schedule: string; offline_message: string | null;
   auto_response_enabled: boolean;
   total_conversations: number; total_messages_handled: number; avg_satisfaction_score: number | null;
+  /** The user whose req.user.id created this agent. See createAgent + migration 265. */
+  created_by: string | null;
+  org_id: string | null;
   created_at: string; updated_at: string;
 }
+
+/**
+ * An owner predicate from `ownerFilter(req, 'created_by')` (middleware/ownership.ts).
+ *
+ * Passed in rather than derived here so the service stays free of Express: the routes
+ * know who is asking, the service only knows how to compose the query. The default is
+ * unscoped, which is correct for solo mode, for admins, and for the two deliberately
+ * cross-tenant callers — the public storefront (/agents/public/*) and inbound p2p —
+ * where the whole point is that another instance can reach an agent it does not own.
+ */
+export type OwnerScope = { sql: string; params: string[] };
+const UNSCOPED: OwnerScope = { sql: '', params: [] };
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
@@ -39,10 +54,22 @@ export async function createAgentService(db: DatabaseAdapter) {
     escalationPolicy?: string; maxConversationTurns?: number;
     availabilitySchedule?: Record<string, unknown>; offlineMessage?: string;
     templateId?: string;
+    /**
+     * req.user.id of the creator. REQUIRED in practice — the route rejects an
+     * unidentified caller with 401 rather than letting this fall back — because an
+     * agent with no owner is one no owner predicate can ever match: in team mode it
+     * becomes admin-only, and every guard below silently has nothing to compare
+     * against. That is exactly the state migration 111 left the table in.
+     */
+    createdBy?: string;
   }): Promise<string> {
     const id = `agent_${Date.now()}_${randomUUID().slice(0, 8)}`;
     const slug = params.slug || slugify(params.name);
 
+    // org_id (also from migration 111) is deliberately left to its NULL default: the
+    // desktop req.user carries id/username/role/school_role and no organisation, so
+    // there is nothing truthful to stamp. Inventing one would make org_id look like an
+    // enforced boundary when nothing sets or checks it.
     await db.run(`
       INSERT INTO agent_profiles (id, name, slug, role_description, system_prompt, avatar, greeting_message,
         default_model, default_thinking, max_tokens, temperature,
@@ -51,8 +78,8 @@ export async function createAgentService(db: DatabaseAdapter) {
         allowed_modules, allowed_areas,
         routing_keywords, routing_patterns, routing_priority,
         escalation_policy, max_conversation_turns,
-        availability_schedule, offline_message, template_id, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
+        availability_schedule, offline_message, template_id, created_by, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')
     `, id, params.name, slug, params.roleDescription, params.systemPrompt,
        params.avatar ?? 'Bot', params.greetingMessage ?? null,
        params.defaultModel ?? null, params.defaultThinking ?? 'think',
@@ -68,7 +95,7 @@ export async function createAgentService(db: DatabaseAdapter) {
        params.routingPriority ?? 0,
        params.escalationPolicy ?? 'notify', params.maxConversationTurns ?? 20,
        JSON.stringify(params.availabilitySchedule ?? {}), params.offlineMessage ?? null,
-       params.templateId ?? null);
+       params.templateId ?? null, params.createdBy ?? null);
 
     return id;
   }
@@ -81,10 +108,23 @@ export async function createAgentService(db: DatabaseAdapter) {
     return await db.get<AgentProfile>('SELECT * FROM agent_profiles WHERE slug = ?', slug) ?? null;
   }
 
-  async function listAgents(params?: { status?: string; category?: string; limit?: number }): Promise<AgentProfile[]> {
+  /**
+   * List agents, optionally scoped to the caller.
+   *
+   * `scope` closes the enumeration half of the team-mode hole: without it a viewer
+   * GETs /api/agents, reads every tenant's system_prompt and connector config, and then
+   * has the ids needed to drive every other route. The per-row guards are worth little
+   * while the list hands out the ids.
+   */
+  async function listAgents(
+    params?: { status?: string; category?: string; limit?: number },
+    scope: OwnerScope = UNSCOPED,
+  ): Promise<AgentProfile[]> {
     let where = 'WHERE 1=1';
     const args: unknown[] = [];
     if (params?.status) { where += ' AND status = ?'; args.push(params.status); }
+    where += scope.sql;
+    args.push(...scope.params);
     args.push(params?.limit ?? 50);
     return await db.all<AgentProfile>(`SELECT * FROM agent_profiles ${where} ORDER BY routing_priority DESC, updated_at DESC LIMIT ?`, ...args);
   }

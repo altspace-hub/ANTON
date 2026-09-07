@@ -353,8 +353,18 @@ export function createMissionState(db: DatabaseAdapter) {
     createdBy?: string;
     pillar?: string;
     limit?: number;
+    /**
+     * The tenant boundary, from ownerFilter(req, 'created_by'). Distinct from
+     * `createdBy`, which is a caller-chosen filter and therefore cannot be one: a
+     * request that simply omits it must not see other people's missions. Empty in solo
+     * mode and for admins. Background callers (the runner) pass nothing and stay
+     * instance-wide, which is what a scheduler must be.
+     */
+    ownerScope?: { sql: string; params: readonly string[] };
   }): Promise<Mission[]> {
-    const where: string[] = [];
+    // Starts at 1=1 so ownerScope's leading ' AND ' is always well-formed, even when
+    // every optional filter is absent — the shape ownerFilter documents.
+    const where: string[] = ['1=1'];
     const args: unknown[] = [];
     if (filter?.status) {
       const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
@@ -366,7 +376,8 @@ export function createMissionState(db: DatabaseAdapter) {
       where.push('created_by = ?');
       args.push(filter.createdBy);
     }
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const whereSql = `WHERE ${where.join(' AND ')}${filter?.ownerScope?.sql ?? ''}`;
+    args.push(...(filter?.ownerScope?.params ?? []));
     args.push(filter?.limit ?? 100);
     const rows = await db.all<MissionRow>(
       `SELECT * FROM missions.missions ${whereSql} ORDER BY created_at DESC LIMIT ?`,

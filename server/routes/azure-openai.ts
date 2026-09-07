@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { AzureOpenAI } from 'openai';
 import type { DatabaseAdapter } from '../db/database.js';
 import { encrypt, decrypt } from '../services/credential-vault.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import { safeError } from '../lib/error-response.js';
 
 // ── Zod Schemas ───────────────────────────────────────────────────────────────
@@ -56,9 +57,36 @@ function maskApiKey(key: string): string {
 
 // ── Route Factory ─────────────────────────────────────────────────────────────
 
+/**
+ * Do the two URLs address the same host? Used to keep the stored API key bound to the
+ * endpoint it was issued for. Origin, not hostname: an http:// downgrade of the same
+ * host would still put the key on the wire in clear.
+ */
+function isSameEndpoint(a: string, b: string): boolean {
+  try {
+    return new URL(a).origin.toLowerCase() === new URL(b).origin.toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
 export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
   const router = Router();
 
+  // Instance-wide provider configuration is admin-only in team mode, exactly like every
+  // sibling settings surface (settings.ts:163/210/252/347/415,
+  // custom-model-endpoints.ts:92/156/226) — this file was the one that carried no guard
+  // at all, so a 'viewer' could repoint the org's Azure endpoint or make the server
+  // spend the stored credential. requireAdminOrSolo is a no-op on a solo laptop, where
+  // authMiddleware stamps the single operator role:'admin'.
+  //
+  // Deliberately per-route and NOT a router.use over the whole prefix: GET
+  // /azure-openai/deployments is what ModelSelector.tsx reads to list the org's Azure
+  // models, so gating the reads would stop every non-admin on an Azure-based install
+  // from choosing a model — a worse outage than the hole being closed. The reads return
+  // deployment names and a MASKED key (maskApiKey); the writes and the two
+  // credential-spending routes are what need the guard.
+  //
   // ── GET /azure-openai/config — retrieve configuration ───────────────────
 
   router.get('/azure-openai/config', async (_req, res) => {
@@ -106,7 +134,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
 
   // ── PUT /azure-openai/config — save or update configuration ─────────────
 
-  router.put('/azure-openai/config', async (req, res) => {
+  router.put('/azure-openai/config', requireAdminOrSolo, async (req, res) => {
     try {
       const parsed = configSchema.parse(req.body);
 
@@ -219,7 +247,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
 
   // ── POST /azure-openai/deployments — add a new deployment ──────────────
 
-  router.post('/azure-openai/deployments', async (req, res) => {
+  router.post('/azure-openai/deployments', requireAdminOrSolo, async (req, res) => {
     try {
       const parsed = deploymentSchema.parse(req.body);
       const id = crypto.randomUUID();
@@ -260,7 +288,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
 
   // ── PUT /azure-openai/deployments/:id — update a deployment ────────────
 
-  router.put('/azure-openai/deployments/:id', async (req, res) => {
+  router.put('/azure-openai/deployments/:id', requireAdminOrSolo, async (req, res) => {
     try {
       const { id } = req.params;
       const parsed = updateDeploymentSchema.parse(req.body);
@@ -354,7 +382,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
 
   // ── DELETE /azure-openai/deployments/:id — remove a deployment ─────────
 
-  router.delete('/azure-openai/deployments/:id', async (req, res) => {
+  router.delete('/azure-openai/deployments/:id', requireAdminOrSolo, async (req, res) => {
     try {
       const { id } = req.params;
 
@@ -379,16 +407,28 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
 
   // ── POST /azure-openai/test — test connection to Azure OpenAI ──────────
 
-  router.post('/azure-openai/test', async (req, res) => {
+  router.post('/azure-openai/test', requireAdminOrSolo, async (req, res) => {
     try {
       const parsed = testSchema.parse(req.body);
 
-      // Fall back to stored key if not provided in request
+      // Fall back to stored key if not provided in request — but ONLY when the caller
+      // is testing the endpoint that key belongs to. Without that condition this handler
+      // decrypted the org's Azure key and put it in the api-key header of a request to
+      // any URL the body named: one call, credential exfiltrated, and a general SSRF
+      // besides. Testing a different host is still allowed — it just has to bring its
+      // own key.
       let effectiveApiKey = parsed.apiKey;
       if (!effectiveApiKey) {
-        const stored = await db.get<{ api_key_encrypted: string }>(
-          "SELECT api_key_encrypted FROM azure_openai_config WHERE id = 'default'"
+        const stored = await db.get<{ endpoint: string; api_key_encrypted: string }>(
+          "SELECT endpoint, api_key_encrypted FROM azure_openai_config WHERE id = 'default'"
         );
+        if (stored && !isSameEndpoint(stored.endpoint, parsed.endpoint)) {
+          res.status(400).json({
+            ok: false,
+            error: 'The stored API key is only sent to the configured endpoint. Provide apiKey explicitly to test a different one.',
+          });
+          return;
+        }
         if (stored) effectiveApiKey = decrypt(stored.api_key_encrypted);
       }
       if (!effectiveApiKey) {
@@ -445,7 +485,7 @@ export async function createAzureOpenAIRoutes(db: DatabaseAdapter) {
   });
 
   // ── POST /azure-openai/diagnose — test Azure with different parameter combos
-  router.post('/azure-openai/diagnose', async (req, res) => {
+  router.post('/azure-openai/diagnose', requireAdminOrSolo, async (req, res) => {
     try {
       const config = await db.get<{ endpoint: string; api_key_encrypted: string; api_version: string }>(
         "SELECT endpoint, api_key_encrypted, api_version FROM azure_openai_config WHERE id = 'default' AND is_active = TRUE"
