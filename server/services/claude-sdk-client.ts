@@ -9,9 +9,12 @@
  * following the azure:/ollama:/compat: convention — no static registry entry.
  *
  * This engine is a TEXT ENGINE, not an agent:
- *   - `tools: []` — every built-in tool disabled. No file access, no shell,
- *     no web search. Nothing needs containing because nothing is granted.
- *   - `maxTurns: 1` — one completion per request.
+ *   - `tools: []` — every built-in tool disabled. No file access, no shell.
+ *     Nothing needs containing because nothing is granted. The one exception
+ *     is opt-in: a caller that passes ANTON's web_search tool gets exactly
+ *     WebSearch + WebFetch (network reads, nothing local) and a bounded number
+ *     of turns to use them — see SDK_WEB_TOOLS below.
+ *   - `maxTurns: 1` — one completion per request (SDK_WEB_MAX_TURNS with web tools).
  *   - `settingSources: []` — the user's personal Claude Code settings, hooks
  *     and CLAUDE.md never leak into an ANTON run.
  *   - `persistSession: false` — runs don't pile up in ~/.claude/projects.
@@ -24,7 +27,8 @@
  * a bare object strips PATH/HOME and the subprocess never starts on Windows.
  *
  * Capability differences vs the API path, stated rather than hidden:
- *   - ANTON's web-search knowledge mode does not run on this engine.
+ *   - Web search runs through the SDK's own WebSearch/WebFetch tools, not the
+ *     API's server-side web_search tool; the instruction is reworded to match.
  *   - The SDK reports a cost figure, but on subscription auth the spend is
  *     plan usage, not a bill.
  *   - Each request spawns the Claude Code runtime (~seconds of startup);
@@ -34,21 +38,15 @@
 import os from 'node:os';
 import { randomUUID } from 'node:crypto';
 import type { StreamSink } from './stream-sink.js';
-import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
+import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens, type AnthropicEffort } from './thinking-map.js';
 import { isSdkEngineEnabled } from './sdk-engine-store.js';
+import { SDK_MODEL_PREFIX, isSdkModel, sdkUnderlyingModel } from './engine-model-id.js';
 
 // ── Model id convention ─────────────────────────────────────
-
-export const SDK_MODEL_PREFIX = 'sdk:';
-
-export function isSdkModel(modelId: string): boolean {
-  return modelId.startsWith(SDK_MODEL_PREFIX);
-}
-
-/** sdk:claude-opus-5 → claude-opus-5 */
-export function sdkUnderlyingModel(modelId: string): string {
-  return isSdkModel(modelId) ? modelId.slice(SDK_MODEL_PREFIX.length) : modelId;
-}
+// The prefix helpers live in engine-model-id.ts — a leaf, so a capability
+// lookup can strip the prefix without loading the engine. Re-exported here so
+// existing importers are untouched.
+export { SDK_MODEL_PREFIX, isSdkModel, sdkUnderlyingModel };
 
 /** The models offered in the picker when the engine is enabled — single
  *  source for the Settings route; the frontend renders what this returns. */
@@ -56,6 +54,7 @@ export const SDK_ENGINE_MODELS: ReadonlyArray<{ id: string; label: string }> = [
   { id: 'sdk:claude-opus-5', label: 'Claude Opus 5 (subscription)' },
   { id: 'sdk:claude-sonnet-5', label: 'Claude Sonnet 5 (subscription)' },
   { id: 'sdk:claude-fable-5', label: 'Claude Fable 5 (subscription)' },
+  { id: 'sdk:claude-fable-5-1', label: 'Claude Fable 5.1 (subscription)' },
 ];
 
 // ── Subprocess environment ──────────────────────────────────
@@ -84,10 +83,10 @@ type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_fi
  */
 export function sdkThinkingOptions(level: ThinkingLevel, underlyingModel: string): {
   thinking?: { type: 'adaptive' } | { type: 'enabled'; budgetTokens: number } | { type: 'disabled' };
-  effort?: 'low' | 'medium' | 'high' | 'max';
+  effort?: AnthropicEffort;
 } {
   if (anthropicUsesAdaptive(underlyingModel)) {
-    return { thinking: { type: 'adaptive' }, effort: anthropicEffort(level) };
+    return { thinking: { type: 'adaptive' }, effort: anthropicEffort(level, underlyingModel) };
   }
   const budget = anthropicBudgetTokens(level);
   if (budget === null) return { thinking: { type: 'disabled' } };
@@ -108,6 +107,9 @@ export interface SdkStreamConfig {
   messages: Array<{ role: 'user' | 'assistant'; content: string | object[] }>;
   signal?: AbortSignal;
   sourceManifest?: string[];
+  /** Claude-format tools the caller holds for the API path. Only ANTON's
+   *  web_search entry means anything here: its presence grants SDK_WEB_TOOLS. */
+  tools?: ReadonlyArray<{ type: string; name?: string }>;
 }
 
 export interface SdkCompletionData {
@@ -122,6 +124,43 @@ export interface SdkCompletionData {
 interface ContentBlock {
   type: 'thinking' | 'text';
   content: string;
+}
+
+// ── Web tools ───────────────────────────────────────────────
+
+/** The only built-in tools this engine ever grants: network reads. Never a
+ *  local tool — WebFetch reaches the network, not the filesystem. */
+export const SDK_WEB_TOOLS: ReadonlyArray<string> = ['WebSearch', 'WebFetch'];
+
+/** Turns a web run may take — search, read a result or two, answer. Bounded so
+ *  a model that keeps searching cannot hold a subscription slot indefinitely.
+ *  A run that hits the cap with text already streamed keeps that text. */
+export const SDK_WEB_MAX_TURNS = 8;
+
+/** True when the caller's Claude tool list carries ANTON's web_search entry. */
+export function sdkWebToolsRequested(tools?: ReadonlyArray<{ type: string; name?: string }>): boolean {
+  return (tools ?? []).some((t) => t.type.startsWith('web_search') || t.name === 'web_search');
+}
+
+const WEB_SEARCH_BLOCK = /## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g;
+
+/**
+ * The knowledge resolver writes "Use the web_search tool …" for the API's
+ * server-side tool. On this engine the tool is called WebSearch (with WebFetch
+ * to read a page), so the instruction is reworded when the tools are granted
+ * and removed when they are not — a prompt must never name a tool the request
+ * does not carry.
+ */
+export function adaptWebSearchInstruction(system: string, webToolsGranted: boolean): string {
+  if (webToolsGranted) {
+    return system.replace(/\bweb_search tool\b/g, 'WebSearch tool (and WebFetch to read a result page)');
+  }
+  return system.replace(WEB_SEARCH_BLOCK, '').replace(/\n{3,}/g, '\n\n');
+}
+
+/** The no-web form, for engines that have no web tools at all (Codex). */
+export function stripWebSearchInstructions(system: string): string {
+  return adaptWebSearchInstruction(system, false);
 }
 
 // ── Concurrency cap ─────────────────────────────────────────
@@ -310,9 +349,13 @@ export async function streamToResponse(
   }
 
   const underlying = sdkUnderlyingModel(config.model);
-  const systemPrompt = config.staticSystemPrompt && config.staticSystemPrompt.trim()
-    ? `${config.staticSystemPrompt}\n\n${config.system}`
-    : config.system;
+  const webTools = sdkWebToolsRequested(config.tools);
+  const systemPrompt = adaptWebSearchInstruction(
+    config.staticSystemPrompt && config.staticSystemPrompt.trim()
+      ? `${config.staticSystemPrompt}\n\n${config.system}`
+      : config.system,
+    webTools,
+  );
 
   const abortController = new AbortController();
   if (config.signal) {
@@ -327,7 +370,7 @@ export async function streamToResponse(
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
 
   try {
-    console.log(`[sdk-engine] run → model=${underlying} thinking=${config.thinking}`);
+    console.log(`[sdk-engine] run → model=${underlying} thinking=${config.thinking}${webTools ? ' tools=web' : ''}`);
     const query = await resolveQuery();
     sendEvent({ type: 'stream_start', messageId: randomUUID() });
 
@@ -336,8 +379,13 @@ export async function streamToResponse(
       options: {
         model: underlying,
         systemPrompt,
-        tools: [],               // text engine: no built-in tools, ever
-        maxTurns: 1,
+        // Text engine by default: no built-in tools, one turn. A run whose
+        // knowledge mode asked for web search gets exactly the two network
+        // tools and enough turns to use them; every other built-in stays
+        // denied — 'dontAsk' refuses anything not in allowedTools.
+        tools: webTools ? [...SDK_WEB_TOOLS] : [],
+        ...(webTools ? { allowedTools: [...SDK_WEB_TOOLS] } : {}),
+        maxTurns: webTools ? SDK_WEB_MAX_TURNS : 1,
         permissionMode: 'dontAsk',
         settingSources: [],      // never inherit the user's personal Claude Code config
         persistSession: false,
@@ -361,7 +409,13 @@ export async function streamToResponse(
         }
       } else if (message.type === 'result') {
         const result = message as SdkResultMessage;
-        if (result.subtype === 'success') {
+        // A web run that used up its turns with an answer already streamed is
+        // a complete answer with a warning, not a failure.
+        const cappedWithAnswer = result.subtype === 'error_max_turns' && currentText.length > 0;
+        if (cappedWithAnswer) {
+          console.warn(`[sdk-engine] run hit the ${SDK_WEB_MAX_TURNS}-turn web cap after streaming text — keeping the answer`);
+        }
+        if (result.subtype === 'success' || cappedWithAnswer) {
           // Native builds may not emit partials — fall back to the final text.
           if (!currentText && typeof result.result === 'string' && result.result.length > 0) {
             currentText = result.result;

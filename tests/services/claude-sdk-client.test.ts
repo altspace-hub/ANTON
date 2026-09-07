@@ -30,6 +30,7 @@ import {
   completeText,
   setSdkQueryImplForTests,
   SDK_ENGINE_MODELS,
+  SDK_WEB_MAX_TURNS,
 } from '../../server/services/claude-sdk-client.js';
 import { resetSdkEngineStoreForTests } from '../../server/services/sdk-engine-store.js';
 import { getProviderFromModelId } from '../../server/services/model-adapter.js';
@@ -155,6 +156,46 @@ describe('SDK options — the text-engine containment set', () => {
     expect(calls[0].options.model).toBe('claude-opus-5');
     expect(calls[0].options.systemPrompt).toBe('static part\n\ndynamic part');
   });
+
+  // The one opt-in widening: ANTON's web_search tool grants exactly the two
+  // network tools. Everything else in the containment set must be unchanged.
+  const WEB_PROMPT = '## WEB SEARCH ENABLED\nUse the web_search tool to find the latest guidance.\n\nTask text.';
+  const WEB_TOOL = [{ type: 'web_search_20250305', name: 'web_search' }];
+
+  it('grants exactly WebSearch + WebFetch, with more turns, when the caller passes the web_search tool', async () => {
+    const calls = fakeSdk([successResult()]);
+    const { sink } = collectingSink();
+    await streamToResponse({ ...BASE_CONFIG, system: WEB_PROMPT, tools: WEB_TOOL }, sink);
+    const o = calls[0].options;
+    expect(o.tools).toEqual(['WebSearch', 'WebFetch']);
+    expect(o.allowedTools).toEqual(['WebSearch', 'WebFetch']);
+    expect(o.maxTurns).toBe(SDK_WEB_MAX_TURNS);
+    expect(o.permissionMode).toBe('dontAsk');        // every other built-in still denied
+    expect(o.settingSources).toEqual([]);
+    expect(o.env).not.toHaveProperty('ANTHROPIC_API_KEY');
+    // the instruction names the tool the request actually carries
+    expect(String(o.systemPrompt)).toContain('Use the WebSearch tool');
+    expect(String(o.systemPrompt)).not.toContain('web_search tool');
+  });
+
+  it('strips the web-search instruction when no web tool is granted — a prompt never names a tool the request lacks', async () => {
+    const calls = fakeSdk([successResult()]);
+    const { sink } = collectingSink();
+    await streamToResponse({ ...BASE_CONFIG, system: WEB_PROMPT }, sink);
+    const o = calls[0].options;
+    expect(o.tools).toEqual([]);
+    expect(o.maxTurns).toBe(1);
+    expect(o).not.toHaveProperty('allowedTools');
+    expect(String(o.systemPrompt)).not.toContain('WEB SEARCH ENABLED');
+    expect(String(o.systemPrompt)).toContain('Task text.');
+  });
+
+  it('keeps a streamed answer when a web run exhausts its turns', async () => {
+    fakeSdk([textDelta('partial answer'), { type: 'result', subtype: 'error_max_turns', usage: { input_tokens: 5, output_tokens: 2 } }]);
+    const data = await completeText({ ...BASE_CONFIG, tools: WEB_TOOL });
+    expect(data.text).toBe('partial answer');
+    expect(data.outputTokens).toBe(2);
+  });
 });
 
 // ── 3. The SSE contract ─────────────────────────────────────
@@ -276,7 +317,13 @@ describe('sdkThinkingOptions — single-source thinking mapping', () => {
       thinking: { type: 'adaptive' },
       effort: 'high',
     });
-    expect(sdkThinkingOptions('investigate', 'claude-fable-5').effort).toBe('max');
+    // investigate reaches the xhigh rung on models that have it; the SDK
+    // documents a fallback to high elsewhere, but ANTON clamps first.
+    expect(sdkThinkingOptions('investigate', 'claude-fable-5').effort).toBe('xhigh');
+    expect(sdkThinkingOptions('investigate', 'claude-fable-5-1').effort).toBe('xhigh');
+    expect(sdkThinkingOptions('investigate', 'claude-sonnet-4-6').effort).toBe('max');
+    expect(sdkThinkingOptions('deep_investigate', 'claude-opus-5').effort).toBe('max');
+    expect(sdkThinkingOptions('think', 'claude-fable-5-1')).toEqual({ thinking: { type: 'adaptive' }, effort: 'medium' });
   });
 
   it('budget models get an explicit budget; quick disables thinking', () => {

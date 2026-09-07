@@ -34,7 +34,8 @@ import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
-import { streamToResponse as sdkStreamToResponse } from '../services/claude-sdk-client.js';
+import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
+import { capabilityModelId } from '../services/engine-model-id.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
@@ -433,8 +434,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Derived from the capability table, not a hardcoded id list — every new
       // 1M-context model would otherwise silently be treated as short-context and
       // pick up a long-context beta header it does not need (see line ~1120).
-      const is1MModel = (MODEL_CAPABILITIES[model]?.maxContextWindow ?? 0) >= 1_000_000;
-      const knowledgeBudget = await resolveContextBudget(model, db as DatabaseAdapter);
+      // Keyed by the model the run will actually use (selectedModel — after
+      // compliance enforce_model / area default / instance default), with an
+      // sdk: prefix stripped: the engine's model has the engine's window. Keyed
+      // by the raw request field, the sdk: default missed the table and got a
+      // 16k budget on a 1M model.
+      const is1MModel = (MODEL_CAPABILITIES[capabilityModelId(selectedModel)]?.maxContextWindow ?? 0) >= 1_000_000;
+      const knowledgeBudget = await resolveContextBudget(selectedModel, db as DatabaseAdapter);
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
       // Set SSE headers early so we can stream progress before the Claude API call starts.
@@ -1162,7 +1168,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // message instead of silently truncating a ~900k prompt.
       if (resolved.tokenEstimate > knowledgeBudget) {
         res.status(400).json({
-          error: `Context too large for ${model}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
+          error: `Context too large for ${selectedModel}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
                  `Trim knowledge sources, use Summary mode for online references, or pick a larger-context model.`,
           code: 'CONTEXT_TOO_LARGE',
           tokenEstimate: resolved.tokenEstimate,
@@ -1197,11 +1203,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
         // Subscription execution engines — the Claude Agent SDK or Codex SDK
         // subprocess, authenticated by this machine's Claude Code / ChatGPT
-        // login (no API key). Neither has ANTON's web_search tool, so strip
-        // the web-search instructions exactly as the non-Anthropic branch does.
-        const sdkPrompt = composedPrompt
-          .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
-          .replace(/\n{3,}/g, '\n\n');
+        // login (no API key). The Claude engine grants its own WebSearch /
+        // WebFetch tools when the run's knowledge mode asked for web search
+        // (and rewords the instruction to name them); Codex has no web tools,
+        // so its prompt is stripped exactly as the non-Anthropic branch does.
+        const sdkWebRun = provider === 'anthropic_sdk' && sdkWebToolsRequested(tools);
+        const sdkPrompt = provider === 'openai_codex' ? stripWebSearchInstructions(composedPrompt) : composedPrompt;
 
         const sdkAbort = new AbortController();
         req.on('close', () => sdkAbort.abort());
@@ -1218,6 +1225,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         };
         const stopSdkTimers = armIdleAbort(res, () => sdkAbort.abort(), {
           firstTokenMs: sdkTimeouts[thinking as string] || 420_000,
+          // A web run is silent while a page is fetched; give it more idle room.
+          ...(sdkWebRun ? { idleMs: 420_000 } : {}),
         });
 
         const engineStream = provider === 'anthropic_sdk' ? sdkStreamToResponse : codexStreamToResponse;
@@ -1231,6 +1240,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               messages,
               signal: sdkAbort.signal,
               sourceManifest: resolved.sourceManifest,
+              tools: sdkWebRun ? tools : undefined,
             },
             res,
             onComplete,
