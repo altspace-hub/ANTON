@@ -763,8 +763,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const RETRY_THRESHOLD = 8.0;     // retry if score is below this (anything less than "Good")
     const MAX_RETRIES = 2;
 
-    // Thinking level progression for retries: default → think_hard → investigate
-    // Opus uses adaptive effort (no budget_tokens cap)
+    // Thinking level progression for retries: default → think_hard → investigate.
+    // `label` is the ANTON thinking level and is what streamChat takes; `effort`
+    // is the API value it maps to, kept for the log line. Passing the effort
+    // value as the level was silently ignored by both engines (an unknown level
+    // falls back to 'think'), so retries never actually thought harder.
     const RETRY_THINKING: Array<{ effort: string; label: string }> = [
       { effort: 'high', label: 'think_hard' },
       { effort: 'max', label: 'investigate' },
@@ -791,13 +794,13 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
     /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
     let lastThinkingContent = '';
-    async function runExecution(effort?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
+    async function runExecution(thinkingLevel?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
       const result = await streamChat({
         model: mapModelToProvider('claude-opus-4-8'),
         system: fullSystemPrompt,
         messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}` }],
         maxTokens: 16000,
-        thinkingLevel: effort ?? 'high',
+        thinkingLevel: thinkingLevel ?? 'think_hard',
       }, res);
       lastThinkingContent = result.thinking;
       return { output: result.text, thinking: result.thinking };
@@ -839,7 +842,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         })}\n\n`);
 
         // Clear previous output from stream (client replaces on retry event)
-        const retryResult = await runExecution(retryConfig.effort, buildRetryGuidance(gate));
+        const retryResult = await runExecution(retryConfig.label, buildRetryGuidance(gate));
         fullOutput = retryResult.output;
         gate = await scoreOutput(fullOutput, task.title, step.name);
         qualityScore = gate?.overall ?? null;

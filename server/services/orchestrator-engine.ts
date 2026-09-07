@@ -572,7 +572,7 @@ export async function aggregateSignals(
 /** Quick assessment: do these signals need a briefing? Returns true if significant signals found */
 export async function assessSignificance(
   signals: PlatformSignal[],
-  anthropic: AnthropicSDK
+  anthropic: AnthropicSDK | null | undefined
 ): Promise<boolean> {
   if (signals.length === 0) return false;
   // Any signal with urgency >= 0.7 is always significant
@@ -646,7 +646,7 @@ Only include proposals where you are highly confident (≥0.8) that the action i
 
 export async function generateBriefing(
   signals: PlatformSignal[],
-  anthropic: AnthropicSDK,
+  anthropic: AnthropicSDK | null | undefined,
   model: string,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'daily',
   thinkingEnabled = false,
@@ -712,9 +712,15 @@ Current date: ${new Date().toISOString().substring(0, 10)}`;
     });
     raw = result.text;
   } catch (err) {
-    // Fallback: generate minimal briefing without LLM
-    const fallbackContent = `# ANTON Orchestrator — ${period} Briefing\n\n*${signals.length} platform signals detected. LLM briefing generation temporarily unavailable.*\n\n${signals.slice(0, 5).map(s => `- **${s.source}**: ${s.summary}`).join('\n')}`;
-    return { content: fallbackContent, proposals: [] };
+    // A briefing without the model is not a briefing. This used to return a
+    // placeholder ("LLM briefing generation temporarily unavailable") with no
+    // proposals, and the caller saved it, logged "Briefing generated — 0
+    // proposals" and recorded the heartbeat as 'ok' — which is how the
+    // briefing path stayed dead from 2026-05-08 for four months while every
+    // cycle reported success. Propagate; the heartbeat row then says 'error'
+    // and names the cause.
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Briefing generation failed on ${mapModelToProvider(model)}: ${msg}`);
   }
 
   // Parse JSON response
@@ -987,7 +993,7 @@ export async function checkStageDemotion(db: DatabaseAdapter): Promise<{ demoted
  */
 export async function generateManagementReport(
   db: DatabaseAdapter,
-  anthropic: AnthropicSDK,
+  anthropic: AnthropicSDK | null | undefined,
   period: 'week' | 'month' = 'week'
 ): Promise<string> {
   const days = period === 'week' ? 7 : 30;
@@ -1102,7 +1108,7 @@ Keep plans specific and executable. Reference real ANTON modules and step patter
 
 export async function generateWorkflowPlan(
   proposal: OrchestratorProposal,
-  anthropic: AnthropicSDK,
+  anthropic: AnthropicSDK | null | undefined,
   model: string = process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-8',
   thinkingEnabled = false
 ): Promise<string | null> {
@@ -1144,7 +1150,7 @@ Produce a concrete, executable workflow plan using ANTON's existing step types.`
 export async function generateNarrativeSummary(
   trailId: string,
   db: DatabaseAdapter,
-  anthropic: AnthropicSDK
+  anthropic: AnthropicSDK | null | undefined
 ): Promise<string> {
   const entries = await db.all(`
     SELECT entry_type, title, content FROM orchestrator_reasoning_entries
@@ -1382,7 +1388,7 @@ export async function completeTrail(
 export async function enrichTrailAsync(
   trailId: string,
   db: DatabaseAdapter,
-  anthropic: AnthropicSDK
+  anthropic: AnthropicSDK | null | undefined
 ): Promise<void> {
   try {
     const narrative = await generateNarrativeSummary(trailId, db, anthropic);
@@ -1399,7 +1405,7 @@ export async function enrichTrailAsync(
 
 export async function runHeartbeatCycle(
   db: DatabaseAdapter,
-  anthropic: AnthropicSDK,
+  anthropic: AnthropicSDK | null | undefined,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'heartbeat',
   forceBriefing: boolean = false
 ): Promise<{ action: 'none' | 'briefing_generated'; briefingId?: string; signalCount: number; trailId?: string }> {

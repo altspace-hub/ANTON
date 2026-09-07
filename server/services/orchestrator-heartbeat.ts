@@ -19,6 +19,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { runHeartbeatCycle, getOrchestratorConfig } from './orchestrator-engine.js';
 import { createNotification } from './notification-service.js';
+import { isSdkEngineEnabled } from './sdk-engine-store.js';
 
 let heartbeatTask: cron.ScheduledTask | null = null;
 let dailyBriefingTask: cron.ScheduledTask | null = null;
@@ -31,8 +32,11 @@ function minutesToCron(minutes: number): string {
 }
 
 export async function initOrchestratorHeartbeat(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Promise<void> {
-  if (!anthropic) {
-    console.log('[orchestrator-heartbeat] Skipping — Anthropic API not configured');
+  // The client object is never used for an LLM call — every orchestrator call
+  // goes through provider-router.callChat, which follows the configured default
+  // engine. Gate on "some Claude path exists", not on the API client alone.
+  if (!anthropic && !isSdkEngineEnabled()) {
+    console.log('[orchestrator-heartbeat] Skipping — no Anthropic API key and the SDK engine is disabled');
     return;
   }
 
