@@ -19,6 +19,7 @@ import type { WorkflowDefinition, WorkflowStep } from '../../src/lib/workflow-de
 import { getWorkflowById } from '../../src/lib/workflow-definitions.js';
 import { resolveTemplate } from '../routes/workflows.js';
 import { createConnectionManager } from './connection-manager.js';
+import { checkFolderPath } from '../lib/folder-guard.js';
 import pkg from 'pg';
 const { Client: PgClient } = pkg;
 import mysql from 'mysql2/promise';
@@ -507,15 +508,32 @@ async function executeHeadlessStep(
         basePath = cfg.base_path as string || cfg.path as string || '';
       }
 
-      if (!basePath || !fs.existsSync(basePath)) {
-        throw new Error(`Filesystem path does not exist: ${basePath}`);
+      // The whitelist check, BEFORE the existence probe. Three things were wrong with
+      // the hand-rolled version this replaces, and the first is the one that mattered:
+      //
+      //   1. It failed OPEN. `allowedBases.length > 0 && …` skipped the check entirely
+      //      when ALLOWED_FOLDER_PATHS was unset — which is the default, and is the case
+      //      on this instance. An unset whitelist meant no whitelist, so a file_read step
+      //      read any directory on the host.
+      //   2. `resolved.startsWith(path.resolve(base))` is unanchored, so a base of
+      //      /data also admitted /data-backup.
+      //   3. It ran AFTER fs.existsSync(basePath), which made the step an existence
+      //      oracle over the whole filesystem even when the read was refused.
+      //
+      // checkFolderPath (lib/folder-guard.ts) is the single definition used by
+      // knowledge-library, rag and knowledge-resolver: unset narrows to ANTON's own
+      // ./uploads and ./outputs rather than widening to the disk, an empty list denies,
+      // and containment is separator-anchored after resolve.
+      //
+      // It matters here specifically because the 'kl:' branch above takes basePath from
+      // knowledge_library.path — rows that predate the guard on that table are still
+      // there, and this is the consumer that never re-checked them.
+      const guard = checkFolderPath(basePath);
+      if (!guard.ok) {
+        throw new Error(`Folder access not permitted: ${guard.error}`);
       }
-
-      // Validate path against ALLOWED_FOLDER_PATHS
-      const allowedBases = (process.env.ALLOWED_FOLDER_PATHS ?? '').split(',').filter(Boolean);
-      const resolved = path.resolve(basePath);
-      if (allowedBases.length > 0 && !allowedBases.some(base => resolved.startsWith(path.resolve(base)))) {
-        throw new Error('Folder access not permitted by ALLOWED_FOLDER_PATHS');
+      if (!fs.existsSync(guard.resolved)) {
+        throw new Error(`Filesystem path does not exist: ${basePath}`);
       }
 
       // Read files matching filter
@@ -523,7 +541,7 @@ async function executeHeadlessStep(
       const extensions = filterStr ? filterStr.split(',').map(e => e.trim().toLowerCase()) : [];
       const maxFiles = 50;
 
-      const entries = fs.readdirSync(basePath, { withFileTypes: true });
+      const entries = fs.readdirSync(guard.resolved, { withFileTypes: true });
       const files: { name: string; content: string; size: number }[] = [];
 
       for (const entry of entries) {
@@ -531,7 +549,7 @@ async function executeHeadlessStep(
         if (extensions.length > 0 && !extensions.some(ext => entry.name.toLowerCase().endsWith(ext))) continue;
         if (files.length >= maxFiles) break;
 
-        const filePath = path.join(basePath, entry.name);
+        const filePath = path.join(guard.resolved, entry.name);
         const stat = fs.statSync(filePath);
         // The connection's own allowed_extensions / max_file_size_mb. A filesystem
         // connection scoped to '.pdf' previously still handed over .env and .pem
@@ -840,8 +858,22 @@ async function executeHeadlessStep(
       const promptName = cfg.prompt as string;
       if (!promptName) throw new Error('LLM step requires "prompt" in config');
 
-      // Read system prompt file
-      const promptPath = path.join(__dirname, '..', 'prompts', `${promptName}.md`);
+      // Read system prompt file.
+      //
+      // promptName comes from step config, and path.join happily walks out of the
+      // prompts directory: '../../../.env' lands on C:.env.md, and any '../' name
+      // reaches any .md in the tree — including not_to_github/, which holds audit and
+      // handover documents. The read's contents become the system prompt, so a
+      // traversal here is a file-disclosure channel through the model's output.
+      //
+      // Resolve, then require containment. A nested name like 'markets/brief' still
+      // works; one that escapes is a bug or an attack, never a missing prompt, so it
+      // throws rather than falling through to the generic fallback below and hiding.
+      const promptsDir = path.resolve(__dirname, '..', 'prompts');
+      const promptPath = path.resolve(promptsDir, `${promptName}.md`);
+      if (promptPath !== promptsDir && !promptPath.startsWith(promptsDir + path.sep)) {
+        throw new Error(`LLM step prompt must live under server/prompts: ${promptName}`);
+      }
       let systemPrompt: string;
       try {
         systemPrompt = fs.readFileSync(promptPath, 'utf-8');

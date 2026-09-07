@@ -508,7 +508,19 @@ describe('file_read honours the connection scope', () => {
     // The file a '.pdf'-scoped connection had no business handing to a workflow.
     writeFileSync(join(dir, '.env'), 'ANTHROPIC_API_KEY=sk-ant-leaked');
     writeFileSync(join(dir, 'big.md'), 'x'.repeat(4096));
-    delete process.env.ALLOWED_FOLDER_PATHS;   // a different control; not under test here
+    // ALLOW the temp dir rather than unsetting the variable.
+    //
+    // This used to `delete` it, with the note "a different control; not under test
+    // here" — which was true only because workflow-executor's own copy of the check
+    // failed OPEN: an unset ALLOWED_FOLDER_PATHS skipped it entirely, so the temp dir
+    // sailed through and the connection-scope guards below were what got exercised.
+    // That copy is gone (it now calls lib/folder-guard.ts, where unset NARROWS to
+    // ./uploads and ./outputs), so unsetting it would refuse this directory and these
+    // cases would fail on the folder whitelist before reaching the thing they test.
+    //
+    // Setting it keeps the intent exactly: the folder guard is satisfied, and what is
+    // under test is still the per-connection extension and size scope.
+    process.env.ALLOWED_FOLDER_PATHS = dir;
   });
 
   afterEach(() => {
