@@ -52,5 +52,13 @@ export function useFileUpload() {
     });
   }, []);
 
-  return { files, upload, remove };
+  /** Drop every attachment (a new chat starts clean). */
+  const clear = useCallback(() => {
+    setFiles((prev) => {
+      for (const f of prev) if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+      return [];
+    });
+  }, []);
+
+  return { files, upload, remove, clear };
 }

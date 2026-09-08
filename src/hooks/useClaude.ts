@@ -3,58 +3,24 @@ import { useSessionStore } from '@/stores/useSessionStore';
 import { useStreamStore } from '@/stores/useStreamStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { streamMessage, createSession, updateSessionTitle } from '@/lib/api';
+import { streamMessage, createSession, generateSessionTitle } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
-import type { Message, ModelId, StreamEvent } from '@/lib/types';
+import type { Message, StreamEvent } from '@/lib/types';
 
 // ── AI Title Generator ──────────────────────────────────────
-// Fires a quick background call after the first response in a session
-// to produce a concise 5-8 word title, then PATCHes the session record.
+// After the first answer the server writes a 5-8 word title from the
+// exchange. This used to be a full /claude/message turn from the browser:
+// every knowledge layer assembled, an interactive engine slot taken at the
+// exact moment the user is most likely to type a follow-up, and an
+// FCP-flavoured prompt for every chat. It is now one small background
+// utility call on the server (POST /sessions/:id/title/generate).
 
-const EMPTY_KS = {
-  modes: {
-    claudeKnowledge: { enabled: false, webSearchEnabled: false, description: '' },
-    onlineReference: { enabled: false, urls: [] as string[], fetchDepth: 'full' as const },
-    localFolder: { enabled: false, folderPaths: [] as string[], fileFilter: undefined, recursive: false },
-    combinedMode: { enabled: false, priority: 'merged' as const, instructions: '' },
-  },
-};
-
-const TITLE_SYSTEM_PROMPT =
-  'You generate concise session titles for FCP compliance consultations. ' +
-  'Given the user request and a preview of the AI response, output ONLY a 5-8 word title that captures the core topic. ' +
-  'No quotes, no trailing punctuation, no explanation. Start with an action word or topic noun.';
-
-async function generateAndSaveTitle(
-  sessionId: string,
-  userMessage: string,
-  responsePreview: string,
-  model: ModelId
-): Promise<void> {
-  try {
-    const titleStream = streamMessage({
-      model,
-      thinking: 'quick',
-      creativity: 'strict',
-      systemPrompt: TITLE_SYSTEM_PROMPT,
-      userMessage: `User request: "${userMessage.slice(0, 200)}"\nResponse preview: "${responsePreview.slice(0, 400)}"`,
-      history: [],
-      outputFormats: [],
-      knowledgeSources: EMPTY_KS,
-      moduleInputs: {},
-    });
-
-    let raw = '';
-    for await (const event of titleStream) {
-      if (event.type === 'text_delta') raw += event.content;
-      if (event.type === 'stream_end' || event.type === 'error') break;
-    }
-
-    const title = raw.trim().replace(/^["']|["']$/g, '').replace(/[.!?]$/, '');
-    if (title) await updateSessionTitle(sessionId, title);
-  } catch {
-    // Non-fatal — original 80-char title stays
-  }
+/** Assistant bubbles that carry an error are not part of the conversation;
+ *  re-sending them as history taught the model to apologise for engine
+ *  outages it never had. */
+const ERROR_BUBBLE_PREFIX = '⚠️ Error:';
+function conversationOnly(messages: Message[]): Message[] {
+  return messages.filter((m) => !(m.role === 'assistant' && m.content.startsWith(ERROR_BUBBLE_PREFIX)));
 }
 
 export function useClaude() {
@@ -141,9 +107,12 @@ export function useClaude() {
       .catch(() => setBudgetWarning(null));
   }, [isTeamMode, user, messages.length]);
 
+  /** Resolves true when an answer was produced; false when the turn failed
+   *  (engine busy/disabled, network, budget) so the caller can keep the
+   *  user's text for a retry. */
   const runMessage = useCallback(
-    async (userMessage: string, thinkingOverride?: 'think_hard' | 'investigate' | 'plan_first') => {
-      if (!userMessage.trim() || isStreaming) return;
+    async (userMessage: string, thinkingOverride?: 'think_hard' | 'investigate' | 'plan_first'): Promise<boolean> => {
+      if (!userMessage.trim() || isStreaming) return false;
 
       // Budget pre-check (frontend warning only - backend enforces hard limit)
       if (budgetWarning && budgetWarning.includes('exceeded')) {
@@ -151,7 +120,7 @@ export function useClaude() {
           type: 'error',
           message: 'Monthly budget exceeded. Please contact your administrator.',
         });
-        return;
+        return false;
       }
 
       // Track whether this is the very first message — used to trigger AI title generation
@@ -204,6 +173,7 @@ export function useClaude() {
       const controller = startStreaming();
 
       let responseText = '';
+      let failed = false;
 
       try {
         const stream = streamMessage(
@@ -222,7 +192,7 @@ export function useClaude() {
             multiAgentTeam,
             multiAgentStyle,
             userMessage,
-            history: messages,
+            history: conversationOnly(messages),
             outputFormats: selectedOutputFormats,
             knowledgeSources,
             moduleInputs,
@@ -254,6 +224,7 @@ export function useClaude() {
           if (event.type === 'text_delta') responseText += event.content;
           if (event.type === 'error') {
             console.error('[useClaude] stream error event:', event.message);
+            failed = true;
             // Surface the error as an assistant message so it's visible
             addMessage({
               id: crypto.randomUUID(),
@@ -269,6 +240,7 @@ export function useClaude() {
         if ((error as Error).name !== 'AbortError') {
           const msg = error instanceof Error ? error.message : 'Unknown error';
           console.error('[useClaude] stream catch error:', msg);
+          failed = true;
           handleStreamEvent({ type: 'error', message: msg });
           addMessage({
             id: crypto.randomUUID(),
@@ -280,10 +252,11 @@ export function useClaude() {
         }
       }
 
-      // After the first successful response, generate an AI title in the background
+      // After the first successful response, the server writes a title in the background
       if (isFirstMessage && activeSessionId && responseText) {
-        generateAndSaveTitle(activeSessionId, userMessage, responseText, model);
+        void generateSessionTitle(activeSessionId, userMessage, responseText);
       }
+      return !failed && responseText.length > 0;
     },
     [
       sessionId, moduleId, areaId, model, thinking, creativity, precision, selectedPersonas, selectedSkills, multiPerspective,

@@ -79,10 +79,11 @@ export default function PromptPage() {
     truncateMessagesAt,
     setModule, setAreaId, restoreSession,
     setAudience, setChannel, setOutputLanguage, setMultiAgentEnabled,
+    setUploadedFileIds,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens } = useClaude();
-  const { files, upload, remove } = useFileUpload();
+  const { files, upload, remove, clear: clearAttachments } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
 
@@ -97,6 +98,23 @@ export default function PromptPage() {
   const [copied, setCopied] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Attachments reach the model only through the config store's
+  // uploadedFileIds — useFileUpload keeps its own list. ModulePage has
+  // mirrored the two since the beginning; this page never did, so "Ask about
+  // the attached document" answered without the document.
+  useEffect(() => {
+    setUploadedFileIds(files.filter((f) => f.status === 'done').map((f) => f.id));
+  }, [files, setUploadedFileIds]);
+
+  // Put the cursor back in the composer when an answer finishes — the next
+  // question should be one keystroke away, not a click.
+  const wasStreamingRef = useRef(false);
+  useEffect(() => {
+    if (wasStreamingRef.current && !isStreaming) composerRef.current?.focus();
+    wasStreamingRef.current = isStreaming;
+  }, [isStreaming]);
 
   // Prompt improvement state
   const [improveState, setImproveState] = useState<ImproveState>('idle');
@@ -233,12 +251,13 @@ export default function PromptPage() {
   // Start a new chat
   const handleNewChat = useCallback(() => {
     clearSession();
+    clearAttachments();
     setSystemPrompt(DEFAULT_SYSTEM_PROMPT);
     setSelectedPersonas(['general-assistant']);
     setModule('open-chat');
     setAreaId('');
     setUserInput('');
-  }, [clearSession, setSystemPrompt, setSelectedPersonas, setModule, setAreaId]);
+  }, [clearSession, clearAttachments, setSystemPrompt, setSelectedPersonas, setModule, setAreaId]);
 
   // Delete a session from history
   const handleDeleteHistory = useCallback(async (historySessionId: string) => {
@@ -253,11 +272,14 @@ export default function PromptPage() {
     }
   }, [sessionId, handleNewChat]);
 
-  const handleSend = () => {
-    if (userInput.trim() && !isStreaming) {
-      runMessage(userInput.trim());
-      setUserInput('');
-    }
+  const handleSend = async () => {
+    const text = userInput.trim();
+    if (!text || isStreaming) return;
+    setUserInput('');
+    const ok = await runMessage(text);
+    // The engine refused (busy, disabled, not signed in) — give the text back
+    // so a retry is one keystroke, unless they have already typed something new.
+    if (!ok) setUserInput((current) => current || text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -876,6 +898,7 @@ export default function PromptPage() {
           }}
         />
         <textarea
+          ref={composerRef}
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           onKeyDown={handleKeyDown}

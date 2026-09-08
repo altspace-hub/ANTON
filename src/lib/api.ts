@@ -291,6 +291,28 @@ export async function updateSessionTitle(sessionId: string, title: string): Prom
   });
 }
 
+/** Ask the server for a 5-8 word title from the first exchange — one small
+ *  background utility call, never a full module-run turn. Best-effort: null
+ *  when the engine is busy or the request fails; the 80-char title stays. */
+export async function generateSessionTitle(
+  sessionId: string,
+  userMessage: string,
+  responsePreview: string,
+): Promise<string | null> {
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/sessions/${sessionId}/title/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userMessage: userMessage.slice(0, 400), responsePreview: responsePreview.slice(0, 600) }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { title?: string | null };
+    return data.title ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function updateSessionNote(sessionId: string, note: string): Promise<void> {
   await fetchWithAuth(`${API_BASE}/sessions/${sessionId}`, {
     method: 'PATCH',

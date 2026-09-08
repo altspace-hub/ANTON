@@ -36,6 +36,8 @@ import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
 import { capabilityModelId } from '../services/engine-model-id.js';
+import { mapModelToProvider } from '../services/provider-router.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
@@ -216,6 +218,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             }
           }
         } catch { /* non-fatal — policy table may not exist on older DBs */ }
+      }
+
+      // A bare Claude id with no API key configured follows the configured
+      // engine — the rule every specialty route already gets from
+      // provider-router. A browser with no saved model sends the literal
+      // fallback id; on a subscription-only instance that must not end in
+      // "add ANTHROPIC_API_KEY to your .env".
+      if (policyModel.startsWith('claude-') && !isApiKeyConfigured()) {
+        policyModel = mapModelToProvider(policyModel);
       }
 
       // Determine provider and validate API key
@@ -2006,8 +2017,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
   router.post('/claude/verify-citations', async (req, res) => {
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      if (!hasClaudeEngine()) {
+        res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
         return;
       }
 

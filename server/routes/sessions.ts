@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { ilike } from '../db/dialect-helpers.js';
+import { callChat } from '../services/provider-router.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
+
+/** Neutral on purpose: the old browser-side prompt titled every chat as an
+ *  "FCP compliance consultation", whatever it was about. */
+const TITLE_SYSTEM_PROMPT =
+  'You write concise titles for saved work sessions. Given the user request and a preview of the answer, ' +
+  'output ONLY a 5-8 word title that captures the core topic. No quotes, no trailing punctuation, no explanation.';
 
 export async function createSessionRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -185,6 +193,53 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       res.json({ ...session as object, messages });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch session' });
+    }
+  });
+
+  // POST /api/sessions/:id/title/generate — a 5-8 word title from the first
+  // exchange. Used to be a full /claude/message turn from the browser: every
+  // knowledge layer assembled, an interactive engine slot taken at the moment
+  // the user is most likely to type a follow-up (the engine has two), and an
+  // FCP-flavoured prompt for every chat. Now one small utility call, marked
+  // background so it yields to interactive work. Best-effort: on failure the
+  // 80-character first-line title simply stays.
+  router.post('/sessions/:id/title/generate', async (req, res) => {
+    try {
+      const { userMessage, responsePreview } = req.body as { userMessage?: string; responsePreview?: string };
+      if (typeof userMessage !== 'string' || !userMessage.trim()) {
+        res.status(400).json({ error: 'userMessage is required' });
+        return;
+      }
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+      const owned = userRole === 'admin'
+        ? await db.get('SELECT id FROM sessions WHERE id = ?', req.params.id)
+        : await db.get('SELECT id FROM sessions WHERE id = ? AND user_id = ?', req.params.id, userId!);
+      if (!owned) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      const chat = await callChat({
+        model: await getRoutedUtilityModel(db),
+        system: TITLE_SYSTEM_PROMPT,
+        messages: [{
+          role: 'user',
+          content: `User request: "${userMessage.slice(0, 400)}"\nAnswer preview: "${String(responsePreview ?? '').slice(0, 600)}"`,
+        }],
+        maxTokens: 40,
+        background: true,
+        db,
+      });
+      const title = chat.text.trim().split('\n')[0].replace(/^["']|["']$/g, '').replace(/[.!?]$/, '').slice(0, 120);
+      if (title) {
+        await db.run('UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?', title, new Date().toISOString(), req.params.id);
+      }
+      res.json({ title: title || null });
+    } catch (error) {
+      // Best-effort by contract: the caller keeps the first-line title.
+      console.warn('[sessions] title generation failed:', error instanceof Error ? error.message : error);
+      res.json({ title: null });
     }
   });
 
