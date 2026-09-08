@@ -3,6 +3,7 @@ import { useSessionStore } from '@/stores/useSessionStore';
 import { useStreamStore } from '@/stores/useStreamStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useConfigStore } from '@/stores/useConfigStore';
 import { streamMessage, createSession, generateSessionTitle } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
 import type { Message, StreamEvent } from '@/lib/types';
@@ -126,6 +127,13 @@ export function useClaude() {
       // Track whether this is the very first message — used to trigger AI title generation
       const isFirstMessage = messages.length === 0;
 
+      // Open chat's expert lens, read at call time (the page sets it right
+      // before this call on the first turn — a captured value would be stale).
+      // With a lens, the request carries the module and area so the composer
+      // loads that module's prompt, area context and skills instead of the
+      // generic override; the session stays an open chat.
+      const lens = useConfigStore.getState().lens;
+
       // Add user message to local state immediately
       const userMsg: Message = {
         id: crypto.randomUUID(),
@@ -157,6 +165,7 @@ export function useClaude() {
               writingTone,
               audience: audience || undefined,
               outputLanguage: outputLanguage || undefined,
+              lens: lens ?? undefined,
             },
           });
           activeSessionId = session.id;
@@ -182,10 +191,11 @@ export function useClaude() {
             thinking: thinkingOverride ?? thinking,
             creativity,
             precision,
-            moduleId: moduleId || undefined,
-            areaId: areaId || undefined,
+            moduleId: lens ? lens.moduleId : (moduleId || undefined),
+            areaId: lens ? (lens.areaId || undefined) : (areaId || undefined),
             transparencyLevel,
-            systemPrompt,
+            // An empty override lets the composer load the lens module's own prompt.
+            systemPrompt: lens ? '' : systemPrompt,
             outputInstruction: outputInstruction || undefined,
             plainTextMode,
             multiAgentEnabled,

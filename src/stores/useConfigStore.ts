@@ -12,6 +12,19 @@ import type { ModelId, ThinkingLevel, CreativityLevel, PrecisionLevel, Knowledge
 import { getStoredDefaultModel, getStoredDefaultThinking, getStoredDefaultCreativity } from '@/stores/useSettingsStore';
 import type { StructureReference } from './useSessionStore';
 
+/**
+ * Open chat's expert lens: the catalogue module the router picked (or the
+ * user chose) whose system prompt, area context and auto-attached skills
+ * shape the answer. The session itself stays an open chat — one box, 560
+ * experts behind it.
+ */
+export interface OpenChatLens {
+  moduleId: string;
+  areaId: string;
+  label: string;
+  reason?: string;
+}
+
 const defaultKnowledgeSources: KnowledgeSourceConfig = {
   modes: {
     claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
@@ -53,6 +66,7 @@ interface ConfigState {
   channel: string;
   outputLanguage: string;
   seed: number | undefined;
+  lens: OpenChatLens | null;
 
   // Setters
   setModel: (model: ModelId) => void;
@@ -86,6 +100,7 @@ interface ConfigState {
   setChannel: (v: string) => void;
   setOutputLanguage: (v: string) => void;
   setSeed: (seed: number | undefined) => void;
+  setLens: (lens: OpenChatLens | null) => void;
   resetConfig: () => void;
 }
 
@@ -121,6 +136,7 @@ const configDefaults = {
   channel: '',
   outputLanguage: 'en',
   seed: undefined as number | undefined,
+  lens: null as OpenChatLens | null,
 };
 
 export const useConfigStore = create<ConfigState>((set) => ({
@@ -157,5 +173,6 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setChannel: (v) => set({ channel: v }),
   setOutputLanguage: (v) => set({ outputLanguage: v }),
   setSeed: (seed) => set({ seed }),
+  setLens: (lens) => set({ lens }),
   resetConfig: () => set({ ...configDefaults }),
 }));

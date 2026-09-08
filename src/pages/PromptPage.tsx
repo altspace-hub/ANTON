@@ -2,7 +2,9 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useClaude } from '@/hooks/useClaude';
 import { useSessionStore } from '@/stores/useSessionStore';
-import { streamMessage, fetchSessions, fetchSession, deleteSession } from '@/lib/api';
+import { useConfigStore, type OpenChatLens } from '@/stores/useConfigStore';
+import { streamMessage, fetchSessions, fetchSession, deleteSession, suggestModuleLens } from '@/lib/api';
+import LensChip from '@/components/shared/LensChip';
 import type { KnowledgeSourceConfig, ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -95,6 +97,11 @@ export default function PromptPage() {
 
   const [userInput, setUserInput] = useState('');
   const [showConfig, setShowConfig] = useState(false);
+  // The expert lens — the catalogue module answering this chat.
+  const lens = useConfigStore((s) => s.lens);
+  const setLens = useConfigStore((s) => s.setLens);
+  const [lensBusy, setLensBusy] = useState(false);
+  const [lensDeclined, setLensDeclined] = useState(false);
   const [copied, setCopied] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -207,6 +214,10 @@ export default function PromptPage() {
         );
         if (Array.isArray(cfg.selectedSkills)) setSelectedSkills(cfg.selectedSkills as string[]);
         if (cfg.model) setModel(cfg.model as ModelId);
+        // The lens the conversation was held under, so a follow-up keeps its expert.
+        const savedLens = cfg.lens as OpenChatLens | undefined;
+        setLens(savedLens && typeof savedLens.moduleId === 'string' ? savedLens : null);
+        setLensDeclined(false);
         if (cfg.thinking) setThinking(cfg.thinking as ThinkingLevel);
         if (cfg.creativity) setCreativity(cfg.creativity as CreativityLevel);
         if (cfg.transparencyLevel !== undefined) setTransparencyLevel(cfg.transparencyLevel as 0 | 1 | 2);
@@ -252,6 +263,7 @@ export default function PromptPage() {
   const handleNewChat = useCallback(() => {
     clearSession();
     clearAttachments();
+    setLensDeclined(false);
     setSystemPrompt(DEFAULT_SYSTEM_PROMPT);
     setSelectedPersonas(['general-assistant']);
     setModule('open-chat');
@@ -274,8 +286,27 @@ export default function PromptPage() {
 
   const handleSend = async () => {
     const text = userInput.trim();
-    if (!text || isStreaming) return;
+    if (!text || isStreaming || lensBusy) return;
     setUserInput('');
+    // First turn with no lens chosen: let the router pick the expert lens
+    // BEFORE the answer, so that module's prompt shapes it. Bounded — a slow
+    // or busy engine must not hold the question hostage.
+    if (messages.length === 0 && !lens && !lensDeclined) {
+      setLensBusy(true);
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 8000);
+      try {
+        const top = (await suggestModuleLens(text, ac.signal))[0];
+        if (top && top.moduleId !== 'open-chat') {
+          setLens({ moduleId: top.moduleId, areaId: top.areaId, label: top.label, reason: top.reason });
+        }
+      } catch {
+        // no lens this time — the generic prompt answers
+      } finally {
+        clearTimeout(timer);
+        setLensBusy(false);
+      }
+    }
     const ok = await runMessage(text);
     // The engine refused (busy, disabled, not signed in) — give the text back
     // so a retry is one keystroke, unless they have already typed something new.
@@ -882,6 +913,15 @@ export default function PromptPage() {
           ))}
         </div>
       )}
+
+      {/* Expert lens — which catalogue module is answering */}
+      <LensChip
+        lens={lens}
+        busy={lensBusy}
+        disabled={isStreaming}
+        onPick={(picked) => { setLens(picked); setLensDeclined(false); }}
+        onClear={() => { setLens(null); setLensDeclined(true); }}
+      />
 
       {/* Input area */}
       <div className={`${files.length > 0 ? 'mt-1.5' : 'mt-3'} flex gap-2`}>
