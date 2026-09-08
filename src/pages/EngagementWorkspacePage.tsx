@@ -50,6 +50,8 @@ export interface EngagementData {
   deliverables: Deliverable[];
   boundaries: Boundary[];
   client_intelligence: ClientIntelligence | null;
+  /** Wave 2: the model-led intake conversation (JSON array of turns). */
+  intake_conversation?: string | null;
   iterations: Iteration[];
   stakeholders: Stakeholder[];
   peer_benchmarks: PeerBenchmark[];
@@ -132,6 +134,8 @@ export interface ClientIntelligence {
   engagement_trigger: string | null;
   client_maturity_signal: string | null;
   sensitivities: string | null;
+  /** 0/1 — whether ANTON may research the client online during intake. */
+  online_research_authorised?: number | null;
 }
 
 export interface Iteration {

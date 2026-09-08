@@ -10,6 +10,7 @@ import {
   AlertTriangle, FileText, Target, List, Shield
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import EngagementIntakeChat from './EngagementIntakeChat';
 import type { EngagementData, ScopeItem, Deliverable, Boundary } from '@/pages/EngagementWorkspacePage';
 
 interface Props {
@@ -78,6 +79,14 @@ export default function EngagementScopeAgreement({ engagement, onUpdate, onNext,
           Review what was extracted from the engagement letter. Add, edit, or remove items. This confirmed scope becomes the reference point for everything that follows.
         </p>
       </div>
+
+      {/* Wave 2 (2026-09-08): the model-led intake — ANTON asks where the scope is thin. */}
+      <EngagementIntakeChat
+        engagementId={engagement.id}
+        conversation={engagement.intake_conversation}
+        onApplied={onReload}
+        researchAllowed={Boolean(engagement.client_intelligence?.online_research_authorised)}
+      />
 
       {/* Tabs */}
       <div className="flex border-b border-border gap-1">

@@ -763,6 +763,210 @@ Return ONLY valid JSON, no explanation.`;
     }
   });
 
+  // ── Intake conversation (Wave 2, 2026-09-08) ────────────────────────────────
+  // POST /api/engagements/:id/intake/turn — ANTON interviews the consultant
+  // for Scope and Client Intelligence instead of presenting a 7-item
+  // checklist and a 16-field form, which is where every March engagement on
+  // this instance stalled. It reads the extracted letter and what is already
+  // known, asks the two or three most valuable questions, and writes the
+  // answers it has confirmed — carried in a trailing <intake_update> block —
+  // into the client-intelligence row, scope items and boundaries: the same
+  // rows the forms edit. With online_research_authorised set, the engine may
+  // search the web for the client. The conversation lives on the engagement.
+  router.post('/:id/intake/turn', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    try {
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', engagementId) as Record<string, unknown> | undefined;
+      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+
+      const message = typeof req.body?.message === 'string' ? req.body.message.trim().slice(0, 4000) : '';
+      const parseArr = (v: unknown): unknown[] => { try { const p = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(p) ? p : []; } catch { return []; } };
+      const conversation = (parseArr(engagement.intake_conversation) as Array<{ role: 'user' | 'assistant'; content: string }>)
+        .filter((t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string');
+      if (message) conversation.push({ role: 'user', content: message });
+
+      const [scopeItems, boundaries, deliverables, workstreams, intel, letterDoc] = await Promise.all([
+        db.all("SELECT title, description, category, status FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed' ORDER BY sort_order LIMIT 100", engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.all('SELECT boundary_type, description FROM engagement_boundaries WHERE engagement_id = ? LIMIT 100', engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.all('SELECT title, format, description FROM engagement_deliverables WHERE engagement_id = ? LIMIT 50', engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.all('SELECT title, description FROM engagement_workstreams WHERE engagement_id = ? ORDER BY sort_order LIMIT 50', engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', engagementId) as Promise<Record<string, unknown> | undefined>,
+        db.get(`SELECT extracted_content FROM engagement_documents WHERE engagement_id = ? AND document_type IN ('engagement_letter', 'project_plan') AND extracted_content IS NOT NULL AND extracted_content <> '' ORDER BY CASE WHEN document_type = 'engagement_letter' THEN 0 ELSE 1 END, uploaded_at DESC LIMIT 1`, engagementId) as Promise<{ extracted_content: string } | undefined>,
+      ]);
+
+      const skip = new Set(['id', 'engagement_id', 'created_at', 'updated_at']);
+      const emptyish = new Set(['', '[]', '{}', 'null']);
+      const known = Object.entries(intel ?? {})
+        .filter(([k, v]) => !skip.has(k) && v !== null && v !== undefined && !emptyish.has(String(v).trim()))
+        .map(([k, v]) => `- ${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
+      const unknownFields = ['client_name', 'division_department', 'region_jurisdiction', 'products_in_scope', 'regulatory_supervisors', 'recent_regulatory_history', 'business_model_description', 'organisational_context', 'engagement_trigger', 'client_maturity_signal', 'sensitivities', 'peer_comparators', 'scale_indicators', 'technology_landscape']
+        .filter((k) => !known.some((line) => line.startsWith(`- ${k}:`)));
+      const researchAllowed = Number(intel?.online_research_authorised ?? 0) === 1;
+      const briefText = typeof engagement.engagement_brief === 'string' ? engagement.engagement_brief : JSON.stringify(engagement.engagement_brief ?? {});
+
+      const systemPrompt = `You are ANTON, a senior consultant running client intake for a professional engagement. You interview the consultant who owns the engagement so that the scope and the client profile are complete before any work starts. Ask, do not lecture.
+
+ENGAGEMENT: ${String(engagement.title ?? '')} (${String(engagement.engagement_type ?? 'full')})
+YOUR ORGANISATION: ${String(engagement.your_organisation ?? 'not stated')}
+CLIENT: ${String(engagement.client_name ?? 'not stated')}
+
+ENGAGEMENT LETTER (extracted; may be partial):
+${letterDoc?.extracted_content ? letterDoc.extracted_content.slice(0, 8000) : '(no letter extracted)'}
+
+EXTRACTION SUMMARY: ${briefText.slice(0, 3000)}
+
+CURRENT SCOPE ITEMS (${scopeItems.length}):
+${scopeItems.map((s) => `- [${String(s.status)}] ${String(s.title)}${s.description ? ` — ${String(s.description).slice(0, 200)}` : ''}`).join('\n') || '- none yet'}
+DELIVERABLES: ${deliverables.map((d) => String(d.title)).join('; ') || 'none yet'}
+WORKSTREAMS: ${workstreams.map((w) => String(w.title)).join('; ') || 'none yet'}
+BOUNDARIES: ${boundaries.map((b) => `${String(b.boundary_type)}: ${String(b.description)}`).join('; ') || 'none yet'}
+
+CLIENT INTELLIGENCE — known:
+${known.join('\n') || '- nothing recorded yet'}
+CLIENT INTELLIGENCE — still unknown: ${unknownFields.join(', ') || 'nothing'}
+${researchAllowed ? '\nOnline research is AUTHORISED for this client: use the web_search tool to look up supervisors, recent enforcement or regulatory history, products and scale before asking the consultant, and say what you found and where.' : '\nOnline research is NOT authorised: do not search; ask the consultant.'}
+
+HOW TO RUN THE INTAKE
+- Each turn: first confirm what you have learned (one or two lines), then ask the 2-3 most valuable remaining questions — about the scope where it is thin or ambiguous, and about the unknown client-intelligence fields that change how the work should be done (supervisors, engagement trigger, products in scope, sensitivities, maturity signal). Never ask for what is already known or what the letter answers.
+- Propose answers you can infer from the letter (mark them as proposals) so the consultant only has to confirm.
+- When the consultant confirms or provides facts, record them. Keep the conversation short; three to five turns should complete a typical intake.
+- End every reply with exactly one machine-readable block, even when nothing new was confirmed:
+<intake_update>
+{"client_intelligence": {"<field>": <value>}, "scope_items": [{"title": "", "description": "", "category": ""}], "boundaries": [{"type": "assumption|exclusion", "description": ""}], "done": false}
+</intake_update>
+  Only include values the consultant has confirmed or explicitly asked you to record — never proposals. Field names: client_name, division_department, region_jurisdiction, business_model_description, organisational_context, engagement_trigger, client_maturity_signal, sensitivities (strings); products_in_scope, regulatory_supervisors, recent_regulatory_history, peer_comparators (arrays of strings); scale_indicators, technology_landscape (objects). Set "done": true when scope and client profile are complete enough to start work.`;
+
+      const model = mapModelToProvider(resolveEngagementModelChoice(
+        engagement.exec_model as string | null | undefined,
+        'think',
+        getEffectiveDefaultModel() ?? null,
+      ));
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      const messages = conversation.length > 0
+        ? conversation.map((t) => ({ role: t.role, content: t.content }))
+        : [{ role: 'user', content: 'Start the intake. Confirm what the letter already tells you, then ask your first questions.' }];
+
+      let text = '';
+      try {
+        const result = await streamChat({
+          model,
+          system: systemPrompt,
+          messages,
+          maxTokens: 4000,
+          thinkingLevel: 'think',
+          tools: researchAllowed ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined,
+        }, res);
+        text = result.text;
+      } catch (err) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+        return;
+      }
+
+      // Apply the confirmed values.
+      const applied = { client_intelligence: 0, scope_items: 0, boundaries: 0, done: false };
+      const block = text.match(/<intake_update>([\s\S]*?)<\/intake_update>/i);
+      if (block) {
+        try {
+          const upd = JSON.parse(block[1].trim()) as {
+            client_intelligence?: Record<string, unknown>;
+            scope_items?: Array<{ title?: string; description?: string; category?: string }>;
+            boundaries?: Array<{ type?: string; description?: string }>;
+            done?: boolean;
+          };
+          applied.done = upd.done === true;
+
+          // Client intelligence: merge the confirmed fields into the row.
+          const STRING_FIELDS = ['client_name', 'division_department', 'region_jurisdiction', 'business_model_description', 'organisational_context', 'engagement_trigger', 'client_maturity_signal', 'sensitivities'];
+          const ARRAY_FIELDS = ['products_in_scope', 'regulatory_supervisors', 'recent_regulatory_history', 'peer_comparators', 'source_channels'];
+          const OBJECT_FIELDS = ['scale_indicators', 'technology_landscape'];
+          const ci = upd.client_intelligence && typeof upd.client_intelligence === 'object' ? upd.client_intelligence : {};
+          const sets: string[] = [];
+          const vals: unknown[] = [];
+          const current = intel ?? {};
+          for (const k of STRING_FIELDS) {
+            const v = ci[k];
+            if (typeof v === 'string' && v.trim()) { sets.push(`${k} = ?`); vals.push(v.trim().slice(0, 2000)); applied.client_intelligence += 1; }
+          }
+          for (const k of ARRAY_FIELDS) {
+            const v = ci[k];
+            if (Array.isArray(v) && v.length) {
+              const existingArr = parseArr(current[k]).map(String);
+              const merged = [...new Set([...existingArr, ...v.map(String).map((s) => s.trim()).filter(Boolean)])].slice(0, 50);
+              sets.push(`${k} = ?`); vals.push(JSON.stringify(merged)); applied.client_intelligence += 1;
+            }
+          }
+          for (const k of OBJECT_FIELDS) {
+            const v = ci[k];
+            if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length) {
+              let existingObj: Record<string, unknown> = {};
+              try { const p = typeof current[k] === 'string' ? JSON.parse(String(current[k])) : current[k]; if (p && typeof p === 'object') existingObj = p as Record<string, unknown>; } catch { /* fresh */ }
+              sets.push(`${k} = ?`); vals.push(JSON.stringify({ ...existingObj, ...(v as Record<string, unknown>) })); applied.client_intelligence += 1;
+            }
+          }
+          if (sets.length > 0) {
+            if (intel) {
+              await db.run(`UPDATE engagement_client_intelligence SET ${sets.join(', ')}, updated_at = NOW() WHERE engagement_id = ?`, ...vals, engagementId);
+            } else {
+              const clientName = typeof ci.client_name === 'string' && ci.client_name.trim() ? ci.client_name.trim() : String(engagement.client_name ?? 'Client');
+              await db.run('INSERT INTO engagement_client_intelligence (id, engagement_id, client_name, source_channels) VALUES (?, ?, ?, ?)', randomUUID(), engagementId, clientName, JSON.stringify(['intake_conversation']));
+              await db.run(`UPDATE engagement_client_intelligence SET ${sets.join(', ')}, updated_at = NOW() WHERE engagement_id = ?`, ...vals, engagementId);
+            }
+          }
+
+          // Scope items: add what is new by title.
+          const haveTitles = new Set(scopeItems.map((s) => String(s.title).trim().toLowerCase()));
+          for (const item of Array.isArray(upd.scope_items) ? upd.scope_items : []) {
+            const title = typeof item?.title === 'string' ? item.title.trim().slice(0, 300) : '';
+            if (!title || haveTitles.has(title.toLowerCase())) continue;
+            await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
+              VALUES (?, ?, ?, ?, ?, '[]', ?, 'confirmed', ?)`,
+              randomUUID(), engagementId, title, typeof item.description === 'string' ? item.description.slice(0, 2000) : null,
+              typeof item.category === 'string' && item.category ? item.category.slice(0, 100) : 'analysis', scopeItems.length + applied.scope_items, 'Confirmed in intake conversation');
+            haveTitles.add(title.toLowerCase());
+            applied.scope_items += 1;
+          }
+
+          // Boundaries: assumptions and exclusions the consultant confirmed.
+          const haveBoundaries = new Set(boundaries.map((b) => `${String(b.boundary_type)}::${String(b.description).trim().toLowerCase()}`));
+          for (const b of Array.isArray(upd.boundaries) ? upd.boundaries : []) {
+            const type = b?.type === 'exclusion' ? 'exclusion' : b?.type === 'assumption' ? 'assumption' : null;
+            const desc = typeof b?.description === 'string' ? b.description.trim().slice(0, 1000) : '';
+            if (!type || !desc || haveBoundaries.has(`${type}::${desc.toLowerCase()}`)) continue;
+            await db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source) VALUES (?, ?, ?, ?, 'intake')`, randomUUID(), engagementId, type, desc);
+            haveBoundaries.add(`${type}::${desc.toLowerCase()}`);
+            applied.boundaries += 1;
+          }
+        } catch (err) {
+          console.warn('[engagements] intake update block unreadable:', err instanceof Error ? err.message : err);
+        }
+      }
+
+      const visible = text.replace(/<intake_update>[\s\S]*?<\/intake_update>/i, '').trim();
+      conversation.push({ role: 'assistant', content: visible });
+      await db.run('UPDATE engagements SET intake_conversation = ?, updated_at = NOW() WHERE id = ?', JSON.stringify(conversation.slice(-40)), engagementId);
+      if (applied.client_intelligence || applied.scope_items || applied.boundaries) {
+        logChange(engagementId, 'client_intelligence', 'intake_applied', `Intake conversation recorded ${applied.client_intelligence} client field(s), ${applied.scope_items} scope item(s), ${applied.boundaries} boundary(ies)`);
+      }
+      res.write(`data: ${JSON.stringify({ type: 'intake_update', applied })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    } catch (e) {
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(e) });
+      }
+    }
+  });
+
   // ── Workstreams ─────────────────────────────────────────────────────────────
 
   router.post('/:id/workstreams', async (req: Request, res: Response) => {
