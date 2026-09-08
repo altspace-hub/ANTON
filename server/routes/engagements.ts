@@ -236,7 +236,8 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   router.patch('/:id', async (req: Request, res: Response) => {
     try {
       const { status, your_organisation, client_name, domain_areas, engagement_brief, quality_blueprint,
-        thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title, exec_model } = req.body;
+        thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title, exec_model,
+        workstream_plan_confirmed, enable_as_benchmark } = req.body;
       const existing = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!existing) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
@@ -259,6 +260,11 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       if (review_modes !== undefined) { updates.push('review_modes = ?'); values.push(JSON.stringify(review_modes)); }
       if (knowledge_config !== undefined) { updates.push('knowledge_config = ?'); values.push(JSON.stringify(knowledge_config)); }
       if (scope_confirmed_at !== undefined) { updates.push('scope_confirmed_at = ?'); values.push(scope_confirmed_at); }
+      // Both were sent by the workspace and silently dropped here: "Confirm
+      // Plan" looked successful with the flag stuck at 0, and the peer library
+      // (WHERE enable_as_benchmark = 1) could never have a source.
+      if (workstream_plan_confirmed !== undefined) { updates.push('workstream_plan_confirmed = ?'); values.push(workstream_plan_confirmed ? 1 : 0); }
+      if (enable_as_benchmark !== undefined) { updates.push('enable_as_benchmark = ?'); values.push(enable_as_benchmark ? 1 : 0); }
       values.push(String(req.params.id));
       await db.run(`UPDATE engagements SET ${updates.join(', ')} WHERE id = ?`, ...values);
       if (status && status !== existing.status) {
@@ -445,8 +451,14 @@ Return ONLY valid JSON, no explanation.`;
           const jsonMatch = rawText.match(/\{[\s\S]*\}/);
           extracted = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
         } catch { extracted = {}; }
-        // Save extraction results
-        await db.run(`UPDATE engagement_documents SET extracted_content = ?, extraction_summary = ? WHERE id = ?`, fileContent.slice(0, 50000), JSON.stringify(extracted), String(req.params.docId));
+        // Keep the extracted text now (the lenses and execution read it) but
+        // hold the extraction summary — the Setup card's "Extracted" badge —
+        // until the scope/workstream/deliverable rows are actually in. On
+        // this instance two letters carried a full summary while
+        // engagement_scope_items had zero rows: the summary was written
+        // first and the inserts never landed, so the user reached an empty
+        // Scope page with a green badge behind them.
+        await db.run(`UPDATE engagement_documents SET extracted_content = ? WHERE id = ?`, fileContent.slice(0, 50000), String(req.params.docId));
         // For engagement_letter/project_plan: auto-populate scope items, workstreams, deliverables, boundaries
         if ((doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') && extracted && typeof extracted === 'object') {
           const ex = extracted as Record<string, unknown>;
@@ -525,10 +537,19 @@ Return ONLY valid JSON, no explanation.`;
         if (doc.document_type === 'good_example') {
           await db.run("UPDATE engagements SET quality_blueprint = ?, updated_at = NOW() WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
         }
+        // A letter that yielded no scope is not "extracted": say so now, on
+        // the Setup card, instead of two phases later on an empty Scope page.
+        if (doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') {
+          const scopeCount = Number(((await db.get('SELECT COUNT(*) AS c FROM engagement_scope_items WHERE engagement_id = ?', String(req.params.id))) as { c: number | string } | undefined)?.c ?? 0);
+          if (scopeCount === 0) {
+            return res.status(422).json({ error: 'ANTON could not read any scope items from this document. Add the scope manually on the next step, or upload a clearer copy and extract again.' });
+          }
+        }
+        await db.run(`UPDATE engagement_documents SET extraction_summary = ? WHERE id = ?`, JSON.stringify(extracted), String(req.params.docId));
         logChange(String(req.params.id), 'setup', 'document_extracted', `Extracted ${doc.document_type}: ${doc.file_name}`);
         res.json({ ok: true, extracted });
       } catch (claudeErr) {
-        res.status(500).json({ error: `Claude extraction failed: ${String(claudeErr)}` });
+        res.status(500).json({ error: `Extraction failed: ${safeError(claudeErr)}` });
       }
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
@@ -772,6 +793,28 @@ Return ONLY valid JSON, no explanation.`;
       if (timeline_end !== undefined) { updates.push('timeline_end = ?'); values.push(timeline_end); }
       if (updates.length) { values.push(String(req.params.wsId)); await db.run(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ?`, ...values); }
       res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', String(req.params.wsId)));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
+  // The planning page has always had a delete button that called this route;
+  // the route did not exist, so the click 404'd and the row came back on reload.
+  router.delete('/:id/workstreams/:wsId', async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+      if (!await canEdit(db, String(req.params.id), userId, userRole))
+        return res.status(403).json({ error: 'Access denied' });
+      const engagementId = String(req.params.id);
+      const wsId = String(req.params.wsId);
+      // Detach before delete — scope items and resources may point at the workstream.
+      await db.run('UPDATE engagement_scope_items SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
+      await db.run('UPDATE engagement_resources SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
+      const result = await db.run('DELETE FROM engagement_workstreams WHERE id = ? AND engagement_id = ?', wsId, engagementId);
+      if (!result.changes) return res.status(404).json({ error: 'Workstream not found' });
+      logChange(engagementId, 'workstream_planning', 'workstream_removed', `Removed workstream ${wsId}`);
+      res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }
@@ -1062,28 +1105,49 @@ Format your output as professional consulting deliverables. Use clear headings, 
       if (lens === 'scope') {
         lensInstruction = 'Analyse the draft output purely against the agreed engagement scope. Identify gaps where scope items are not adequately addressed, areas with insufficient depth, and topics mentioned in scope that are missing from the output.';
       } else if (lens === 'engagement_letter') {
-        const letterResource = resources.find(r => String(r.category || '').toLowerCase().includes('letter') || String(r.title || '').toLowerCase().includes('engagement letter'));
-        if (letterResource && letterResource.extracted_content) {
-          referenceContext = `\n\nENGAGEMENT LETTER (reference):\n${String(letterResource.extracted_content).slice(0, 6000)}`;
-        } else {
-          // Fall back to stored letter_content on engagement
-          const letterContent = String(engagement?.letter_content || '');
-          if (letterContent) referenceContext = `\n\nENGAGEMENT LETTER:\n${letterContent.slice(0, 6000)}`;
+        // The letter lives on engagement_documents (extracted at Setup), not on
+        // engagement_resources — and engagements has no letter_content column.
+        // The old lookups found nothing and the lens confidently reviewed the
+        // draft against an empty reference. A lens with no reference refuses.
+        const letterDoc = await db.get(
+          `SELECT extracted_content FROM engagement_documents
+             WHERE engagement_id = ? AND document_type IN ('engagement_letter', 'project_plan')
+               AND extracted_content IS NOT NULL AND extracted_content <> ''
+             ORDER BY CASE WHEN document_type = 'engagement_letter' THEN 0 ELSE 1 END, uploaded_at DESC
+             LIMIT 1`,
+          String(req.params.id),
+        ) as { extracted_content: string } | undefined;
+        if (!letterDoc) {
+          return res.status(400).json({ error: 'No engagement letter has been extracted for this engagement — upload and extract it in Setup before using this lens.' });
         }
+        referenceContext = `\n\nENGAGEMENT LETTER (reference):\n${letterDoc.extracted_content.slice(0, 6000)}`;
         lensInstruction = 'Compare the draft output against the original engagement letter. Identify: commitments made in the letter not yet delivered, scope agreed in the letter but missing from output, tone/format mismatches, and client expectations set in the letter that are unmet.';
       } else if (lens === 'quality_blueprint') {
-        const blueprintResource = resources.find(r => String(r.category || '').toLowerCase().includes('blueprint') || String(r.title || '').toLowerCase().includes('blueprint'));
-        if (blueprintResource && blueprintResource.extracted_content) {
-          referenceContext = `\n\nQUALITY BLUEPRINT:\n${String(blueprintResource.extracted_content).slice(0, 6000)}`;
+        // The blueprint is the extraction of the good-example document,
+        // stored on the engagement row — never an engagement_resources entry.
+        const rawBlueprint = engagement?.quality_blueprint;
+        const blueprintText = typeof rawBlueprint === 'string' ? rawBlueprint : rawBlueprint ? JSON.stringify(rawBlueprint, null, 1) : '';
+        if (!blueprintText.trim() || blueprintText.trim() === '{}') {
+          return res.status(400).json({ error: 'No quality blueprint yet — upload and extract a good-example document in Setup before using this lens.' });
         }
+        referenceContext = `\n\nQUALITY BLUEPRINT:\n${blueprintText.slice(0, 6000)}`;
         lensInstruction = 'Assess the draft output against the quality blueprint standards. Identify gaps in structure, missing mandatory sections, quality criteria not met, areas below the expected standard of evidence, and recommendations lacking implementation specificity.';
       } else if (lens === 'regulatory') {
         lensInstruction = 'Review the draft output through a regulatory scrutiny lens. Identify gaps in regulatory citations, areas where the analysis might not withstand regulatory challenge, missing references to applicable regulations/guidelines, and conclusions that need stronger regulatory grounding.';
       } else if (lens === 'client') {
-        const clientIntelResource = resources.find(r => String(r.category || '').toLowerCase().includes('client') || String(r.category || '').toLowerCase().includes('intel'));
-        if (clientIntelResource && clientIntelResource.extracted_content) {
-          referenceContext = `\n\nCLIENT INTELLIGENCE:\n${String(clientIntelResource.extracted_content).slice(0, 4000)}`;
+        // The client profile is the engagement_client_intelligence row the
+        // user filled in during Phase 2a — all of it, not the five fields
+        // execution quotes.
+        const intel = await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
+        const skip = new Set(['id', 'engagement_id', 'created_at', 'updated_at']);
+        const empty = new Set(['', '[]', '{}', '0', 'null']);
+        const clientLines = Object.entries(intel ?? {})
+          .filter(([k, v]) => !skip.has(k) && v !== null && v !== undefined && !empty.has(String(v).trim()))
+          .map(([k, v]) => `- ${k.replace(/_/g, ' ')}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
+        if (clientLines.length === 0) {
+          return res.status(400).json({ error: 'No client intelligence recorded yet — fill in the Client Intelligence phase before using this lens.' });
         }
+        referenceContext = `\n\nCLIENT INTELLIGENCE:\n${clientLines.join('\n').slice(0, 4000)}`;
         lensInstruction = 'Analyse the draft output from the client\'s perspective. Identify: client-specific context that should be incorporated but is missing, generic statements that should be tailored to the client, areas where client pain points are not addressed, and recommendations that may be impractical for this specific client.';
       } else if (lens === 'red_team') {
         lensInstruction = 'Challenge the draft output as a critical reviewer or opposing counsel. Identify: assumptions that are not sufficiently justified, conclusions that could be disputed, evidence gaps that weaken key arguments, alternative interpretations not considered, and risks that are underplayed or omitted.';
@@ -1425,7 +1489,9 @@ Return ONLY valid JSON.`,
       // Get the iteration to review (latest approved or specified)
       const iteration = iteration_id
         ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
-        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
+        // The approved iteration is the one to review; a later draft must not
+        // silently displace it just because its number is higher.
+        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY CASE WHEN status = 'approved' THEN 0 ELSE 1 END, iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
       if (!iteration) return res.status(400).json({ error: 'No iteration found to review' });
 
@@ -1594,7 +1660,9 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       // Get iteration content
       const iteration = iteration_id
         ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
-        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
+        // The approved iteration is the one to review; a later draft must not
+        // silently displace it just because its number is higher.
+        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY CASE WHEN status = 'approved' THEN 0 ELSE 1 END, iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
       if (!iteration || !iteration.output_content) return res.status(400).json({ error: 'No iteration content to export' });
 

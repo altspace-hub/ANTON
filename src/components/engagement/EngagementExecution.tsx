@@ -84,10 +84,16 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
           if (!line.startsWith('data: ')) continue;
           try {
             const event = JSON.parse(line.slice(6));
-            if (event.type === 'text') setStreamedText(prev => prev + event.text);
-            if (event.type === 'thinking_delta') setStreamedThinking(prev => prev + event.content);
+            // The route streams through provider-router, whose frames are
+            // { type: 'text_delta', content } — the same shape every other
+            // streaming page parses. This component kept the pre-router
+            // { type: 'text', text } contract after the route moved, so the
+            // deliverable was written and saved but never shown.
+            if (event.type === 'text_delta') setStreamedText(prev => prev + String(event.content ?? ''));
+            else if (event.type === 'text') setStreamedText(prev => prev + String(event.text ?? ''));
+            if (event.type === 'thinking_delta') setStreamedThinking(prev => prev + String(event.content ?? ''));
             if (event.type === 'done') { setDone(true); onReload(); }
-            if (event.type === 'error') setError(event.error);
+            if (event.type === 'error') setError(String(event.error ?? event.message ?? 'Execution failed'));
           } catch { /**/ }
         }
       }
