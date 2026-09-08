@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import type { StreamEvent, Message } from '@/lib/types';
+import type { StreamEvent, Message, ContextUsed } from '@/lib/types';
 
 // ── Flush buffer (PERF-05) ────────────────────────────────────
 let _textBuf = '';
@@ -22,6 +22,8 @@ interface StreamState {
   isStreaming: boolean;
   isAssemblingContext: boolean;
   lastSourcesUsed: string[];
+  /** Wave 2: what the last answer's prompt actually held (documents, project, lens, layers). */
+  lastContextUsed: ContextUsed | null;
   streamingText: string;
   streamingThinking: string;
   abortController: AbortController | null;
@@ -60,6 +62,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   isStreaming: false,
   isAssemblingContext: false,
   lastSourcesUsed: [],
+  lastContextUsed: null,
   streamingText: '',
   streamingThinking: '',
   abortController: null,
@@ -139,6 +142,9 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         break;
       case 'context_assembly_complete':
         set({ isAssemblingContext: false });
+        break;
+      case 'context_used':
+        set({ lastContextUsed: event.context });
         break;
       case 'thinking_delta':
         _thinkBuf += event.content;

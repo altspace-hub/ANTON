@@ -437,6 +437,37 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           return ok;
         });
 
+      // Project (matter) documents (Wave 2, 2026-09-08): a session inside a
+      // project reads the project's files as if they were attached to the
+      // turn — the project is the container, so its documents ride along.
+      // Newest ten, images excluded, budgeted by the resolver like uploads.
+      let projectRow: { id: string; name: string } | null = null;
+      const projectFileLabels: Record<string, string> = {};
+      const projectDocumentPaths: string[] = [];
+      if (sessionId) {
+        try {
+          projectRow = (await db.get(
+            'SELECT p.id, p.name FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
+            String(sessionId),
+          ) as { id: string; name: string } | undefined) ?? null;
+          if (projectRow) {
+            const rows = await db.all(
+              'SELECT file_path, original_name, extension FROM project_files WHERE project_id = ? ORDER BY created_at DESC LIMIT 10',
+              projectRow.id,
+            ) as Array<{ file_path: string; original_name: string; extension: string | null }>;
+            for (const f of rows) {
+              const ext = String(f.extension || path.extname(f.original_name)).toLowerCase();
+              if (IMAGE_EXTENSIONS_SERVER.has(ext)) continue;
+              const resolvedPath = path.resolve(f.file_path);
+              if (uploadedFilePaths.includes(resolvedPath) || projectDocumentPaths.includes(resolvedPath)) continue;
+              projectDocumentPaths.push(resolvedPath);
+              projectFileLabels[resolvedPath] = `${f.original_name} (project: ${projectRow.name})`;
+            }
+          }
+        } catch { /* non-fatal — project documents are enrichment */ }
+      }
+      const allDocumentPaths = [...uploadedFilePaths, ...projectDocumentPaths];
+
       // Capability-aware knowledge budget (plan 2.15): derived from the
       // session model's real context window — 800k for 1M-context Claude
       // (unchanged), ~104k for Mistral Large, the trained window for
@@ -457,7 +488,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Set SSE headers early so we can stream progress before the Claude API call starts.
       const hasLocalFolders = !!(knowledgeSources as any)?.modes?.localFolder?.enabled &&
         ((knowledgeSources as any)?.modes?.localFolder?.folderPaths?.length ?? 0) > 0;
-      const hasUploadedFiles = uploadedFilePaths.length > 0 || imageFileIds.length > 0;
+      const hasUploadedFiles = allDocumentPaths.length > 0 || imageFileIds.length > 0;
       const needsEarlySSE = hasLocalFolders || hasUploadedFiles;
 
       const sendProgress = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -474,7 +505,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
       const resolved: ResolvedKnowledge = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths, { contextBudget: knowledgeBudget })
+        ? await resolveKnowledgeSources(knowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
@@ -698,12 +729,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // other sessions rides along. buildProjectContextSummary had existed for
       // months with no caller — sessions never carried a project_id at creation.
       let projectContextPrompt = '';
-      if (sessionId) {
+      if (sessionId && projectRow) {
         try {
-          const sessionRow = await db.get('SELECT project_id FROM sessions WHERE id = ?', String(sessionId)) as { project_id: string | null } | undefined;
-          if (sessionRow?.project_id) {
-            projectContextPrompt = await buildProjectContextSummary(db, sessionRow.project_id, String(sessionId));
-          }
+          projectContextPrompt = await buildProjectContextSummary(db, projectRow.id, String(sessionId));
         } catch { /* non-fatal — the project layer is enrichment */ }
       }
       const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
@@ -800,6 +828,33 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Merge tools from knowledge resolver (web search) with any request-level tools
       const tools = resolved.tools as Array<{ type: string; name: string }>;
 
+      // Wave 2 (2026-09-08): what this answer is built from — sent to the page
+      // as a "context used" frame before the model call and kept on the
+      // message's config snapshot. It records what is actually in the prompt
+      // (documents, project, lens, knowledge layers), not what was toggled.
+      const contextUsed = {
+        model: selectedModel,
+        thinking: String(thinking || 'think_hard'),
+        lens: moduleId ? { moduleId: String(moduleId), areaId: areaId ? String(areaId) : null } : null,
+        project: projectRow,
+        documents: (resolved.sourceDetails ?? [])
+          .filter((d) => d.type === 'uploaded_file')
+          .map((d) => ({
+            name: d.name,
+            chars: d.charCount ?? 0,
+            source: (d.path && projectFileLabels[d.path] ? 'project' : 'upload') as 'project' | 'upload',
+            ...(d.note ? { skipped: true } : {}),
+          })),
+        knowledgeSources: resolved.sourceManifest,
+        ragChunks: ragChunks.length,
+        packGroundingChars: knowledgePackPrompt.length,
+        atomChars: atomLayerPrompt ? atomLayerPrompt.length : 0,
+        orgContext: Boolean(orgContextPrompt),
+        goalsValues: Boolean(goalsValuesPrompt),
+        resumeContext: Boolean(resumeContextPrompt),
+        webSearch: tools.some((t) => t.type === 'web_search_20250305'),
+      };
+
       // Log composed prompt length for debugging
       const promptLengthDesc = staticSystemPrompt
         ? `static=${staticSystemPrompt.length} chars (cached) + dynamic=${composedPrompt.length} chars`
@@ -853,6 +908,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               multiAgentStyle: req.body.multiAgentStyle || null,
               precision: req.body.precision || null,
               channel: req.body.channel || null,
+              // Wave 2: what was actually in the prompt (see contextUsed above).
+              contextUsed,
             };
             // CACHE-03: include cache read/write tokens and compute cache-adjusted cost.
             // Computed BEFORE the message INSERT so the real per-call cost is persisted
@@ -1227,6 +1284,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         });
         return;
       }
+
+      // The "context used" frame goes out before the model call so the page can
+      // show what the prompt holds while the answer streams. Headers may not
+      // be set yet; every engine branch below sets them only when absent.
+      if (!res.headersSent) {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+      }
+      sendProgress({ type: 'context_used', context: contextUsed });
 
       // Route to the correct provider adapter
       if (provider === 'anthropic_sdk' || provider === 'openai_codex') {

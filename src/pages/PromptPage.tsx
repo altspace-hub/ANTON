@@ -74,7 +74,7 @@ export default function PromptPage() {
     sessionId, systemPrompt: currentSystemPrompt,
     plainTextMode, structureReference, transparencyLevel, writingTone, emojiEnabled,
     nativeReasoningEnabled, atomInjectionEnabled, atomCollectionEnabled,
-    audience, channel, outputLanguage, uploadedFileIds, lastSourcesUsed,
+    audience, channel, outputLanguage, uploadedFileIds, lastSourcesUsed, lastContextUsed,
     setThinking, setCreativity, setModel, setSystemPrompt,
     setKnowledgeSources, setSelectedOutputFormats,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, clearSession,
@@ -684,6 +684,7 @@ export default function PromptPage() {
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
             sourceManifest={lastSourcesUsed}
+            contextUsed={lastContextUsed}
             conversation={messages.map((m) => ({ role: m.role, content: m.content }))}
           />
       )}

@@ -114,7 +114,7 @@ export default function ModulePage() {
     deliberationEnabled, setDeliberationEnabled,
     setPlainTextMode, setMultiAgentEnabled,
     plainTextMode,
-    isAssemblingContext, lastSourcesUsed,
+    isAssemblingContext, lastSourcesUsed, lastContextUsed,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens, ireChainId, ireCurrentPhase, ireTotalPhases, ireCurrentPhaseName } = useClaude();
@@ -1365,6 +1365,7 @@ export default function ModulePage() {
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
             sourceManifest={lastSourcesUsed}
+            contextUsed={lastContextUsed}
             rerunOf={lastAssistantMessage?.rerunOf ?? null}
           />
         )}
