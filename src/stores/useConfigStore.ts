@@ -25,6 +25,13 @@ export interface OpenChatLens {
   reason?: string;
 }
 
+/** The project (matter) a session is held in. Survives New Chat on purpose:
+ *  the next question is usually about the same client. */
+export interface SessionProject {
+  id: string;
+  name: string;
+}
+
 const defaultKnowledgeSources: KnowledgeSourceConfig = {
   modes: {
     claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
@@ -67,6 +74,7 @@ interface ConfigState {
   outputLanguage: string;
   seed: number | undefined;
   lens: OpenChatLens | null;
+  project: SessionProject | null;
 
   // Setters
   setModel: (model: ModelId) => void;
@@ -101,6 +109,7 @@ interface ConfigState {
   setOutputLanguage: (v: string) => void;
   setSeed: (seed: number | undefined) => void;
   setLens: (lens: OpenChatLens | null) => void;
+  setProject: (project: SessionProject | null) => void;
   resetConfig: () => void;
 }
 
@@ -137,6 +146,7 @@ const configDefaults = {
   outputLanguage: 'en',
   seed: undefined as number | undefined,
   lens: null as OpenChatLens | null,
+  project: null as SessionProject | null,
 };
 
 export const useConfigStore = create<ConfigState>((set) => ({
@@ -174,5 +184,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setOutputLanguage: (v) => set({ outputLanguage: v }),
   setSeed: (seed) => set({ seed }),
   setLens: (lens) => set({ lens }),
-  resetConfig: () => set({ ...configDefaults }),
+  setProject: (project) => set({ project }),
+  // The project outlives a reset: New Chat inside a matter stays in the matter.
+  resetConfig: () => set((state) => ({ ...configDefaults, project: state.project })),
 }));

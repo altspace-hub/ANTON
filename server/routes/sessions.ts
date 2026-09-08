@@ -86,15 +86,20 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
   // POST /api/sessions — create session
   router.post('/sessions', async (req, res) => {
     try {
-      const { moduleId, title, config } = req.body;
+      const { moduleId, title, config, projectId } = req.body as { moduleId: string; title: string; config?: unknown; projectId?: unknown };
       const userId = req.user?.id;
       const id = crypto.randomUUID();
-      await db.run('INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, ?, ?, ?, ?)', id,
+      // A session can be born inside a project. project_id could only ever be
+      // set by a later PATCH, and containment that needs a second step after
+      // the work is done is containment nobody performs: 0 of 54 sessions here.
+      const project = typeof projectId === 'string' && projectId.trim() ? projectId.trim() : null;
+      await db.run('INSERT INTO sessions (id, module_id, title, config, user_id, project_id) VALUES (?, ?, ?, ?, ?, ?)', id,
         moduleId,
         title,
         JSON.stringify(config || {}),
-        userId);
-      res.json({ id, moduleId, title, config });
+        userId,
+        project);
+      res.json({ id, moduleId, title, config, projectId: project });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create session' });
     }
@@ -175,10 +180,14 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       const userRole = req.user?.role;
 
       // Check ownership (admins can see all sessions)
-      const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
+      const whereClause = userRole === 'admin' ? 'WHERE s.id = ?' : 'WHERE s.id = ? AND s.user_id = ?';
       const params = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
 
-      const session = await db.get(`SELECT * FROM sessions ${whereClause}`, ...params);
+      // project_name rides along so a restored chat can show its matter without a second call.
+      const session = await db.get(
+        `SELECT s.*, p.name AS project_name FROM sessions s LEFT JOIN projects p ON p.id = s.project_id ${whereClause}`,
+        ...params,
+      );
       if (!session) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;

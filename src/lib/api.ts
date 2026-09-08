@@ -273,7 +273,7 @@ export async function fetchSessions(moduleId?: string, options?: {
   return res.json();
 }
 
-export async function createSession(data: { moduleId: string; title: string; config: unknown }) {
+export async function createSession(data: { moduleId: string; title: string; config: unknown; projectId?: string | null }) {
   const res = await fetchWithAuth(`${API_BASE}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

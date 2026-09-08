@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { useClaude } from '@/hooks/useClaude';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useConfigStore, type OpenChatLens } from '@/stores/useConfigStore';
-import { streamMessage, fetchSessions, fetchSession, deleteSession, suggestModuleLens } from '@/lib/api';
+import { streamMessage, fetchSessions, fetchSession, deleteSession, suggestModuleLens, assignSessionToProject } from '@/lib/api';
 import LensChip from '@/components/shared/LensChip';
+import ProjectChip from '@/components/shared/ProjectChip';
 import type { KnowledgeSourceConfig, ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -102,6 +103,9 @@ export default function PromptPage() {
   const setLens = useConfigStore((s) => s.setLens);
   const [lensBusy, setLensBusy] = useState(false);
   const [lensDeclined, setLensDeclined] = useState(false);
+  // The project (matter) this chat is filed under.
+  const project = useConfigStore((s) => s.project);
+  const setProject = useConfigStore((s) => s.setProject);
   const [copied, setCopied] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -204,6 +208,9 @@ export default function PromptPage() {
         }));
         restoreSession(historySessionId, parsedMessages);
         setModule('open-chat');
+        // The matter the session was filed under — name looked up lazily by the chip.
+        const restoredProjectId = (data as { project_id?: string | null }).project_id ?? null;
+        setProject(restoredProjectId ? { id: restoredProjectId, name: (data as { project_name?: string }).project_name ?? 'Project' } : null);
         const cfg: Record<string, unknown> =
           typeof data.config === 'string' ? JSON.parse(data.config) : (data.config ?? {});
         // Always restore system prompt and persona (fall back to defaults)
@@ -914,14 +921,29 @@ export default function PromptPage() {
         </div>
       )}
 
-      {/* Expert lens — which catalogue module is answering */}
-      <LensChip
-        lens={lens}
-        busy={lensBusy}
-        disabled={isStreaming}
-        onPick={(picked) => { setLens(picked); setLensDeclined(false); }}
-        onClear={() => { setLens(null); setLensDeclined(true); }}
-      />
+      {/* Expert lens and project — who is answering, and which matter this belongs to */}
+      <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1">
+        <LensChip
+          lens={lens}
+          busy={lensBusy}
+          disabled={isStreaming}
+          onPick={(picked) => { setLens(picked); setLensDeclined(false); }}
+          onClear={() => { setLens(null); setLensDeclined(true); }}
+        />
+        <ProjectChip
+          project={project}
+          disabled={isStreaming}
+          onPick={(picked) => {
+            setProject(picked);
+            // A chat already under way moves with its history.
+            if (sessionId) void assignSessionToProject(sessionId, picked.id).catch(() => undefined);
+          }}
+          onClear={() => {
+            setProject(null);
+            if (sessionId) void assignSessionToProject(sessionId, null).catch(() => undefined);
+          }}
+        />
+      </div>
 
       {/* Input area */}
       <div className={`${files.length > 0 ? 'mt-1.5' : 'mt-3'} flex gap-2`}>

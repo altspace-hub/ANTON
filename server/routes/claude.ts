@@ -8,7 +8,7 @@ import { runIterativeReasoning, getRevelationChain } from '../services/iterative
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import type { ResolvedKnowledge } from '../../src/lib/types.js';
 import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
@@ -694,6 +694,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
       const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
+      // The project (matter) this session belongs to: what was concluded in its
+      // other sessions rides along. buildProjectContextSummary had existed for
+      // months with no caller — sessions never carried a project_id at creation.
+      let projectContextPrompt = '';
+      if (sessionId) {
+        try {
+          const sessionRow = await db.get('SELECT project_id FROM sessions WHERE id = ?', String(sessionId)) as { project_id: string | null } | undefined;
+          if (sessionRow?.project_id) {
+            projectContextPrompt = await buildProjectContextSummary(db, sessionRow.project_id, String(sessionId));
+          }
+        } catch { /* non-fatal — the project layer is enrichment */ }
+      }
       const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
       // Wave 3.4 — atom-layer A/B experiment: when injection is on and the run
       // will be persisted, ~20% of runs are deterministically assigned to a
@@ -761,6 +773,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgePackPrompt: knowledgePackPrompt || undefined,
         atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
+        projectContextPrompt: projectContextPrompt || undefined,
         goalsValuesPrompt: goalsValuesPrompt || undefined,
       } as const;
 

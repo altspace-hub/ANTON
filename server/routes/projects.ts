@@ -26,7 +26,8 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       if (IS_TEAM_MODE && userRole !== 'admin') {
         // In team mode, non-admins only see projects they're a member of
         projects = await db.all(
-          `SELECT p.*, COUNT(s.id) as session_count
+          `SELECT p.*, COUNT(s.id) as session_count,
+                  EXISTS (SELECT 1 FROM coding_projects cp WHERE cp.project_id = p.id) AS is_coding
            FROM projects p
            LEFT JOIN sessions s ON s.project_id = p.id
            INNER JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
@@ -36,7 +37,8 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
         , userId);
       } else {
         projects = await db.all(
-          `SELECT p.*, COUNT(s.id) as session_count
+          `SELECT p.*, COUNT(s.id) as session_count,
+                  EXISTS (SELECT 1 FROM coding_projects cp WHERE cp.project_id = p.id) AS is_coding
            FROM projects p
            LEFT JOIN sessions s ON s.project_id = p.id
            WHERE p.status != 'deleted'

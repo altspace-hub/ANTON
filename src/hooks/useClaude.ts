@@ -133,6 +133,7 @@ export function useClaude() {
       // loads that module's prompt, area context and skills instead of the
       // generic override; the session stays an open chat.
       const lens = useConfigStore.getState().lens;
+      const project = useConfigStore.getState().project;
 
       // Add user message to local state immediately
       const userMsg: Message = {
@@ -151,6 +152,8 @@ export function useClaude() {
           const session = await createSession({
             moduleId,
             title: userMessage.slice(0, 80) + (userMessage.length > 80 ? '…' : ''),
+            // Born inside the project, so its context rides along from the first turn.
+            projectId: project?.id ?? null,
             config: {
               model,
               thinking,
