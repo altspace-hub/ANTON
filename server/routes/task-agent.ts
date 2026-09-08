@@ -27,6 +27,8 @@ import { createAtomExtractor } from '../services/atom-extractor.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { findCandidateModules, type CandidateModule } from '../services/module-recommendation.js';
+import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
 import {
   compileTaskToMission,
@@ -87,6 +89,26 @@ interface TaskFile {
 // action_type / action_config fields future approaches can declare.
 type ExecutionStep = ApproachExecutionStep;
 
+/** The approach whose plan the model writes for the task itself, drawing on the
+ *  seeded capabilities AND the module catalogue. Seeded idempotently at boot. */
+export const MODEL_PLAN_APPROACH_ID = 'app-model-plan';
+
+/**
+ * The steps a task will execute: the plan the model authored for it (stored
+ * with the approach choice), falling back to the approach template. Until
+ * 2026-09-08 the model's tailored plan was discarded on confirm and the
+ * template's steps — UI click-throughs like "Open Gap Assessor wizard" — ran.
+ */
+export function resolveExecutionSteps(
+  task: { chosen_approach_config?: string | null },
+  templateStepsJson: string | null | undefined,
+): ExecutionStep[] {
+  const cfg = parseJson<{ execution_steps?: unknown }>(task.chosen_approach_config ?? '{}', {});
+  const authored = Array.isArray(cfg.execution_steps) ? (cfg.execution_steps as ExecutionStep[]) : [];
+  if (authored.length > 0) return authored;
+  return parseJson<ExecutionStep[]>(templateStepsJson ?? '[]', []);
+}
+
 interface IntakeTaskContext {
   status: string;
   title: string;
@@ -146,7 +168,10 @@ function parseJson<T>(raw: string | null | undefined, fallback: T): T {
 /** Build the self-knowledge context string injected into ANTON's system prompt */
 function buildSelfKnowledgeContext(
   capabilities: CapabilityRow[],
-  approaches: ApproachRow[]
+  approaches: ApproachRow[],
+  /** Catalogue modules matched to this task — the Task Agent's reach beyond
+   *  its 19 seeded (FCP) capabilities into all 560 expert modules. */
+  catalogue: CandidateModule[] = [],
 ): string {
   const capLines = capabilities.map((c) => {
     const useCases = parseJson<string[]>(c.use_cases, []).join(', ');
@@ -158,13 +183,21 @@ function buildSelfKnowledgeContext(
     return `- **${a.name}** [${a.id}] (${a.effort})\n  ${a.summary}\n  Best for: ${patterns}`;
   }).join('\n\n');
 
+  const catalogueLines = catalogue
+    .map((m) => `- **${m.label}** [module_id: ${m.id}] (area: ${m.areaId})\n  ${m.description.slice(0, 160)}`)
+    .join('\n');
+
   return `## ANTON SELF-KNOWLEDGE
 
 ### Available Capabilities
 ${capLines}
 
 ### Available Approach Templates
-${appLines}`;
+${appLines}
+
+### Relevant expert modules (from the module catalogue, matched to this task)
+Set a step's "module_id" to one of these ids when that expertise fits the step.
+${catalogueLines || '- none matched this task'}`;
 }
 
 /** System prompt for ANTON Task Agent — supports 3 phases: propose / intake / (execute is server-side) */
@@ -249,13 +282,18 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
       "summary": "<one-line pitch>",
       "rationale": "<why this fits this specific task>",
       "effort": "quick|medium|deep",
-      "outcome": "<what the user gets>"
+      "outcome": "<what the user gets>",
+      "execution_steps": [
+        {"step": 1, "name": "<deliverable-shaped step name>", "description": "<what to produce, from what inputs>", "module_id": "<optional: a catalogue module id from the list below>", "capability_id": "<optional: a cap-* id>"}
+      ]
     }
   ]
 }
 </approaches>
 
 **CRITICAL: approach_id MUST be one of the IDs listed in AVAILABLE APPROACHES below.**
+
+**PLAN RULES:** Author 3-6 execution_steps FOR THIS TASK. Each step is a professional deliverable ("Article-by-article CDD gap matrix for AMLR Arts 20–40", "Redline memo on the indemnity clause"), never a UI action ("open the wizard", "export the file"). Set module_id when a catalogue module's expertise fits the step. When no approach template fits the work — legal, HR, procurement, drafting, anything outside the templates — use approach_id "app-model-plan", which exists for exactly that, instead of answering ready:false.
 
 **If no approach matches:**
 <approaches>
@@ -276,7 +314,7 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
 </clarifying>
 
 ## STYLE
-Professional, direct, concise. Senior FCP consultant tone. No filler.
+Professional, direct, concise. Senior consultant tone. No filler.
 ${intakeSection}
 ${selfKnowledge}`;
 }
@@ -285,6 +323,30 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
   const router = Router();
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+  // The approach whose plan the model authors per task. Seeded here, once,
+  // so an existing install gets it without a migration; the init seeds run
+  // only on an empty table.
+  try {
+    await db.run(
+      `INSERT INTO anton_approaches (id, name, summary, description, task_pattern, capability_ids, execution_steps, effort, outcome, required_inputs, confidence_threshold, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+       ON CONFLICT (id) DO NOTHING`,
+      MODEL_PLAN_APPROACH_ID,
+      'Tailored plan',
+      'ANTON writes the plan for this task, drawing on the whole module catalogue',
+      'For work no template covers — legal, HR, procurement, drafting, research: ANTON authors 3-6 deliverable steps for this specific task, each executed on the best-matching expert module with the quality gate.',
+      '["any task without a matching template"]',
+      '[]',
+      '[]',
+      'medium',
+      'A plan written for this task, executed step by step with a quality gate on each deliverable',
+      '[]',
+      0.5,
+    );
+  } catch (err) {
+    console.warn('[task-agent] could not seed the tailored-plan approach:', err instanceof Error ? err.message : err);
+  }
 
   // Lazy mission controller — the Task Agent → Missions bridge (Wave 5.1).
   // Only constructed when a task is actually executed as a mission.
@@ -407,7 +469,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     let executionSteps: ExecutionStep[] = [];
     if (task.chosen_approach_id) {
       const approach = await db.get('SELECT execution_steps FROM anton_approaches WHERE id=?', task.chosen_approach_id) as { execution_steps: string } | undefined;
-      if (approach) executionSteps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
+      if (approach) executionSteps = resolveExecutionSteps(task, approach.execution_steps);
     }
 
     // Wave 5.1 — linked mission status round-trip. Cheap reads only; the
@@ -454,17 +516,23 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const { content } = req.body as { content: string };
     if (content.length > 2000) return res.status(400).json({ error: 'Message must be ≤2000 characters' });
 
-    // Load self-knowledge
+    // Load self-knowledge: the seeded capabilities and approaches, plus the
+    // catalogue modules that match THIS task — so an NDA or a redline gets a
+    // real plan instead of stranding in intake with "no approach matches".
     const caps = await db.all('SELECT * FROM anton_capabilities WHERE active=1') as CapabilityRow[];
     const approaches = await db.all('SELECT * FROM anton_approaches WHERE active=1') as ApproachRow[];
-    const selfKnowledge = buildSelfKnowledgeContext(caps, approaches);
+    let catalogue: CandidateModule[] = [];
+    try {
+      catalogue = await findCandidateModules(`${task.title}\n${task.description}`, 14);
+    } catch { /* catalogue unavailable — the seeded capabilities still apply */ }
+    const selfKnowledge = buildSelfKnowledgeContext(caps, approaches, catalogue);
 
     // Build task context for intake phase
     let taskCtx: IntakeTaskContext | undefined;
     if (task.status === 'clarifying' && task.chosen_approach_id) {
       const chosenApp = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
       if (chosenApp) {
-        const steps = parseJson<ExecutionStep[]>(chosenApp.execution_steps, []);
+        const steps = resolveExecutionSteps(task, chosenApp.execution_steps);
         const primaryCapId = parseJson<string[]>(chosenApp.capability_ids, [])[0];
         const cap = primaryCapId ? await db.get('SELECT * FROM anton_capabilities WHERE id=?', primaryCapId) as CapabilityRow | undefined : undefined;
         taskCtx = {
@@ -634,22 +702,37 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    const { approach_id, config = {} } = req.body as { approach_id: string; config: Record<string, unknown> };
+    const { approach_id, config = {}, execution_steps } = req.body as {
+      approach_id: string; config: Record<string, unknown>; execution_steps?: ExecutionStep[];
+    };
 
     const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
+
+    // Keep the plan the model wrote for this task — it is what the user just
+    // approved. A module id the catalogue does not know is dropped from its
+    // step (the step still runs on the generic prompt) so an invented id can
+    // never break execution.
+    const authored: ExecutionStep[] = [];
+    for (const [i, s] of (execution_steps ?? []).entries()) {
+      const wanted = typeof s.module_id === 'string' && s.module_id.trim() ? s.module_id.trim() : undefined;
+      const known = wanted ? await getModule(wanted).catch(() => undefined) : undefined;
+      const { module_id: _dropped, ...rest } = s;
+      authored.push({ ...rest, step: i + 1, ...(known ? { module_id: known.id } : {}) });
+    }
+    const storedConfig = authored.length > 0 ? { ...config, execution_steps: authored } : config;
 
     await db.run(`
       UPDATE anton_tasks
       SET chosen_approach_id=?, chosen_approach_config=?, status='clarifying',
           intake_answers='{}', intake_ready=0, current_step=0, updated_at=NOW()
       WHERE id=?
-    `, approach_id, JSON.stringify(config), task.id);
+    `, approach_id, JSON.stringify(storedConfig), task.id);
 
     // Update usage stats
     await db.run('UPDATE anton_approaches SET times_used=times_used+1 WHERE id=?', approach_id);
 
-    const steps = parseJson<unknown[]>(approach.execution_steps, []);
+    const steps = authored.length > 0 ? authored : parseJson<unknown[]>(approach.execution_steps, []);
     res.json({ success: true, approach, steps });
   });
 
@@ -727,7 +810,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
 
-    const steps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
+    const steps = resolveExecutionSteps(task, approach.execution_steps);
     const currentStepIdx = task.current_step ?? 0;
     const step = steps[currentStepIdx];
     if (!step) return res.status(400).json({ error: 'All steps already completed' });
@@ -738,9 +821,13 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       ? await db.get('SELECT * FROM anton_capabilities WHERE id=?', capId) as CapabilityRow | undefined
       : undefined;
 
-    // Load module system prompt from disk
+    // The step's prompt: the plan's catalogue module first (server/areas), then
+    // the capability's file-based prompt, then the generic consultant.
     let modulePrompt = '';
-    if (capability?.module_id) {
+    if (step.module_id) {
+      try { modulePrompt = (await getModuleSystemPrompt(step.module_id)) ?? ''; } catch { modulePrompt = ''; }
+    }
+    if (!modulePrompt && capability?.module_id) {
       const promptPath = join(PROMPTS_DIR, `${capability.module_id}.md`);
       if (existsSync(promptPath)) {
         modulePrompt = readFileSync(promptPath, 'utf-8');
@@ -1035,7 +1122,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
 
     try {
-      const steps = parseJson<ApproachExecutionStep[]>(approach.execution_steps, []);
+      const steps = resolveExecutionSteps(task, approach.execution_steps);
       const intakeAnswers = parseJson<Record<string, string>>(task.intake_answers ?? '{}', {});
       const taskFiles = parseJson<TaskFile[]>(task.task_files ?? '[]', []);
       const activePackIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []);

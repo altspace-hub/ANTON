@@ -13,7 +13,6 @@
 // 'research' additionally gets Claude's native web_search tool when the
 // resolved provider is Anthropic (2A.3).
 
-import Anthropic from '@anthropic-ai/sdk';
 import { callChat, type StreamChatConfig, type ChatResult } from '../provider-router.js';
 import { createMissionState } from './mission-state.js';
 import { createMissionGrowBridge, type LeadInput, type OpportunityInput, type SignalInput } from './mission-grow-bridge.js';
@@ -424,25 +423,24 @@ when you have real data — do NOT speculate.
     // providers skip silently and run the plain LLM call.
     const cfgForSearch = task.module_config as { web_search?: unknown } | null;
     const wantsWebSearch = task.task_type === 'research' || cfgForSearch?.web_search === true;
-    const useWebSearch = wantsWebSearch && provider === 'anthropic' && Boolean(process.env.ANTHROPIC_API_KEY);
+    // Both Claude paths take the tool through provider-router now: the API
+    // sends web_search, the SDK engine grants WebSearch/WebFetch. The old raw
+    // Anthropic client here was gated on the API key, so research tasks on a
+    // subscription-only instance silently ran without the web.
+    const useWebSearch = wantsWebSearch && (provider === 'anthropic' || provider === 'anthropic_sdk');
 
     let result: ChatResult;
     try {
       const maxTokens = Math.min(task.estimated_tokens ?? 8000, 16_000);
-      result = useWebSearch
-        ? await callAnthropicWithWebSearch({
-            model: modelId,
-            system: systemPrompt,
-            user: userPrompt,
-            maxTokens,
-          })
-        : await callChatWithTimeout({
-            model: modelId,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }],
-            maxTokens,
-            thinkingLevel: 'think',
-          });
+      result = await callChatWithTimeout({
+        model: modelId,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+        maxTokens,
+        thinkingLevel: 'think',
+        tools: useWebSearch ? [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] : undefined,
+        background: true,
+      }, useWebSearch ? 180_000 : 120_000);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const newRetry = task.retry_count + 1;
@@ -552,46 +550,6 @@ export function extractGrowBlocks(text: string): GrowBlock[] {
   return out;
 }
 
-/**
- * Direct Anthropic call with the native web_search tool (Wave-2 2A.3).
- * Mirrors the established pattern in pathfinder-engine / radar-fetcher:
- * web_search_20250305 is Claude-specific so it can't go through callChat
- * (which never forwards tools on the non-streaming Anthropic path), and
- * web search + extended thinking are mutually exclusive — research tasks
- * trade thinking for live sources. Streamed internally to dodge the SDK's
- * long-request restriction; bounded by an overall timeout.
- */
-async function callAnthropicWithWebSearch(
-  params: { model: string; system: string; user: string; maxTokens: number },
-  timeoutMs = 180_000,
-): Promise<ChatResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
-  const client = new Anthropic({ apiKey });
-  const stream = client.messages.stream({
-    model: params.model,
-    max_tokens: params.maxTokens,
-    system: params.system,
-    messages: [{ role: 'user', content: params.user }],
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
-  });
-  const response = await Promise.race([
-    stream.finalMessage(),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Web-search task timed out after ${timeoutMs}ms`)), timeoutMs),
-    ),
-  ]);
-  let text = '';
-  for (const block of response.content) {
-    if (block.type === 'text') text += block.text;
-  }
-  return {
-    text,
-    thinking: '',
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-  };
-}
 
 // ── Transitive conditional skip (Wave-3 3A.3) ──────────────────────────────
 

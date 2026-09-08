@@ -60,6 +60,9 @@ export interface ApproachExecutionStep {
   step: number;
   name: string;
   capability_id?: string;
+  /** A catalogue module (server/areas) whose prompt runs this step — set by
+   *  the model when it authors the plan for a task. */
+  module_id?: string;
   description?: string;
   /** Optional declared mission action for this step. */
   action_type?: string;

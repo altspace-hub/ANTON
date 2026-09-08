@@ -42,6 +42,8 @@ interface ExecutionStep {
   step: number;
   name: string;
   capability_id?: string;
+  /** Catalogue module chosen by the model for this step. */
+  module_id?: string;
   description?: string;
 }
 
@@ -101,6 +103,8 @@ interface Proposal {
   rationale: string;
   effort: 'quick' | 'medium' | 'deep';
   outcome: string;
+  /** The plan the model wrote for this task — what the user approves. */
+  execution_steps?: ExecutionStep[];
 }
 
 interface ClarifyingQuestion {
@@ -225,13 +229,13 @@ function ProposalCard({
 }: {
   proposal: Proposal;
   index: number;
-  onSelect: (id: string) => void;
+  onSelect: (index: number) => void;
   selected: boolean;
 }) {
   const effortCfg = EFFORT_CONFIG[proposal.effort] ?? EFFORT_CONFIG.medium;
   return (
     <button
-      onClick={() => onSelect(proposal.approach_id)}
+      onClick={() => onSelect(index)}
       className={`w-full text-left rounded-xl border p-4 transition-all hover:border-adv-teal/50 hover:bg-adv-teal-soft ${
         selected
           ? 'border-adv-teal bg-adv-teal-soft shadow-lg shadow-adv-teal/10'
@@ -260,6 +264,22 @@ function ProposalCard({
           <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-adv-green" />
           <p className="text-xs text-adv-off-white">{proposal.outcome}</p>
         </div>
+      )}
+
+      {/* The plan written for this task — these are the steps that will run */}
+      {proposal.execution_steps && proposal.execution_steps.length > 0 && (
+        <ol className="mt-2.5 space-y-1 border-t border-border/60 pt-2 text-xs text-adv-gray">
+          {proposal.execution_steps.map((s, i) => (
+            <li key={`${s.step}-${i}`} className="flex gap-2">
+              <span className="shrink-0 font-medium text-adv-teal">{i + 1}.</span>
+              <span>
+                <span className="text-adv-off-white">{s.name}</span>
+                {s.description ? <span> — {s.description}</span> : null}
+                {s.module_id ? <span className="ml-1 rounded bg-adv-dark-2 px-1 py-0.5 text-[10px] text-adv-gray">{s.module_id}</span> : null}
+              </span>
+            </li>
+          ))}
+        </ol>
       )}
 
       {selected && (
@@ -723,7 +743,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
-  const [selectedProposal, setSelectedProposal] = useState<string | null>(null);
+  // Selected by index, not approach id: two proposals may share an approach
+  // (both "tailored plan") and differ only in the plan they carry.
+  const [selectedProposal, setSelectedProposal] = useState<number | null>(null);
   const [confirmingApproach, setConfirmingApproach] = useState(false);
   const [proceeding, setProceeding] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -875,13 +897,16 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   }
 
   async function confirmApproach() {
-    if (!selectedProposal || !task || confirmingApproach) return;
+    if (selectedProposal === null || !task || confirmingApproach) return;
+    const chosen = task.proposals?.[selectedProposal];
+    if (!chosen) return;
     setConfirmingApproach(true);
     try {
       const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/select-approach`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approach_id: selectedProposal }),
+        // The plan travels with the choice — it is what the user just approved.
+        body: JSON.stringify({ approach_id: chosen.approach_id, execution_steps: chosen.execution_steps ?? [] }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -1337,7 +1362,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               <Layers className="h-4 w-4 text-adv-teal" />
               <span className="text-sm font-semibold text-adv-white">ANTON's Proposed Approaches</span>
             </div>
-            {selectedProposal && task.status === 'awaiting_selection' && (
+            {selectedProposal !== null && task.status === 'awaiting_selection' && (
               <button
                 onClick={confirmApproach}
                 disabled={confirmingApproach}
@@ -1351,11 +1376,11 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           <div className="space-y-2">
             {task.proposals.map((p, i) => (
               <ProposalCard
-                key={p.approach_id}
+                key={`${p.approach_id}-${i}`}
                 proposal={p}
                 index={i}
                 onSelect={setSelectedProposal}
-                selected={selectedProposal === p.approach_id}
+                selected={selectedProposal === i}
               />
             ))}
           </div>
