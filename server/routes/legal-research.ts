@@ -17,22 +17,26 @@ import AnthropicSDK from '@anthropic-ai/sdk';
 import { buildOrgContextLayer } from '../services/prompt-builder.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { createCitationLedger, VERIFICATION_DISCLAIMER, type CitationInput } from '../services/citation-ledger.js';
 import { bundleLegalResearchSessionToAnton } from '../services/anton-bundler.js';
 import { signAntonBundle } from '../services/anton-bundle-signing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Thinking token budget per mode (null = web-search mode, no thinking allowed)
-const THINKING_BUDGETS: Record<string, number | null> = {
-  'deep-dive': 16000,
-  'hypothetical': 16000,
-  'comparison': 8000,
-  'case-law': null,       // typically used with web search
-  'opinion': 24000,
-  'gap-spotter': 16000,
-  'comparative-jurisdiction': 16000,
-  'rapid-risk': 4000,
+// Reasoning depth per mode — ANTON thinking levels, the currency provider-router
+// takes. (A THINKING_BUDGETS table in raw tokens lived here for a year and was
+// never read.) Web search no longer switches reasoning off: that was an
+// API-era myth, and the router now sends thinking and tools together.
+const MODE_THINKING: Record<string, string> = {
+  'deep-dive': 'investigate',
+  'hypothetical': 'investigate',
+  'comparison': 'think_hard',
+  'case-law': 'think',
+  'opinion': 'investigate',
+  'gap-spotter': 'investigate',
+  'comparative-jurisdiction': 'think_hard',
+  'rapid-risk': 'think',
 };
 
 // Eight interaction modes available in Counsel's Desk
@@ -149,17 +153,26 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
   router.post('/legal-research', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const { title, mode, expert_role } = req.body as { title?: string; mode?: string; expert_role?: string };
+      const { title, mode, expert_role, active_knowledge_packs } = req.body as {
+        title?: string; mode?: string; expert_role?: string; active_knowledge_packs?: unknown;
+      };
+      // The page has always sent its default pack selection; the route dropped
+      // it, so every session was stored with '[]' and the Knowledge Packs
+      // panel showed five active packs that grounded nothing.
+      const packs = Array.isArray(active_knowledge_packs)
+        ? active_knowledge_packs.filter((p): p is string => typeof p === 'string' && p.length > 0 && p.length <= 100).slice(0, 20)
+        : [];
       const id = randomUUID();
       const now = new Date().toISOString();
       await db.run(
-        `INSERT INTO legal_research_sessions (id, title, mode, expert_role, user_id, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO legal_research_sessions (id, title, mode, expert_role, active_knowledge_packs, user_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       ,
         id,
         title || 'Untitled Legal Research',
         mode || 'deep-dive',
         expert_role || 'eu-regulatory-lawyer',
+        JSON.stringify(packs),
         uid,
         now,
         now
@@ -256,7 +269,8 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
 
   // ── Streaming Claude message ────────────────────────────────────────────────
   router.post('/legal-research/:id/message', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    // The SDK engine or a key — or an explicitly injected client (tests, a funded key).
+    if (!hasClaudeEngine() && !anthropic) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     try {
       const uid = getUserId(req);
@@ -315,38 +329,37 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
 
       const toneInstruction = '\n\n## TONE & STYLE\nUse strict professional legal language throughout. No emojis. No colloquialisms. Structure responses with clear headings, numbered points, and precise legal references. Maintain the register expected by a senior legal practitioner reviewing the analysis.';
 
-      const systemPrompt = basePrompt + modeInstruction + roleInstruction + toneInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction;
+      // A real search brief when web search is on. The model used to be handed
+      // the tool with no instruction at all — and on the SDK engine the tool
+      // is named WebSearch, which claude-sdk-client rewords from "web_search
+      // tool" below.
+      const webSearchInstruction = webSearchEnabled
+        ? '\n\n## WEB SEARCH ENABLED\nUse the web_search tool to check the primary sources for every instrument you cite: EUR-Lex for EU regulations and directives, the EBA/ESMA/EIOPA sites for guidelines, curia.europa.eu for CJEU judgments, and the national gazette or supervisor for national law. Prefer official sources over commentary. Cite the URL and the date you consulted it alongside the legal citation. Search before asserting the current text of a provision or the status of a case.'
+        : '';
+
+      const systemPrompt = basePrompt + modeInstruction + roleInstruction + toneInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction + webSearchInstruction;
 
       const tools = webSearchEnabled
         ? [{ type: 'web_search_20250305', name: 'web_search' }]
-        : [];
+        : undefined;
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       res.setHeader('X-Accel-Buffering', 'no');
 
-      // Thinking and tools (web search) are mutually exclusive in the Claude API
-      const useThinking = tools.length === 0;
-      // Map budget tiers to effort levels for provider-router thinking
-      const EFFORT_MAP: Record<string, string> = {
-        'deep-dive': 'investigate',
-        'hypothetical': 'investigate',
-        'comparison': 'think_hard',
-        'opinion': 'investigate',
-        'gap-spotter': 'investigate',
-        'comparative-jurisdiction': 'think_hard',
-        'rapid-risk': 'think',
-      };
-      const thinkingLevel = EFFORT_MAP[session.mode] ?? 'think_hard';
+      // Thinking AND tools, always. `useThinking = tools.length === 0` used to
+      // drop reasoning to the engine default the moment web search was on —
+      // a Legal Opinion Draft ran at effort low instead of max.
+      const thinkingLevel = MODE_THINKING[session.mode] ?? 'think_hard';
 
       await streamChat({
         model: mapModelToProvider('claude-opus-4-8'),
         system: systemPrompt,
         messages: messages as Array<{ role: string; content: string }>,
         maxTokens: 16000,
-        thinkingLevel: useThinking ? thinkingLevel : undefined,
-        tools: useThinking ? undefined : tools,
+        thinkingLevel,
+        tools,
       }, res);
 
       res.write('data: [DONE]\n\n');

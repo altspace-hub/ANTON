@@ -147,6 +147,11 @@ const PRIORITY_PACKS: Array<{ id: string; label: string }> = [
 
 // Citation auto-capture patterns — require enough context to avoid false positives
 const CITATION_PATTERNS = [
+  // The prompt's own mandated format — instrument AND article:
+  // "Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 15(3)(b), OJ L …".
+  // Captured first so the article survives; the instrument-only patterns below
+  // stop at the comma and produced a green tick that meant only "the Regulation exists".
+  { pattern: /(?:Regulation|Directive) \(E[UC]\) (?:No )?\d{1,4}\/\d{1,4}(?:[^,\n]{0,120})?,\s*Art(?:icle|\.)\s*\d+(?:\(\d+\))?(?:\([a-z]\))?/g, type: 'regulation' as const },
   { pattern: /Regulation \(EU\) \d{4}\/\d+(?:\s+of\s+[^,\n]{0,80})?/g, type: 'regulation' as const },
   { pattern: /Directive \(EU\) \d{4}\/\d+(?:\s+of\s+[^,\n]{0,80})?/g, type: 'directive' as const },
   // Only capture Art. with a framework qualifier (e.g. "AMLR Art.12" or "Art.12(3)(b)")
@@ -404,7 +409,10 @@ export default function CounselsDesk() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: updatedQuestion.messages.map(m => ({ role: m.role, content: m.content })),
+          // Error bubbles are shown to the user, never replayed to the model.
+          messages: updatedQuestion.messages
+            .filter(m => !(m.role === 'assistant' && m.content.startsWith('⚠️')))
+            .map(m => ({ role: m.role, content: m.content })),
           webSearchEnabled,
           plainLanguageMode,
         }),
@@ -416,6 +424,11 @@ export default function CounselsDesk() {
       const decoder = new TextDecoder();
       let assistantContent = '';
       let thinkingContent = '';
+      // Carry a partial SSE line across reads: a frame split by a TCP chunk
+      // boundary was dropped by JSON.parse — with a native SDK build that
+      // emits the whole answer as one text_delta, that lost the whole answer.
+      let buffer = '';
+      let streamError: string | null = null;
 
       // Add placeholder assistant message
       const withPlaceholder = [...newQs];
@@ -428,12 +441,19 @@ export default function CounselsDesk() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
         for (const line of lines) {
           if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
           try {
             const event = JSON.parse(line.slice(6));
+
+            // Engine/server failure frames — both key spellings are in use.
+            if (event.type === 'error') {
+              streamError = String(event.error ?? event.message ?? 'The engine could not answer.');
+              continue;
+            }
 
             // Capture thinking/reasoning content
             const thinkingChunk = event.type === 'thinking_delta' ? event.content
@@ -470,6 +490,23 @@ export default function CounselsDesk() {
             }
           } catch { /* ignore parse errors */ }
         }
+      }
+
+      // An engine refusal or an empty stream is not an answer. Say why where
+      // the answer would have been — a blank '▋' bubble used to be saved as a
+      // finished answer (2 of the 3 answers ever produced here were empty).
+      if (!assistantContent.trim()) {
+        assistantContent = `⚠️ ${streamError ?? 'No answer was produced — the engine may be busy. Send your question again to retry.'}`;
+        const shown = assistantContent;
+        setQuestions(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(q => q.id === activeTabId);
+          if (idx === -1) return prev;
+          const msgs = [...updated[idx].messages];
+          msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: shown };
+          updated[idx] = { ...updated[idx], messages: msgs };
+          return updated;
+        });
       }
 
       // Auto-capture citations, then verify them against ground truth (post-stream)
