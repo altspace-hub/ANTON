@@ -609,6 +609,12 @@ Return ONLY valid JSON, no explanation.`;
   router.post('/:id/resources', upload.single('file'), async (req: Request, res: Response) => {
     try {
       const { category = 'documents', title, url, workstream_id, text_content } = req.body;
+      // The column's CHECK list; an unknown category used to surface as a 500
+      // from the database rather than a 400 naming the allowed values.
+      const RESOURCE_CATEGORIES = ['documents', 'meetings', 'regulations', 'data', 'code', 'good_example', 'other'];
+      if (!RESOURCE_CATEGORIES.includes(String(category))) {
+        return res.status(400).json({ error: `Unknown resource category "${String(category)}". Use one of: ${RESOURCE_CATEGORIES.join(', ')}.` });
+      }
       const resourceTitle = title || req.file?.originalname || url || 'Untitled';
       const id = randomUUID();
 
@@ -1253,7 +1259,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
             description: "Read one of the engagement's documents (engagement letter, project plan, good example) in full by name.",
             schema: { name: z.string().describe('Document name or type, e.g. "engagement letter"') },
             handler: async (args) => {
-              const docs = await db.all('SELECT name, document_type, extracted_content FROM engagement_documents WHERE engagement_id = ? LIMIT 50', engagementId) as Array<{ name: string; document_type: string; extracted_content: string | null }>;
+              const docs = await db.all('SELECT file_name AS name, document_type, extracted_content FROM engagement_documents WHERE engagement_id = ? LIMIT 50', engagementId) as Array<{ name: string; document_type: string; extracted_content: string | null }>;
               const wanted = String(args.name ?? '').trim().toLowerCase();
               const d = docs.find((x) => x.name.toLowerCase() === wanted) ?? docs.find((x) => x.name.toLowerCase().includes(wanted) || String(x.document_type).replace(/_/g, ' ').includes(wanted));
               if (!d) return `No document matching "${String(args.name ?? '')}". Documents: ${docs.map((x) => `"${x.name}" (${x.document_type})`).join(', ') || 'none'}.`;
