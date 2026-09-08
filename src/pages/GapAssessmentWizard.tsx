@@ -17,6 +17,7 @@ import {
   RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
+import { getStoredDefaultModel } from '@/stores/useSettingsStore';
 import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
 import ModelSelector from '@/components/shared/ModelSelector';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
@@ -423,7 +424,10 @@ function GapAssessmentWizardInner() {
     maturity: 3,
     concerns: '',
     documents: '',
-    modelTier: 'claude-sonnet-4-6' as string,
+    // The instance default (seeded from the server at boot) — a hardcoded bare
+    // Claude id here was routed to the metered API client, so a fresh
+    // assessment on a subscription-only instance failed every batch.
+    modelTier: getStoredDefaultModel() as string,
   });
 
   /** Human label for a stored modelTier — legacy aliases plus real model ids. */
@@ -468,6 +472,8 @@ function GapAssessmentWizardInner() {
   const [evidenceManifest, setEvidenceManifest] = useState<EvidenceManifestEntry[]>([]);
   // Wave 1.7 — re-assessment mode toggle (only meaningful when iterations exist)
   const [reassessMode, setReassessMode] = useState(false);
+  /** Batches the last run reported as failed — offered for a targeted retry. */
+  const [failedBatches, setFailedBatches] = useState<Array<{ framework: string; batchIndex: number }>>([]);
   // Wave 2.7 — second-opinion lane (comparison slot, never overwrites findings)
   const [soTier, setSoTier] = useState('');
   const [soRunning, setSoRunning] = useState(false);
@@ -714,19 +720,26 @@ function GapAssessmentWizardInner() {
   };
 
   // ── Run assessment (SSE) ───────────────────────────────────────────────────
-  const runAssessment = async () => {
+  const runAssessment = async (retryBatches?: Array<{ framework: string; batchIndex: number }>) => {
     if (!id || isRunning) return;
     setIsRunning(true);
     setProgressEvents([]);
+    setFailedBatches([]);
 
     try {
       const response = await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
+        body: JSON.stringify({
+          ...(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
+          ...(retryBatches && retryBatches.length > 0 ? { retryBatches } : {}),
+        }),
       });
 
-      if (!response.ok || !response.body) throw new Error('Stream failed');
+      if (!response.ok || !response.body) {
+        const detail = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(detail.error ?? `Run failed (${response.status})`);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -744,6 +757,12 @@ function GapAssessmentWizardInner() {
               const next = [...prev, event];
               return next.length > 200 ? next.slice(next.length - 200) : next;
             });
+            // A partial failure: the server lists the batches that failed and
+            // did NOT mark the assessment complete — offer a targeted retry.
+            const failed = (event as unknown as { failedBatches?: Array<{ framework: string; batchIndex: number }> }).failedBatches;
+            if (event.type === 'error' && Array.isArray(failed) && failed.length > 0) {
+              setFailedBatches(failed);
+            }
             if (event.type === 'batch_complete' && event.findings) {
               // Capture batch thinking/reasoning
               if ((event as unknown as Record<string, unknown>).thinking) {
@@ -1813,7 +1832,7 @@ function GapAssessmentWizardInner() {
                     </span>
                   </label>
                 )}
-                <button onClick={runAssessment} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                <button onClick={() => runAssessment()} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                   <Play className="h-4 w-4" /> {reassessMode && iterations.length > 0 ? 'Start Re-assessment' : 'Start Assessment'}
                 </button>
               </div>
@@ -1823,8 +1842,8 @@ function GapAssessmentWizardInner() {
               <div className="rounded-xl border border-border bg-adv-card">
                 <div ref={progressRef} className="max-h-80 overflow-y-auto p-4 space-y-2 font-mono text-xs">
                   {progressEvents.map((e, i) => (
-                    <div key={i} className={`flex items-start gap-2 ${e.type === 'error' ? 'text-red-400' : e.type === 'complete' ? 'text-adv-green' : e.type === 'batch_complete' ? 'text-adv-teal' : 'text-adv-gray'}`}>
-                      {e.type === 'error' ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
+                    <div key={i} className={`flex items-start gap-2 ${(e.type === 'error' || e.type === 'batch_error') ? 'text-red-400' : e.type === 'complete' ? 'text-adv-green' : e.type === 'batch_complete' ? 'text-adv-teal' : 'text-adv-gray'}`}>
+                      {(e.type === 'error' || e.type === 'batch_error') ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
                       <span>{e.message || e.type}</span>
                       {e.type === 'batch_complete' && e.batchIndex !== undefined && e.totalBatches !== undefined && (
                         <span className="ml-auto text-adv-gray">{e.batchIndex + 1}/{e.totalBatches}</span>
@@ -1838,7 +1857,15 @@ function GapAssessmentWizardInner() {
                     </div>
                   )}
                 </div>
-                {!isRunning && findings.length > 0 && (
+                {!isRunning && failedBatches.length > 0 && (
+                  <div className="flex items-center gap-3 border-t border-adv-red/30 bg-adv-red/5 p-4">
+                    <button onClick={() => runAssessment(failedBatches)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                      <RefreshCw className="h-4 w-4" /> Retry {failedBatches.length} failed batch{failedBatches.length === 1 ? '' : 'es'}
+                    </button>
+                    <span className="text-xs text-adv-gray">The assessment is not complete. Batches that succeeded are kept; only the failed ones re-run.</span>
+                  </div>
+                )}
+                {!isRunning && failedBatches.length === 0 && findings.length > 0 && (
                   <div className="border-t border-border p-4">
                     <button onClick={() => goToStep(5)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                       View Scoring ({findings.length} findings) <ChevronRight className="h-4 w-4" />

@@ -5,6 +5,7 @@
  */
 
 import { safeError } from '../lib/error-response.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -56,7 +57,13 @@ function getUserId(req: Request): string {
 export async function createGapAssessmentsRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Promise<Router> {
   const router = Router();
   const engine = await createGapAssessmentEngine(db);
+  // Kept for the engine function signatures; the LLM calls themselves go
+  // through provider-router and the routes gate on hasClaudeEngine().
   const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20 * 60 * 1000 }) : null);
+  /** Assessment ids with a run in progress in this process. */
+  const runsInFlight = new Set<string>();
+  /** An explicitly injected client (tests, or a funded key) is a Claude path too. */
+  const engineAvailable = (): boolean => hasClaudeEngine() || Boolean(anthropic);
 
   // ── List available frameworks ───────────────────────────────────────────────
   router.get('/gap-assessments/frameworks', async (_req: Request, res: Response) => {
@@ -83,7 +90,7 @@ export async function createGapAssessmentsRoutes(db: DatabaseAdapter, sharedAnth
 
   // ── Generate custom framework via AI ────────────────────────────────────────
   router.post('/gap-assessments/frameworks/generate', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'AI not available' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const { name, description, regulationUrl, documentText, articleHints } = req.body as {
       name?: string;
@@ -322,11 +329,29 @@ Generate the complete framework JSON now.`;
   // Triggers chunked Claude calls for the selected frameworks/articles.
   // Streams progress events to the client via SSE.
   router.post('/gap-assessments/:id/run', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
     if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    // One run per assessment at a time: a second Start (or a reload mid-run
+    // that showed "Ready to assess" again) launched concurrent runs writing
+    // the same rows.
+    const assessmentId = req.params.id as string;
+    if (runsInFlight.has(assessmentId)) {
+      return res.status(409).json({ error: 'This assessment is already running — wait for it to finish before starting again.' });
+    }
+    runsInFlight.add(assessmentId);
+
+    // Retry of specific batches after a partial failure (see the end of the loop).
+    const retryBatches = (req.body ?? {}) as { retryBatches?: Array<{ framework: string; batchIndex: number }> };
+    const retrySet = Array.isArray(retryBatches.retryBatches) && retryBatches.retryBatches.length > 0
+      ? new Set(retryBatches.retryBatches.map((b) => `${b.framework}::${b.batchIndex}`))
+      : null;
+    const failedBatches: Array<{ framework: string; batchIndex: number; error: string }> = [];
+    let attemptedBatches = 0;
+    const previousStatus = String(assessment.status ?? '');
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -377,21 +402,30 @@ Generate the complete framework JSON now.`;
         }
       }
 
-      // Build org context + knowledge pack layers to enrich every Claude batch call
+      // Build org context + knowledge pack layers to enrich every Claude batch call.
+      // The pack layer is given the frameworks and concerns as its query so it
+      // retrieves relevant entities — called with no context it dumped every
+      // active pack (three AML packs) into every batch of a DORA or GDPR run.
       const orgContextLayer = await buildOrgContextLayer(db, uid);
-      const knowledgePackLayer = await buildKnowledgePackLayer(db);
+      const knowledgePackLayer = await buildKnowledgePackLayer(db, {
+        userMessage: [...frameworks, String(contextConfig.concerns || '')].filter(Boolean).join(' '),
+      });
 
       // Resolve knowledge sources (RAG, folders, web search, URLs) if configured
       let knowledgeContext = '';
+      let knowledgeTools: Array<{ type: string; name?: string; [key: string]: unknown }> | undefined;
       if (contextConfig.knowledgeSources && typeof contextConfig.knowledgeSources === 'object') {
         try {
           sendEvent({ type: 'status', status: 'resolving', message: 'Resolving knowledge sources (folders, RAG, web)...' });
           const resolved = await resolveKnowledgeSources(
             contextConfig.knowledgeSources as Parameters<typeof resolveKnowledgeSources>[0],
             [],
-            { db, userQuery: String(contextConfig.concerns || 'AML compliance gap assessment'), contextBudget: 100_000 }
+            { db, userQuery: String(contextConfig.concerns || `${frameworks.join(' ')} compliance gap assessment`), contextBudget: 100_000 }
           );
           knowledgeContext = [resolved.systemPromptAdditions, resolved.contextDocuments].filter(Boolean).join('\n\n');
+          // The web-search tool the resolver built is handed to every batch —
+          // it used to be discarded here while the prompt told the model to use it.
+          knowledgeTools = resolved.tools.length > 0 ? (resolved.tools as typeof knowledgeTools) : undefined;
           if (resolved.sourceManifest?.length) {
             sendEvent({ type: 'info', message: `Knowledge sources loaded: ${resolved.sourceManifest.join(', ')} (~${resolved.tokenEstimate.toLocaleString()} tokens)` });
           }
@@ -442,6 +476,11 @@ Generate the complete framework JSON now.`;
 
         for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
           const batch = batches[batchIdx];
+          if (retrySet && !retrySet.has(`${frameworkId}::${batchIdx}`)) {
+            sendEvent({ type: 'info', framework: frameworkId, batchIndex: batchIdx, message: `Batch ${batchIdx + 1}/${batches.length} kept from the previous run` });
+            continue;
+          }
+          attemptedBatches += 1;
           sendEvent({
             type: 'batch_start',
             framework: frameworkId,
@@ -473,7 +512,7 @@ Generate the complete framework JSON now.`;
               extraSystemContext || undefined,
               modelTier,
               db,
-              batchBaseline ? { baseline: batchBaseline } : undefined
+              (batchBaseline || knowledgeTools) ? { baseline: batchBaseline, tools: knowledgeTools } : undefined
             );
 
             // Save findings to DB
@@ -502,6 +541,7 @@ Generate the complete framework JSON now.`;
           } catch (batchErr) {
             const errMsg = batchErr instanceof Error ? batchErr.message : String(batchErr);
             console.error(`[gap-assessments] batch ${batchIdx + 1} error:`, errMsg);
+            failedBatches.push({ framework: frameworkId, batchIndex: batchIdx, error: errMsg });
             sendEvent({
               type: 'batch_error',
               framework: frameworkId,
@@ -515,6 +555,24 @@ Generate the complete framework JSON now.`;
         sendEvent({ type: 'framework_complete', framework: frameworkId });
       }
 
+      // A run with failed batches is not complete. It used to advance to the
+      // scoring step and say "Assessment complete" regardless — 9 of the 13
+      // assessments on this instance sit at Step 5 with zero findings. Now the
+      // status stays where it was and the client gets the list to retry.
+      if (failedBatches.length > 0) {
+        if (previousStatus && previousStatus !== 'assessing') {
+          await db.run('UPDATE gap_assessments SET status = ?, current_step = 4, updated_at = ? WHERE id = ?', previousStatus, new Date().toISOString(), req.params.id as string);
+        }
+        sendEvent({
+          type: 'error',
+          failedBatches: failedBatches.map(({ framework, batchIndex }) => ({ framework, batchIndex })),
+          error: failedBatches[0].error,
+          message: `${failedBatches.length} of ${attemptedBatches} batches failed — the assessment is NOT complete. First error: ${failedBatches[0].error.slice(0, 160)}`,
+        });
+        res.end();
+        return;
+      }
+
       await db.run("UPDATE gap_assessments SET status = 'scoring', current_step = 5, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
 
       sendEvent({ type: 'complete', message: 'Assessment complete. Proceed to scoring view (Step 5).' });
@@ -524,6 +582,8 @@ Generate the complete framework JSON now.`;
       console.error('[gap-assessments] run error:', err);
       sendEvent({ type: 'error', error: safeError(err) });
       res.end();
+    } finally {
+      runsInFlight.delete(assessmentId);
     }
   });
 
@@ -536,7 +596,7 @@ Generate the complete framework JSON now.`;
     tier === 'opus' ? 'claude-opus-4-8' : tier === 'sonnet' ? 'claude-sonnet-4-6' : tier;
 
   router.post('/gap-assessments/:id/second-opinion', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -734,7 +794,7 @@ Generate the complete framework JSON now.`;
 
   // ── Synthesise capability view (Step 6) ────────────────────────────────────
   router.post('/gap-assessments/:id/synthesise', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -768,7 +828,7 @@ Generate the complete framework JSON now.`;
 
   // ── Generate board summary (Step 7) ────────────────────────────────────────
   router.post('/gap-assessments/:id/board-summary', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -815,7 +875,7 @@ Generate the complete framework JSON now.`;
 
   // ── Generate roadmap (Step 8) ───────────────────────────────────────────────
   router.post('/gap-assessments/:id/roadmap', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);

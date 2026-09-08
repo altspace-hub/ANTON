@@ -777,7 +777,7 @@ function buildFinding(
 }
 
 export async function runAssessmentBatch(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   frameworkId: string,
   articleBatch: FrameworkArticle[],
   contextConfig: Record<string, unknown>,
@@ -789,6 +789,10 @@ export async function runAssessmentBatch(
   opts?: {
     /** Prior-iteration baseline keyed by articleId — activates re-assessment mode (Wave 1.7). */
     baseline?: Record<string, BaselineFinding>;
+    /** Claude-format tools from the knowledge resolver (web search). The route
+     *  resolved them for years and dropped them here, so the Step 3 "Web search"
+     *  toggle changed the prompt's promises and nothing else. */
+    tools?: Array<{ type: string; name?: string; [key: string]: unknown }>;
   }
 ): Promise<AssessmentBatchResult> {
   const framework = loadFramework(frameworkId);
@@ -829,13 +833,17 @@ export async function runAssessmentBatch(
 
   const mc = getModelConfig(modelTier);
   // For custom model IDs (azure:*, gpt-*, mistral-*), use directly; for Claude tiers, map via provider
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
+    model: mapModelToProvider(mc.model),
     system: systemPrompt,
     messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework, hasEvidence, baseline) }],
     maxTokens: mc.maxTokensBatch,
     thinkingLevel: mc.thinkingLevel,
+    tools: opts?.tools,
     db,
   });
 
@@ -863,14 +871,17 @@ export async function runAssessmentBatch(
 }
 
 export async function synthesiseCapabilityView(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
   modelTier: GapModelTier = 'sonnet',
   db?: DatabaseAdapter
 ): Promise<{ json: string; reasoning: string }> {
   const findingsSummary = Object.entries(allFindings).map(([fw, findings]) => {
-    const summary = findings.map(f => `${f.articleId}: ${f.score} (${f.priority}) — ${f.notes}`).join('\n');
+    // currentState carries the "No evidence provided — based on stated
+    // maturity level" caveat the prompt below asks the model to carry
+    // through; without it the synthesis presented assumed states as observed gaps.
+    const summary = findings.map(f => `${f.articleId}: ${f.score} (${f.priority})\n  Current state: ${f.currentState}\n  Notes: ${f.notes}`).join('\n');
     return `### Framework: ${fw}\n${summary}`;
   }).join('\n\n');
 
@@ -879,9 +890,12 @@ export async function synthesiseCapabilityView(
   const criticalCount = Object.values(allFindings).flat().filter(f => f.priority === 'critical').length;
 
   const mc = getModelConfig(modelTier);
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
+    model: mapModelToProvider(mc.model),
     maxTokens: mc.maxTokensSynthesis,
     thinkingLevel: mc.thinkingLevel,
     db,
@@ -943,7 +957,7 @@ Return a JSON array of capability themes:
 }
 
 export async function generateBoardSummary(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
@@ -971,9 +985,12 @@ export async function generateBoardSummary(
   const frameworkNames = Object.keys(allFindings).join(', ');
 
   const mcBoard = getModelConfig(modelTier);
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mcBoard.model : mapModelToProvider(mcBoard.model),
+    model: mapModelToProvider(mcBoard.model),
     maxTokens: mcBoard.maxTokensSynthesis,
     thinkingLevel: mcBoard.thinkingLevel,
     db,
@@ -986,7 +1003,7 @@ Structure:
 **Entity:** [entity type] | **Date:** ${new Date().toISOString().slice(0, 10)} | **Frameworks assessed:** ${frameworkNames}
 
 ### Overall Compliance Posture
-[2-3 paragraph executive overview: overall risk level, comparison to regulatory expectations, and urgency assessment. Include estimated financial exposure range if enforcement action were taken (consider typical FI fines in the jurisdiction).]
+[2-3 paragraph executive overview: overall risk level, comparison to regulatory expectations, and urgency assessment. Do NOT state a financial exposure figure unless the findings or the knowledge provided to you contain one; otherwise write "Financial exposure was not quantified in this assessment."]
 
 ### What's Working
 - [3-5 positives — concrete, specific, citing evidence]
@@ -997,7 +1014,7 @@ For each of the top 5-7 issues:
 > [3-4 sentences: what the gap is, why it matters to the board, estimated financial/reputational risk if unaddressed, and regulatory timeline pressure]
 
 ### Peer Comparison Context
-[Brief note on how similar institutions in the jurisdiction/sector typically score on these dimensions. Flag areas where the entity is behind peer norms.]
+[Only if peer data was provided in the findings or knowledge above. Otherwise write exactly: "No peer data was provided to this assessment." Never invent peer norms.]
 
 ### Regulatory Timeline Pressure
 | Regulatory Milestone | Date | Risk If Not Compliant |
@@ -1010,6 +1027,7 @@ For each of the top 5-7 issues:
 3. [...]
 
 ### Estimated Remediation Investment
+Head this table with the sentence: "Illustrative order-of-magnitude ranges — not derived from this assessment; to be validated with the programme team."
 | Category | Estimated Range | Timing |
 |---|---|---|
 | Personnel / FTE | [range] | [when needed] |
@@ -1046,7 +1064,7 @@ ${capabilityView}`,
 }
 
 export async function generateRoadmap(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
@@ -1063,9 +1081,12 @@ export async function generateRoadmap(
   ).join('\n');
 
   const mcRoad = getModelConfig(modelTier);
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mcRoad.model : mapModelToProvider(mcRoad.model),
+    model: mapModelToProvider(mcRoad.model),
     maxTokens: mcRoad.maxTokensSynthesis,
     thinkingLevel: mcRoad.thinkingLevel,
     db,
