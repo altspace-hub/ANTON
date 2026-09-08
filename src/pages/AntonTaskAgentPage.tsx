@@ -57,6 +57,17 @@ interface ExecutionResult {
   thinking_level?: string;
   thinking?: string;
   description?: string;
+  /** Wave 3: the tools the step called on the agentic engine. */
+  tool_calls?: Array<{ name: string; input: Record<string, unknown>; ms: number; is_error: boolean; output_preview?: string }>;
+}
+
+/** Wave 3: one tool call in progress or finished while a step streams. */
+interface StepActivity {
+  id: number;
+  name: string;
+  input: string;
+  status: 'running' | 'done' | 'error';
+  ms?: number;
 }
 
 /** Wave 5.1 — compact status of the mission executing this task. */
@@ -333,6 +344,14 @@ function StepResultCard({
           <span className="text-sm font-semibold text-adv-white truncate">
             Step {result.step + 1}: {result.name}
           </span>
+          {(result.tool_calls?.length ?? 0) > 0 && (
+            <span
+              className="ml-1 rounded-full bg-adv-teal/10 px-2 py-0.5 text-[10px] font-medium text-adv-teal"
+              title={result.tool_calls!.map((c) => `${c.name.replace(/_/g, ' ')}: ${Object.values(c.input).map(String).join(' · ').slice(0, 80)}`).join('\n')}
+            >
+              {result.tool_calls!.length} tool call{result.tool_calls!.length === 1 ? '' : 's'}
+            </span>
+          )}
           {result.quality_score != null && (
             <span className={`ml-1 rounded-full bg-adv-dark/40 px-2 py-0.5 text-[10px] font-bold ${qualityColor}`}>
               {result.quality_score.toFixed(1)}/10
@@ -440,6 +459,7 @@ function ExecutionResultPanel({
   streamingStepName,
   streamingText,
   streamingThinking,
+  streamingActivity = [],
   isStreaming,
   onExport,
   isExporting,
@@ -448,6 +468,8 @@ function ExecutionResultPanel({
   streamingStepName?: string;
   streamingText: string;
   streamingThinking?: string;
+  /** Wave 3: tool calls of the agentic engine while the step streams. */
+  streamingActivity?: StepActivity[];
   isStreaming: boolean;
   onExport: (format: string, content: string, filename: string) => void;
   isExporting: boolean;
@@ -485,6 +507,23 @@ function ExecutionResultPanel({
                 {streamingThinking.slice(-500)}
               </pre>
             </div>
+          )}
+          {/* Wave 3: what the engine is doing — documents read, packs searched, specialists consulted */}
+          {streamingActivity.length > 0 && (
+            <ul className="border-b border-border/30 bg-adv-dark-2 px-5 py-2 space-y-1">
+              {streamingActivity.map((a) => (
+                <li key={a.id} className="flex items-center gap-2 text-xs">
+                  {a.status === 'running'
+                    ? <Loader2 className="h-3 w-3 animate-spin text-adv-teal shrink-0" />
+                    : a.status === 'error'
+                      ? <span className="h-3 w-3 rounded-full bg-adv-red/70 shrink-0" />
+                      : <span className="h-3 w-3 rounded-full bg-adv-teal/70 shrink-0" />}
+                  <span className="font-medium text-adv-off-white">{a.name.replace(/_/g, ' ')}</span>
+                  {a.input && <span className="truncate text-adv-gray" title={a.input}>{a.input}</span>}
+                  {a.ms != null && <span className="ml-auto shrink-0 text-adv-gray/60">{(a.ms / 1000).toFixed(1)}s</span>}
+                </li>
+              ))}
+            </ul>
           )}
           <div className="max-h-96 overflow-y-auto p-5">
             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-adv-off-white">
@@ -755,6 +794,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [executingStepName, setExecutingStepName] = useState('');
   const [executingStepText, setExecutingStepText] = useState('');
   const [executingStepThinking, setExecutingStepThinking] = useState('');
+  const [executingStepActivity, setExecutingStepActivity] = useState<StepActivity[]>([]);
   // Mission bridge state (Wave 5.1)
   const [launchingMission, setLaunchingMission] = useState(false);
   const [syncingMission, setSyncingMission] = useState(false);
@@ -1033,17 +1073,31 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           const raw = line.slice(6).trim();
           if (!raw) continue;
           try {
-            const parsed = JSON.parse(raw) as { type: string; text?: string; content?: string; hasMoreSteps?: boolean };
+            const parsed = JSON.parse(raw) as {
+              type: string; text?: string; content?: string; hasMoreSteps?: boolean;
+              id?: number; name?: string; input?: Record<string, unknown>; isError?: boolean; ms?: number;
+            };
             if ((parsed.type === 'text' || parsed.type === 'text_delta') && (parsed.text || parsed.content)) {
               accumulated += (parsed.text ?? parsed.content ?? '');
               setExecutingStepText(accumulated);
             } else if ((parsed.type === 'thinking' || parsed.type === 'thinking_delta') && (parsed.text || parsed.content)) {
               accThinking += (parsed.text ?? parsed.content ?? '');
               setExecutingStepThinking(accThinking);
+            } else if (parsed.type === 'turn_start') {
+              // Wave 3: each turn of the agentic engine starts a fresh message —
+              // the deliverable is the last one, so show only the current turn.
+              accumulated = '';
+              setExecutingStepText('');
+            } else if (parsed.type === 'tool_call' && typeof parsed.id === 'number') {
+              const summary = Object.values(parsed.input ?? {}).map((v) => String(v)).join(' · ').slice(0, 120);
+              setExecutingStepActivity((prev) => [...prev, { id: parsed.id as number, name: String(parsed.name ?? 'tool'), input: summary, status: 'running' }]);
+            } else if (parsed.type === 'tool_result' && typeof parsed.id === 'number') {
+              setExecutingStepActivity((prev) => prev.map((a) => (a.id === parsed.id ? { ...a, status: parsed.isError ? 'error' : 'done', ms: parsed.ms } : a)));
             } else if (parsed.type === 'quality_retry') {
               // Reset text on retry — new attempt starts fresh
               accumulated = '';
               setExecutingStepText('');
+              setExecutingStepActivity([]);
             } else if (parsed.type === 'done') {
               await loadTask();
               onStatusChange();
@@ -1061,6 +1115,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       setExecutingStepText('');
       setExecutingStepName('');
       setExecutingStepThinking('');
+      setExecutingStepActivity([]);
     }
   }
 
@@ -1397,6 +1452,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           streamingStepName={executingStepName}
           streamingText={executingStepText}
           streamingThinking={executingStepThinking}
+          streamingActivity={executingStepActivity}
           isStreaming={executingStep}
           onExport={(fmt, content, filename) => doExport(fmt, content, { filename, title: task.title })}
           isExporting={isExporting}

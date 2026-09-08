@@ -302,6 +302,76 @@ async function resolveQuery(): Promise<QueryFn> {
   return startSdkImport();
 }
 
+// ── Agentic runs (Wave 3, 2026-09-08) — shared plumbing ─────
+// The agentic runner (sdk-agentic-runner.ts) needs the same SDK module, the
+// same slot accounting and the same env/thinking helpers as the text engine,
+// but also the SDK's in-process MCP server factory. These accessors keep the
+// slot counter and the boot-time import in one place.
+
+/** The SDK surface an agentic run needs. Tests inject a fake. */
+export interface AgentSdkModule {
+  query: QueryFn;
+  createSdkMcpServer: (options: { name: string; version?: string; tools: unknown[] }) => unknown;
+  tool: (name: string, description: string, schema: Record<string, unknown>, handler: (args: Record<string, unknown>, extra: unknown) => Promise<unknown>) => unknown;
+}
+let agentSdkImpl: AgentSdkModule | null = null;
+export function setSdkAgentImplForTests(impl: AgentSdkModule | null): void {
+  agentSdkImpl = impl;
+}
+let agentSdkModulePromise: Promise<AgentSdkModule> | null = null;
+export async function resolveAgentSdk(): Promise<AgentSdkModule> {
+  if (agentSdkImpl) return agentSdkImpl;
+  agentSdkModulePromise ??= import('@anthropic-ai/claude-agent-sdk')
+    .then((mod) => ({
+      query: mod.query as unknown as QueryFn,
+      createSdkMcpServer: mod.createSdkMcpServer as unknown as AgentSdkModule['createSdkMcpServer'],
+      tool: mod.tool as unknown as AgentSdkModule['tool'],
+    }))
+    .catch((err) => { agentSdkModulePromise = null; throw err; });
+  return agentSdkModulePromise;
+}
+
+/**
+ * Take a subscription slot for a run, or explain why not. Returns null when
+ * the slot is taken (release with releaseSdkSlot); the same caps and wording
+ * as streamToResponse so every engine path tells the same story.
+ */
+export function tryAcquireSdkSlot(background: boolean): string | null {
+  if (!isSdkEngineEnabled()) return 'The SDK execution engine is disabled. Enable it in Settings → Execution engines.';
+  const slotCap = background ? MAX_BACKGROUND_SDK_RUNS : MAX_CONCURRENT_SDK_RUNS;
+  if (activeRuns >= slotCap) {
+    return background
+      ? `SDK engine busy — background work is capped at ${MAX_BACKGROUND_SDK_RUNS} of ${MAX_CONCURRENT_SDK_RUNS} concurrent runs so interactive requests always keep a slot. It will retry on the next pass.`
+      : `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.`;
+  }
+  activeRuns++;
+  return null;
+}
+export function releaseSdkSlot(): void {
+  if (activeRuns > 0) activeRuns--;
+}
+/**
+ * Run `fn` with the caller's slot released for its duration. An agentic run's
+ * subprocess is idle while one of its tools executes, so a tool that itself
+ * needs the engine (consult an expert module) may take the slot the parent
+ * was holding. Live finding 2026-09-08: without this, every nested consult
+ * was refused "SDK engine busy" the moment one background job was running.
+ * The slot is re-taken unconditionally afterwards — a brief overshoot of the
+ * cap is preferable to a parent that cannot resume.
+ */
+export async function yieldSdkSlotDuring<T>(fn: () => Promise<T>): Promise<T> {
+  releaseSdkSlot();
+  try {
+    return await fn();
+  } finally {
+    activeRuns++;
+  }
+}
+/** Exposed for tests: the live slot count. */
+export function activeSdkRunsForTests(): number {
+  return activeRuns;
+}
+
 export async function streamToResponse(
   config: SdkStreamConfig,
   res: StreamSink,

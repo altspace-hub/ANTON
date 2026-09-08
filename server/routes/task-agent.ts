@@ -30,6 +30,9 @@ import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { findCandidateModules, type CandidateModule } from '../services/module-recommendation.js';
 import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
+import { runAgentic, type AgentToolDefinition, type AgenticToolCall } from '../services/sdk-agentic-runner.js';
+import { isSdkModel } from '../services/engine-model-id.js';
+import { z } from 'zod';
 import {
   compileTaskToMission,
   summarizeLinkedMission,
@@ -936,13 +939,99 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       }, output, taskTitle, stepName);
     }
 
+    // ── Wave 3 (2026-09-08): the step runs on the agentic engine ─────────
+    // On the subscription engine a step is no longer one shot with whatever
+    // was pasted into the prompt: it can read the attached documents in
+    // full, search the regulatory packs, and consult ANTON's expert modules
+    // for a specialist view, over several turns, before writing the
+    // deliverable. Every call is streamed to the page and kept on the step.
+    const stepModel = mapModelToProvider('claude-opus-4-8');
+    const useAgentic = isSdkModel(stepModel);
+    let lastToolCalls: AgenticToolCall[] = [];
+
+    const agentTools: AgentToolDefinition[] = [
+      {
+        name: 'read_document',
+        description: 'Read one of the documents attached to this task in full (the prompt may hold only part). Pass the exact document name.',
+        schema: { name: z.string().describe('Exact name of the attached document') },
+        handler: async (args) => {
+          const wanted = String(args.name ?? '').trim().toLowerCase();
+          const file = taskFiles.find((f) => f.name.toLowerCase() === wanted) ?? taskFiles.find((f) => f.name.toLowerCase().includes(wanted));
+          if (!file) return `No attached document named "${String(args.name ?? '')}". Attached: ${taskFiles.map((f) => f.name).join(', ') || 'none'}.`;
+          return `### ${file.name}\n${file.text}`;
+        },
+      },
+      {
+        name: 'search_knowledge',
+        description: "Search ANTON's regulatory knowledge packs and framework texts for the articles and entities relevant to a question. Returns the matching text with citations.",
+        schema: { query: z.string().describe('What to look for — an obligation, an article, an entity, a topic') },
+        handler: async (args) => {
+          const grounding = await retrieveGroundingText({ query: String(args.query ?? ''), packIds: activePackIds, db, tokenBudget: 2000 });
+          return grounding?.text ?? 'Nothing relevant found in the knowledge packs for that query.';
+        },
+      },
+      {
+        name: 'list_expert_modules',
+        description: "Find ANTON expert modules (550+ specialist prompts across compliance, legal, risk, finance, HR and more) relevant to a topic, to consult via consult_expert_module.",
+        schema: { topic: z.string().describe('The topic or task to find specialists for') },
+        handler: async (args) => {
+          const found = await findCandidateModules(String(args.topic ?? ''), 8);
+          if (found.length === 0) return 'No matching expert modules.';
+          return found.map((m) => `- ${m.id} — ${m.label} (${m.areaId}): ${m.description}`).join('\n');
+        },
+      },
+      {
+        name: 'consult_expert_module',
+        description: 'Ask one ANTON expert module a focused question and get its specialist answer. Use list_expert_modules to find the module id first.',
+        schema: {
+          module_id: z.string().describe('The module id from list_expert_modules'),
+          question: z.string().describe('The focused question, with the context the specialist needs'),
+        },
+        handler: async (args) => {
+          const moduleId = String(args.module_id ?? '');
+          const prompt = await getModuleSystemPrompt(moduleId);
+          if (!prompt) return `No expert module with id "${moduleId}".`;
+          const answer = await callChat({
+            model: stepModel,
+            system: prompt,
+            messages: [{ role: 'user', content: String(args.question ?? '') }],
+            maxTokens: 4000,
+            thinkingLevel: 'think',
+          });
+          return answer.text || '(the specialist returned nothing)';
+        },
+      },
+    ];
+    // The brief names the attached documents: in the live run the model
+    // asked read_document for policies it had inferred from the task text and
+    // none were attached — three wasted turns.
+    const AGENT_TOOLS_BRIEF = `\n\n## TOOLS AVAILABLE TO YOU
+You may call read_document (an attached document in full), search_knowledge (regulatory pack and framework text with citations), list_expert_modules and consult_expert_module (a specialist's view from ANTON's expert modules). Use them where they would make the deliverable more accurate or complete — check a citation, read a clause, get a second view — and then write the complete deliverable as your FINAL message. The final message must be the deliverable itself, with no preamble about which tools you used.
+Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`).join(', ') : 'none — do not ask read_document for documents that are not listed here; state what is missing in the deliverable instead.'}`;
+
     /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
     let lastThinkingContent = '';
     async function runExecution(thinkingLevel?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
+      const userMessage = `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}`;
+      if (useAgentic) {
+        const run = await runAgentic({
+          model: stepModel,
+          thinking: (thinkingLevel ?? 'think') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+          system: fullSystemPrompt + AGENT_TOOLS_BRIEF,
+          prompt: userMessage,
+          tools: agentTools,
+          maxTurns: 12,
+        }, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        lastThinkingContent = run.thinking;
+        lastToolCalls = run.toolCalls;
+        if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the step');
+        if (run.warning) res.write(`data: ${JSON.stringify({ type: 'warning', message: run.warning })}\n\n`);
+        return { output: run.text, thinking: run.thinking };
+      }
       const result = await streamChat({
-        model: mapModelToProvider('claude-opus-4-8'),
+        model: stepModel,
         system: fullSystemPrompt,
-        messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}` }],
+        messages: [{ role: 'user', content: userMessage }],
         maxTokens: 16000,
         // Attempt 1 at 'think'; the retry ladder climbs think_hard → investigate.
         // With attempt 1 already at think_hard the first retry re-ran at the
@@ -1027,6 +1116,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         quality_critique: gate?.critique || undefined,
         quality_dimensions: gate ? { ...gate.dimensions } : undefined,
         source: 'task_agent',
+        ...(lastToolCalls.length > 0 ? {
+          tool_calls: lastToolCalls.map((c) => ({
+            name: c.name, input: c.input, ms: c.ms, is_error: c.isError, output_preview: c.output.slice(0, 300),
+          })),
+        } : {}),
       });
 
       const nextStepIdx = currentStepIdx + 1;
