@@ -21,6 +21,7 @@ import { getStoredDefaultModel } from '@/stores/useSettingsStore';
 import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
 import ModelSelector from '@/components/shared/ModelSelector';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
+import GapInterviewChat, { type InterviewTurn, type InterviewNoteDraft } from '@/components/gap-assessment/GapInterviewChat';
 import { useExport } from '@/hooks/useExport';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -461,6 +462,8 @@ function GapAssessmentWizardInner() {
     // Claude id here was routed to the metered API client, so a fresh
     // assessment on a subscription-only instance failed every batch.
     modelTier: getStoredDefaultModel() as string,
+    // Wave 2 (2026-09-08): the control interview ANTON ran, kept with Step 3.
+    interviewConversation: [] as InterviewTurn[],
   });
 
   /** Human label for a stored modelTier — legacy aliases plus real model ids. */
@@ -738,6 +741,31 @@ function GapAssessmentWizardInner() {
       knowledgeSources,
     };
   }, [contextConfig, knowledgeSources]);
+
+  // Wave 2 (2026-09-08): a completed interview turn. The notes ANTON recorded
+  // are filed under the interviewee's role (one card per role, one line per
+  // note) so they remain ordinary, editable interview evidence; the
+  // conversation and the notes are persisted together without leaving Step 3.
+  const handleInterviewTurn = useCallback(async (turns: InterviewTurn[], notes: InterviewNoteDraft[]) => {
+    let nextIvs = interviews;
+    if (notes.length > 0) {
+      nextIvs = [...interviews];
+      for (const n of notes) {
+        const line = `${n.articles.length > 0 ? `[${n.articles.join(', ')}] ` : ''}${n.text}`;
+        const idx = nextIvs.findIndex(i => i.role.trim().toLowerCase() === n.role.trim().toLowerCase());
+        if (idx >= 0) nextIvs[idx] = { ...nextIvs[idx], notes: `${nextIvs[idx].notes.trim()}\n- ${line}`.trim() };
+        else nextIvs.push({ id: crypto.randomUUID(), role: n.role, notes: `- ${line}` });
+      }
+      setInterviews(nextIvs);
+    }
+    setContextConfig(c => ({ ...c, interviewConversation: turns }));
+    if (!id) return;
+    await fetchWithAuth(`/api/gap-assessments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context_config: { ...buildEnrichedContext(evidenceDocs, nextIvs), interviewConversation: turns } }),
+    });
+  }, [interviews, evidenceDocs, buildEnrichedContext, id]);
 
   const saveContext = async () => {
     if (!id) return;
@@ -1731,6 +1759,15 @@ function GapAssessmentWizardInner() {
                 </div>
               )}
             </div>
+
+            {/* Wave 2 (2026-09-08): the control interview — ANTON asks, the notes write themselves. */}
+            {id && (
+              <GapInterviewChat
+                assessmentId={id}
+                conversation={Array.isArray(contextConfig.interviewConversation) ? contextConfig.interviewConversation : []}
+                onTurn={handleInterviewTurn}
+              />
+            )}
 
             {/* ── Interview Notes ────────────────────────────────────────── */}
             <div className="rounded-xl border border-border bg-adv-card p-4">

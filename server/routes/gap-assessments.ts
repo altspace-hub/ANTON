@@ -23,6 +23,7 @@ import {
   extractEvidenceItems,
   buildEvidenceManifest,
   mapFindingRow,
+  __getModelConfig,
   type FrameworkArticle,
   type GapModelTier,
   type GapFindingRow,
@@ -30,6 +31,7 @@ import {
   type OverrideRequestBody,
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
+import { domainForFrameworks, domainProfile } from '../services/gap-domains.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import {
   computeOpinionAgreement,
@@ -291,6 +293,137 @@ Generate the complete framework JSON now.`;
     } catch (err) {
       console.error('[gap-assessments] patch error:', err);
       res.status(500).json({ error: 'Failed to update assessment' });
+    }
+  });
+
+  // ── Control interview (Wave 2, 2026-09-08) ─────────────────────────────────
+  // POST /api/gap-assessments/:id/interview/turn  { messages }
+  // Step 3 asked for "interview notes" in a blank textarea, so the consultant
+  // had to know which questions establish the five facts each article is
+  // scored on. ANTON now runs the interview: the articles in scope, theme by
+  // theme, in the words of the specialist the framework calls for, and it
+  // records what the interviewee said as attributed, article-referenced notes
+  // carried in a trailing <interview_update> block. The wizard keeps the
+  // conversation with the rest of Step 3 and files the notes as evidence.
+  router.post('/gap-assessments/:id/interview/turn', async (req: Request, res: Response) => {
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+    const uid = getUserId(req);
+    const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    try {
+      const body = (req.body ?? {}) as { messages?: unknown };
+      const history = (Array.isArray(body.messages) ? body.messages : [])
+        .filter((t): t is { role: 'user' | 'assistant'; content: string } =>
+          Boolean(t) && typeof t === 'object' && ((t as { role?: unknown }).role === 'user' || (t as { role?: unknown }).role === 'assistant') && typeof (t as { content?: unknown }).content === 'string')
+        .slice(-40)
+        .map((t) => ({ role: t.role, content: t.content.slice(0, 6000) }));
+
+      const frameworkIds = JSON.parse(assessment.frameworks || '[]') as string[];
+      const scopeConfig = JSON.parse(assessment.scope_config || '{}') as { selectedThemes?: string[] };
+      const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
+      const selectedThemes = new Set(Array.isArray(scopeConfig.selectedThemes) ? scopeConfig.selectedThemes.map(String) : []);
+
+      const articleLines: string[] = [];
+      const frameworkNames: string[] = [];
+      let articleChars = 0;
+      for (const fwId of frameworkIds) {
+        const fw = getFramework(fwId);
+        if (!fw) continue;
+        frameworkNames.push(fw.name);
+        for (const a of fw.articles) {
+          if (selectedThemes.size > 0 && !selectedThemes.has(a.theme)) continue;
+          const line = `- ${fw.shortName} ${a.id} — ${a.title} [${a.theme}]: ${a.requirement}`;
+          if (articleChars + line.length > 16000) { articleLines.push('- … (further articles omitted for length)'); break; }
+          articleLines.push(line);
+          articleChars += line.length;
+        }
+      }
+
+      const evidence = extractEvidenceItems(contextConfig);
+      const documentNames = evidence.filter((e) => e.kind === 'document').map((e) => e.name);
+      const recorded = evidence.filter((e) => e.kind === 'interview').map((e) => `### ${e.name}\n${e.text.slice(0, 1500)}`);
+      const persona = domainProfile(domainForFrameworks(frameworkIds)).assessorPersona;
+      const str = (k: string): string => (typeof contextConfig[k] === 'string' ? String(contextConfig[k]) : '');
+
+      const systemPrompt = `You are ANTON, a ${persona}, conducting a structured control interview for a compliance gap assessment against ${frameworkNames.join(' and ') || 'the selected framework'}.
+
+ENTITY: ${str('entityType') || 'not stated'} — ${str('jurisdiction') || 'jurisdiction not stated'}; segments: ${str('segments') || 'not stated'}; self-assessed maturity ${String(contextConfig.maturity ?? '?')}/5.
+STATED CONCERNS: ${str('concerns') || 'none stated'}
+
+The assessment scores every article on five facts: documented, implemented, tested, evidenced, owner assigned. Your questions must establish those facts for the articles in scope, in the interviewee's own words — which policy, which system or process, when it was last tested and by whom, what evidence exists, who owns it. A control that is documented but never tested is the common gap; ask about testing and evidence explicitly.
+
+ARTICLES IN SCOPE (${articleLines.length}):
+${articleLines.join('\n') || '- (none — the scope has no articles)'}
+
+EVIDENCE ALREADY UPLOADED: ${documentNames.join('; ') || 'none'}
+INTERVIEW NOTES ALREADY RECORDED:
+${recorded.join('\n\n') || '(none yet)'}
+
+HOW TO RUN THE INTERVIEW
+- If you do not yet know who you are speaking with, ask for their role first (MLRO, Head of Compliance, CISO, DPO, Head of Operations — whatever fits the framework); otherwise use the role given.
+- Take the articles theme by theme. Ask 2-3 questions per turn — the ones that discriminate most. Never re-ask what the recorded notes or uploaded evidence already answer.
+- After each answer, record what was said as interview notes: factual, attributed to the role, referencing the article ids, in the interviewee's words where they are telling ("CDD refresh is 3 years for all customers — no risk-based differentiation"). "Did not know" is a finding too — record it.
+- Keep going until every theme in scope is covered or the interviewee says they are done; then set "done": true and summarise the themes with the weakest answers.
+- End every reply with exactly one machine-readable block, even when nothing was recorded:
+<interview_update>
+{"notes": [{"role": "MLRO", "articles": ["Art.12"], "text": "…"}], "done": false}
+</interview_update>
+  Only record what the interviewee actually said in this turn — never your own questions or assumptions.`;
+
+      const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
+      const model = mapModelToProvider(__getModelConfig(modelTier).model);
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      const messages = history.length > 0
+        ? history
+        : [{ role: 'user' as const, content: 'Start the interview. Confirm what you already have, then ask your first questions.' }];
+
+      let text = '';
+      try {
+        const result = await streamChat({ model, system: systemPrompt, messages, maxTokens: 4000, thinkingLevel: 'think' }, res);
+        text = result.text;
+      } catch (err) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const notes: Array<{ role: string; articles: string[]; text: string }> = [];
+      let done = false;
+      const block = text.match(/<interview_update>([\s\S]*?)<\/interview_update>/i);
+      if (block) {
+        try {
+          const upd = JSON.parse(block[1].trim()) as { notes?: unknown; done?: unknown };
+          done = upd.done === true;
+          for (const n of Array.isArray(upd.notes) ? upd.notes.slice(0, 20) : []) {
+            const item = n as { role?: unknown; articles?: unknown; text?: unknown };
+            const noteText = typeof item.text === 'string' ? item.text.trim().slice(0, 2000) : '';
+            if (!noteText) continue;
+            notes.push({
+              role: typeof item.role === 'string' && item.role.trim() ? item.role.trim().slice(0, 100) : 'Interviewee',
+              articles: Array.isArray(item.articles) ? item.articles.filter((a): a is string => typeof a === 'string').map((a) => a.slice(0, 40)).slice(0, 20) : [],
+              text: noteText,
+            });
+          }
+        } catch (err) {
+          console.warn('[gap-assessments] interview update block unreadable:', err instanceof Error ? err.message : err);
+        }
+      }
+      res.write(`data: ${JSON.stringify({ type: 'interview_update', notes, done })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    } catch (err) {
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(err) });
+      }
     }
   });
 
