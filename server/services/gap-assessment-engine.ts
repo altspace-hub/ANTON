@@ -12,6 +12,7 @@ import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { frameworkDomain, domainForFrameworks, domainProfile, type GapDomain } from './gap-domains.js';
 import {
   computeScoring,
   scoringForManual,
@@ -115,6 +116,8 @@ export interface Framework {
   articleCount: number;
   themes: string[];
   articles: FrameworkArticle[];
+  /** Which kind of specialist assesses it — derived from gap-domains.ts at load. */
+  domain?: GapDomain;
 }
 
 export interface ArticleFinding {
@@ -442,6 +445,7 @@ function loadFramework(frameworkId: string): Framework | null {
     const filePath = path.join(frameworkDir, `${frameworkId}.json`);
     if (!fs.existsSync(filePath)) return null;
     const fw = fs.readJsonSync(filePath) as Framework;
+    fw.domain = frameworkDomain(fw.id ?? frameworkId);
     frameworkCache.set(frameworkId, fw);
     return fw;
   } catch (err) {
@@ -458,7 +462,7 @@ export function listAvailableFrameworks(): Omit<Framework, 'articles'>[] {
     return files.map(f => {
       const fw = fs.readJsonSync(path.join(frameworkDir, f)) as Framework;
       const { articles: _articles, ...meta } = fw;
-      return meta;
+      return { ...meta, domain: frameworkDomain(fw.id) };
     });
   } catch {
     return [];
@@ -475,7 +479,11 @@ function buildAssessmentSystemPrompt(context: {
   segments: string;
   maturity: number;
   concerns: string;
-}, hasEvidence: boolean, reassess: boolean): string {
+}, hasEvidence: boolean, reassess: boolean, domain: GapDomain = 'compliance'): string {
+  // The assessor is the framework's kind of specialist — a DORA run was
+  // judged by "a senior AML/CFT compliance specialist" and its output
+  // talked about AML maturity.
+  const profile = domainProfile(domain);
   const groundingRules = hasEvidence
     ? `Grounding rules for "currentState":
 - Describe THIS entity's ACTUAL current state, grounded in the evidence documents and interview notes provided with this assessment. Reference the specific document or interview you are drawing on.
@@ -491,12 +499,12 @@ function buildAssessmentSystemPrompt(context: {
 - If something changed, return "changed": true with the FULL criteria, fresh currentState/notes, and a "changeReason" (1-2 sentences naming the specific evidence that moved the answer). changeReason is MANDATORY whenever any criterion answer differs from the baseline.`
     : '';
 
-  return `You are a senior AML/CFT compliance specialist conducting a structured gap assessment.
+  return `You are a ${profile.assessorPersona} conducting a structured gap assessment.
 
 Entity: ${context.entityType}
 Jurisdiction(s): ${context.jurisdiction}
 Customer segments: ${context.segments}
-Current AML maturity (self-rated): ${context.maturity}/5
+Current ${profile.label} maturity (self-rated): ${context.maturity}/5
 Known concerns: ${context.concerns || 'None specified'}
 
 Your task is to assess the entity's compliance with the articles listed below. For each article you provide STRUCTURED CRITERION FACTS — you do NOT assign scores, RAG bands, or priorities. A deterministic, versioned rubric computes those from your facts after the run. Put all of your judgement into answering the criteria truthfully and into the narrative fields.
@@ -822,7 +830,7 @@ export async function runAssessmentBatch(
   const baseline = opts?.baseline && Object.keys(opts.baseline).length > 0 ? opts.baseline : undefined;
 
   const hasEvidence = evidenceText.length > 0;
-  const baseSystem = buildAssessmentSystemPrompt(context, hasEvidence, !!baseline);
+  const baseSystem = buildAssessmentSystemPrompt(context, hasEvidence, !!baseline, framework.domain ?? frameworkDomain(frameworkId));
   const idListNote = evidenceItems.length > 0
     ? `\nEach item has a stable id in [brackets] — cite those ids in evidenceRefs.\n`
     : '';
@@ -899,7 +907,7 @@ export async function synthesiseCapabilityView(
     maxTokens: mc.maxTokensSynthesis,
     thinkingLevel: mc.thinkingLevel,
     db,
-    system: `You are a senior compliance transformation advisor with 20+ years of experience in AML/CFT regulatory implementation across Nordic and European financial institutions.
+    system: `You are a ${domainProfile(domainForFrameworks(Object.keys(allFindings))).advisorPersona}.
 
 Synthesise the article-level gap findings below into 8-12 cross-cutting capability themes. Each theme spans one or more regulatory articles and reflects a real organisational capability (not just a regulation grouping).
 
@@ -994,7 +1002,7 @@ export async function generateBoardSummary(
     maxTokens: mcBoard.maxTokensSynthesis,
     thinkingLevel: mcBoard.thinkingLevel,
     db,
-    system: `You are a senior compliance advisor with deep experience presenting to boards of Nordic and European financial institutions. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
+    system: `You are a ${domainProfile(domainForFrameworks(Object.keys(allFindings))).boardPersona}. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
 
 Truthfulness rule: where the underlying findings are marked "No evidence provided — based on stated maturity level", make clear to the board that those points reflect the stated maturity level rather than reviewed evidence — never present them as observed facts about this institution.
 
@@ -1090,7 +1098,7 @@ export async function generateRoadmap(
     maxTokens: mcRoad.maxTokensSynthesis,
     thinkingLevel: mcRoad.thinkingLevel,
     db,
-    system: `You are a compliance transformation programme manager with extensive experience delivering AML/CFT remediation programmes for Nordic and European financial institutions. Build a detailed, phased remediation roadmap.
+    system: `You are a ${domainProfile(domainForFrameworks(Object.keys(allFindings))).programmePersona}. Build a detailed, phased remediation roadmap.
 
 Return a JSON object:
 {

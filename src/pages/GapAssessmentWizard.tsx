@@ -133,7 +133,45 @@ interface Framework {
   articleCount: number;
   themes: string[];
   articles: Array<{ id: string; title: string; theme: string; requirement: string }>;
+  /** Which kind of specialist assesses it (server: gap-domains.ts). */
+  domain?: string;
 }
+
+/** Entity types offered per assessment domain — the list was banks only,
+ *  so a SaaS company assessing GDPR or a hospital assessing ISO 27001 could
+ *  not even name what it was. */
+const ENTITY_TYPES_BY_DOMAIN: Record<string, string[]> = {
+  'aml': ['Credit institution', 'Payment institution', 'E-money institution', 'Crypto-asset service provider (CASP)', 'Investment firm', 'Insurance undertaking', 'Asset manager', 'Fund administrator', 'Trust or company service provider', 'Law firm / notary', 'Real estate agent', 'Gambling operator'],
+  'sanctions': ['Credit institution', 'Payment institution', 'Investment firm', 'Insurance undertaking', 'Exporter / manufacturer', 'Shipping / logistics company', 'Trading company', 'Corporate group'],
+  'ict-resilience': ['Credit institution', 'Payment institution', 'Investment firm', 'Insurance undertaking', 'Crypto-asset service provider (CASP)', 'ICT third-party service provider', 'Market infrastructure'],
+  'infosec': ['SaaS / technology company', 'Financial services firm', 'Healthcare provider', 'Public body', 'Merchant / retailer', 'Managed service provider', 'Manufacturer'],
+  'privacy': ['SaaS / technology company', 'Financial services firm', 'Healthcare provider', 'Public body', 'Retailer / e-commerce', 'Employer (HR processing)', 'Marketing / adtech company'],
+  'ai-governance': ['AI system provider', 'AI system deployer', 'Financial services firm', 'Healthcare provider', 'Public body', 'Employer using AI in HR'],
+  'anti-bribery': ['Corporate group', 'Financial services firm', 'Construction / infrastructure company', 'Extractives / energy company', 'Pharmaceutical company', 'Public body'],
+  'financial-conduct': ['Credit institution', 'Investment firm', 'Insurance undertaking', 'Asset manager', 'Fund administrator', 'Payment institution'],
+  'digital-assets': ['Crypto-asset service provider (CASP)', 'Stablecoin issuer', 'Payment institution', 'E-money institution', 'Credit institution', 'Fintech platform'],
+  'esg': ['Listed company', 'Large undertaking', 'Financial services firm', 'Subsidiary of a non-EU parent'],
+  'corporate-governance': ['Private limited company', 'Public limited company', 'Financial services firm', 'Charity / not-for-profit'],
+  'online-safety': ['Social media platform', 'Search service', 'Online marketplace', 'Gaming / streaming service', 'Messaging service'],
+  'compliance': ['Financial services firm', 'Corporate group', 'SaaS / technology company', 'Public body', 'Healthcare provider', 'Other regulated organisation'],
+};
+
+/** Interview roles suggested per domain — the datalist listed AML roles only. */
+const INTERVIEW_ROLES_BY_DOMAIN: Record<string, string[]> = {
+  'aml': ['MLRO / Compliance Officer', 'Head of AML Operations', 'KYC Team Lead', 'Transaction Monitoring Analyst', 'Head of Risk', 'Internal Audit', 'Board Member / NED', 'Front-line Relationship Manager', 'IT / Data Team', 'Legal Counsel'],
+  'sanctions': ['Head of Sanctions', 'Screening Team Lead', 'Trade Finance Operations', 'Head of Compliance', 'Legal Counsel', 'Internal Audit', 'Export Control Officer'],
+  'ict-resilience': ['CIO / CTO', 'CISO', 'Head of IT Operations', 'Third-Party Risk Manager', 'Business Continuity Manager', 'Head of Risk', 'Internal Audit', 'Incident Manager'],
+  'infosec': ['CISO', 'Security Operations Lead', 'IT Infrastructure Manager', 'DevOps / Platform Lead', 'Data Protection Officer', 'Internal Audit', 'HR (joiners/leavers)'],
+  'privacy': ['Data Protection Officer', 'Head of Legal', 'CISO', 'Marketing Lead', 'HR Director', 'Product Owner', 'Customer Service Lead'],
+  'ai-governance': ['Head of AI / ML', 'Data Science Lead', 'Product Owner', 'Data Protection Officer', 'Head of Risk', 'Legal Counsel', 'Model Validation'],
+  'anti-bribery': ['Chief Compliance Officer', 'Head of Procurement', 'Sales Director', 'Finance Director', 'Internal Audit', 'Legal Counsel', 'Country Manager'],
+  'financial-conduct': ['Head of Compliance', 'Head of Product', 'Head of Distribution', 'Conduct Risk Manager', 'Head of Risk', 'Internal Audit', 'Board Member / NED'],
+  'digital-assets': ['Chief Compliance Officer', 'Head of Custody', 'Head of Trading / Markets', 'CISO', 'Head of Risk', 'Legal Counsel', 'Finance Director'],
+  'esg': ['Head of Sustainability', 'CFO / Financial Controller', 'Head of Procurement', 'HR Director', 'Investor Relations', 'Internal Audit'],
+  'corporate-governance': ['Company Secretary', 'Board Chair', 'Non-Executive Director', 'CFO', 'General Counsel', 'Internal Audit'],
+  'online-safety': ['Head of Trust & Safety', 'Content Moderation Lead', 'Product Owner', 'Legal Counsel', 'Data Protection Officer', 'Head of Engineering'],
+  'compliance': ['Head of Compliance', 'Head of Risk', 'Head of Operations', 'Legal Counsel', 'Internal Audit', 'Board Member / NED', 'IT / Data Team'],
+};
 
 interface ProgressEvent {
   type: string;
@@ -215,18 +253,6 @@ interface InterviewNote {
   notes: string;
 }
 
-const INTERVIEW_ROLE_SUGGESTIONS = [
-  'MLRO / Compliance Officer',
-  'Head of AML Operations',
-  'KYC Team Lead',
-  'Transaction Monitoring Analyst',
-  'Head of Risk',
-  'Internal Audit',
-  'Board Member / NECD',
-  'Front-line Relationship Manager',
-  'IT / Data Team',
-  'Legal Counsel',
-];
 
 interface IterationSummary {
   id: string;
@@ -416,6 +442,13 @@ function GapAssessmentWizardInner() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [findings, setFindings] = useState<Array<ArticleFinding & { framework: string }>>([]);
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  // The assessment's domain: the frameworks' shared domain, generic when they mix.
+  const assessmentDomain = (() => {
+    const domains = new Set(frameworks.map(f => f.domain ?? 'compliance'));
+    return domains.size === 1 ? [...domains][0] : 'compliance';
+  })();
+  const entityTypeOptions = ENTITY_TYPES_BY_DOMAIN[assessmentDomain] ?? ENTITY_TYPES_BY_DOMAIN.compliance;
+  const interviewRoleSuggestions = INTERVIEW_ROLES_BY_DOMAIN[assessmentDomain] ?? INTERVIEW_ROLES_BY_DOMAIN.compliance;
   const [currentStep, setCurrentStep] = useState(1);
   const [contextConfig, setContextConfig] = useState({
     entityType: 'Credit institution',
@@ -1563,14 +1596,9 @@ function GapAssessmentWizardInner() {
                   value={contextConfig.entityType}
                   onChange={e => setContextConfig(c => ({ ...c, entityType: e.target.value }))}
                 >
-                  <option>Credit institution</option>
-                  <option>Payment institution</option>
-                  <option>E-money institution</option>
-                  <option>Crypto-asset service provider (CASP)</option>
-                  <option>Investment firm</option>
-                  <option>Insurance undertaking</option>
-                  <option>Asset manager</option>
-                  <option>Fund administrator</option>
+                  {/* A stored value outside this domain's list stays selectable — never silently changed. */}
+                  {!entityTypeOptions.includes(contextConfig.entityType) && <option>{contextConfig.entityType}</option>}
+                  {entityTypeOptions.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
@@ -1739,7 +1767,7 @@ function GapAssessmentWizardInner() {
                             onChange={e => updateInterview(interview.id, 'role', e.target.value)}
                           />
                           <datalist id={`role-list-${interview.id}`}>
-                            {INTERVIEW_ROLE_SUGGESTIONS.map(r => <option key={r} value={r} />)}
+                            {interviewRoleSuggestions.map(r => <option key={r} value={r} />)}
                           </datalist>
                         </div>
                         <button type="button" onClick={() => removeInterview(interview.id)} className="text-adv-gray hover:text-adv-red transition-colors" title="Remove interview">
