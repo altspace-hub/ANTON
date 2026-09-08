@@ -119,6 +119,8 @@ interface Assessment {
   scope_config: string;
   context_config: string;
   status: string;
+  /** Wave 3: a run in progress on the server that the wizard can re-attach to. */
+  run_job?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; error?: string } | null;
   current_step: number;
   article_scores: string;
   capability_view: string | null;
@@ -638,6 +640,19 @@ function GapAssessmentWizardInner() {
 
   useEffect(() => { loadAssessment(); }, [loadAssessment]);
 
+  // Wave 3: a run still going on the server (this page was reloaded) is
+  // picked back up — every frame so far, then live — on Step 4.
+  const attachedRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    const run = assessment?.run_job;
+    if (!assessment || !run || run.status !== 'running' || isRunning) return;
+    if (attachedRunRef.current === run.startedAt) return;
+    attachedRunRef.current = run.startedAt;
+    setCurrentStep(4);
+    void attachRun();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment?.id, assessment?.run_job?.status, assessment?.run_job?.startedAt]);
+
   // ── Pre-fill context from Org Context (only for fresh assessments on step 1-3) ──
   useEffect(() => {
     if (!assessment) return;
@@ -781,21 +796,27 @@ function GapAssessmentWizardInner() {
   };
 
   // ── Run assessment (SSE) ───────────────────────────────────────────────────
-  const runAssessment = async (retryBatches?: Array<{ framework: string; batchIndex: number }>) => {
+  const runAssessment = async (retryBatches?: Array<{ framework: string; batchIndex: number }>) => streamRun('start', retryBatches);
+  /** Wave 3: a run outlives the request — a reloaded wizard picks it back up. */
+  const attachRun = async () => streamRun('attach');
+
+  const streamRun = async (mode: 'start' | 'attach', retryBatches?: Array<{ framework: string; batchIndex: number }>) => {
     if (!id || isRunning) return;
     setIsRunning(true);
     setProgressEvents([]);
     setFailedBatches([]);
 
     try {
-      const response = await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
-          ...(retryBatches && retryBatches.length > 0 ? { retryBatches } : {}),
-        }),
-      });
+      const response = mode === 'start'
+        ? await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
+            ...(retryBatches && retryBatches.length > 0 ? { retryBatches } : {}),
+          }),
+        })
+        : await fetchWithAuth(`/api/gap-assessments/${id}/run/stream`);
 
       if (!response.ok || !response.body) {
         const detail = await response.json().catch(() => ({})) as { error?: string };

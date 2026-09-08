@@ -45,6 +45,8 @@ export interface EngagementData {
   scope_confirmed_at: string | null;
   /** Wave 2: set by POST /:id/complete, cleared by /reopen. */
   completed_at?: string | null;
+  /** Wave 3: an execution in progress on the server that the page can re-attach to. */
+  run_job?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; toolCalls: number; turns: number; error?: string } | null;
   documents: EngagementDocument[];
   scope_items: ScopeItem[];
   workstreams: Workstream[];

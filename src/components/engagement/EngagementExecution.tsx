@@ -26,11 +26,25 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  /** Wave 3: the agentic engine's tool calls while it works. */
+  const [activity, setActivity] = useState<Array<{ id: number; name: string; input: string; status: 'running' | 'done' | 'error'; ms?: number }>>([]);
   const [selectedWorkstream, setSelectedWorkstream] = useState<string | null>(
     engagement.workstreams.length === 1 ? engagement.workstreams[0].id : null
   );
   const outputRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Wave 3: an execution still going on the server (this page was reloaded)
+  // is picked back up — every frame so far, then live.
+  const attachedRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    const run = engagement.run_job;
+    if (!run || run.status !== 'running' || executing) return;
+    if (attachedRunRef.current === run.startedAt) return;
+    attachedRunRef.current = run.startedAt;
+    void attachExecution();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engagement.id, engagement.run_job?.status, engagement.run_job?.startedAt]);
 
   // Auto-scroll output
   useEffect(() => {
@@ -47,10 +61,15 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
     ? engagement.workstreams.find(w => w.id === selectedWorkstream)
     : null;
 
-  async function execute() {
+  async function execute() { await streamExecution('start'); }
+  /** Wave 3: an execution outlives the request — a reloaded page picks it back up. */
+  async function attachExecution() { await streamExecution('attach'); }
+
+  async function streamExecution(mode: 'start' | 'attach') {
     setExecuting(true);
     setStreamedText('');
     setStreamedThinking('');
+    setActivity([]);
     setThinkingOpen(false);
     setError(null);
     setDone(false);
@@ -58,12 +77,14 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
     abortRef.current = new AbortController();
 
     try {
-      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/execute`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workstream_id: selectedWorkstream || undefined }),
-        signal: abortRef.current.signal,
-      });
+      const res = mode === 'start'
+        ? await fetchWithAuth(`/api/engagements/${engagement.id}/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workstream_id: selectedWorkstream || undefined }),
+          signal: abortRef.current.signal,
+        })
+        : await fetchWithAuth(`/api/engagements/${engagement.id}/execute/stream`, { signal: abortRef.current.signal });
 
       if (!res.ok) throw new Error(await res.text());
       if (!res.body) throw new Error('No response stream');
@@ -92,6 +113,17 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
             if (event.type === 'text_delta') setStreamedText(prev => prev + String(event.content ?? ''));
             else if (event.type === 'text') setStreamedText(prev => prev + String(event.text ?? ''));
             if (event.type === 'thinking_delta') setStreamedThinking(prev => prev + String(event.content ?? ''));
+            // Wave 3: the agentic engine works in turns — the deliverable is the
+            // last one, so each new turn starts the shown text afresh — and
+            // reports every tool call as it runs.
+            if (event.type === 'turn_start') setStreamedText('');
+            if (event.type === 'tool_call' && typeof event.id === 'number') {
+              const summary = Object.values((event.input ?? {}) as Record<string, unknown>).map(v => String(v)).join(' · ').slice(0, 120);
+              setActivity(prev => [...prev, { id: event.id as number, name: String(event.name ?? 'tool'), input: summary, status: 'running' }]);
+            }
+            if (event.type === 'tool_result' && typeof event.id === 'number') {
+              setActivity(prev => prev.map(a => (a.id === event.id ? { ...a, status: event.isError ? 'error' : 'done', ms: event.ms as number | undefined } : a)));
+            }
             if (event.type === 'done') { setDone(true); onReload(); }
             if (event.type === 'error') setError(String(event.error ?? event.message ?? 'Execution failed'));
           } catch { /**/ }
@@ -193,6 +225,24 @@ export default function EngagementExecution({ engagement, onUpdate, onNext, onRe
             </button>
           )}
         </div>
+      )}
+
+      {/* Wave 3: what the engine is doing — resources read, profile checked, specialists consulted */}
+      {activity.length > 0 && (
+        <ul className="rounded-xl border border-border bg-adv-card px-4 py-3 space-y-1.5">
+          {activity.map(a => (
+            <li key={a.id} className="flex items-center gap-2 text-xs">
+              {a.status === 'running'
+                ? <Loader2 className="h-3 w-3 animate-spin text-adv-teal shrink-0" />
+                : a.status === 'error'
+                  ? <span className="h-3 w-3 rounded-full bg-adv-red/70 shrink-0" />
+                  : <span className="h-3 w-3 rounded-full bg-adv-teal/70 shrink-0" />}
+              <span className="font-medium text-adv-off-white">{a.name.replace(/_/g, ' ')}</span>
+              {a.input && <span className="truncate text-adv-gray" title={a.input}>{a.input}</span>}
+              {a.ms != null && <span className="ml-auto shrink-0 text-adv-gray/60">{(a.ms / 1000).toFixed(1)}s</span>}
+            </li>
+          ))}
+        </ul>
       )}
 
       {/* Executing state */}

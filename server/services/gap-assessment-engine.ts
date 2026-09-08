@@ -12,6 +12,10 @@ import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { runAgentic, type AgentToolDefinition } from './sdk-agentic-runner.js';
+import { isSdkModel } from './engine-model-id.js';
+import { retrieveGroundingText } from './framework-text-retrieval.js';
+import { z } from 'zod';
 import { frameworkDomain, domainForFrameworks, domainProfile, type GapDomain } from './gap-domains.js';
 import {
   computeScoring,
@@ -801,6 +805,14 @@ export async function runAssessmentBatch(
      *  resolved them for years and dropped them here, so the Step 3 "Web search"
      *  toggle changed the prompt's promises and nothing else. */
     tools?: Array<{ type: string; name?: string; [key: string]: unknown }>;
+    /** Wave 3: on the subscription engine the batch reads evidence on demand
+     *  through tools instead of a 120k-character paste. */
+    agentic?: {
+      /** Framework/pack ids search_knowledge is scoped to. */
+      packIds?: string[];
+      /** Tool activity, for the run's progress feed. */
+      onEvent?: (event: { type: string; message: string }) => void;
+    };
   }
 ): Promise<AssessmentBatchResult> {
   const framework = loadFramework(frameworkId);
@@ -834,10 +846,6 @@ export async function runAssessmentBatch(
   const idListNote = evidenceItems.length > 0
     ? `\nEach item has a stable id in [brackets] — cite those ids in evidenceRefs.\n`
     : '';
-  const evidenceSection = hasEvidence
-    ? `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe following evidence was provided by the assessor. Use this to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Quote or reference specific documents/interviews where applicable. Where the evidence does not cover an article, say so explicitly per the grounding rules above.${idListNote}\n${evidenceText}`
-    : '';
-  const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
 
   const mc = getModelConfig(modelTier);
   // For custom model IDs (azure:*, gpt-*, mistral-*), use directly; for Claude tiers, map via provider
@@ -845,17 +853,114 @@ export async function runAssessmentBatch(
   // engine (an sdk: default → the subscription), engine/provider ids pass
   // through untouched. The old "custom model" branch sent a bare Claude id —
   // the wizard's former default — straight to the metered API client.
-  const result = await callChat({
-    model: mapModelToProvider(mc.model),
-    system: systemPrompt,
-    messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework, hasEvidence, baseline) }],
-    maxTokens: mc.maxTokensBatch,
-    thinkingLevel: mc.thinkingLevel,
-    tools: opts?.tools,
-    db,
-  });
+  const routedModel = mapModelToProvider(mc.model);
+  const userMessage = buildBatchUserMessage(articleBatch, framework, hasEvidence, baseline);
 
-  const rawFindings = JSON.parse(extractJson(result.text, 'array')) as RawBatchFinding[];
+  let resultText = '';
+  let resultThinking = '';
+  if (opts?.agentic && isSdkModel(routedModel) && evidenceItems.length > 0) {
+    // ── Wave 3: evidence on demand ────────────────────────────────────────
+    // The batch used to receive the evidence as one paste cut at 120,000
+    // characters — the one real run here uploaded 247k and lost half without
+    // a word. On the subscription engine the batch gets a manifest with an
+    // excerpt of each item and reads the rest through tools, so nothing is
+    // cut and quotes are checked against the FULL text of every item.
+    for (const i of evidenceItems) shownTextByDocId.set(i.docId, i.text);
+    const EXCERPT_CHARS = 1_200;
+    const manifest = evidenceItems.map((i) =>
+      `### ${i.kind === 'interview' ? 'INTERVIEW' : 'DOCUMENT'} [${i.docId}]: ${i.name} — ${i.text.length.toLocaleString('en-GB')} characters\n${i.text.slice(0, EXCERPT_CHARS)}${i.text.length > EXCERPT_CHARS ? '\n… (excerpt — call read_evidence for the rest)' : ''}`,
+    ).join('\n\n---\n\n');
+    const evidenceSection = `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe assessor provided ${evidenceItems.length} evidence item(s), listed below with an excerpt each. Use them to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Before scoring an article that an item bears on, call read_evidence with its id to read the relevant part in full; quote only text you have read. Where the evidence does not cover an article, say so explicitly per the grounding rules above.${idListNote}\n${manifest}`;
+    const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
+
+    const READ_CHARS = 30_000;
+    const byId = new Map(evidenceItems.map((i) => [i.docId, i]));
+    const tools: AgentToolDefinition[] = [
+      {
+        name: 'read_evidence',
+        description: 'Read an evidence item in full by its id (from the list in your instructions). Long items are returned in 30,000-character pages; pass offset to continue.',
+        schema: { doc_id: z.string().describe('The evidence id, e.g. doc-3f2a…'), offset: z.number().int().min(0).optional().describe('Character offset to start from (default 0)') },
+        handler: async (args) => {
+          const item = byId.get(String(args.doc_id ?? '').trim());
+          if (!item) return `No evidence item with id "${String(args.doc_id ?? '')}". Known ids: ${evidenceItems.map((i) => i.docId).join(', ')}.`;
+          const offset = Math.max(0, Number(args.offset ?? 0) || 0);
+          const page = item.text.slice(offset, offset + READ_CHARS);
+          const more = offset + READ_CHARS < item.text.length ? `\n\n… continues — call again with offset ${offset + READ_CHARS} (total ${item.text.length.toLocaleString('en-GB')} characters).` : '';
+          return `### [${item.docId}] ${item.name} (characters ${offset.toLocaleString('en-GB')}–${Math.min(item.text.length, offset + READ_CHARS).toLocaleString('en-GB')})\n${page}${more}`;
+        },
+      },
+      {
+        name: 'search_evidence',
+        description: 'Find which evidence items mention a term or phrase, with a short context around each hit.',
+        schema: { term: z.string().describe('A word or phrase to look for, case-insensitive') },
+        handler: async (args) => {
+          const term = String(args.term ?? '').trim().toLowerCase();
+          if (!term) return 'Give a term to search for.';
+          const hits: string[] = [];
+          for (const item of evidenceItems) {
+            const lower = item.text.toLowerCase();
+            let from = 0; let count = 0;
+            while (count < 3) {
+              const at = lower.indexOf(term, from);
+              if (at < 0) break;
+              hits.push(`[${item.docId}] ${item.name} @${at}: …${item.text.slice(Math.max(0, at - 120), at + term.length + 120).replace(/\s+/g, ' ')}…`);
+              from = at + term.length; count += 1;
+            }
+          }
+          return hits.length > 0 ? hits.join('\n') : `No evidence item mentions "${term}".`;
+        },
+      },
+      {
+        name: 'search_knowledge',
+        description: "Search the framework's requirement text and ANTON's regulatory knowledge packs for an obligation, article or topic. Returns the matching text with citations.",
+        schema: { query: z.string().describe('What to look for') },
+        handler: async (args) => {
+          const grounding = await retrieveGroundingText({ query: String(args.query ?? ''), packIds: opts.agentic?.packIds ?? [frameworkId], db, tokenBudget: 1500 });
+          return grounding?.text ?? 'Nothing relevant found.';
+        },
+      },
+    ];
+    const webSearch = Boolean(opts.tools?.some((t) => t.type === 'web_search_20250305'));
+    const onEvent = opts.agentic.onEvent;
+    const run = await runAgentic({
+      model: routedModel,
+      thinking: mc.thinkingLevel as Parameters<typeof runAgentic>[0]['thinking'],
+      system: systemPrompt,
+      prompt: userMessage,
+      tools,
+      webSearch,
+      maxTurns: 14,
+    }, (event) => {
+      if (!onEvent) return;
+      if (event.type === 'tool_call') {
+        const input = Object.values(event.input).map((v) => String(v)).join(' · ').slice(0, 80);
+        onEvent({ type: 'batch_tool', message: `${event.name.replace(/_/g, ' ')}: ${input}` });
+      } else if (event.type === 'tool_result' && event.isError) {
+        onEvent({ type: 'batch_tool', message: `${event.name.replace(/_/g, ' ')} failed: ${event.output.slice(0, 120)}` });
+      }
+    });
+    if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the batch');
+    resultText = run.text;
+    resultThinking = run.thinking;
+  } else {
+    const evidenceSection = hasEvidence
+      ? `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe following evidence was provided by the assessor. Use this to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Quote or reference specific documents/interviews where applicable. Where the evidence does not cover an article, say so explicitly per the grounding rules above.${idListNote}\n${evidenceText}`
+      : '';
+    const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
+    const result = await callChat({
+      model: routedModel,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      maxTokens: mc.maxTokensBatch,
+      thinkingLevel: mc.thinkingLevel,
+      tools: opts?.tools,
+      db,
+    });
+    resultText = result.text;
+    resultThinking = result.thinking || '';
+  }
+
+  const rawFindings = JSON.parse(extractJson(resultText, 'array')) as RawBatchFinding[];
   const byArticleId = new Map<string, RawBatchFinding>();
   for (const r of rawFindings) {
     if (r && typeof r === 'object' && typeof r.articleId === 'string') byArticleId.set(r.articleId, r);
@@ -875,7 +980,7 @@ export async function runAssessmentBatch(
     findings.push(buildFinding(article, raw, evidenceIndex, b));
   }
 
-  return { framework: frameworkId, findings, batchIndex, totalBatches, thinking: result.thinking || '' };
+  return { framework: frameworkId, findings, batchIndex, totalBatches, thinking: resultThinking };
 }
 
 export async function synthesiseCapabilityView(

@@ -146,3 +146,36 @@ describe('buildAtomLayer — scope', () => {
     expect(seen.some((sql) => /FROM knowledge_atoms ka/.test(sql))).toBe(false);
   });
 });
+
+// ── Wave 3 (2026-09-08): open chat's pack slice is small ─────────────────────
+// The "context used" line showed ~18k characters of pack text riding on a
+// question about an engagement letter. Strict mode now asks for a dozen close
+// matches and keeps a quarter of the module budget.
+describe('buildKnowledgePackLayer — strict mode budget', () => {
+  function manyHits(n: number): HybridSearchResult[] {
+    return Array.from({ length: n }, (_, i) => ({
+      ...packHit(),
+      id: `emb-${i}`,
+      content_id: `${PACK_ID}::AMLR-Art-${i}`,
+      content_text: `AMLR Article ${i} — ${'obliged entities shall keep records of the measures taken '.repeat(8)}`,
+      score: 0.9 - i * 0.01,
+      metadata: { packId: PACK_ID, refId: `AMLR-Art-${i}`, packName: 'EU AMLR Core' },
+    }));
+  }
+
+  it('asks for far fewer, closer matches than a module run and keeps a fraction of the text', async () => {
+    hybridSearchMock.mockResolvedValue(manyHits(30));
+    const strictLayer = await buildKnowledgePackLayer(packDb(), { userMessage: 'What does the engagement letter say about the client?' });
+    const strictOpts = hybridSearchMock.mock.calls[0][1] as { topK?: number; minSimilarity?: number };
+
+    hybridSearchMock.mockResolvedValue(manyHits(30));
+    const moduleLayer = await buildKnowledgePackLayer(packDb(), { areaId: 'fcp', moduleId: 'amlr-readiness', userMessage: 'What does the engagement letter say about the client?' });
+    const moduleOpts = hybridSearchMock.mock.calls[1][1] as { topK?: number; minSimilarity?: number };
+
+    expect(strictOpts.topK).toBeLessThanOrEqual(12);
+    expect(moduleOpts.topK).toBeGreaterThan(strictOpts.topK ?? 0);
+    expect(strictOpts.minSimilarity).toBeGreaterThan(moduleOpts.minSimilarity ?? 0);
+    expect(strictLayer.length).toBeLessThan(5_000);
+    expect(strictLayer.length).toBeLessThan(moduleLayer.length / 2);
+  });
+});

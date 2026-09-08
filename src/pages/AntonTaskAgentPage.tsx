@@ -99,6 +99,8 @@ interface TaskDetail extends Task {
   execution_steps: ExecutionStep[];
   linked_mission_id?: string | null;
   linked_mission?: LinkedMissionSummary | null;
+  /** Wave 3: a step run in progress on the server that the page can re-attach to. */
+  step_run?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; meta: { step?: number; step_name?: string }; frames: number; toolCalls: number; turns: number; error?: string } | null;
 }
 
 interface ConversationMessage {
@@ -831,6 +833,18 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [task?.conversation, streamText]);
 
+  // Wave 3: a step run still going on the server (this page was reloaded, or
+  // opened in a second tab) is picked back up — buffered frames, then live.
+  const attachedRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    const run = task?.step_run;
+    if (!task || !run || run.status !== 'running' || executingStep) return;
+    if (attachedRunRef.current === run.startedAt) return;
+    attachedRunRef.current = run.startedAt;
+    void attachStepRun();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, task?.step_run?.status, task?.step_run?.startedAt]);
+
   async function sendFirstMessage(content: string) {
     if (!content.trim() || streaming) return;
     setStreaming(true);
@@ -1039,22 +1053,29 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     }
   }
 
-  async function runStep() {
+  async function runStep() { await streamStepRun('start'); }
+  /** Wave 3: a step run outlives the request — a reloaded page picks it back up. */
+  async function attachStepRun() { await streamStepRun('attach'); }
+
+  async function streamStepRun(mode: 'start' | 'attach') {
     if (!task || executingStep) return;
-    const stepIdx = task.current_step;
+    const stepIdx = mode === 'attach' ? (task.step_run?.meta.step ?? task.current_step) : task.current_step;
     const stepDef = task.execution_steps?.[stepIdx];
     const stepName = stepDef ? `Step ${stepIdx + 1}: ${stepDef.name}` : `Step ${stepIdx + 1}`;
     setExecutingStep(true);
     setExecutingStepName(stepName);
     setExecutingStepText('');
     setExecutingStepThinking('');
+    setExecutingStepActivity([]);
 
     try {
-      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
+      const res = mode === 'start'
+        ? await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        : await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step/stream`);
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({ error: 'Execution failed' }));
         setSendError((err as { error?: string }).error ?? 'Execution failed');

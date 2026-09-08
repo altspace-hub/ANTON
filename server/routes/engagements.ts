@@ -20,6 +20,13 @@ import { streamChat, callChat, mapModelToProvider } from '../services/provider-r
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { resolveEngagementModelChoice } from '../services/engagement-exec-model.js';
 import { bridgeIterationToSession } from '../services/engagement-session-bridge.js';
+import { runAgentic, type AgentToolDefinition } from '../services/sdk-agentic-runner.js';
+import { isSdkModel } from '../services/engine-model-id.js';
+import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { getModuleSystemPrompt } from '../services/module-loader.js';
+import { findCandidateModules } from '../services/module-recommendation.js';
+import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import { z } from 'zod';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
@@ -226,7 +233,9 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const stakeholders = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? LIMIT 500', String(req.params.id));
       const peer_benchmarks = await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id));
       const quality_gate = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
-      res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate });
+      // Wave 3: an execution in progress (or just finished) that the page can re-attach to.
+      const run_job = getStepJobSummary(`engagement-run:${String(req.params.id)}`);
+      res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate, run_job });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }
@@ -1179,6 +1188,12 @@ EXECUTION INSTRUCTIONS:
 
 Format your output as professional consulting deliverables. Use clear headings, structured findings, and actionable recommendations.${knowledgeContext}`;
 
+      // Wave 3 (2026-09-08): the execution is a job that outlives this
+      // request — a reloaded page re-attaches (GET /:id/execute/stream) and a
+      // second Execute attaches instead of starting a second run. Inside the
+      // job, `res` is the job's sink; the body below is unchanged.
+      const { job } = startStepJob(`engagement-run:${String(req.params.id)}`, { engagement_id: String(req.params.id), workstream_id: workstream_id || null }, async (sink) => {
+      const res = sink as unknown as Response;
       // Stream the response
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
@@ -1202,14 +1217,119 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
       const userTurnContent = `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}`;
 
-      const streamResult = await streamChat({
-        model: execModel,
-        maxTokens: isQuick ? 32_000 : 128_000,
-        system: systemPrompt + planFirstInstr,
-        messages: [{ role: 'user', content: userTurnContent }],
-        thinkingLevel: isQuick ? undefined : thinkingLevel,
-        tools: tools.length > 0 ? tools : undefined,
-      }, res);
+      // ── Wave 3: on the subscription engine the run reads for itself ─────
+      // The one-shot prompt carried the first ten resources at 5,000
+      // characters each and nothing else; the deliverable could not read a
+      // policy in full, look up the client profile, check a citation, or ask a
+      // specialist. On the agentic engine it gets tools for all of that and
+      // several turns; the final turn is the deliverable.
+      let streamResult: { text: string; thinking: string; inputTokens: number; outputTokens: number };
+      if (isSdkModel(execModel)) {
+        const engagementId = String(req.params.id);
+        const agentTools: AgentToolDefinition[] = [
+          {
+            name: 'list_resources',
+            description: 'List the resources collected for this engagement (title, category, size) so you can read the ones that matter.',
+            schema: {},
+            handler: async () => resources.length === 0 ? 'No resources collected.' : resources.map((r) => `- "${String(r.title)}" [${String(r.category)}] — ${String(r.extracted_content || '').length.toLocaleString('en-GB')} characters${r.url ? ` — ${String(r.url)}` : ''}`).join('\n'),
+          },
+          {
+            name: 'read_resource',
+            description: 'Read a collected resource in full by its exact title (see list_resources). Long resources come in 30,000-character pages; pass offset to continue.',
+            schema: { title: z.string().describe('Exact resource title'), offset: z.number().int().min(0).optional() },
+            handler: async (args) => {
+              const wanted = String(args.title ?? '').trim().toLowerCase();
+              const r = resources.find((x) => String(x.title).toLowerCase() === wanted) ?? resources.find((x) => String(x.title).toLowerCase().includes(wanted));
+              if (!r) return `No resource titled "${String(args.title ?? '')}".`;
+              const text = String(r.extracted_content || '');
+              const offset = Math.max(0, Number(args.offset ?? 0) || 0);
+              const page = text.slice(offset, offset + 30_000);
+              const more = offset + 30_000 < text.length ? `\n\n… continues — call again with offset ${offset + 30_000} (total ${text.length.toLocaleString('en-GB')} characters).` : '';
+              return `### ${String(r.title)} [${String(r.category)}]\n${page || '(no text extracted)'}${more}`;
+            },
+          },
+          {
+            name: 'read_document',
+            description: "Read one of the engagement's documents (engagement letter, project plan, good example) in full by name.",
+            schema: { name: z.string().describe('Document name or type, e.g. "engagement letter"') },
+            handler: async (args) => {
+              const docs = await db.all('SELECT name, document_type, extracted_content FROM engagement_documents WHERE engagement_id = ? LIMIT 50', engagementId) as Array<{ name: string; document_type: string; extracted_content: string | null }>;
+              const wanted = String(args.name ?? '').trim().toLowerCase();
+              const d = docs.find((x) => x.name.toLowerCase() === wanted) ?? docs.find((x) => x.name.toLowerCase().includes(wanted) || String(x.document_type).replace(/_/g, ' ').includes(wanted));
+              if (!d) return `No document matching "${String(args.name ?? '')}". Documents: ${docs.map((x) => `"${x.name}" (${x.document_type})`).join(', ') || 'none'}.`;
+              return `### ${d.name} (${d.document_type})\n${String(d.extracted_content || '').slice(0, 60_000) || '(no text extracted)'}`;
+            },
+          },
+          {
+            name: 'client_profile',
+            description: 'The client intelligence recorded at intake: supervisors, products, trigger, sensitivities, maturity.',
+            schema: {},
+            handler: async () => {
+              if (!client_intel) return 'No client profile recorded.';
+              return Object.entries(client_intel)
+                .filter(([k, v]) => !['id', 'engagement_id', 'created_at', 'updated_at'].includes(k) && v !== null && v !== undefined && !['', '[]', '{}'].includes(String(v).trim()))
+                .map(([k, v]) => `- ${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join('\n') || 'No client profile recorded.';
+            },
+          },
+          {
+            name: 'scope_and_deliverables',
+            description: 'The confirmed scope items (with descriptions) and the deliverables expected.',
+            schema: {},
+            handler: async () => `## SCOPE\n${scope_items.map((si, i) => `${i + 1}. ${String(si.title)}${si.description ? ` — ${String(si.description)}` : ''}`).join('\n') || 'none'}\n\n## DELIVERABLES\n${deliverables.map((d) => `- ${String(d.title)} (${String(d.format || 'docx')})${d.description ? `: ${String(d.description)}` : ''}`).join('\n') || 'none'}`,
+          },
+          {
+            name: 'search_knowledge',
+            description: "Search ANTON's regulatory knowledge packs and framework texts for an obligation, article or topic. Returns matching text with citations.",
+            schema: { query: z.string().describe('What to look for') },
+            handler: async (args) => {
+              const grounding = await retrieveGroundingText({ query: String(args.query ?? ''), packIds: [], db, tokenBudget: 1500 });
+              return grounding?.text ?? 'Nothing relevant found.';
+            },
+          },
+          {
+            name: 'consult_expert_module',
+            description: "Ask one of ANTON's 550+ expert modules a focused question for a specialist view. Give a topic to find modules, or a module id and a question.",
+            schema: { topic: z.string().optional().describe('Topic to find modules for'), module_id: z.string().optional(), question: z.string().optional() },
+            handler: async (args) => {
+              if (typeof args.module_id === 'string' && typeof args.question === 'string') {
+                const prompt = await getModuleSystemPrompt(args.module_id);
+                if (!prompt) return `No expert module with id "${args.module_id}".`;
+                const answer = await callChat({ model: execModel, system: prompt, messages: [{ role: 'user', content: args.question }], maxTokens: 4000, thinkingLevel: 'think' });
+                return answer.text || '(the specialist returned nothing)';
+              }
+              const found = await findCandidateModules(String(args.topic ?? ''), 8);
+              return found.length ? found.map((m) => `- ${m.id} — ${m.label} (${m.areaId}): ${m.description}`).join('\n') : 'No matching expert modules.';
+            },
+          },
+        ];
+        const resourceList = resources.length > 0
+          ? `RESOURCES COLLECTED (${resources.length}) — read the ones that matter with read_resource:\n${resources.map((r) => `- "${String(r.title)}" [${String(r.category)}] — ${String(r.extracted_content || '').length.toLocaleString('en-GB')} characters`).join('\n')}`
+          : 'Note: No resources have been collected. Base the analysis on the scope, the client profile and your expertise, and say what a fuller analysis would need.';
+        const agenticBrief = `\n\n## HOW TO WORK
+You have tools: list_resources / read_resource (the collected material in full), read_document (the engagement letter, plan, good example), client_profile, scope_and_deliverables, search_knowledge (regulatory text with citations)${knowledgeConfig.webSearchEnabled ? ', WebSearch/WebFetch' : ''}, and consult_expert_module (a specialist's view). Read before you write: the resources that bear on each scope item, the client profile, and any citation you rely on. Then write the complete deliverable as your FINAL message — the deliverable itself, with no preamble about the tools you used.`;
+        const run = await runAgentic({
+          model: execModel,
+          thinking: (isQuick ? 'quick' : thinkingLevel) as Parameters<typeof runAgentic>[0]['thinking'],
+          system: systemPrompt + planFirstInstr + agenticBrief,
+          prompt: `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceList}${ragDirectoryContext}`,
+          tools: agentTools,
+          webSearch: Boolean(knowledgeConfig.webSearchEnabled),
+          maxTurns: 18,
+          timeoutMs: 40 * 60 * 1000,
+        }, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the execution');
+        if (run.warning) res.write(`data: ${JSON.stringify({ type: 'warning', message: run.warning })}\n\n`);
+        streamResult = { text: run.text, thinking: run.thinking, inputTokens: run.usage.inputTokens, outputTokens: run.usage.outputTokens };
+      } else {
+        streamResult = await streamChat({
+          model: execModel,
+          maxTokens: isQuick ? 32_000 : 128_000,
+          system: systemPrompt + planFirstInstr,
+          messages: [{ role: 'user', content: userTurnContent }],
+          thinkingLevel: isQuick ? undefined : thinkingLevel,
+          tools: tools.length > 0 ? tools : undefined,
+        }, res);
+      }
 
       const fullContent = streamResult.text;
       const fullThinking = streamResult.thinking;
@@ -1257,10 +1377,27 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
       res.write(`data: ${JSON.stringify({ type: 'done', iterationId, sessionId: bridgedSessionId })}\n\n`);
       res.end();
+      });
+      attachToStepJob(job, res);
     } catch (e) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
-      res.end();
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(e) });
+      }
     }
+  });
+
+  // ── GET /api/engagements/:id/execute/stream — re-attach to a run (Wave 3) ──
+  router.get('/:id/execute/stream', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    const engagement = await db.get('SELECT id FROM engagements WHERE id = ?', engagementId);
+    if (!engagement) return res.status(404).json({ error: 'Not found' });
+    if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+    const job = getStepJob(`engagement-run:${engagementId}`);
+    if (!job) return res.status(404).json({ error: 'No execution in progress for this engagement' });
+    attachToStepJob(job, res);
   });
 
   // ── Iterations ──────────────────────────────────────────────────────────────

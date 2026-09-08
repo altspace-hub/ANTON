@@ -31,6 +31,7 @@ import { findCandidateModules, type CandidateModule } from '../services/module-r
 import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
 import { runAgentic, type AgentToolDefinition, type AgenticToolCall } from '../services/sdk-agentic-runner.js';
+import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
 import { isSdkModel } from '../services/engine-model-id.js';
 import { z } from 'zod';
 import {
@@ -498,6 +499,8 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       clarifying_answers: parseJson(task.clarifying_answers, []),
       execution_run_ids: parseJson(task.execution_run_ids, []),
       tags: parseJson(task.tags, []),
+      // Wave 3: a step run in progress (or just finished) that the page can re-attach to.
+      step_run: getStepJobSummary(`task-step:${task.id}`),
       intake_answers: parseJson(task.intake_answers ?? '{}', {}),
       execution_results: parseJson(task.execution_results ?? '[]', []),
       current_step: task.current_step ?? 0,
@@ -900,6 +903,13 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
     const fullSystemPrompt = `${modulePrompt}\n\n---\n\n${contextParts.join('\n\n')}`;
 
+    // Wave 3 (2026-09-08): the run is a job that outlives this request. A
+    // reload re-attaches (GET /tasks/:id/execute-step/stream); a second click
+    // while it runs attaches instead of starting a second run. Inside the
+    // job, `res` is the job's sink — the body below is unchanged.
+    const jobKey = `task-step:${task.id}`;
+    const { job, started } = startStepJob(jobKey, { task_id: task.id, step: currentStepIdx, step_name: step.name, task_title: task.title }, async (sink) => {
+    const res = sink as unknown as Response;
     // SSE stream
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -1190,6 +1200,31 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
       res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
+    });
+    if (!started) {
+      console.log(`[task-agent] execute-step: attaching to the run already in progress for task ${task.id}`);
+    }
+    attachToStepJob(job, res);
+  });
+
+  // ── GET /api/task-agent/tasks/:id/execute-step/stream — re-attach ────────
+  // A reloaded page picks the running (or just-finished) step run back up:
+  // every frame so far, then the live ones until the job ends.
+  router.get('/tasks/:id/execute-step/stream', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT id FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as { id: string } | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    const job = getStepJob(`task-step:${task.id}`);
+    if (!job) return res.status(404).json({ error: 'No step run in progress for this task' });
+    attachToStepJob(job, res);
+  });
+
+  // ── GET /api/task-agent/tasks/:id/execute-step/status ────────────────────
+  router.get('/tasks/:id/execute-step/status', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT id FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as { id: string } | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    res.json({ step_run: getStepJobSummary(`task-step:${task.id}`) });
   });
 
   // ── POST /api/task-agent/tasks/:id/execute-as-mission ───────────────────

@@ -456,6 +456,15 @@ export async function buildKnowledgePackLayer(
 /** Token budget for injected pack entity text (~same scale as buildAtomLayer). */
 const PACK_LAYER_TOKEN_BUDGET = 3500;
 const PACK_LAYER_MAX_ENTITIES = 60;
+/**
+ * Open chat (strict mode) gets a much smaller, more relevant slice. The
+ * "context used" line (Wave 2) showed ~18k characters of pack text riding on
+ * a question about an engagement letter — relevance-only was still too
+ * generous. A dozen close matches, a quarter of the module budget.
+ */
+const STRICT_PACK_LAYER_TOKEN_BUDGET = 900;
+const STRICT_PACK_LAYER_MAX_ENTITIES = 12;
+const STRICT_PACK_MIN_SIMILARITY = 0.55;
 
 /**
  * Retrieve the most relevant pack entity text for the current session,
@@ -492,15 +501,15 @@ async function retrievePackEntityContent(
       const results = await hybridSearch(db, {
         query,
         contentTypes: ['knowledge_pack_entity'],
-        topK: PACK_LAYER_MAX_ENTITIES,
-        minSimilarity: strict ? 0.45 : 0.25,
+        topK: strict ? STRICT_PACK_LAYER_MAX_ENTITIES : PACK_LAYER_MAX_ENTITIES,
+        minSimilarity: strict ? STRICT_PACK_MIN_SIMILARITY : 0.25,
         includeDocumentChunks: false,
         // Pack entities are instance-wide reference material with no owner column,
         // and the prompt layer has no request to derive a principal from anyway.
         scope: INSTANCE_WIDE_SEARCH,
       });
       const fromActivePacks = results.filter(r => activeIds.has(splitContentId(r.content_id).packId));
-      const capped = applyTokenBudget(fromActivePacks, PACK_LAYER_TOKEN_BUDGET);
+      const capped = applyTokenBudget(fromActivePacks, strict ? STRICT_PACK_LAYER_TOKEN_BUDGET : PACK_LAYER_TOKEN_BUDGET);
       if (capped.length > 0) {
         return capped.map(r => {
           const { packId, refId } = splitContentId(r.content_id);

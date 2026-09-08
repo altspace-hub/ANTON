@@ -32,6 +32,7 @@ import {
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
 import { domainForFrameworks, domainProfile } from '../services/gap-domains.js';
+import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import {
   computeOpinionAgreement,
@@ -265,7 +266,8 @@ Generate the complete framework JSON now.`;
       // Map snake_case DB columns to camelCase for frontend (incl. criterion facts,
       // evidence refs, override + carry-forward metadata — Wave 1.1/1.2/1.5/1.7)
       const mappedFindings = findings.map(mapFindingRow);
-      res.json({ assessment, findings: mappedFindings });
+      // Wave 3: a run in progress (or just finished) that the wizard can re-attach to.
+      res.json({ assessment: { ...(assessment as Record<string, unknown>), run_job: getStepJobSummary(`gap-run:${req.params.id as string}`) }, findings: mappedFindings });
     } catch (err) {
       console.error('[gap-assessments] get error:', err);
       res.status(500).json({ error: 'Failed to get assessment' });
@@ -473,6 +475,10 @@ HOW TO RUN THE INTERVIEW
     // the same rows.
     const assessmentId = req.params.id as string;
     if (runsInFlight.has(assessmentId)) {
+      // Wave 3: a run in progress is a job — a second Start (or a reloaded
+      // page) attaches to it instead of being told to wait.
+      const running = getStepJob(`gap-run:${assessmentId}`);
+      if (running && running.status === 'running') return attachToStepJob(running, res);
       return res.status(409).json({ error: 'This assessment is already running — wait for it to finish before starting again.' });
     }
     runsInFlight.add(assessmentId);
@@ -486,6 +492,12 @@ HOW TO RUN THE INTERVIEW
     let attemptedBatches = 0;
     const previousStatus = String(assessment.status ?? '');
 
+    // Wave 3 (2026-09-08): the run is a job that outlives this request. A
+    // reloaded wizard re-attaches (GET /gap-assessments/:id/run/stream) and
+    // sees every frame so far. Inside the job, `res` is the job's sink — the
+    // body below is unchanged.
+    const { job } = startStepJob(`gap-run:${assessmentId}`, { assessment_id: assessmentId, title: String((assessment as Record<string, unknown>).title ?? '') }, async (sink) => {
+    const res = sink as unknown as Response;
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -645,7 +657,16 @@ HOW TO RUN THE INTERVIEW
               extraSystemContext || undefined,
               modelTier,
               db,
-              (batchBaseline || knowledgeTools) ? { baseline: batchBaseline, tools: knowledgeTools } : undefined
+              {
+                baseline: batchBaseline,
+                tools: knowledgeTools,
+                // Wave 3: on the subscription engine the batch reads evidence
+                // through tools; its tool activity lands in the progress feed.
+                agentic: {
+                  packIds: frameworks,
+                  onEvent: (e) => sendEvent({ type: 'info', framework: frameworkId, batchIndex: batchIdx, message: `Batch ${batchIdx + 1}: ${e.message}` }),
+                },
+              }
             );
 
             // Save findings to DB
@@ -718,6 +739,17 @@ HOW TO RUN THE INTERVIEW
     } finally {
       runsInFlight.delete(assessmentId);
     }
+    });
+    attachToStepJob(job, res);
+  });
+
+  // ── GET /api/gap-assessments/:id/run/stream — re-attach to a run ──────────
+  router.get('/gap-assessments/:id/run/stream', async (req: Request, res: Response) => {
+    const assessment = await engine.getAssessmentForUser(req.params.id as string, getUserId(req));
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+    const job = getStepJob(`gap-run:${req.params.id as string}`);
+    if (!job) return res.status(404).json({ error: 'No run in progress for this assessment' });
+    attachToStepJob(job, res);
   });
 
   // ── Second-opinion lane (Wave 2.7) ──────────────────────────────────────────
