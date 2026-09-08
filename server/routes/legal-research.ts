@@ -16,6 +16,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { buildOrgContextLayer } from '../services/prompt-builder.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
+import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { createCitationLedger, VERIFICATION_DISCLAIMER, type CitationInput } from '../services/citation-ledger.js';
@@ -23,6 +24,100 @@ import { bundleLegalResearchSessionToAnton } from '../services/anton-bundler.js'
 import { signAntonBundle } from '../services/anton-bundle-signing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ── The matter (Wave 2, 2026-09-08) ─────────────────────────────────────────
+// A session used to open on a blank textarea: nothing recorded about the
+// facts, parties, jurisdiction or the decision the client needs, and no way
+// to attach the contract or decision the question is about. The matter brief
+// is taken by ANTON at intake; documents are attached by the consultant; both
+// are injected into every research turn.
+interface MatterDocument { id: string; name: string; text: string }
+interface MatterSessionRow {
+  id: string;
+  title?: string;
+  mode: string;
+  expert_role: string;
+  active_knowledge_packs: string;
+  research_questions?: string | null;
+  documents?: string | null;
+  matter_brief?: string | null;
+  intake_conversation?: string | null;
+}
+const MATTER_FIELDS = ['client', 'parties', 'facts', 'jurisdiction', 'question', 'decision_needed', 'deadline', 'risk_posture', 'instruments', 'constraints'] as const;
+type MatterField = typeof MATTER_FIELDS[number];
+const MATTER_LABELS: Record<MatterField, string> = {
+  client: 'Client',
+  parties: 'Parties',
+  facts: 'Facts',
+  jurisdiction: 'Governing law / jurisdiction',
+  question: 'The question',
+  decision_needed: 'Decision the client needs',
+  deadline: 'Deadline',
+  risk_posture: 'Risk posture',
+  instruments: 'Instruments in play',
+  constraints: 'Constraints and sensitivities',
+};
+const MAX_MATTER_DOCS = 20;
+const MAX_MATTER_DOC_CHARS = 300_000;
+/** Characters of attached documents injected into one research turn. */
+const MATTER_DOC_BUDGET = 80_000;
+
+/** The client's document list as stored: bounded, typed, or null when malformed. */
+function sanitiseMatterDocuments(raw: unknown): MatterDocument[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: MatterDocument[] = [];
+  for (const d of raw.slice(0, MAX_MATTER_DOCS)) {
+    if (!d || typeof d !== 'object') return null;
+    const { id, name, text } = d as Record<string, unknown>;
+    if (typeof id !== 'string' || !id.trim() || typeof name !== 'string') return null;
+    out.push({ id: id.slice(0, 200), name: name.trim().slice(0, 200) || id.slice(0, 200), text: typeof text === 'string' ? text.slice(0, MAX_MATTER_DOC_CHARS) : '' });
+  }
+  return out;
+}
+
+function parseMatterDocuments(raw: unknown): MatterDocument[] {
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return sanitiseMatterDocuments(parsed) ?? [];
+  } catch { return []; }
+}
+
+function parseMatterBrief(raw: unknown): Partial<Record<MatterField, string>> {
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!parsed || typeof parsed !== 'object') return {};
+    const out: Partial<Record<MatterField, string>> = {};
+    for (const k of MATTER_FIELDS) {
+      const v = (parsed as Record<string, unknown>)[k];
+      if (typeof v === 'string' && v.trim()) out[k] = v.trim();
+    }
+    return out;
+  } catch { return {}; }
+}
+
+/** The system-prompt section carrying the matter brief and the attached documents. */
+function buildMatterSection(session: MatterSessionRow): string {
+  const brief = parseMatterBrief(session.matter_brief);
+  const docs = parseMatterDocuments(session.documents);
+  let out = '';
+  const lines = MATTER_FIELDS.filter((k) => brief[k]).map((k) => `- ${MATTER_LABELS[k]}: ${brief[k]}`);
+  if (lines.length > 0) {
+    out += `\n\n## THE MATTER\nThe instructions taken at intake. Answer about this matter, not in the abstract.\n${lines.join('\n')}`;
+  }
+  if (docs.length > 0) {
+    let budget = MATTER_DOC_BUDGET;
+    const parts: string[] = [];
+    for (const d of docs) {
+      if (budget <= 0) { parts.push(`### DOCUMENT: ${d.name}\n(omitted — the document budget for one turn is exhausted)`); continue; }
+      const text = d.text.slice(0, budget);
+      budget -= text.length;
+      const note = text.length < d.text.length ? ` (first ${text.length.toLocaleString('en-GB')} of ${d.text.length.toLocaleString('en-GB')} characters)` : '';
+      parts.push(`### DOCUMENT: ${d.name}${note}\n${text}`);
+    }
+    out += `\n\n## MATTER DOCUMENTS (${docs.length})\nThe documents the matter concerns. Quote them by name and clause when you rely on them, and say when a document does not cover a point.\n\n${parts.join('\n\n---\n\n')}`;
+  }
+  return out;
+}
 
 // Reasoning depth per mode — ANTON thinking levels, the currency provider-router
 // takes. (A THINKING_BUDGETS table in raw tokens lived here for a year and was
@@ -202,12 +297,19 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
   router.patch('/legal-research/:id', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const allowed = ['title', 'mode', 'expert_role', 'research_questions', 'pinned_findings', 'citations', 'active_knowledge_packs'];
+      const allowed = ['title', 'mode', 'expert_role', 'research_questions', 'pinned_findings', 'citations', 'active_knowledge_packs', 'documents', 'matter_brief'];
       const updates: Record<string, unknown> = {};
       for (const key of allowed) {
         if (req.body[key] !== undefined) {
           updates[key] = typeof req.body[key] === 'object' ? JSON.stringify(req.body[key]) : req.body[key];
         }
+      }
+      // Matter documents (Wave 2): the extracted text travels with the session
+      // — the upload store keeps only the file — so bound what one session holds.
+      if (req.body.documents !== undefined) {
+        const cleaned = sanitiseMatterDocuments(req.body.documents);
+        if (!cleaned) return res.status(400).json({ error: 'documents must be an array of { id, name, text }' });
+        updates.documents = JSON.stringify(cleaned);
       }
       if (Object.keys(updates).length === 0) return res.json({ ok: true });
 
@@ -274,8 +376,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
 
     try {
       const uid = getUserId(req);
-      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid) as {
-        mode: string; expert_role: string; active_knowledge_packs: string } | undefined;
+      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid) as MatterSessionRow | undefined;
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
       const { messages, webSearchEnabled, plainLanguageMode } = req.body as {
@@ -337,7 +438,12 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
         ? '\n\n## WEB SEARCH ENABLED\nUse the web_search tool to check the primary sources for every instrument you cite: EUR-Lex for EU regulations and directives, the EBA/ESMA/EIOPA sites for guidelines, curia.europa.eu for CJEU judgments, and the national gazette or supervisor for national law. Prefer official sources over commentary. Cite the URL and the date you consulted it alongside the legal citation. Search before asserting the current text of a provision or the status of a case.'
         : '';
 
-      const systemPrompt = basePrompt + modeInstruction + roleInstruction + toneInstruction + orgContextSection + knowledgePackSection + plainLanguageInstruction + webSearchInstruction;
+      // The matter (Wave 2): the brief ANTON took at intake and the documents
+      // attached to the session, so every question is answered about THIS
+      // contract, decision or set of facts rather than in the abstract.
+      const matterSection = buildMatterSection(session);
+
+      const systemPrompt = basePrompt + modeInstruction + roleInstruction + toneInstruction + orgContextSection + matterSection + knowledgePackSection + plainLanguageInstruction + webSearchInstruction;
 
       const tools = webSearchEnabled
         ? [{ type: 'web_search_20250305', name: 'web_search' }]
@@ -353,8 +459,11 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
       // a Legal Opinion Draft ran at effort low instead of max.
       const thinkingLevel = MODE_THINKING[session.mode] ?? 'think_hard';
 
+      // The instance default through the router — a hard-coded Claude-4 API
+      // id ignored the model the user chose and, without a funded key, only
+      // worked because the router happened to fall back to the engine.
       await streamChat({
-        model: mapModelToProvider('claude-opus-4-8'),
+        model: mapModelToProvider(getEffectiveDefaultModel() ?? 'claude-opus-4-8'),
         system: systemPrompt,
         messages: messages as Array<{ role: string; content: string }>,
         maxTokens: 16000,
@@ -375,6 +484,131 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
       } else {
         res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
         res.end();
+      }
+    }
+  });
+
+  // ── Matter intake (Wave 2, 2026-09-08) ─────────────────────────────────────
+  // POST /api/legal-research/:id/intake/turn  { message }
+  // ANTON takes instructions on the matter the way senior counsel does —
+  // facts, parties, governing law, the precise question, the decision the
+  // client needs and by when — reading any attached documents first. What
+  // the consultant confirms is merged into matter_brief (carried by a
+  // trailing <matter_update> block the reader never sees) and injected into
+  // every research turn. The conversation lives on the session.
+  router.post('/legal-research/:id/intake/turn', async (req: Request, res: Response) => {
+    if (!hasClaudeEngine() && !anthropic) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+    try {
+      const uid = getUserId(req);
+      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid) as MatterSessionRow | undefined;
+      if (!session) return res.status(404).json({ error: 'Session not found' });
+
+      const message = typeof (req.body as { message?: unknown })?.message === 'string' ? String((req.body as { message: string }).message).trim().slice(0, 4000) : '';
+      const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = (() => {
+        try {
+          const v = JSON.parse(String(session.intake_conversation || '[]'));
+          return Array.isArray(v) ? v.filter((t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string') : [];
+        } catch { return []; }
+      })();
+      if (message) conversation.push({ role: 'user', content: message });
+
+      const brief = parseMatterBrief(session.matter_brief);
+      const docs = parseMatterDocuments(session.documents);
+      const known = MATTER_FIELDS.filter((k) => brief[k]).map((k) => `- ${k}: ${brief[k]}`);
+      const unknown = MATTER_FIELDS.filter((k) => !brief[k]);
+      const modeInfo = LEGAL_MODES.find((m) => m.id === session.mode);
+      const roleInfo = EXPERT_ROLES.find((r) => r.id === session.expert_role);
+
+      let excerptBudget = 12_000;
+      const excerpts = docs.map((d) => {
+        const text = d.text.slice(0, Math.max(0, Math.min(4000, excerptBudget)));
+        excerptBudget -= text.length;
+        return `### ${d.name}${text.length < d.text.length ? ' (excerpt)' : ''}\n${text || '(no text extracted)'}`;
+      });
+
+      const systemPrompt = `You are ANTON, senior counsel taking instructions on a new matter before research begins. You are speaking with the consultant or lawyer who owns the matter. Take instructions the way an experienced practitioner does: establish the facts, the parties, the governing law and jurisdiction, the precise question, the decision the client needs to make and by when, and the client's risk posture. Ask, do not lecture.
+
+SESSION: ${String(session.title ?? '')}
+CURRENT MODE: ${modeInfo ? modeInfo.label : session.mode} — CURRENT ROLE: ${roleInfo ? `${roleInfo.label} (${roleInfo.focus})` : session.expert_role}
+AVAILABLE MODES: ${LEGAL_MODES.map((m) => `${m.id} = ${m.label}`).join('; ')}
+AVAILABLE ROLES: ${EXPERT_ROLES.map((r) => `${r.id} = ${r.label}`).join('; ')}
+
+DOCUMENTS ATTACHED (${docs.length}):
+${excerpts.join('\n\n') || '(none — the consultant can attach the contract, decision or correspondence the matter concerns)'}
+
+MATTER — known so far:
+${known.join('\n') || '- nothing recorded yet'}
+MATTER — still unknown: ${unknown.join(', ') || 'nothing'}
+
+HOW TO TAKE INSTRUCTIONS
+- Each turn: confirm what you now know in one or two lines, then ask the 2-3 questions that matter most for the research. Read the attached documents first and propose what they establish, marked as proposals, so the consultant only has to confirm. Never ask what is already known.
+- When the matter is clear enough to research, restate it in three lines, set "done": true, and suggest the mode and expert role best suited to it (ids from the lists) when they differ from the current ones.
+- End every reply with exactly one machine-readable block, even when nothing new was confirmed:
+<matter_update>
+{"matter": {"<field>": "<value>"}, "suggested_mode": null, "suggested_role": null, "done": false}
+</matter_update>
+  Fields: ${MATTER_FIELDS.join(', ')} — each a short string. Only include values the consultant confirmed, or that an attached document establishes and the consultant has not contradicted. Never include your own proposals until confirmed.`;
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      const messages = conversation.length > 0
+        ? conversation.map((t) => ({ role: t.role, content: t.content }))
+        : [{ role: 'user', content: 'Take instructions on this matter. Start with what the attached documents establish, if any, then ask your first questions.' }];
+
+      let text = '';
+      try {
+        const result = await streamChat({
+          model: mapModelToProvider(getEffectiveDefaultModel() ?? 'claude-opus-4-8'),
+          system: systemPrompt,
+          messages,
+          maxTokens: 3000,
+          thinkingLevel: 'think',
+        }, res);
+        text = result.text;
+      } catch (err) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const applied = { fields: 0, done: false, suggested_mode: null as string | null, suggested_role: null as string | null };
+      const nextBrief: Partial<Record<MatterField, string>> = { ...brief };
+      const block = text.match(/<matter_update>([\s\S]*?)<\/matter_update>/i);
+      if (block) {
+        try {
+          const upd = JSON.parse(block[1].trim()) as { matter?: Record<string, unknown>; suggested_mode?: unknown; suggested_role?: unknown; done?: unknown };
+          applied.done = upd.done === true;
+          const matter = upd.matter && typeof upd.matter === 'object' ? upd.matter : {};
+          for (const k of MATTER_FIELDS) {
+            const v = matter[k];
+            if (typeof v === 'string' && v.trim() && v.trim() !== nextBrief[k]) { nextBrief[k] = v.trim().slice(0, 2000); applied.fields += 1; }
+          }
+          if (typeof upd.suggested_mode === 'string' && upd.suggested_mode !== session.mode && LEGAL_MODES.some((m) => m.id === upd.suggested_mode)) applied.suggested_mode = upd.suggested_mode;
+          if (typeof upd.suggested_role === 'string' && upd.suggested_role !== session.expert_role && EXPERT_ROLES.some((r) => r.id === upd.suggested_role)) applied.suggested_role = upd.suggested_role;
+        } catch (err) {
+          console.warn('[legal-research] matter update block unreadable:', err instanceof Error ? err.message : err);
+        }
+      }
+
+      const visible = text.replace(/<matter_update>[\s\S]*?<\/matter_update>/i, '').trim();
+      conversation.push({ role: 'assistant', content: visible });
+      await db.run(
+        'UPDATE legal_research_sessions SET matter_brief = ?, intake_conversation = ?, updated_at = ? WHERE id = ? AND user_id = ?',
+        JSON.stringify(nextBrief), JSON.stringify(conversation.slice(-40)), new Date().toISOString(), req.params.id, uid,
+      );
+      res.write(`data: ${JSON.stringify({ type: 'matter_update', applied })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    } catch (err) {
+      console.error('[legal-research] intake error:', err);
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(err) });
       }
     }
   });
