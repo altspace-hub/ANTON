@@ -853,7 +853,15 @@ HOW TO RUN THE INTERVIEW
             // rubric, different model. No baseline: this is an independent read.
             const result = await runAssessmentBatch(
               anthropic, frameworkId, batch, contextConfig, batchIdx, batches.length,
-              extraSystemContext || undefined, requestedTier, db
+              extraSystemContext || undefined, requestedTier, db,
+              {
+                // Wave 3: the second opinion reads evidence the way the primary
+                // run does — on demand through tools, nothing cut at 120k.
+                agentic: {
+                  packIds: [frameworkId],
+                  onEvent: (e) => sendEvent({ type: 'info', framework: frameworkId, batchIndex: batchIdx, message: `Batch ${batchIdx + 1}: ${e.message}` }),
+                },
+              }
             );
             for (const f of result.findings) {
               await db.run(
