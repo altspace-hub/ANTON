@@ -36,7 +36,7 @@ import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
 import { capabilityModelId } from '../services/engine-model-id.js';
-import { mapModelToProvider } from '../services/provider-router.js';
+import { mapModelToProvider, callChat } from '../services/provider-router.js';
 import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
@@ -51,7 +51,7 @@ import { createTemporalReasoningService } from '../services/temporal-reasoning.j
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
-import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
 import { computeRunCostUsd } from '../services/run-cost.js';
 
@@ -723,9 +723,14 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // A/B experiment is not biased toward "atoms don't help" by runs that never
       // actually injected anything. resolveFinalArm leaves 'holdout'/null as-is.
       atomArm = resolveFinalArm(atomArm, atomLayerPrompt);
+      // A run without an area gets the user's universal ('all'-scoped) values
+      // and nothing else. Defaulting the domain to 'finance' handed every
+      // open-chat question the Markets strategy and paper-trading constraints
+      // as HARD rules — a stored run shows a kickoff-agenda request being
+      // rewritten into an AMLR project under them.
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
         (req as any).user?.id || 'default',
-        areaId || 'finance'
+        areaId || 'general'
       );
 
       const promptComposerConfig = {
@@ -2043,8 +2048,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // module-loader (full corpus), not from the client. Any client-provided module
   // list is ignored (kept in the body for backwards compatibility only).
   router.post('/modules/smart-search', async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(503).json({ error: 'API key not configured' });
+    if (!hasClaudeEngine()) {
+      res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
       return;
     }
 
@@ -2081,24 +2086,26 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
       const candidates = scored.slice(0, MAX_CANDIDATES).map(s => s.m);
 
-      const client = getClient();
       const moduleList = candidates
         .map(m => `- ${m.id}: ${m.label} — ${(m.description ?? '').slice(0, 160)}`)
         .join('\n');
 
-      const response = await client.messages.create({
-        // Wave 3.8: raw-Anthropic site — honours a Claude utility override,
-        // falls back to the default Haiku for non-Anthropic utility models.
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 512,
+      // Through provider-router on the routed utility model — this was a raw
+      // Anthropic client on the metered key, so Home's "Find the right module"
+      // errored on every query on a subscription-only instance.
+      const response = await callChat({
+        model: await getRoutedUtilityModel(db),
         system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
         messages: [{
           role: 'user',
           content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as a JSON array:\n[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]`,
         }],
+        maxTokens: 512,
+        jsonMode: true,
+        db,
       });
 
-      const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '[]';
+      const text = response.text.trim() || '[]';
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 
