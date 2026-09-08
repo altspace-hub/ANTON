@@ -195,7 +195,7 @@ ${allInputs.map((inp) => `- ${inp}`).join('\n')}
 
 **Already known from the task description:**
 "${taskCtx.description}"${answersText}
-${(taskCtx.attachedFileNames?.length ?? 0) > 0 ? `\n**Documents already attached by the user:**\n${taskCtx.attachedFileNames!.map((f) => `- 📄 ${f}`).join('\n')}\nAcknowledge these documents and use them in your analysis.` : '\n**No documents attached yet.**\nYou MUST ask the user to attach relevant documents before marking intake as complete.'}
+${(taskCtx.attachedFileNames?.length ?? 0) > 0 ? `\n**Documents already attached by the user:**\n${taskCtx.attachedFileNames!.map((f) => `- 📄 ${f}`).join('\n')}\nAcknowledge these documents and use them in your analysis.` : '\n**No documents attached yet.**\nAsk ONCE whether the user has documents that would materially improve this work, naming which ones (e.g. the policy being reviewed). If they say none are available, or ask you to proceed, do not ask again: mark intake complete and list the assumptions you will work under in the summary.'}
 ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n${taskCtx.activePackNames!.map((p) => `- 📚 ${p}`).join('\n')}\nThese regulatory knowledge packs are loaded and available.` : ''}
 
 **YOUR JOB NOW — INTAKE RULES:**
@@ -205,10 +205,7 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
 - Ask specifically for inputs NOT already covered in the task description above
 - Ask for 2-3 items at a time — never overwhelm the user
 - Be concrete: "What entity type is the client?" not "tell me about the context"
-- **IMPORTANT: Always ask the user to attach relevant documents** using the "Attach doc" button below the chat:
-  - Existing policies, procedures, or frameworks being assessed
-  - Client documents, regulatory texts, or reference materials
-  - Say something like: "Please attach the relevant [policy/document] using the 📎 Attach doc button below"
+- **Documents help but are not a precondition.** Ask once for the documents that would materially improve the work (the policy being assessed, the client's procedures, the contract), pointing at the 📎 Attach doc button below the chat. If the user cannot provide them, proceed on the task description and the regulatory text you have, and say what you are assuming. Never make the same request twice.
 - **Also suggest activating relevant Knowledge Packs** if the task involves specific regulations:
   - Say: "You can also activate relevant regulatory knowledge packs (e.g. EU Sanctions, EBA Guidelines) using the 📚 Knowledge packs button"
 - Start IMMEDIATELY with your questions — no preamble like "great, let me ask..."
@@ -227,7 +224,7 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
 </intake_complete>`;
   }
 
-  return `You are ANTON — an AI coworker for Financial Crime Prevention (FCP) consultants. You have structured knowledge of your own capabilities, modules, and approach templates.
+  return `You are ANTON — an AI coworker for consultants and domain experts: financial crime prevention, legal, risk, compliance, and the other professional areas ANTON covers. You have structured knowledge of your own capabilities, modules, and approach templates.
 
 ## PHASE 1: PROPOSE APPROACHES (default mode)
 
@@ -589,9 +586,46 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       res.write(`data: ${JSON.stringify({ type: 'done', status: newStatus, proposals, clarifyingQuestions: clarifyingQs, intakeReady, intakeAnswers })}\n\n`);
       res.end();
     } catch (err) {
+      // Keep what the user typed. The conversation was only persisted on
+      // success, so an engine refusal ("busy", "disabled") threw their answer
+      // away and the page reverted it — they retyped and hit the same wall.
+      try {
+        await db.run('UPDATE anton_tasks SET conversation=?, updated_at=NOW() WHERE id=?', JSON.stringify(history), task.id);
+      } catch { /* best-effort */ }
       res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
+  });
+
+  // ── POST /api/task-agent/tasks/:id/intake-ready ────────────────────────
+  // The human's "proceed with what I have". Intake used to complete only when
+  // the model emitted <intake_complete>, and the prompt forbade that without
+  // attached documents — so a task whose documents live elsewhere (a Jira
+  // ticket pointing at SharePoint) could never reach execution. Both real
+  // tasks on this instance died exactly there.
+  router.post('/tasks/:id/intake-ready', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!task.chosen_approach_id) return res.status(400).json({ error: 'Pick an approach first' });
+    if (task.intake_ready) return res.json({ ok: true, intakeReady: 1 });
+
+    const assumptions = typeof req.body?.assumptions === 'string' ? req.body.assumptions.trim().slice(0, 2000) : '';
+    const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = parseJson(task.conversation, []);
+    conversation.push({
+      role: 'assistant',
+      content: assumptions
+        ? `Proceeding with the information available. Working assumptions: ${assumptions}`
+        : 'Proceeding with the information available — no further documents. Any gaps will be stated as assumptions in the deliverable.',
+    });
+    const intakeAnswers = parseJson<Record<string, string>>(task.intake_answers ?? '{}', {});
+    if (assumptions) intakeAnswers.assumptions = assumptions;
+
+    await db.run(
+      'UPDATE anton_tasks SET intake_ready=1, status=?, conversation=?, intake_answers=?, updated_at=NOW() WHERE id=?',
+      'clarifying', JSON.stringify(conversation), JSON.stringify(intakeAnswers), task.id,
+    );
+    res.json({ ok: true, intakeReady: 1 });
   });
 
   // ── POST /api/task-agent/tasks/:id/select-approach ─────────────────────
@@ -713,7 +747,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       }
     }
     if (!modulePrompt) {
-      modulePrompt = `You are ANTON — an expert Financial Crime Prevention consultant AI. Produce a comprehensive, high-quality professional deliverable based on the task and context provided.`;
+      modulePrompt = `You are ANTON — an expert consultant AI working for professionals across financial crime prevention, legal, risk, compliance and adjacent domains. Produce a comprehensive, high-quality professional deliverable based on the task and context provided.`;
     }
 
     // Assemble execution context from intake answers + task description + files + knowledge packs
@@ -731,6 +765,29 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     if (taskFiles.length > 0) {
       const docTexts = taskFiles.map((f) => `### DOCUMENT: ${f.name}\n${f.text}`).join('\n\n---\n\n');
       contextParts.push(`## ATTACHED DOCUMENTS\nThe following documents have been provided for this task:\n\n${docTexts}`);
+    }
+
+    // Prior step outputs — step N sees step N-1 in full and earlier steps in
+    // excerpt. The persistence site has always said "context carries forward";
+    // until now nothing did, so a five-step deliverable was five restarts and
+    // the quality gate, scoring each step alone, could not see the seams.
+    // Same shape as mission-executor's prior-output block.
+    const priorResults = parseJson<Array<{ step?: number; name?: string; output?: string }>>(task.execution_results ?? '[]', []);
+    if (priorResults.length > 0) {
+      const PRIOR_BUDGET = 12_000;
+      const last = priorResults[priorResults.length - 1];
+      const lastText = String(last.output ?? '').slice(0, 9_000);
+      const blocks: string[] = [`### Step ${(last.step ?? 0) + 1}: ${last.name ?? ''} (full)\n${lastText}`];
+      let used = lastText.length;
+      for (const r of priorResults.slice(0, -1).reverse()) {
+        const room = Math.min(1_500, PRIOR_BUDGET - used);
+        if (room <= 0) break;
+        const excerpt = String(r.output ?? '').slice(0, room);
+        if (!excerpt) continue;
+        blocks.push(`### Step ${(r.step ?? 0) + 1}: ${r.name ?? ''} (excerpt)\n${excerpt}`);
+        used += excerpt.length;
+      }
+      contextParts.push(`## PRIOR STEP OUTPUTS\nBuild on these — reference them, do not repeat them.\n\n${blocks.reverse().join('\n\n---\n\n')}`);
     }
 
     // Inject REAL grounding text (item 1.3): relevant framework articles + pack
@@ -800,7 +857,10 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         system: fullSystemPrompt,
         messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}` }],
         maxTokens: 16000,
-        thinkingLevel: thinkingLevel ?? 'think_hard',
+        // Attempt 1 at 'think'; the retry ladder climbs think_hard → investigate.
+        // With attempt 1 already at think_hard the first retry re-ran at the
+        // same effort and only the label changed.
+        thinkingLevel: thinkingLevel ?? 'think',
       }, res);
       lastThinkingContent = result.thinking;
       return { output: result.text, thinking: result.thinking };
@@ -811,9 +871,9 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       let gate: GateResult | null = null;
       let qualityScore: number | null = null;
       let retryCount = 0;
-      let thinkingLabel = 'standard';
+      let thinkingLabel = 'think';
 
-      // Attempt 1 — standard execution (no extended thinking)
+      // Attempt 1 — standard reasoning; retries climb the ladder
       const firstResult = await runExecution();
       fullOutput = firstResult.output;
       gate = await scoreOutput(fullOutput, task.title, step.name);

@@ -725,6 +725,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [sendError, setSendError] = useState<string | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<string | null>(null);
   const [confirmingApproach, setConfirmingApproach] = useState(false);
+  const [proceeding, setProceeding] = useState(false);
   const [loading, setLoading] = useState(true);
   const [autoStarted, setAutoStarted] = useState(false);
   // Execution state
@@ -795,6 +796,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             const parsed = JSON.parse(raw);
             if (parsed.type === 'text' || parsed.type === 'text_delta') { accumulated += (parsed.text ?? parsed.content ?? ''); setStreamText(accumulated); }
             else if (parsed.type === 'done') { await loadTask(); onStatusChange(); }
+            else if (parsed.type === 'error') { setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not answer — try again.')); await loadTask(); }
           } catch { /* skip */ }
         }
       }
@@ -851,6 +853,12 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             } else if (parsed.type === 'done') {
               await loadTask();
               onStatusChange();
+            } else if (parsed.type === 'error') {
+              // The engine refused (busy, disabled, not signed in). The server
+              // keeps the message that was sent, so a reload shows it and a
+              // retry is one click — the answer used to just vanish.
+              setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not answer — try again.'));
+              await loadTask();
             }
           } catch { /* skip */ }
         }
@@ -920,6 +928,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                   } else if (parsed.type === 'done') {
                     await loadTask();
                     onStatusChange();
+                  } else if (parsed.type === 'error') {
+                    setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not start the intake — try again.'));
+                    await loadTask();
                   }
                 } catch { /* skip */ }
               }
@@ -929,9 +940,37 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           setStreaming(false);
           setStreamText('');
         }
+      } else {
+        // A 404 here means the model proposed an approach id that is not in
+        // the catalogue; the button used to just stop spinning.
+        setSendError(String((data as { error?: string }).error ?? 'Could not confirm the approach — try again.'));
       }
     } finally {
       setConfirmingApproach(false);
+    }
+  }
+
+  /** The human's end to intake: documents are optional, so the task must be
+   *  able to move to execution on what is already known. */
+  async function proceedWithoutMore() {
+    if (!task || proceeding) return;
+    setProceeding(true);
+    setSendError(null);
+    try {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/intake-ready`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setSendError(String(data.error ?? 'Could not proceed — try again.'));
+        return;
+      }
+      await loadTask();
+      onStatusChange();
+    } finally {
+      setProceeding(false);
     }
   }
 
@@ -1188,6 +1227,23 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               <div className="whitespace-pre-wrap">{getDisplayText(streamText)}</div>
               <div className="mt-1 h-1 w-4 animate-pulse rounded bg-adv-teal/40" />
             </div>
+          </div>
+        )}
+
+        {/* Intake in progress — the human can end it; documents are optional */}
+        {task.status === 'clarifying' && task.intake_ready !== 1 && !!task.chosen_approach_id && !streaming && !task.linked_mission_id && (
+          <div className="mx-1 flex items-center justify-between gap-3 rounded-xl border border-border bg-adv-card px-4 py-2.5">
+            <p className="text-xs text-adv-gray">
+              Still gathering context. Nothing more to add? ANTON proceeds on what it has and states its assumptions.
+            </p>
+            <button
+              onClick={proceedWithoutMore}
+              disabled={proceeding}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-adv-teal/40 px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/10 transition-colors disabled:opacity-60"
+            >
+              {proceeding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronsRight className="h-3.5 w-3.5" />}
+              Proceed with what I have
+            </button>
           </div>
         )}
 
