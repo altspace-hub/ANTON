@@ -1685,6 +1685,7 @@ Return ONLY valid JSON.`,
 
   // POST /api/engagements/:id/quality-gate/run — SSE: run all quality checks
   router.post('/:id/quality-gate/run', async (req: Request, res: Response) => {
+    let qgId: string | null = null;
     try {
       const { iteration_id } = req.body;
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
@@ -1718,73 +1719,115 @@ Return ONLY valid JSON.`,
 
       const qgModel = await getRoutedUtilityModel(db);
 
+      // Persist as we go (Wave 2, 2026-09-08). The gate used to be eight
+      // serial engine calls with one INSERT at the very end: a check that
+      // failed after minutes of engine time saved nothing, and a reload
+      // mid-run showed nothing. The row is now created before the first
+      // check and updated after every one; a failed check is recorded as
+      // such and the rest continue; a gate with failures is 'partial', never
+      // release-ready, and the page says which checks to re-run.
+      qgId = randomUUID();
       const results: Record<string, unknown> = {};
+      const failedChecks: string[] = [];
+      const COLUMN_FOR: Record<string, string> = {
+        scope_completeness: 'scope_completeness',
+        blueprint_alignment: 'blueprint_alignment',
+        cross_consistency: 'cross_consistency',
+        assumptions_section: 'assumptions_section',
+        executive_summary: 'executive_summary',
+        expert_reviews: 'expert_reviews',
+      };
+      await db.run(
+        "INSERT INTO engagement_quality_gates (id, engagement_id, iteration_id, status) VALUES (?, ?, ?, 'running')",
+        qgId, String(req.params.id), String(iteration.id),
+      );
+      const send = (event: Record<string, unknown>): void => { res.write(`data: ${JSON.stringify(event)}\n\n`); };
+      async function persist(key: string, value: unknown): Promise<void> {
+        results[key] = value;
+        const column = COLUMN_FOR[key];
+        if (!column) return;
+        const stored = typeof value === 'string' ? value : JSON.stringify(value);
+        // Column names come from the fixed map above, never from input.
+        try { await db.run(`UPDATE engagement_quality_gates SET ${column} = ? WHERE id = ?`, stored, qgId); } catch { /* the frame already reached the page */ }
+      }
 
       async function runCheck(checkId: string, label: string, prompt: string): Promise<Record<string, unknown>> {
-        res.write(`data: ${JSON.stringify({ type: 'check_start', check: checkId, label })}\n\n`);
-        const r = await callChat({
-          model: qgModel,
-          system: 'You are a quality assessment assistant. Return only valid JSON.',
-          messages: [{ role: 'user', content: prompt }],
-          maxTokens: 1024,
-        });
-        const raw = r.text || '{}';
-        let parsed: Record<string, unknown> = {};
-        try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { raw }; } catch { parsed = { raw }; }
-        res.write(`data: ${JSON.stringify({ type: 'check_done', check: checkId, label, result: parsed })}\n\n`);
-        return parsed;
+        send({ type: 'check_start', check: checkId, label });
+        try {
+          const r = await callChat({
+            model: qgModel,
+            system: 'You are a quality assessment assistant. Return only valid JSON.',
+            messages: [{ role: 'user', content: prompt }],
+            maxTokens: 1024,
+          });
+          const raw = r.text || '{}';
+          let parsed: Record<string, unknown> = {};
+          try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { raw }; } catch { parsed = { raw }; }
+          send({ type: 'check_done', check: checkId, label, result: parsed });
+          return parsed;
+        } catch (err) {
+          failedChecks.push(checkId);
+          const message = safeError(err);
+          send({ type: 'check_error', check: checkId, label, error: message });
+          return { error: message };
+        }
       }
 
       // 8A: Scope Completeness
-      results['scope_completeness'] = await runCheck('8A', 'Scope Completeness', `
+      await persist('scope_completeness', await runCheck('8A', 'Scope Completeness', `
 Assess whether the following deliverable addresses all confirmed scope items.
 Scope items:\n${scopeSummary}
 Deliverable:\n${outputContent.slice(0, 8000)}
-Return JSON: { "score": 0-100, "addressed": ["item title"], "partial": ["item title"], "missing": ["item title"], "notes": "" }`);
+Return JSON: { "score": 0-100, "addressed": ["item title"], "partial": ["item title"], "missing": ["item title"], "notes": "" }`));
 
       // 8B: Blueprint Alignment
       if (Object.keys(qualityBlueprint).length > 0) {
-        results['blueprint_alignment'] = await runCheck('8B', 'Blueprint Alignment', `
+        await persist('blueprint_alignment', await runCheck('8B', 'Blueprint Alignment', `
 Compare this deliverable against the Quality Blueprint.
 Blueprint:\n${blueprintStr.slice(0, 2000)}
 Deliverable:\n${outputContent.slice(0, 6000)}
-Return JSON: { "score": 0-100, "structure_match": 0-100, "tone_match": 0-100, "citation_match": 0-100, "finding_format_match": 0-100, "deviations": ["deviation"], "notes": "" }`);
+Return JSON: { "score": 0-100, "structure_match": 0-100, "tone_match": 0-100, "citation_match": 0-100, "finding_format_match": 0-100, "deviations": ["deviation"], "notes": "" }`));
       } else {
-        results['blueprint_alignment'] = { score: null, notes: 'No quality blueprint extracted — skip Phase 3a to enable this check.' };
-        res.write(`data: ${JSON.stringify({ type: 'check_skip', check: '8B', label: 'Blueprint Alignment', reason: 'No blueprint' })}\n\n`);
+        await persist('blueprint_alignment', { score: null, notes: 'No quality blueprint extracted — skip Phase 3a to enable this check.' });
+        send({ type: 'check_skip', check: '8B', label: 'Blueprint Alignment', reason: 'No blueprint' });
       }
 
       // 8C: Cross-Consistency
-      results['cross_consistency'] = await runCheck('8C', 'Cross-Workstream Consistency', `
+      await persist('cross_consistency', await runCheck('8C', 'Cross-Workstream Consistency', `
 Analyse this deliverable for internal consistency issues.
 Deliverable:\n${outputContent.slice(0, 8000)}
-Return JSON: { "score": 0-100, "severity_consistent": true/false, "terminology_consistent": true/false, "conflicts": ["description"], "notes": "" }`);
+Return JSON: { "score": 0-100, "severity_consistent": true/false, "terminology_consistent": true/false, "conflicts": ["description"], "notes": "" }`));
 
       // 8D: Assumptions & Limitations (generated from boundaries register)
-      const assumptionsText = boundaries.length > 0
-        ? boundaries.map(b => `[${b.boundary_type}] ${b.description}`).join('\n')
-        : 'No formal assumptions or boundaries recorded.';
-      results['assumptions_section'] = `# Assumptions and Limitations\n\n${boundaries.filter(b => b.boundary_type === 'assumption').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Exclusions\n${boundaries.filter(b => b.boundary_type === 'exclusion').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Limitations\n${boundaries.filter(b => b.boundary_type === 'limitation').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}`;
-      res.write(`data: ${JSON.stringify({ type: 'check_done', check: '8D', label: 'Assumptions & Limitations', result: { generated: true, boundary_count: boundaries.length } })}\n\n`);
+      await persist('assumptions_section', `# Assumptions and Limitations\n\n${boundaries.filter(b => b.boundary_type === 'assumption').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Exclusions\n${boundaries.filter(b => b.boundary_type === 'exclusion').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Limitations\n${boundaries.filter(b => b.boundary_type === 'limitation').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}`);
+      send({ type: 'check_done', check: '8D', label: 'Assumptions & Limitations', result: { generated: true, boundary_count: boundaries.length } });
 
       // 8E: Executive Summary
-      res.write(`data: ${JSON.stringify({ type: 'check_start', check: '8E', label: 'Executive Summary' })}\n\n`);
-      const execSummaryResult = await callChat({
-        model: qgModel,
-        system: 'You are a senior consulting analyst. Write professional executive summaries.',
-        messages: [{ role: 'user', content: `Generate a concise executive summary for this consulting deliverable. Use a professional tone suitable for senior management.
+      send({ type: 'check_start', check: '8E', label: 'Executive Summary' });
+      try {
+        const execSummaryResult = await callChat({
+          model: qgModel,
+          system: 'You are a senior consulting analyst. Write professional executive summaries.',
+          messages: [{ role: 'user', content: `Generate a concise executive summary for this consulting deliverable. Use a professional tone suitable for senior management.
 
 Deliverable:\n${outputContent.slice(0, 10000)}
 Deliverables expected:\n${deliverables.map(d => d.title).join(', ')}
 ${peer_benchmarks.length > 0 ? `\nPeer context available: ${peersStr.slice(0, 1000)}` : ''}
 
 Write 3-4 paragraphs: context, key findings, main recommendations, and next steps. Start with the most important message.` }],
-        maxTokens: 1500,
-      });
-      results['executive_summary'] = execSummaryResult.text;
-      res.write(`data: ${JSON.stringify({ type: 'check_done', check: '8E', label: 'Executive Summary', result: { generated: true, length: String(results['executive_summary']).length } })}\n\n`);
+          maxTokens: 1500,
+        });
+        await persist('executive_summary', execSummaryResult.text);
+        send({ type: 'check_done', check: '8E', label: 'Executive Summary', result: { generated: true, length: String(results['executive_summary']).length } });
+      } catch (err) {
+        failedChecks.push('8E');
+        await persist('executive_summary', '');
+        send({ type: 'check_error', check: '8E', label: 'Executive Summary', error: safeError(err) });
+      }
 
-      // 8F: Expert Panel Review (4 lenses)
+      // 8F: Expert Panel Review (4 lenses) — two at a time: the subscription
+      // engine has two interactive slots, and the gate must not take both
+      // for the whole run.
       const expertLenses = [
         { id: 'devil_advocate', name: "Devil's Advocate", instruction: "Challenge the findings and assumptions. What would a critical reader dispute? What evidence is missing?" },
         { id: 'regulatory', name: 'Regulatory', instruction: "Check regulatory accuracy. Are citations correct? Is terminology precise? Are any requirements misstated or missing?" },
@@ -1792,19 +1835,33 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
         { id: 'pragmatist', name: 'Pragmatist', instruction: "Are recommendations implementable? Do they fit the client's likely capacity and resources? Is the timeline realistic?" },
       ];
       const expertResults: Record<string, unknown> = {};
-      for (const lens of expertLenses) {
-        res.write(`data: ${JSON.stringify({ type: 'check_start', check: `8F-${lens.id}`, label: `Expert: ${lens.name}` })}\n\n`);
-        const r = await callChat({
-          model: qgModel,
-          system: `You are reviewing a consulting deliverable from the perspective of a ${lens.name}. Return only valid JSON.`,
-          messages: [{ role: 'user', content: `${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
-          maxTokens: 600,
-        });
-        const raw = r.text || '{}';
-        try { const m = raw.match(/\{[\s\S]*\}/); expertResults[lens.id] = m ? JSON.parse(m[0]) : { raw }; } catch { expertResults[lens.id] = { raw }; }
-        res.write(`data: ${JSON.stringify({ type: 'check_done', check: `8F-${lens.id}`, label: `Expert: ${lens.name}`, result: expertResults[lens.id] })}\n\n`);
+      const LENS_CONCURRENCY = 2;
+      const lensQueue = [...expertLenses];
+      async function lensWorker(): Promise<void> {
+        for (let lens = lensQueue.shift(); lens; lens = lensQueue.shift()) {
+          const checkId = `8F-${lens.id}`;
+          const label = `Expert: ${lens.name}`;
+          send({ type: 'check_start', check: checkId, label });
+          try {
+            const r = await callChat({
+              model: qgModel,
+              system: `You are reviewing a consulting deliverable from the perspective of a ${lens.name}. Return only valid JSON.`,
+              messages: [{ role: 'user', content: `${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
+              maxTokens: 600,
+            });
+            const raw = r.text || '{}';
+            try { const m = raw.match(/\{[\s\S]*\}/); expertResults[lens.id] = m ? JSON.parse(m[0]) : { raw }; } catch { expertResults[lens.id] = { raw }; }
+            send({ type: 'check_done', check: checkId, label, result: expertResults[lens.id] });
+          } catch (err) {
+            failedChecks.push(checkId);
+            expertResults[lens.id] = { error: safeError(err) };
+            send({ type: 'check_error', check: checkId, label, error: safeError(err) });
+          }
+          await persist('expert_reviews', expertResults);
+        }
       }
-      results['expert_reviews'] = expertResults;
+      await Promise.all(Array.from({ length: LENS_CONCURRENCY }, () => lensWorker()));
+      await persist('expert_reviews', expertResults);
 
       // Calculate overall score
       const scores: number[] = [];
@@ -1815,30 +1872,92 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const missing = (results['scope_completeness'] as Record<string, unknown>)?.missing as string[] || [];
       const conflicts = (results['cross_consistency'] as Record<string, unknown>)?.conflicts as string[] || [];
       const blockers = [...missing.map(m => `Missing scope: ${m}`), ...conflicts];
-      const releaseReady = overallScore !== null && overallScore >= 80 && blockers.length === 0;
+      const releaseReady = overallScore !== null && overallScore >= 80 && blockers.length === 0 && failedChecks.length === 0;
+      const gateStatus = failedChecks.length > 0 ? 'partial' : 'completed';
 
-      // Save quality gate record
-      const qgId = randomUUID();
-      await db.run(`INSERT INTO engagement_quality_gates (id, engagement_id, iteration_id, scope_completeness, blueprint_alignment, cross_consistency, assumptions_section, executive_summary, expert_reviews, overall_score, release_ready, blockers, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')`, 
-        qgId, String(req.params.id), String(iteration.id),
-        JSON.stringify(results['scope_completeness']),
-        JSON.stringify(results['blueprint_alignment']),
-        JSON.stringify(results['cross_consistency']),
-        String(results['assumptions_section'] || ''),
-        String(results['executive_summary'] || ''),
-        JSON.stringify(results['expert_reviews']),
-        overallScore, releaseReady ? 1 : 0,
-        JSON.stringify(blockers)
+      await db.run(
+        'UPDATE engagement_quality_gates SET overall_score = ?, release_ready = ?, blockers = ?, status = ? WHERE id = ?',
+        overallScore, releaseReady ? 1 : 0, JSON.stringify(blockers), gateStatus, qgId,
       );
-      await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = NOW() WHERE id = ?", String(req.params.id));
-      logChange(String(req.params.id), 'quality_gate', 'quality_gate_run', `Quality gate completed. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`);
+      // A completed engagement re-running its gate stays completed.
+      if (String(engagement.status) !== 'completed') {
+        await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = NOW() WHERE id = ?", String(req.params.id));
+      }
+      logChange(String(req.params.id), 'quality_gate', 'quality_gate_run', failedChecks.length > 0
+        ? `Quality gate ran with ${failedChecks.length} failed check(s): ${failedChecks.join(', ')}. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`
+        : `Quality gate completed. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`);
 
-      res.write(`data: ${JSON.stringify({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers })}\n\n`);
+      send({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers, failed_checks: failedChecks, status: gateStatus });
       res.end();
     } catch (e) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
-      res.end();
+      if (qgId) {
+        try { await db.run("UPDATE engagement_quality_gates SET status = 'failed' WHERE id = ? AND status = 'running'", qgId); } catch { /* best effort */ }
+      }
+      if (!res.headersSent) {
+        res.status(500).json({ error: safeError(e) });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.end();
+      }
+    }
+  });
+
+  // ── Completion (Wave 2, 2026-09-08) ────────────────────────────────────────
+  // POST /api/engagements/:id/complete { force? } — nothing ever set an
+  // engagement to 'completed': the progress bar topped out at 86% and the
+  // peer-benchmark library (status IN ('review','completed') AND
+  // enable_as_benchmark) stayed empty. Completing needs at least one
+  // executed iteration; a quality gate that is not release-ready (or none at
+  // all) needs an explicit force, which the changelog records.
+  router.post('/:id/complete', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    try {
+      const engagement = await db.get('SELECT id, status FROM engagements WHERE id = ?', engagementId) as { id: string; status: string } | undefined;
+      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+
+      const iteration = await db.get('SELECT id FROM engagement_iterations WHERE engagement_id = ? LIMIT 1', engagementId);
+      if (!iteration) return res.status(409).json({ error: 'Nothing has been executed yet — run the engagement before marking it complete.' });
+
+      const gate = await db.get(
+        'SELECT id, release_ready, overall_score, blockers, status FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1',
+        engagementId,
+      ) as { id: string; release_ready: number; overall_score: number | null; blockers: string; status: string } | undefined;
+      const force = (req.body as { force?: unknown } | undefined)?.force === true;
+      const gateReady = Boolean(gate && Number(gate.release_ready) === 1);
+      if (!gateReady && !force) {
+        return res.status(409).json({
+          error: gate
+            ? 'The latest quality gate is not release-ready. Resolve the blockers, or complete anyway.'
+            : 'No quality gate has been run. Run it first, or complete anyway.',
+          needs_force: true,
+          gate: gate ?? null,
+        });
+      }
+
+      await db.run("UPDATE engagements SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = ?", engagementId);
+      logChange(engagementId, 'quality_gate', 'engagement_completed', gateReady
+        ? `Engagement marked complete (quality gate ${gate?.overall_score != null ? `${Number(gate.overall_score).toFixed(0)}%, ` : ''}release-ready)`
+        : `Engagement marked complete without a release-ready quality gate (forced by the user)`);
+      res.json(await db.get('SELECT * FROM engagements WHERE id = ?', engagementId));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
+  // POST /api/engagements/:id/reopen — back to review; the completion stamp is cleared.
+  router.post('/:id/reopen', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    try {
+      const engagement = await db.get('SELECT id, status FROM engagements WHERE id = ?', engagementId) as { id: string; status: string } | undefined;
+      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+      if (engagement.status !== 'completed') return res.status(409).json({ error: 'Only a completed engagement can be reopened.' });
+      await db.run("UPDATE engagements SET status = 'review', completed_at = NULL, updated_at = NOW() WHERE id = ?", engagementId);
+      logChange(engagementId, 'review', 'engagement_reopened', 'Engagement reopened for review');
+      res.json(await db.get('SELECT * FROM engagements WHERE id = ?', engagementId));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
