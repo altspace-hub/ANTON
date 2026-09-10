@@ -25,6 +25,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import type AnthropicSDK from '@anthropic-ai/sdk';
 import { requireAuth } from '../middleware/auth.js';
+import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import {
   runHeartbeatCycle,
   createReasoningTrail, addTrailEntry, completeTrail,
@@ -59,7 +60,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         config,
         lastHeartbeat,
         unreadBriefings,
-        apiConfigured: !!anthropic,
+        apiConfigured: !!anthropic || isSdkEngineEnabled(),
         spendGate,
       });
     } catch (err) {
@@ -124,7 +125,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
   // ── Generate briefing on demand ──────────────────────────────────────────
   router.post('/orchestrator/briefings/generate', requireAuth, async (_req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+    if (!anthropic && !isSdkEngineEnabled()) return res.status(503).json({ error: 'No Claude engine available — add an Anthropic API key or enable the SDK engine in Settings → Execution engines' });
     try {
       const result = await runHeartbeatCycle(db, anthropic, 'on_demand', true);
       res.json({ result });
@@ -692,7 +693,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
   // ── Management report ─────────────────────────────────────────────────────
   router.get('/orchestrator/report', requireAuth, async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+    if (!anthropic && !isSdkEngineEnabled()) return res.status(503).json({ error: 'No Claude engine available — add an Anthropic API key or enable the SDK engine in Settings → Execution engines' });
     try {
       const period = (req.query.period as string) === 'month' ? 'month' : 'week';
       const report = await generateManagementReport(db, anthropic, period);
@@ -837,7 +838,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   router.post('/orchestrator/demo/advance', requireAuth, async (_req: Request, res: Response) => {
     try {
       const { day, done } = await advanceSimulationDay(db);
-      if (!done && anthropic) {
+      if (!done && (anthropic || isSdkEngineEnabled())) {
         // Trigger a heartbeat cycle for the new day's signals
         runHeartbeatCycle(db, anthropic, 'on_demand', false).catch(() => {});
       }

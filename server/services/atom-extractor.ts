@@ -199,6 +199,9 @@ Rules:
     try {
       const chat = await callChat({
         model,
+        // Learning happens after the answer; it must never hold a subscription
+        // slot an interactive run is waiting for.
+        background: true,
         system: systemPrompt,
         messages: [
           {
@@ -362,6 +365,9 @@ Rules:
     try {
       const chat = await callChat({
         model,
+        // Learning happens after the answer; it must never hold a subscription
+        // slot an interactive run is waiting for.
+        background: true,
         system: 'You analyze relationships between knowledge atoms. Output only valid JSON.',
         messages: [{ role: 'user', content: prompt }],
         maxTokens: 1024,

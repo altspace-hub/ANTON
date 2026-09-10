@@ -11,7 +11,7 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Local-first web application that enables consultants, lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a structured, guided interface — no command-line knowledge required.
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.
-**Primary AI:** Anthropic Claude (`claude-opus-4-8` default). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
+**Primary AI:** Anthropic Claude. The default model is the Settings pick (`app_settings.default_model`); this instance runs `sdk:claude-opus-5` on the subscription SDK engine (`server/services/claude-sdk-client.ts` — the machine's Claude Code login, no API key). With an API key and no Settings pick the tier default is `claude-opus-4-8`. Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
 **Companion App:** PWA + Capacitor Android wrapper at `src/app/` — separate Vite build (`dist/app/`) for end-users on phones.
 **Design philosophy:** "Start with the problem, not the solution." Every module begins with a clear problem statement and pre-configured AI behaviour. Users can override everything, but the defaults should produce excellent results for someone who just clicks "Run."
 
@@ -95,7 +95,7 @@ pnpm run build && pnpm run start
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
 | Database | PostgreSQL | 16+ |
-| Primary AI | Anthropic Claude | claude-opus-4-8 (Opus 4.8) |
+| Primary AI | Anthropic Claude | Settings default — `sdk:claude-opus-5` here (subscription engine); `claude-opus-4-8` is the API tier default |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, Mistral, Ollama | — |
 | File processing | mammoth (docx), pdf-parse, xlsx | — |
 | Export | docx, exceljs, pdfkit, pptxgenjs, fountain | — |
@@ -183,7 +183,8 @@ Claude is the default and most deeply integrated. Other providers work through a
 
 | Provider | Env Variable | Default Model | Adapter File |
 |---|---|---|---|
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-8` | Built-in (`claude-client.ts`) |
+| Anthropic (subscription engine) | none — Claude Code login; enable in Settings → Execution engines (`SDK_ENGINE_ENABLED`) | `sdk:claude-opus-5` | `server/services/claude-sdk-client.ts` |
+| Anthropic (API) | `ANTHROPIC_API_KEY` | `claude-opus-4-8` | Built-in (`claude-client.ts`) |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` | `server/services/model-adapter.ts` |
 | Azure OpenAI | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` | (per deployment) | `server/services/adapters/azureOpenaiAdapter.ts` |
 | Google | `GOOGLE_API_KEY` | `gemini-2.0-flash` | `server/services/model-adapter.ts` |
@@ -194,17 +195,20 @@ Azure OpenAI supports reasoning models (o3, o4-mini) with effort mapping, multi-
 
 Set the API key in `.env` to enable each provider. Users switch models in the UI per session.
 
+**Every LLM call site follows the Settings default.** `server/services/provider-router.ts` (`getConfiguredProvider` / `resolveModel` / `mapModelToProvider`) resolves hardcoded `claude-*` ids and `large` / `medium` / `small` tiers to the configured engine — under an `sdk:` default, large-tier work runs the default model and medium/small run `sdk:claude-sonnet-5` so utility calls are not promoted to Opus. Never construct an Anthropic client in a new route: go through `streamChat` / `callChat`, which carry the SDK engine's branches (including streaming, via a forwarding sink). Capability lookups (context budget, 1M checks, output ceilings) must strip the engine prefix with `capabilityModelId()` from `server/services/engine-model-id.ts`; an id that will be dispatched must keep it. The SDK engine is a text engine — the one opt-in exception is ANTON's `web_search` tool, which grants exactly `WebSearch` + `WebFetch` for that run.
+
 ### Thinking Levels
 
-| Level | Description | Claude Opus 4.8 | Sonnet/Haiku |
+| Level | Description | Adaptive Claude (Fable 5.x, Opus 5, Sonnet 5, Opus 4.8, Sonnet 4.6) | Budget models (Sonnet 4.5, Haiku 4.5) |
 |---|---|---|---|
 | `quick` | No deep reasoning | `effort: 'low'` | thinking disabled |
 | `think` | Standard reasoning | `effort: 'medium'` | `budget_tokens: 4096` |
-| `think_hard` | Deep reasoning | `effort: 'high'` | `budget_tokens: 16384` |
-| `investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
-| `plan_first` | Plan then execute | `effort: 'max'` | `budget_tokens: 32768` |
+| `think_hard` | Deep reasoning | `effort: 'high'` | `budget_tokens: 10000` |
+| `investigate` | Extended reasoning | `effort: 'xhigh'` (`'max'` on Sonnet 4.6, which lacks the rung) | `budget_tokens: 32768` |
+| `plan_first` | Plan then execute | `effort: 'xhigh'` (same clamp) | `budget_tokens: 32768` |
+| `deep_investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
 
-For `claude-opus-4-8`, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
+For adaptive models, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for them — Fable 5.x rejects it with a 400. The ladder lives in exactly one place, `server/services/thinking-map.ts`: `anthropicEffort(level, model)` clamps `xhigh` to `max` on models that predate it, and `model-capabilities.ts` derives its per-model config from it rather than keeping a second table.
 
 ### Export Pipeline
 

@@ -48,6 +48,8 @@ export interface SharedStepRecord extends StepQualityRecord {
   description?: string;
   /** Which engine executed this step. Absent = legacy task_agent records. */
   source?: 'task_agent' | 'mission';
+  /** Wave 3: the tools the step called on the agentic engine, in order. */
+  tool_calls?: Array<{ name: string; input: Record<string, unknown>; ms: number; is_error: boolean; output_preview?: string }>;
   /** Set when source==='mission' — the missions.mission_tasks row id. */
   mission_task_id?: string;
 }

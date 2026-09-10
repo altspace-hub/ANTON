@@ -137,6 +137,8 @@ export function createStructuredExtractor(db: DatabaseAdapter) {
             maxTokens: 8_000,
             temperature: 0,
             jsonMode: true,
+            // Post-turn bookkeeping — yields the interactive engine slot.
+            background: true,
             db,
           }),
           new Promise<never>((_, reject) =>

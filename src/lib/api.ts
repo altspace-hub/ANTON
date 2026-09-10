@@ -273,7 +273,7 @@ export async function fetchSessions(moduleId?: string, options?: {
   return res.json();
 }
 
-export async function createSession(data: { moduleId: string; title: string; config: unknown }) {
+export async function createSession(data: { moduleId: string; title: string; config: unknown; projectId?: string | null }) {
   const res = await fetchWithAuth(`${API_BASE}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -289,6 +289,56 @@ export async function updateSessionTitle(sessionId: string, title: string): Prom
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title }),
   });
+}
+
+/** Ask the server for a 5-8 word title from the first exchange — one small
+ *  background utility call, never a full module-run turn. Best-effort: null
+ *  when the engine is busy or the request fails; the 80-char title stays. */
+export async function generateSessionTitle(
+  sessionId: string,
+  userMessage: string,
+  responsePreview: string,
+): Promise<string | null> {
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/sessions/${sessionId}/title/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userMessage: userMessage.slice(0, 400), responsePreview: responsePreview.slice(0, 600) }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { title?: string | null };
+    return data.title ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export interface ModuleLensSuggestion {
+  moduleId: string;
+  label: string;
+  reason: string;
+  areaId: string;
+}
+
+/** Ask the recommender which catalogue module should answer this — the
+ *  expert "lens" for an open-chat turn. The caller bounds it with a signal. */
+export async function suggestModuleLens(query: string, signal?: AbortSignal): Promise<ModuleLensSuggestion[]> {
+  const res = await fetchWithAuth(`${API_BASE}/modules/smart-search`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: query.slice(0, 2000) }),
+    signal,
+  });
+  if (!res.ok) return [];
+  const data = (await res.json()) as Array<{ moduleId?: string; label?: string; moduleName?: string; reason?: string; areaId?: string }>;
+  return (Array.isArray(data) ? data : [])
+    .filter((m) => typeof m.moduleId === 'string' && m.moduleId.length > 0)
+    .map((m) => ({
+      moduleId: String(m.moduleId),
+      label: String(m.label ?? m.moduleName ?? m.moduleId),
+      reason: String(m.reason ?? ''),
+      areaId: String(m.areaId ?? ''),
+    }));
 }
 
 export async function updateSessionNote(sessionId: string, note: string): Promise<void> {

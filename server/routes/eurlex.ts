@@ -5,6 +5,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 
 // Known regulation shortcuts
 const REGULATION_LOOKUP: Record<string, { title: string; celexNumber: string }> = {
@@ -106,8 +107,8 @@ export async function createEurLexRoutes(db?: DatabaseAdapter, anthropic?: Anthr
    * Streams SSE: { type: 'progress'|'finding'|'summary'|'done', ... }
    */
   router.post('/eurlex/validate-pack', async (req, res) => {
-    if (!db || !anthropic) {
-      res.status(503).json({ error: 'Database and AI service required for validation' });
+    if (!db || (!hasClaudeEngine() && !anthropic)) {
+      res.status(503).json({ error: db ? NO_CLAUDE_ENGINE_MESSAGE : 'Database required for validation' });
       return;
     }
 

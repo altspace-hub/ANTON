@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { ilike } from '../db/dialect-helpers.js';
+import { callChat } from '../services/provider-router.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
+
+/** Neutral on purpose: the old browser-side prompt titled every chat as an
+ *  "FCP compliance consultation", whatever it was about. */
+const TITLE_SYSTEM_PROMPT =
+  'You write concise titles for saved work sessions. Given the user request and a preview of the answer, ' +
+  'output ONLY a 5-8 word title that captures the core topic. No quotes, no trailing punctuation, no explanation.';
 
 export async function createSessionRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -78,15 +86,20 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
   // POST /api/sessions — create session
   router.post('/sessions', async (req, res) => {
     try {
-      const { moduleId, title, config } = req.body;
+      const { moduleId, title, config, projectId } = req.body as { moduleId: string; title: string; config?: unknown; projectId?: unknown };
       const userId = req.user?.id;
       const id = crypto.randomUUID();
-      await db.run('INSERT INTO sessions (id, module_id, title, config, user_id) VALUES (?, ?, ?, ?, ?)', id,
+      // A session can be born inside a project. project_id could only ever be
+      // set by a later PATCH, and containment that needs a second step after
+      // the work is done is containment nobody performs: 0 of 54 sessions here.
+      const project = typeof projectId === 'string' && projectId.trim() ? projectId.trim() : null;
+      await db.run('INSERT INTO sessions (id, module_id, title, config, user_id, project_id) VALUES (?, ?, ?, ?, ?, ?)', id,
         moduleId,
         title,
         JSON.stringify(config || {}),
-        userId);
-      res.json({ id, moduleId, title, config });
+        userId,
+        project);
+      res.json({ id, moduleId, title, config, projectId: project });
     } catch (error) {
       res.status(500).json({ error: 'Failed to create session' });
     }
@@ -167,10 +180,14 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       const userRole = req.user?.role;
 
       // Check ownership (admins can see all sessions)
-      const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
+      const whereClause = userRole === 'admin' ? 'WHERE s.id = ?' : 'WHERE s.id = ? AND s.user_id = ?';
       const params = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
 
-      const session = await db.get(`SELECT * FROM sessions ${whereClause}`, ...params);
+      // project_name rides along so a restored chat can show its matter without a second call.
+      const session = await db.get(
+        `SELECT s.*, p.name AS project_name FROM sessions s LEFT JOIN projects p ON p.id = s.project_id ${whereClause}`,
+        ...params,
+      );
       if (!session) {
         res.status(404).json({ error: 'Session not found or access denied' });
         return;
@@ -185,6 +202,53 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       res.json({ ...session as object, messages });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch session' });
+    }
+  });
+
+  // POST /api/sessions/:id/title/generate — a 5-8 word title from the first
+  // exchange. Used to be a full /claude/message turn from the browser: every
+  // knowledge layer assembled, an interactive engine slot taken at the moment
+  // the user is most likely to type a follow-up (the engine has two), and an
+  // FCP-flavoured prompt for every chat. Now one small utility call, marked
+  // background so it yields to interactive work. Best-effort: on failure the
+  // 80-character first-line title simply stays.
+  router.post('/sessions/:id/title/generate', async (req, res) => {
+    try {
+      const { userMessage, responsePreview } = req.body as { userMessage?: string; responsePreview?: string };
+      if (typeof userMessage !== 'string' || !userMessage.trim()) {
+        res.status(400).json({ error: 'userMessage is required' });
+        return;
+      }
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+      const owned = userRole === 'admin'
+        ? await db.get('SELECT id FROM sessions WHERE id = ?', req.params.id)
+        : await db.get('SELECT id FROM sessions WHERE id = ? AND user_id = ?', req.params.id, userId!);
+      if (!owned) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+      }
+
+      const chat = await callChat({
+        model: await getRoutedUtilityModel(db),
+        system: TITLE_SYSTEM_PROMPT,
+        messages: [{
+          role: 'user',
+          content: `User request: "${userMessage.slice(0, 400)}"\nAnswer preview: "${String(responsePreview ?? '').slice(0, 600)}"`,
+        }],
+        maxTokens: 40,
+        background: true,
+        db,
+      });
+      const title = chat.text.trim().split('\n')[0].replace(/^["']|["']$/g, '').replace(/[.!?]$/, '').slice(0, 120);
+      if (title) {
+        await db.run('UPDATE sessions SET title = ?, updated_at = ? WHERE id = ?', title, new Date().toISOString(), req.params.id);
+      }
+      res.json({ title: title || null });
+    } catch (error) {
+      // Best-effort by contract: the caller keeps the first-line title.
+      console.warn('[sessions] title generation failed:', error instanceof Error ? error.message : error);
+      res.json({ title: null });
     }
   });
 

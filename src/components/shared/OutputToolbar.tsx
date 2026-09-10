@@ -9,7 +9,8 @@ import ModelSelector from '@/components/shared/ModelSelector';
 import RerunComparison, { type RerunComparisonData } from '@/components/shared/RerunComparison';
 import { fetchPromptPreview, createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
-import type { ModelId } from '@/lib/types';
+import type { ModelId, ContextUsed } from '@/lib/types';
+import { MODULES } from '@/lib/constants';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -63,6 +64,8 @@ interface OutputToolbarProps {
   onUpgradeThinking?: (level: 'think_hard' | 'investigate') => void;
   /** Per-message config snapshot — used for accurate "How ANTON Thought" display on old sessions */
   configSnapshot?: Record<string, unknown> | null;
+  /** Wave 2: what the last answer's prompt actually held (live; the snapshot wins after reload). */
+  contextUsed?: ContextUsed | null;
   /** ATTR-04: Source manifest from last request — passed to CitationVerifier for cross-checking */
   sourceManifest?: string[];
   /** Wave 2.3: when the displayed output is itself a rerun, the original message id */
@@ -104,7 +107,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
-    configSnapshot, sourceManifest, rerunOf, conversation,
+    configSnapshot, contextUsed, sourceManifest, rerunOf, conversation,
   } = props;
 
   // Derive trail display values — prefer per-message configSnapshot over live store state
@@ -122,6 +125,36 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const trailMeta       = (snap.metaCognitiveEnabled as boolean) ?? metaCognitiveEnabled;
   const trailMultiPersp = (snap.multiPerspective as boolean)    ?? multiPerspective;
   const trailStructRef  = (snap.structureReference as typeof structureReference) ?? structureReference;
+  // Wave 2: what was actually in the prompt — the persisted snapshot after a
+  // reload, the live frame during and right after the run.
+  const trailContext    = ((snap.contextUsed as ContextUsed | undefined) ?? contextUsed) ?? null;
+  const contextRows: { label: string; value: string; color: string }[] = [];
+  if (trailContext) {
+    if (trailContext.lens) {
+      const mod = MODULES.find((m) => m.id === trailContext.lens?.moduleId);
+      contextRows.push({ label: 'Answering as', value: mod?.label ?? trailContext.lens.moduleId, color: 'text-adv-teal' });
+    }
+    if (trailContext.project) contextRows.push({ label: 'Project', value: trailContext.project.name, color: 'text-adv-teal' });
+    const docs = trailContext.documents ?? [];
+    if (docs.length > 0) {
+      const used = docs.filter((d) => !d.skipped);
+      const skipped = docs.length - used.length;
+      contextRows.push({
+        label: 'Documents',
+        value: `${used.map((d) => d.name).join(', ')}${skipped > 0 ? ` (+${skipped} skipped — budget)` : ''}`,
+        color: 'text-adv-off-white',
+      });
+    }
+    const otherSources = (trailContext.knowledgeSources ?? []).filter((s) => !/\(uploaded\)$/.test(s));
+    if (otherSources.length > 0) contextRows.push({ label: 'Knowledge', value: otherSources.join(', '), color: 'text-adv-gray' });
+    if (trailContext.ragChunks > 0) contextRows.push({ label: 'Retrieved', value: `${trailContext.ragChunks} passage${trailContext.ragChunks === 1 ? '' : 's'}`, color: 'text-adv-gray' });
+    if (trailContext.packGroundingChars > 0) contextRows.push({ label: 'Regulatory text', value: `~${Math.round(trailContext.packGroundingChars / 4).toLocaleString('en-GB')} tokens grounded`, color: 'text-adv-gray' });
+    if (trailContext.atomChars > 0) contextRows.push({ label: 'Memory', value: `~${Math.round(trailContext.atomChars / 4).toLocaleString('en-GB')} tokens of institutional memory`, color: 'text-adv-gray' });
+    if (trailContext.webSearch) contextRows.push({ label: 'Web search', value: 'Available to the model', color: 'text-adv-teal' });
+    if (trailContext.goalsValues) contextRows.push({ label: 'Goals & values', value: 'Applied', color: 'text-adv-gray' });
+    if (trailContext.resumeContext) contextRows.push({ label: 'Resumed', value: 'Earlier session context carried', color: 'text-adv-gray' });
+    if (contextRows.length === 0) contextRows.push({ label: 'Context', value: 'Your message and the conversation only', color: 'text-adv-gray' });
+  }
 
   const [activePanel, setActivePanel] = useState<PanelId>(null);
 
@@ -1096,6 +1129,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   ...(trailMultiPersp ? [{ label: 'Multi-Perspective', value: 'Enabled', color: 'text-adv-teal' }] : []),
                   ...(trailMeta ? [{ label: 'Meta-Cognitive', value: 'Enabled', color: 'text-adv-teal' }] : []),
                   ...(trailStructRef ? [{ label: 'Structure Ref', value: trailStructRef.mode + (trailStructRef.fileName ? ` · ${trailStructRef.fileName}` : ''), color: 'text-adv-gray' }] : []),
+                  ...contextRows,
                 ] as { label: string; value: string; color: string }[]).map(({ label, value, color }) => (
                   <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-adv-dark px-3 py-2">
                     <span className="shrink-0 text-[11px] text-adv-gray">{label}</span>

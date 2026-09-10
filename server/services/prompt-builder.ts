@@ -433,7 +433,13 @@ export async function buildKnowledgePackLayer(
     }
 
     // ── Inject actual pack entity TEXT (budgeted) ─────────────────────────
-    const entityLines = await retrievePackEntityContent(db, rows, context);
+    // A run with neither area nor module (open chat) has no claim on any
+    // pack: it gets pack content only when retrieval finds a strong match,
+    // and no pack listing at all otherwise. The listing alone told the model
+    // that AML packs were "active for this session" on every question.
+    const strict = !context?.areaId && !context?.moduleId && Boolean(context?.userMessage?.trim());
+    const entityLines = await retrievePackEntityContent(db, rows, context, strict);
+    if (strict && entityLines.length === 0) return '';
     if (entityLines.length > 0) {
       lines.push('');
       lines.push('### Relevant pack content');
@@ -450,6 +456,15 @@ export async function buildKnowledgePackLayer(
 /** Token budget for injected pack entity text (~same scale as buildAtomLayer). */
 const PACK_LAYER_TOKEN_BUDGET = 3500;
 const PACK_LAYER_MAX_ENTITIES = 60;
+/**
+ * Open chat (strict mode) gets a much smaller, more relevant slice. The
+ * "context used" line (Wave 2) showed ~18k characters of pack text riding on
+ * a question about an engagement letter — relevance-only was still too
+ * generous. A dozen close matches, a quarter of the module budget.
+ */
+const STRICT_PACK_LAYER_TOKEN_BUDGET = 900;
+const STRICT_PACK_LAYER_MAX_ENTITIES = 12;
+const STRICT_PACK_MIN_SIMILARITY = 0.55;
 
 /**
  * Retrieve the most relevant pack entity text for the current session,
@@ -460,6 +475,9 @@ async function retrievePackEntityContent(
   db: DatabaseAdapter,
   activePacks: Array<{ id: string; display_name: string; regulatory_area: string | null }>,
   context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
+  /** Relevance-only: a stronger similarity floor and no deterministic dump
+   *  (tiers 2-3) when semantic retrieval finds nothing. */
+  strict = false,
 ): Promise<string[]> {
   const activeIds = new Set(activePacks.map(p => p.id));
   const packNameById = new Map(activePacks.map(p => [p.id, p.display_name]));
@@ -483,15 +501,15 @@ async function retrievePackEntityContent(
       const results = await hybridSearch(db, {
         query,
         contentTypes: ['knowledge_pack_entity'],
-        topK: PACK_LAYER_MAX_ENTITIES,
-        minSimilarity: 0.25,
+        topK: strict ? STRICT_PACK_LAYER_MAX_ENTITIES : PACK_LAYER_MAX_ENTITIES,
+        minSimilarity: strict ? STRICT_PACK_MIN_SIMILARITY : 0.25,
         includeDocumentChunks: false,
         // Pack entities are instance-wide reference material with no owner column,
         // and the prompt layer has no request to derive a principal from anyway.
         scope: INSTANCE_WIDE_SEARCH,
       });
       const fromActivePacks = results.filter(r => activeIds.has(splitContentId(r.content_id).packId));
-      const capped = applyTokenBudget(fromActivePacks, PACK_LAYER_TOKEN_BUDGET);
+      const capped = applyTokenBudget(fromActivePacks, strict ? STRICT_PACK_LAYER_TOKEN_BUDGET : PACK_LAYER_TOKEN_BUDGET);
       if (capped.length > 0) {
         return capped.map(r => {
           const { packId, refId } = splitContentId(r.content_id);
@@ -504,6 +522,10 @@ async function retrievePackEntityContent(
       // Embeddings/vector search unavailable — fall through to deterministic path
     }
   }
+
+  // Strict mode is relevance or nothing — the deterministic tiers below
+  // dump whatever packs are active, which is exactly the off-task text.
+  if (strict) return [];
 
   // ── Tier 2: deterministic — embedding rows by pack prefix (retain descriptions) ──
   // Area-matched packs first (substring match on regulatory_area/name is the
@@ -607,12 +629,15 @@ export async function buildAtomLayer(
     // ── Try full hybrid search if we have a user message ─────────────────
     if (userMessage && userMessage.trim().length > 5) {
       try {
-        // Full vector + BM25 + RRF fusion via hybridSearch
+        // Full vector + BM25 + RRF fusion via hybridSearch. A run with no area
+        // (open chat) has no relevance boost to lean on, so it demands a
+        // stronger match: at 0.25 a kickoff-agenda question pulled in 25
+        // Coding Studio review flags as "supporting evidence".
         const results = await hybridSearch(db, {
           query: userMessage.trim(),
           contentTypes: ['knowledge_atom'],
           topK: 25,
-          minSimilarity: 0.25,
+          minSimilarity: areaId ? 0.25 : 0.45,
           // Atoms only — unowned, same reasoning as the pack layer above.
           scope: INSTANCE_WIDE_SEARCH,
         });
@@ -634,7 +659,14 @@ export async function buildAtomLayer(
           created_at: string; superseded_by: string | null; coding_project_id: string | null;
         }>;
 
-        const atomMap = new Map(atomRows.map(a => [a.id, a]));
+        // A Coding Studio project's atoms (review flags, test failures) are that
+        // project's lessons — they only belong in that project's runs. They are
+        // 98.6% of all atoms on this instance and were retrieved everywhere.
+        const atomMap = new Map(
+          atomRows
+            .filter(a => !a.coding_project_id || a.coding_project_id === codingProjectId)
+            .map(a => [a.id, a]),
+        );
 
         // Merge hybrid search scores with authoritative atom metadata
         const enriched = results
@@ -762,13 +794,16 @@ async function buildAtomLayerFallback(
   areaId?: string | null,
 ): Promise<string> {
   try {
-    const conditions = ['ka.is_active = 1', "ka.created_at >= NOW() - INTERVAL '30 days'", 'ka.confidence >= 0.7'];
+    // No area means no relevance signal at all: the fallback would be the 15
+    // most confident atoms of the last 30 days from anywhere in the product.
+    // For an open-chat question that is noise dressed as evidence.
+    if (!areaId) return '';
+
+    const conditions = ['ka.is_active = 1', "ka.created_at >= NOW() - INTERVAL '30 days'", 'ka.confidence >= 0.7', 'ka.coding_project_id IS NULL'];
     const params: unknown[] = [];
 
-    if (areaId) {
-      conditions.push('(ka.source_area_id = ? OR ka.source_area_id IS NULL)');
-      params.push(areaId);
-    }
+    conditions.push('(ka.source_area_id = ? OR ka.source_area_id IS NULL)');
+    params.push(areaId);
 
     const atoms = await db.all(`
       SELECT ka.content, ka.atom_type, ka.category, ka.confidence

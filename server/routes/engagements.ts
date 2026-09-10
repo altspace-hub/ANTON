@@ -20,6 +20,13 @@ import { streamChat, callChat, mapModelToProvider } from '../services/provider-r
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { resolveEngagementModelChoice } from '../services/engagement-exec-model.js';
 import { bridgeIterationToSession } from '../services/engagement-session-bridge.js';
+import { runAgentic, type AgentToolDefinition } from '../services/sdk-agentic-runner.js';
+import { isSdkModel } from '../services/engine-model-id.js';
+import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { getModuleSystemPrompt } from '../services/module-loader.js';
+import { findCandidateModules } from '../services/module-recommendation.js';
+import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import { z } from 'zod';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 
@@ -226,7 +233,9 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       const stakeholders = await db.all('SELECT * FROM engagement_stakeholders WHERE engagement_id = ? LIMIT 500', String(req.params.id));
       const peer_benchmarks = await db.all('SELECT id, benchmark_type, anonymized_label, domain, scope_similarity, maturity_data, key_findings, search_query, created_at FROM engagement_peer_benchmarks WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 500', String(req.params.id));
       const quality_gate = await db.get('SELECT * FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1', String(req.params.id)) || null;
-      res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate });
+      // Wave 3: an execution in progress (or just finished) that the page can re-attach to.
+      const run_job = getStepJobSummary(`engagement-run:${String(req.params.id)}`);
+      res.json({ ...engagement, documents, scope_items, workstreams, resources, deliverables, boundaries, client_intelligence, iterations, stakeholders, peer_benchmarks, quality_gate, run_job });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }
@@ -236,7 +245,8 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
   router.patch('/:id', async (req: Request, res: Response) => {
     try {
       const { status, your_organisation, client_name, domain_areas, engagement_brief, quality_blueprint,
-        thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title, exec_model } = req.body;
+        thinking_level, expert_panel, review_modes, knowledge_config, scope_confirmed_at, title, exec_model,
+        workstream_plan_confirmed, enable_as_benchmark } = req.body;
       const existing = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
       if (!existing) return res.status(404).json({ error: 'Not found' });
       const userId = getUserId(req);
@@ -259,6 +269,11 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       if (review_modes !== undefined) { updates.push('review_modes = ?'); values.push(JSON.stringify(review_modes)); }
       if (knowledge_config !== undefined) { updates.push('knowledge_config = ?'); values.push(JSON.stringify(knowledge_config)); }
       if (scope_confirmed_at !== undefined) { updates.push('scope_confirmed_at = ?'); values.push(scope_confirmed_at); }
+      // Both were sent by the workspace and silently dropped here: "Confirm
+      // Plan" looked successful with the flag stuck at 0, and the peer library
+      // (WHERE enable_as_benchmark = 1) could never have a source.
+      if (workstream_plan_confirmed !== undefined) { updates.push('workstream_plan_confirmed = ?'); values.push(workstream_plan_confirmed ? 1 : 0); }
+      if (enable_as_benchmark !== undefined) { updates.push('enable_as_benchmark = ?'); values.push(enable_as_benchmark ? 1 : 0); }
       values.push(String(req.params.id));
       await db.run(`UPDATE engagements SET ${updates.join(', ')} WHERE id = ?`, ...values);
       if (status && status !== existing.status) {
@@ -445,8 +460,14 @@ Return ONLY valid JSON, no explanation.`;
           const jsonMatch = rawText.match(/\{[\s\S]*\}/);
           extracted = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
         } catch { extracted = {}; }
-        // Save extraction results
-        await db.run(`UPDATE engagement_documents SET extracted_content = ?, extraction_summary = ? WHERE id = ?`, fileContent.slice(0, 50000), JSON.stringify(extracted), String(req.params.docId));
+        // Keep the extracted text now (the lenses and execution read it) but
+        // hold the extraction summary — the Setup card's "Extracted" badge —
+        // until the scope/workstream/deliverable rows are actually in. On
+        // this instance two letters carried a full summary while
+        // engagement_scope_items had zero rows: the summary was written
+        // first and the inserts never landed, so the user reached an empty
+        // Scope page with a green badge behind them.
+        await db.run(`UPDATE engagement_documents SET extracted_content = ? WHERE id = ?`, fileContent.slice(0, 50000), String(req.params.docId));
         // For engagement_letter/project_plan: auto-populate scope items, workstreams, deliverables, boundaries
         if ((doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') && extracted && typeof extracted === 'object') {
           const ex = extracted as Record<string, unknown>;
@@ -525,10 +546,19 @@ Return ONLY valid JSON, no explanation.`;
         if (doc.document_type === 'good_example') {
           await db.run("UPDATE engagements SET quality_blueprint = ?, updated_at = NOW() WHERE id = ?", JSON.stringify(extracted), String(req.params.id));
         }
+        // A letter that yielded no scope is not "extracted": say so now, on
+        // the Setup card, instead of two phases later on an empty Scope page.
+        if (doc.document_type === 'engagement_letter' || doc.document_type === 'project_plan') {
+          const scopeCount = Number(((await db.get('SELECT COUNT(*) AS c FROM engagement_scope_items WHERE engagement_id = ?', String(req.params.id))) as { c: number | string } | undefined)?.c ?? 0);
+          if (scopeCount === 0) {
+            return res.status(422).json({ error: 'ANTON could not read any scope items from this document. Add the scope manually on the next step, or upload a clearer copy and extract again.' });
+          }
+        }
+        await db.run(`UPDATE engagement_documents SET extraction_summary = ? WHERE id = ?`, JSON.stringify(extracted), String(req.params.docId));
         logChange(String(req.params.id), 'setup', 'document_extracted', `Extracted ${doc.document_type}: ${doc.file_name}`);
         res.json({ ok: true, extracted });
       } catch (claudeErr) {
-        res.status(500).json({ error: `Claude extraction failed: ${String(claudeErr)}` });
+        res.status(500).json({ error: `Extraction failed: ${safeError(claudeErr)}` });
       }
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
@@ -579,6 +609,12 @@ Return ONLY valid JSON, no explanation.`;
   router.post('/:id/resources', upload.single('file'), async (req: Request, res: Response) => {
     try {
       const { category = 'documents', title, url, workstream_id, text_content } = req.body;
+      // The column's CHECK list; an unknown category used to surface as a 500
+      // from the database rather than a 400 naming the allowed values.
+      const RESOURCE_CATEGORIES = ['documents', 'meetings', 'regulations', 'data', 'code', 'good_example', 'other'];
+      if (!RESOURCE_CATEGORIES.includes(String(category))) {
+        return res.status(400).json({ error: `Unknown resource category "${String(category)}". Use one of: ${RESOURCE_CATEGORIES.join(', ')}.` });
+      }
       const resourceTitle = title || req.file?.originalname || url || 'Untitled';
       const id = randomUUID();
 
@@ -742,6 +778,210 @@ Return ONLY valid JSON, no explanation.`;
     }
   });
 
+  // ── Intake conversation (Wave 2, 2026-09-08) ────────────────────────────────
+  // POST /api/engagements/:id/intake/turn — ANTON interviews the consultant
+  // for Scope and Client Intelligence instead of presenting a 7-item
+  // checklist and a 16-field form, which is where every March engagement on
+  // this instance stalled. It reads the extracted letter and what is already
+  // known, asks the two or three most valuable questions, and writes the
+  // answers it has confirmed — carried in a trailing <intake_update> block —
+  // into the client-intelligence row, scope items and boundaries: the same
+  // rows the forms edit. With online_research_authorised set, the engine may
+  // search the web for the client. The conversation lives on the engagement.
+  router.post('/:id/intake/turn', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    try {
+      const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', engagementId) as Record<string, unknown> | undefined;
+      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+
+      const message = typeof req.body?.message === 'string' ? req.body.message.trim().slice(0, 4000) : '';
+      const parseArr = (v: unknown): unknown[] => { try { const p = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(p) ? p : []; } catch { return []; } };
+      const conversation = (parseArr(engagement.intake_conversation) as Array<{ role: 'user' | 'assistant'; content: string }>)
+        .filter((t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string');
+      if (message) conversation.push({ role: 'user', content: message });
+
+      const [scopeItems, boundaries, deliverables, workstreams, intel, letterDoc] = await Promise.all([
+        db.all("SELECT title, description, category, status FROM engagement_scope_items WHERE engagement_id = ? AND status != 'removed' ORDER BY sort_order LIMIT 100", engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.all('SELECT boundary_type, description FROM engagement_boundaries WHERE engagement_id = ? LIMIT 100', engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.all('SELECT title, format, description FROM engagement_deliverables WHERE engagement_id = ? LIMIT 50', engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.all('SELECT title, description FROM engagement_workstreams WHERE engagement_id = ? ORDER BY sort_order LIMIT 50', engagementId) as Promise<Array<Record<string, unknown>>>,
+        db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', engagementId) as Promise<Record<string, unknown> | undefined>,
+        db.get(`SELECT extracted_content FROM engagement_documents WHERE engagement_id = ? AND document_type IN ('engagement_letter', 'project_plan') AND extracted_content IS NOT NULL AND extracted_content <> '' ORDER BY CASE WHEN document_type = 'engagement_letter' THEN 0 ELSE 1 END, uploaded_at DESC LIMIT 1`, engagementId) as Promise<{ extracted_content: string } | undefined>,
+      ]);
+
+      const skip = new Set(['id', 'engagement_id', 'created_at', 'updated_at']);
+      const emptyish = new Set(['', '[]', '{}', 'null']);
+      const known = Object.entries(intel ?? {})
+        .filter(([k, v]) => !skip.has(k) && v !== null && v !== undefined && !emptyish.has(String(v).trim()))
+        .map(([k, v]) => `- ${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
+      const unknownFields = ['client_name', 'division_department', 'region_jurisdiction', 'products_in_scope', 'regulatory_supervisors', 'recent_regulatory_history', 'business_model_description', 'organisational_context', 'engagement_trigger', 'client_maturity_signal', 'sensitivities', 'peer_comparators', 'scale_indicators', 'technology_landscape']
+        .filter((k) => !known.some((line) => line.startsWith(`- ${k}:`)));
+      const researchAllowed = Number(intel?.online_research_authorised ?? 0) === 1;
+      const briefText = typeof engagement.engagement_brief === 'string' ? engagement.engagement_brief : JSON.stringify(engagement.engagement_brief ?? {});
+
+      const systemPrompt = `You are ANTON, a senior consultant running client intake for a professional engagement. You interview the consultant who owns the engagement so that the scope and the client profile are complete before any work starts. Ask, do not lecture.
+
+ENGAGEMENT: ${String(engagement.title ?? '')} (${String(engagement.engagement_type ?? 'full')})
+YOUR ORGANISATION: ${String(engagement.your_organisation ?? 'not stated')}
+CLIENT: ${String(engagement.client_name ?? 'not stated')}
+
+ENGAGEMENT LETTER (extracted; may be partial):
+${letterDoc?.extracted_content ? letterDoc.extracted_content.slice(0, 8000) : '(no letter extracted)'}
+
+EXTRACTION SUMMARY: ${briefText.slice(0, 3000)}
+
+CURRENT SCOPE ITEMS (${scopeItems.length}):
+${scopeItems.map((s) => `- [${String(s.status)}] ${String(s.title)}${s.description ? ` — ${String(s.description).slice(0, 200)}` : ''}`).join('\n') || '- none yet'}
+DELIVERABLES: ${deliverables.map((d) => String(d.title)).join('; ') || 'none yet'}
+WORKSTREAMS: ${workstreams.map((w) => String(w.title)).join('; ') || 'none yet'}
+BOUNDARIES: ${boundaries.map((b) => `${String(b.boundary_type)}: ${String(b.description)}`).join('; ') || 'none yet'}
+
+CLIENT INTELLIGENCE — known:
+${known.join('\n') || '- nothing recorded yet'}
+CLIENT INTELLIGENCE — still unknown: ${unknownFields.join(', ') || 'nothing'}
+${researchAllowed ? '\nOnline research is AUTHORISED for this client: use the web_search tool to look up supervisors, recent enforcement or regulatory history, products and scale before asking the consultant, and say what you found and where.' : '\nOnline research is NOT authorised: do not search; ask the consultant.'}
+
+HOW TO RUN THE INTAKE
+- Each turn: first confirm what you have learned (one or two lines), then ask the 2-3 most valuable remaining questions — about the scope where it is thin or ambiguous, and about the unknown client-intelligence fields that change how the work should be done (supervisors, engagement trigger, products in scope, sensitivities, maturity signal). Never ask for what is already known or what the letter answers.
+- Propose answers you can infer from the letter (mark them as proposals) so the consultant only has to confirm.
+- When the consultant confirms or provides facts, record them. Keep the conversation short; three to five turns should complete a typical intake.
+- End every reply with exactly one machine-readable block, even when nothing new was confirmed:
+<intake_update>
+{"client_intelligence": {"<field>": <value>}, "scope_items": [{"title": "", "description": "", "category": ""}], "boundaries": [{"type": "assumption|exclusion", "description": ""}], "done": false}
+</intake_update>
+  Only include values the consultant has confirmed or explicitly asked you to record — never proposals. Field names: client_name, division_department, region_jurisdiction, business_model_description, organisational_context, engagement_trigger, client_maturity_signal, sensitivities (strings); products_in_scope, regulatory_supervisors, recent_regulatory_history, peer_comparators (arrays of strings); scale_indicators, technology_landscape (objects). Set "done": true when scope and client profile are complete enough to start work.`;
+
+      const model = mapModelToProvider(resolveEngagementModelChoice(
+        engagement.exec_model as string | null | undefined,
+        'think',
+        getEffectiveDefaultModel() ?? null,
+      ));
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      const messages = conversation.length > 0
+        ? conversation.map((t) => ({ role: t.role, content: t.content }))
+        : [{ role: 'user', content: 'Start the intake. Confirm what the letter already tells you, then ask your first questions.' }];
+
+      let text = '';
+      try {
+        const result = await streamChat({
+          model,
+          system: systemPrompt,
+          messages,
+          maxTokens: 4000,
+          thinkingLevel: 'think',
+          tools: researchAllowed ? [{ type: 'web_search_20250305', name: 'web_search' }] : undefined,
+        }, res);
+        text = result.text;
+      } catch (err) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+        return;
+      }
+
+      // Apply the confirmed values.
+      const applied = { client_intelligence: 0, scope_items: 0, boundaries: 0, done: false };
+      const block = text.match(/<intake_update>([\s\S]*?)<\/intake_update>/i);
+      if (block) {
+        try {
+          const upd = JSON.parse(block[1].trim()) as {
+            client_intelligence?: Record<string, unknown>;
+            scope_items?: Array<{ title?: string; description?: string; category?: string }>;
+            boundaries?: Array<{ type?: string; description?: string }>;
+            done?: boolean;
+          };
+          applied.done = upd.done === true;
+
+          // Client intelligence: merge the confirmed fields into the row.
+          const STRING_FIELDS = ['client_name', 'division_department', 'region_jurisdiction', 'business_model_description', 'organisational_context', 'engagement_trigger', 'client_maturity_signal', 'sensitivities'];
+          const ARRAY_FIELDS = ['products_in_scope', 'regulatory_supervisors', 'recent_regulatory_history', 'peer_comparators', 'source_channels'];
+          const OBJECT_FIELDS = ['scale_indicators', 'technology_landscape'];
+          const ci = upd.client_intelligence && typeof upd.client_intelligence === 'object' ? upd.client_intelligence : {};
+          const sets: string[] = [];
+          const vals: unknown[] = [];
+          const current = intel ?? {};
+          for (const k of STRING_FIELDS) {
+            const v = ci[k];
+            if (typeof v === 'string' && v.trim()) { sets.push(`${k} = ?`); vals.push(v.trim().slice(0, 2000)); applied.client_intelligence += 1; }
+          }
+          for (const k of ARRAY_FIELDS) {
+            const v = ci[k];
+            if (Array.isArray(v) && v.length) {
+              const existingArr = parseArr(current[k]).map(String);
+              const merged = [...new Set([...existingArr, ...v.map(String).map((s) => s.trim()).filter(Boolean)])].slice(0, 50);
+              sets.push(`${k} = ?`); vals.push(JSON.stringify(merged)); applied.client_intelligence += 1;
+            }
+          }
+          for (const k of OBJECT_FIELDS) {
+            const v = ci[k];
+            if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length) {
+              let existingObj: Record<string, unknown> = {};
+              try { const p = typeof current[k] === 'string' ? JSON.parse(String(current[k])) : current[k]; if (p && typeof p === 'object') existingObj = p as Record<string, unknown>; } catch { /* fresh */ }
+              sets.push(`${k} = ?`); vals.push(JSON.stringify({ ...existingObj, ...(v as Record<string, unknown>) })); applied.client_intelligence += 1;
+            }
+          }
+          if (sets.length > 0) {
+            if (intel) {
+              await db.run(`UPDATE engagement_client_intelligence SET ${sets.join(', ')}, updated_at = NOW() WHERE engagement_id = ?`, ...vals, engagementId);
+            } else {
+              const clientName = typeof ci.client_name === 'string' && ci.client_name.trim() ? ci.client_name.trim() : String(engagement.client_name ?? 'Client');
+              await db.run('INSERT INTO engagement_client_intelligence (id, engagement_id, client_name, source_channels) VALUES (?, ?, ?, ?)', randomUUID(), engagementId, clientName, JSON.stringify(['intake_conversation']));
+              await db.run(`UPDATE engagement_client_intelligence SET ${sets.join(', ')}, updated_at = NOW() WHERE engagement_id = ?`, ...vals, engagementId);
+            }
+          }
+
+          // Scope items: add what is new by title.
+          const haveTitles = new Set(scopeItems.map((s) => String(s.title).trim().toLowerCase()));
+          for (const item of Array.isArray(upd.scope_items) ? upd.scope_items : []) {
+            const title = typeof item?.title === 'string' ? item.title.trim().slice(0, 300) : '';
+            if (!title || haveTitles.has(title.toLowerCase())) continue;
+            await db.run(`INSERT INTO engagement_scope_items (id, engagement_id, title, description, category, methodology, sort_order, status, original_text)
+              VALUES (?, ?, ?, ?, ?, '[]', ?, 'confirmed', ?)`,
+              randomUUID(), engagementId, title, typeof item.description === 'string' ? item.description.slice(0, 2000) : null,
+              typeof item.category === 'string' && item.category ? item.category.slice(0, 100) : 'analysis', scopeItems.length + applied.scope_items, 'Confirmed in intake conversation');
+            haveTitles.add(title.toLowerCase());
+            applied.scope_items += 1;
+          }
+
+          // Boundaries: assumptions and exclusions the consultant confirmed.
+          const haveBoundaries = new Set(boundaries.map((b) => `${String(b.boundary_type)}::${String(b.description).trim().toLowerCase()}`));
+          for (const b of Array.isArray(upd.boundaries) ? upd.boundaries : []) {
+            const type = b?.type === 'exclusion' ? 'exclusion' : b?.type === 'assumption' ? 'assumption' : null;
+            const desc = typeof b?.description === 'string' ? b.description.trim().slice(0, 1000) : '';
+            if (!type || !desc || haveBoundaries.has(`${type}::${desc.toLowerCase()}`)) continue;
+            await db.run(`INSERT INTO engagement_boundaries (id, engagement_id, boundary_type, description, source) VALUES (?, ?, ?, ?, 'intake')`, randomUUID(), engagementId, type, desc);
+            haveBoundaries.add(`${type}::${desc.toLowerCase()}`);
+            applied.boundaries += 1;
+          }
+        } catch (err) {
+          console.warn('[engagements] intake update block unreadable:', err instanceof Error ? err.message : err);
+        }
+      }
+
+      const visible = text.replace(/<intake_update>[\s\S]*?<\/intake_update>/i, '').trim();
+      conversation.push({ role: 'assistant', content: visible });
+      await db.run('UPDATE engagements SET intake_conversation = ?, updated_at = NOW() WHERE id = ?', JSON.stringify(conversation.slice(-40)), engagementId);
+      if (applied.client_intelligence || applied.scope_items || applied.boundaries) {
+        logChange(engagementId, 'client_intelligence', 'intake_applied', `Intake conversation recorded ${applied.client_intelligence} client field(s), ${applied.scope_items} scope item(s), ${applied.boundaries} boundary(ies)`);
+      }
+      res.write(`data: ${JSON.stringify({ type: 'intake_update', applied })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    } catch (e) {
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(e) });
+      }
+    }
+  });
+
   // ── Workstreams ─────────────────────────────────────────────────────────────
 
   router.post('/:id/workstreams', async (req: Request, res: Response) => {
@@ -772,6 +1012,28 @@ Return ONLY valid JSON, no explanation.`;
       if (timeline_end !== undefined) { updates.push('timeline_end = ?'); values.push(timeline_end); }
       if (updates.length) { values.push(String(req.params.wsId)); await db.run(`UPDATE engagement_workstreams SET ${updates.join(', ')} WHERE id = ?`, ...values); }
       res.json(await db.get('SELECT * FROM engagement_workstreams WHERE id = ?', String(req.params.wsId)));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
+  // The planning page has always had a delete button that called this route;
+  // the route did not exist, so the click 404'd and the row came back on reload.
+  router.delete('/:id/workstreams/:wsId', async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+      if (!await canEdit(db, String(req.params.id), userId, userRole))
+        return res.status(403).json({ error: 'Access denied' });
+      const engagementId = String(req.params.id);
+      const wsId = String(req.params.wsId);
+      // Detach before delete — scope items and resources may point at the workstream.
+      await db.run('UPDATE engagement_scope_items SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
+      await db.run('UPDATE engagement_resources SET workstream_id = NULL WHERE engagement_id = ? AND workstream_id = ?', engagementId, wsId);
+      const result = await db.run('DELETE FROM engagement_workstreams WHERE id = ? AND engagement_id = ?', wsId, engagementId);
+      if (!result.changes) return res.status(404).json({ error: 'Workstream not found' });
+      logChange(engagementId, 'workstream_planning', 'workstream_removed', `Removed workstream ${wsId}`);
+      res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }
@@ -932,6 +1194,12 @@ EXECUTION INSTRUCTIONS:
 
 Format your output as professional consulting deliverables. Use clear headings, structured findings, and actionable recommendations.${knowledgeContext}`;
 
+      // Wave 3 (2026-09-08): the execution is a job that outlives this
+      // request — a reloaded page re-attaches (GET /:id/execute/stream) and a
+      // second Execute attaches instead of starting a second run. Inside the
+      // job, `res` is the job's sink; the body below is unchanged.
+      const { job } = startStepJob(`engagement-run:${String(req.params.id)}`, { engagement_id: String(req.params.id), workstream_id: workstream_id || null }, async (sink) => {
+      const res = sink as unknown as Response;
       // Stream the response
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
@@ -955,14 +1223,119 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
       const userTurnContent = `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceContext ? `UPLOADED DOCUMENTS:\n${resourceContext}` : 'Note: No documents have been uploaded. Base analysis on scope and general expertise.'}${ragDirectoryContext}`;
 
-      const streamResult = await streamChat({
-        model: execModel,
-        maxTokens: isQuick ? 32_000 : 128_000,
-        system: systemPrompt + planFirstInstr,
-        messages: [{ role: 'user', content: userTurnContent }],
-        thinkingLevel: isQuick ? undefined : thinkingLevel,
-        tools: tools.length > 0 ? tools : undefined,
-      }, res);
+      // ── Wave 3: on the subscription engine the run reads for itself ─────
+      // The one-shot prompt carried the first ten resources at 5,000
+      // characters each and nothing else; the deliverable could not read a
+      // policy in full, look up the client profile, check a citation, or ask a
+      // specialist. On the agentic engine it gets tools for all of that and
+      // several turns; the final turn is the deliverable.
+      let streamResult: { text: string; thinking: string; inputTokens: number; outputTokens: number };
+      if (isSdkModel(execModel)) {
+        const engagementId = String(req.params.id);
+        const agentTools: AgentToolDefinition[] = [
+          {
+            name: 'list_resources',
+            description: 'List the resources collected for this engagement (title, category, size) so you can read the ones that matter.',
+            schema: {},
+            handler: async () => resources.length === 0 ? 'No resources collected.' : resources.map((r) => `- "${String(r.title)}" [${String(r.category)}] — ${String(r.extracted_content || '').length.toLocaleString('en-GB')} characters${r.url ? ` — ${String(r.url)}` : ''}`).join('\n'),
+          },
+          {
+            name: 'read_resource',
+            description: 'Read a collected resource in full by its exact title (see list_resources). Long resources come in 30,000-character pages; pass offset to continue.',
+            schema: { title: z.string().describe('Exact resource title'), offset: z.number().int().min(0).optional() },
+            handler: async (args) => {
+              const wanted = String(args.title ?? '').trim().toLowerCase();
+              const r = resources.find((x) => String(x.title).toLowerCase() === wanted) ?? resources.find((x) => String(x.title).toLowerCase().includes(wanted));
+              if (!r) return `No resource titled "${String(args.title ?? '')}".`;
+              const text = String(r.extracted_content || '');
+              const offset = Math.max(0, Number(args.offset ?? 0) || 0);
+              const page = text.slice(offset, offset + 30_000);
+              const more = offset + 30_000 < text.length ? `\n\n… continues — call again with offset ${offset + 30_000} (total ${text.length.toLocaleString('en-GB')} characters).` : '';
+              return `### ${String(r.title)} [${String(r.category)}]\n${page || '(no text extracted)'}${more}`;
+            },
+          },
+          {
+            name: 'read_document',
+            description: "Read one of the engagement's documents (engagement letter, project plan, good example) in full by name.",
+            schema: { name: z.string().describe('Document name or type, e.g. "engagement letter"') },
+            handler: async (args) => {
+              const docs = await db.all('SELECT file_name AS name, document_type, extracted_content FROM engagement_documents WHERE engagement_id = ? LIMIT 50', engagementId) as Array<{ name: string; document_type: string; extracted_content: string | null }>;
+              const wanted = String(args.name ?? '').trim().toLowerCase();
+              const d = docs.find((x) => x.name.toLowerCase() === wanted) ?? docs.find((x) => x.name.toLowerCase().includes(wanted) || String(x.document_type).replace(/_/g, ' ').includes(wanted));
+              if (!d) return `No document matching "${String(args.name ?? '')}". Documents: ${docs.map((x) => `"${x.name}" (${x.document_type})`).join(', ') || 'none'}.`;
+              return `### ${d.name} (${d.document_type})\n${String(d.extracted_content || '').slice(0, 60_000) || '(no text extracted)'}`;
+            },
+          },
+          {
+            name: 'client_profile',
+            description: 'The client intelligence recorded at intake: supervisors, products, trigger, sensitivities, maturity.',
+            schema: {},
+            handler: async () => {
+              if (!client_intel) return 'No client profile recorded.';
+              return Object.entries(client_intel)
+                .filter(([k, v]) => !['id', 'engagement_id', 'created_at', 'updated_at'].includes(k) && v !== null && v !== undefined && !['', '[]', '{}'].includes(String(v).trim()))
+                .map(([k, v]) => `- ${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`).join('\n') || 'No client profile recorded.';
+            },
+          },
+          {
+            name: 'scope_and_deliverables',
+            description: 'The confirmed scope items (with descriptions) and the deliverables expected.',
+            schema: {},
+            handler: async () => `## SCOPE\n${scope_items.map((si, i) => `${i + 1}. ${String(si.title)}${si.description ? ` — ${String(si.description)}` : ''}`).join('\n') || 'none'}\n\n## DELIVERABLES\n${deliverables.map((d) => `- ${String(d.title)} (${String(d.format || 'docx')})${d.description ? `: ${String(d.description)}` : ''}`).join('\n') || 'none'}`,
+          },
+          {
+            name: 'search_knowledge',
+            description: "Search ANTON's regulatory knowledge packs and framework texts for an obligation, article or topic. Returns matching text with citations.",
+            schema: { query: z.string().describe('What to look for') },
+            handler: async (args) => {
+              const grounding = await retrieveGroundingText({ query: String(args.query ?? ''), packIds: [], db, tokenBudget: 1500 });
+              return grounding?.text ?? 'Nothing relevant found.';
+            },
+          },
+          {
+            name: 'consult_expert_module',
+            description: "Ask one of ANTON's 550+ expert modules a focused question for a specialist view. Give a topic to find modules, or a module id and a question.",
+            schema: { topic: z.string().optional().describe('Topic to find modules for'), module_id: z.string().optional(), question: z.string().optional() },
+            handler: async (args) => {
+              if (typeof args.module_id === 'string' && typeof args.question === 'string') {
+                const prompt = await getModuleSystemPrompt(args.module_id);
+                if (!prompt) return `No expert module with id "${args.module_id}".`;
+                const answer = await callChat({ model: execModel, system: prompt, messages: [{ role: 'user', content: args.question }], maxTokens: 4000, thinkingLevel: 'think' });
+                return answer.text || '(the specialist returned nothing)';
+              }
+              const found = await findCandidateModules(String(args.topic ?? ''), 8);
+              return found.length ? found.map((m) => `- ${m.id} — ${m.label} (${m.areaId}): ${m.description}`).join('\n') : 'No matching expert modules.';
+            },
+          },
+        ];
+        const resourceList = resources.length > 0
+          ? `RESOURCES COLLECTED (${resources.length}) — read the ones that matter with read_resource:\n${resources.map((r) => `- "${String(r.title)}" [${String(r.category)}] — ${String(r.extracted_content || '').length.toLocaleString('en-GB')} characters`).join('\n')}`
+          : 'Note: No resources have been collected. Base the analysis on the scope, the client profile and your expertise, and say what a fuller analysis would need.';
+        const agenticBrief = `\n\n## HOW TO WORK
+You have tools: list_resources / read_resource (the collected material in full), read_document (the engagement letter, plan, good example), client_profile, scope_and_deliverables, search_knowledge (regulatory text with citations)${knowledgeConfig.webSearchEnabled ? ', WebSearch/WebFetch' : ''}, and consult_expert_module (a specialist's view). Read before you write: the resources that bear on each scope item, the client profile, and any citation you rely on. Then write the complete deliverable as your FINAL message — the deliverable itself, with no preamble about the tools you used.`;
+        const run = await runAgentic({
+          model: execModel,
+          thinking: (isQuick ? 'quick' : thinkingLevel) as Parameters<typeof runAgentic>[0]['thinking'],
+          system: systemPrompt + planFirstInstr + agenticBrief,
+          prompt: `Execute the ${workstream ? workstream.title + ' workstream' : 'engagement'} analysis. Produce a complete, professional draft deliverable.\n\n${resourceList}${ragDirectoryContext}`,
+          tools: agentTools,
+          webSearch: Boolean(knowledgeConfig.webSearchEnabled),
+          maxTurns: 18,
+          timeoutMs: 40 * 60 * 1000,
+        }, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the execution');
+        if (run.warning) res.write(`data: ${JSON.stringify({ type: 'warning', message: run.warning })}\n\n`);
+        streamResult = { text: run.text, thinking: run.thinking, inputTokens: run.usage.inputTokens, outputTokens: run.usage.outputTokens };
+      } else {
+        streamResult = await streamChat({
+          model: execModel,
+          maxTokens: isQuick ? 32_000 : 128_000,
+          system: systemPrompt + planFirstInstr,
+          messages: [{ role: 'user', content: userTurnContent }],
+          thinkingLevel: isQuick ? undefined : thinkingLevel,
+          tools: tools.length > 0 ? tools : undefined,
+        }, res);
+      }
 
       const fullContent = streamResult.text;
       const fullThinking = streamResult.thinking;
@@ -1010,10 +1383,27 @@ Format your output as professional consulting deliverables. Use clear headings, 
 
       res.write(`data: ${JSON.stringify({ type: 'done', iterationId, sessionId: bridgedSessionId })}\n\n`);
       res.end();
+      });
+      attachToStepJob(job, res);
     } catch (e) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
-      res.end();
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(e) });
+      }
     }
+  });
+
+  // ── GET /api/engagements/:id/execute/stream — re-attach to a run (Wave 3) ──
+  router.get('/:id/execute/stream', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    const engagement = await db.get('SELECT id FROM engagements WHERE id = ?', engagementId);
+    if (!engagement) return res.status(404).json({ error: 'Not found' });
+    if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+    const job = getStepJob(`engagement-run:${engagementId}`);
+    if (!job) return res.status(404).json({ error: 'No execution in progress for this engagement' });
+    attachToStepJob(job, res);
   });
 
   // ── Iterations ──────────────────────────────────────────────────────────────
@@ -1062,28 +1452,49 @@ Format your output as professional consulting deliverables. Use clear headings, 
       if (lens === 'scope') {
         lensInstruction = 'Analyse the draft output purely against the agreed engagement scope. Identify gaps where scope items are not adequately addressed, areas with insufficient depth, and topics mentioned in scope that are missing from the output.';
       } else if (lens === 'engagement_letter') {
-        const letterResource = resources.find(r => String(r.category || '').toLowerCase().includes('letter') || String(r.title || '').toLowerCase().includes('engagement letter'));
-        if (letterResource && letterResource.extracted_content) {
-          referenceContext = `\n\nENGAGEMENT LETTER (reference):\n${String(letterResource.extracted_content).slice(0, 6000)}`;
-        } else {
-          // Fall back to stored letter_content on engagement
-          const letterContent = String(engagement?.letter_content || '');
-          if (letterContent) referenceContext = `\n\nENGAGEMENT LETTER:\n${letterContent.slice(0, 6000)}`;
+        // The letter lives on engagement_documents (extracted at Setup), not on
+        // engagement_resources — and engagements has no letter_content column.
+        // The old lookups found nothing and the lens confidently reviewed the
+        // draft against an empty reference. A lens with no reference refuses.
+        const letterDoc = await db.get(
+          `SELECT extracted_content FROM engagement_documents
+             WHERE engagement_id = ? AND document_type IN ('engagement_letter', 'project_plan')
+               AND extracted_content IS NOT NULL AND extracted_content <> ''
+             ORDER BY CASE WHEN document_type = 'engagement_letter' THEN 0 ELSE 1 END, uploaded_at DESC
+             LIMIT 1`,
+          String(req.params.id),
+        ) as { extracted_content: string } | undefined;
+        if (!letterDoc) {
+          return res.status(400).json({ error: 'No engagement letter has been extracted for this engagement — upload and extract it in Setup before using this lens.' });
         }
+        referenceContext = `\n\nENGAGEMENT LETTER (reference):\n${letterDoc.extracted_content.slice(0, 6000)}`;
         lensInstruction = 'Compare the draft output against the original engagement letter. Identify: commitments made in the letter not yet delivered, scope agreed in the letter but missing from output, tone/format mismatches, and client expectations set in the letter that are unmet.';
       } else if (lens === 'quality_blueprint') {
-        const blueprintResource = resources.find(r => String(r.category || '').toLowerCase().includes('blueprint') || String(r.title || '').toLowerCase().includes('blueprint'));
-        if (blueprintResource && blueprintResource.extracted_content) {
-          referenceContext = `\n\nQUALITY BLUEPRINT:\n${String(blueprintResource.extracted_content).slice(0, 6000)}`;
+        // The blueprint is the extraction of the good-example document,
+        // stored on the engagement row — never an engagement_resources entry.
+        const rawBlueprint = engagement?.quality_blueprint;
+        const blueprintText = typeof rawBlueprint === 'string' ? rawBlueprint : rawBlueprint ? JSON.stringify(rawBlueprint, null, 1) : '';
+        if (!blueprintText.trim() || blueprintText.trim() === '{}') {
+          return res.status(400).json({ error: 'No quality blueprint yet — upload and extract a good-example document in Setup before using this lens.' });
         }
+        referenceContext = `\n\nQUALITY BLUEPRINT:\n${blueprintText.slice(0, 6000)}`;
         lensInstruction = 'Assess the draft output against the quality blueprint standards. Identify gaps in structure, missing mandatory sections, quality criteria not met, areas below the expected standard of evidence, and recommendations lacking implementation specificity.';
       } else if (lens === 'regulatory') {
         lensInstruction = 'Review the draft output through a regulatory scrutiny lens. Identify gaps in regulatory citations, areas where the analysis might not withstand regulatory challenge, missing references to applicable regulations/guidelines, and conclusions that need stronger regulatory grounding.';
       } else if (lens === 'client') {
-        const clientIntelResource = resources.find(r => String(r.category || '').toLowerCase().includes('client') || String(r.category || '').toLowerCase().includes('intel'));
-        if (clientIntelResource && clientIntelResource.extracted_content) {
-          referenceContext = `\n\nCLIENT INTELLIGENCE:\n${String(clientIntelResource.extracted_content).slice(0, 4000)}`;
+        // The client profile is the engagement_client_intelligence row the
+        // user filled in during Phase 2a — all of it, not the five fields
+        // execution quotes.
+        const intel = await db.get('SELECT * FROM engagement_client_intelligence WHERE engagement_id = ?', String(req.params.id)) as Record<string, unknown> | undefined;
+        const skip = new Set(['id', 'engagement_id', 'created_at', 'updated_at']);
+        const empty = new Set(['', '[]', '{}', '0', 'null']);
+        const clientLines = Object.entries(intel ?? {})
+          .filter(([k, v]) => !skip.has(k) && v !== null && v !== undefined && !empty.has(String(v).trim()))
+          .map(([k, v]) => `- ${k.replace(/_/g, ' ')}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
+        if (clientLines.length === 0) {
+          return res.status(400).json({ error: 'No client intelligence recorded yet — fill in the Client Intelligence phase before using this lens.' });
         }
+        referenceContext = `\n\nCLIENT INTELLIGENCE:\n${clientLines.join('\n').slice(0, 4000)}`;
         lensInstruction = 'Analyse the draft output from the client\'s perspective. Identify: client-specific context that should be incorporated but is missing, generic statements that should be tailored to the client, areas where client pain points are not addressed, and recommendations that may be impractical for this specific client.';
       } else if (lens === 'red_team') {
         lensInstruction = 'Challenge the draft output as a critical reviewer or opposing counsel. Identify: assumptions that are not sufficiently justified, conclusions that could be disputed, evidence gaps that weaken key arguments, alternative interpretations not considered, and risks that are underplayed or omitted.';
@@ -1417,6 +1828,7 @@ Return ONLY valid JSON.`,
 
   // POST /api/engagements/:id/quality-gate/run — SSE: run all quality checks
   router.post('/:id/quality-gate/run', async (req: Request, res: Response) => {
+    let qgId: string | null = null;
     try {
       const { iteration_id } = req.body;
       const engagement = await db.get('SELECT * FROM engagements WHERE id = ?', String(req.params.id)) as Record<string, unknown>;
@@ -1425,7 +1837,9 @@ Return ONLY valid JSON.`,
       // Get the iteration to review (latest approved or specified)
       const iteration = iteration_id
         ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
-        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
+        // The approved iteration is the one to review; a later draft must not
+        // silently displace it just because its number is higher.
+        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY CASE WHEN status = 'approved' THEN 0 ELSE 1 END, iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
       if (!iteration) return res.status(400).json({ error: 'No iteration found to review' });
 
@@ -1448,73 +1862,115 @@ Return ONLY valid JSON.`,
 
       const qgModel = await getRoutedUtilityModel(db);
 
+      // Persist as we go (Wave 2, 2026-09-08). The gate used to be eight
+      // serial engine calls with one INSERT at the very end: a check that
+      // failed after minutes of engine time saved nothing, and a reload
+      // mid-run showed nothing. The row is now created before the first
+      // check and updated after every one; a failed check is recorded as
+      // such and the rest continue; a gate with failures is 'partial', never
+      // release-ready, and the page says which checks to re-run.
+      qgId = randomUUID();
       const results: Record<string, unknown> = {};
+      const failedChecks: string[] = [];
+      const COLUMN_FOR: Record<string, string> = {
+        scope_completeness: 'scope_completeness',
+        blueprint_alignment: 'blueprint_alignment',
+        cross_consistency: 'cross_consistency',
+        assumptions_section: 'assumptions_section',
+        executive_summary: 'executive_summary',
+        expert_reviews: 'expert_reviews',
+      };
+      await db.run(
+        "INSERT INTO engagement_quality_gates (id, engagement_id, iteration_id, status) VALUES (?, ?, ?, 'running')",
+        qgId, String(req.params.id), String(iteration.id),
+      );
+      const send = (event: Record<string, unknown>): void => { res.write(`data: ${JSON.stringify(event)}\n\n`); };
+      async function persist(key: string, value: unknown): Promise<void> {
+        results[key] = value;
+        const column = COLUMN_FOR[key];
+        if (!column) return;
+        const stored = typeof value === 'string' ? value : JSON.stringify(value);
+        // Column names come from the fixed map above, never from input.
+        try { await db.run(`UPDATE engagement_quality_gates SET ${column} = ? WHERE id = ?`, stored, qgId); } catch { /* the frame already reached the page */ }
+      }
 
       async function runCheck(checkId: string, label: string, prompt: string): Promise<Record<string, unknown>> {
-        res.write(`data: ${JSON.stringify({ type: 'check_start', check: checkId, label })}\n\n`);
-        const r = await callChat({
-          model: qgModel,
-          system: 'You are a quality assessment assistant. Return only valid JSON.',
-          messages: [{ role: 'user', content: prompt }],
-          maxTokens: 1024,
-        });
-        const raw = r.text || '{}';
-        let parsed: Record<string, unknown> = {};
-        try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { raw }; } catch { parsed = { raw }; }
-        res.write(`data: ${JSON.stringify({ type: 'check_done', check: checkId, label, result: parsed })}\n\n`);
-        return parsed;
+        send({ type: 'check_start', check: checkId, label });
+        try {
+          const r = await callChat({
+            model: qgModel,
+            system: 'You are a quality assessment assistant. Return only valid JSON.',
+            messages: [{ role: 'user', content: prompt }],
+            maxTokens: 1024,
+          });
+          const raw = r.text || '{}';
+          let parsed: Record<string, unknown> = {};
+          try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { raw }; } catch { parsed = { raw }; }
+          send({ type: 'check_done', check: checkId, label, result: parsed });
+          return parsed;
+        } catch (err) {
+          failedChecks.push(checkId);
+          const message = safeError(err);
+          send({ type: 'check_error', check: checkId, label, error: message });
+          return { error: message };
+        }
       }
 
       // 8A: Scope Completeness
-      results['scope_completeness'] = await runCheck('8A', 'Scope Completeness', `
+      await persist('scope_completeness', await runCheck('8A', 'Scope Completeness', `
 Assess whether the following deliverable addresses all confirmed scope items.
 Scope items:\n${scopeSummary}
 Deliverable:\n${outputContent.slice(0, 8000)}
-Return JSON: { "score": 0-100, "addressed": ["item title"], "partial": ["item title"], "missing": ["item title"], "notes": "" }`);
+Return JSON: { "score": 0-100, "addressed": ["item title"], "partial": ["item title"], "missing": ["item title"], "notes": "" }`));
 
       // 8B: Blueprint Alignment
       if (Object.keys(qualityBlueprint).length > 0) {
-        results['blueprint_alignment'] = await runCheck('8B', 'Blueprint Alignment', `
+        await persist('blueprint_alignment', await runCheck('8B', 'Blueprint Alignment', `
 Compare this deliverable against the Quality Blueprint.
 Blueprint:\n${blueprintStr.slice(0, 2000)}
 Deliverable:\n${outputContent.slice(0, 6000)}
-Return JSON: { "score": 0-100, "structure_match": 0-100, "tone_match": 0-100, "citation_match": 0-100, "finding_format_match": 0-100, "deviations": ["deviation"], "notes": "" }`);
+Return JSON: { "score": 0-100, "structure_match": 0-100, "tone_match": 0-100, "citation_match": 0-100, "finding_format_match": 0-100, "deviations": ["deviation"], "notes": "" }`));
       } else {
-        results['blueprint_alignment'] = { score: null, notes: 'No quality blueprint extracted — skip Phase 3a to enable this check.' };
-        res.write(`data: ${JSON.stringify({ type: 'check_skip', check: '8B', label: 'Blueprint Alignment', reason: 'No blueprint' })}\n\n`);
+        await persist('blueprint_alignment', { score: null, notes: 'No quality blueprint extracted — skip Phase 3a to enable this check.' });
+        send({ type: 'check_skip', check: '8B', label: 'Blueprint Alignment', reason: 'No blueprint' });
       }
 
       // 8C: Cross-Consistency
-      results['cross_consistency'] = await runCheck('8C', 'Cross-Workstream Consistency', `
+      await persist('cross_consistency', await runCheck('8C', 'Cross-Workstream Consistency', `
 Analyse this deliverable for internal consistency issues.
 Deliverable:\n${outputContent.slice(0, 8000)}
-Return JSON: { "score": 0-100, "severity_consistent": true/false, "terminology_consistent": true/false, "conflicts": ["description"], "notes": "" }`);
+Return JSON: { "score": 0-100, "severity_consistent": true/false, "terminology_consistent": true/false, "conflicts": ["description"], "notes": "" }`));
 
       // 8D: Assumptions & Limitations (generated from boundaries register)
-      const assumptionsText = boundaries.length > 0
-        ? boundaries.map(b => `[${b.boundary_type}] ${b.description}`).join('\n')
-        : 'No formal assumptions or boundaries recorded.';
-      results['assumptions_section'] = `# Assumptions and Limitations\n\n${boundaries.filter(b => b.boundary_type === 'assumption').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Exclusions\n${boundaries.filter(b => b.boundary_type === 'exclusion').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Limitations\n${boundaries.filter(b => b.boundary_type === 'limitation').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}`;
-      res.write(`data: ${JSON.stringify({ type: 'check_done', check: '8D', label: 'Assumptions & Limitations', result: { generated: true, boundary_count: boundaries.length } })}\n\n`);
+      await persist('assumptions_section', `# Assumptions and Limitations\n\n${boundaries.filter(b => b.boundary_type === 'assumption').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Exclusions\n${boundaries.filter(b => b.boundary_type === 'exclusion').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}\n\n## Limitations\n${boundaries.filter(b => b.boundary_type === 'limitation').map(b => `- ${b.description}`).join('\n') || 'None recorded.'}`);
+      send({ type: 'check_done', check: '8D', label: 'Assumptions & Limitations', result: { generated: true, boundary_count: boundaries.length } });
 
       // 8E: Executive Summary
-      res.write(`data: ${JSON.stringify({ type: 'check_start', check: '8E', label: 'Executive Summary' })}\n\n`);
-      const execSummaryResult = await callChat({
-        model: qgModel,
-        system: 'You are a senior consulting analyst. Write professional executive summaries.',
-        messages: [{ role: 'user', content: `Generate a concise executive summary for this consulting deliverable. Use a professional tone suitable for senior management.
+      send({ type: 'check_start', check: '8E', label: 'Executive Summary' });
+      try {
+        const execSummaryResult = await callChat({
+          model: qgModel,
+          system: 'You are a senior consulting analyst. Write professional executive summaries.',
+          messages: [{ role: 'user', content: `Generate a concise executive summary for this consulting deliverable. Use a professional tone suitable for senior management.
 
 Deliverable:\n${outputContent.slice(0, 10000)}
 Deliverables expected:\n${deliverables.map(d => d.title).join(', ')}
 ${peer_benchmarks.length > 0 ? `\nPeer context available: ${peersStr.slice(0, 1000)}` : ''}
 
 Write 3-4 paragraphs: context, key findings, main recommendations, and next steps. Start with the most important message.` }],
-        maxTokens: 1500,
-      });
-      results['executive_summary'] = execSummaryResult.text;
-      res.write(`data: ${JSON.stringify({ type: 'check_done', check: '8E', label: 'Executive Summary', result: { generated: true, length: String(results['executive_summary']).length } })}\n\n`);
+          maxTokens: 1500,
+        });
+        await persist('executive_summary', execSummaryResult.text);
+        send({ type: 'check_done', check: '8E', label: 'Executive Summary', result: { generated: true, length: String(results['executive_summary']).length } });
+      } catch (err) {
+        failedChecks.push('8E');
+        await persist('executive_summary', '');
+        send({ type: 'check_error', check: '8E', label: 'Executive Summary', error: safeError(err) });
+      }
 
-      // 8F: Expert Panel Review (4 lenses)
+      // 8F: Expert Panel Review (4 lenses) — two at a time: the subscription
+      // engine has two interactive slots, and the gate must not take both
+      // for the whole run.
       const expertLenses = [
         { id: 'devil_advocate', name: "Devil's Advocate", instruction: "Challenge the findings and assumptions. What would a critical reader dispute? What evidence is missing?" },
         { id: 'regulatory', name: 'Regulatory', instruction: "Check regulatory accuracy. Are citations correct? Is terminology precise? Are any requirements misstated or missing?" },
@@ -1522,19 +1978,33 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
         { id: 'pragmatist', name: 'Pragmatist', instruction: "Are recommendations implementable? Do they fit the client's likely capacity and resources? Is the timeline realistic?" },
       ];
       const expertResults: Record<string, unknown> = {};
-      for (const lens of expertLenses) {
-        res.write(`data: ${JSON.stringify({ type: 'check_start', check: `8F-${lens.id}`, label: `Expert: ${lens.name}` })}\n\n`);
-        const r = await callChat({
-          model: qgModel,
-          system: `You are reviewing a consulting deliverable from the perspective of a ${lens.name}. Return only valid JSON.`,
-          messages: [{ role: 'user', content: `${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
-          maxTokens: 600,
-        });
-        const raw = r.text || '{}';
-        try { const m = raw.match(/\{[\s\S]*\}/); expertResults[lens.id] = m ? JSON.parse(m[0]) : { raw }; } catch { expertResults[lens.id] = { raw }; }
-        res.write(`data: ${JSON.stringify({ type: 'check_done', check: `8F-${lens.id}`, label: `Expert: ${lens.name}`, result: expertResults[lens.id] })}\n\n`);
+      const LENS_CONCURRENCY = 2;
+      const lensQueue = [...expertLenses];
+      async function lensWorker(): Promise<void> {
+        for (let lens = lensQueue.shift(); lens; lens = lensQueue.shift()) {
+          const checkId = `8F-${lens.id}`;
+          const label = `Expert: ${lens.name}`;
+          send({ type: 'check_start', check: checkId, label });
+          try {
+            const r = await callChat({
+              model: qgModel,
+              system: `You are reviewing a consulting deliverable from the perspective of a ${lens.name}. Return only valid JSON.`,
+              messages: [{ role: 'user', content: `${lens.instruction}\n\nDeliverable:\n${outputContent.slice(0, 5000)}\n\nReturn JSON: { "verdict": "positive|neutral|concerns", "key_points": ["point 1", "point 2"], "top_concern": "" }` }],
+              maxTokens: 600,
+            });
+            const raw = r.text || '{}';
+            try { const m = raw.match(/\{[\s\S]*\}/); expertResults[lens.id] = m ? JSON.parse(m[0]) : { raw }; } catch { expertResults[lens.id] = { raw }; }
+            send({ type: 'check_done', check: checkId, label, result: expertResults[lens.id] });
+          } catch (err) {
+            failedChecks.push(checkId);
+            expertResults[lens.id] = { error: safeError(err) };
+            send({ type: 'check_error', check: checkId, label, error: safeError(err) });
+          }
+          await persist('expert_reviews', expertResults);
+        }
       }
-      results['expert_reviews'] = expertResults;
+      await Promise.all(Array.from({ length: LENS_CONCURRENCY }, () => lensWorker()));
+      await persist('expert_reviews', expertResults);
 
       // Calculate overall score
       const scores: number[] = [];
@@ -1545,30 +2015,92 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       const missing = (results['scope_completeness'] as Record<string, unknown>)?.missing as string[] || [];
       const conflicts = (results['cross_consistency'] as Record<string, unknown>)?.conflicts as string[] || [];
       const blockers = [...missing.map(m => `Missing scope: ${m}`), ...conflicts];
-      const releaseReady = overallScore !== null && overallScore >= 80 && blockers.length === 0;
+      const releaseReady = overallScore !== null && overallScore >= 80 && blockers.length === 0 && failedChecks.length === 0;
+      const gateStatus = failedChecks.length > 0 ? 'partial' : 'completed';
 
-      // Save quality gate record
-      const qgId = randomUUID();
-      await db.run(`INSERT INTO engagement_quality_gates (id, engagement_id, iteration_id, scope_completeness, blueprint_alignment, cross_consistency, assumptions_section, executive_summary, expert_reviews, overall_score, release_ready, blockers, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'completed')`, 
-        qgId, String(req.params.id), String(iteration.id),
-        JSON.stringify(results['scope_completeness']),
-        JSON.stringify(results['blueprint_alignment']),
-        JSON.stringify(results['cross_consistency']),
-        String(results['assumptions_section'] || ''),
-        String(results['executive_summary'] || ''),
-        JSON.stringify(results['expert_reviews']),
-        overallScore, releaseReady ? 1 : 0,
-        JSON.stringify(blockers)
+      await db.run(
+        'UPDATE engagement_quality_gates SET overall_score = ?, release_ready = ?, blockers = ?, status = ? WHERE id = ?',
+        overallScore, releaseReady ? 1 : 0, JSON.stringify(blockers), gateStatus, qgId,
       );
-      await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = NOW() WHERE id = ?", String(req.params.id));
-      logChange(String(req.params.id), 'quality_gate', 'quality_gate_run', `Quality gate completed. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`);
+      // A completed engagement re-running its gate stays completed.
+      if (String(engagement.status) !== 'completed') {
+        await db.run("UPDATE engagements SET status = 'quality_gate', updated_at = NOW() WHERE id = ?", String(req.params.id));
+      }
+      logChange(String(req.params.id), 'quality_gate', 'quality_gate_run', failedChecks.length > 0
+        ? `Quality gate ran with ${failedChecks.length} failed check(s): ${failedChecks.join(', ')}. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`
+        : `Quality gate completed. Score: ${overallScore?.toFixed(1) ?? 'N/A'}%`);
 
-      res.write(`data: ${JSON.stringify({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers })}\n\n`);
+      send({ type: 'done', quality_gate_id: qgId, overall_score: overallScore, release_ready: releaseReady, blockers, failed_checks: failedChecks, status: gateStatus });
       res.end();
     } catch (e) {
-      res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
-      res.end();
+      if (qgId) {
+        try { await db.run("UPDATE engagement_quality_gates SET status = 'failed' WHERE id = ? AND status = 'running'", qgId); } catch { /* best effort */ }
+      }
+      if (!res.headersSent) {
+        res.status(500).json({ error: safeError(e) });
+      } else {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(e) })}\n\n`);
+        res.end();
+      }
+    }
+  });
+
+  // ── Completion (Wave 2, 2026-09-08) ────────────────────────────────────────
+  // POST /api/engagements/:id/complete { force? } — nothing ever set an
+  // engagement to 'completed': the progress bar topped out at 86% and the
+  // peer-benchmark library (status IN ('review','completed') AND
+  // enable_as_benchmark) stayed empty. Completing needs at least one
+  // executed iteration; a quality gate that is not release-ready (or none at
+  // all) needs an explicit force, which the changelog records.
+  router.post('/:id/complete', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    try {
+      const engagement = await db.get('SELECT id, status FROM engagements WHERE id = ?', engagementId) as { id: string; status: string } | undefined;
+      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+
+      const iteration = await db.get('SELECT id FROM engagement_iterations WHERE engagement_id = ? LIMIT 1', engagementId);
+      if (!iteration) return res.status(409).json({ error: 'Nothing has been executed yet — run the engagement before marking it complete.' });
+
+      const gate = await db.get(
+        'SELECT id, release_ready, overall_score, blockers, status FROM engagement_quality_gates WHERE engagement_id = ? ORDER BY created_at DESC LIMIT 1',
+        engagementId,
+      ) as { id: string; release_ready: number; overall_score: number | null; blockers: string; status: string } | undefined;
+      const force = (req.body as { force?: unknown } | undefined)?.force === true;
+      const gateReady = Boolean(gate && Number(gate.release_ready) === 1);
+      if (!gateReady && !force) {
+        return res.status(409).json({
+          error: gate
+            ? 'The latest quality gate is not release-ready. Resolve the blockers, or complete anyway.'
+            : 'No quality gate has been run. Run it first, or complete anyway.',
+          needs_force: true,
+          gate: gate ?? null,
+        });
+      }
+
+      await db.run("UPDATE engagements SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = ?", engagementId);
+      logChange(engagementId, 'quality_gate', 'engagement_completed', gateReady
+        ? `Engagement marked complete (quality gate ${gate?.overall_score != null ? `${Number(gate.overall_score).toFixed(0)}%, ` : ''}release-ready)`
+        : `Engagement marked complete without a release-ready quality gate (forced by the user)`);
+      res.json(await db.get('SELECT * FROM engagements WHERE id = ?', engagementId));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
+  // POST /api/engagements/:id/reopen — back to review; the completion stamp is cleared.
+  router.post('/:id/reopen', async (req: Request, res: Response) => {
+    const engagementId = String(req.params.id);
+    try {
+      const engagement = await db.get('SELECT id, status FROM engagements WHERE id = ?', engagementId) as { id: string; status: string } | undefined;
+      if (!engagement) return res.status(404).json({ error: 'Not found' });
+      if (!await canEdit(db, engagementId, getUserId(req), getUserRole(req))) return res.status(403).json({ error: 'Access denied' });
+      if (engagement.status !== 'completed') return res.status(409).json({ error: 'Only a completed engagement can be reopened.' });
+      await db.run("UPDATE engagements SET status = 'review', completed_at = NULL, updated_at = NOW() WHERE id = ?", engagementId);
+      logChange(engagementId, 'review', 'engagement_reopened', 'Engagement reopened for review');
+      res.json(await db.get('SELECT * FROM engagements WHERE id = ?', engagementId));
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
     }
   });
 
@@ -1594,7 +2126,9 @@ Write 3-4 paragraphs: context, key findings, main recommendations, and next step
       // Get iteration content
       const iteration = iteration_id
         ? await db.get('SELECT * FROM engagement_iterations WHERE id = ?', iteration_id) as Record<string, unknown>
-        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
+        // The approved iteration is the one to review; a later draft must not
+        // silently displace it just because its number is higher.
+        : await db.get("SELECT * FROM engagement_iterations WHERE engagement_id = ? AND status IN ('approved','draft') ORDER BY CASE WHEN status = 'approved' THEN 0 ELSE 1 END, iteration_number DESC LIMIT 1", String(req.params.id)) as Record<string, unknown>;
 
       if (!iteration || !iteration.output_content) return res.status(400).json({ error: 'No iteration content to export' });
 

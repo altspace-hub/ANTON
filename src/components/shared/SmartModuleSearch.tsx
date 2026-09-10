@@ -60,7 +60,7 @@ export default function SmartModuleSearch() {
         body: JSON.stringify({ query: q }),
       });
       if (!res.ok) {
-        setError('Could not reach the AI. Check that your API key is configured.');
+        setError('Could not reach the AI engine — check Settings → Execution engines, then try again.');
         return;
       }
       const data = await res.json() as ModuleMatch[];

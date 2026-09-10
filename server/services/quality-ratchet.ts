@@ -89,6 +89,9 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
         }],
         maxTokens: 500,
         jsonMode: true,
+        // Post-turn bookkeeping. On the subscription engine (two slots) an
+        // interactive run must never queue behind a quality score.
+        background: true,
         db,
       });
       llmText = chat.text;

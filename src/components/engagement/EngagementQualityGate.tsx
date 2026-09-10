@@ -67,10 +67,68 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
   const [running, setRunning] = useState(false);
   const [checks, setChecks] = useState<Record<string, CheckProgress>>({});
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [exporting, setExporting] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // Wave 2 (2026-09-08): completing the engagement.
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const [needsForce, setNeedsForce] = useState(false);
 
   const latestGate = engagement.quality_gate;
+  const isCompleted = engagement.status === 'completed';
+
+  async function markComplete(force: boolean) {
+    setCompleting(true);
+    setCompleteError(null);
+    try {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+      });
+      const body = await res.json().catch(() => ({})) as { error?: string; needs_force?: boolean };
+      if (!res.ok) {
+        setNeedsForce(body.needs_force === true);
+        throw new Error(body.error ?? `Could not complete (${res.status})`);
+      }
+      setNeedsForce(false);
+      onReload();
+    } catch (e) {
+      setCompleteError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCompleting(false);
+    }
+  }
+
+  async function reopen() {
+    setCompleting(true);
+    setCompleteError(null);
+    try {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}/reopen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!res.ok) { const b = await res.json().catch(() => ({})) as { error?: string }; throw new Error(b.error ?? 'Could not reopen'); }
+      onReload();
+    } catch (e) {
+      setCompleteError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCompleting(false);
+    }
+  }
+
+  async function toggleBenchmark(enabled: boolean) {
+    setCompleteError(null);
+    try {
+      const res = await fetchWithAuth(`/api/engagements/${engagement.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable_as_benchmark: enabled ? 1 : 0 }),
+      });
+      if (!res.ok) throw new Error('Could not update the benchmark setting');
+      onReload();
+    } catch (e) {
+      setCompleteError(e instanceof Error ? e.message : String(e));
+    }
+  }
 
   async function runQualityGate() {
     setRunning(true);
@@ -137,6 +195,21 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
               setChecks(p => ({ ...p, [parentCode]: { code: parentCode, status: 'skipped', result: { reason: evt.reason } } }));
             }
 
+            // Wave 2: a failed check is shown as failed and the run continues;
+            // the gate is saved as partial with the other checks' results.
+            if (evt.type === 'check_error') {
+              const parentCode = evt.check.split('-')[0];
+              const isSubCheck = evt.check.includes('-');
+              setChecks(p => {
+                const current = p[parentCode] || { code: parentCode, status: 'running' };
+                if (isSubCheck) {
+                  const subChecks = [...(current.subChecks || []), { code: evt.check, label: evt.label, result: { error: evt.error } }];
+                  return { ...p, [parentCode]: { ...current, subChecks, status: 'running' } };
+                }
+                return { ...p, [parentCode]: { ...current, status: 'error', result: { error: evt.error } } };
+              });
+            }
+
             if (evt.type === 'done') {
               // Mark any remaining running/pending 8F check as done
               setChecks(p => {
@@ -146,6 +219,10 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
                 });
                 return next;
               });
+              const failed: string[] = Array.isArray(evt.failed_checks) ? evt.failed_checks : [];
+              setWarning(failed.length > 0
+                ? `${failed.length} check${failed.length === 1 ? '' : 's'} failed (${failed.join(', ')}). The gate was saved with the other results; run it again to retry.`
+                : null);
               onReload();
             }
 
@@ -336,6 +413,12 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
           {error}
         </div>
       )}
+      {warning && (
+        <div className="flex items-start gap-2 bg-adv-gold/10 border border-adv-gold/30 rounded-xl px-4 py-3 text-sm text-adv-gold">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          {warning}
+        </div>
+      )}
 
       {/* Export */}
       {latestGate && (
@@ -361,6 +444,75 @@ export default function EngagementQualityGate({ engagement, onUpdate, onReload }
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Completion (Wave 2, 2026-09-08) — nothing ever set status 'completed'. */}
+      {(latestGate || engagement.iterations.length > 0 || isCompleted) && (
+        <div className={`rounded-xl border p-5 space-y-3 ${isCompleted ? 'border-adv-teal/40 bg-adv-teal/5' : 'bg-adv-card border-border'}`}>
+          <h3 className="text-sm font-semibold text-adv-off-white flex items-center gap-2">
+            <CheckCircle className={`h-4 w-4 ${isCompleted ? 'text-adv-teal' : 'text-adv-gray'}`} />
+            {isCompleted ? 'Engagement complete' : 'Complete the engagement'}
+          </h3>
+          {isCompleted ? (
+            <>
+              <p className="text-xs text-adv-gray">
+                Marked complete{engagement.completed_at ? ` on ${new Date(engagement.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. It now counts as a finished matter; reopen it to change the deliverable.
+              </p>
+              <label className="flex items-start gap-2 text-xs text-adv-off-white">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 accent-adv-teal"
+                  checked={engagement.enable_as_benchmark === 1}
+                  onChange={e => void toggleBenchmark(e.target.checked)}
+                />
+                <span>Offer this engagement as an anonymised peer benchmark to future engagements (scores and maturity data only, never the deliverable text).</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => void reopen()}
+                disabled={completing}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm text-adv-gray hover:text-adv-teal hover:border-adv-teal/40 transition-colors disabled:opacity-50"
+              >
+                {completing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                Reopen for review
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-adv-gray">
+                {latestGate
+                  ? (latestGate.release_ready === 1
+                    ? 'The latest quality gate is release-ready.'
+                    : latestGate.status === 'partial'
+                      ? 'The latest quality gate did not finish every check — run it again, or complete anyway.'
+                      : 'The latest quality gate is not release-ready — resolve the blockers, or complete anyway.')
+                  : 'No quality gate has been run yet. Run it first, or complete anyway.'}
+              </p>
+              {completeError && <p className="text-xs text-adv-red">{completeError}</p>}
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => void markComplete(false)}
+                  disabled={completing || running}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-adv-teal text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50"
+                >
+                  {completing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+                  Mark engagement complete
+                </button>
+                {needsForce && (
+                  <button
+                    type="button"
+                    onClick={() => void markComplete(true)}
+                    disabled={completing}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-adv-gold/50 text-sm text-adv-gold hover:bg-adv-gold/10 transition-colors disabled:opacity-50"
+                  >
+                    Complete anyway
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -2,7 +2,10 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useClaude } from '@/hooks/useClaude';
 import { useSessionStore } from '@/stores/useSessionStore';
-import { streamMessage, fetchSessions, fetchSession, deleteSession } from '@/lib/api';
+import { useConfigStore, type OpenChatLens } from '@/stores/useConfigStore';
+import { streamMessage, fetchSessions, fetchSession, deleteSession, suggestModuleLens, assignSessionToProject } from '@/lib/api';
+import LensChip from '@/components/shared/LensChip';
+import ProjectChip from '@/components/shared/ProjectChip';
 import type { KnowledgeSourceConfig, ModelId, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -71,7 +74,7 @@ export default function PromptPage() {
     sessionId, systemPrompt: currentSystemPrompt,
     plainTextMode, structureReference, transparencyLevel, writingTone, emojiEnabled,
     nativeReasoningEnabled, atomInjectionEnabled, atomCollectionEnabled,
-    audience, channel, outputLanguage, uploadedFileIds, lastSourcesUsed,
+    audience, channel, outputLanguage, uploadedFileIds, lastSourcesUsed, lastContextUsed,
     setThinking, setCreativity, setModel, setSystemPrompt,
     setKnowledgeSources, setSelectedOutputFormats,
     setSelectedPersonas, setSelectedSkills, setMultiPerspective, setMetaCognitiveEnabled, clearSession,
@@ -79,10 +82,11 @@ export default function PromptPage() {
     truncateMessagesAt,
     setModule, setAreaId, restoreSession,
     setAudience, setChannel, setOutputLanguage, setMultiAgentEnabled,
+    setUploadedFileIds,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens } = useClaude();
-  const { files, upload, remove } = useFileUpload();
+  const { files, upload, remove, clear: clearAttachments } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
 
@@ -94,9 +98,34 @@ export default function PromptPage() {
 
   const [userInput, setUserInput] = useState('');
   const [showConfig, setShowConfig] = useState(false);
+  // The expert lens — the catalogue module answering this chat.
+  const lens = useConfigStore((s) => s.lens);
+  const setLens = useConfigStore((s) => s.setLens);
+  const [lensBusy, setLensBusy] = useState(false);
+  const [lensDeclined, setLensDeclined] = useState(false);
+  // The project (matter) this chat is filed under.
+  const project = useConfigStore((s) => s.project);
+  const setProject = useConfigStore((s) => s.setProject);
   const [copied, setCopied] = useState(false);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Attachments reach the model only through the config store's
+  // uploadedFileIds — useFileUpload keeps its own list. ModulePage has
+  // mirrored the two since the beginning; this page never did, so "Ask about
+  // the attached document" answered without the document.
+  useEffect(() => {
+    setUploadedFileIds(files.filter((f) => f.status === 'done').map((f) => f.id));
+  }, [files, setUploadedFileIds]);
+
+  // Put the cursor back in the composer when an answer finishes — the next
+  // question should be one keystroke away, not a click.
+  const wasStreamingRef = useRef(false);
+  useEffect(() => {
+    if (wasStreamingRef.current && !isStreaming) composerRef.current?.focus();
+    wasStreamingRef.current = isStreaming;
+  }, [isStreaming]);
 
   // Prompt improvement state
   const [improveState, setImproveState] = useState<ImproveState>('idle');
@@ -179,6 +208,9 @@ export default function PromptPage() {
         }));
         restoreSession(historySessionId, parsedMessages);
         setModule('open-chat');
+        // The matter the session was filed under — name looked up lazily by the chip.
+        const restoredProjectId = (data as { project_id?: string | null }).project_id ?? null;
+        setProject(restoredProjectId ? { id: restoredProjectId, name: (data as { project_name?: string }).project_name ?? 'Project' } : null);
         const cfg: Record<string, unknown> =
           typeof data.config === 'string' ? JSON.parse(data.config) : (data.config ?? {});
         // Always restore system prompt and persona (fall back to defaults)
@@ -189,6 +221,10 @@ export default function PromptPage() {
         );
         if (Array.isArray(cfg.selectedSkills)) setSelectedSkills(cfg.selectedSkills as string[]);
         if (cfg.model) setModel(cfg.model as ModelId);
+        // The lens the conversation was held under, so a follow-up keeps its expert.
+        const savedLens = cfg.lens as OpenChatLens | undefined;
+        setLens(savedLens && typeof savedLens.moduleId === 'string' ? savedLens : null);
+        setLensDeclined(false);
         if (cfg.thinking) setThinking(cfg.thinking as ThinkingLevel);
         if (cfg.creativity) setCreativity(cfg.creativity as CreativityLevel);
         if (cfg.transparencyLevel !== undefined) setTransparencyLevel(cfg.transparencyLevel as 0 | 1 | 2);
@@ -233,12 +269,14 @@ export default function PromptPage() {
   // Start a new chat
   const handleNewChat = useCallback(() => {
     clearSession();
+    clearAttachments();
+    setLensDeclined(false);
     setSystemPrompt(DEFAULT_SYSTEM_PROMPT);
     setSelectedPersonas(['general-assistant']);
     setModule('open-chat');
     setAreaId('');
     setUserInput('');
-  }, [clearSession, setSystemPrompt, setSelectedPersonas, setModule, setAreaId]);
+  }, [clearSession, clearAttachments, setSystemPrompt, setSelectedPersonas, setModule, setAreaId]);
 
   // Delete a session from history
   const handleDeleteHistory = useCallback(async (historySessionId: string) => {
@@ -253,11 +291,33 @@ export default function PromptPage() {
     }
   }, [sessionId, handleNewChat]);
 
-  const handleSend = () => {
-    if (userInput.trim() && !isStreaming) {
-      runMessage(userInput.trim());
-      setUserInput('');
+  const handleSend = async () => {
+    const text = userInput.trim();
+    if (!text || isStreaming || lensBusy) return;
+    setUserInput('');
+    // First turn with no lens chosen: let the router pick the expert lens
+    // BEFORE the answer, so that module's prompt shapes it. Bounded — a slow
+    // or busy engine must not hold the question hostage.
+    if (messages.length === 0 && !lens && !lensDeclined) {
+      setLensBusy(true);
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 8000);
+      try {
+        const top = (await suggestModuleLens(text, ac.signal))[0];
+        if (top && top.moduleId !== 'open-chat') {
+          setLens({ moduleId: top.moduleId, areaId: top.areaId, label: top.label, reason: top.reason });
+        }
+      } catch {
+        // no lens this time — the generic prompt answers
+      } finally {
+        clearTimeout(timer);
+        setLensBusy(false);
+      }
     }
+    const ok = await runMessage(text);
+    // The engine refused (busy, disabled, not signed in) — give the text back
+    // so a retry is one keystroke, unless they have already typed something new.
+    if (!ok) setUserInput((current) => current || text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -624,6 +684,7 @@ export default function PromptPage() {
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
             sourceManifest={lastSourcesUsed}
+            contextUsed={lastContextUsed}
             conversation={messages.map((m) => ({ role: m.role, content: m.content }))}
           />
       )}
@@ -861,6 +922,30 @@ export default function PromptPage() {
         </div>
       )}
 
+      {/* Expert lens and project — who is answering, and which matter this belongs to */}
+      <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1">
+        <LensChip
+          lens={lens}
+          busy={lensBusy}
+          disabled={isStreaming}
+          onPick={(picked) => { setLens(picked); setLensDeclined(false); }}
+          onClear={() => { setLens(null); setLensDeclined(true); }}
+        />
+        <ProjectChip
+          project={project}
+          disabled={isStreaming}
+          onPick={(picked) => {
+            setProject(picked);
+            // A chat already under way moves with its history.
+            if (sessionId) void assignSessionToProject(sessionId, picked.id).catch(() => undefined);
+          }}
+          onClear={() => {
+            setProject(null);
+            if (sessionId) void assignSessionToProject(sessionId, null).catch(() => undefined);
+          }}
+        />
+      </div>
+
       {/* Input area */}
       <div className={`${files.length > 0 ? 'mt-1.5' : 'mt-3'} flex gap-2`}>
         {/* Hidden file input */}
@@ -876,6 +961,7 @@ export default function PromptPage() {
           }}
         />
         <textarea
+          ref={composerRef}
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           onKeyDown={handleKeyDown}

@@ -208,15 +208,22 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
 
   // ── Core: Decision Context ──────────────────────────────────────────────
 
+  /** Domains whose decisions the Markets pillar's learned temporal patterns bear on. */
+  const MARKET_DOMAINS: ReadonlySet<string> = new Set(['finance', 'markets']);
+
   async function getDecisionContext(userId = 'default', domain = 'finance'): Promise<DecisionContext> {
     const [horizons, strategy, values, conflictRules, temporalPatterns] = await Promise.all([
       getGoalsProfile(userId),
       getActiveStrategy(userId, domain),
       getValuesConstraints(userId, domain),
       getConflictRules(userId),
-      db.all<{ content: string; confidence: number; horizon: string | null }>(
-        "SELECT content, confidence, horizon FROM market_atoms WHERE atom_type = 'temporal_pattern' AND is_active = 1 ORDER BY confidence DESC LIMIT 20"
-      ),
+      // market_atoms are Markets-pillar learning. They were injected into every
+      // domain — a legal or HR run got "learned temporal patterns" about equities.
+      MARKET_DOMAINS.has(domain)
+        ? db.all<{ content: string; confidence: number; horizon: string | null }>(
+            "SELECT content, confidence, horizon FROM market_atoms WHERE atom_type = 'temporal_pattern' AND is_active = 1 ORDER BY confidence DESC LIMIT 20"
+          )
+        : Promise.resolve([] as Array<{ content: string; confidence: number; horizon: string | null }>),
     ]);
     return { horizons, strategy, values, conflictRules, temporalPatterns };
   }

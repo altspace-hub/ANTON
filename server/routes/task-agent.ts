@@ -27,7 +27,13 @@ import { createAtomExtractor } from '../services/atom-extractor.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
+import { findCandidateModules, type CandidateModule } from '../services/module-recommendation.js';
+import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
+import { runAgentic, type AgentToolDefinition, type AgenticToolCall } from '../services/sdk-agentic-runner.js';
+import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import { isSdkModel } from '../services/engine-model-id.js';
+import { z } from 'zod';
 import {
   compileTaskToMission,
   summarizeLinkedMission,
@@ -86,6 +92,26 @@ interface TaskFile {
 // Shared with the mission compiler (Wave 5.1) — includes the optional
 // action_type / action_config fields future approaches can declare.
 type ExecutionStep = ApproachExecutionStep;
+
+/** The approach whose plan the model writes for the task itself, drawing on the
+ *  seeded capabilities AND the module catalogue. Seeded idempotently at boot. */
+export const MODEL_PLAN_APPROACH_ID = 'app-model-plan';
+
+/**
+ * The steps a task will execute: the plan the model authored for it (stored
+ * with the approach choice), falling back to the approach template. Until
+ * 2026-09-08 the model's tailored plan was discarded on confirm and the
+ * template's steps — UI click-throughs like "Open Gap Assessor wizard" — ran.
+ */
+export function resolveExecutionSteps(
+  task: { chosen_approach_config?: string | null },
+  templateStepsJson: string | null | undefined,
+): ExecutionStep[] {
+  const cfg = parseJson<{ execution_steps?: unknown }>(task.chosen_approach_config ?? '{}', {});
+  const authored = Array.isArray(cfg.execution_steps) ? (cfg.execution_steps as ExecutionStep[]) : [];
+  if (authored.length > 0) return authored;
+  return parseJson<ExecutionStep[]>(templateStepsJson ?? '[]', []);
+}
 
 interface IntakeTaskContext {
   status: string;
@@ -146,7 +172,10 @@ function parseJson<T>(raw: string | null | undefined, fallback: T): T {
 /** Build the self-knowledge context string injected into ANTON's system prompt */
 function buildSelfKnowledgeContext(
   capabilities: CapabilityRow[],
-  approaches: ApproachRow[]
+  approaches: ApproachRow[],
+  /** Catalogue modules matched to this task — the Task Agent's reach beyond
+   *  its 19 seeded (FCP) capabilities into all 560 expert modules. */
+  catalogue: CandidateModule[] = [],
 ): string {
   const capLines = capabilities.map((c) => {
     const useCases = parseJson<string[]>(c.use_cases, []).join(', ');
@@ -158,13 +187,21 @@ function buildSelfKnowledgeContext(
     return `- **${a.name}** [${a.id}] (${a.effort})\n  ${a.summary}\n  Best for: ${patterns}`;
   }).join('\n\n');
 
+  const catalogueLines = catalogue
+    .map((m) => `- **${m.label}** [module_id: ${m.id}] (area: ${m.areaId})\n  ${m.description.slice(0, 160)}`)
+    .join('\n');
+
   return `## ANTON SELF-KNOWLEDGE
 
 ### Available Capabilities
 ${capLines}
 
 ### Available Approach Templates
-${appLines}`;
+${appLines}
+
+### Relevant expert modules (from the module catalogue, matched to this task)
+Set a step's "module_id" to one of these ids when that expertise fits the step.
+${catalogueLines || '- none matched this task'}`;
 }
 
 /** System prompt for ANTON Task Agent — supports 3 phases: propose / intake / (execute is server-side) */
@@ -195,7 +232,7 @@ ${allInputs.map((inp) => `- ${inp}`).join('\n')}
 
 **Already known from the task description:**
 "${taskCtx.description}"${answersText}
-${(taskCtx.attachedFileNames?.length ?? 0) > 0 ? `\n**Documents already attached by the user:**\n${taskCtx.attachedFileNames!.map((f) => `- 📄 ${f}`).join('\n')}\nAcknowledge these documents and use them in your analysis.` : '\n**No documents attached yet.**\nYou MUST ask the user to attach relevant documents before marking intake as complete.'}
+${(taskCtx.attachedFileNames?.length ?? 0) > 0 ? `\n**Documents already attached by the user:**\n${taskCtx.attachedFileNames!.map((f) => `- 📄 ${f}`).join('\n')}\nAcknowledge these documents and use them in your analysis.` : '\n**No documents attached yet.**\nAsk ONCE whether the user has documents that would materially improve this work, naming which ones (e.g. the policy being reviewed). If they say none are available, or ask you to proceed, do not ask again: mark intake complete and list the assumptions you will work under in the summary.'}
 ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n${taskCtx.activePackNames!.map((p) => `- 📚 ${p}`).join('\n')}\nThese regulatory knowledge packs are loaded and available.` : ''}
 
 **YOUR JOB NOW — INTAKE RULES:**
@@ -205,10 +242,7 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
 - Ask specifically for inputs NOT already covered in the task description above
 - Ask for 2-3 items at a time — never overwhelm the user
 - Be concrete: "What entity type is the client?" not "tell me about the context"
-- **IMPORTANT: Always ask the user to attach relevant documents** using the "Attach doc" button below the chat:
-  - Existing policies, procedures, or frameworks being assessed
-  - Client documents, regulatory texts, or reference materials
-  - Say something like: "Please attach the relevant [policy/document] using the 📎 Attach doc button below"
+- **Documents help but are not a precondition.** Ask once for the documents that would materially improve the work (the policy being assessed, the client's procedures, the contract), pointing at the 📎 Attach doc button below the chat. If the user cannot provide them, proceed on the task description and the regulatory text you have, and say what you are assuming. Never make the same request twice.
 - **Also suggest activating relevant Knowledge Packs** if the task involves specific regulations:
   - Say: "You can also activate relevant regulatory knowledge packs (e.g. EU Sanctions, EBA Guidelines) using the 📚 Knowledge packs button"
 - Start IMMEDIATELY with your questions — no preamble like "great, let me ask..."
@@ -227,7 +261,7 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
 </intake_complete>`;
   }
 
-  return `You are ANTON — an AI coworker for Financial Crime Prevention (FCP) consultants. You have structured knowledge of your own capabilities, modules, and approach templates.
+  return `You are ANTON — an AI coworker for consultants and domain experts: financial crime prevention, legal, risk, compliance, and the other professional areas ANTON covers. You have structured knowledge of your own capabilities, modules, and approach templates.
 
 ## PHASE 1: PROPOSE APPROACHES (default mode)
 
@@ -252,13 +286,18 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
       "summary": "<one-line pitch>",
       "rationale": "<why this fits this specific task>",
       "effort": "quick|medium|deep",
-      "outcome": "<what the user gets>"
+      "outcome": "<what the user gets>",
+      "execution_steps": [
+        {"step": 1, "name": "<deliverable-shaped step name>", "description": "<what to produce, from what inputs>", "module_id": "<optional: a catalogue module id from the list below>", "capability_id": "<optional: a cap-* id>"}
+      ]
     }
   ]
 }
 </approaches>
 
 **CRITICAL: approach_id MUST be one of the IDs listed in AVAILABLE APPROACHES below.**
+
+**PLAN RULES:** Author 3-6 execution_steps FOR THIS TASK. Each step is a professional deliverable ("Article-by-article CDD gap matrix for AMLR Arts 20–40", "Redline memo on the indemnity clause"), never a UI action ("open the wizard", "export the file"). Set module_id when a catalogue module's expertise fits the step. When no approach template fits the work — legal, HR, procurement, drafting, anything outside the templates — use approach_id "app-model-plan", which exists for exactly that, instead of answering ready:false.
 
 **If no approach matches:**
 <approaches>
@@ -279,7 +318,7 @@ ${(taskCtx.activePackNames?.length ?? 0) > 0 ? `\n**Active Knowledge Packs:**\n$
 </clarifying>
 
 ## STYLE
-Professional, direct, concise. Senior FCP consultant tone. No filler.
+Professional, direct, concise. Senior consultant tone. No filler.
 ${intakeSection}
 ${selfKnowledge}`;
 }
@@ -288,6 +327,30 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
   const router = Router();
   const ai = anthropic ?? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY });
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
+  // The approach whose plan the model authors per task. Seeded here, once,
+  // so an existing install gets it without a migration; the init seeds run
+  // only on an empty table.
+  try {
+    await db.run(
+      `INSERT INTO anton_approaches (id, name, summary, description, task_pattern, capability_ids, execution_steps, effort, outcome, required_inputs, confidence_threshold, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+       ON CONFLICT (id) DO NOTHING`,
+      MODEL_PLAN_APPROACH_ID,
+      'Tailored plan',
+      'ANTON writes the plan for this task, drawing on the whole module catalogue',
+      'For work no template covers — legal, HR, procurement, drafting, research: ANTON authors 3-6 deliverable steps for this specific task, each executed on the best-matching expert module with the quality gate.',
+      '["any task without a matching template"]',
+      '[]',
+      '[]',
+      'medium',
+      'A plan written for this task, executed step by step with a quality gate on each deliverable',
+      '[]',
+      0.5,
+    );
+  } catch (err) {
+    console.warn('[task-agent] could not seed the tailored-plan approach:', err instanceof Error ? err.message : err);
+  }
 
   // Lazy mission controller — the Task Agent → Missions bridge (Wave 5.1).
   // Only constructed when a task is actually executed as a mission.
@@ -410,7 +473,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     let executionSteps: ExecutionStep[] = [];
     if (task.chosen_approach_id) {
       const approach = await db.get('SELECT execution_steps FROM anton_approaches WHERE id=?', task.chosen_approach_id) as { execution_steps: string } | undefined;
-      if (approach) executionSteps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
+      if (approach) executionSteps = resolveExecutionSteps(task, approach.execution_steps);
     }
 
     // Wave 5.1 — linked mission status round-trip. Cheap reads only; the
@@ -436,6 +499,8 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       clarifying_answers: parseJson(task.clarifying_answers, []),
       execution_run_ids: parseJson(task.execution_run_ids, []),
       tags: parseJson(task.tags, []),
+      // Wave 3: a step run in progress (or just finished) that the page can re-attach to.
+      step_run: getStepJobSummary(`task-step:${task.id}`),
       intake_answers: parseJson(task.intake_answers ?? '{}', {}),
       execution_results: parseJson(task.execution_results ?? '[]', []),
       current_step: task.current_step ?? 0,
@@ -457,17 +522,23 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const { content } = req.body as { content: string };
     if (content.length > 2000) return res.status(400).json({ error: 'Message must be ≤2000 characters' });
 
-    // Load self-knowledge
+    // Load self-knowledge: the seeded capabilities and approaches, plus the
+    // catalogue modules that match THIS task — so an NDA or a redline gets a
+    // real plan instead of stranding in intake with "no approach matches".
     const caps = await db.all('SELECT * FROM anton_capabilities WHERE active=1') as CapabilityRow[];
     const approaches = await db.all('SELECT * FROM anton_approaches WHERE active=1') as ApproachRow[];
-    const selfKnowledge = buildSelfKnowledgeContext(caps, approaches);
+    let catalogue: CandidateModule[] = [];
+    try {
+      catalogue = await findCandidateModules(`${task.title}\n${task.description}`, 14);
+    } catch { /* catalogue unavailable — the seeded capabilities still apply */ }
+    const selfKnowledge = buildSelfKnowledgeContext(caps, approaches, catalogue);
 
     // Build task context for intake phase
     let taskCtx: IntakeTaskContext | undefined;
     if (task.status === 'clarifying' && task.chosen_approach_id) {
       const chosenApp = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
       if (chosenApp) {
-        const steps = parseJson<ExecutionStep[]>(chosenApp.execution_steps, []);
+        const steps = resolveExecutionSteps(task, chosenApp.execution_steps);
         const primaryCapId = parseJson<string[]>(chosenApp.capability_ids, [])[0];
         const cap = primaryCapId ? await db.get('SELECT * FROM anton_capabilities WHERE id=?', primaryCapId) as CapabilityRow | undefined : undefined;
         taskCtx = {
@@ -589,9 +660,46 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       res.write(`data: ${JSON.stringify({ type: 'done', status: newStatus, proposals, clarifyingQuestions: clarifyingQs, intakeReady, intakeAnswers })}\n\n`);
       res.end();
     } catch (err) {
+      // Keep what the user typed. The conversation was only persisted on
+      // success, so an engine refusal ("busy", "disabled") threw their answer
+      // away and the page reverted it — they retyped and hit the same wall.
+      try {
+        await db.run('UPDATE anton_tasks SET conversation=?, updated_at=NOW() WHERE id=?', JSON.stringify(history), task.id);
+      } catch { /* best-effort */ }
       res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
+  });
+
+  // ── POST /api/task-agent/tasks/:id/intake-ready ────────────────────────
+  // The human's "proceed with what I have". Intake used to complete only when
+  // the model emitted <intake_complete>, and the prompt forbade that without
+  // attached documents — so a task whose documents live elsewhere (a Jira
+  // ticket pointing at SharePoint) could never reach execution. Both real
+  // tasks on this instance died exactly there.
+  router.post('/tasks/:id/intake-ready', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!task.chosen_approach_id) return res.status(400).json({ error: 'Pick an approach first' });
+    if (task.intake_ready) return res.json({ ok: true, intakeReady: 1 });
+
+    const assumptions = typeof req.body?.assumptions === 'string' ? req.body.assumptions.trim().slice(0, 2000) : '';
+    const conversation: Array<{ role: 'user' | 'assistant'; content: string }> = parseJson(task.conversation, []);
+    conversation.push({
+      role: 'assistant',
+      content: assumptions
+        ? `Proceeding with the information available. Working assumptions: ${assumptions}`
+        : 'Proceeding with the information available — no further documents. Any gaps will be stated as assumptions in the deliverable.',
+    });
+    const intakeAnswers = parseJson<Record<string, string>>(task.intake_answers ?? '{}', {});
+    if (assumptions) intakeAnswers.assumptions = assumptions;
+
+    await db.run(
+      'UPDATE anton_tasks SET intake_ready=1, status=?, conversation=?, intake_answers=?, updated_at=NOW() WHERE id=?',
+      'clarifying', JSON.stringify(conversation), JSON.stringify(intakeAnswers), task.id,
+    );
+    res.json({ ok: true, intakeReady: 1 });
   });
 
   // ── POST /api/task-agent/tasks/:id/select-approach ─────────────────────
@@ -600,22 +708,37 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const task = await db.get('SELECT * FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as TaskRow | undefined;
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    const { approach_id, config = {} } = req.body as { approach_id: string; config: Record<string, unknown> };
+    const { approach_id, config = {}, execution_steps } = req.body as {
+      approach_id: string; config: Record<string, unknown>; execution_steps?: ExecutionStep[];
+    };
 
     const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
+
+    // Keep the plan the model wrote for this task — it is what the user just
+    // approved. A module id the catalogue does not know is dropped from its
+    // step (the step still runs on the generic prompt) so an invented id can
+    // never break execution.
+    const authored: ExecutionStep[] = [];
+    for (const [i, s] of (execution_steps ?? []).entries()) {
+      const wanted = typeof s.module_id === 'string' && s.module_id.trim() ? s.module_id.trim() : undefined;
+      const known = wanted ? await getModule(wanted).catch(() => undefined) : undefined;
+      const { module_id: _dropped, ...rest } = s;
+      authored.push({ ...rest, step: i + 1, ...(known ? { module_id: known.id } : {}) });
+    }
+    const storedConfig = authored.length > 0 ? { ...config, execution_steps: authored } : config;
 
     await db.run(`
       UPDATE anton_tasks
       SET chosen_approach_id=?, chosen_approach_config=?, status='clarifying',
           intake_answers='{}', intake_ready=0, current_step=0, updated_at=NOW()
       WHERE id=?
-    `, approach_id, JSON.stringify(config), task.id);
+    `, approach_id, JSON.stringify(storedConfig), task.id);
 
     // Update usage stats
     await db.run('UPDATE anton_approaches SET times_used=times_used+1 WHERE id=?', approach_id);
 
-    const steps = parseJson<unknown[]>(approach.execution_steps, []);
+    const steps = authored.length > 0 ? authored : parseJson<unknown[]>(approach.execution_steps, []);
     res.json({ success: true, approach, steps });
   });
 
@@ -693,7 +816,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const approach = await db.get('SELECT * FROM anton_approaches WHERE id=?', task.chosen_approach_id) as ApproachRow | undefined;
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
 
-    const steps = parseJson<ExecutionStep[]>(approach.execution_steps, []);
+    const steps = resolveExecutionSteps(task, approach.execution_steps);
     const currentStepIdx = task.current_step ?? 0;
     const step = steps[currentStepIdx];
     if (!step) return res.status(400).json({ error: 'All steps already completed' });
@@ -704,16 +827,20 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       ? await db.get('SELECT * FROM anton_capabilities WHERE id=?', capId) as CapabilityRow | undefined
       : undefined;
 
-    // Load module system prompt from disk
+    // The step's prompt: the plan's catalogue module first (server/areas), then
+    // the capability's file-based prompt, then the generic consultant.
     let modulePrompt = '';
-    if (capability?.module_id) {
+    if (step.module_id) {
+      try { modulePrompt = (await getModuleSystemPrompt(step.module_id)) ?? ''; } catch { modulePrompt = ''; }
+    }
+    if (!modulePrompt && capability?.module_id) {
       const promptPath = join(PROMPTS_DIR, `${capability.module_id}.md`);
       if (existsSync(promptPath)) {
         modulePrompt = readFileSync(promptPath, 'utf-8');
       }
     }
     if (!modulePrompt) {
-      modulePrompt = `You are ANTON — an expert Financial Crime Prevention consultant AI. Produce a comprehensive, high-quality professional deliverable based on the task and context provided.`;
+      modulePrompt = `You are ANTON — an expert consultant AI working for professionals across financial crime prevention, legal, risk, compliance and adjacent domains. Produce a comprehensive, high-quality professional deliverable based on the task and context provided.`;
     }
 
     // Assemble execution context from intake answers + task description + files + knowledge packs
@@ -731,6 +858,29 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     if (taskFiles.length > 0) {
       const docTexts = taskFiles.map((f) => `### DOCUMENT: ${f.name}\n${f.text}`).join('\n\n---\n\n');
       contextParts.push(`## ATTACHED DOCUMENTS\nThe following documents have been provided for this task:\n\n${docTexts}`);
+    }
+
+    // Prior step outputs — step N sees step N-1 in full and earlier steps in
+    // excerpt. The persistence site has always said "context carries forward";
+    // until now nothing did, so a five-step deliverable was five restarts and
+    // the quality gate, scoring each step alone, could not see the seams.
+    // Same shape as mission-executor's prior-output block.
+    const priorResults = parseJson<Array<{ step?: number; name?: string; output?: string }>>(task.execution_results ?? '[]', []);
+    if (priorResults.length > 0) {
+      const PRIOR_BUDGET = 12_000;
+      const last = priorResults[priorResults.length - 1];
+      const lastText = String(last.output ?? '').slice(0, 9_000);
+      const blocks: string[] = [`### Step ${(last.step ?? 0) + 1}: ${last.name ?? ''} (full)\n${lastText}`];
+      let used = lastText.length;
+      for (const r of priorResults.slice(0, -1).reverse()) {
+        const room = Math.min(1_500, PRIOR_BUDGET - used);
+        if (room <= 0) break;
+        const excerpt = String(r.output ?? '').slice(0, room);
+        if (!excerpt) continue;
+        blocks.push(`### Step ${(r.step ?? 0) + 1}: ${r.name ?? ''} (excerpt)\n${excerpt}`);
+        used += excerpt.length;
+      }
+      contextParts.push(`## PRIOR STEP OUTPUTS\nBuild on these — reference them, do not repeat them.\n\n${blocks.reverse().join('\n\n---\n\n')}`);
     }
 
     // Inject REAL grounding text (item 1.3): relevant framework articles + pack
@@ -753,6 +903,13 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
 
     const fullSystemPrompt = `${modulePrompt}\n\n---\n\n${contextParts.join('\n\n')}`;
 
+    // Wave 3 (2026-09-08): the run is a job that outlives this request. A
+    // reload re-attaches (GET /tasks/:id/execute-step/stream); a second click
+    // while it runs attaches instead of starting a second run. Inside the
+    // job, `res` is the job's sink — the body below is unchanged.
+    const jobKey = `task-step:${task.id}`;
+    const { job, started } = startStepJob(jobKey, { task_id: task.id, step: currentStepIdx, step_name: step.name, task_title: task.title }, async (sink) => {
+    const res = sink as unknown as Response;
     // SSE stream
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -763,8 +920,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const RETRY_THRESHOLD = 8.0;     // retry if score is below this (anything less than "Good")
     const MAX_RETRIES = 2;
 
-    // Thinking level progression for retries: default → think_hard → investigate
-    // Opus uses adaptive effort (no budget_tokens cap)
+    // Thinking level progression for retries: default → think_hard → investigate.
+    // `label` is the ANTON thinking level and is what streamChat takes; `effort`
+    // is the API value it maps to, kept for the log line. Passing the effort
+    // value as the level was silently ignored by both engines (an unknown level
+    // falls back to 'think'), so retries never actually thought harder.
     const RETRY_THINKING: Array<{ effort: string; label: string }> = [
       { effort: 'high', label: 'think_hard' },
       { effort: 'max', label: 'investigate' },
@@ -789,15 +949,104 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       }, output, taskTitle, stepName);
     }
 
+    // ── Wave 3 (2026-09-08): the step runs on the agentic engine ─────────
+    // On the subscription engine a step is no longer one shot with whatever
+    // was pasted into the prompt: it can read the attached documents in
+    // full, search the regulatory packs, and consult ANTON's expert modules
+    // for a specialist view, over several turns, before writing the
+    // deliverable. Every call is streamed to the page and kept on the step.
+    const stepModel = mapModelToProvider('claude-opus-4-8');
+    const useAgentic = isSdkModel(stepModel);
+    let lastToolCalls: AgenticToolCall[] = [];
+
+    const agentTools: AgentToolDefinition[] = [
+      {
+        name: 'read_document',
+        description: 'Read one of the documents attached to this task in full (the prompt may hold only part). Pass the exact document name.',
+        schema: { name: z.string().describe('Exact name of the attached document') },
+        handler: async (args) => {
+          const wanted = String(args.name ?? '').trim().toLowerCase();
+          const file = taskFiles.find((f) => f.name.toLowerCase() === wanted) ?? taskFiles.find((f) => f.name.toLowerCase().includes(wanted));
+          if (!file) return `No attached document named "${String(args.name ?? '')}". Attached: ${taskFiles.map((f) => f.name).join(', ') || 'none'}.`;
+          return `### ${file.name}\n${file.text}`;
+        },
+      },
+      {
+        name: 'search_knowledge',
+        description: "Search ANTON's regulatory knowledge packs and framework texts for the articles and entities relevant to a question. Returns the matching text with citations.",
+        schema: { query: z.string().describe('What to look for — an obligation, an article, an entity, a topic') },
+        handler: async (args) => {
+          const grounding = await retrieveGroundingText({ query: String(args.query ?? ''), packIds: activePackIds, db, tokenBudget: 2000 });
+          return grounding?.text ?? 'Nothing relevant found in the knowledge packs for that query.';
+        },
+      },
+      {
+        name: 'list_expert_modules',
+        description: "Find ANTON expert modules (550+ specialist prompts across compliance, legal, risk, finance, HR and more) relevant to a topic, to consult via consult_expert_module.",
+        schema: { topic: z.string().describe('The topic or task to find specialists for') },
+        handler: async (args) => {
+          const found = await findCandidateModules(String(args.topic ?? ''), 8);
+          if (found.length === 0) return 'No matching expert modules.';
+          return found.map((m) => `- ${m.id} — ${m.label} (${m.areaId}): ${m.description}`).join('\n');
+        },
+      },
+      {
+        name: 'consult_expert_module',
+        description: 'Ask one ANTON expert module a focused question and get its specialist answer. Use list_expert_modules to find the module id first.',
+        schema: {
+          module_id: z.string().describe('The module id from list_expert_modules'),
+          question: z.string().describe('The focused question, with the context the specialist needs'),
+        },
+        handler: async (args) => {
+          const moduleId = String(args.module_id ?? '');
+          const prompt = await getModuleSystemPrompt(moduleId);
+          if (!prompt) return `No expert module with id "${moduleId}".`;
+          const answer = await callChat({
+            model: stepModel,
+            system: prompt,
+            messages: [{ role: 'user', content: String(args.question ?? '') }],
+            maxTokens: 4000,
+            thinkingLevel: 'think',
+          });
+          return answer.text || '(the specialist returned nothing)';
+        },
+      },
+    ];
+    // The brief names the attached documents: in the live run the model
+    // asked read_document for policies it had inferred from the task text and
+    // none were attached — three wasted turns.
+    const AGENT_TOOLS_BRIEF = `\n\n## TOOLS AVAILABLE TO YOU
+You may call read_document (an attached document in full), search_knowledge (regulatory pack and framework text with citations), list_expert_modules and consult_expert_module (a specialist's view from ANTON's expert modules). Use them where they would make the deliverable more accurate or complete — check a citation, read a clause, get a second view — and then write the complete deliverable as your FINAL message. The final message must be the deliverable itself, with no preamble about which tools you used.
+Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`).join(', ') : 'none — do not ask read_document for documents that are not listed here; state what is missing in the deliverable instead.'}`;
+
     /** Run one execution attempt (streaming to res). Returns { output, thinking }. */
     let lastThinkingContent = '';
-    async function runExecution(effort?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
+    async function runExecution(thinkingLevel?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
+      const userMessage = `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}`;
+      if (useAgentic) {
+        const run = await runAgentic({
+          model: stepModel,
+          thinking: (thinkingLevel ?? 'think') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+          system: fullSystemPrompt + AGENT_TOOLS_BRIEF,
+          prompt: userMessage,
+          tools: agentTools,
+          maxTurns: 12,
+        }, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        lastThinkingContent = run.thinking;
+        lastToolCalls = run.toolCalls;
+        if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the step');
+        if (run.warning) res.write(`data: ${JSON.stringify({ type: 'warning', message: run.warning })}\n\n`);
+        return { output: run.text, thinking: run.thinking };
+      }
       const result = await streamChat({
-        model: mapModelToProvider('claude-opus-4-8'),
+        model: stepModel,
         system: fullSystemPrompt,
-        messages: [{ role: 'user', content: `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}` }],
+        messages: [{ role: 'user', content: userMessage }],
         maxTokens: 16000,
-        thinkingLevel: effort ?? 'high',
+        // Attempt 1 at 'think'; the retry ladder climbs think_hard → investigate.
+        // With attempt 1 already at think_hard the first retry re-ran at the
+        // same effort and only the label changed.
+        thinkingLevel: thinkingLevel ?? 'think',
       }, res);
       lastThinkingContent = result.thinking;
       return { output: result.text, thinking: result.thinking };
@@ -808,9 +1057,9 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       let gate: GateResult | null = null;
       let qualityScore: number | null = null;
       let retryCount = 0;
-      let thinkingLabel = 'standard';
+      let thinkingLabel = 'think';
 
-      // Attempt 1 — standard execution (no extended thinking)
+      // Attempt 1 — standard reasoning; retries climb the ladder
       const firstResult = await runExecution();
       fullOutput = firstResult.output;
       gate = await scoreOutput(fullOutput, task.title, step.name);
@@ -839,7 +1088,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         })}\n\n`);
 
         // Clear previous output from stream (client replaces on retry event)
-        const retryResult = await runExecution(retryConfig.effort, buildRetryGuidance(gate));
+        const retryResult = await runExecution(retryConfig.label, buildRetryGuidance(gate));
         fullOutput = retryResult.output;
         gate = await scoreOutput(fullOutput, task.title, step.name);
         qualityScore = gate?.overall ?? null;
@@ -877,6 +1126,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         quality_critique: gate?.critique || undefined,
         quality_dimensions: gate ? { ...gate.dimensions } : undefined,
         source: 'task_agent',
+        ...(lastToolCalls.length > 0 ? {
+          tool_calls: lastToolCalls.map((c) => ({
+            name: c.name, input: c.input, ms: c.ms, is_error: c.isError, output_preview: c.output.slice(0, 300),
+          })),
+        } : {}),
       });
 
       const nextStepIdx = currentStepIdx + 1;
@@ -946,6 +1200,31 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
       res.end();
     }
+    });
+    if (!started) {
+      console.log(`[task-agent] execute-step: attaching to the run already in progress for task ${task.id}`);
+    }
+    attachToStepJob(job, res);
+  });
+
+  // ── GET /api/task-agent/tasks/:id/execute-step/stream — re-attach ────────
+  // A reloaded page picks the running (or just-finished) step run back up:
+  // every frame so far, then the live ones until the job ends.
+  router.get('/tasks/:id/execute-step/stream', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT id FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as { id: string } | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    const job = getStepJob(`task-step:${task.id}`);
+    if (!job) return res.status(404).json({ error: 'No step run in progress for this task' });
+    attachToStepJob(job, res);
+  });
+
+  // ── GET /api/task-agent/tasks/:id/execute-step/status ────────────────────
+  router.get('/tasks/:id/execute-step/status', async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const task = await db.get('SELECT id FROM anton_tasks WHERE id=? AND user_id=?', req.params.id, userId) as { id: string } | undefined;
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    res.json({ step_run: getStepJobSummary(`task-step:${task.id}`) });
   });
 
   // ── POST /api/task-agent/tasks/:id/execute-as-mission ───────────────────
@@ -972,7 +1251,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     if (!approach) return res.status(404).json({ error: 'Approach not found' });
 
     try {
-      const steps = parseJson<ApproachExecutionStep[]>(approach.execution_steps, []);
+      const steps = resolveExecutionSteps(task, approach.execution_steps);
       const intakeAnswers = parseJson<Record<string, string>>(task.intake_answers ?? '{}', {});
       const taskFiles = parseJson<TaskFile[]>(task.task_files ?? '[]', []);
       const activePackIds = parseJson<string[]>(task.active_knowledge_packs ?? '[]', []);

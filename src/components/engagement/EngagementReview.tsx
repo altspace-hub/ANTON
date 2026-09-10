@@ -16,6 +16,7 @@ import {
   Trash2, RefreshCw, Sliders, Brain, Users2, Play, Square, ExternalLink
 } from 'lucide-react';
 import { fetchWithAuth, streamMessage } from '@/lib/api';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { ModelId, StreamEvent } from '@/lib/types';
 import type { EngagementData, Iteration, Resource } from '@/pages/EngagementWorkspacePage';
 
@@ -865,14 +866,18 @@ function GapAnalysisDisplay({ gapJson }: { gapJson: string }) {
 
 // ── CouncilPanel ──────────────────────────────────────────────────────────────
 
-const COUNCIL_ROLES: { id: string; label: string; icon: string; description: string; prompt: string; defaultModel: ModelId }[] = [
+// Every seat defaults to the instance's default model (the SDK engine on a
+// subscription install). The former per-role Claude-4 API ids sent every
+// council run to the metered key — dead on this instance — and the chair's
+// id could not even be changed. The per-role picker still lets a cheaper
+// engine model be chosen for a seat.
+const COUNCIL_ROLES: { id: string; label: string; icon: string; description: string; prompt: string }[] = [
   {
     id: 'scope-checker',
     label: 'Scope Checker',
     icon: '🎯',
     description: 'Verifies all scope items are addressed',
     prompt: 'Review the draft against the confirmed engagement scope. Identify which scope items are well-addressed, which are partially addressed, and which are missing. Be specific about gaps and their severity.',
-    defaultModel: 'claude-haiku-4-5-20251001',
   },
   {
     id: 'quality-auditor',
@@ -880,7 +885,6 @@ const COUNCIL_ROLES: { id: string; label: string; icon: string; description: str
     icon: '🏗️',
     description: 'Assesses depth, evidence and structure',
     prompt: 'Audit the draft for professional quality. Assess: completeness, analytical depth, evidence quality, logical structure, and actionability of recommendations. Identify the 3 most important improvements needed.',
-    defaultModel: 'claude-sonnet-4-6',
   },
   {
     id: 'regulatory',
@@ -888,7 +892,6 @@ const COUNCIL_ROLES: { id: string; label: string; icon: string; description: str
     icon: '⚖️',
     description: 'Checks regulatory accuracy and robustness',
     prompt: 'Review the draft for regulatory accuracy. Flag any statements that could be challenged by a regulator, areas where regulatory citations are missing or weak, and recommendations that may be insufficient under applicable standards.',
-    defaultModel: 'claude-opus-4-8',
   },
   {
     id: 'red-team',
@@ -896,9 +899,12 @@ const COUNCIL_ROLES: { id: string; label: string; icon: string; description: str
     icon: '🔴',
     description: 'Adversarially challenges assumptions',
     prompt: 'You are a red team attacker. Find every weakness, assumption gap, logical flaw, or unsupported conclusion. Think adversarially — what would a hostile reviewer, opposing counsel, or regulator use to challenge this output?',
-    defaultModel: 'claude-sonnet-4-6',
   },
 ];
+
+/** The instance default, read when the council runs — not at module load,
+ *  which can precede the boot-time sync from the server. */
+const councilDefaultModel = (): ModelId => useSettingsStore.getState().defaultModel;
 
 const EMPTY_KS_COUNCIL = {
   modes: {
@@ -917,7 +923,7 @@ function CouncilPanel({ engagement, iteration, onSaved }: {
   const [enabled, setEnabled] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set(['scope-checker', 'quality-auditor']));
   const [roleModels, setRoleModels] = useState<Record<string, ModelId>>(() =>
-    Object.fromEntries(COUNCIL_ROLES.map(r => [r.id, r.defaultModel]))
+    Object.fromEntries(COUNCIL_ROLES.map(r => [r.id, councilDefaultModel()]))
   );
   const [running, setRunning] = useState(false);
   const [activeRole, setActiveRole] = useState<string | null>(null);
@@ -979,7 +985,7 @@ Provide a structured review in 3-5 paragraphs with clear headings. Be specific a
         setRoleOutputs(prev => ({ ...prev, [role.id]: '' }));
 
         const stream = streamMessage({
-          model: roleModels[role.id] || role.defaultModel,
+          model: roleModels[role.id] || councilDefaultModel(),
           thinking: 'think',
           creativity: 'strict',
           systemPrompt: buildMemberSystemPrompt(role.id),
@@ -1008,7 +1014,7 @@ Provide a structured review in 3-5 paragraphs with clear headings. Be specific a
 
       let chairText = '';
       const chairStream = streamMessage({
-        model: 'claude-opus-4-8',
+        model: councilDefaultModel(),
         thinking: 'think_hard',
         creativity: 'balanced',
         systemPrompt: `You are the Chair of an AI Council reviewing a consulting engagement draft. Synthesise the council's reviews into a final assessment.
@@ -1038,7 +1044,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
         members: members.map(r => ({
           role: r.id,
           label: r.label,
-          model: roleModels[r.id] || r.defaultModel,
+          model: roleModels[r.id] || councilDefaultModel(),
           output: allOutputs[r.id] || '',
         })),
         chairSynthesis: chairText,
@@ -1124,7 +1130,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
                     <p className="text-xs text-adv-gray mb-2">{role.description}</p>
                     {active && (
                       <select
-                        value={roleModels[role.id] || role.defaultModel}
+                        value={roleModels[role.id] || councilDefaultModel()}
                         onChange={(e) => setRoleModels(prev => ({ ...prev, [role.id]: e.target.value as ModelId }))}
                         onClick={e => e.stopPropagation()}
                         disabled={running}

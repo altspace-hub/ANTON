@@ -17,9 +17,11 @@ import {
   RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
+import { getStoredDefaultModel } from '@/stores/useSettingsStore';
 import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
 import ModelSelector from '@/components/shared/ModelSelector';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
+import GapInterviewChat, { type InterviewTurn, type InterviewNoteDraft } from '@/components/gap-assessment/GapInterviewChat';
 import { useExport } from '@/hooks/useExport';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -117,6 +119,8 @@ interface Assessment {
   scope_config: string;
   context_config: string;
   status: string;
+  /** Wave 3: a run in progress on the server that the wizard can re-attach to. */
+  run_job?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; error?: string } | null;
   current_step: number;
   article_scores: string;
   capability_view: string | null;
@@ -132,7 +136,45 @@ interface Framework {
   articleCount: number;
   themes: string[];
   articles: Array<{ id: string; title: string; theme: string; requirement: string }>;
+  /** Which kind of specialist assesses it (server: gap-domains.ts). */
+  domain?: string;
 }
+
+/** Entity types offered per assessment domain — the list was banks only,
+ *  so a SaaS company assessing GDPR or a hospital assessing ISO 27001 could
+ *  not even name what it was. */
+const ENTITY_TYPES_BY_DOMAIN: Record<string, string[]> = {
+  'aml': ['Credit institution', 'Payment institution', 'E-money institution', 'Crypto-asset service provider (CASP)', 'Investment firm', 'Insurance undertaking', 'Asset manager', 'Fund administrator', 'Trust or company service provider', 'Law firm / notary', 'Real estate agent', 'Gambling operator'],
+  'sanctions': ['Credit institution', 'Payment institution', 'Investment firm', 'Insurance undertaking', 'Exporter / manufacturer', 'Shipping / logistics company', 'Trading company', 'Corporate group'],
+  'ict-resilience': ['Credit institution', 'Payment institution', 'Investment firm', 'Insurance undertaking', 'Crypto-asset service provider (CASP)', 'ICT third-party service provider', 'Market infrastructure'],
+  'infosec': ['SaaS / technology company', 'Financial services firm', 'Healthcare provider', 'Public body', 'Merchant / retailer', 'Managed service provider', 'Manufacturer'],
+  'privacy': ['SaaS / technology company', 'Financial services firm', 'Healthcare provider', 'Public body', 'Retailer / e-commerce', 'Employer (HR processing)', 'Marketing / adtech company'],
+  'ai-governance': ['AI system provider', 'AI system deployer', 'Financial services firm', 'Healthcare provider', 'Public body', 'Employer using AI in HR'],
+  'anti-bribery': ['Corporate group', 'Financial services firm', 'Construction / infrastructure company', 'Extractives / energy company', 'Pharmaceutical company', 'Public body'],
+  'financial-conduct': ['Credit institution', 'Investment firm', 'Insurance undertaking', 'Asset manager', 'Fund administrator', 'Payment institution'],
+  'digital-assets': ['Crypto-asset service provider (CASP)', 'Stablecoin issuer', 'Payment institution', 'E-money institution', 'Credit institution', 'Fintech platform'],
+  'esg': ['Listed company', 'Large undertaking', 'Financial services firm', 'Subsidiary of a non-EU parent'],
+  'corporate-governance': ['Private limited company', 'Public limited company', 'Financial services firm', 'Charity / not-for-profit'],
+  'online-safety': ['Social media platform', 'Search service', 'Online marketplace', 'Gaming / streaming service', 'Messaging service'],
+  'compliance': ['Financial services firm', 'Corporate group', 'SaaS / technology company', 'Public body', 'Healthcare provider', 'Other regulated organisation'],
+};
+
+/** Interview roles suggested per domain — the datalist listed AML roles only. */
+const INTERVIEW_ROLES_BY_DOMAIN: Record<string, string[]> = {
+  'aml': ['MLRO / Compliance Officer', 'Head of AML Operations', 'KYC Team Lead', 'Transaction Monitoring Analyst', 'Head of Risk', 'Internal Audit', 'Board Member / NED', 'Front-line Relationship Manager', 'IT / Data Team', 'Legal Counsel'],
+  'sanctions': ['Head of Sanctions', 'Screening Team Lead', 'Trade Finance Operations', 'Head of Compliance', 'Legal Counsel', 'Internal Audit', 'Export Control Officer'],
+  'ict-resilience': ['CIO / CTO', 'CISO', 'Head of IT Operations', 'Third-Party Risk Manager', 'Business Continuity Manager', 'Head of Risk', 'Internal Audit', 'Incident Manager'],
+  'infosec': ['CISO', 'Security Operations Lead', 'IT Infrastructure Manager', 'DevOps / Platform Lead', 'Data Protection Officer', 'Internal Audit', 'HR (joiners/leavers)'],
+  'privacy': ['Data Protection Officer', 'Head of Legal', 'CISO', 'Marketing Lead', 'HR Director', 'Product Owner', 'Customer Service Lead'],
+  'ai-governance': ['Head of AI / ML', 'Data Science Lead', 'Product Owner', 'Data Protection Officer', 'Head of Risk', 'Legal Counsel', 'Model Validation'],
+  'anti-bribery': ['Chief Compliance Officer', 'Head of Procurement', 'Sales Director', 'Finance Director', 'Internal Audit', 'Legal Counsel', 'Country Manager'],
+  'financial-conduct': ['Head of Compliance', 'Head of Product', 'Head of Distribution', 'Conduct Risk Manager', 'Head of Risk', 'Internal Audit', 'Board Member / NED'],
+  'digital-assets': ['Chief Compliance Officer', 'Head of Custody', 'Head of Trading / Markets', 'CISO', 'Head of Risk', 'Legal Counsel', 'Finance Director'],
+  'esg': ['Head of Sustainability', 'CFO / Financial Controller', 'Head of Procurement', 'HR Director', 'Investor Relations', 'Internal Audit'],
+  'corporate-governance': ['Company Secretary', 'Board Chair', 'Non-Executive Director', 'CFO', 'General Counsel', 'Internal Audit'],
+  'online-safety': ['Head of Trust & Safety', 'Content Moderation Lead', 'Product Owner', 'Legal Counsel', 'Data Protection Officer', 'Head of Engineering'],
+  'compliance': ['Head of Compliance', 'Head of Risk', 'Head of Operations', 'Legal Counsel', 'Internal Audit', 'Board Member / NED', 'IT / Data Team'],
+};
 
 interface ProgressEvent {
   type: string;
@@ -214,18 +256,6 @@ interface InterviewNote {
   notes: string;
 }
 
-const INTERVIEW_ROLE_SUGGESTIONS = [
-  'MLRO / Compliance Officer',
-  'Head of AML Operations',
-  'KYC Team Lead',
-  'Transaction Monitoring Analyst',
-  'Head of Risk',
-  'Internal Audit',
-  'Board Member / NECD',
-  'Front-line Relationship Manager',
-  'IT / Data Team',
-  'Legal Counsel',
-];
 
 interface IterationSummary {
   id: string;
@@ -415,6 +445,13 @@ function GapAssessmentWizardInner() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [findings, setFindings] = useState<Array<ArticleFinding & { framework: string }>>([]);
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  // The assessment's domain: the frameworks' shared domain, generic when they mix.
+  const assessmentDomain = (() => {
+    const domains = new Set(frameworks.map(f => f.domain ?? 'compliance'));
+    return domains.size === 1 ? [...domains][0] : 'compliance';
+  })();
+  const entityTypeOptions = ENTITY_TYPES_BY_DOMAIN[assessmentDomain] ?? ENTITY_TYPES_BY_DOMAIN.compliance;
+  const interviewRoleSuggestions = INTERVIEW_ROLES_BY_DOMAIN[assessmentDomain] ?? INTERVIEW_ROLES_BY_DOMAIN.compliance;
   const [currentStep, setCurrentStep] = useState(1);
   const [contextConfig, setContextConfig] = useState({
     entityType: 'Credit institution',
@@ -423,7 +460,12 @@ function GapAssessmentWizardInner() {
     maturity: 3,
     concerns: '',
     documents: '',
-    modelTier: 'claude-sonnet-4-6' as string,
+    // The instance default (seeded from the server at boot) — a hardcoded bare
+    // Claude id here was routed to the metered API client, so a fresh
+    // assessment on a subscription-only instance failed every batch.
+    modelTier: getStoredDefaultModel() as string,
+    // Wave 2 (2026-09-08): the control interview ANTON ran, kept with Step 3.
+    interviewConversation: [] as InterviewTurn[],
   });
 
   /** Human label for a stored modelTier — legacy aliases plus real model ids. */
@@ -468,6 +510,8 @@ function GapAssessmentWizardInner() {
   const [evidenceManifest, setEvidenceManifest] = useState<EvidenceManifestEntry[]>([]);
   // Wave 1.7 — re-assessment mode toggle (only meaningful when iterations exist)
   const [reassessMode, setReassessMode] = useState(false);
+  /** Batches the last run reported as failed — offered for a targeted retry. */
+  const [failedBatches, setFailedBatches] = useState<Array<{ framework: string; batchIndex: number }>>([]);
   // Wave 2.7 — second-opinion lane (comparison slot, never overwrites findings)
   const [soTier, setSoTier] = useState('');
   const [soRunning, setSoRunning] = useState(false);
@@ -596,6 +640,19 @@ function GapAssessmentWizardInner() {
 
   useEffect(() => { loadAssessment(); }, [loadAssessment]);
 
+  // Wave 3: a run still going on the server (this page was reloaded) is
+  // picked back up — every frame so far, then live — on Step 4.
+  const attachedRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    const run = assessment?.run_job;
+    if (!assessment || !run || run.status !== 'running' || isRunning) return;
+    if (attachedRunRef.current === run.startedAt) return;
+    attachedRunRef.current = run.startedAt;
+    setCurrentStep(4);
+    void attachRun();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment?.id, assessment?.run_job?.status, assessment?.run_job?.startedAt]);
+
   // ── Pre-fill context from Org Context (only for fresh assessments on step 1-3) ──
   useEffect(() => {
     if (!assessment) return;
@@ -700,6 +757,31 @@ function GapAssessmentWizardInner() {
     };
   }, [contextConfig, knowledgeSources]);
 
+  // Wave 2 (2026-09-08): a completed interview turn. The notes ANTON recorded
+  // are filed under the interviewee's role (one card per role, one line per
+  // note) so they remain ordinary, editable interview evidence; the
+  // conversation and the notes are persisted together without leaving Step 3.
+  const handleInterviewTurn = useCallback(async (turns: InterviewTurn[], notes: InterviewNoteDraft[]) => {
+    let nextIvs = interviews;
+    if (notes.length > 0) {
+      nextIvs = [...interviews];
+      for (const n of notes) {
+        const line = `${n.articles.length > 0 ? `[${n.articles.join(', ')}] ` : ''}${n.text}`;
+        const idx = nextIvs.findIndex(i => i.role.trim().toLowerCase() === n.role.trim().toLowerCase());
+        if (idx >= 0) nextIvs[idx] = { ...nextIvs[idx], notes: `${nextIvs[idx].notes.trim()}\n- ${line}`.trim() };
+        else nextIvs.push({ id: crypto.randomUUID(), role: n.role, notes: `- ${line}` });
+      }
+      setInterviews(nextIvs);
+    }
+    setContextConfig(c => ({ ...c, interviewConversation: turns }));
+    if (!id) return;
+    await fetchWithAuth(`/api/gap-assessments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context_config: { ...buildEnrichedContext(evidenceDocs, nextIvs), interviewConversation: turns } }),
+    });
+  }, [interviews, evidenceDocs, buildEnrichedContext, id]);
+
   const saveContext = async () => {
     if (!id) return;
     const enrichedContext = buildEnrichedContext(evidenceDocs, interviews);
@@ -714,19 +796,32 @@ function GapAssessmentWizardInner() {
   };
 
   // ── Run assessment (SSE) ───────────────────────────────────────────────────
-  const runAssessment = async () => {
+  const runAssessment = async (retryBatches?: Array<{ framework: string; batchIndex: number }>) => streamRun('start', retryBatches);
+  /** Wave 3: a run outlives the request — a reloaded wizard picks it back up. */
+  const attachRun = async () => streamRun('attach');
+
+  const streamRun = async (mode: 'start' | 'attach', retryBatches?: Array<{ framework: string; batchIndex: number }>) => {
     if (!id || isRunning) return;
     setIsRunning(true);
     setProgressEvents([]);
+    setFailedBatches([]);
 
     try {
-      const response = await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
-      });
+      const response = mode === 'start'
+        ? await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
+            ...(retryBatches && retryBatches.length > 0 ? { retryBatches } : {}),
+          }),
+        })
+        : await fetchWithAuth(`/api/gap-assessments/${id}/run/stream`);
 
-      if (!response.ok || !response.body) throw new Error('Stream failed');
+      if (!response.ok || !response.body) {
+        const detail = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(detail.error ?? `Run failed (${response.status})`);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -744,6 +839,12 @@ function GapAssessmentWizardInner() {
               const next = [...prev, event];
               return next.length > 200 ? next.slice(next.length - 200) : next;
             });
+            // A partial failure: the server lists the batches that failed and
+            // did NOT mark the assessment complete — offer a targeted retry.
+            const failed = (event as unknown as { failedBatches?: Array<{ framework: string; batchIndex: number }> }).failedBatches;
+            if (event.type === 'error' && Array.isArray(failed) && failed.length > 0) {
+              setFailedBatches(failed);
+            }
             if (event.type === 'batch_complete' && event.findings) {
               // Capture batch thinking/reasoning
               if ((event as unknown as Record<string, unknown>).thinking) {
@@ -1544,14 +1645,9 @@ function GapAssessmentWizardInner() {
                   value={contextConfig.entityType}
                   onChange={e => setContextConfig(c => ({ ...c, entityType: e.target.value }))}
                 >
-                  <option>Credit institution</option>
-                  <option>Payment institution</option>
-                  <option>E-money institution</option>
-                  <option>Crypto-asset service provider (CASP)</option>
-                  <option>Investment firm</option>
-                  <option>Insurance undertaking</option>
-                  <option>Asset manager</option>
-                  <option>Fund administrator</option>
+                  {/* A stored value outside this domain's list stays selectable — never silently changed. */}
+                  {!entityTypeOptions.includes(contextConfig.entityType) && <option>{contextConfig.entityType}</option>}
+                  {entityTypeOptions.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
@@ -1685,6 +1781,15 @@ function GapAssessmentWizardInner() {
               )}
             </div>
 
+            {/* Wave 2 (2026-09-08): the control interview — ANTON asks, the notes write themselves. */}
+            {id && (
+              <GapInterviewChat
+                assessmentId={id}
+                conversation={Array.isArray(contextConfig.interviewConversation) ? contextConfig.interviewConversation : []}
+                onTurn={handleInterviewTurn}
+              />
+            )}
+
             {/* ── Interview Notes ────────────────────────────────────────── */}
             <div className="rounded-xl border border-border bg-adv-card p-4">
               <div className="flex items-center justify-between mb-3">
@@ -1720,7 +1825,7 @@ function GapAssessmentWizardInner() {
                             onChange={e => updateInterview(interview.id, 'role', e.target.value)}
                           />
                           <datalist id={`role-list-${interview.id}`}>
-                            {INTERVIEW_ROLE_SUGGESTIONS.map(r => <option key={r} value={r} />)}
+                            {interviewRoleSuggestions.map(r => <option key={r} value={r} />)}
                           </datalist>
                         </div>
                         <button type="button" onClick={() => removeInterview(interview.id)} className="text-adv-gray hover:text-adv-red transition-colors" title="Remove interview">
@@ -1813,7 +1918,7 @@ function GapAssessmentWizardInner() {
                     </span>
                   </label>
                 )}
-                <button onClick={runAssessment} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                <button onClick={() => runAssessment()} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                   <Play className="h-4 w-4" /> {reassessMode && iterations.length > 0 ? 'Start Re-assessment' : 'Start Assessment'}
                 </button>
               </div>
@@ -1823,8 +1928,8 @@ function GapAssessmentWizardInner() {
               <div className="rounded-xl border border-border bg-adv-card">
                 <div ref={progressRef} className="max-h-80 overflow-y-auto p-4 space-y-2 font-mono text-xs">
                   {progressEvents.map((e, i) => (
-                    <div key={i} className={`flex items-start gap-2 ${e.type === 'error' ? 'text-red-400' : e.type === 'complete' ? 'text-adv-green' : e.type === 'batch_complete' ? 'text-adv-teal' : 'text-adv-gray'}`}>
-                      {e.type === 'error' ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
+                    <div key={i} className={`flex items-start gap-2 ${(e.type === 'error' || e.type === 'batch_error') ? 'text-red-400' : e.type === 'complete' ? 'text-adv-green' : e.type === 'batch_complete' ? 'text-adv-teal' : 'text-adv-gray'}`}>
+                      {(e.type === 'error' || e.type === 'batch_error') ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
                       <span>{e.message || e.type}</span>
                       {e.type === 'batch_complete' && e.batchIndex !== undefined && e.totalBatches !== undefined && (
                         <span className="ml-auto text-adv-gray">{e.batchIndex + 1}/{e.totalBatches}</span>
@@ -1838,7 +1943,15 @@ function GapAssessmentWizardInner() {
                     </div>
                   )}
                 </div>
-                {!isRunning && findings.length > 0 && (
+                {!isRunning && failedBatches.length > 0 && (
+                  <div className="flex items-center gap-3 border-t border-adv-red/30 bg-adv-red/5 p-4">
+                    <button onClick={() => runAssessment(failedBatches)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                      <RefreshCw className="h-4 w-4" /> Retry {failedBatches.length} failed batch{failedBatches.length === 1 ? '' : 'es'}
+                    </button>
+                    <span className="text-xs text-adv-gray">The assessment is not complete. Batches that succeeded are kept; only the failed ones re-run.</span>
+                  </div>
+                )}
+                {!isRunning && failedBatches.length === 0 && findings.length > 0 && (
                   <div className="border-t border-border p-4">
                     <button onClick={() => goToStep(5)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                       View Scoring ({findings.length} findings) <ChevronRight className="h-4 w-4" />

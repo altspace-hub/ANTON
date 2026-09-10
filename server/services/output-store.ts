@@ -1,6 +1,6 @@
-import { getAnthropicUtilityModel } from './utility-model.js';
+import { getRoutedUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
-import { getClient } from './claude-client.js';
+import { callChat } from './provider-router.js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -182,15 +182,15 @@ export async function createOutputStore(db: DatabaseAdapter) {
     // Run after current event-loop tick so the HTTP response is not delayed
     setImmediate(async () => {
       try {
-        const client = getClient();
-
         // Truncate large payloads to avoid excessive token usage
         const dataStr = JSON.stringify(outputData);
         const truncated = dataStr.length > 4000 ? dataStr.slice(0, 4000) + '...(truncated)' : dataStr;
 
-        const message = await client.messages.create({
-          model: await getAnthropicUtilityModel(db),
-          max_tokens: 120,
+        // Through provider-router, as background work. This was a raw Anthropic
+        // client on the metered key: every open-chat turn logged "Summary
+        // generation failed" and no atom was ever learned from a chat.
+        const message = await callChat({
+          model: await getRoutedUtilityModel(db),
           system: 'You summarise workflow step outputs in one concise sentence (max 20 words). Return only the sentence — no preamble.',
           messages: [
             {
@@ -198,14 +198,12 @@ export async function createOutputStore(db: DatabaseAdapter) {
               content: `Summarise this workflow output in one sentence:\n\n${truncated}`,
             },
           ],
+          maxTokens: 120,
+          background: true,
+          db,
         });
 
-        // Extract text from the response
-        let summary = '';
-        for (const block of message.content) {
-          if (block.type === 'text') summary += block.text;
-        }
-        summary = summary.trim().slice(0, 500);
+        const summary = message.text.trim().slice(0, 500);
 
         await db.run(
           'UPDATE workflow_outputs SET output_summary = ? WHERE id = ?',
@@ -224,7 +222,7 @@ export async function createOutputStore(db: DatabaseAdapter) {
     try {
       // Lazy-import to avoid circular dependency: atom-extractor imports output-store
       const { createAtomExtractor } = await import('./atom-extractor.js');
-      const extractor = await createAtomExtractor(db, getClient());
+      const extractor = await createAtomExtractor(db);
       await extractor.extractAtoms(outputId);
     } catch (err) {
       console.error('[output-store] Atom extraction failed for', outputId, err);

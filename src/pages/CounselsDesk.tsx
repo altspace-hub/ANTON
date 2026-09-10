@@ -12,9 +12,10 @@ import {
   Scale, BookOpen, FlaskConical, GitCompare, Search, FileText,
   SearchCheck, Globe, Zap, Plus, X, Pin, Download, Trash2,
   ChevronDown, RefreshCw, Copy, CheckSquare, Languages,
-  CheckCircle2, HelpCircle, XCircle, ExternalLink,
+  CheckCircle2, HelpCircle, XCircle, ExternalLink, Paperclip, Loader2,
 } from 'lucide-react';
-import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
+import IntakeChat from '@/components/shared/IntakeChat';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,21 @@ interface LegalSession {
   pinned_findings: string;
   citations: string;
   active_knowledge_packs?: string;
+  /** Wave 2: attached matter documents (JSON array of { id, name, text }). */
+  documents?: string;
+  /** Wave 2: the matter brief ANTON took at intake (JSON object). */
+  matter_brief?: string;
+  /** Wave 2: the intake conversation (JSON array of turns). */
+  intake_conversation?: string;
+}
+
+interface MatterDocument { id: string; name: string; text: string }
+
+function parseMatterDocuments(raw: string | undefined): MatterDocument[] {
+  try { const v = JSON.parse(raw || '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+function parseMatterBrief(raw: string | undefined): Record<string, string> {
+  try { const v = JSON.parse(raw || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; }
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -147,6 +163,11 @@ const PRIORITY_PACKS: Array<{ id: string; label: string }> = [
 
 // Citation auto-capture patterns — require enough context to avoid false positives
 const CITATION_PATTERNS = [
+  // The prompt's own mandated format — instrument AND article:
+  // "Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 15(3)(b), OJ L …".
+  // Captured first so the article survives; the instrument-only patterns below
+  // stop at the comma and produced a green tick that meant only "the Regulation exists".
+  { pattern: /(?:Regulation|Directive) \(E[UC]\) (?:No )?\d{1,4}\/\d{1,4}(?:[^,\n]{0,120})?,\s*Art(?:icle|\.)\s*\d+(?:\(\d+\))?(?:\([a-z]\))?/g, type: 'regulation' as const },
   { pattern: /Regulation \(EU\) \d{4}\/\d+(?:\s+of\s+[^,\n]{0,80})?/g, type: 'regulation' as const },
   { pattern: /Directive \(EU\) \d{4}\/\d+(?:\s+of\s+[^,\n]{0,80})?/g, type: 'directive' as const },
   // Only capture Art. with a framework qualifier (e.g. "AMLR Art.12" or "Art.12(3)(b)")
@@ -213,6 +234,12 @@ export default function CounselsDesk() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [loadingSession, setLoadingSession] = useState(false);
   const [showNewSession, setShowNewSession] = useState(false);
+  // Wave 2 (2026-09-08): the matter — attached documents + ANTON's intake.
+  const [attaching, setAttaching] = useState(false);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [showMatter, setShowMatter] = useState(false);
+  const [matterDismissed, setMatterDismissed] = useState(false);
+  const attachInputRef = useRef<HTMLInputElement>(null);
   const [newTitle, setNewTitle] = useState('');
   const [selectedMode, setSelectedMode] = useState('deep-dive');
   const [selectedRole, setSelectedRole] = useState('eu-regulatory-lawyer');
@@ -283,6 +310,50 @@ export default function CounselsDesk() {
       setLoadingSession(false);
     }
   }, []);
+
+  // Wave 2 (2026-09-08): attach the contract, decision or correspondence the
+  // matter concerns. The upload store keeps the file; the extracted text
+  // travels with the session so every research turn can quote it.
+  const persistMatterDocuments = useCallback(async (docs: MatterDocument[]) => {
+    if (!activeSession) return;
+    const r = await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documents: docs }),
+    });
+    if (!r.ok) throw new Error('Could not save the document to the session');
+    const { session } = await r.json();
+    setActiveSession(session);
+  }, [activeSession]);
+
+  const attachDocuments = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0 || !activeSession) return;
+    setAttaching(true);
+    setAttachError(null);
+    try {
+      const existing = parseMatterDocuments(activeSession.documents);
+      const added: MatterDocument[] = [];
+      for (const file of Array.from(files)) {
+        const result = await uploadFile(file) as { id: string; originalName?: string; text?: string };
+        added.push({ id: result.id, name: result.originalName || file.name, text: result.text || '' });
+      }
+      await persistMatterDocuments([...existing, ...added]);
+    } catch (e) {
+      setAttachError(e instanceof Error ? e.message : 'Attachment failed');
+    } finally {
+      setAttaching(false);
+      if (attachInputRef.current) attachInputRef.current.value = '';
+    }
+  }, [activeSession, persistMatterDocuments]);
+
+  const removeDocument = useCallback(async (docId: string) => {
+    if (!activeSession) return;
+    try {
+      await persistMatterDocuments(parseMatterDocuments(activeSession.documents).filter(d => d.id !== docId));
+    } catch (e) {
+      setAttachError(e instanceof Error ? e.message : 'Could not remove the document');
+    }
+  }, [activeSession, persistMatterDocuments]);
 
   function createNewQuestion(): ResearchQuestion {
     return { id: `q-${Date.now()}`, title: 'New question', messages: [], status: 'idle' };
@@ -404,7 +475,10 @@ export default function CounselsDesk() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: updatedQuestion.messages.map(m => ({ role: m.role, content: m.content })),
+          // Error bubbles are shown to the user, never replayed to the model.
+          messages: updatedQuestion.messages
+            .filter(m => !(m.role === 'assistant' && m.content.startsWith('⚠️')))
+            .map(m => ({ role: m.role, content: m.content })),
           webSearchEnabled,
           plainLanguageMode,
         }),
@@ -416,6 +490,11 @@ export default function CounselsDesk() {
       const decoder = new TextDecoder();
       let assistantContent = '';
       let thinkingContent = '';
+      // Carry a partial SSE line across reads: a frame split by a TCP chunk
+      // boundary was dropped by JSON.parse — with a native SDK build that
+      // emits the whole answer as one text_delta, that lost the whole answer.
+      let buffer = '';
+      let streamError: string | null = null;
 
       // Add placeholder assistant message
       const withPlaceholder = [...newQs];
@@ -428,12 +507,19 @@ export default function CounselsDesk() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
         for (const line of lines) {
           if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
           try {
             const event = JSON.parse(line.slice(6));
+
+            // Engine/server failure frames — both key spellings are in use.
+            if (event.type === 'error') {
+              streamError = String(event.error ?? event.message ?? 'The engine could not answer.');
+              continue;
+            }
 
             // Capture thinking/reasoning content
             const thinkingChunk = event.type === 'thinking_delta' ? event.content
@@ -470,6 +556,23 @@ export default function CounselsDesk() {
             }
           } catch { /* ignore parse errors */ }
         }
+      }
+
+      // An engine refusal or an empty stream is not an answer. Say why where
+      // the answer would have been — a blank '▋' bubble used to be saved as a
+      // finished answer (2 of the 3 answers ever produced here were empty).
+      if (!assistantContent.trim()) {
+        assistantContent = `⚠️ ${streamError ?? 'No answer was produced — the engine may be busy. Send your question again to retry.'}`;
+        const shown = assistantContent;
+        setQuestions(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(q => q.id === activeTabId);
+          if (idx === -1) return prev;
+          const msgs = [...updated[idx].messages];
+          msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: shown };
+          updated[idx] = { ...updated[idx], messages: msgs };
+          return updated;
+        });
       }
 
       // Auto-capture citations, then verify them against ground truth (post-stream)
@@ -787,7 +890,57 @@ export default function CounselsDesk() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold text-adv-off-white truncate">{activeSession.title}</h1>
+            {/* Wave 2: the documents the matter concerns */}
+            {(() => {
+              const docs = parseMatterDocuments(activeSession.documents);
+              if (docs.length === 0 && !attachError) return null;
+              return (
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {docs.map(d => (
+                    <span key={d.id} className="flex items-center gap-1 rounded-md border border-border bg-adv-card px-2 py-0.5 text-[11px] text-adv-gray" title={`${d.text.length.toLocaleString('en-GB')} characters extracted`}>
+                      <FileText className="h-3 w-3 text-adv-teal" />
+                      <span className="max-w-[180px] truncate">{d.name}</span>
+                      {d.text.length === 0 && <span className="text-adv-gold">no text</span>}
+                      <button type="button" onClick={() => removeDocument(d.id)} className="text-adv-gray hover:text-adv-red" title="Remove from the matter"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                  {attachError && <span className="text-[11px] text-adv-red">{attachError}</span>}
+                </div>
+              );
+            })()}
           </div>
+
+          {/* Wave 2: attach a document / open the matter intake */}
+          <input
+            ref={attachInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.docx,.doc,.txt,.md,.rtf,.html,.xlsx,.csv"
+            className="hidden"
+            onChange={e => void attachDocuments(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => attachInputRef.current?.click()}
+            disabled={attaching}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-adv-card px-3 py-1.5 text-xs text-adv-off-white hover:border-adv-teal/40 transition-colors disabled:opacity-60"
+            title="Attach the contract, decision or correspondence the matter concerns"
+          >
+            {attaching ? <Loader2 className="h-3.5 w-3.5 animate-spin text-adv-teal" /> : <Paperclip className="h-3.5 w-3.5 text-adv-teal" />}
+            Attach
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const open = showMatter || (Object.keys(parseMatterBrief(activeSession.matter_brief)).length === 0 && !matterDismissed);
+              if (open) { setShowMatter(false); setMatterDismissed(true); } else { setShowMatter(true); }
+            }}
+            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors ${Object.keys(parseMatterBrief(activeSession.matter_brief)).length > 0 ? 'border-adv-teal/40 bg-adv-teal-dim text-adv-teal' : 'border-border bg-adv-card text-adv-off-white hover:border-adv-teal/40'}`}
+            title="The matter brief ANTON took at intake"
+          >
+            <Scale className="h-3.5 w-3.5" />
+            Matter
+          </button>
 
           {/* Mode selector */}
           <div className="relative" ref={modeSelectorRef}>
@@ -873,6 +1026,41 @@ export default function CounselsDesk() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: conversation area */}
         <div className="flex flex-1 flex-col overflow-hidden border-r border-border">
+          {/* Wave 2 (2026-09-08): ANTON takes instructions on the matter before research. */}
+          {(showMatter || (Object.keys(parseMatterBrief(activeSession.matter_brief)).length === 0 && !matterDismissed)) && (
+            <div className="shrink-0 border-b border-border bg-adv-dark-2 px-4 py-3">
+              {Object.keys(parseMatterBrief(activeSession.matter_brief)).length > 0 && (
+                <div className="mb-2 grid grid-cols-1 gap-x-4 gap-y-0.5 text-[11px] sm:grid-cols-2">
+                  {Object.entries(parseMatterBrief(activeSession.matter_brief)).map(([k, v]) => (
+                    <div key={k} className="truncate"><span className="text-adv-gray">{k.replace(/_/g, ' ')}: </span><span className="text-adv-off-white" title={v}>{v}</span></div>
+                  ))}
+                </div>
+              )}
+              <IntakeChat
+                endpoint={`/api/legal-research/${activeSession.id}/intake/turn`}
+                conversation={activeSession.intake_conversation}
+                updateType="matter_update"
+                blockTag="matter_update"
+                title="Let ANTON take instructions"
+                subtitle={parseMatterDocuments(activeSession.documents).length > 0 ? 'ANTON reads the attached documents first.' : 'Attach the contract or decision first if you have it.'}
+                intro="Before research, ANTON establishes the facts, the parties, the governing law, the precise question and the decision the client needs — the way counsel takes instructions. Every research turn then works from that brief."
+                startLabel="Take instructions"
+                onUpdate={(frame) => {
+                  const a = (frame.applied ?? {}) as { fields?: number; done?: boolean; suggested_mode?: string | null; suggested_role?: string | null };
+                  const parts: string[] = [];
+                  if (Number(a.fields)) { parts.push(`Recorded ${a.fields} matter detail${Number(a.fields) === 1 ? '' : 's'}.`); void loadSession(activeSession.id); }
+                  if (a.suggested_mode || a.suggested_role) {
+                    const m = a.suggested_mode ? MODES.find(x => x.id === a.suggested_mode)?.label : null;
+                    const r = a.suggested_role ? EXPERT_ROLES.find(x => x.id === a.suggested_role)?.label : null;
+                    parts.push(`ANTON suggests ${[m && `the ${m} mode`, r && `the ${r} role`].filter(Boolean).join(' and ')} — switch from the selectors above.`);
+                  }
+                  if (a.done && parts.length === 0) parts.push('Instructions complete — ask your first research question.');
+                  return parts.length > 0 ? parts.join(' ') : null;
+                }}
+              />
+            </div>
+          )}
+
           {/* Question tabs */}
           <div className="flex shrink-0 items-center gap-1 border-b border-border bg-adv-dark-2 px-3 py-2 overflow-x-auto">
             {questions.map((q, i) => (

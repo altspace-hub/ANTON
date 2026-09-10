@@ -272,10 +272,14 @@ async function retrievePackEntities(
   if (packIds.length === 0 || terms.length === 0) return [];
   try {
     const placeholders = packIds.map(() => '?').join(',');
+    // Counsel's Desk (and the seeded defaults) address packs by their slug —
+    // knowledge_packs.name ('amlr-2024', 'amla-amld6') — while ids are UUIDs and
+    // display names are long titles. Without the name match no pack the page
+    // showed as active ever grounded anything.
     const packs = await db.all(
       `SELECT id, display_name FROM knowledge_packs
-       WHERE (id IN (${placeholders}) OR display_name IN (${placeholders})) AND status='active'`,
-      ...packIds, ...packIds
+       WHERE (id IN (${placeholders}) OR name IN (${placeholders}) OR display_name IN (${placeholders})) AND status='active'`,
+      ...packIds, ...packIds, ...packIds
     ) as Array<{ id: string; display_name: string }>;
     if (packs.length === 0) return [];
     const packNameById = new Map(packs.map((p) => [p.id, p.display_name]));

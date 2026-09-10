@@ -42,6 +42,8 @@ interface ExecutionStep {
   step: number;
   name: string;
   capability_id?: string;
+  /** Catalogue module chosen by the model for this step. */
+  module_id?: string;
   description?: string;
 }
 
@@ -55,6 +57,17 @@ interface ExecutionResult {
   thinking_level?: string;
   thinking?: string;
   description?: string;
+  /** Wave 3: the tools the step called on the agentic engine. */
+  tool_calls?: Array<{ name: string; input: Record<string, unknown>; ms: number; is_error: boolean; output_preview?: string }>;
+}
+
+/** Wave 3: one tool call in progress or finished while a step streams. */
+interface StepActivity {
+  id: number;
+  name: string;
+  input: string;
+  status: 'running' | 'done' | 'error';
+  ms?: number;
 }
 
 /** Wave 5.1 — compact status of the mission executing this task. */
@@ -86,6 +99,8 @@ interface TaskDetail extends Task {
   execution_steps: ExecutionStep[];
   linked_mission_id?: string | null;
   linked_mission?: LinkedMissionSummary | null;
+  /** Wave 3: a step run in progress on the server that the page can re-attach to. */
+  step_run?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; meta: { step?: number; step_name?: string }; frames: number; toolCalls: number; turns: number; error?: string } | null;
 }
 
 interface ConversationMessage {
@@ -101,6 +116,8 @@ interface Proposal {
   rationale: string;
   effort: 'quick' | 'medium' | 'deep';
   outcome: string;
+  /** The plan the model wrote for this task — what the user approves. */
+  execution_steps?: ExecutionStep[];
 }
 
 interface ClarifyingQuestion {
@@ -225,13 +242,13 @@ function ProposalCard({
 }: {
   proposal: Proposal;
   index: number;
-  onSelect: (id: string) => void;
+  onSelect: (index: number) => void;
   selected: boolean;
 }) {
   const effortCfg = EFFORT_CONFIG[proposal.effort] ?? EFFORT_CONFIG.medium;
   return (
     <button
-      onClick={() => onSelect(proposal.approach_id)}
+      onClick={() => onSelect(index)}
       className={`w-full text-left rounded-xl border p-4 transition-all hover:border-adv-teal/50 hover:bg-adv-teal-soft ${
         selected
           ? 'border-adv-teal bg-adv-teal-soft shadow-lg shadow-adv-teal/10'
@@ -260,6 +277,22 @@ function ProposalCard({
           <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-adv-green" />
           <p className="text-xs text-adv-off-white">{proposal.outcome}</p>
         </div>
+      )}
+
+      {/* The plan written for this task — these are the steps that will run */}
+      {proposal.execution_steps && proposal.execution_steps.length > 0 && (
+        <ol className="mt-2.5 space-y-1 border-t border-border/60 pt-2 text-xs text-adv-gray">
+          {proposal.execution_steps.map((s, i) => (
+            <li key={`${s.step}-${i}`} className="flex gap-2">
+              <span className="shrink-0 font-medium text-adv-teal">{i + 1}.</span>
+              <span>
+                <span className="text-adv-off-white">{s.name}</span>
+                {s.description ? <span> — {s.description}</span> : null}
+                {s.module_id ? <span className="ml-1 rounded bg-adv-dark-2 px-1 py-0.5 text-[10px] text-adv-gray">{s.module_id}</span> : null}
+              </span>
+            </li>
+          ))}
+        </ol>
       )}
 
       {selected && (
@@ -313,6 +346,14 @@ function StepResultCard({
           <span className="text-sm font-semibold text-adv-white truncate">
             Step {result.step + 1}: {result.name}
           </span>
+          {(result.tool_calls?.length ?? 0) > 0 && (
+            <span
+              className="ml-1 rounded-full bg-adv-teal/10 px-2 py-0.5 text-[10px] font-medium text-adv-teal"
+              title={result.tool_calls!.map((c) => `${c.name.replace(/_/g, ' ')}: ${Object.values(c.input).map(String).join(' · ').slice(0, 80)}`).join('\n')}
+            >
+              {result.tool_calls!.length} tool call{result.tool_calls!.length === 1 ? '' : 's'}
+            </span>
+          )}
           {result.quality_score != null && (
             <span className={`ml-1 rounded-full bg-adv-dark/40 px-2 py-0.5 text-[10px] font-bold ${qualityColor}`}>
               {result.quality_score.toFixed(1)}/10
@@ -420,6 +461,7 @@ function ExecutionResultPanel({
   streamingStepName,
   streamingText,
   streamingThinking,
+  streamingActivity = [],
   isStreaming,
   onExport,
   isExporting,
@@ -428,6 +470,8 @@ function ExecutionResultPanel({
   streamingStepName?: string;
   streamingText: string;
   streamingThinking?: string;
+  /** Wave 3: tool calls of the agentic engine while the step streams. */
+  streamingActivity?: StepActivity[];
   isStreaming: boolean;
   onExport: (format: string, content: string, filename: string) => void;
   isExporting: boolean;
@@ -465,6 +509,23 @@ function ExecutionResultPanel({
                 {streamingThinking.slice(-500)}
               </pre>
             </div>
+          )}
+          {/* Wave 3: what the engine is doing — documents read, packs searched, specialists consulted */}
+          {streamingActivity.length > 0 && (
+            <ul className="border-b border-border/30 bg-adv-dark-2 px-5 py-2 space-y-1">
+              {streamingActivity.map((a) => (
+                <li key={a.id} className="flex items-center gap-2 text-xs">
+                  {a.status === 'running'
+                    ? <Loader2 className="h-3 w-3 animate-spin text-adv-teal shrink-0" />
+                    : a.status === 'error'
+                      ? <span className="h-3 w-3 rounded-full bg-adv-red/70 shrink-0" />
+                      : <span className="h-3 w-3 rounded-full bg-adv-teal/70 shrink-0" />}
+                  <span className="font-medium text-adv-off-white">{a.name.replace(/_/g, ' ')}</span>
+                  {a.input && <span className="truncate text-adv-gray" title={a.input}>{a.input}</span>}
+                  {a.ms != null && <span className="ml-auto shrink-0 text-adv-gray/60">{(a.ms / 1000).toFixed(1)}s</span>}
+                </li>
+              ))}
+            </ul>
           )}
           <div className="max-h-96 overflow-y-auto p-5">
             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-adv-off-white">
@@ -723,8 +784,11 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
-  const [selectedProposal, setSelectedProposal] = useState<string | null>(null);
+  // Selected by index, not approach id: two proposals may share an approach
+  // (both "tailored plan") and differ only in the plan they carry.
+  const [selectedProposal, setSelectedProposal] = useState<number | null>(null);
   const [confirmingApproach, setConfirmingApproach] = useState(false);
+  const [proceeding, setProceeding] = useState(false);
   const [loading, setLoading] = useState(true);
   const [autoStarted, setAutoStarted] = useState(false);
   // Execution state
@@ -732,6 +796,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   const [executingStepName, setExecutingStepName] = useState('');
   const [executingStepText, setExecutingStepText] = useState('');
   const [executingStepThinking, setExecutingStepThinking] = useState('');
+  const [executingStepActivity, setExecutingStepActivity] = useState<StepActivity[]>([]);
   // Mission bridge state (Wave 5.1)
   const [launchingMission, setLaunchingMission] = useState(false);
   const [syncingMission, setSyncingMission] = useState(false);
@@ -768,6 +833,18 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [task?.conversation, streamText]);
 
+  // Wave 3: a step run still going on the server (this page was reloaded, or
+  // opened in a second tab) is picked back up — buffered frames, then live.
+  const attachedRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    const run = task?.step_run;
+    if (!task || !run || run.status !== 'running' || executingStep) return;
+    if (attachedRunRef.current === run.startedAt) return;
+    attachedRunRef.current = run.startedAt;
+    void attachStepRun();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, task?.step_run?.status, task?.step_run?.startedAt]);
+
   async function sendFirstMessage(content: string) {
     if (!content.trim() || streaming) return;
     setStreaming(true);
@@ -795,6 +872,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             const parsed = JSON.parse(raw);
             if (parsed.type === 'text' || parsed.type === 'text_delta') { accumulated += (parsed.text ?? parsed.content ?? ''); setStreamText(accumulated); }
             else if (parsed.type === 'done') { await loadTask(); onStatusChange(); }
+            else if (parsed.type === 'error') { setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not answer — try again.')); await loadTask(); }
           } catch { /* skip */ }
         }
       }
@@ -851,6 +929,12 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             } else if (parsed.type === 'done') {
               await loadTask();
               onStatusChange();
+            } else if (parsed.type === 'error') {
+              // The engine refused (busy, disabled, not signed in). The server
+              // keeps the message that was sent, so a reload shows it and a
+              // retry is one click — the answer used to just vanish.
+              setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not answer — try again.'));
+              await loadTask();
             }
           } catch { /* skip */ }
         }
@@ -867,13 +951,16 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
   }
 
   async function confirmApproach() {
-    if (!selectedProposal || !task || confirmingApproach) return;
+    if (selectedProposal === null || !task || confirmingApproach) return;
+    const chosen = task.proposals?.[selectedProposal];
+    if (!chosen) return;
     setConfirmingApproach(true);
     try {
       const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/select-approach`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approach_id: selectedProposal }),
+        // The plan travels with the choice — it is what the user just approved.
+        body: JSON.stringify({ approach_id: chosen.approach_id, execution_steps: chosen.execution_steps ?? [] }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -920,6 +1007,9 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
                   } else if (parsed.type === 'done') {
                     await loadTask();
                     onStatusChange();
+                  } else if (parsed.type === 'error') {
+                    setSendError(String(parsed.error ?? parsed.message ?? 'ANTON could not start the intake — try again.'));
+                    await loadTask();
                   }
                 } catch { /* skip */ }
               }
@@ -929,28 +1019,63 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           setStreaming(false);
           setStreamText('');
         }
+      } else {
+        // A 404 here means the model proposed an approach id that is not in
+        // the catalogue; the button used to just stop spinning.
+        setSendError(String((data as { error?: string }).error ?? 'Could not confirm the approach — try again.'));
       }
     } finally {
       setConfirmingApproach(false);
     }
   }
 
-  async function runStep() {
+  /** The human's end to intake: documents are optional, so the task must be
+   *  able to move to execution on what is already known. */
+  async function proceedWithoutMore() {
+    if (!task || proceeding) return;
+    setProceeding(true);
+    setSendError(null);
+    try {
+      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/intake-ready`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setSendError(String(data.error ?? 'Could not proceed — try again.'));
+        return;
+      }
+      await loadTask();
+      onStatusChange();
+    } finally {
+      setProceeding(false);
+    }
+  }
+
+  async function runStep() { await streamStepRun('start'); }
+  /** Wave 3: a step run outlives the request — a reloaded page picks it back up. */
+  async function attachStepRun() { await streamStepRun('attach'); }
+
+  async function streamStepRun(mode: 'start' | 'attach') {
     if (!task || executingStep) return;
-    const stepIdx = task.current_step;
+    const stepIdx = mode === 'attach' ? (task.step_run?.meta.step ?? task.current_step) : task.current_step;
     const stepDef = task.execution_steps?.[stepIdx];
     const stepName = stepDef ? `Step ${stepIdx + 1}: ${stepDef.name}` : `Step ${stepIdx + 1}`;
     setExecutingStep(true);
     setExecutingStepName(stepName);
     setExecutingStepText('');
     setExecutingStepThinking('');
+    setExecutingStepActivity([]);
 
     try {
-      const res = await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
+      const res = mode === 'start'
+        ? await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        })
+        : await fetchWithAuth(`/api/task-agent/tasks/${task.id}/execute-step/stream`);
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => ({ error: 'Execution failed' }));
         setSendError((err as { error?: string }).error ?? 'Execution failed');
@@ -969,17 +1094,31 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           const raw = line.slice(6).trim();
           if (!raw) continue;
           try {
-            const parsed = JSON.parse(raw) as { type: string; text?: string; content?: string; hasMoreSteps?: boolean };
+            const parsed = JSON.parse(raw) as {
+              type: string; text?: string; content?: string; hasMoreSteps?: boolean;
+              id?: number; name?: string; input?: Record<string, unknown>; isError?: boolean; ms?: number;
+            };
             if ((parsed.type === 'text' || parsed.type === 'text_delta') && (parsed.text || parsed.content)) {
               accumulated += (parsed.text ?? parsed.content ?? '');
               setExecutingStepText(accumulated);
             } else if ((parsed.type === 'thinking' || parsed.type === 'thinking_delta') && (parsed.text || parsed.content)) {
               accThinking += (parsed.text ?? parsed.content ?? '');
               setExecutingStepThinking(accThinking);
+            } else if (parsed.type === 'turn_start') {
+              // Wave 3: each turn of the agentic engine starts a fresh message —
+              // the deliverable is the last one, so show only the current turn.
+              accumulated = '';
+              setExecutingStepText('');
+            } else if (parsed.type === 'tool_call' && typeof parsed.id === 'number') {
+              const summary = Object.values(parsed.input ?? {}).map((v) => String(v)).join(' · ').slice(0, 120);
+              setExecutingStepActivity((prev) => [...prev, { id: parsed.id as number, name: String(parsed.name ?? 'tool'), input: summary, status: 'running' }]);
+            } else if (parsed.type === 'tool_result' && typeof parsed.id === 'number') {
+              setExecutingStepActivity((prev) => prev.map((a) => (a.id === parsed.id ? { ...a, status: parsed.isError ? 'error' : 'done', ms: parsed.ms } : a)));
             } else if (parsed.type === 'quality_retry') {
               // Reset text on retry — new attempt starts fresh
               accumulated = '';
               setExecutingStepText('');
+              setExecutingStepActivity([]);
             } else if (parsed.type === 'done') {
               await loadTask();
               onStatusChange();
@@ -997,6 +1136,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
       setExecutingStepText('');
       setExecutingStepName('');
       setExecutingStepThinking('');
+      setExecutingStepActivity([]);
     }
   }
 
@@ -1191,6 +1331,23 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           </div>
         )}
 
+        {/* Intake in progress — the human can end it; documents are optional */}
+        {task.status === 'clarifying' && task.intake_ready !== 1 && !!task.chosen_approach_id && !streaming && !task.linked_mission_id && (
+          <div className="mx-1 flex items-center justify-between gap-3 rounded-xl border border-border bg-adv-card px-4 py-2.5">
+            <p className="text-xs text-adv-gray">
+              Still gathering context. Nothing more to add? ANTON proceeds on what it has and states its assumptions.
+            </p>
+            <button
+              onClick={proceedWithoutMore}
+              disabled={proceeding}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-adv-teal/40 px-3 py-1.5 text-xs font-medium text-adv-teal hover:bg-adv-teal/10 transition-colors disabled:opacity-60"
+            >
+              {proceeding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ChevronsRight className="h-3.5 w-3.5" />}
+              Proceed with what I have
+            </button>
+          </div>
+        )}
+
         {/* Intake complete — ready to run first step */}
         {task.intake_ready === 1 && (task.execution_results?.length ?? 0) === 0 && !executingStep && !task.linked_mission_id && (
           <div className="mx-1 rounded-xl border border-adv-teal/30 bg-adv-teal-soft px-4 py-3">
@@ -1281,7 +1438,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
               <Layers className="h-4 w-4 text-adv-teal" />
               <span className="text-sm font-semibold text-adv-white">ANTON's Proposed Approaches</span>
             </div>
-            {selectedProposal && task.status === 'awaiting_selection' && (
+            {selectedProposal !== null && task.status === 'awaiting_selection' && (
               <button
                 onClick={confirmApproach}
                 disabled={confirmingApproach}
@@ -1295,11 +1452,11 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           <div className="space-y-2">
             {task.proposals.map((p, i) => (
               <ProposalCard
-                key={p.approach_id}
+                key={`${p.approach_id}-${i}`}
                 proposal={p}
                 index={i}
                 onSelect={setSelectedProposal}
-                selected={selectedProposal === p.approach_id}
+                selected={selectedProposal === i}
               />
             ))}
           </div>
@@ -1316,6 +1473,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
           streamingStepName={executingStepName}
           streamingText={executingStepText}
           streamingThinking={executingStepThinking}
+          streamingActivity={executingStepActivity}
           isStreaming={executingStep}
           onExport={(fmt, content, filename) => doExport(fmt, content, { filename, title: task.title })}
           isExporting={isExporting}

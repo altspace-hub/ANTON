@@ -186,6 +186,7 @@ export async function streamToResponse(
         system: config.system,
         staticSystemPrompt: config.staticSystemPrompt,
         messages: config.messages,
+        tools: config.tools,
       },
       res,
       onComplete
@@ -371,6 +372,7 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
       system: config.system,
       staticSystemPrompt: config.staticSystemPrompt,
       messages: config.messages,
+      tools: config.tools,
     });
   }
 
@@ -493,6 +495,7 @@ export async function streamToHandler(
           system: config.system,
           staticSystemPrompt: config.staticSystemPrompt,
           messages: config.messages,
+          tools: config.tools,
         },
         mockRes,
         wrappedComplete

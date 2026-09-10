@@ -48,9 +48,11 @@ describe('Gap Assessor model picker', () => {
     expect(src).toMatch(/<ModelSelector value=\{soTier as ModelId\}/);
   });
 
-  it('defaults to a real model id, not a legacy alias', () => {
-    // The alias renders as raw text in the shared selector, and only the
-    // family match keeps it at full reasoning.
-    expect(src).toMatch(/modelTier: 'claude-[a-z0-9.-]+' as string/);
+  it('defaults to the instance default model, never a hardcoded id', () => {
+    // A hardcoded bare Claude id was routed to the metered API client, so on a
+    // subscription-only instance every default run failed. The default is the
+    // Settings choice, seeded from the server at boot.
+    expect(src).toMatch(/modelTier: getStoredDefaultModel\(\) as string/);
+    expect(src).not.toMatch(/modelTier: 'claude-[a-z0-9.-]+' as string/);
   });
 });

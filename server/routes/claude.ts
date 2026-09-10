@@ -8,7 +8,7 @@ import { runIterativeReasoning, getRevelationChain } from '../services/iterative
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import type { ResolvedKnowledge } from '../../src/lib/types.js';
 import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
@@ -34,7 +34,10 @@ import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
-import { streamToResponse as sdkStreamToResponse } from '../services/claude-sdk-client.js';
+import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
+import { capabilityModelId } from '../services/engine-model-id.js';
+import { mapModelToProvider, callChat } from '../services/provider-router.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
@@ -48,7 +51,7 @@ import { createTemporalReasoningService } from '../services/temporal-reasoning.j
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
-import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
 import { computeRunCostUsd } from '../services/run-cost.js';
 
@@ -215,6 +218,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             }
           }
         } catch { /* non-fatal — policy table may not exist on older DBs */ }
+      }
+
+      // A bare Claude id with no API key configured follows the configured
+      // engine — the rule every specialty route already gets from
+      // provider-router. A browser with no saved model sends the literal
+      // fallback id; on a subscription-only instance that must not end in
+      // "add ANTHROPIC_API_KEY to your .env".
+      if (policyModel.startsWith('claude-') && !isApiKeyConfigured()) {
+        policyModel = mapModelToProvider(policyModel);
       }
 
       // Determine provider and validate API key
@@ -425,6 +437,37 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           return ok;
         });
 
+      // Project (matter) documents (Wave 2, 2026-09-08): a session inside a
+      // project reads the project's files as if they were attached to the
+      // turn — the project is the container, so its documents ride along.
+      // Newest ten, images excluded, budgeted by the resolver like uploads.
+      let projectRow: { id: string; name: string } | null = null;
+      const projectFileLabels: Record<string, string> = {};
+      const projectDocumentPaths: string[] = [];
+      if (sessionId) {
+        try {
+          projectRow = (await db.get(
+            'SELECT p.id, p.name FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
+            String(sessionId),
+          ) as { id: string; name: string } | undefined) ?? null;
+          if (projectRow) {
+            const rows = await db.all(
+              'SELECT file_path, original_name, extension FROM project_files WHERE project_id = ? ORDER BY created_at DESC LIMIT 10',
+              projectRow.id,
+            ) as Array<{ file_path: string; original_name: string; extension: string | null }>;
+            for (const f of rows) {
+              const ext = String(f.extension || path.extname(f.original_name)).toLowerCase();
+              if (IMAGE_EXTENSIONS_SERVER.has(ext)) continue;
+              const resolvedPath = path.resolve(f.file_path);
+              if (uploadedFilePaths.includes(resolvedPath) || projectDocumentPaths.includes(resolvedPath)) continue;
+              projectDocumentPaths.push(resolvedPath);
+              projectFileLabels[resolvedPath] = `${f.original_name} (project: ${projectRow.name})`;
+            }
+          }
+        } catch { /* non-fatal — project documents are enrichment */ }
+      }
+      const allDocumentPaths = [...uploadedFilePaths, ...projectDocumentPaths];
+
       // Capability-aware knowledge budget (plan 2.15): derived from the
       // session model's real context window — 800k for 1M-context Claude
       // (unchanged), ~104k for Mistral Large, the trained window for
@@ -433,14 +476,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Derived from the capability table, not a hardcoded id list — every new
       // 1M-context model would otherwise silently be treated as short-context and
       // pick up a long-context beta header it does not need (see line ~1120).
-      const is1MModel = (MODEL_CAPABILITIES[model]?.maxContextWindow ?? 0) >= 1_000_000;
-      const knowledgeBudget = await resolveContextBudget(model, db as DatabaseAdapter);
+      // Keyed by the model the run will actually use (selectedModel — after
+      // compliance enforce_model / area default / instance default), with an
+      // sdk: prefix stripped: the engine's model has the engine's window. Keyed
+      // by the raw request field, the sdk: default missed the table and got a
+      // 16k budget on a 1M model.
+      const is1MModel = (MODEL_CAPABILITIES[capabilityModelId(selectedModel)]?.maxContextWindow ?? 0) >= 1_000_000;
+      const knowledgeBudget = await resolveContextBudget(selectedModel, db as DatabaseAdapter);
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
       // Set SSE headers early so we can stream progress before the Claude API call starts.
       const hasLocalFolders = !!(knowledgeSources as any)?.modes?.localFolder?.enabled &&
         ((knowledgeSources as any)?.modes?.localFolder?.folderPaths?.length ?? 0) > 0;
-      const hasUploadedFiles = uploadedFilePaths.length > 0 || imageFileIds.length > 0;
+      const hasUploadedFiles = allDocumentPaths.length > 0 || imageFileIds.length > 0;
       const needsEarlySSE = hasLocalFolders || hasUploadedFiles;
 
       const sendProgress = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -457,7 +505,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
       const resolved: ResolvedKnowledge = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths, { contextBudget: knowledgeBudget })
+        ? await resolveKnowledgeSources(knowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
@@ -677,6 +725,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
       const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
       const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
+      // The project (matter) this session belongs to: what was concluded in its
+      // other sessions rides along. buildProjectContextSummary had existed for
+      // months with no caller — sessions never carried a project_id at creation.
+      let projectContextPrompt = '';
+      if (sessionId && projectRow) {
+        try {
+          projectContextPrompt = await buildProjectContextSummary(db, projectRow.id, String(sessionId));
+        } catch { /* non-fatal — the project layer is enrichment */ }
+      }
       const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
       // Wave 3.4 — atom-layer A/B experiment: when injection is on and the run
       // will be persisted, ~20% of runs are deterministically assigned to a
@@ -706,9 +763,14 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // A/B experiment is not biased toward "atoms don't help" by runs that never
       // actually injected anything. resolveFinalArm leaves 'holdout'/null as-is.
       atomArm = resolveFinalArm(atomArm, atomLayerPrompt);
+      // A run without an area gets the user's universal ('all'-scoped) values
+      // and nothing else. Defaulting the domain to 'finance' handed every
+      // open-chat question the Markets strategy and paper-trading constraints
+      // as HARD rules — a stored run shows a kickoff-agenda request being
+      // rewritten into an AMLR project under them.
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
         (req as any).user?.id || 'default',
-        areaId || 'finance'
+        areaId || 'general'
       );
 
       const promptComposerConfig = {
@@ -739,6 +801,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgePackPrompt: knowledgePackPrompt || undefined,
         atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
+        projectContextPrompt: projectContextPrompt || undefined,
         goalsValuesPrompt: goalsValuesPrompt || undefined,
       } as const;
 
@@ -764,6 +827,33 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Merge tools from knowledge resolver (web search) with any request-level tools
       const tools = resolved.tools as Array<{ type: string; name: string }>;
+
+      // Wave 2 (2026-09-08): what this answer is built from — sent to the page
+      // as a "context used" frame before the model call and kept on the
+      // message's config snapshot. It records what is actually in the prompt
+      // (documents, project, lens, knowledge layers), not what was toggled.
+      const contextUsed = {
+        model: selectedModel,
+        thinking: String(thinking || 'think_hard'),
+        lens: moduleId ? { moduleId: String(moduleId), areaId: areaId ? String(areaId) : null } : null,
+        project: projectRow,
+        documents: (resolved.sourceDetails ?? [])
+          .filter((d) => d.type === 'uploaded_file')
+          .map((d) => ({
+            name: d.name,
+            chars: d.charCount ?? 0,
+            source: (d.path && projectFileLabels[d.path] ? 'project' : 'upload') as 'project' | 'upload',
+            ...(d.note ? { skipped: true } : {}),
+          })),
+        knowledgeSources: resolved.sourceManifest,
+        ragChunks: ragChunks.length,
+        packGroundingChars: knowledgePackPrompt.length,
+        atomChars: atomLayerPrompt ? atomLayerPrompt.length : 0,
+        orgContext: Boolean(orgContextPrompt),
+        goalsValues: Boolean(goalsValuesPrompt),
+        resumeContext: Boolean(resumeContextPrompt),
+        webSearch: tools.some((t) => t.type === 'web_search_20250305'),
+      };
 
       // Log composed prompt length for debugging
       const promptLengthDesc = staticSystemPrompt
@@ -818,6 +908,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               multiAgentStyle: req.body.multiAgentStyle || null,
               precision: req.body.precision || null,
               channel: req.body.channel || null,
+              // Wave 2: what was actually in the prompt (see contextUsed above).
+              contextUsed,
             };
             // CACHE-03: include cache read/write tokens and compute cache-adjusted cost.
             // Computed BEFORE the message INSERT so the real per-call cost is persisted
@@ -1162,7 +1254,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // message instead of silently truncating a ~900k prompt.
       if (resolved.tokenEstimate > knowledgeBudget) {
         res.status(400).json({
-          error: `Context too large for ${model}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
+          error: `Context too large for ${selectedModel}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
                  `Trim knowledge sources, use Summary mode for online references, or pick a larger-context model.`,
           code: 'CONTEXT_TOO_LARGE',
           tokenEstimate: resolved.tokenEstimate,
@@ -1193,15 +1285,29 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         return;
       }
 
+      // The "context used" frame goes out before the model call so the page can
+      // show what the prompt holds while the answer streams. Headers may not
+      // be set yet; every engine branch below sets them only when absent.
+      if (!res.headersSent) {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+      }
+      sendProgress({ type: 'context_used', context: contextUsed });
+
       // Route to the correct provider adapter
       if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
         // Subscription execution engines — the Claude Agent SDK or Codex SDK
         // subprocess, authenticated by this machine's Claude Code / ChatGPT
-        // login (no API key). Neither has ANTON's web_search tool, so strip
-        // the web-search instructions exactly as the non-Anthropic branch does.
-        const sdkPrompt = composedPrompt
-          .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
-          .replace(/\n{3,}/g, '\n\n');
+        // login (no API key). The Claude engine grants its own WebSearch /
+        // WebFetch tools when the run's knowledge mode asked for web search
+        // (and rewords the instruction to name them); Codex has no web tools,
+        // so its prompt is stripped exactly as the non-Anthropic branch does.
+        const sdkWebRun = provider === 'anthropic_sdk' && sdkWebToolsRequested(tools);
+        const sdkPrompt = provider === 'openai_codex' ? stripWebSearchInstructions(composedPrompt) : composedPrompt;
 
         const sdkAbort = new AbortController();
         req.on('close', () => sdkAbort.abort());
@@ -1218,6 +1324,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         };
         const stopSdkTimers = armIdleAbort(res, () => sdkAbort.abort(), {
           firstTokenMs: sdkTimeouts[thinking as string] || 420_000,
+          // A web run is silent while a page is fetched; give it more idle room.
+          ...(sdkWebRun ? { idleMs: 420_000 } : {}),
         });
 
         const engineStream = provider === 'anthropic_sdk' ? sdkStreamToResponse : codexStreamToResponse;
@@ -1231,6 +1339,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               messages,
               signal: sdkAbort.signal,
               sourceManifest: resolved.sourceManifest,
+              tools: sdkWebRun ? tools : undefined,
             },
             res,
             onComplete,
@@ -1996,8 +2105,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
   router.post('/claude/verify-citations', async (req, res) => {
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      if (!hasClaudeEngine()) {
+        res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
         return;
       }
 
@@ -2022,8 +2131,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // module-loader (full corpus), not from the client. Any client-provided module
   // list is ignored (kept in the body for backwards compatibility only).
   router.post('/modules/smart-search', async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(503).json({ error: 'API key not configured' });
+    if (!hasClaudeEngine()) {
+      res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
       return;
     }
 
@@ -2060,24 +2169,26 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
       const candidates = scored.slice(0, MAX_CANDIDATES).map(s => s.m);
 
-      const client = getClient();
       const moduleList = candidates
         .map(m => `- ${m.id}: ${m.label} — ${(m.description ?? '').slice(0, 160)}`)
         .join('\n');
 
-      const response = await client.messages.create({
-        // Wave 3.8: raw-Anthropic site — honours a Claude utility override,
-        // falls back to the default Haiku for non-Anthropic utility models.
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 512,
+      // Through provider-router on the routed utility model — this was a raw
+      // Anthropic client on the metered key, so Home's "Find the right module"
+      // errored on every query on a subscription-only instance.
+      const response = await callChat({
+        model: await getRoutedUtilityModel(db),
         system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
         messages: [{
           role: 'user',
           content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as a JSON array:\n[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]`,
         }],
+        maxTokens: 512,
+        jsonMode: true,
+        db,
       });
 
-      const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '[]';
+      const text = response.text.trim() || '[]';
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 

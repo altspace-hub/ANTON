@@ -94,6 +94,9 @@ export async function resolveKnowledgeSources(
     /** Model-aware token budget (resolveContextBudget in context-budget.ts).
      *  Falls back to the env/900k default when omitted. */
     contextBudget?: number;
+    /** Display name per uploaded path — project files carry a random
+     *  on-disk name, and the model should see "Engagement letter.pdf (project)". */
+    fileLabels?: Record<string, string>;
   },
 ): Promise<ResolvedKnowledge> {
   const result: ResolvedKnowledge = {
@@ -269,10 +272,11 @@ export async function resolveKnowledgeSources(
 
   if (uploadedFilePaths.length > 0) {
     for (const filePath of uploadedFilePaths) {
+      const label = options?.fileLabels?.[filePath] ?? path.basename(filePath);
       if (usedTokens >= effectiveBudget) {
-        console.warn(`[resolver] SKIPPING ${path.basename(filePath)} — budget exhausted (${usedTokens}/${effectiveBudget})`);
-        contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${path.basename(filePath)}`);
-        sourceDetails.push({ type: 'uploaded_file', name: path.basename(filePath), path: filePath, contentHashed: false, note: 'skipped — context budget reached' });
+        console.warn(`[resolver] SKIPPING ${label} — budget exhausted (${usedTokens}/${effectiveBudget})`);
+        contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${label}`);
+        sourceDetails.push({ type: 'uploaded_file', name: label, path: filePath, contentHashed: false, note: 'skipped — context budget reached' });
         continue;
       }
 
@@ -281,13 +285,13 @@ export async function resolveKnowledgeSources(
 
       const tokens = estimateTokens(text);
       contextParts.push(
-        `\n### UPLOADED DOCUMENT: ${path.basename(filePath)}\n\n${text}`
+        `\n### UPLOADED DOCUMENT: ${label}\n\n${text}`
       );
       usedTokens += tokens;
-      result.sourceManifest.push(`${path.basename(filePath)} (uploaded)`);
+      result.sourceManifest.push(`${label} (uploaded)`);
       sourceDetails.push({
         type: 'uploaded_file',
-        name: path.basename(filePath),
+        name: label,
         path: filePath,
         sha256: contentSha256(text),
         charCount: text.length,

@@ -195,9 +195,24 @@ export const TaskMessageSchema = z.object({
   content: z.string().min(1).max(10_000).trim(),
 });
 
+/** One step of a plan the model authored for THIS task (a deliverable, not a UI click). */
+export const TaskPlanStepSchema = z.object({
+  step: z.number().int().min(1).max(20),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  /** A catalogue module whose prompt should run this step. */
+  module_id: z.string().max(120).optional(),
+  /** A seeded ANTON capability (cap-*) this step uses. */
+  capability_id: z.string().max(120).optional(),
+  output_format: z.string().max(120).optional(),
+});
+
 export const TaskSelectApproachSchema = z.object({
   approach_id: z.string().min(1).max(100),
   config: z.record(z.string(), z.unknown()).optional().default({}),
+  /** The proposal's own plan. Persisted with the choice so execution runs
+   *  the steps the user approved, not a template's. */
+  execution_steps: z.array(TaskPlanStepSchema).max(12).optional(),
 });
 
 export const TaskIngestSchema = z.object({

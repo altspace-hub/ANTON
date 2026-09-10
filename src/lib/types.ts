@@ -6,6 +6,7 @@
 
 export type ModelId =
   // Anthropic Claude — latest first
+  | 'claude-fable-5-1'             // 2026-09-07 — Fable 5.1, Mythos-class; adaptive only, xhigh effort
   | 'claude-fable-5'               // 2026-06-10 — top tier above Opus, adaptive only
   | 'claude-opus-5'                // 2026-07-24 — Claude 5 Opus, adaptive only
   | 'claude-sonnet-5'              // 2026-07-24 — Claude 5 Sonnet, adaptive only
@@ -340,7 +341,35 @@ export type StreamEvent =
   | { type: 'phase_start'; phaseIndex: number; phaseName: string; totalPhases: number }
   | { type: 'phase_end'; phaseIndex: number; phaseName: string; durationMs: number; confidenceScore: number | null }
   | { type: 'revelation_chain_id'; chainId: string }
-  | { type: 'compaction'; message: string };
+  | { type: 'compaction'; message: string }
+  | { type: 'context_used'; context: ContextUsed };
+
+/**
+ * Wave 2 (2026-09-08): what one answer was built from — sent as a frame before
+ * the model call and kept on the assistant message's config snapshot, so the
+ * "How ANTON Thought" panel can say which documents, project, lens and
+ * knowledge layers were actually in the prompt rather than what was toggled.
+ */
+export interface ContextUsed {
+  model: string;
+  thinking: string;
+  /** The module answering (open chat lens or the module page). */
+  lens: { moduleId: string; areaId: string | null } | null;
+  project: { id: string; name: string } | null;
+  /** Documents in the prompt: this turn's uploads and the project's files. */
+  documents: Array<{ name: string; chars: number; source: 'upload' | 'project'; skipped?: boolean }>;
+  /** The resolver's source manifest (built-in knowledge, URLs, folders, RAG). */
+  knowledgeSources: string[];
+  ragChunks: number;
+  /** Characters of grounded regulatory pack text injected (0 = none). */
+  packGroundingChars: number;
+  /** Characters of institutional-memory atoms injected (0 = none). */
+  atomChars: number;
+  orgContext: boolean;
+  goalsValues: boolean;
+  resumeContext: boolean;
+  webSearch: boolean;
+}
 
 // ── Claude API Request ─────────────────────────────────────
 

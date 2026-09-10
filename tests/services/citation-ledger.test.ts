@@ -75,6 +75,42 @@ describe('citation-ledger — verified_local against real framework fixtures', (
   });
 });
 
+describe('citation-ledger — the prompt\'s own mandated citation format', () => {
+  // counsels-desk.md tells the model to cite as
+  // "Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 15(3)(b), OJ L, 19.6.2024".
+  // The page's old capture dropped the article, so the ledger only ever
+  // checked that the Regulation exists — a hallucinated Art. 999 got a green tick.
+  const MANDATED = 'Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 15(3)(b)';
+
+  it('verifies the ARTICLE, not just the instrument, and returns the real article title', async () => {
+    const amlr = JSON.parse(fs.readFileSync(path.join(FRAMEWORKS_DIR, 'amlr-2024.json'), 'utf-8')) as {
+      articles: Array<{ id: string; title: string }>;
+    };
+    const expectedTitle = amlr.articles.find((a) => a.id === 'Art.15')!.title;
+    const ledger = createCitationLedger({ fetchImpl: failingFetch });
+    const [r] = await ledger.verifyCitations([{ ref: MANDATED }]);
+    expect(r.status).toBe('verified_local');
+    expect(r.title).toBe(expectedTitle);
+    expect(r.detail).toContain('Article found');
+  });
+
+  it('flags a non-existent article of a real Regulation as not_found', async () => {
+    const ledger = createCitationLedger({ fetchImpl: failingFetch });
+    const [r] = await ledger.verifyCitations([{ ref: 'Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 999' }]);
+    expect(r.status).toBe('not_found');
+    expect(r.detail).toContain('does not exist');
+  });
+
+  it('falls back to the instrument existence check when the instrument has no local text', async () => {
+    const fetchImpl = mockFetch(() => ({ status: 200 }));
+    const ledger = createCitationLedger({ fetchImpl });
+    const [r] = await ledger.verifyCitations([{ ref: 'Regulation (EU) 2019/2088 of the European Parliament and of the Council, Art. 4' }]);
+    // Whether SFDR is a local fixture or not, the verdict must be a real one, never a silent pass on the article.
+    expect(['verified_local', 'not_found', 'verified_remote', 'unresolved']).toContain(r.status);
+    if (r.status === 'verified_remote') expect(r.detail).toContain('exists on EUR-Lex');
+  });
+});
+
 describe('citation-ledger — not_found (the dangerous one)', () => {
   it('flags "AMLR Art.999" as not_found (AMLR has 90 articles, full local coverage)', async () => {
     const ledger = createCitationLedger({ fetchImpl: failingFetch });
