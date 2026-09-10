@@ -14,6 +14,8 @@ interface MarketDataSourceRow {
   last_fetch_at: string | null;
   last_fetch_status: string | null;
   last_fetch_error: string | null;
+  /** Set after an account-level refusal; the source is skipped until then (migration 271). */
+  refused_until?: string | Date | null;
   items_fetched_total: number;
   quality_score: number;
   created_at: string;
@@ -46,6 +48,27 @@ interface WatchlistRow {
 }
 
 // ── Factory ──────────────────────────────────────────────────────────────────
+
+/**
+ * The provider refused the ACCOUNT (401/402/403/429) and nothing was ingested.
+ * Typed so fetchFromSource can put the source on a cooldown instead of letting
+ * every later cycle retry the full symbol list against a closed door.
+ */
+export class ProviderRefusedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ProviderRefusedError';
+  }
+}
+
+/** Hours a refused source waits before it is tried again (config.refusal_cooldown_hours overrides). */
+export const DEFAULT_REFUSAL_COOLDOWN_HOURS = 4;
+/** Symbols per FMP batch-quote request. */
+export const FMP_BATCH_QUOTE_CHUNK = 50;
+/** A symbol whose newest bar is older than this gets its history backfilled (config.backfill_stale_days overrides). */
+export const DEFAULT_BACKFILL_STALE_DAYS = 3;
+/** Backfills per cycle, so a long outage is repaired over a few cycles rather than in one burst (config.backfill_max_per_cycle overrides). */
+export const DEFAULT_BACKFILL_MAX_PER_CYCLE = 40;
 
 export async function createMarketDataService(db: DatabaseAdapter) {
 
@@ -134,10 +157,17 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     metadata?: Record<string, unknown>;
   }) {
     const id = `mdr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // A price bar for a date the source already holds is REPLACED: an intraday
+    // quote written at 16:00 UTC must give way to the closing quote at 20:17,
+    // and a backfilled EOD bar to a fresher one. Every other data type keeps
+    // first-write-wins — a news item is not "fresher" the second time.
+    const onConflict = params.dataType === 'price'
+      ? 'DO UPDATE SET content = EXCLUDED.content, title = EXCLUDED.title, metadata = EXCLUDED.metadata, fetched_at = NOW()'
+      : 'DO NOTHING';
     await db.run(`
       INSERT INTO market_data_raw (id, source_id, data_type, symbol, title, content, published_at, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (source_id, symbol, data_type, published_at) DO NOTHING
+      ON CONFLICT (source_id, symbol, data_type, published_at) ${onConflict}
     `, id, params.sourceId, params.dataType,
        params.symbol ?? null, params.title ?? null, params.content,
        params.publishedAt ?? null, JSON.stringify(params.metadata ?? {}));
@@ -164,7 +194,9 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       await db.run(`
         INSERT INTO market_price_normalized (id, symbol, price_date, open, high, low, close, adjusted_close, volume, source_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT (symbol, price_date, source_id) DO NOTHING
+        ON CONFLICT (symbol, price_date, source_id) DO UPDATE SET
+          open = EXCLUDED.open, high = EXCLUDED.high, low = EXCLUDED.low, close = EXCLUDED.close,
+          adjusted_close = EXCLUDED.adjusted_close, volume = EXCLUDED.volume
       `, normId, symbol, priceDate, open, high, low, close, adjustedClose, volume, sourceId);
     } catch {
       // Non-fatal: price normalization is best-effort
@@ -314,12 +346,23 @@ export async function createMarketDataService(db: DatabaseAdapter) {
   // ── Fetch from Provider ──────────────────────────────────────────────────
   // Dispatches to the right provider adapter based on source config
 
-  async function fetchFromSource(sourceId: string): Promise<{ itemsIngested: number; error?: string }> {
+  async function fetchFromSource(sourceId: string): Promise<{ itemsIngested: number; error?: string; skipped?: boolean }> {
     const source = await getSource(sourceId);
     if (!source) return { itemsIngested: 0, error: 'Source not found' };
 
     let config: Record<string, unknown>;
     try { config = JSON.parse(source.config); } catch { config = {}; }
+
+    // Cooldown (2026-09-10): a source the provider refused waits before it is
+    // tried again. It stays active — a quota resets on its own — but the
+    // hundreds of refused requests a day, and the retries that ate the first
+    // minutes of the next window, are gone.
+    if (source.refused_until) {
+      const until = new Date(source.refused_until);
+      if (!Number.isNaN(until.getTime()) && until.getTime() > Date.now()) {
+        return { itemsIngested: 0, skipped: true, error: `Provider refused the account; waiting until ${until.toISOString()} before trying again` };
+      }
+    }
 
     let itemsIngested = 0;
 
@@ -361,6 +404,17 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       return { itemsIngested };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
+      if (err instanceof ProviderRefusedError) {
+        const hours = Number(config.refusal_cooldown_hours ?? DEFAULT_REFUSAL_COOLDOWN_HOURS) || DEFAULT_REFUSAL_COOLDOWN_HOURS;
+        const until = new Date(Date.now() + hours * 3_600_000).toISOString();
+        await db.run(`
+          UPDATE market_data_sources
+          SET last_fetch_at = NOW(), last_fetch_status = 'error',
+              last_fetch_error = ?, refused_until = ?, updated_at = NOW()
+          WHERE id = ?
+        `, `${message} Skipping this source until ${until}.`, until, sourceId);
+        return { itemsIngested: 0, error: message };
+      }
       await db.run(`
         UPDATE market_data_sources
         SET last_fetch_at = NOW(), last_fetch_status = 'error',
@@ -411,7 +465,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       assertNotRefused(ingested: number): void {
         if (ingested > 0 || seen.size === 0) return;
         const detail = [...seen.entries()].map(([status, count]) => `HTTP ${status} x${count}`).join(', ');
-        throw new Error(
+        throw new ProviderRefusedError(
           `${provider} refused every request and nothing was ingested (${detail}). ` +
           'Check the account plan or daily quota.',
         );
@@ -571,6 +625,30 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     }
   }
 
+  /**
+   * The symbols of a price source whose newest bar is missing or older than
+   * `staleDays` — the ones the per-symbol history call is still worth spending on.
+   */
+  async function symbolsNeedingBackfill(sourceId: string, symbols: string[], staleDays: number): Promise<string[]> {
+    if (symbols.length === 0) return [];
+    const cutoff = new Date(Date.now() - staleDays * 86_400_000).toISOString().slice(0, 10);
+    let newest = new Map<string, string>();
+    try {
+      const rows = await db.all<{ symbol: string; newest: string | Date | null }>(
+        `SELECT symbol, MAX(published_at) AS newest FROM market_data_raw
+         WHERE source_id = ? AND data_type = 'price' GROUP BY symbol`,
+        sourceId,
+      );
+      newest = new Map(rows.map((r) => [r.symbol, r.newest instanceof Date ? r.newest.toISOString().slice(0, 10) : String(r.newest ?? '').slice(0, 10)]));
+    } catch {
+      // Unknown state — treat everything as stale; the per-cycle cap bounds the cost.
+    }
+    return symbols.filter((s) => {
+      const last = newest.get(s);
+      return !last || last < cutoff;
+    });
+  }
+
   async function fetchFMP(sourceId: string, config: Record<string, unknown>): Promise<number> {
     const refusals = createRefusalTracker('FMP');
     const apiKey = config.api_key_env
@@ -583,9 +661,64 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     let ingested = 0;
 
     if (dataType === 'price') {
-      for (const symbol of symbols) {
+      // ── One request for the whole list (2026-09-10) ─────────────────────
+      // This fetch used to pull 30 days of EOD history PER SYMBOL on every
+      // cycle: ~156 requests a cycle across the price sources, several cycles
+      // a day, and the FMP plan was exhausted by mid-morning. A batch quote
+      // carries every symbol's current bar in one request; the per-symbol
+      // history is now a backfill for symbols whose newest bar has gone stale
+      // (an outage, a new symbol), capped per cycle so repair is spread out.
+      const today = new Date().toISOString().slice(0, 10);
+      const quoted = new Set<string>();
+      for (let i = 0; i < symbols.length; i += FMP_BATCH_QUOTE_CHUNK) {
+        const chunk = symbols.slice(i, i + FMP_BATCH_QUOTE_CHUNK);
         await waitForFmpSlot();
-        const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
+        const url = `https://financialmodelingprep.com/stable/batch-quote?symbols=${chunk.map(encodeURIComponent).join(',')}&apikey=${apiKey}`;
+        const response = await fetch(url);
+        await incrementFmpCount();
+        if (!response.ok) { refusals.note(response.status); continue; }
+        const quotes = await response.json() as Array<{
+          symbol?: string; price?: number; open?: number; dayHigh?: number; dayLow?: number;
+          previousClose?: number; volume?: number; timestamp?: number;
+        }>;
+        for (const q of Array.isArray(quotes) ? quotes : []) {
+          if (!q.symbol || typeof q.price !== 'number') continue;
+          const date = typeof q.timestamp === 'number' && q.timestamp > 0
+            ? new Date(q.timestamp * 1000).toISOString().slice(0, 10)
+            : today;
+          await ingestRawData({
+            sourceId, dataType: 'price', symbol: q.symbol,
+            title: `${q.symbol} ${date}`,
+            content: JSON.stringify({
+              date, open: q.open ?? null, high: q.dayHigh ?? null, low: q.dayLow ?? null,
+              close: q.price, adjClose: q.price, volume: q.volume ?? null, previousClose: q.previousClose ?? null,
+            }),
+            publishedAt: date,
+            metadata: { provider: 'fmp', endpoint: 'batch-quote' },
+          });
+          quoted.add(q.symbol);
+          ingested++;
+        }
+      }
+
+      // Backfill: symbols with no bar in the last N days get their history.
+      const staleDays = Number(config.backfill_stale_days ?? DEFAULT_BACKFILL_STALE_DAYS) || DEFAULT_BACKFILL_STALE_DAYS;
+      const maxBackfill = Number(config.backfill_max_per_cycle ?? DEFAULT_BACKFILL_MAX_PER_CYCLE) || DEFAULT_BACKFILL_MAX_PER_CYCLE;
+      const stale = await symbolsNeedingBackfill(sourceId, symbols, staleDays);
+      let backfilled = 0;
+      for (const symbol of stale) {
+        if (backfilled >= maxBackfill) {
+          console.log(`[market-data] FMP backfill capped at ${maxBackfill} symbol(s) this cycle; ${stale.length - backfilled} more wait for the next`);
+          break;
+        }
+        backfilled++;
+        await waitForFmpSlot();
+        // FMP meters bandwidth, not requests ("Bandwidth Limit Reach"). Without
+        // from/to this endpoint returns the symbol's ENTIRE history and the
+        // loop below kept 30 days of it — years of bars downloaded per symbol
+        // per cycle. Ask for the window that is kept.
+        const from = new Date(Date.now() - 45 * 86_400_000).toISOString().slice(0, 10);
+        const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${today}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
         if (!response.ok) { refusals.note(response.status); continue; }
