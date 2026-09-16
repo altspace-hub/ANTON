@@ -368,6 +368,17 @@ try {
   console.warn('[fc] applyEnvOverrides failed:', err instanceof Error ? err.message : err);
 }
 
+// Skills: read the packs under server/skills/ into the synchronous skill index
+// so the prompt composer's resolveSkills() and GET /api/skills see them. Until
+// this ran, only the inline built-ins resolved and a disk pack attached to a
+// session was not injected. A failed load keeps the built-ins and boots.
+try {
+  const { preloadDiskSkills } = await import('./services/skills-manager.js');
+  await preloadDiskSkills();
+} catch (err) {
+  console.warn('[skills-manager] disk skill preload failed — built-in skills only:', err instanceof Error ? err.message : err);
+}
+
 // Initialize workspace root directory
 await ensureWorkspacesRoot();
 

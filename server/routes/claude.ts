@@ -7,7 +7,10 @@ import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../se
 import { runIterativeReasoning, getRevelationChain } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createOutputStore } from '../services/output-store.js';
-import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
+import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } from '../services/prompt-composer.js';
+import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-versions.js';
+import { getModule } from '../services/module-loader.js';
+import { estimateTokens } from '../services/token-estimator.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import type { ResolvedKnowledge } from '../../src/lib/types.js';
@@ -323,6 +326,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // The id is hoisted because it doubles as the deterministic unit for the
       // atom-layer A/B arm assignment (Wave 3.4) further down.
       const userMessageId = sessionId && userMessage ? crypto.randomUUID() : null;
+      // Wave 1: the assistant message id is minted before dispatch and sent to
+      // the page in the "context used" frame, so the answer the user is looking
+      // at carries the same id as its persisted row and run artifact. Before
+      // this the row id was minted inside onComplete and the browser minted its
+      // own at stream end, so the artifact route 404'd until a reload.
+      const assistantMessageId = crypto.randomUUID();
       if (sessionId && userMessage) {
         try {
           await db.run(
@@ -372,11 +381,23 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Inject guided module inputs as a structured context block before the user message
       let finalUserMessage = userMessage;
       if (moduleInputs && typeof moduleInputs === 'object' && Object.keys(moduleInputs as object).length > 0) {
+        // Wave 1: render guided inputs with the module's own field labels and
+        // option labels. Before this the model saw key-derived labels and raw
+        // option values ("Entity Type: bank") although 9,187 of 9,188 options
+        // define a label ("Institution Type: Bank / credit institution").
+        const moduleCfg = moduleId ? await getModule(String(moduleId)).catch(() => undefined) : undefined;
+        const fieldById = new Map((moduleCfg?.guidedInputs ?? []).map((f) => [f.id, f] as const));
         const inputLines = Object.entries(moduleInputs as Record<string, unknown>)
           .filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
           .map(([k, v]) => {
-            const label = k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            const value = Array.isArray(v) ? (v as unknown[]).join(', ') : String(v);
+            const field = fieldById.get(k);
+            const label = field?.label?.trim() || k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const render = (x: unknown): string => {
+              const raw = String(x);
+              const opt = field?.options?.find((o) => o.value === raw);
+              return opt?.label ?? raw;
+            };
+            const value = Array.isArray(v) ? (v as unknown[]).map(render).join(', ') : render(v);
             return `- **${label}:** ${value}`;
           });
         if (inputLines.length > 0) {
@@ -814,15 +835,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           || selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6'
           || selectedModel === 'claude-sonnet-4-5-20250929');
 
+      // Wave 1: one composition for every engine (same block order on the API
+      // and the subscription engine); the parts list feeds the per-layer
+      // hashes in the run artifact and the prompt-version bookkeeping.
+      const composed = await composeSystemPromptParts(promptComposerConfig);
       let composedPrompt: string;
       let staticSystemPrompt: string | undefined;
 
       if (isCachingModel) {
-        const split = await composeSystemPromptSplit(promptComposerConfig);
-        composedPrompt = split.dynamicPart;   // dynamic portion → system string in StreamConfig
-        staticSystemPrompt = split.staticPart; // static portion → cached block
+        composedPrompt = composed.dynamicPart;   // dynamic portion → system string in StreamConfig
+        staticSystemPrompt = composed.staticPart; // static portion → cached block
       } else {
-        composedPrompt = await composeSystemPrompt(promptComposerConfig);
+        composedPrompt = composed.full;
         staticSystemPrompt = undefined;
       }
 
@@ -845,6 +869,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         thinking: String(thinking || 'think_hard'),
         engine: provider,
         effort: resolvedEffort,
+        assistantMessageId: sessionId ? assistantMessageId : null,
         lens: moduleId ? { moduleId: String(moduleId), areaId: areaId ? String(areaId) : null } : null,
         project: projectRow,
         documents: (resolved.sourceDetails ?? [])
@@ -896,9 +921,27 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // or "unknown pricing" rather than "free".
             const costBasis: 'list' | 'free' | 'plan' | 'unknown' =
               isSdkEngineModel || isCodexEngineModel ? 'plan' : isOllamaModel ? 'free' : hasKnownPricing ? 'list' : 'unknown';
+            // Wave 1: content-addressed versions of the prompts this run used —
+            // the module prompt (file or the user's override) and the ground
+            // prompt — so the audit row names the exact text, not "latest".
+            const modulePromptPart = composed.parts.find((p) => p.key === 'layer4_module_prompt');
+            const modulePromptVersion = moduleId && modulePromptPart
+              ? await ensurePromptVersion(db, String(moduleId), modulePromptPart.text, systemPrompt ? 'user-override' : 'system')
+              : null;
+            const foundationVersion = await ensurePromptVersion(db, FOUNDATION_PROMPT_ID, foundationPromptText());
             // Build config snapshot first — used in both INSERT and UPDATE below
             const configSnapshot = {
               model: selectedModel,
+              // Wave 1: what the run was actually built from, pinned.
+              mergedSkills: mergedSkills ?? [],
+              moduleInputs: moduleInputs && typeof moduleInputs === 'object' ? moduleInputs : null,
+              userTurnSha256: sha256Hex(finalUserMessage),
+              modulePromptVersionId: modulePromptVersion?.id ?? null,
+              modulePromptVersion: modulePromptVersion?.version ?? null,
+              modulePromptSha256: modulePromptPart ? sha256Hex(modulePromptPart.text) : null,
+              foundationVersionId: foundationVersion?.id ?? null,
+              guardrailApplied: composed.parts.some((p) => p.key === 'layer4c_guardrail'),
+              provenanceContract: composed.parts.some((p) => p.key === 'layer7_provenance_contract'),
               // Wave 0: engine, resolved effort and the model the engine actually
               // served (a dated snapshot id where the API/SDK reports one).
               engine: provider,
@@ -955,7 +998,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             });
             // Item 1.6: the assistant message id is captured so the run artifact
             // (composed prompt + pinned source manifest) can FK to this exact row.
-            const assistantMessageId = crypto.randomUUID();
+            // (assistantMessageId is minted before dispatch — see the context frame.)
             let messagePersisted = false;
             try {
               await db.run(`INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, cost, model_id, config_snapshot, created_at)
@@ -986,17 +1029,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               const fullComposedPrompt = staticSystemPrompt
                 ? `${staticSystemPrompt}\n\n${composedPrompt}`
                 : composedPrompt;
+              // Wave 0: when the engine hands back the exact string it sent
+              // (the SDK client rewords the web-search instruction after this
+              // route composed the prompt), pin that — not the pre-rewording text.
+              const sentPrompt = data.systemPromptSent ?? fullComposedPrompt;
+              // Wave 1: every layer the composer assembled, each with its own
+              // hash — foundation, profile, style, area, module, guardrail,
+              // personas, skills, output format, contract, transparency, docs —
+              // preceded by the whole string the engine received.
               const layerSummary = buildLayerSummary({
-                'composed_static_layers_1_3_cached': staticSystemPrompt ?? '',
-                [staticSystemPrompt ? 'composed_dynamic' : 'composed_full']: composedPrompt,
-                'layer2a_org_context': orgContextPrompt,
-                'layer2b_knowledge_pack': knowledgePackPrompt,
-                'layer4a_resume_context': resumeContextPrompt,
-                'layer6_atoms': atomLayerPrompt,
-                'goals_values': goalsValuesPrompt,
-                'business_context': businessContext ?? '',
-                'layer6_knowledge_system_additions': resolved.systemPromptAdditions,
-                'layer6_reference_documents': resolved.contextDocuments,
+                composed_full: sentPrompt,
+                ...(staticSystemPrompt ? { composed_static_cached: staticSystemPrompt, composed_dynamic: composedPrompt } : {}),
+                ...Object.fromEntries(composed.parts.map((p) => [p.key, p.text])),
                 // Wave 3.4: the A/B arm rides in the layer summary (entry name
                 // carries the arm — entries store name/chars/sha only).
                 ...(atomArm ? { [`atom_ab_arm_${atomArm}`]: atomArm } : {}),
@@ -1007,10 +1051,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               void writeRunArtifact(db, {
                 messageId: assistantMessageId,
                 sessionId,
-                // Wave 0: when the engine hands back the exact string it sent
-                // (the SDK client rewords the web-search instruction after this
-                // route composed the prompt), pin that — not the pre-rewording text.
-                composedPrompt: data.systemPromptSent ?? fullComposedPrompt,
+                composedPrompt: sentPrompt,
                 layerSummary,
                 sourceManifest,
               });
@@ -1032,15 +1073,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 });
               }
             }
-            // GOV-02: look up current system_prompt version for this module
-            let systemPromptVersionId: string | undefined;
-            if (moduleId) {
-              try {
-                const spRow = await db.get(`SELECT id FROM system_prompts WHERE module_id = ? AND deprecated_at IS NULL ORDER BY created_at DESC LIMIT 1`
-                , moduleId) as { id: string } | undefined;
-                systemPromptVersionId = spRow?.id;
-              } catch { /* non-fatal */ }
-            }
+            // GOV-02 (Wave 1): the exact, content-addressed version row of the
+            // module prompt this run composed — never a "latest row" lookup.
+            const systemPromptVersionId: string | undefined = modulePromptVersion?.id;
             // RATE-04: use async audit queue instead of synchronous write
             enqueueAudit({
               sessionId,
@@ -1721,8 +1756,43 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
-      // Compose the full system prompt
-      const composedPrompt = await composeSystemPrompt({
+      // Wave 1: the preview composes the same layers as a run — org context,
+      // knowledge packs, memory atoms, goals & values, resume and project
+      // context, auto-attached format skills, the guardrail and the provenance
+      // contract — so "what will be sent" is what is sent. The previous preview
+      // omitted seven of those layers. The atom A/B arm is not drawn here: a
+      // preview is not a run.
+      const sessionIdForPreview = typeof req.body.sessionId === 'string' && req.body.sessionId ? req.body.sessionId : undefined;
+      const userMessageForPreview =
+        typeof req.body.userMessage === 'string' ? req.body.userMessage
+        : typeof req.body.message === 'string' ? req.body.message
+        : '';
+      const previewUserId = (req as { user?: { id?: string } }).user?.id || 'default';
+      const [orgContextPrompt, knowledgePackPrompt, goalsValuesPrompt, resumeContextPrompt] = await Promise.all([
+        buildOrgContextLayer(db, previewUserId),
+        buildKnowledgePackLayer(db, { areaId, moduleId, userMessage: userMessageForPreview }),
+        temporalReasoning.buildGoalsValuesLayer(previewUserId, areaId || 'general'),
+        sessionIdForPreview ? buildResumeContextLayer(db, sessionIdForPreview) : Promise.resolve(''),
+      ]);
+      const atomLayerPrompt = req.body.atomInjectionEnabled !== false
+        ? await buildAtomLayer(db, areaId, moduleId, userMessageForPreview, sessionIdForPreview ?? null)
+        : '';
+      let projectContextPrompt = '';
+      if (sessionIdForPreview) {
+        try {
+          const previewProject = await db.get(
+            'SELECT p.id FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
+            sessionIdForPreview,
+          ) as { id: string } | undefined;
+          if (previewProject) projectContextPrompt = await buildProjectContextSummary(db, previewProject.id, sessionIdForPreview);
+        } catch { /* enrichment only */ }
+      }
+      const previewAutoSkills = getAutoAttachSkillIds(Array.isArray(req.body.outputFormats) ? req.body.outputFormats : []);
+      const previewSkills = Array.isArray(selectedSkills)
+        ? [...new Set([...(selectedSkills as string[]), ...previewAutoSkills])]
+        : previewAutoSkills.length > 0 ? previewAutoSkills : undefined;
+
+      const composed = await composeSystemPromptParts({
         moduleId,
         areaId,
         systemPromptOverride: systemPrompt,
@@ -1731,7 +1801,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         outputInstruction,
         plainTextMode: !!plainTextMode,
         selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
-        selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : undefined,
+        selectedSkills: previewSkills,
         multiPerspective: !!multiPerspective,
         metaCognitiveEnabled: !!metaCognitiveEnabled,
         structureReference,
@@ -1745,17 +1815,25 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgeSystemAdditions: resolved.systemPromptAdditions,
         knowledgeContextDocuments: resolved.contextDocuments,
         userProfile: userProfile || null,
+        orgContextPrompt: orgContextPrompt || undefined,
+        knowledgePackPrompt: knowledgePackPrompt || undefined,
+        atomLayerPrompt: atomLayerPrompt || undefined,
+        resumeContextPrompt: resumeContextPrompt || undefined,
+        projectContextPrompt: projectContextPrompt || undefined,
+        goalsValuesPrompt: goalsValuesPrompt || undefined,
       });
-
-      // Estimate tokens (~4 chars per token)
-      const estimatedTokens = Math.ceil(composedPrompt.length / 4);
+      const composedPrompt = composed.full;
 
       res.json({
         prompt: composedPrompt,
-        estimatedTokens,
+        // The same estimator the run's context budget uses, not chars/4.
+        estimatedTokens: estimateTokens(composedPrompt),
         knowledgeTokenEstimate: resolved.tokenEstimate,
         sourceManifest: resolved.sourceManifest,
-        model: model || 'claude-opus-4-8',
+        model: model || getEffectiveDefaultModel() || null,
+        layers: composed.parts.map((p) => ({ key: p.key, chars: p.text.length, cacheable: p.cacheable })),
+        staticChars: composed.staticPart.length,
+        dynamicChars: composed.dynamicPart.length,
       });
     } catch (error) {
       res.status(500).json({ error: safeError(error) });

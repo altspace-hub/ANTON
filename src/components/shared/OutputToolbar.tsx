@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, ThumbsDown, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom } from 'lucide-react';
+import { Search, Sparkles, Brain, Puzzle, ThumbsUp, ThumbsDown, Check, Loader2, ShieldCheck, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
 import FeedbackWidget from '@/components/shared/FeedbackWidget';
 import ModelSelector from '@/components/shared/ModelSelector';
 import RerunComparison, { type RerunComparisonData } from '@/components/shared/RerunComparison';
-import { fetchPromptPreview, createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate } from '@/lib/api';
-import { buildOutputInstruction } from '@/lib/output-format-definitions';
+import ProvenancePanel from '@/components/shared/ProvenancePanel';
+import { createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate } from '@/lib/api';
 import type { ModelId, ContextUsed } from '@/lib/types';
-import { MODULES } from '@/lib/constants';
 
 // ── Types ────────────────────────────────────────────────────
 
-type PanelId = 'citations' | 'review' | 'thinking' | 'prompt' | 'feedback' | 'save' | 'trust' | 'trail' | 'history' | 'rerun' | 'exportRun' | null;
+type PanelId = 'citations' | 'review' | 'thinking' | 'feedback' | 'save' | 'trust' | 'provenance' | 'history' | 'rerun' | 'exportRun' | null;
 
 interface OutputToolbarProps {
   /** The last assistant output text (for citations & review) */
@@ -82,14 +81,13 @@ interface DistilledExample { user: string; assistant: string }
 
 const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentType<{ className?: string }>; streamingOnly?: boolean }> = [
   { id: 'trust', label: 'Trust Score', icon: ShieldCheck },
-  { id: 'trail', label: 'How ANTON Thought', icon: Layers },
+  { id: 'provenance', label: 'Provenance', icon: Layers },
   { id: 'citations', label: 'Citations', icon: Search },
   { id: 'review', label: 'Review', icon: Sparkles },
   { id: 'thinking', label: 'Thinking', icon: Brain, streamingOnly: false },
   { id: 'history', label: 'History', icon: History },
   { id: 'rerun', label: 'Rerun with…', icon: GitCompare },
   { id: 'exportRun', label: 'Export run', icon: FileDown },
-  { id: 'prompt', label: 'Full Prompt', icon: ClipboardList },
   { id: 'feedback', label: 'Feedback', icon: ThumbsUp },
   { id: 'save', label: 'Save', icon: Puzzle },
 ];
@@ -101,85 +99,16 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     outputContent, model, sessionId, isStreaming,
     streamingThinking, thinkingContent,
     moduleId, areaId, systemPrompt, creativity, thinking,
-    plainTextMode, selectedPersonas, selectedSkills,
+    selectedPersonas, selectedSkills,
     multiPerspective, metaCognitiveEnabled, structureReference,
-    transparencyLevel, writingTone, emojiEnabled,
-    audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
+    transparencyLevel, writingTone,
+    audience, channel, outputLanguage,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
     configSnapshot, contextUsed, sourceManifest, rerunOf, conversation,
   } = props;
 
-  // Derive trail display values — prefer per-message configSnapshot over live store state
-  const snap = configSnapshot ?? {};
-  const trailModel      = (snap.model as string)                ?? model;
-  const trailThinking   = (snap.thinking as string)             ?? thinking ?? 'quick';
-  const trailCreativity = (snap.creativity as string)           ?? creativity ?? 'balanced';
-  const trailTransp     = (snap.transparencyLevel as 0 | 1 | 2) ?? transparencyLevel ?? 0;
-  const trailTone       = (snap.writingTone as string)          ?? writingTone;
-  const trailAudience   = (snap.audience as string)             ?? audience;
-  const trailChannel    = (snap.channel as string)              ?? channel;
-  const trailLang       = (snap.outputLanguage as string)       ?? outputLanguage;
-  const trailPersonas   = (snap.selectedPersonas as string[])   ?? selectedPersonas;
-  const trailSkills     = (snap.selectedSkills as string[])     ?? selectedSkills;
-  const trailMeta       = (snap.metaCognitiveEnabled as boolean) ?? metaCognitiveEnabled;
-  const trailMultiPersp = (snap.multiPerspective as boolean)    ?? multiPerspective;
-  const trailStructRef  = (snap.structureReference as typeof structureReference) ?? structureReference;
-  // Wave 2: what was actually in the prompt — the persisted snapshot after a
-  // reload, the live frame during and right after the run.
-  const trailContext    = ((snap.contextUsed as ContextUsed | undefined) ?? contextUsed) ?? null;
-  const contextRows: { label: string; value: string; color: string }[] = [];
-  if (trailContext) {
-    // Wave 0: which engine did the work, how hard it was asked to think, and
-    // the model id it reported — the ledger's answer to "what actually ran".
-    if (trailContext.engine) {
-      const engineLabel =
-        trailContext.engine === 'anthropic_sdk' ? 'Claude subscription'
-        : trailContext.engine === 'openai_codex' ? 'Codex subscription'
-        : trailContext.engine === 'anthropic' ? 'Anthropic API'
-        : trailContext.engine;
-      contextRows.push({
-        label: 'Engine',
-        value: `${engineLabel}${trailContext.effort ? ` · effort ${trailContext.effort}` : ''}`,
-        color: 'text-adv-gray',
-      });
-    }
-    if (trailContext.modelServed) {
-      contextRows.push({ label: 'Model served', value: trailContext.modelServed, color: 'text-adv-gray' });
-    }
-    if (trailContext.lens) {
-      const mod = MODULES.find((m) => m.id === trailContext.lens?.moduleId);
-      contextRows.push({ label: 'Answering as', value: mod?.label ?? trailContext.lens.moduleId, color: 'text-adv-teal' });
-    }
-    if (trailContext.project) contextRows.push({ label: 'Project', value: trailContext.project.name, color: 'text-adv-teal' });
-    const docs = trailContext.documents ?? [];
-    if (docs.length > 0) {
-      const used = docs.filter((d) => !d.skipped);
-      const skipped = docs.length - used.length;
-      contextRows.push({
-        label: 'Documents',
-        value: `${used.map((d) => d.name).join(', ')}${skipped > 0 ? ` (+${skipped} skipped — budget)` : ''}`,
-        color: 'text-adv-off-white',
-      });
-    }
-    const otherSources = (trailContext.knowledgeSources ?? []).filter((s) => !/\(uploaded\)$/.test(s));
-    if (otherSources.length > 0) contextRows.push({ label: 'Knowledge', value: otherSources.join(', '), color: 'text-adv-gray' });
-    if (trailContext.ragChunks > 0) contextRows.push({ label: 'Retrieved', value: `${trailContext.ragChunks} passage${trailContext.ragChunks === 1 ? '' : 's'}`, color: 'text-adv-gray' });
-    if (trailContext.packGroundingChars > 0) contextRows.push({ label: 'Regulatory text', value: `~${Math.round(trailContext.packGroundingChars / 4).toLocaleString('en-GB')} tokens grounded`, color: 'text-adv-gray' });
-    if (trailContext.atomChars > 0) contextRows.push({ label: 'Memory', value: `~${Math.round(trailContext.atomChars / 4).toLocaleString('en-GB')} tokens of institutional memory`, color: 'text-adv-gray' });
-    if (trailContext.webSearch) contextRows.push({ label: 'Web search', value: 'Available to the model', color: 'text-adv-teal' });
-    if (trailContext.goalsValues) contextRows.push({ label: 'Goals & values', value: 'Applied', color: 'text-adv-gray' });
-    if (trailContext.resumeContext) contextRows.push({ label: 'Resumed', value: 'Earlier session context carried', color: 'text-adv-gray' });
-    if (contextRows.length === 0) contextRows.push({ label: 'Context', value: 'Your message and the conversation only', color: 'text-adv-gray' });
-  }
-
   const [activePanel, setActivePanel] = useState<PanelId>(null);
-
-  // Full Prompt state
-  const [promptText, setPromptText] = useState('');
-  const [promptTokens, setPromptTokens] = useState(0);
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptCopied, setPromptCopied] = useState(false);
 
   // Save module state
   const [saveModuleName, setSaveModuleName] = useState('');
@@ -316,49 +245,6 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const hasThinkingContent = !!(streamingThinking || thinkingContent);
   const isStreamingThinking = isStreaming && !!streamingThinking;
   const displayThinking = isStreaming ? streamingThinking : thinkingContent;
-
-  // ── Full Prompt fetch ──────────────────────────────────────
-
-  const handleLoadPrompt = async () => {
-    setPromptLoading(true);
-    try {
-      const result = await fetchPromptPreview({
-        model,
-        thinking,
-        creativity,
-        moduleId,
-        areaId,
-        systemPrompt,
-        outputInstruction: buildOutputInstruction(selectedOutputFormats) || undefined,
-        plainTextMode,
-        selectedPersonas,
-        selectedSkills,
-        multiPerspective,
-        metaCognitiveEnabled,
-        structureReference,
-        transparencyLevel,
-        writingTone,
-        emojiEnabled,
-        audience,
-        channel,
-        outputLanguage,
-        knowledgeSources,
-        uploadedFileIds,
-      });
-      setPromptText(result.prompt);
-      setPromptTokens(result.estimatedTokens);
-    } catch {
-      setPromptText('Failed to load prompt. Please try again.');
-    } finally {
-      setPromptLoading(false);
-    }
-  };
-
-  const handleCopyPrompt = async () => {
-    await navigator.clipboard.writeText(promptText);
-    setPromptCopied(true);
-    setTimeout(() => setPromptCopied(false), 2000);
-  };
 
   // ── Rerun with… (Wave 2.3) ─────────────────────────────────
 
@@ -522,7 +408,8 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           const isThinkingChip = chip.id === 'thinking';
           const isFeedbackChip = chip.id === 'feedback';
           const isFeedbackDone = isFeedbackChip && feedbackDone;
-          const disabled = (isStreaming && !isThinkingChip) || ((chip.id === 'rerun' || chip.id === 'exportRun') && !sessionId);
+          const isProvenanceChip = chip.id === 'provenance';
+          const disabled = (isStreaming && !isThinkingChip && !isProvenanceChip) || ((chip.id === 'rerun' || chip.id === 'exportRun') && !sessionId);
 
           return (
             <button
@@ -609,56 +496,20 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </div>
           )}
 
-          {/* ── Full Prompt Panel ─────────────────────────── */}
-          {activePanel === 'prompt' && (
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-medium text-adv-off-white">Composed System Prompt</span>
-                <div className="flex items-center gap-2">
-                  {promptTokens > 0 && (
-                    <span className="text-[11px] text-adv-gray">
-                      ~{promptTokens.toLocaleString()} tokens
-                    </span>
-                  )}
-                  {promptText && (
-                    <button
-                      onClick={handleCopyPrompt}
-                      className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors"
-                    >
-                      {promptCopied ? <Check className="h-3 w-3 text-adv-green" /> : <Copy className="h-3 w-3" />}
-                      {promptCopied ? 'Copied' : 'Copy'}
-                    </button>
-                  )}
-                  <button
-                    onClick={handleLoadPrompt}
-                    disabled={promptLoading}
-                    className="flex items-center gap-1 rounded-md bg-adv-teal/10 border border-adv-teal/30 px-2.5 py-1 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
-                  >
-                    {promptLoading ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
-                    )}
-                    {promptText ? 'Refresh' : 'Load Prompt'}
-                  </button>
-                </div>
-              </div>
-              {promptText ? (
-                <pre className="rounded-lg bg-adv-dark p-3 text-xs text-adv-gray font-mono whitespace-pre-wrap leading-relaxed">
-                  {promptText}
-                </pre>
-              ) : (
-                <div className="rounded-lg bg-adv-dark p-4 text-center">
-                  <ClipboardList className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
-                  <p className="text-sm text-adv-gray">
-                    Click &quot;Load Prompt&quot; to see the full system prompt being sent to Claude.
-                  </p>
-                  <p className="mt-1 text-xs text-adv-gray">
-                    This includes all layers: foundation, module prompt, personas, skills, output format instructions, and knowledge sources.
-                  </p>
-                </div>
-              )}
-            </div>
+          {/* ── Provenance Panel (Wave 1 — explainability contract) ── */}
+          {activePanel === 'provenance' && (
+            <ProvenancePanel
+              sessionId={sessionId}
+              outputContent={outputContent}
+              isStreaming={isStreaming}
+              configSnapshot={configSnapshot ?? null}
+              contextUsed={contextUsed ?? null}
+              sourceNames={sourceManifest}
+              live={{
+                model, thinking, creativity, transparencyLevel, writingTone, audience, channel, outputLanguage,
+                selectedPersonas, selectedSkills, metaCognitiveEnabled, multiPerspective, structureReference,
+              }}
+            />
           )}
 
           {/* ── Rerun with… Panel (Wave 2.3) ──────────────── */}
@@ -1124,38 +975,6 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </div>
           )}
 
-          {/* ── How ANTON Thought Panel ───────────────────── */}
-          {activePanel === 'trail' && (
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <Layers className="h-4 w-4 text-adv-teal" />
-                <span className="text-xs font-medium text-adv-off-white">How ANTON Thought</span>
-              </div>
-              <div className="space-y-1.5">
-                {([
-                  { label: 'Model', value: trailModel, color: 'text-adv-blue' },
-                  { label: 'Thinking', value: trailThinking, color: 'text-adv-teal' },
-                  { label: 'Creativity', value: trailCreativity, color: 'text-adv-teal' },
-                  { label: 'Transparency', value: `Level ${trailTransp}`, color: 'text-adv-gray' },
-                  ...(trailTone ? [{ label: 'Tone', value: trailTone, color: 'text-adv-gray' }] : []),
-                  ...(trailAudience ? [{ label: 'Audience', value: trailAudience, color: 'text-adv-gray' }] : []),
-                  ...(trailChannel ? [{ label: 'Channel', value: trailChannel, color: 'text-adv-gray' }] : []),
-                  ...(trailLang && trailLang !== 'en' ? [{ label: 'Language', value: trailLang, color: 'text-adv-gray' }] : []),
-                  ...(trailPersonas && trailPersonas.length > 0 ? [{ label: 'Personas', value: trailPersonas.join(', '), color: 'text-adv-gold' }] : []),
-                  ...(trailSkills && trailSkills.length > 0 ? [{ label: 'Skills', value: trailSkills.join(', '), color: 'text-adv-gold' }] : []),
-                  ...(trailMultiPersp ? [{ label: 'Multi-Perspective', value: 'Enabled', color: 'text-adv-teal' }] : []),
-                  ...(trailMeta ? [{ label: 'Meta-Cognitive', value: 'Enabled', color: 'text-adv-teal' }] : []),
-                  ...(trailStructRef ? [{ label: 'Structure Ref', value: trailStructRef.mode + (trailStructRef.fileName ? ` · ${trailStructRef.fileName}` : ''), color: 'text-adv-gray' }] : []),
-                  ...contextRows,
-                ] as { label: string; value: string; color: string }[]).map(({ label, value, color }) => (
-                  <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-adv-dark px-3 py-2">
-                    <span className="shrink-0 text-[11px] text-adv-gray">{label}</span>
-                    <span className={`max-w-[60%] truncate text-right text-[11px] font-medium ${color}`} title={value}>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

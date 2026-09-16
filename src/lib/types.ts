@@ -359,6 +359,9 @@ export interface ContextUsed {
   effort?: string | null;
   /** Wave 0: the model id the engine reported it served (known after the run). */
   modelServed?: string | null;
+  /** Wave 1: the id the assistant message will be persisted under (null when
+   *  the run has no session), so the live answer and its run artifact agree. */
+  assistantMessageId?: string | null;
   /** The module answering (open chat lens or the module page). */
   lens: { moduleId: string; areaId: string | null } | null;
   project: { id: string; name: string } | null;
@@ -466,6 +469,25 @@ export interface HealthStatus {
   version: string;
 }
 
+// ── Skills ─────────────────────────────────────────────────
+
+/**
+ * One entry of GET /api/skills — a built-in or a server/skills/ disk pack — as
+ * the list endpoint returns it: without the prompt body (GET /api/skills/:id
+ * carries it). Mirrors `Skill` in server/services/skills-manager.ts.
+ */
+export interface SkillSummary {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  category: string;
+  tags: string[];
+  applicableAreas?: string[];
+  source?: 'builtin' | 'disk';
+}
+
 // ── Knowledge Library ──────────────────────────────────────
 
 export interface KnowledgeLibraryEntry {
@@ -480,4 +502,92 @@ export interface KnowledgeLibraryEntry {
   file_count: number;
   word_count: number;
   created_at: string;
+}
+
+// ── Provenance (Wave 1 — the explainability contract) ──────
+// Shapes verified against server/routes/claude.ts (GET
+// /sessions/:sessionId/messages/:messageId/artifacts, ~L2246),
+// server/services/run-artifact-writer.ts (LayerSummaryEntry) and
+// server/routes/embeddings.ts (GET /embeddings/feedback/:sessionId, ~L352).
+
+/** One entry of run_artifacts.layer_summary — name, size and pin of a prompt layer. */
+export interface RunArtifactLayer {
+  layer: string;
+  chars: number;
+  sha256: string;
+}
+
+/**
+ * One entry of run_artifacts.source_manifest. The resolver writes
+ * ResolvedSourceDetail rows; the name-only fallback writes
+ * `{ type: 'summary', name, contentHashed: false }` — so every field but
+ * type/name is optional here.
+ */
+export interface RunArtifactSource {
+  type: string;
+  name: string;
+  path?: string;
+  url?: string;
+  sha256?: string;
+  charCount?: number;
+  retrievedAt?: string;
+  contentHashed?: boolean;
+  note?: string;
+}
+
+/** The persisted run record for one assistant message (run_artifacts row). */
+export interface RunArtifact {
+  id: string;
+  message_id: string;
+  session_id: string | null;
+  /** The system prompt as sent — capped at 2 MB in storage (see `truncated`). */
+  composed_prompt: string;
+  /** sha256 of the FULL prompt, even when the stored text is truncated. */
+  prompt_sha256: string;
+  prompt_chars: number;
+  truncated: boolean;
+  layer_summary: RunArtifactLayer[];
+  source_manifest: RunArtifactSource[];
+  created_at: string;
+}
+
+/** One injected institutional-memory atom with its retrieval score (retrieval_feedback ⋈ knowledge_atoms). */
+export interface InjectedAtomRow {
+  atom_id: string;
+  retrieval_method: string;
+  retrieval_score: number;
+  injected_at: string;
+  was_relevant: number | null;
+  content: string;
+  atom_type: string;
+  category: string;
+  confidence: number;
+}
+
+/** The message row as GET /api/sessions/:id returns it (only the fields provenance reads). */
+export interface PersistedAssistantMessageRow {
+  id: string;
+  role: 'user' | 'assistant';
+  token_count: number | null;
+  config_snapshot: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/** One layer of a previewed prompt (POST /api/claude/preview-prompt → layers[]). */
+export interface PromptPreviewLayer {
+  key: string;
+  chars: number;
+  cacheable: boolean;
+}
+
+/** What POST /api/claude/preview-prompt returns (layers / staticChars / dynamicChars are the 2026-09-16 additions). */
+export interface PromptPreviewResult {
+  prompt: string;
+  estimatedTokens: number;
+  knowledgeTokenEstimate: number;
+  sourceManifest: string[];
+  model: string;
+  layers?: PromptPreviewLayer[];
+  staticChars?: number;
+  dynamicChars?: number;
 }

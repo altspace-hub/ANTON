@@ -7,7 +7,11 @@
  * Two sources:
  * 1. BUILT_IN_SKILLS — defined inline below (synchronous, always available)
  * 2. Disk skills — loaded from server/skills/{id}/skill.json + skill-content.md
- *    These are loaded lazily on first async call and merged with built-ins.
+ *    `preloadDiskSkills()` (called once at server boot from server/index.ts)
+ *    reads them into an in-memory index so that the SYNCHRONOUS resolvers the
+ *    prompt composer and the routes use — getSkillById / getAllSkills /
+ *    resolveSkills — see disk packs too. Before preload, only built-ins resolve.
+ *    Built-ins win on an id clash.
  */
 
 import path from 'path';
@@ -17,13 +21,29 @@ import { fileURLToPath } from 'url';
 const __dirname_skills = path.dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = path.join(__dirname_skills, '..', 'skills');
 
+/**
+ * Every category a skill may declare. The last two come from the disk packs
+ * under server/skills/ (`technical`: AAOIFI / IFSB standards; `thematic`:
+ * crop database, livestock diseases) — a skill.json category outside this list
+ * is loaded as `domain` with a warning rather than dropped.
+ */
+export const SKILL_CATEGORIES = [
+  'language', 'communication', 'methodology', 'domain', 'style', 'jurisdiction', 'technical', 'thematic',
+] as const;
+
+export type SkillCategory = typeof SKILL_CATEGORIES[number];
+
+export function isSkillCategory(value: unknown): value is SkillCategory {
+  return typeof value === 'string' && (SKILL_CATEGORIES as readonly string[]).includes(value);
+}
+
 export interface Skill {
   id: string;
   name: string;
   description: string;
   version: string;
   author: string;
-  category: 'language' | 'communication' | 'methodology' | 'domain' | 'style' | 'jurisdiction';
+  category: SkillCategory;
   tags: string[];
   applicableAreas?: string[];
   prompt: string;  // Injected as Layer 5 in PromptComposer
@@ -943,8 +963,53 @@ export function getBuiltInSkills(): Skill[] {
   return _cachedSkills;
 }
 
+/**
+ * Disk packs, once `preloadDiskSkills()` has run. Keyed by id; a built-in with
+ * the same id shadows the disk entry (see getSkillById).
+ */
+let _diskSkillIndex: Map<string, Skill> | null = null;
+
+/** True once the disk packs have been read into the synchronous index. */
+export function isDiskSkillsPreloaded(): boolean {
+  return _diskSkillIndex !== null;
+}
+
+/**
+ * Read every server/skills/{id} pack into the in-memory index the synchronous
+ * resolvers consult. Idempotent. Called once at server start; a failure is the
+ * caller's to log — the built-ins keep working either way.
+ * Returns the number of disk packs indexed.
+ */
+export async function preloadDiskSkills(): Promise<number> {
+  const disk = await loadDiskSkills();
+  const index = new Map<string, Skill>();
+  for (const skill of disk) {
+    if (!skill.id) continue;
+    if (index.has(skill.id)) {
+      console.warn(`[skills-manager] duplicate disk skill id '${skill.id}' — keeping the first one loaded`);
+      continue;
+    }
+    index.set(skill.id, skill);
+  }
+  _diskSkillIndex = index;
+  return index.size;
+}
+
+/** Synchronous — built-ins first, then the preloaded disk packs. */
 export function getSkillById(id: string): Skill | undefined {
-  return getBuiltInSkills().find((s) => s.id === id);
+  return getBuiltInSkills().find((s) => s.id === id) ?? _diskSkillIndex?.get(id);
+}
+
+/**
+ * Synchronous — every skill the resolver can see right now: built-ins plus the
+ * preloaded disk packs (minus any disk id shadowed by a built-in).
+ */
+export function getAllSkills(): Skill[] {
+  const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
+  if (!_diskSkillIndex || _diskSkillIndex.size === 0) return builtins;
+  const builtinIds = new Set(builtins.map((s) => s.id));
+  const disk = [..._diskSkillIndex.values()].filter((s) => !builtinIds.has(s.id));
+  return [...builtins, ...disk];
 }
 
 /**
@@ -999,8 +1064,10 @@ export function getAutoAttachSkillIds(outputFormats: string[]): string[] {
 }
 
 // ── Disk-based skills ─────────────────────────────────────────
-// Loaded from server/skills/{id}/skill.json + skill-content.md
-// Merged with built-ins on first async request (disk overrides built-in on ID clash).
+// Loaded from server/skills/{id}/skill.json + skill-content.md.
+// `preloadDiskSkills()` above feeds them into the synchronous index; the
+// async helpers below preload on demand and then defer to the sync resolvers,
+// so both paths apply one precedence rule (built-in wins on an id clash).
 
 let _diskSkillsCache: Skill[] | null = null;
 
@@ -1041,13 +1108,22 @@ async function loadDiskSkills(): Promise<Skill[]> {
         ? (await fs.readFile(contentPath, 'utf-8')).trim()
         : '';
 
+      let category: SkillCategory = 'domain';
+      if (raw.category === undefined) {
+        // no category declared — 'domain' is the documented default
+      } else if (isSkillCategory(raw.category)) {
+        category = raw.category;
+      } else {
+        console.warn(`[skills-manager] ${entry.name}/skill.json declares unknown category '${raw.category}' — loaded as 'domain' (known: ${SKILL_CATEGORIES.join(', ')})`);
+      }
+
       diskSkills.push({
         id: raw.id,
         name: raw.label ?? raw.name ?? raw.id,
         description: raw.description ?? '',
         version: raw.version ?? '1.0.0',
         author: raw.author ?? 'openEXPERT',
-        category: (raw.category as Skill['category']) ?? 'domain',
+        category,
         tags: raw.tags ?? [],
         applicableAreas: raw.applicableAreas,
         prompt,
@@ -1064,38 +1140,36 @@ async function loadDiskSkills(): Promise<Skill[]> {
 }
 
 /**
- * Returns all skills — built-ins merged with disk skills.
- * Disk skills override built-ins with the same ID.
+ * Returns all skills — built-ins merged with disk skills — preloading the disk
+ * packs first if server start has not done so yet (tests, ad-hoc scripts).
  */
 export async function getAllSkillsAsync(): Promise<Skill[]> {
-  const disk = await loadDiskSkills();
-  const diskIds = new Set(disk.map((s) => s.id));
-  const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
-  return [...builtins.filter((s) => !diskIds.has(s.id)), ...disk];
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return getAllSkills();
 }
 
 /**
- * Get a skill by ID — checks disk skills first, then built-ins.
+ * Get a skill by ID, preloading the disk packs on demand.
  */
 export async function getSkillByIdAsync(id: string): Promise<Skill | undefined> {
-  const all = await getAllSkillsAsync();
-  return all.find((s) => s.id === id);
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return getSkillById(id);
 }
 
 /**
- * Resolve skill IDs including disk skills.
+ * Resolve skill IDs, preloading the disk packs on demand.
  */
 export async function resolveSkillsAsync(skillIds: string[]): Promise<string> {
-  if (!skillIds || skillIds.length === 0) return '';
-  const all = await getAllSkillsAsync();
-  const index = new Map(all.map((s) => [s.id, s]));
-  const skills = skillIds.map((id) => index.get(id)).filter(Boolean) as Skill[];
-  if (skills.length === 0) return '';
-  if (skills.length === 1) return skills[0].prompt;
-  return skills.map((s) => s.prompt).join('\n\n---\n\n');
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return resolveSkills(skillIds);
 }
 
+/**
+ * Drop every cache, including the preloaded disk index — after this only the
+ * built-ins resolve until `preloadDiskSkills()` runs again.
+ */
 export function invalidateSkillCache(): void {
   _diskSkillsCache = null;
+  _diskSkillIndex = null;
   _cachedSkills = null;
 }

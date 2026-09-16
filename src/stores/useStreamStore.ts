@@ -211,7 +211,9 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         const fullThinking = state.streamingThinking + _thinkBuf;
         _textBuf = ''; _thinkBuf = '';
         const message: Message = {
-          id: crypto.randomUUID(),
+          // Wave 1: use the id the server persists the row under (sent in the
+          // context frame) so the run artifact resolves without a reload.
+          id: state.lastContextUsed?.assistantMessageId || crypto.randomUUID(),
           sessionId: sessionId || '',
           role: 'assistant',
           content: fullText,

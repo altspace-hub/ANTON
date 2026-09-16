@@ -17,6 +17,7 @@ import StatusIndicator from '@/components/shared/StatusIndicator';
 import FileUploader from '@/components/shared/FileUploader';
 import ExportBar from '@/components/shared/ExportBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
+import { PromptPreviewChip } from '@/components/shared/ProvenancePanel';
 import TransformPanel from '@/components/shared/TransformPanel';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
@@ -1040,10 +1041,25 @@ export default function PromptPage() {
           )}
         </div>
       </div>
-      <div className="mt-1.5 flex items-center justify-between">
-        <p className="text-xs text-adv-gray">
-          Ctrl+Enter to send · <Paperclip className="inline h-3 w-3" /> to attach documents · ✦ to improve prompt
-        </p>
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-xs text-adv-gray">
+            Ctrl+Enter to send · <Paperclip className="inline h-3 w-3" /> to attach documents · ✦ to improve prompt
+          </p>
+          {/* Wave 1: the prompt a send would carry right now — lens-aware, same fields as Run */}
+          <PromptPreviewChip
+            disabled={isStreaming || lensBusy}
+            config={{
+              model, thinking, creativity, moduleId: 'open-chat', systemPrompt: currentSystemPrompt,
+              selectedOutputFormats, plainTextMode, selectedPersonas, selectedSkills, multiPerspective,
+              metaCognitiveEnabled, structureReference, transparencyLevel, writingTone, emojiEnabled,
+              nativeReasoningEnabled, atomInjectionEnabled, audience, channel, outputLanguage,
+              knowledgeSources: knowledgeSources as unknown as Record<string, unknown>,
+              uploadedFileIds, sessionId, userMessage: userInput,
+              lens: lens ? { moduleId: lens.moduleId, areaId: lens.areaId } : null,
+            }}
+          />
+        </div>
         {!isStreaming && userInput.trim() && (
           <div className="flex items-center gap-1 text-[11px] text-adv-gray">
             <Coins className="h-3 w-3" />

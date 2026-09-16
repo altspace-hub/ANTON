@@ -1,4 +1,4 @@
-import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent } from './types';
+import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent, RunArtifact, InjectedAtomRow, PersistedAssistantMessageRow, SkillSummary } from './types';
 import { safeStorage } from './safe-storage';
 
 export const API_BASE = '/api';
@@ -558,6 +558,13 @@ export async function fetchSkills() {
   const res = await fetch(`${API_BASE}/skills`, { headers: { ...getAuthHeader() } });
   if (!res.ok) return [];
   return res.json();
+}
+
+/** One skill with its prompt body — the list endpoint above omits prompts. */
+export async function fetchSkill(id: string): Promise<(SkillSummary & { prompt: string }) | null> {
+  const res = await fetch(`${API_BASE}/skills/${encodeURIComponent(id)}`, { headers: { ...getAuthHeader() } });
+  if (!res.ok) return null;
+  return res.json() as Promise<SkillSummary & { prompt: string }>;
 }
 
 export async function fetchCommunitySkills() {
@@ -1307,4 +1314,63 @@ export async function suggestMarketTemplates(question: string) {
   });
   if (!res.ok) throw new Error('Template suggestion failed');
   return res.json();
+}
+
+// ── Provenance (Wave 1 — the explainability contract) ────────
+
+/**
+ * The persisted run record for one assistant message. Returns null on 404
+ * (older runs predate run_artifacts, or the fire-and-forget writer had not
+ * landed yet); throws on any other failure so the panel can say so.
+ */
+export async function fetchRunArtifact(sessionId: string, messageId: string): Promise<RunArtifact | null> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/sessions/${encodeURIComponent(sessionId)}/messages/${encodeURIComponent(messageId)}/artifacts`,
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `Run record request failed (HTTP ${res.status})`);
+  }
+  const row = (await res.json()) as RunArtifact & { layer_summary: unknown; source_manifest: unknown };
+  return {
+    ...row,
+    truncated: !!row.truncated,
+    layer_summary: Array.isArray(row.layer_summary) ? (row.layer_summary as RunArtifact['layer_summary']) : [],
+    source_manifest: Array.isArray(row.source_manifest) ? (row.source_manifest as RunArtifact['source_manifest']) : [],
+  };
+}
+
+/** The atoms injected into a session with their retrieval scores (same route InjectedAtomsPanel reads). */
+export async function fetchInjectedAtoms(sessionId: string): Promise<InjectedAtomRow[]> {
+  const res = await fetchWithAuth(`${API_BASE}/embeddings/feedback/${encodeURIComponent(sessionId)}`);
+  if (!res.ok) return [];
+  const data = (await res.json()) as { injectedAtoms?: InjectedAtomRow[] };
+  return Array.isArray(data.injectedAtoms) ? data.injectedAtoms : [];
+}
+
+/**
+ * The last assistant message row as the server persisted it. Needed because
+ * a live run's message id is minted client-side at stream_end (the server's
+ * `assistantMessageId` never reaches the browser), so run_artifacts can only
+ * be looked up by the id the session endpoint reports.
+ */
+export async function fetchLatestAssistantMessageRow(sessionId: string): Promise<PersistedAssistantMessageRow | null> {
+  const session = (await fetchSession(sessionId)) as { messages?: unknown } | null;
+  if (!session || !Array.isArray(session.messages)) return null;
+  const rows = session.messages as Array<Record<string, unknown>>;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const m = rows[i];
+    if (m.role !== 'assistant' || typeof m.id !== 'string') continue;
+    return {
+      id: m.id,
+      role: 'assistant',
+      token_count: typeof m.token_count === 'number' ? m.token_count : null,
+      config_snapshot: m.config_snapshot && typeof m.config_snapshot === 'object'
+        ? (m.config_snapshot as Record<string, unknown>)
+        : null,
+      created_at: typeof m.created_at === 'string' ? m.created_at : '',
+    };
+  }
+  return null;
 }

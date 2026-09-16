@@ -56,6 +56,38 @@ Before producing any output, create an explicit plan:
 4. Identify any gaps in the provided information
 5. Present this plan, then execute it systematically`;
 
+// ── Layer 4c: compliance guardrail (Wave 1, 2026-09-16) ──────────────────────
+// GOV-06 defined this text on the client (ModulePage) and appended it only when
+// the user edited the prompt, so a default FCP run never carried it: the latest
+// FCP run's stored prompt had no trace of it on either engine. It is now a
+// server-side layer for the regulated areas below, recorded in the run artifact
+// as `layer4c_guardrail`. The client copy is left in place; the composer skips
+// this layer when the module prompt already contains the marker line.
+export const COMPLIANCE_GUARDRAIL_MARKER = 'IMPORTANT LIMITATION — NON-NEGOTIABLE';
+
+export const COMPLIANCE_GUARDRAIL = `**${COMPLIANCE_GUARDRAIL_MARKER}**
+You do NOT make compliance decisions, give legal advice, or replace professional judgment.
+You provide analysis, structured information, and decision support to human experts who retain full professional responsibility for all compliance and legal conclusions.
+Every output must include appropriate caveats where decisions depend on facts or legal interpretation not visible in this analysis.`;
+
+/** Areas whose modules always carry the guardrail. One place to change. */
+export const GUARDRAIL_AREAS: ReadonlySet<string> = new Set([
+  'fcp',
+  'legal',
+  'tax-transfer-pricing',
+  'data-privacy',
+  'payments-dora',
+  'blockchain',
+]);
+
+/** The guardrail text for an area, or null when the area is not regulated in this sense
+ *  or the module prompt already carries the marker (a user-edited prompt from the client). */
+export function guardrailForArea(areaId: string | undefined, modulePrompt: string): string | null {
+  if (!areaId || !GUARDRAIL_AREAS.has(areaId)) return null;
+  if (modulePrompt.includes(COMPLIANCE_GUARDRAIL_MARKER)) return null;
+  return COMPLIANCE_GUARDRAIL;
+}
+
 const EXPERT_ROLE_INSTRUCTIONS: Record<string, string> = {
   // ── General (non-domain) ──────────────────────────────────────────────────────
   'general-assistant': 'You are a knowledgeable, helpful AI assistant. You answer questions clearly and accurately across any topic. When the user asks about specialised domains, adapt your depth accordingly. You are professional, precise, and practical.',

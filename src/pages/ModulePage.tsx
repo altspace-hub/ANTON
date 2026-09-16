@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, Navigate } from 'react-router-dom';
-import { MODULES, MODULE_DEFAULT_SKILLS, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
+import { MODULES, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
 import type { KnowledgeSourceConfig, KnowledgeLibraryEntry } from '@/lib/types';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useStreamStore } from '@/stores/useStreamStore';
 import { useClaude } from '@/hooks/useClaude';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
+import { useSkillCatalog, readRecommendedSkills } from '@/hooks/useSkills';
 import { getRecommendedExportFormats } from '@/lib/output-format-definitions';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import WritingStylePanel from '@/components/shared/WritingStylePanel';
@@ -35,6 +36,7 @@ import TransformPanel from '@/components/shared/TransformPanel';
 import HumanOversightGate from '@/components/shared/HumanOversightGate';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
+import { PromptPreviewChip } from '@/components/shared/ProvenancePanel';
 import InjectedAtomsPanel from '@/components/shared/InjectedAtomsPanel';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import { SeedControl } from '@/components/shared/SeedControl';
@@ -139,6 +141,15 @@ export default function ModulePage() {
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
   const [reviewUpdating, setReviewUpdating] = useState(false);
   const [suggestedSkillsDismissed, setSuggestedSkillsDismissed] = useState(false);
+  // Skills this module's module.json recommends (`recommendedSkills`), read from
+  // the config the server serves. Only ids the skill catalogue actually has are
+  // offered — the banner never attaches an id the resolver would drop.
+  const [moduleRecommendedSkills, setModuleRecommendedSkills] = useState<string[]>([]);
+  const { skills: skillCatalog } = useSkillCatalog();
+  const suggestedSkills = useMemo(
+    () => moduleRecommendedSkills.filter((id) => skillCatalog.some((s) => s.id === id)),
+    [moduleRecommendedSkills, skillCatalog],
+  );
   const [suggestedLibraryEntries, setSuggestedLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
   const [activePacks, setActivePacks] = useState<Array<{ display_name: string; entity_count: number; relationship_count: number }>>([]);
   const [myWayActive, setMyWayActive] = useState(false);
@@ -212,6 +223,7 @@ export default function ModulePage() {
   // ITEM 4: Skill suggestion banner
   useEffect(() => {
     if (!moduleId) return;
+    setModuleRecommendedSkills([]); // the module-load effects below refill it from the served config
     const dismissed = localStorage.getItem(`dismissed-skills-${moduleId}`);
     if (dismissed) { setSuggestedSkillsDismissed(true); return; }
     setSuggestedSkillsDismissed(false);
@@ -369,6 +381,7 @@ export default function ModulePage() {
         if (!cfg) return;
         if (cfg.areaId) setAreaId(cfg.areaId);
         if (cfg.guidedInputs) setGuidedInputFields(cfg.guidedInputs);
+        setModuleRecommendedSkills(readRecommendedSkills(cfg));
       });
       // Restore saved config + conversation history from the DB.
       fetchSession(sessionParam).then((data) => {
@@ -455,6 +468,7 @@ export default function ModulePage() {
           if (!cfg) return;
           if (cfg.areaId) setAreaId(cfg.areaId);
           if (cfg.guidedInputs) setGuidedInputFields(cfg.guidedInputs);
+          setModuleRecommendedSkills(readRecommendedSkills(cfg));
           if (typeof cfg.defaults?.transparencyLevel === 'number') {
             setTransparencyLevel(cfg.defaults.transparencyLevel as 0 | 1 | 2);
           }
@@ -479,6 +493,7 @@ export default function ModulePage() {
         if (Array.isArray(defs.outputFormats)) setSelectedOutputFormats(defs.outputFormats);
         if (dynamicCfg.areaId) setAreaId(dynamicCfg.areaId);
         if (dynamicCfg.guidedInputs) setGuidedInputFields(dynamicCfg.guidedInputs);
+        setModuleRecommendedSkills(readRecommendedSkills(dynamicCfg));
         if (typeof defs.transparencyLevel === 'number') {
           setTransparencyLevel(defs.transparencyLevel as 0 | 1 | 2);
         }
@@ -798,14 +813,14 @@ export default function ModulePage() {
           <InjectedAtomsPanel sessionId={sessionId} />
 
           {/* Skills */}
-          {moduleId && !suggestedSkillsDismissed && (MODULE_DEFAULT_SKILLS[moduleId]?.length ?? 0) > 0 && (!selectedSkills || selectedSkills.length === 0) && (
+          {moduleId && !suggestedSkillsDismissed && suggestedSkills.length > 0 && (!selectedSkills || selectedSkills.length === 0) && (
             <div className="mb-2 px-3 py-2 bg-adv-teal/10 border border-adv-teal/30 rounded flex items-center justify-between gap-2">
               <span className="text-xs text-adv-teal">
-                Suggested skills for this module — Apply?
+                Suggested for this module: {suggestedSkills.map((id) => skillCatalog.find((s) => s.id === id)?.name ?? id).join(', ')} — Apply?
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setSelectedSkills(MODULE_DEFAULT_SKILLS[moduleId] ?? [])}
+                  onClick={() => setSelectedSkills(suggestedSkills)}
                   className="text-xs px-2 py-0.5 bg-adv-teal text-adv-dark rounded hover:bg-adv-teal-dark"
                 >
                   Apply
@@ -1041,6 +1056,7 @@ export default function ModulePage() {
             )}
 
             <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
               {isStreaming ? (
                 <button
                   onClick={stopStreaming}
@@ -1068,6 +1084,19 @@ export default function ModulePage() {
                   )}
                 </button>
               )}
+              {/* Wave 1: the prompt a run would carry right now — same fields as Run, composed server-side */}
+              <PromptPreviewChip
+                disabled={isStreaming}
+                config={{
+                  model, thinking, creativity, precision, moduleId, areaId: areaId ?? undefined, systemPrompt,
+                  selectedOutputFormats, plainTextMode, selectedPersonas, selectedSkills, multiPerspective,
+                  metaCognitiveEnabled, structureReference, referenceOutput, transparencyLevel, writingTone,
+                  emojiEnabled, nativeReasoningEnabled, atomInjectionEnabled, audience, channel, outputLanguage,
+                  knowledgeSources: knowledgeSources as unknown as Record<string, unknown>,
+                  uploadedFileIds, sessionId, userMessage: userInput,
+                }}
+              />
+              </div>
               {/* Cost estimate (TOKEN-04) — shown before run whenever context is non-trivial */}
               {!isStreaming && estimatedInputTokens > 200 && (
                 <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray'}`}>

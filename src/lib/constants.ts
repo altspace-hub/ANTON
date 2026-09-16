@@ -3918,18 +3918,10 @@ export const CREATIVITY_LEVELS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// ── Module default skills & knowledge categories ────────────────────────────
-
-export const MODULE_DEFAULT_SKILLS: Record<string, string[]> = {
-  'gap-analysis': ['fcp-compliance', 'regulatory-analysis'],
-  'sanctions-advisory': ['sanctions-expert'],
-  'document-creation': ['fcp-compliance', 'document-drafting'],
-  'regulatory-monitor': ['regulatory-analysis'],
-  'training-content': ['training-design'],
-  'data-management': ['data-analysis'],
-  'risk-assessment': ['risk-assessment', 'regulatory-analysis'],
-  'investigation-support': ['investigation-support', 'fcp-compliance'],
-};
+// ── Module knowledge categories ──────────────────────────────────────────────
+// Skill suggestions are no longer a client-side map: a module recommends skills
+// through `recommendedSkills` in its module.json (served by GET /api/modules/:id
+// and validated against the skill library by server/services/module-loader.ts).
 
 export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
   'gap-analysis': ['regulation', 'case_law', 'client'],
