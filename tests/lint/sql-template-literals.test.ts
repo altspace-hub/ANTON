@@ -24,6 +24,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -79,13 +80,9 @@ describe('no SQL template literal contains a // comment', () => {
 });
 
 // ── Does the statement actually parse? ───────────────────────────────────────
-const DATABASE_URL = (() => {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const m = readFileSync(join(process.cwd(), '.env'), 'utf8').match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
-})();
+// tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+// this run; a test never reads .env to find a database.
+const DATABASE_URL = resolveTestDatabaseUrl();
 const d = DATABASE_URL ? describe : describe.skip;
 
 d('the create-project INSERT parses against PostgreSQL', () => {

@@ -31,16 +31,13 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 import express from 'express';
 import type { Express } from 'express';
 import { randomUUID } from 'crypto';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import type { DatabaseAdapter } from '../../server/db/database.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  const envPath = join(process.cwd(), '.env');
-  if (!existsSync(envPath)) return undefined;
-  const m = readFileSync(envPath, 'utf8').match(/^DATABASE_URL=(.+)$/m);
-  return m ? m[1].trim() : undefined;
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();

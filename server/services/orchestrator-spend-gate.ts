@@ -105,10 +105,27 @@ export async function checkSpendGate(db: DatabaseAdapter): Promise<SpendGateStat
   }
 }
 
+/** The persisted gate state (app_settings 'orchestrator_spend_gate_state'). */
+export interface SpendGateStateRecord {
+  paused: boolean;
+  /** When the gate last transitioned. */
+  changed_at: string;
+  threshold: number;
+  /** Heartbeat cycles skipped since the gate closed. Absent while open. */
+  paused_cycles?: number;
+  /** When the most recent cycle was skipped. Absent while open. */
+  last_paused_cycle_at?: string;
+}
+
 /**
  * Check the gate AND log/persist any state transition (pause ↔ resume).
  * On a pause transition a system notification is created so the user sees
  * "Paused: rate recent proposals to resume" in the notification tray too.
+ *
+ * Called once per scheduled heartbeat cycle. While the gate is closed, each
+ * call bumps `paused_cycles` / `last_paused_cycle_at` on the persisted state —
+ * that counter is the only record a skipped cycle leaves (no reasoning trail,
+ * no audit_log row: the cycle called no model and decided nothing).
  */
 export async function checkAndRecordSpendGate(db: DatabaseAdapter): Promise<SpendGateState> {
   const state = await checkSpendGate(db);
@@ -118,14 +135,22 @@ export async function checkAndRecordSpendGate(db: DatabaseAdapter): Promise<Spen
       'SELECT value FROM app_settings WHERE key = ?',
       SPEND_GATE_STATE_KEY
     ) as { value: string } | undefined;
-    const previous: { paused: boolean } | null = row?.value ? JSON.parse(row.value) as { paused: boolean } : null;
+    const previous: SpendGateStateRecord | null = row?.value ? JSON.parse(row.value) as SpendGateStateRecord : null;
+    const now = new Date().toISOString();
+
+    const persist = (record: SpendGateStateRecord) => db.run(
+      'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      SPEND_GATE_STATE_KEY,
+      JSON.stringify(record)
+    );
 
     if (!previous || previous.paused !== state.paused) {
-      await db.run(
-        'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-        SPEND_GATE_STATE_KEY,
-        JSON.stringify({ paused: state.paused, changed_at: new Date().toISOString(), threshold: state.threshold })
-      );
+      const next: SpendGateStateRecord = { paused: state.paused, changed_at: now, threshold: state.threshold };
+      if (state.paused) {
+        next.paused_cycles = 1;
+        next.last_paused_cycle_at = now;
+      }
+      await persist(next);
 
       if (state.paused) {
         console.warn(`[orchestrator-spend-gate] PAUSED — last ${state.threshold} proposals all unrated. Heartbeat briefing generation halted until a proposal is rated.`);
@@ -136,8 +161,15 @@ export async function checkAndRecordSpendGate(db: DatabaseAdapter): Promise<Spen
           link: '/orchestrator',
         });
       } else if (previous) {
-        console.log('[orchestrator-spend-gate] RESUMED — a recent proposal was rated. Heartbeat briefing generation re-enabled.');
+        console.log(`[orchestrator-spend-gate] RESUMED — a recent proposal was rated after ${previous.paused_cycles ?? 0} skipped cycle(s). Heartbeat briefing generation re-enabled.`);
       }
+    } else if (state.paused) {
+      await persist({
+        ...previous,
+        threshold: state.threshold,
+        paused_cycles: (previous.paused_cycles ?? 0) + 1,
+        last_paused_cycle_at: now,
+      });
     }
   } catch (err) {
     // Gate transition bookkeeping must never break the caller.

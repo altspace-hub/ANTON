@@ -11,8 +11,6 @@
  * DATABASE_URL (skip otherwise, same pattern as the route tests).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { randomBytes } from 'crypto';
 import {
   resolveAmountMicroFtc,
@@ -23,14 +21,12 @@ import {
   generateOrderId,
 } from '../../server/services/checkout-service.js';
 import type { ChainFetcher } from '../../server/services/checkout-service.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 const DATABASE_URL = resolveDatabaseUrl();
 const describeOrSkip = DATABASE_URL ? describe : describe.skip;

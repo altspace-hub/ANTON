@@ -27,17 +27,16 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 const MIGRATIONS_DIR = join(process.cwd(), 'server/db/migrations-pg');
 const MIGRATION_ID = '256_brand_templates_latex';
 const MIGRATION_SQL = readFileSync(join(MIGRATIONS_DIR, `${MIGRATION_ID}.sql`), 'utf8');
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const m = readFileSync(join(process.cwd(), '.env'), 'utf8').match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 const DATABASE_URL = resolveDatabaseUrl();
 

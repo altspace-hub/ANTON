@@ -6,27 +6,21 @@
  * GET  /api/council/:sessionId/dissent-ledger — read the persisted ledger.
  *
  * The LLM extraction is replaced with an injected stub (deps.extract) —
- * NO live LLM call happens in this file. Requires DATABASE_URL (env or
- * .env); skips otherwise (same pattern as feedback-valves.test.ts).
+ * NO live LLM call happens in this file. Requires DATABASE_URL (from
+ * tests/setup/db-guard.ts); skips otherwise (same pattern as feedback-valves.test.ts).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import type { Server } from 'http';
 import type { DissentExtractionResult, DissentLedger } from '../../server/services/council-dissent.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch {
-    return undefined;
-  }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();

@@ -72,6 +72,9 @@ export interface StreamCompletionData {
   /** Full content array from the API response (includes thinking blocks with signatures).
    *  Must be preserved and replayed in subsequent turns when thinking is enabled. */
   rawContentBlocks?: unknown[];
+  /** Wave 0: the model id the API reports on the final message (the served
+   *  snapshot, e.g. a dated id), recorded so a run can name what actually ran. */
+  modelServed?: string;
 }
 
 interface ContentBlock {
@@ -457,6 +460,11 @@ export async function streamToResponse(
       finalOutputTokens = finalUsage.output_tokens || 0;
     }
 
+    // Wave 0: the served model id (a dated snapshot on the API) rides on the
+    // usage event so the trail can name what ran without a reload.
+    const servedModel = typeof (finalMessage as { model?: unknown }).model === 'string'
+      ? (finalMessage as { model: string }).model
+      : undefined;
     sendEvent({
       type: 'usage',
       inputTokens: finalInputTokens,
@@ -464,6 +472,7 @@ export async function streamToResponse(
       thinkingTokens: 0,
       cacheCreationTokens: finalUsage.cache_creation_input_tokens || 0,
       cacheReadTokens: finalUsage.cache_read_input_tokens || 0,
+      ...(servedModel ? { modelServed: servedModel } : {}),
     });
 
     const textBlockCount = contentBlocks.filter(b => b.type === 'text').length;
@@ -485,6 +494,7 @@ export async function streamToResponse(
         cacheReadTokens: finalUsage.cache_read_input_tokens || 0,
         cacheCreationTokens: finalUsage.cache_creation_input_tokens || 0,
         rawContentBlocks: finalMessage.content as unknown[],
+        modelServed: servedModel,
       });
     }
 

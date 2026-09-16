@@ -27,6 +27,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import pg from 'pg';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 const FIXTURE = path.resolve(__dirname, '..', 'fixtures', 'markets-loop-schema.sql');
 
@@ -51,25 +52,19 @@ let client: pg.Client | null = null;
 let skipReason = '';
 
 /**
- * DATABASE_URL from the environment, else out of the repo .env — the same
- * fallback tests/helpers/markets-test-db.ts uses. Vitest does not load .env,
- * so reading only process.env made this skip on every run, which is a guard
- * that reports success while checking nothing.
+ * DATABASE_URL as tests/setup/db-guard.ts (vitest globalSetup) left it: the
+ * dedicated ANTON_TEST_DATABASE_URL (migrated, so its schema is the real one),
+ * CI's service database, or nothing — then this suite skips and says so. It no
+ * longer falls back to the repo .env: that fallback pointed every developer run
+ * at the live database.
  */
 function readDatabaseUrl(): string | null {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const envText = fs.readFileSync(path.resolve(__dirname, '..', '..', '.env'), 'utf8');
-    const m = envText.match(/^\s*DATABASE_URL\s*=\s*(.+?)\s*$/m);
-    return m ? m[1]! : null;
-  } catch {
-    return null;
-  }
+  return resolveTestDatabaseUrl() ?? null;
 }
 
 beforeAll(async () => {
   const url = readDatabaseUrl();
-  if (!url) { skipReason = 'no DATABASE_URL in the environment or .env'; return; }
+  if (!url) { skipReason = 'no DATABASE_URL for this run (see tests/setup/db-guard.ts)'; return; }
   try {
     const c = new pg.Client({ connectionString: url });
     await c.connect();

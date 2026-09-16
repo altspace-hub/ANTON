@@ -273,6 +273,54 @@ describe('streamToResponse — StreamEvent wire contract', () => {
   });
 });
 
+// ── Wave 0: the ledger records what the engine served ───────
+
+describe('Wave 0 — onComplete carries what the engine actually served', () => {
+  it('reports the served model (largest output share), the SDK cost estimate and the exact prompt sent', async () => {
+    const calls = fakeSdk([
+      textDelta('Hello'),
+      successResult({
+        modelUsage: {
+          'claude-haiku-4-5-20251001': { outputTokens: 2 },
+          'claude-opus-5-20260601': { outputTokens: 20 },
+        },
+      }),
+    ]);
+    const { sink, events } = collectingSink();
+    let completion: { modelServed?: string; engineCostUsd?: number; systemPromptSent?: string } | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+
+    expect(completion).not.toBeNull();
+    expect(completion!.modelServed).toBe('claude-opus-5-20260601');
+    expect(completion!.engineCostUsd).toBe(0.01);
+    // The run artifact must pin the string the subprocess received, not the
+    // route's pre-rewording composition.
+    expect(completion!.systemPromptSent).toBe(calls[0].options.systemPrompt);
+    expect(completion!.systemPromptSent).toBe('static part\n\ndynamic part');
+
+    const usage = events().find((e) => e.type === 'usage');
+    expect(usage).toMatchObject({ modelServed: 'claude-opus-5-20260601' });
+  });
+
+  it('prefers the canonical model id when the SDK supplies one', async () => {
+    fakeSdk([textDelta('x'), successResult({ modelUsage: { 'us.anthropic.claude-opus-5': { outputTokens: 9, canonicalModel: 'claude-opus-5' } } })]);
+    const { sink } = collectingSink();
+    let completion: { modelServed?: string } | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(completion!.modelServed).toBe('claude-opus-5');
+  });
+
+  it('leaves modelServed undefined when the SDK reports no per-model usage', async () => {
+    fakeSdk([textDelta('x'), successResult()]);
+    const { sink, events } = collectingSink();
+    let completion: { modelServed?: string } | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(completion!.modelServed).toBeUndefined();
+    const usage = events().find((e) => e.type === 'usage') as Record<string, unknown>;
+    expect('modelServed' in usage).toBe(false);
+  });
+});
+
 describe('completeText — aggregate for the non-streaming path', () => {
   it('returns the aggregated completion', async () => {
     fakeSdk([textDelta('agg'), successResult()]);

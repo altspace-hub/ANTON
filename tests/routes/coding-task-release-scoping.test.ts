@@ -33,6 +33,7 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import type { Server } from 'http';
 import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = 'c'.repeat(64);
 
@@ -216,13 +217,9 @@ describe('the three task-status lists agree', () => {
 });
 
 // ── What does the column actually permit? ────────────────────────────────────
-const DATABASE_URL = (() => {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const m = readFileSync(join(process.cwd(), '.env'), 'utf8').match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
-})();
+// tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+// this run; a test never reads .env to find a database.
+const DATABASE_URL = resolveTestDatabaseUrl();
 const d = DATABASE_URL ? describe : describe.skip;
 
 d('coding_tasks_status_check, asked directly', () => {

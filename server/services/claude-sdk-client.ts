@@ -119,6 +119,15 @@ export interface SdkCompletionData {
   outputTokens: number;
   cacheReadTokens: number;
   cacheCreationTokens: number;
+  /** Wave 0: the model id the engine actually served (from the SDK result's
+   *  per-model usage map), so the ledger can record more than the `sdk:` alias. */
+  modelServed?: string;
+  /** Wave 0: the SDK's own running cost estimate for the query — plan usage,
+   *  not a bill; recorded as a basis-tagged figure, never as messages.cost. */
+  engineCostUsd?: number;
+  /** Wave 0: the exact system prompt string handed to the subprocess (after the
+   *  web-search instruction rewording), so the run artifact stores what was sent. */
+  systemPromptSent?: string;
 }
 
 interface ContentBlock {
@@ -270,6 +279,21 @@ interface SdkResultMessage {
     cache_creation_input_tokens?: number;
     cache_read_input_tokens?: number;
   };
+  /** Per-model usage keyed by the raw model id the engine ran (SDK `ModelUsage`). */
+  modelUsage?: Record<string, { outputTokens?: number; canonicalModel?: string }>;
+}
+
+/** The model that did the work: the usage-map entry with the most output tokens
+ *  (a web run may also touch a helper model; the deliverable comes from the
+ *  main one). Undefined when the SDK reports no per-model usage. */
+function servedModelFromUsage(usage: SdkResultMessage['modelUsage']): string | undefined {
+  if (!usage) return undefined;
+  let best: { id: string; out: number } | undefined;
+  for (const [id, u] of Object.entries(usage)) {
+    const out = u?.outputTokens ?? 0;
+    if (!best || out > best.out) best = { id: u?.canonicalModel || id, out };
+  }
+  return best?.id;
 }
 type SdkMessage = SdkPartialMessage | SdkResultMessage | { type: string };
 
@@ -438,6 +462,8 @@ export async function streamToResponse(
   let currentText = '';
   let currentThinking = '';
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
+  let modelServed: string | undefined;
+  let engineCostUsd: number | undefined;
 
   try {
     console.log(`[sdk-engine] run → model=${underlying} thinking=${config.thinking}${webTools ? ' tools=web' : ''}`);
@@ -497,7 +523,9 @@ export async function streamToResponse(
             cacheReadTokens: result.usage?.cache_read_input_tokens ?? 0,
             cacheCreationTokens: result.usage?.cache_creation_input_tokens ?? 0,
           };
-          sendEvent({ type: 'usage', ...usageData, thinkingTokens: 0 });
+          modelServed = servedModelFromUsage(result.modelUsage);
+          engineCostUsd = typeof result.total_cost_usd === 'number' ? result.total_cost_usd : undefined;
+          sendEvent({ type: 'usage', ...usageData, thinkingTokens: 0, ...(modelServed ? { modelServed } : {}) });
         } else {
           const detail = result.errors?.length ? ` — ${result.errors.join('; ')}` : '';
           console.warn(`[sdk-engine] run failed (${result.subtype})${detail}`);
@@ -523,7 +551,14 @@ export async function streamToResponse(
     res.end();
 
     if (onComplete && currentText) {
-      await onComplete({ text: currentText, thinking: currentThinking, ...usageData });
+      await onComplete({
+        text: currentText,
+        thinking: currentThinking,
+        ...usageData,
+        modelServed,
+        engineCostUsd,
+        systemPromptSent: systemPrompt,
+      });
     }
   } catch (err) {
     // Mirror claude-client's contract: failures surface as an SSE error event,

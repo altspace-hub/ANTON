@@ -335,7 +335,7 @@ export type StreamEvent =
   | { type: 'text_delta'; content: string }
   | { type: 'web_search_start'; query: string }
   | { type: 'web_search_result'; url: string; title: string }
-  | { type: 'usage'; inputTokens: number; outputTokens: number; thinkingTokens: number; cacheCreationTokens: number; cacheReadTokens: number }
+  | { type: 'usage'; inputTokens: number; outputTokens: number; thinkingTokens: number; cacheCreationTokens: number; cacheReadTokens: number; modelServed?: string }
   | { type: 'error'; message: string }
   | { type: 'stream_end'; contentBlocks: ContentBlock[]; sourceManifest?: string[] }
   | { type: 'phase_start'; phaseIndex: number; phaseName: string; totalPhases: number }
@@ -353,6 +353,12 @@ export type StreamEvent =
 export interface ContextUsed {
   model: string;
   thinking: string;
+  /** Wave 0: the resolved engine (anthropic_sdk, anthropic, mistral, …). */
+  engine?: string;
+  /** Wave 0: the effort word the ladder resolved for this level on this model. */
+  effort?: string | null;
+  /** Wave 0: the model id the engine reported it served (known after the run). */
+  modelServed?: string | null;
   /** The module answering (open chat lens or the module page). */
   lens: { moduleId: string; areaId: string | null } | null;
   project: { id: string; name: string } | null;

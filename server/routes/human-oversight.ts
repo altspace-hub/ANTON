@@ -31,6 +31,38 @@ function getUserId(req: unknown): string {
   return (req as { user?: { id?: string } }).user?.id ?? 'default';
 }
 
+/**
+ * The read queries, exported so tests/db/query-column-drift.test.ts can run the
+ * exact statements against a real schema. human_oversight_reviews (schema line
+ * ~566) scopes rows by `user_id`; there is no `reviewer_id` column — an earlier
+ * draft filtered on one and the per-session GET 500'd on every call.
+ */
+export const OVERSIGHT_SQL = {
+  /** Latest review for one session, scoped to the calling user. Params: session_id, user_id. */
+  sessionReview:
+    'SELECT * FROM human_oversight_reviews WHERE session_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1',
+  /** Review list for the calling user with optional filters. Returns SQL + params in order. */
+  listReviews: (
+    userId: string,
+    filters: { sessionId?: string; moduleId?: string },
+    limit: number,
+  ): { sql: string; params: unknown[] } => {
+    let sql = 'SELECT * FROM human_oversight_reviews WHERE user_id = ?';
+    const params: unknown[] = [userId];
+    if (filters.sessionId) {
+      sql += ' AND session_id = ?';
+      params.push(filters.sessionId);
+    }
+    if (filters.moduleId) {
+      sql += ' AND module_id = ?';
+      params.push(filters.moduleId);
+    }
+    sql += ' ORDER BY created_at DESC LIMIT ?';
+    params.push(limit);
+    return { sql, params };
+  },
+} as const;
+
 export async function createHumanOversightRoutes(db: DatabaseAdapter) {
   const router = express.Router();
 
@@ -101,22 +133,9 @@ export async function createHumanOversightRoutes(db: DatabaseAdapter) {
       const { session_id, module_id, limit: limitStr } = req.query as Record<string, string | undefined>;
       const limit = Math.min(parseInt(limitStr ?? '50', 10) || 50, 200);
 
-      let sql = 'SELECT * FROM human_oversight_reviews WHERE user_id = ?';
-      const params: unknown[] = [userId];
-
-      if (session_id) {
-        sql += ' AND session_id = ?';
-        params.push(session_id);
-      }
-      if (module_id) {
-        sql += ' AND module_id = ?';
-        params.push(module_id);
-      }
-
-      sql += ' ORDER BY created_at DESC LIMIT ?';
-      params.push(limit);
-
-      const reviews = await db.get(sql, ...params);
+      const { sql, params } = OVERSIGHT_SQL.listReviews(userId, { sessionId: session_id, moduleId: module_id }, limit);
+      // A list route: db.all, not db.get (which returned only the first row).
+      const reviews = await db.all(sql, ...params);
       res.json({ reviews });
     } catch (err) {
       console.error('[oversight] GET /oversight/reviews error:', err);
@@ -129,7 +148,7 @@ export async function createHumanOversightRoutes(db: DatabaseAdapter) {
     try {
       const userId = getUserId(req);
       const { sessionId } = req.params;
-      const review = await db.get('SELECT * FROM human_oversight_reviews WHERE session_id = ? AND reviewer_id = ? ORDER BY created_at DESC LIMIT 1', sessionId, userId);
+      const review = await db.get(OVERSIGHT_SQL.sessionReview, sessionId, userId);
       res.json({ review: review ?? null });
     } catch (err) {
       console.error('[oversight] GET session review error:', err);

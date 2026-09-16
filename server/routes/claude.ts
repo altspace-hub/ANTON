@@ -54,6 +54,7 @@ import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
 import { computeRunCostUsd } from '../services/run-cost.js';
+import { anthropicEffort } from '../services/thinking-map.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
 
@@ -832,9 +833,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // as a "context used" frame before the model call and kept on the
       // message's config snapshot. It records what is actually in the prompt
       // (documents, project, lens, knowledge layers), not what was toggled.
+      // Wave 0: the effort word the ladder resolves for this level on this
+      // model — recorded so "how hard did it think" is a fact, not a level name.
+      // Only Anthropic-family engines express effort; others record null.
+      const resolvedEffort: string | null =
+        provider === 'anthropic' || provider === 'anthropic_sdk'
+          ? anthropicEffort((thinking || 'think_hard') as Parameters<typeof anthropicEffort>[0], capabilityModelId(selectedModel))
+          : null;
       const contextUsed = {
         model: selectedModel,
         thinking: String(thinking || 'think_hard'),
+        engine: provider,
+        effort: resolvedEffort,
         lens: moduleId ? { moduleId: String(moduleId), areaId: areaId ? String(areaId) : null } : null,
         project: projectRow,
         documents: (resolved.sourceDetails ?? [])
@@ -881,10 +891,21 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
-        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[] }) => {
+        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string }) => {
+            // Wave 0: how this run is billed, so a NULL cost reads as "plan usage"
+            // or "unknown pricing" rather than "free".
+            const costBasis: 'list' | 'free' | 'plan' | 'unknown' =
+              isSdkEngineModel || isCodexEngineModel ? 'plan' : isOllamaModel ? 'free' : hasKnownPricing ? 'list' : 'unknown';
             // Build config snapshot first — used in both INSERT and UPDATE below
             const configSnapshot = {
               model: selectedModel,
+              // Wave 0: engine, resolved effort and the model the engine actually
+              // served (a dated snapshot id where the API/SDK reports one).
+              engine: provider,
+              effort: resolvedEffort,
+              modelServed: data.modelServed ?? null,
+              costBasis,
+              engineCostUsd: data.engineCostUsd ?? null,
               thinking: req.body.thinking,
               creativity: req.body.creativity,
               transparencyLevel: req.body.transparencyLevel,
@@ -908,8 +929,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               multiAgentStyle: req.body.multiAgentStyle || null,
               precision: req.body.precision || null,
               channel: req.body.channel || null,
-              // Wave 2: what was actually in the prompt (see contextUsed above).
-              contextUsed,
+              // Wave 2: what was actually in the prompt (see contextUsed above),
+              // plus (Wave 0) the served model once the engine has reported it.
+              contextUsed: { ...contextUsed, modelServed: data.modelServed ?? null },
             };
             // CACHE-03: include cache read/write tokens and compute cache-adjusted cost.
             // Computed BEFORE the message INSERT so the real per-call cost is persisted
@@ -985,7 +1007,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               void writeRunArtifact(db, {
                 messageId: assistantMessageId,
                 sessionId,
-                composedPrompt: fullComposedPrompt,
+                // Wave 0: when the engine hands back the exact string it sent
+                // (the SDK client rewords the web-search instruction after this
+                // route composed the prompt), pin that — not the pre-rewording text.
+                composedPrompt: data.systemPromptSent ?? fullComposedPrompt,
                 layerSummary,
                 sourceManifest,
               });
@@ -1022,6 +1047,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               moduleId,
               areaId,
               model: selectedModel,
+              // Wave 0: the resolved engine, not the queue's 'anthropic' default —
+              // every row used to say anthropic, Mistral and Azure included.
+              provider,
+              // Wave 0: the resolver's manifest (built-in / uploads / URLs / folders /
+              // RAG) — the column was only ever filled by orchestrator heartbeats.
+              knowledgeSourcesUsed: resolved.sourceManifest,
               thinkingLevel: thinking,
               creativity,
               writingTone: writingTone || 'professional',

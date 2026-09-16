@@ -18,12 +18,11 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import type { Response } from 'express';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import {
   loadOwnedRow, respondToRowAccessError, isRowAccessError, RowAccessError,
 } from '../../server/lib/owned-row.js';
 import type { OwnedRequest } from '../../server/middleware/ownership.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 const ADMIN: OwnedRequest = { user: { id: 'admin-1', role: 'admin' } };
 const ALICE: OwnedRequest = { user: { id: 'alice', role: 'analyst' } };
@@ -202,14 +201,9 @@ describe('respondToRowAccessError', () => {
 // ── Live PostgreSQL ─────────────────────────────────────────────────────────
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch {
-    return undefined;
-  }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();

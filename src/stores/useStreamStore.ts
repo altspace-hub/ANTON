@@ -161,6 +161,12 @@ export const useStreamStore = create<StreamState>((set, get) => ({
           lastOutputTokens: s.lastOutputTokens + (event.outputTokens || 0),
           lastCachedTokens: s.lastCachedTokens + (event.cacheReadTokens || 0),
           lastCacheCreationTokens: s.lastCacheCreationTokens + (event.cacheCreationTokens || 0),
+          // Wave 0: the engine names the model it served only at the end of the
+          // run; merge it into the live "context used" frame so the trail shows
+          // it without a reload.
+          ...(event.modelServed && s.lastContextUsed
+            ? { lastContextUsed: { ...s.lastContextUsed, modelServed: event.modelServed } }
+            : {}),
         }));
         break;
 

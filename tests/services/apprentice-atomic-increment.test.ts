@@ -10,22 +10,16 @@
  * no lost updates. (Rerun-gating — reruns don't increment — is asserted at the
  * route level in rerun.test.ts via the rerunOf marker; here we lock the SQL shape.)
  *
- * Requires DATABASE_URL (env or .env) + migration 221 (quality_n); skips otherwise.
+ * Requires DATABASE_URL (from tests/setup/db-guard.ts) + migration 221 (quality_n); skips otherwise.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch {
-    return undefined;
-  }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();

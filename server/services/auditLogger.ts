@@ -101,7 +101,7 @@ export async function writeAuditEntry(db: DatabaseAdapter, entry: AuditEntry): P
       entry.outputTokenCount || 0,
       entry.cachedTokens || 0,
       entry.cacheCreationTokens || 0,
-      entry.estimatedCostUsd || 0,
+      entry.estimatedCostUsd ?? null,
       entry.responseStatus || 'completed',
       entry.seed !== undefined ? entry.seed : null,
       entry.userId || null,

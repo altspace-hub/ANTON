@@ -144,7 +144,7 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
           COALESCE(AVG(qs.score_overall),0) as avg_quality
         FROM sessions s
         LEFT JOIN audit_log a ON a.session_id = s.id
-        LEFT JOIN quality_scores qs ON qs.session_id = s.id
+        LEFT JOIN quality_scores qs ON qs.session_id = s.id AND qs.origin = 'run'
         WHERE s.project_id = ?
       `, id) as {
         session_count: number;

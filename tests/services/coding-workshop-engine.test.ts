@@ -19,8 +19,6 @@
  */
 import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import {
   createCodingWorkshopEngine,
   createDefaultWorkshopState,
@@ -33,6 +31,7 @@ import {
 import { resetCodingModelStrategyForTests } from '../../server/services/coding-model-resolver.js';
 import { CORE_TEAM_ROLES } from '../../server/services/core-team-panel.js';
 import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 // ── env: force Mistral so resolveCodingModel('orchestrator') is deterministic ─
 const ENV_KEYS = ['ANTHROPIC_API_KEY', 'MISTRAL_API_KEY', 'OPENAI_API_KEY', 'GOOGLE_API_KEY', 'DEFAULT_MODEL'] as const;
@@ -397,12 +396,9 @@ describe('the opening workshop turn (what reaches the model)', () => {
 // ── finalize seeds a coding_project (PG-backed; skips without DATABASE_URL) ─
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 const DATABASE_URL = resolveDatabaseUrl();
 const describeOrSkip = DATABASE_URL ? describe : describe.skip;

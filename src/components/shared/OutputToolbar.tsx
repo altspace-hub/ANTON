@@ -130,6 +130,23 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const trailContext    = ((snap.contextUsed as ContextUsed | undefined) ?? contextUsed) ?? null;
   const contextRows: { label: string; value: string; color: string }[] = [];
   if (trailContext) {
+    // Wave 0: which engine did the work, how hard it was asked to think, and
+    // the model id it reported — the ledger's answer to "what actually ran".
+    if (trailContext.engine) {
+      const engineLabel =
+        trailContext.engine === 'anthropic_sdk' ? 'Claude subscription'
+        : trailContext.engine === 'openai_codex' ? 'Codex subscription'
+        : trailContext.engine === 'anthropic' ? 'Anthropic API'
+        : trailContext.engine;
+      contextRows.push({
+        label: 'Engine',
+        value: `${engineLabel}${trailContext.effort ? ` · effort ${trailContext.effort}` : ''}`,
+        color: 'text-adv-gray',
+      });
+    }
+    if (trailContext.modelServed) {
+      contextRows.push({ label: 'Model served', value: trailContext.modelServed, color: 'text-adv-gray' });
+    }
     if (trailContext.lens) {
       const mod = MODULES.find((m) => m.id === trailContext.lens?.moduleId);
       contextRows.push({ label: 'Answering as', value: mod?.label ?? trailContext.lens.moduleId, color: 'text-adv-teal' });

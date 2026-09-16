@@ -41,7 +41,7 @@ export async function createCapabilityCardGenerator(db: DatabaseAdapter) {
 
     // Get quality scores
     const qualityStats = await db.all<{ module_id: string; avg_score: number; scored_count: number }>(
-      "SELECT module_id, ROUND(AVG(score_overall)::numeric, 2) as avg_score, COUNT(*) as scored_count FROM quality_scores GROUP BY module_id"
+      "SELECT module_id, ROUND(AVG(score_overall)::numeric, 2) as avg_score, COUNT(*) as scored_count FROM quality_scores WHERE origin = 'run' GROUP BY module_id"
     );
     const qualityMap = new Map(qualityStats.map(q => [q.module_id, Number(q.avg_score)]));
 
@@ -60,7 +60,7 @@ export async function createCapabilityCardGenerator(db: DatabaseAdapter) {
 
     // Overall quality
     const overallQuality = await db.get<{ avg: number }>(
-      'SELECT ROUND(AVG(score_overall)::numeric, 2) as avg FROM quality_scores'
+      "SELECT ROUND(AVG(score_overall)::numeric, 2) as avg FROM quality_scores WHERE origin = 'run'"
     );
 
     const modules = moduleStats.map(m => ({

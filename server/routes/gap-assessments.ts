@@ -584,9 +584,12 @@ HOW TO RUN THE INTERVIEW
 
       // Model tier: 'opus'/'sonnet' for Claude, or a custom model ID (azure:*, gpt-*, mistral-*, etc.)
       const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
-      const tierLabel = modelTier === 'opus' ? 'Opus 4.8 (deep reasoning)'
-        : modelTier === 'sonnet' ? 'Sonnet 4.6 (standard)'
-        : modelTier;
+      // Wave 0: name the model the router will actually run for this tier
+      // (sdk:claude-opus-5 on the subscription engine), not a hard-coded 4.x label.
+      const routedModelForTier = mapModelToProvider(__getModelConfig(modelTier).model);
+      const tierLabel = modelTier === 'opus' ? `${routedModelForTier} (deep reasoning)`
+        : modelTier === 'sonnet' ? `${routedModelForTier} (standard)`
+        : routedModelForTier;
       sendEvent({ type: 'status', status: 'assessing', message: `Starting assessment with ${tierLabel}...` });
 
       for (const frameworkId of frameworks) {

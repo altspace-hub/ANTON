@@ -859,12 +859,18 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
         // M11: Write to audit log for compliance tracking
         try {
           const { enqueueAudit } = await import('./audit-queue.js');
+          const { getProviderFromModelId } = await import('./model-adapter.js');
+          // Wave 0: the engine that ran, not a hard-coded 'anthropic'. An id the
+          // classifier cannot place is recorded as 'unknown' rather than dropping
+          // the row (getProviderFromModelId throws on unknown ids).
+          let auditProvider = 'unknown';
+          try { auditProvider = getProviderFromModelId(resolvedModel, db); } catch { /* keep 'unknown' */ }
           enqueueAudit({
             sessionId: currentSessionId!,
             moduleId: intent.moduleId || undefined,
             areaId: intent.areaId || undefined,
             model: resolvedModel,
-            provider: 'anthropic',
+            provider: auditProvider,
             thinkingLevel: thinkingLevel,
             inputTokenCount: completion.inputTokens,
             outputTokenCount: completion.outputTokens,

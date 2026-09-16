@@ -26,7 +26,12 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import AnthropicSDK from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
-import { checkAndRecordSpendGate } from './orchestrator-spend-gate.js';
+import type { ChatResult, StreamChatConfig } from './provider-router.js';
+import { getProviderFromModelId } from './model-adapter.js';
+import { enqueueAudit } from './audit-queue.js';
+import { MODEL_CAPABILITIES, estimateCost } from '../config/model-capabilities.js';
+import { capabilityModelId } from './engine-model-id.js';
+import { checkAndRecordSpendGate, SPEND_GATE_STATE_KEY } from './orchestrator-spend-gate.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -202,7 +207,7 @@ async function readQualitySignals(db: DatabaseAdapter, declineThreshold: number)
            COUNT(*) as sample_count
     FROM quality_scores qs
     JOIN quality_baselines qb ON qb.module_id = qs.module_id
-    WHERE qs.scored_at >= NOW() - INTERVAL '14 days'
+    WHERE qs.scored_at >= NOW() - INTERVAL '14 days' AND qs.origin = 'run'
     GROUP BY qs.module_id
     HAVING qb.baseline_score - AVG(qs.score_overall) >= ? AND COUNT(*) >= 2
     ORDER BY decline DESC
@@ -567,21 +572,145 @@ export async function aggregateSignals(
   return allSignals.sort((a, b) => (b.urgency * b.relevance) - (a.urgency * a.relevance));
 }
 
-// ── Heartbeat Assessment (Haiku — cheap, frequent) ────────────────────────────
+// ── Model calls — one ledger row per call ─────────────────────────────────────
+//
+// Until 2026-09-16 the orchestrator's audit_log rows were written per TRAIL,
+// not per call: module 'orchestrator', model NULL, zero tokens, status
+// 'completed' — 7,031 rows, 3,753 of them for cycles the spend gate had
+// skipped without calling any model. Every model call now goes through
+// callModel(), which writes exactly one audit_log row carrying the dispatched
+// model id, its resolved provider, the token counts the router returned and
+// the priced cost; a call that fails is recorded as 'error'. Nothing else in
+// this file writes audit_log.
 
-/** Quick assessment: do these signals need a briefing? Returns true if significant signals found */
-export async function assessSignificance(
-  signals: PlatformSignal[],
-  anthropic: AnthropicSDK | null | undefined
-): Promise<boolean> {
-  if (signals.length === 0) return false;
-  // Any signal with urgency >= 0.7 is always significant
-  if (signals.some(s => s.urgency >= 0.7)) return true;
-  // If >= 3 moderate signals, ask LLM to assess
-  if (signals.length < 3) return false;
+export type OrchestratorLlmStep = 'significance' | 'briefing' | 'narrative' | 'management_report' | 'workflow_plan';
 
+export interface LlmCallUsage {
+  step: OrchestratorLlmStep;
+  /** The id that was dispatched, engine prefix included (sdk:claude-sonnet-5). */
+  model: string;
+  /** Resolved provider id — anthropic_sdk for sdk: ids, anthropic for the API. */
+  provider: string;
+  thinkingLevel?: string;
+  inputTokens: number;
+  outputTokens: number;
+  /** null when MODEL_CAPABILITIES has no price for the model (an honest unknown, not $0). */
+  costUsd: number | null;
+  /** null when the call returned no thinking text. */
+  thinking: string | null;
+  durationMs: number;
+}
+
+interface ModelCallContext {
+  step: OrchestratorLlmStep;
+  /** The reasoning trail the call belongs to, when one is open. */
+  trailId?: string;
+}
+
+function providerFor(model: string): string {
+  try { return getProviderFromModelId(model); } catch { return 'unknown'; }
+}
+
+/** Priced from the capability table, keyed by the bare model (sdk: stripped). */
+function costFor(model: string, inputTokens: number, outputTokens: number): number | null {
+  const key = capabilityModelId(model);
+  return key in MODEL_CAPABILITIES ? estimateCost(key, inputTokens, outputTokens) : null;
+}
+
+function auditModelCall(
+  call: Pick<LlmCallUsage, 'model' | 'provider' | 'thinkingLevel' | 'inputTokens' | 'outputTokens' | 'costUsd'>,
+  ctx: ModelCallContext,
+  status: 'success' | 'error',
+): void {
   try {
-    const prompt = `You are a compliance operations AI. Evaluate if these platform signals require immediate attention.
+    enqueueAudit({
+      moduleId: 'orchestrator',
+      model: call.model,
+      provider: call.provider,
+      thinkingLevel: call.thinkingLevel,
+      inputTokenCount: call.inputTokens,
+      outputTokenCount: call.outputTokens,
+      estimatedCostUsd: call.costUsd ?? undefined,
+      responseStatus: status,
+      knowledgeSourcesUsed: [`orchestrator:${ctx.step}`, ...(ctx.trailId ? [`trail:${ctx.trailId}`] : [])],
+    });
+  } catch {
+    // The ledger must never break the cycle.
+  }
+}
+
+/**
+ * Dispatch a model call through the provider router and record it in the
+ * ledger. `config.model` must already be the id to dispatch (mapModelToProvider
+ * applied), so the audit row names what actually ran.
+ */
+async function callModel(
+  config: StreamChatConfig & { model: string },
+  ctx: ModelCallContext,
+): Promise<{ result: ChatResult; usage: LlmCallUsage }> {
+  const model = config.model;
+  const provider = providerFor(model);
+  const started = Date.now();
+  let result: ChatResult;
+  try {
+    result = await callChat(config);
+  } catch (err) {
+    auditModelCall(
+      { model, provider, thinkingLevel: config.thinkingLevel, inputTokens: 0, outputTokens: 0, costUsd: null },
+      ctx,
+      'error',
+    );
+    throw err;
+  }
+  const inputTokens = result.inputTokens ?? 0;
+  const outputTokens = result.outputTokens ?? 0;
+  const usage: LlmCallUsage = {
+    step: ctx.step,
+    model,
+    provider,
+    thinkingLevel: config.thinkingLevel,
+    inputTokens,
+    outputTokens,
+    costUsd: costFor(model, inputTokens, outputTokens),
+    thinking: result.thinking ? result.thinking : null,
+    durationMs: Date.now() - started,
+  };
+  auditModelCall(usage, ctx, 'success');
+  return { result, usage };
+}
+
+// ── Heartbeat Assessment (small model — cheap, frequent) ─────────────────────
+
+export interface SignificanceAssessment {
+  significant: boolean;
+  /** How the verdict was reached — the rule that decided, or the model. */
+  method: 'forced' | 'no_signals' | 'high_urgency' | 'too_few' | 'model' | 'model_failed_rule_fallback';
+  /** Set only when the model was consulted. */
+  usage?: LlmCallUsage;
+  /** The model call's failure, when the fallback rule decided. */
+  error?: string;
+}
+
+/**
+ * The deterministic part of the significance check. Returns null when the
+ * rules cannot decide and the model must be asked — the caller opens the
+ * reasoning trail before that call so the call is recorded against it.
+ */
+export function assessSignificanceByRule(signals: PlatformSignal[]): SignificanceAssessment | null {
+  if (signals.length === 0) return { significant: false, method: 'no_signals' };
+  // Any signal with urgency >= 0.7 is always significant
+  if (signals.some(s => s.urgency >= 0.7)) return { significant: true, method: 'high_urgency' };
+  // Fewer than 3 moderate signals never warrant a briefing
+  if (signals.length < 3) return { significant: false, method: 'too_few' };
+  return null;
+}
+
+/** Ask the model whether ≥3 moderate signals collectively warrant a briefing. */
+export async function assessSignificanceWithModel(
+  signals: PlatformSignal[],
+  ctx: { trailId?: string } = {},
+): Promise<SignificanceAssessment> {
+  const prompt = `You are a compliance operations AI. Evaluate if these platform signals require immediate attention.
 Reply ONLY with "YES" or "NO".
 
 Signals (${signals.length} total, showing top 5):
@@ -589,16 +718,49 @@ ${signals.slice(0, 5).map(s => `- [${s.source}] urgency=${s.urgency.toFixed(2)}:
 
 Do these signals collectively warrant generating a situational briefing for the compliance team?`;
 
-    const result = await callChat({
+  try {
+    const { result, usage } = await callModel({
       model: mapModelToProvider(process.env.ORCHESTRATOR_HEARTBEAT_MODEL || 'claude-haiku-4-5-20251001'),
       system: 'You are a compliance operations AI.',
       messages: [{ role: 'user', content: prompt }],
       maxTokens: 10,
-    });
-    return result.text.trim().toUpperCase().startsWith('YES');
-  } catch {
+    }, { step: 'significance', trailId: ctx.trailId });
+    return { significant: result.text.trim().toUpperCase().startsWith('YES'), method: 'model', usage };
+  } catch (err) {
     // On LLM error, use rule-based fallback
-    return signals.filter(s => s.urgency >= 0.5).length >= 2;
+    return {
+      significant: signals.filter(s => s.urgency >= 0.5).length >= 2,
+      method: 'model_failed_rule_fallback',
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+/** Quick assessment: do these signals need a briefing? Rules first; the model only when they cannot decide. */
+export async function assessSignificance(
+  signals: PlatformSignal[],
+  _anthropic?: AnthropicSDK | null
+): Promise<boolean> {
+  const byRule = assessSignificanceByRule(signals);
+  if (byRule) return byRule.significant;
+  return (await assessSignificanceWithModel(signals)).significant;
+}
+
+function describeAssessment(assessment: SignificanceAssessment, signals: PlatformSignal[]): string {
+  const verdict = assessment.significant ? 'SIGNIFICANT' : 'ROUTINE';
+  switch (assessment.method) {
+    case 'forced':
+      return `Assessment result: ${verdict}. Force-briefing requested.`;
+    case 'high_urgency':
+      return `Assessment result: ${verdict}. ${signals.filter(s => s.urgency >= 0.7).length} high-urgency signal(s) (urgency ≥ 0.7) — decided by rule, no model call.`;
+    case 'no_signals':
+      return `Assessment result: ${verdict}. No signals detected — decided by rule, no model call.`;
+    case 'too_few':
+      return `Assessment result: ${verdict}. ${signals.length} moderate signal(s), fewer than the 3 needed to consult the model — decided by rule, no model call.`;
+    case 'model':
+      return `Assessment result: ${verdict}. ${assessment.usage?.model ?? 'the model'} assessed ${signals.length} moderate signals collectively (${(assessment.usage?.inputTokens ?? 0) + (assessment.usage?.outputTokens ?? 0)} tokens).`;
+    case 'model_failed_rule_fallback':
+      return `Assessment result: ${verdict}. The model call failed (${assessment.error ?? 'unknown error'}); the fallback rule (≥2 signals with urgency ≥ 0.5) decided.`;
   }
 }
 
@@ -650,8 +812,9 @@ export async function generateBriefing(
   model: string,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'daily',
   thinkingEnabled = false,
-  db?: DatabaseAdapter
-): Promise<{ content: string; proposals: OrchestratorProposal[] }> {
+  db?: DatabaseAdapter,
+  ctx: { trailId?: string } = {}
+): Promise<{ content: string; proposals: OrchestratorProposal[]; usage: LlmCallUsage }> {
   const signalSummary = signals
     .slice(0, 20)
     .map(s => `[${s.source.toUpperCase()}] urgency=${s.urgency.toFixed(2)} relevance=${s.relevance.toFixed(2)}\nID: ${s.signal_id}\n${s.summary}`)
@@ -702,15 +865,17 @@ Current date: ${new Date().toISOString().substring(0, 10)}`;
   const maxTokens = isOpus ? 16000 : (model === 'claude-sonnet-4-6') ? 48000 : 4000;
 
   let raw = '';
+  let usage: LlmCallUsage;
   try {
-    const result = await callChat({
+    const call = await callModel({
       model: mapModelToProvider(model),
       system: BRIEFING_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens,
       thinkingLevel: 'investigate',
-    });
-    raw = result.text;
+    }, { step: 'briefing', trailId: ctx.trailId });
+    raw = call.result.text;
+    usage = call.usage;
   } catch (err) {
     // A briefing without the model is not a briefing. This used to return a
     // placeholder ("LLM briefing generation temporarily unavailable") with no
@@ -735,10 +900,11 @@ Current date: ${new Date().toISOString().substring(0, 10)}`;
     return {
       content: parsed.briefing_markdown || raw,
       proposals: Array.isArray(parsed.proposals) ? parsed.proposals : [],
+      usage,
     };
   } catch {
     // Treat entire response as markdown content, no structured proposals
-    return { content: raw, proposals: [] };
+    return { content: raw, proposals: [], usage };
   }
 }
 
@@ -1059,12 +1225,12 @@ Report format:
 Keep it concise (300–500 words). Professional tone. Include concrete numbers.`;
 
   try {
-    const result = await callChat({
+    const { result } = await callModel({
       model: mapModelToProvider('claude-sonnet-4-6'),
       system: 'You are a management report writer for the ANTON Prime AI Orchestrator.',
       messages: [{ role: 'user', content: prompt }],
       maxTokens: 1024,
-    });
+    }, { step: 'management_report' });
     return result.text || 'Report generation failed';
   } catch (e) {
     // Fallback: data-only report
@@ -1127,13 +1293,13 @@ Produce a concrete, executable workflow plan using ANTON's existing step types.`
   const planMaxTokens = isOpusPlan ? 16000 : 48000;
 
   try {
-    const result = await callChat({
+    const { result } = await callModel({
       model: mapModelToProvider(model),
       system: PLAN_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMsg }],
       maxTokens: planMaxTokens,
       thinkingLevel: 'investigate',
-    });
+    }, { step: 'workflow_plan' });
     const raw = result.text;
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return raw;
@@ -1171,12 +1337,12 @@ ${entrySummary}
 Write the narrative summary:`;
 
   try {
-    const result = await callChat({
+    const { result } = await callModel({
       model: mapModelToProvider('claude-sonnet-4-6'),
       system: 'You are ANTON\'s AI Orchestrator summarising reasoning trails.',
       messages: [{ role: 'user', content: prompt }],
       maxTokens: 200,
-    });
+    }, { step: 'narrative', trailId });
     return result.text.trim();
   } catch {
     return '';
@@ -1249,34 +1415,11 @@ export async function saveTrailToWorkspace(
   }
 }
 
-// ── Audit Log Integration ──────────────────────────────────────────────────────
-
-export async function logTrailToAuditLog(
-  trailId: string,
-  db: DatabaseAdapter,
-  trail: { trigger_type: string; status: string; total_entries: number; duration_ms?: number | null }
-): Promise<void> {
-  try {
-    const tableExists = (await db.get(
-      "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'audit_log'"
-    ) as { c: number }).c > 0;
-    if (!tableExists) return;
-
-    await db.run(`
-      INSERT INTO audit_log
-        (id, timestamp, module_id, response_status, knowledge_sources_used)
-      VALUES (?, NOW(), 'orchestrator', ?, ?)
-    `,
-      randomUUID(),
-      trail.status === 'completed' ? 'completed' : 'error',
-      JSON.stringify({ trail_id: trailId, trigger: trail.trigger_type, entries: trail.total_entries, duration_ms: trail.duration_ms })
-    );
-  } catch {
-    // Audit log integration is non-fatal
-  }
-}
-
 // ── Reasoning Trail ───────────────────────────────────────────────────────────
+//
+// audit_log is written per model call by callModel() above — a trail no longer
+// writes its own model-less row on completion (that was the source of the
+// 7,031 empty 'orchestrator' rows, one per trail, including every paused one).
 
 export type ReasoningEntryType =
   | 'signal_detection' | 'signal_assessment' | 'context_gathering'
@@ -1289,10 +1432,17 @@ export interface ReasoningEntryInput {
   entry_type: ReasoningEntryType;
   title: string;
   content: string;
+  /** The model's thinking text for this step; omitted or empty is stored as NULL. */
   thinking_content?: string;
   confidence?: number;
   duration_ms?: number;
   metadata?: Record<string, unknown>;
+  /** The dispatched model id, when this step called a model. */
+  model_used?: string;
+  /** Input + output tokens of that call. */
+  tokens_used?: number;
+  /** Priced cost of that call; null when the model has no known price. */
+  cost_usd?: number | null;
 }
 
 /** Create a new reasoning trail for a heartbeat cycle or approval action */
@@ -1316,16 +1466,22 @@ export async function addTrailEntry(
   entry: ReasoningEntryInput
 ): Promise<void> {
   try {
-    const seq = (await db.get(
+    // COUNT(*) is a bigint, which node-postgres returns as a string. This was
+    // `.c + 1` — "1" + 1 = "11" — so the second entry of every trail was
+    // numbered 11 and total_entries read 11 for a two-entry trail (4,412 of
+    // them in the live table; four-entry briefing trails read 31).
+    const countRow = await db.get(
       'SELECT COUNT(*) as c FROM orchestrator_reasoning_entries WHERE trail_id = ?',
       trailId
-    ) as { c: number }).c + 1;
+    ) as { c: number | string } | undefined;
+    const seq = Number(countRow?.c ?? 0) + 1;
 
     await db.run(`
       INSERT INTO orchestrator_reasoning_entries
         (id, trail_id, entry_type, sequence_number, title, content,
-         thinking_content, confidence, duration_ms, metadata)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         thinking_content, confidence, duration_ms, metadata,
+         model_used, tokens_used, cost_usd)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       randomUUID(),
       trailId,
@@ -1333,10 +1489,13 @@ export async function addTrailEntry(
       seq,
       entry.title,
       entry.content,
-      entry.thinking_content ?? null,
+      entry.thinking_content || null,
       entry.confidence ?? null,
       entry.duration_ms ?? null,
-      entry.metadata ? JSON.stringify(entry.metadata) : null
+      entry.metadata ? JSON.stringify(entry.metadata) : null,
+      entry.model_used ?? null,
+      entry.tokens_used ?? null,
+      entry.cost_usd ?? null
     );
 
     await db.run(`
@@ -1358,15 +1517,18 @@ export async function completeTrail(
 ): Promise<void> {
   try {
     const now = new Date().toISOString();
-    const total = (await db.get('SELECT total_entries FROM orchestrator_reasoning_trails WHERE id = ?', trailId) as { total_entries: number } | undefined)?.total_entries ?? 0;
 
+    // The trail's token and cost totals are the sum of its entries' model
+    // calls — rolled up here so they cannot drift from the entries.
     await db.run(`
       UPDATE orchestrator_reasoning_trails SET
         status = ?, duration_ms = ?, completed_at = ?,
         heartbeat_id  = COALESCE(?, heartbeat_id),
         briefing_id   = COALESCE(?, briefing_id),
         proposal_id   = COALESCE(?, proposal_id),
-        execution_id  = COALESCE(?, execution_id)
+        execution_id  = COALESCE(?, execution_id),
+        total_reasoning_tokens = (SELECT COALESCE(SUM(tokens_used), 0) FROM orchestrator_reasoning_entries WHERE trail_id = ?),
+        total_reasoning_cost_usd = (SELECT COALESCE(SUM(cost_usd), 0) FROM orchestrator_reasoning_entries WHERE trail_id = ?)
       WHERE id = ?
     `,
       status, durationMs, now,
@@ -1374,11 +1536,9 @@ export async function completeTrail(
       linkages?.briefing_id ?? null,
       linkages?.proposal_id ?? null,
       linkages?.execution_id ?? null,
+      trailId, trailId,
       trailId
     );
-
-    // Audit log (sync — non-fatal)
-    logTrailToAuditLog(trailId, db, { trigger_type: 'heartbeat', status, total_entries: total, duration_ms: durationMs });
   } catch (err) {
     console.warn('[orchestrator] Trail complete write failed (non-fatal):', err);
   }
@@ -1403,12 +1563,56 @@ export async function enrichTrailAsync(
 
 // ── Full Heartbeat Cycle ──────────────────────────────────────────────────────
 
+export interface HeartbeatCycleResult {
+  action: 'none' | 'briefing_generated' | 'spend_gate_paused';
+  briefingId?: string;
+  signalCount: number;
+  /** Set only when the cycle reasoned — asked the model, generated a briefing, or failed trying. */
+  trailId?: string;
+}
+
+const GATE_PAUSED_LOG_INTERVAL_MS = 60 * 60 * 1000;
+let gatePausedLastLoggedAt = 0;
+
+/**
+ * A reasoning trail that is written only once the cycle has something to
+ * reason about. Entries are buffered until the first model call (or a
+ * failure) materialises the trail; a cycle the spend gate skipped, or one the
+ * rules settled without a model, discards the buffer. A no-op is not a
+ * decision and leaves no trail — its only records are the heartbeat row and,
+ * when paused, the skipped-cycle counter in the spend-gate state.
+ */
+class DeferredTrail {
+  private readonly buffered: ReasoningEntryInput[] = [];
+  private trailId: string | undefined;
+
+  constructor(
+    private readonly db: DatabaseAdapter,
+    private readonly triggerType: 'heartbeat' | 'on_demand',
+    private readonly transparencyLevel: number,
+  ) {}
+
+  get id(): string | undefined { return this.trailId; }
+
+  async add(entry: ReasoningEntryInput): Promise<void> {
+    if (this.trailId) await addTrailEntry(this.db, this.trailId, entry);
+    else this.buffered.push(entry);
+  }
+
+  async materialise(): Promise<string> {
+    if (this.trailId) return this.trailId;
+    this.trailId = await createReasoningTrail(this.db, this.triggerType, this.transparencyLevel);
+    for (const entry of this.buffered.splice(0)) await addTrailEntry(this.db, this.trailId, entry);
+    return this.trailId;
+  }
+}
+
 export async function runHeartbeatCycle(
   db: DatabaseAdapter,
   anthropic: AnthropicSDK | null | undefined,
   period: 'daily' | 'weekly' | 'on_demand' | 'heartbeat' = 'heartbeat',
   forceBriefing: boolean = false
-): Promise<{ action: 'none' | 'briefing_generated'; briefingId?: string; signalCount: number; trailId?: string }> {
+): Promise<HeartbeatCycleResult> {
   const config = await getOrchestratorConfig(db);
 
   if (config.fully_disabled || config.orchestrator_paused) {
@@ -1420,22 +1624,21 @@ export async function runHeartbeatCycle(
   const lookbackDays = period === 'weekly' ? 14 : period === 'on_demand' ? 7 : 1;
   const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
 
-  // Start reasoning trail
   const triggerType = period === 'on_demand' ? 'on_demand' : 'heartbeat';
-  const trailId = await createReasoningTrail(db, triggerType, (config as OrchestratorConfig & { reasoning_transparency_level?: number }).reasoning_transparency_level ?? 1);
+  const transparencyLevel = (config as OrchestratorConfig & { reasoning_transparency_level?: number }).reasoning_transparency_level ?? 1;
+  const trail = new DeferredTrail(db, triggerType, transparencyLevel);
 
   let signals: PlatformSignal[] = [];
   let action: 'none' | 'briefing_generated' = 'none';
   let briefingId: string | undefined;
-  let heartbeatId: string | undefined;
   let error: string | undefined;
   let spendGatePaused = false;
 
   try {
-    // Step 1: Aggregate signals
+    // Step 1: Aggregate signals (deterministic — runs on every cycle)
     const signalStart = Date.now();
     signals = await aggregateSignals(db, since);
-    await addTrailEntry(db, trailId, {
+    await trail.add({
       entry_type: 'signal_detection',
       title: `${signals.length} platform signals detected`,
       content: signals.length === 0
@@ -1457,78 +1660,113 @@ export async function runHeartbeatCycle(
     if (period !== 'on_demand') {
       const gate = await checkAndRecordSpendGate(db);
       spendGatePaused = gate.paused;
-      if (gate.paused) {
-        console.log(`[orchestrator] Spend gate active — skipping LLM briefing generation (${gate.reason})`);
-        await addTrailEntry(db, trailId, {
-          entry_type: 'signal_assessment',
-          title: 'Spend gate active — LLM briefing generation paused',
-          content: `${gate.reason}. ${signals.length} signals were aggregated deterministically but no LLM call was made. Rate any recent proposal on the Orchestrator dashboard to resume.`,
-          metadata: { spend_gate: true, unrated_streak: gate.unratedStreak, threshold: gate.threshold },
-        });
+      // A skipped cycle is not a decision: no trail, no audit row. Its record
+      // is the skipped-cycle counter checkAndRecordSpendGate keeps in the gate
+      // state, plus this line at most once an hour.
+      if (gate.paused && Date.now() - gatePausedLastLoggedAt >= GATE_PAUSED_LOG_INTERVAL_MS) {
+        gatePausedLastLoggedAt = Date.now();
+        console.info(`[orchestrator] Spend gate active — heartbeat cycles skip the model until a recent proposal is rated (${gate.reason}). Skipped cycles are counted in app_settings.${SPEND_GATE_STATE_KEY}; this line repeats at most hourly.`);
       }
     }
 
     if (!spendGatePaused) {
-    // Step 2: Assess significance
-    const assessStart = Date.now();
-    const significant = forceBriefing || (await assessSignificance(signals, anthropic));
-    await addTrailEntry(db, trailId, {
-      entry_type: 'signal_assessment',
-      title: significant ? 'Signals assessed as significant — briefing warranted' : 'Signals assessed as routine — no briefing needed',
-      content: significant
-        ? `Assessment result: SIGNIFICANT. ${forceBriefing ? 'Force-briefing requested.' : `${signals.filter(s => s.urgency >= 0.7).length} high-urgency signals and/or ≥3 moderate signals detected.`}`
-        : `Assessment result: ROUTINE. ${signals.length} signals detected but none meet the significance threshold individually or collectively.`,
-      confidence: significant ? 0.9 : 0.8,
-      duration_ms: Date.now() - assessStart,
-      metadata: { significant, forced: forceBriefing, signal_count: signals.length },
-    });
-
-    if (significant || period !== 'heartbeat') {
-      // Step 3: Generate briefing + proposals
-      const briefingStart = Date.now();
-      await addTrailEntry(db, trailId, {
-        entry_type: 'proposal_reasoning',
-        title: `Generating ${period} briefing with proposal recommendations`,
-        content: `Calling ${config.briefing_model} to analyse ${signals.length} signals and generate actionable proposals.\n\nSignal composition:\n${[...new Set(signals.map(s => s.source))].map(src => `- ${src}: ${signals.filter(s => s.source === src).length} signals`).join('\n')}`,
-        metadata: { model: config.briefing_model, signal_count: signals.length, period },
+      // Step 2: Assess significance — rules first; the model only when they
+      // cannot decide, and then against an open trail so the call is recorded.
+      const assessStart = Date.now();
+      let assessment: SignificanceAssessment;
+      if (forceBriefing) {
+        assessment = { significant: true, method: 'forced' };
+      } else {
+        const byRule = assessSignificanceByRule(signals);
+        assessment = byRule ?? await assessSignificanceWithModel(signals, { trailId: await trail.materialise() });
+      }
+      const { significant, usage: assessUsage } = assessment;
+      await trail.add({
+        entry_type: 'signal_assessment',
+        title: significant ? 'Signals assessed as significant — briefing warranted' : 'Signals assessed as routine — no briefing needed',
+        content: describeAssessment(assessment, signals),
+        confidence: significant ? 0.9 : 0.8,
+        duration_ms: Date.now() - assessStart,
+        thinking_content: assessUsage?.thinking ?? undefined,
+        model_used: assessUsage?.model,
+        tokens_used: assessUsage ? assessUsage.inputTokens + assessUsage.outputTokens : undefined,
+        cost_usd: assessUsage?.costUsd,
+        metadata: {
+          significant,
+          method: assessment.method,
+          forced: forceBriefing,
+          signal_count: signals.length,
+          ...(assessUsage ? { model: assessUsage.model, provider: assessUsage.provider, input_tokens: assessUsage.inputTokens, output_tokens: assessUsage.outputTokens } : {}),
+          ...(assessment.error ? { model_error: assessment.error } : {}),
+        },
       });
 
-      const briefingThinking = !!(config as OrchestratorConfig).briefing_thinking_enabled;
-      const { content, proposals } = await generateBriefing(signals, anthropic, config.briefing_model, period, briefingThinking, db);
+      if (significant || period !== 'heartbeat') {
+        // Step 3: Generate briefing + proposals — the cycle becomes a decision here.
+        const trailId = await trail.materialise();
+        const briefingStart = Date.now();
+        const briefingModel = mapModelToProvider(config.briefing_model);
+        await trail.add({
+          entry_type: 'proposal_reasoning',
+          title: `Generating ${period} briefing with proposal recommendations`,
+          content: `Calling ${briefingModel}${briefingModel !== config.briefing_model ? ` (configured as ${config.briefing_model}, resolved to the default engine)` : ''} to analyse ${signals.length} signals and generate actionable proposals.\n\nSignal composition:\n${[...new Set(signals.map(s => s.source))].map(src => `- ${src}: ${signals.filter(s => s.source === src).length} signals`).join('\n')}`,
+          metadata: { model: briefingModel, configured_model: config.briefing_model, signal_count: signals.length, period },
+        });
 
-      await addTrailEntry(db, trailId, {
-        entry_type: 'completion_summary',
-        title: `Briefing generated — ${proposals.length} proposals`,
-        content: `Briefing generation complete.\n\nProposals generated: ${proposals.length}\n${proposals.slice(0, 5).map((p, i) => `${i + 1}. [${p.action_type}] ${p.proposed_action} (confidence: ${Math.round(p.confidence_score * 100)}%)`).join('\n')}`,
-        confidence: proposals.length > 0 ? proposals.reduce((a, p) => a + p.confidence_score, 0) / proposals.length : 0,
-        duration_ms: Date.now() - briefingStart,
-        metadata: { proposals_count: proposals.length, action_types: [...new Set(proposals.map(p => p.action_type))] },
-      });
+        const briefingThinking = !!(config as OrchestratorConfig).briefing_thinking_enabled;
+        const { content, proposals, usage } = await generateBriefing(signals, anthropic, config.briefing_model, period, briefingThinking, db, { trailId });
 
-      briefingId = await saveBriefing(db, {
-        period,
-        content,
-        signals_read: signals.length,
-        proposals_count: proposals.length,
-        signals_data: signals,
-        proposals,
-      });
-      action = 'briefing_generated';
-    }
-    } // end !spendGatePaused (LLM steps)
+        await trail.add({
+          entry_type: 'completion_summary',
+          title: `Briefing generated — ${proposals.length} proposals`,
+          content: `Briefing generation complete.\n\nProposals generated: ${proposals.length}\n${proposals.slice(0, 5).map((p, i) => `${i + 1}. [${p.action_type}] ${p.proposed_action} (confidence: ${Math.round(p.confidence_score * 100)}%)`).join('\n')}`,
+          confidence: proposals.length > 0 ? proposals.reduce((a, p) => a + p.confidence_score, 0) / proposals.length : 0,
+          duration_ms: Date.now() - briefingStart,
+          thinking_content: usage.thinking ?? undefined,
+          model_used: usage.model,
+          tokens_used: usage.inputTokens + usage.outputTokens,
+          cost_usd: usage.costUsd,
+          metadata: {
+            proposals_count: proposals.length,
+            action_types: [...new Set(proposals.map(p => p.action_type))],
+            model: usage.model,
+            provider: usage.provider,
+            input_tokens: usage.inputTokens,
+            output_tokens: usage.outputTokens,
+            cost_usd: usage.costUsd,
+          },
+        });
+
+        briefingId = await saveBriefing(db, {
+          period,
+          content,
+          signals_read: signals.length,
+          proposals_count: proposals.length,
+          signals_data: signals,
+          proposals,
+        });
+        action = 'briefing_generated';
+      }
+    } // end !spendGatePaused (model steps)
   } catch (err) {
     error = String(err);
     console.error('[orchestrator] Heartbeat cycle error:', err);
-    await addTrailEntry(db, trailId, {
-      entry_type: 'completion_summary',
-      title: 'Cycle failed with error',
-      content: `Error during heartbeat cycle: ${error}`,
-      metadata: { error },
-    });
+    // A failed cycle always leaves a trail naming the cause.
+    try {
+      await trail.materialise();
+      await trail.add({
+        entry_type: 'completion_summary',
+        title: 'Cycle failed with error',
+        content: `Error during heartbeat cycle: ${error}`,
+        metadata: { error },
+      });
+    } catch (trailErr) {
+      console.warn('[orchestrator] Could not record the failure on a trail (non-fatal):', trailErr);
+    }
   }
 
-  // Log heartbeat
-  heartbeatId = randomUUID();
+  // Log heartbeat — the one row every cycle leaves, paused or not.
+  const heartbeatId = randomUUID();
   await db.run(`
     INSERT INTO orchestrator_heartbeats
       (id, signals_checked, signals_significant, action_taken, duration_ms, error_message, status)
@@ -1543,14 +1781,17 @@ export async function runHeartbeatCycle(
     error ? 'error' : 'ok'
   );
 
-  // Complete trail
-  await completeTrail(db, trailId, error ? 'failed' : 'completed', Date.now() - start, {
-    heartbeat_id: heartbeatId,
-    briefing_id: briefingId,
-  });
+  // Complete the trail — only a cycle that reasoned has one.
+  const trailId = trail.id;
+  if (trailId) {
+    await completeTrail(db, trailId, error ? 'failed' : 'completed', Date.now() - start, {
+      heartbeat_id: heartbeatId,
+      briefing_id: briefingId,
+    });
+  }
 
   // Async enrichment: narrative summary + workspace file (non-blocking)
-  if (action === 'briefing_generated') {
+  if (action === 'briefing_generated' && trailId) {
     enrichTrailAsync(trailId, db, anthropic).catch(err => {
       console.error('[orchestrator] enrichTrailAsync failed (non-fatal):', err);
     });
@@ -1617,5 +1858,5 @@ export async function runHeartbeatCycle(
     console.error('[orchestrator] Stage check error (non-fatal):', String(e));
   }
 
-  return { action, briefingId, signalCount: signals.length, trailId };
+  return { action: spendGatePaused ? 'spend_gate_paused' : action, briefingId, signalCount: signals.length, trailId };
 }
