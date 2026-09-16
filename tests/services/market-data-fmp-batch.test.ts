@@ -115,6 +115,61 @@ describe('FMP prices — one batch request, history only as backfill', () => {
     expect(historyCalls.every((u) => [...stale].some((s) => u.includes(`symbol=${s}&`)))).toBe(true);
   });
 
+  it('falls back to per-symbol bounded history when batch-quote is not in the plan, and remembers it', async () => {
+    // Live on 2026-09-16: batch-quote answered 402 "Restricted Endpoint" — the
+    // plan, not the quota — while historical-price-eod with from/to worked.
+    // Without the fallback the cycle ingested nothing, recorded a refusal and
+    // put the source on a four-hour cooldown; prices moved only when the
+    // backfill found a symbol stale enough.
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes('batch-quote')) return { ok: false, status: 402, json: async () => ({}), text: async () => 'Restricted Endpoint: This endpoint is not available under your current subscription' };
+      return history();
+    });
+    const stale = new Set(['SYM3']);
+    const bars = SYMBOLS.filter((s) => !stale.has(s)).map((s) => ({ symbol: s, newest: today }));
+    const { db, writes } = makeDb(source(), bars);
+    const { createMarketDataService } = await import('../../server/services/market-data-service.js');
+    const svc = await createMarketDataService(db);
+
+    const first = await svc.fetchFromSource(SOURCE_ID);
+
+    const historyCalls = urlsCalled().filter((u) => u.includes('historical-price-eod'));
+    expect(urlsCalled().filter((u) => u.includes('batch-quote'))).toHaveLength(1);
+    expect(historyCalls).toHaveLength(35);
+    // Every request is bounded: a from/to window, one week for fresh symbols
+    // and 45 days for the stale one.
+    const from = (u: string) => new Date(u.match(/from=(\d{4}-\d{2}-\d{2})/)![1]).getTime();
+    const dayMs = 86_400_000;
+    expect(historyCalls.every((u) => /from=\d{4}-\d{2}-\d{2}&to=\d{4}-\d{2}-\d{2}/.test(u))).toBe(true);
+    const staleCall = historyCalls.find((u) => u.includes('symbol=SYM3&'))!;
+    const freshCall = historyCalls.find((u) => u.includes('symbol=SYM4&'))!;
+    expect(Date.now() - from(staleCall)).toBeGreaterThan(44 * dayMs);
+    expect(Date.now() - from(freshCall)).toBeLessThan(8 * dayMs);
+    expect(first.itemsIngested).toBe(35);
+    expect(writes.some((w) => /last_fetch_status = 'success'/.test(w.sql))).toBe(true);
+    expect(writes.some((w) => w.sql.includes('refused_until = ?'))).toBe(false);
+
+    // The next cycle on the same service skips batch-quote altogether.
+    fetchMock.mockClear();
+    await svc.fetchFromSource(SOURCE_ID);
+    expect(urlsCalled().some((u) => u.includes('batch-quote'))).toBe(false);
+    expect(urlsCalled().filter((u) => u.includes('historical-price-eod'))).toHaveLength(35);
+  });
+
+  it('rolls the FMP daily counter over on the first call of a new day', async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      const m = url.match(/batch-quote\?symbols=([^&]+)/);
+      return m ? quotes(decodeURIComponent(m[1]).split(',')) : refused();
+    });
+    const { db, writes } = makeDb(source(), fresh);
+    const { createMarketDataService } = await import('../../server/services/market-data-service.js');
+    const svc = await createMarketDataService(db);
+    await svc.fetchFromSource(SOURCE_ID);
+    const counter = writes.find((w) => w.sql.includes('UPDATE api_rate_limits'));
+    expect(counter?.sql).toMatch(/CASE WHEN reset_date = \? THEN daily_calls \+ 1 ELSE 1 END/);
+    expect(counter?.params[0]).toBe(today);
+  });
+
   it('a non-price data type is untouched (news still goes one request per feed)', async () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => [] });
     const { db } = makeDb(source({ config: { data_type: 'news', symbols: [] } }), []);

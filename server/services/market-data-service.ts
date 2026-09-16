@@ -619,7 +619,17 @@ export async function createMarketDataService(db: DatabaseAdapter) {
 
   async function incrementFmpCount(): Promise<void> {
     try {
-      await db.run("UPDATE api_rate_limits SET daily_calls = daily_calls + 1, updated_at = NOW() WHERE provider = 'fmp'");
+      // The day rolls over here too: the reset in getFmpCount is only reached
+      // by callers of that function, and the fetch path is not one of them —
+      // the counter stood at 239,882 calls against a reset_date in March.
+      const today = new Date().toISOString().slice(0, 10);
+      await db.run(
+        `UPDATE api_rate_limits
+         SET daily_calls = CASE WHEN reset_date = ? THEN daily_calls + 1 ELSE 1 END,
+             reset_date = ?, updated_at = NOW()
+         WHERE provider = 'fmp'`,
+        today, today,
+      );
     } catch {
       // Non-fatal
     }
@@ -649,6 +659,13 @@ export async function createMarketDataService(db: DatabaseAdapter) {
     });
   }
 
+  /**
+   * Set once FMP answers batch-quote with 402 "Restricted Endpoint" — the plan
+   * does not include it (seen 2026-09-16) — so later cycles go straight to the
+   * per-symbol path instead of spending a refused request each time.
+   */
+  let fmpBatchQuoteRestricted = false;
+
   async function fetchFMP(sourceId: string, config: Record<string, unknown>): Promise<number> {
     const refusals = createRefusalTracker('FMP');
     const apiKey = config.api_key_env
@@ -670,13 +687,33 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       // (an outage, a new symbol), capped per cycle so repair is spread out.
       const today = new Date().toISOString().slice(0, 10);
       const quoted = new Set<string>();
-      for (let i = 0; i < symbols.length; i += FMP_BATCH_QUOTE_CHUNK) {
+      // Stale symbols are decided BEFORE anything is ingested, so a symbol
+      // that has been dark for days gets its 45-day history rather than the
+      // short window the fallback below asks for.
+      const staleDays = Number(config.backfill_stale_days ?? DEFAULT_BACKFILL_STALE_DAYS) || DEFAULT_BACKFILL_STALE_DAYS;
+      const maxBackfill = Number(config.backfill_max_per_cycle ?? DEFAULT_BACKFILL_MAX_PER_CYCLE) || DEFAULT_BACKFILL_MAX_PER_CYCLE;
+      const stale = await symbolsNeedingBackfill(sourceId, symbols, staleDays);
+      const staleSet = new Set(stale);
+
+      for (let i = 0; i < symbols.length && !fmpBatchQuoteRestricted; i += FMP_BATCH_QUOTE_CHUNK) {
         const chunk = symbols.slice(i, i + FMP_BATCH_QUOTE_CHUNK);
         await waitForFmpSlot();
         const url = `https://financialmodelingprep.com/stable/batch-quote?symbols=${chunk.map(encodeURIComponent).join(',')}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
-        if (!response.ok) { refusals.note(response.status); continue; }
+        if (!response.ok) {
+          // 402 "Restricted Endpoint" is the PLAN, not the quota: remember it
+          // for this process and take the per-symbol path instead. Any other
+          // refusal is the account's.
+          const body = response.status === 402 ? await response.text().catch(() => '') : '';
+          if (response.status === 402 && /restricted endpoint/i.test(body)) {
+            fmpBatchQuoteRestricted = true;
+            console.warn('[market-data] FMP batch-quote is not included in this plan — using per-symbol quotes (bounded history) from now on');
+            break;
+          }
+          refusals.note(response.status);
+          continue;
+        }
         const quotes = await response.json() as Array<{
           symbol?: string; price?: number; open?: number; dayHigh?: number; dayLow?: number;
           previousClose?: number; volume?: number; timestamp?: number;
@@ -701,27 +738,19 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         }
       }
 
-      // Backfill: symbols with no bar in the last N days get their history.
-      const staleDays = Number(config.backfill_stale_days ?? DEFAULT_BACKFILL_STALE_DAYS) || DEFAULT_BACKFILL_STALE_DAYS;
-      const maxBackfill = Number(config.backfill_max_per_cycle ?? DEFAULT_BACKFILL_MAX_PER_CYCLE) || DEFAULT_BACKFILL_MAX_PER_CYCLE;
-      const stale = await symbolsNeedingBackfill(sourceId, symbols, staleDays);
-      let backfilled = 0;
-      for (const symbol of stale) {
-        if (backfilled >= maxBackfill) {
-          console.log(`[market-data] FMP backfill capped at ${maxBackfill} symbol(s) this cycle; ${stale.length - backfilled} more wait for the next`);
-          break;
-        }
-        backfilled++;
+      // Per-symbol bounded history. FMP meters bandwidth, not requests
+      // ("Bandwidth Limit Reach"): without from/to this endpoint returns the
+      // symbol's ENTIRE history, which is what exhausted the plan. Two uses:
+      //   - the fallback when batch-quote is not in the plan: every symbol,
+      //     a one-week window (a handful of bars, ~1 KB each);
+      //   - the backfill for stale symbols: a 45-day window, capped per cycle.
+      const fetchHistory = async (symbol: string, windowDays: number): Promise<void> => {
         await waitForFmpSlot();
-        // FMP meters bandwidth, not requests ("Bandwidth Limit Reach"). Without
-        // from/to this endpoint returns the symbol's ENTIRE history and the
-        // loop below kept 30 days of it — years of bars downloaded per symbol
-        // per cycle. Ask for the window that is kept.
-        const from = new Date(Date.now() - 45 * 86_400_000).toISOString().slice(0, 10);
+        const from = new Date(Date.now() - windowDays * 86_400_000).toISOString().slice(0, 10);
         const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&from=${from}&to=${today}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
-        if (!response.ok) { refusals.note(response.status); continue; }
+        if (!response.ok) { refusals.note(response.status); return; }
         const rawData = await response.json() as Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }> | { historical?: Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }> };
         const historical = Array.isArray(rawData) ? rawData : (rawData.historical ?? []);
         for (const day of historical.slice(0, 30)) {
@@ -733,6 +762,24 @@ export async function createMarketDataService(db: DatabaseAdapter) {
             metadata: { provider: 'fmp' },
           });
           ingested++;
+        }
+      };
+
+      if (fmpBatchQuoteRestricted) {
+        // Fallback: every symbol, short window; stale ones get the long window here.
+        for (const symbol of symbols) {
+          await fetchHistory(symbol, staleSet.has(symbol) ? 45 : 7);
+        }
+      } else {
+        // Backfill: symbols with no bar in the last N days get their history.
+        let backfilled = 0;
+        for (const symbol of stale) {
+          if (backfilled >= maxBackfill) {
+            console.log(`[market-data] FMP backfill capped at ${maxBackfill} symbol(s) this cycle; ${stale.length - backfilled} more wait for the next`);
+            break;
+          }
+          backfilled++;
+          await fetchHistory(symbol, 45);
         }
       }
     } else if (dataType === 'news') {
