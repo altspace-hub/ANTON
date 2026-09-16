@@ -7,7 +7,7 @@ The Banking & Financial Services area covers the technical and regulatory dimens
 ## Regulatory Framework
 
 **Prudential Regulation:**
-- CRR3 (Capital Requirements Regulation 3) — Basel IV implementation in the EU
+- CRR3 (Capital Requirements Regulation 3, Regulation (EU) 2024/1623) — Basel IV implementation in the EU; applies from 1 January 2025
 - CRD6 (Capital Requirements Directive 6) — national law implementation
 - Basel III/IV standards (BIS) — minimum capital, liquidity, leverage requirements
 - SREP (Supervisory Review and Evaluation Process) — supervisory capital add-ons (Pillar 2)
@@ -15,7 +15,7 @@ The Banking & Financial Services area covers the technical and regulatory dimens
 
 **Payment Services:**
 - PSD2 (Payment Services Directive 2) — current framework
-- PSD3 / PSR (Payment Services Regulation) — forthcoming replacement
+- PSD3 / PSR (Payment Services Regulation) — proposed replacement [verify: adoption status and application dates]
 - EMD2 (E-Money Directive 2) / EMR (forthcoming E-Money Regulation)
 - Strong Customer Authentication (SCA) under RTS 2018/389
 - Open Banking / Open Finance framework
@@ -54,3 +54,5 @@ When working in the Banking & Financial Services domain:
 5. **Payment infrastructure interdependency** — Payment regulation intersects with AML, data protection, and operational resilience
 6. **IFRS 9 forward-looking** — Provisioning requires forward-looking economic scenarios, not just historical data
 7. **Proportionality** — Regulatory requirements scale with entity size, complexity, and interconnectedness
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

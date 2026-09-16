@@ -113,3 +113,70 @@ describe('module / area id integrity', () => {
     expect(duplicated).toEqual([]);
   });
 });
+
+describe('legacy server/prompts directory', () => {
+  // 2026-09-16: 19 files in server/prompts/ shadowed a live
+  // server/areas/<area>/modules/<id>/system-prompt.md and had drifted — the
+  // legacy sanctions-advisory carried three sections the live copy had lost,
+  // while two readers (task-agent capability fallback, companion persona
+  // preview) still preferred the legacy file. The live copies were merged and
+  // the shadows deleted; both readers now go through getModuleSystemPrompt().
+  // These two tests pin that (a) a shadow copy cannot creep back and (b) the
+  // "ghost" ids that live ONLY in server/prompts still resolve through the
+  // loader's fallback.
+  const repoRoot = path.resolve(__dirname, '..', '..');
+  const areasDir = path.join(repoRoot, 'server', 'areas');
+  const legacyPromptsDir = path.join(repoRoot, 'server', 'prompts');
+
+  function liveModuleIds(): Set<string> {
+    const ids = new Set<string>();
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        if (!fs.existsSync(configPath)) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string };
+        if (config.id) ids.add(config.id);
+      }
+    }
+    return ids;
+  }
+
+  function legacyPromptIds(): string[] {
+    return fs.readdirSync(legacyPromptsDir)
+      .filter((f) => f.endsWith('.md') && !f.startsWith('_')) // _foundation / _explainability are layers, not modules
+      .map((f) => f.slice(0, -'.md'.length));
+  }
+
+  it('no server/prompts/<id>.md shadows an id that has a live module dir', () => {
+    const live = liveModuleIds();
+    const shadowed = legacyPromptIds().filter((id) => live.has(id));
+    expect(shadowed).toEqual([]);
+  });
+
+  it('every ghost id (server/prompts only) still resolves through getModuleSystemPrompt', async () => {
+    // module-loader starts a recursive fs.watch on server/areas outside
+    // production; keep that out of the test worker.
+    const prevEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    let getModuleSystemPrompt: (id: string) => Promise<string | null>;
+    try {
+      ({ getModuleSystemPrompt } = await import('../../server/services/module-loader'));
+    } finally {
+      process.env.NODE_ENV = prevEnv;
+    }
+    const live = liveModuleIds();
+    const ghosts = legacyPromptIds().filter((id) => !live.has(id));
+    expect(ghosts.length, 'the ghost set went empty — did the fallback dir move?').toBeGreaterThan(0);
+
+    const unresolved: string[] = [];
+    for (const id of ghosts) {
+      const prompt = await getModuleSystemPrompt(id);
+      if (!prompt || prompt.trim().length === 0) unresolved.push(id);
+    }
+    expect(unresolved).toEqual([]);
+  }, 30_000);
+});

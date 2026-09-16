@@ -53,6 +53,7 @@ Structure every investigation across these phases. Some investigations will star
 - What is the specific concern? (Unusual transaction pattern / PEP-related activity / sanctions proximity / structuring / rapid movement)
 - What is the relevant context? (Customer type / relationship age / business purpose / historical activity)
 - Initial assessment: Does the trigger warrant a full investigation, quick triage and dismiss, or escalation to MLRO immediately?
+- Record the trigger source, date, and reference; assign a priority (Urgent / High / Standard / Low) with rationale; note time constraints (supervisory deadlines, tipping-off exposure, asset-freezing needs).
 
 ### Phase 2 — Customer and Entity Profiling
 - Who is the customer? (Full CDD record review: identification, verification, beneficial ownership, PEP status, source of wealth, risk classification)
@@ -78,6 +79,7 @@ Structure every investigation across these phases. Some investigations will star
 - State which analytical questions remain open.
 - Draft case narrative for MLRO review.
 - State clearly: "The decision whether to file a SAR/STR is for the MLRO."
+- If the case is closed without a SAR: document the rationale for dismissal with specificity — generic "no suspicion" closures are audit findings.
 
 ---
 
@@ -124,6 +126,25 @@ Use these typologies when identifying patterns. A "typology match" is an observa
 - Pattern: Rapid conversion of fiat to virtual assets and back; use of peer-to-peer exchanges or mixers/tumblers; multiple wallet hops before arriving at a regulated on-ramp.
 - Signals: Customer deposits funds immediately after receiving from a VA exchange; high frequency of small VA conversions; customer uses multiple unhosted wallets; blockchain analysis shows proximity to sanctioned addresses or darknet markets.
 - Reference: FATF Guidance on VA and VASP (2021); EBA Opinion on AML/CFT and virtual assets.
+
+### Real Estate ML
+- Pattern: Cash or third-party-funded property purchases; payments made on behalf of the buyer by unrelated parties; rapid resale, often at a loss; corporate vehicles or trusts as purchasers.
+- Reference: FATF work on ML/TF through the real estate sector.
+- Counter-hypothesis: Legitimate investment — is the purchaser's source of funds documented and consistent with the purchase price?
+
+### Counter-Hypothesis Tests (apply to every typology match)
+
+For each pattern flagged, state the plausible innocent explanation and the test that would confirm or eliminate it:
+
+| Typology | Counter-hypothesis | Test |
+|---|---|---|
+| Structuring | Legitimate small business with multiple cashiers | Consistent business receipts across all deposits? |
+| Layering / rapid movement | Treasury or liquidity management | Is the counterparty a known group treasury entity? |
+| Trade-based ML | Genuine commercial relationship with pricing variance | Are invoices available and prices within market range? |
+| Shell company use | Legitimate holding structure | Is there a documented commercial rationale for the structure? |
+| PEP / corruption | Legitimate personal wealth | Is source of wealth documented and plausible given tenure in public role? |
+| Real estate | Legitimate investment | Is source of funds documented and consistent with the purchase price? |
+| Virtual assets | Legitimate crypto investor | Can the customer explain the wallet addresses and transaction history? |
 
 ---
 

@@ -17,7 +17,7 @@ The Risk Management area covers enterprise risk assessment, risk appetite framew
 - BCBS Principles for the Sound Management of Operational Risk (2011)
 - FSB Principles for Effective Risk Data Aggregation and Risk Reporting (BCBS 239)
 - SREP / ICAAP — supervisory review of risk management quality
-- DORA — digital operational resilience (ICT risk subset of operational risk)
+- DORA (EU) 2022/2554 — digital operational resilience (ICT risk subset of operational risk; applies from 17 January 2025)
 
 **Scenario Analysis:**
 - Bank of England / EBA Climate Stress Testing frameworks
@@ -60,3 +60,5 @@ When working in the Risk Management domain:
 5. **Board ownership** — Risk appetite is a board responsibility, not a management document
 6. **Forward-looking** — Risk management predicts and prevents; it does not just explain what went wrong
 7. **Proportionality** — Risk management complexity should match the entity's risk profile and systemic importance
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

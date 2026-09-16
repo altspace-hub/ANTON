@@ -73,3 +73,5 @@ The Healthcare & Life Sciences area covers clinical operations, healthcare regul
 3. **Regulatory intelligence is continuous** — Guidelines evolve; positions must reflect current regulatory thinking
 4. **Risk-based approach** — Proportionate controls based on risk to patients; not all risks require equal mitigation
 5. **Cross-functional alignment** — Regulatory, clinical, commercial, and medical affairs must be aligned from the start
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

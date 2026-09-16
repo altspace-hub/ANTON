@@ -36,8 +36,9 @@
  */
 
 import os from 'node:os';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { StreamSink } from './stream-sink.js';
+import type { WebSourceRecord } from '../../src/lib/types.js';
 import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens, type AnthropicEffort } from './thinking-map.js';
 import { isSdkEngineEnabled } from './sdk-engine-store.js';
 import { SDK_MODEL_PREFIX, isSdkModel, sdkUnderlyingModel } from './engine-model-id.js';
@@ -128,7 +129,12 @@ export interface SdkCompletionData {
   /** Wave 0: the exact system prompt string handed to the subprocess (after the
    *  web-search instruction rewording), so the run artifact stores what was sent. */
   systemPromptSent?: string;
+  /** Wave 2: every WebSearch / WebFetch call the run made, paired with what
+   *  the tool returned (query + hits; URL + sha256 of the fetched text). Present
+   *  on this engine — possibly empty — and absent on engines without web tools. */
+  webSources?: WebSourceRecord[];
 }
+export type { WebSourceRecord };
 
 interface ContentBlock {
   type: 'thinking' | 'text';
@@ -295,7 +301,154 @@ function servedModelFromUsage(usage: SdkResultMessage['modelUsage']): string | u
   }
   return best?.id;
 }
-type SdkMessage = SdkPartialMessage | SdkResultMessage | { type: string };
+
+// ── Web sources (Wave 2, 2026-09-16) ────────────────────────
+// A web-grounded run reads pages through the SDK's WebSearch / WebFetch tools.
+// Each call travels as a `tool_use` block on an assistant envelope message and
+// its outcome as a `tool_result` block on a user envelope message
+// (SDKAssistantMessage / SDKUserMessage in sdk.d.ts); the SDK also attaches
+// the tool's structured output to the user envelope as `tool_use_result`
+// (WebSearchOutput / WebFetchOutput in sdk-tools.d.ts). The loop used to drop
+// both envelopes, so the pages an answer was grounded on were recorded
+// nowhere. The tracker pairs every call with its result and reduces the pair
+// to a record: query + hits for a search, URL + sha256 + length of the text
+// the tool handed the model for a fetch. Page bodies never enter a record.
+
+/** Search hits kept per web_search record. */
+export const WEB_SOURCE_RESULT_CAP = 20;
+
+type WebToolName = 'WebSearch' | 'WebFetch';
+
+interface SdkToolUseBlock { type: 'tool_use'; id: string; name: string; input?: unknown }
+interface SdkToolResultBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  content?: string | Array<{ type?: string; text?: string }>;
+  is_error?: boolean;
+}
+/** SDKAssistantMessage: `message` is the API message; its content may hold tool_use blocks. */
+interface SdkAssistantEnvelope { type: 'assistant'; message?: { content?: unknown }; timestamp?: string }
+/** SDKUserMessage: tool results come back here, with the tool's structured output alongside. */
+interface SdkUserEnvelope { type: 'user'; message?: { content?: unknown }; tool_use_result?: unknown; timestamp?: string }
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
+const isToolUseBlock = (v: unknown): v is SdkToolUseBlock =>
+  isRecord(v) && v.type === 'tool_use' && typeof v.id === 'string' && typeof v.name === 'string';
+const isToolResultBlock = (v: unknown): v is SdkToolResultBlock =>
+  isRecord(v) && v.type === 'tool_result' && typeof v.tool_use_id === 'string';
+const isWebToolName = (name: string): name is WebToolName => name === 'WebSearch' || name === 'WebFetch';
+
+/** The text a tool_result handed the model: a string, or its text blocks joined. */
+function toolResultText(content: SdkToolResultBlock['content']): string {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content.map((b) => (isRecord(b) ? str(b.text) : undefined)).filter((t): t is string => t !== undefined).join('\n');
+}
+
+const URL_IN_TEXT = /https?:\/\/[^\s<>"')\]]+/g;
+
+/** Hits from the SDK's structured WebSearchOutput; failing that, the URLs in the text the model read. */
+function searchHits(structured: Record<string, unknown> | undefined, text: string): Array<{ url: string; title: string }> {
+  const hits: Array<{ url: string; title: string }> = [];
+  const seen = new Set<string>();
+  const add = (url: string, title: string): void => {
+    if (hits.length >= WEB_SOURCE_RESULT_CAP || seen.has(url)) return;
+    seen.add(url);
+    hits.push({ url, title });
+  };
+  if (structured && Array.isArray(structured.results)) {
+    for (const entry of structured.results) {
+      if (!isRecord(entry) || !Array.isArray(entry.content)) continue;   // string entries are the tool's commentary
+      for (const hit of entry.content) {
+        const url = isRecord(hit) ? str(hit.url) : undefined;
+        if (url) add(url, (isRecord(hit) && str(hit.title)) || '');
+      }
+    }
+  }
+  if (hits.length === 0) {
+    for (const url of text.match(URL_IN_TEXT) ?? []) add(url, '');
+  }
+  return hits;
+}
+
+export interface WebSourceTracker {
+  /** Feed every SDK message; returns the records this one completed (a user envelope may close several). */
+  observe(message: SdkMessage): WebSourceRecord[];
+  /** Every record so far, in completion order. */
+  readonly records: WebSourceRecord[];
+  /** Calls whose result never arrived — an aborted run. */
+  pendingCount(): number;
+}
+
+export function createWebSourceTracker(): WebSourceTracker {
+  const pending = new Map<string, { name: WebToolName; input: Record<string, unknown> }>();
+  /** url → title from earlier search hits, so a fetch of a hit carries its title. */
+  const titles = new Map<string, string>();
+  const records: WebSourceRecord[] = [];
+
+  const observe = (message: SdkMessage): WebSourceRecord[] => {
+    if (message.type === 'assistant') {
+      const content = (message as SdkAssistantEnvelope).message?.content;
+      if (Array.isArray(content)) {
+        for (const block of content) {
+          if (isToolUseBlock(block) && isWebToolName(block.name)) {
+            pending.set(block.id, { name: block.name, input: isRecord(block.input) ? block.input : {} });
+          }
+        }
+      }
+      return [];
+    }
+    if (message.type !== 'user') return [];
+    const envelope = message as SdkUserEnvelope;
+    const content = envelope.message?.content;
+    if (!Array.isArray(content)) return [];
+    const structured = isRecord(envelope.tool_use_result) ? envelope.tool_use_result : undefined;
+    const retrievedAt = str(envelope.timestamp) ?? new Date().toISOString();
+    const completed: WebSourceRecord[] = [];
+    for (const block of content) {
+      if (!isToolResultBlock(block)) continue;
+      const call = pending.get(block.tool_use_id);
+      if (!call) continue;                       // an ANTON MCP tool or anything else: not a web source
+      pending.delete(block.tool_use_id);
+      const isError = block.is_error === true;
+      const text = toolResultText(block.content) || str(structured?.result) || '';
+      let record: WebSourceRecord;
+      if (call.name === 'WebSearch') {
+        const hits = isError ? [] : searchHits(structured, text);
+        for (const h of hits) if (h.title) titles.set(h.url, h.title);
+        record = {
+          kind: 'web_search',
+          query: str(structured?.query) ?? str(call.input.query),
+          resultUrls: hits.map((h) => h.url),
+          results: hits,
+          retrievedAt,
+        };
+      } else {
+        const url = str(structured?.url) ?? str(call.input.url);
+        const title = url ? titles.get(url) : undefined;
+        const code = structured?.code;
+        const failed = isError || (typeof code === 'number' && code >= 400);
+        record = { kind: 'web_fetch', url, retrievedAt };
+        if (title) record.title = title;
+        // An error string is not page evidence: no hash for a failed fetch.
+        if (!failed && text) {
+          record.sha256 = createHash('sha256').update(text, 'utf8').digest('hex');
+          record.charCount = text.length;
+        }
+        if (failed) record.isError = true;
+      }
+      if (isError) record.isError = true;
+      records.push(record);
+      completed.push(record);
+    }
+    return completed;
+  };
+
+  return { observe, records, pendingCount: () => pending.size };
+}
+
+type SdkMessage = SdkPartialMessage | SdkResultMessage | SdkAssistantEnvelope | SdkUserEnvelope | { type: string };
 
 /** Injectable SDK boundary — tests replace this; production resolves the real
  *  package lazily (the SDK is a ~1.2 MB module; don't pay for it at boot). */
@@ -464,6 +617,7 @@ export async function streamToResponse(
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
   let modelServed: string | undefined;
   let engineCostUsd: number | undefined;
+  const webSources = createWebSourceTracker();
 
   try {
     console.log(`[sdk-engine] run → model=${underlying} thinking=${config.thinking}${webTools ? ' tools=web' : ''}`);
@@ -534,8 +688,14 @@ export async function streamToResponse(
             message: `SDK engine run failed (${result.subtype})${detail}. If this mentions authentication, run \`claude\` once on this machine and log in.`,
           });
         }
+      } else if (message.type === 'assistant' || message.type === 'user') {
+        // Wave 2: the envelopes carry the WebSearch / WebFetch calls and their
+        // results — the only record of what a web-grounded run actually read.
+        for (const source of webSources.observe(message)) {
+          sendEvent({ type: 'source_fetched', source });
+        }
       }
-      // system/assistant envelope messages carry nothing this engine needs.
+      // system envelope messages carry nothing this engine needs.
     }
 
     if (currentText) {
@@ -543,6 +703,10 @@ export async function streamToResponse(
       // cache fields (a 27k-char run logged "2 in" without them).
       const cached = usageData.cacheReadTokens + usageData.cacheCreationTokens;
       console.log(`[sdk-engine] run complete — ${usageData.inputTokens + cached} in (${cached} cached) / ${usageData.outputTokens} out tokens`);
+    }
+    if (webSources.records.length > 0 || webSources.pendingCount() > 0) {
+      const searches = webSources.records.filter((r) => r.kind === 'web_search').length;
+      console.log(`[sdk-engine] web sources recorded: ${searches} search(es), ${webSources.records.length - searches} fetch(es)${webSources.pendingCount() > 0 ? `, ${webSources.pendingCount()} call(s) never returned` : ''}`);
     }
     if (currentThinking) contentBlocks.push({ type: 'thinking', content: currentThinking });
     if (currentText) contentBlocks.push({ type: 'text', content: currentText });
@@ -558,6 +722,7 @@ export async function streamToResponse(
         modelServed,
         engineCostUsd,
         systemPromptSent: systemPrompt,
+        webSources: webSources.records,
       });
     }
   } catch (err) {

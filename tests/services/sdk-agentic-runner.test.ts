@@ -11,6 +11,7 @@
  * the way the engine would and then streams the turns.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 import { setSdkAgentImplForTests, activeSdkRunsForTests, tryAcquireSdkSlot, releaseSdkSlot, type AgentSdkModule } from '../../server/services/claude-sdk-client.js';
 import { resetSdkEngineStoreForTests } from '../../server/services/sdk-engine-store.js';
 
@@ -195,5 +196,40 @@ describe('runAgentic', () => {
     expect(refused.ok).toBe(false);
     expect(refused.error).toMatch(/disabled/);
     expect(calls).toHaveLength(1);
+  });
+
+  // Wave 2: the SDK's own WebSearch / WebFetch never pass through the MCP
+  // wrapper, so toolCalls cannot carry them; their envelopes are recorded as
+  // web sources instead and reported as each result lands.
+  it('records WebSearch / WebFetch envelopes as web sources, reported as they land, apart from toolCalls', async () => {
+    const dora = 'https://eur-lex.europa.eu/eli/reg/2022/2554/oj';
+    const page = 'Article 5 of DORA sets the ICT risk management framework.';
+    fakeSdk(() => (async function* () {
+      yield turnStart();
+      yield textDelta('Let me read the regulation.');
+      yield { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_1', name: 'WebSearch', input: { query: 'DORA article 5' } }] } };
+      yield {
+        type: 'user',
+        message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: 'results' }] },
+        tool_use_result: { query: 'DORA article 5', results: [{ tool_use_id: 'srv_1', content: [{ title: 'DORA', url: dora }] }], durationSeconds: 1 },
+      };
+      yield { type: 'assistant', message: { role: 'assistant', content: [{ type: 'tool_use', id: 'toolu_2', name: 'WebFetch', input: { url: dora, prompt: 'Article 5' } }] } };
+      yield { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_2', content: page }] } };
+      yield turnStart();
+      yield textDelta('Article 5 sets the framework.');
+      yield success();
+    })());
+    const events: AgenticEvent[] = [];
+    const result = await runAgentic({ model: 'sdk:claude-opus-5', thinking: 'quick', system: 's', prompt: 'p', tools: [], webSearch: true }, (e) => events.push(e));
+
+    expect(result.ok).toBe(true);
+    expect(result.text).toBe('Article 5 sets the framework.');
+    const fetched = events.filter((e): e is Extract<AgenticEvent, { type: 'source_fetched' }> => e.type === 'source_fetched');
+    expect(fetched.map((e) => e.source.kind)).toEqual(['web_search', 'web_fetch']);
+    expect(fetched[0].source).toMatchObject({ query: 'DORA article 5', resultUrls: [dora] });
+    expect(fetched[1].source).toMatchObject({ url: dora, title: 'DORA', sha256: createHash('sha256').update(page, 'utf8').digest('hex'), charCount: page.length });
+    expect(result.webSources).toEqual(fetched.map((e) => e.source));
+    expect(JSON.stringify(result.webSources)).not.toContain('ICT risk management');
+    expect(result.toolCalls).toEqual([]);
   });
 });

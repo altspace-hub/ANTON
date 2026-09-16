@@ -834,10 +834,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
       try { modulePrompt = (await getModuleSystemPrompt(step.module_id)) ?? ''; } catch { modulePrompt = ''; }
     }
     if (!modulePrompt && capability?.module_id) {
-      const promptPath = join(PROMPTS_DIR, `${capability.module_id}.md`);
-      if (existsSync(promptPath)) {
-        modulePrompt = readFileSync(promptPath, 'utf-8');
-      }
+      // Same resolver as the step module: the live server/areas prompt first,
+      // then the server/prompts ghost fallback for ids with no module dir — so
+      // a capability whose module has moved into server/areas no longer needs
+      // a shadow copy (the shadow copies drifted; see module-area-integrity).
+      try { modulePrompt = (await getModuleSystemPrompt(capability.module_id)) ?? ''; } catch { modulePrompt = ''; }
     }
     if (!modulePrompt) {
       modulePrompt = `You are ANTON — an expert consultant AI working for professionals across financial crime prevention, legal, risk, compliance and adjacent domains. Produce a comprehensive, high-quality professional deliverable based on the task and context provided.`;

@@ -806,8 +806,14 @@ HOW TO RUN THE INTERVIEW
 
     try {
       // Same enrichment layers as the primary run — the only variable is the model.
+      // Wave 2: the second opinion queries the pack layer with the same
+      // frameworks + concerns as the primary run; called with no context it
+      // dumped every active pack into every batch.
       const orgContextLayer = await buildOrgContextLayer(db, uid);
-      const knowledgePackLayer = await buildKnowledgePackLayer(db);
+      const opinionFrameworks = JSON.parse((assessment as unknown as { frameworks?: string | null }).frameworks || '[]') as string[];
+      const knowledgePackLayer = await buildKnowledgePackLayer(db, {
+        userMessage: [...opinionFrameworks, String(contextConfig.concerns || '')].filter(Boolean).join(' '),
+      });
       let knowledgeContext = '';
       if (contextConfig.knowledgeSources && typeof contextConfig.knowledgeSources === 'object') {
         try {

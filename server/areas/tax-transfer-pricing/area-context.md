@@ -38,3 +38,5 @@ When working in the Tax & Transfer Pricing domain:
 4. **Documentation disciplines** — TP documentation must exist contemporaneously; post-hoc rationalisation is rejected by courts
 5. **Proportionality** — Risk-based approach; high-value, high-risk transactions merit deeper analysis and stronger documentation
 6. **Pillar Two awareness** — From 2024/2025, GloBE rules affect groups with revenue above EUR 750M; ETR computations are critical
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

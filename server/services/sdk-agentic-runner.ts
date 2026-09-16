@@ -31,6 +31,8 @@ import {
   sdkThinkingOptions,
   sdkUnderlyingModel,
   SDK_WEB_TOOLS,
+  createWebSourceTracker,
+  type WebSourceRecord,
 } from './claude-sdk-client.js';
 
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
@@ -69,6 +71,8 @@ export type AgenticEvent =
   | { type: 'thinking_delta'; content: string }
   | { type: 'tool_call'; id: number; name: string; input: Record<string, unknown> }
   | { type: 'tool_result'; id: number; name: string; output: string; isError: boolean; ms: number }
+  /** Wave 2: a WebSearch / WebFetch call paired with what it returned (built-in tools are not `tool_call`s). */
+  | { type: 'source_fetched'; source: WebSourceRecord }
   | { type: 'error'; message: string };
 
 export interface AgenticToolCall {
@@ -88,6 +92,9 @@ export interface AgenticRunResult {
   /** Every assistant turn's text, in order. */
   transcript: string[];
   toolCalls: AgenticToolCall[];
+  /** Wave 2: the pages the SDK's own WebSearch / WebFetch touched — those calls
+   *  never pass through the MCP wrapper, so `toolCalls` cannot carry them. */
+  webSources: WebSourceRecord[];
   turns: number;
   usage: { inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheCreationTokens: number };
   /** Set when ok is false, or when the run was cut off but kept its answer. */
@@ -122,7 +129,7 @@ interface ResultMessage {
 
 export async function runAgentic(config: AgenticRunConfig, onEvent: (event: AgenticEvent) => void): Promise<AgenticRunResult> {
   const empty = (): AgenticRunResult => ({
-    ok: false, text: '', thinking: '', transcript: [], toolCalls: [], turns: 0,
+    ok: false, text: '', thinking: '', transcript: [], toolCalls: [], webSources: [], turns: 0,
     usage: { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 },
   });
 
@@ -133,6 +140,7 @@ export async function runAgentic(config: AgenticRunConfig, onEvent: (event: Agen
   }
 
   const toolCalls: AgenticToolCall[] = [];
+  const webSources = createWebSourceTracker();
   const transcript: string[] = [];
   let currentTurnText = '';
   let currentTurnThinking = '';
@@ -232,6 +240,7 @@ export async function runAgentic(config: AgenticRunConfig, onEvent: (event: Agen
           onEvent({ type: 'thinking_delta', content: delta.thinking });
         }
       } else if (message.type === 'assistant') {
+        webSources.observe(message);   // registers WebSearch / WebFetch tool_use blocks
         // A native build may not emit partials: take the turn's text from the
         // complete message when nothing was streamed for it.
         if (!currentTurnText) {
@@ -243,6 +252,9 @@ export async function runAgentic(config: AgenticRunConfig, onEvent: (event: Agen
             onEvent({ type: 'text_delta', content: text });
           }
         }
+      } else if (message.type === 'user') {
+        // Wave 2: the tool_result envelope closes a web call — report the source as it lands.
+        for (const source of webSources.observe(message)) onEvent({ type: 'source_fetched', source });
       } else if (message.type === 'result') {
         resultSeen = message as ResultMessage;
       }
@@ -255,6 +267,7 @@ export async function runAgentic(config: AgenticRunConfig, onEvent: (event: Agen
       thinking: allThinking,
       transcript,
       toolCalls,
+      webSources: webSources.records,
       turns: resultSeen?.num_turns ?? turns,
       usage,
     };
@@ -284,14 +297,14 @@ export async function runAgentic(config: AgenticRunConfig, onEvent: (event: Agen
       result.error = `SDK engine run failed (${resultSeen.subtype})${detail}`;
       onEvent({ type: 'error', message: result.error });
     }
-    console.log(`[sdk-agentic] run ${result.ok ? 'complete' : 'failed'} — ${result.turns} turn(s), ${toolCalls.length} tool call(s), ${usage.inputTokens + usage.cacheReadTokens + usage.cacheCreationTokens} in / ${usage.outputTokens} out`);
+    console.log(`[sdk-agentic] run ${result.ok ? 'complete' : 'failed'} — ${result.turns} turn(s), ${toolCalls.length} tool call(s), ${webSources.records.length} web source(s), ${usage.inputTokens + usage.cacheReadTokens + usage.cacheCreationTokens} in / ${usage.outputTokens} out`);
     return result;
   } catch (err) {
     finishTurn();
     const message = err instanceof Error ? err.message : 'SDK engine failed to start';
     console.error(`[sdk-agentic] error: ${message}`);
     onEvent({ type: 'error', message });
-    return { ...empty(), transcript, toolCalls, turns, error: message };
+    return { ...empty(), transcript, toolCalls, webSources: webSources.records, turns, error: message };
   } finally {
     clearTimeout(timeout);
     releaseSdkSlot();

@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -47,6 +48,10 @@ export interface GroundingSource {
   reference?: string;
   articleId?: string;
   title?: string;
+  /** Wave 2: sha256 of the article line as injected, so the run artifact can pin it. */
+  sha256?: string;
+  /** Wave 2: characters of the injected line. */
+  chars?: number;
 }
 
 export interface GroundingResult {
@@ -61,6 +66,12 @@ export interface RetrieveOptions {
   query: string;
   /** Knowledge pack ids or display names active for the session/task (soft scope). */
   packIds?: string[];
+  /**
+   * Wave 2: framework ids that may ground the query even when it does not
+   * name them ("weak scope"), e.g. the area's frameworks from
+   * area-frameworks.ts. Articles from these still need term overlap to appear.
+   */
+  frameworkIds?: string[];
   /** DB adapter — enables knowledge-pack entity text retrieval. Optional. */
   db?: DatabaseAdapter;
   /** Approximate token budget for the whole grounding section. Default 3000. */
@@ -172,11 +183,12 @@ interface FrameworkCandidate {
 function matchFrameworks(
   docs: FrameworkDoc[],
   query: string,
-  packIds: string[]
+  packIds: string[],
+  frameworkIds: string[] = []
 ): FrameworkCandidate[] {
   const q = query.toLowerCase();
   const qRefs = extractRefNumbers(query);
-  const packSet = new Set(packIds.map((p) => p.toLowerCase()));
+  const packSet = new Set([...packIds, ...frameworkIds].map((p) => p.toLowerCase()));
   const out: FrameworkCandidate[] = [];
 
   for (const doc of docs) {
@@ -327,12 +339,12 @@ const CHARS_PER_TOKEN = 4;
  * the grounding layer in that case.
  */
 export async function retrieveGroundingText(opts: RetrieveOptions): Promise<GroundingResult | null> {
-  const { query, packIds = [], db, tokenBudget = 3000, frameworksDir } = opts;
+  const { query, packIds = [], frameworkIds = [], db, tokenBudget = 3000, frameworksDir } = opts;
   if (!query || !query.trim()) return null;
 
   const docs = loadFrameworkIndex(frameworksDir);
   const terms = tokenize(query);
-  const candidates = matchFrameworks(docs, query, packIds);
+  const candidates = matchFrameworks(docs, query, packIds, frameworkIds);
   const scored = candidates.length > 0 ? scoreArticles(candidates, query, terms) : [];
 
   const budgetChars = Math.max(400, tokenBudget * CHARS_PER_TOKEN);
@@ -365,6 +377,8 @@ export async function retrieveGroundingText(opts: RetrieveOptions): Promise<Grou
       reference: doc.reference,
       articleId: article.id,
       title: article.title,
+      sha256: createHash('sha256').update(line, 'utf8').digest('hex'),
+      chars: line.length,
     });
   }
 

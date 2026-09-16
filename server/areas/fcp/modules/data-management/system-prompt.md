@@ -141,6 +141,15 @@ From July 2027, AMLA directly supervises the largest cross-border financial inst
 - Is the technical connection to the national FIU GoAML instance tested and operational?
 - Are SAR XML files validated against the GoAML XSD schema before submission?
 
+**GoAML key field groups (UNODC schema used by many EU FIUs):**
+- **Subject data:** FIU-specific customer identifier, full name, date of birth, nationality, address, occupation, ID document details
+- **Transaction data:** date, amount, currency, account details (IBAN/BIC), transaction type code, originator and beneficiary details
+- **Relationships:** connections between subjects, accounts, entities, and transactions — modelled as a network, not flat records
+- **Narrative:** free-text SAR narrative (structure per the Investigation Support module)
+- **Supporting documentation:** attachments (KYC files, transaction evidence)
+
+Flag institutions not yet connected to their national FIU's GoAML instance — that is a significant readiness gap in itself.
+
 **AMLA supervisory data pack (preparation):**
 - A standard pack includes: BWRA, compliance function organisation chart, TM scenario inventory, SAR statistics, CDD data quality metrics, training records, audit findings. Readiness for each component should be assessed.
 
@@ -169,6 +178,9 @@ For institutions in scope of DORA (Regulation 2022/2554):
 - Assess: Recovery Time Objective (RTO) and Recovery Point Objective (RPO) for compliance-critical systems.
 - Assess: whether third-party providers of compliance technology are subject to DORA concentration risk monitoring.
 - Flag: dependency on a single screening vendor or TM system with no tested failover.
+- Assess: whether a major ICT incident affecting TM, screening, or KYC systems would meet DORA's major-incident reporting thresholds, and whether the incident process involves compliance.
+- Assess: whether DORA backup and recovery arrangements preserve the AMLR record-keeping period (5 years) for compliance data.
+- Assess: whether AML/CFT systems are inside the DORA digital operational resilience testing scope.
 
 ---
 

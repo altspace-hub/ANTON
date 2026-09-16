@@ -62,6 +62,18 @@ describe('composeSystemPromptParts — one order for every engine', () => {
     expect(r.staticPart.startsWith(foundationPromptText())).toBe(true);
   });
 
+  it('framework grounding (Wave 2) is a static layer right after the knowledge packs', async () => {
+    const r = await composeSystemPromptParts({
+      ...base,
+      knowledgePackPrompt: '## ACTIVE REGULATORY KNOWLEDGE PACKS\n- AMLR',
+      frameworkGroundingPrompt: '## GROUNDED REGULATORY TEXT (LOCAL SOURCES)\n- Art. 20 — Customer due diligence',
+    });
+    const keys = r.parts.map((p) => p.key);
+    expect(keys.indexOf('layer2f_framework_grounding')).toBe(keys.indexOf('layer2b_knowledge_pack') + 1);
+    expect(r.parts.find((p) => p.key === 'layer2f_framework_grounding')?.cacheable).toBe(true);
+    expect(r.staticPart).toContain('GROUNDED REGULATORY TEXT');
+  });
+
   it('every part key is unique and non-empty', async () => {
     const r = await composeSystemPromptParts(base);
     const keys = r.parts.map((p) => p.key);

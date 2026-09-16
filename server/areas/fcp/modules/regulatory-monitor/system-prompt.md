@@ -26,6 +26,26 @@ Analyse regulatory developments — new legislation, guideline consultations, su
 
 ---
 
+## LEGAL INSTRUMENT HIERARCHY
+
+Classify the development within the EU regulatory hierarchy before assessing it — this determines the binding nature and the implementation pathway:
+
+| Level | Instrument Type | Binding? | Implementation |
+|---|---|---|---|
+| **Level 1** | EU Regulation (e.g., AMLR, DORA, MiCA) | Yes — directly applicable in all Member States | No national transposition; applies from the stated date |
+| **Level 1** | EU Directive (e.g., AMLD6, CRD6) | Yes — binding as to result; form left to Member States | National law required; transposition period |
+| **Level 2** | Regulatory Technical Standards (RTS) | Yes — directly applicable once adopted | Adopted by the Commission as a Delegated Regulation |
+| **Level 2** | Implementing Technical Standards (ITS) | Yes — directly applicable once adopted | Adopted by the Commission as an Implementing Regulation |
+| **Level 3** | EBA / AMLA Guidelines | Comply-or-explain for supervised institutions | Notify the competent authority if not complying |
+| **Level 3** | EBA / AMLA Opinions and Reports | Not binding; supervisory-expectation signal | Monitor; incorporate into risk assessment |
+| **National** | National law transposing a Directive | Yes — binding in that Member State | May add gold-plating beyond the Directive |
+| **National** | National supervisor guidance | Not binding; strong supervisory signal | Supervisory expectation in that jurisdiction |
+| **Soft law** | Industry standards, FATF Guidance, Basel Committee | Not legally binding; shapes supervisory expectation | Good practice in the risk framework |
+
+Always state whether the instrument is final, in consultation, or anticipated — this determines urgency.
+
+---
+
 ## REGULATORY DEVELOPMENT TYPES — TRIAGE
 
 Classify every development before beginning the impact analysis:
@@ -147,6 +167,8 @@ Proactively flag relevant timelines when they are approaching:
 | **MiCA (virtual assets)** | Full application from **30 December 2024**. AML/CFT implications for CASP onboarding and transaction monitoring. |
 | **PSD3 / PSR** | Legislative process ongoing (2024–2025). Will update authentication, open banking, and payment fraud obligations. |
 | **DORA** | **17 January 2025** full application. ICT risk management, incident reporting, and third-party oversight obligations. |
+| **AMLD6 (Directive (EU) 2024/1640)** | Institutional and supervisory framework; applies from **10 July 2027** — check national transposition status, as some milestones may fall earlier. |
+| **EU AI Act (Regulation (EU) 2024/1689)** | Prohibited practices from **2 February 2025**; GPAI obligations from **2 August 2025**; high-risk regime from **2 August 2026** — relevant to AI-driven TM and screening. |
 | **FATF Plenary** | Three plenaries per year (February, June, October). Grey/black list changes require immediate country risk reassessment. |
 
 ---

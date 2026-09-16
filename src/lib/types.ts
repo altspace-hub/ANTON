@@ -207,6 +207,10 @@ export interface ResolvedKnowledge {
   sourceManifest: string[];
   /** Per-source provenance with content hashes (item 1.6). Optional so legacy literal constructions stay valid. */
   sourceDetails?: ResolvedSourceDetail[];
+  /** Sources dropped whole by the context budget (Wave 2 budget fairness). Each has a sourceDetails row whose note starts "skipped — context budget". */
+  skippedCount?: number;
+  /** Estimated tokens of those dropped sources — what a larger budget would have carried. */
+  skippedTokens?: number;
 }
 
 // ── Output Formats ─────────────────────────────────────────
@@ -342,7 +346,8 @@ export type StreamEvent =
   | { type: 'phase_end'; phaseIndex: number; phaseName: string; durationMs: number; confidenceScore: number | null }
   | { type: 'revelation_chain_id'; chainId: string }
   | { type: 'compaction'; message: string }
-  | { type: 'context_used'; context: ContextUsed };
+  | { type: 'context_used'; context: ContextUsed }
+  | { type: 'source_fetched'; source: WebSourceRecord };
 
 /**
  * Wave 2 (2026-09-08): what one answer was built from — sent as a frame before
@@ -362,11 +367,22 @@ export interface ContextUsed {
   /** Wave 1: the id the assistant message will be persisted under (null when
    *  the run has no session), so the live answer and its run artifact agree. */
   assistantMessageId?: string | null;
+  /** Wave 2: the knowledge packs that had a claim on this run, with the
+   *  number of entries each contributed. */
+  packs?: Array<{ name: string; version: string | null; entries: number }>;
+  packEntries?: number;
+  /** Wave 2: framework files whose articles were injected, and how many. */
+  frameworks?: string[];
+  frameworkArticles?: number;
+  frameworkChars?: number;
   /** The module answering (open chat lens or the module page). */
   lens: { moduleId: string; areaId: string | null } | null;
   project: { id: string; name: string } | null;
   /** Documents in the prompt: this turn's uploads and the project's files. */
-  documents: Array<{ name: string; chars: number; source: 'upload' | 'project'; skipped?: boolean }>;
+  documents: Array<{ name: string; chars: number; source: 'upload' | 'project' | 'url' | 'folder'; skipped?: boolean; note?: string }>;
+  /** Wave 2: sources the resolver skipped for budget, and the tokens they would have cost. */
+  skippedCount?: number;
+  skippedTokens?: number;
   /** The resolver's source manifest (built-in knowledge, URLs, folders, RAG). */
   knowledgeSources: string[];
   ragChunks: number;
@@ -378,6 +394,35 @@ export interface ContextUsed {
   goalsValues: boolean;
   resumeContext: boolean;
   webSearch: boolean;
+}
+
+/**
+ * Wave 2 (2026-09-16): one page the SDK engine's WebSearch / WebFetch tool
+ * touched during a web-grounded run, recorded from the tool events as they
+ * happen. A search keeps its query and the hits the tool returned; a fetch
+ * keeps the URL plus a sha256 and length of the text the tool handed the
+ * model. Page bodies never enter the record — the hash is what lets the run
+ * artifact prove later what the answer was grounded on.
+ */
+export interface WebSourceRecord {
+  kind: 'web_search' | 'web_fetch';
+  /** web_search: the query the model issued. */
+  query?: string;
+  /** web_fetch: the URL fetched (the tool's reported URL, else the one requested). */
+  url?: string;
+  /** web_fetch: the title an earlier search in the same run gave this URL, when known. */
+  title?: string;
+  /** web_search: the URLs the search returned, bounded (first 20). */
+  resultUrls?: string[];
+  /** web_search: the same hits with their titles, in the tool's order. */
+  results?: Array<{ url: string; title: string }>;
+  /** web_fetch: sha256 hex of the text the tool returned to the model (absent on error). */
+  sha256?: string;
+  /** web_fetch: length of that text in characters. */
+  charCount?: number;
+  /** ISO timestamp — the SDK's envelope timestamp when it carries one. */
+  retrievedAt: string;
+  isError?: boolean;
 }
 
 // ── Claude API Request ─────────────────────────────────────

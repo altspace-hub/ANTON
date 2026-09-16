@@ -5,6 +5,15 @@ import { fetchRagFolders, indexRagFolder, fetchRagCollections } from '@/lib/api'
 import HelpTooltip from './HelpTooltip';
 import { RAGSearchPanel } from './RAGSearchPanel';
 
+/**
+ * Mode 5a (indexed-folder retrieval, `config.ragMode`) has a working folder
+ * index (POST /api/rag/index, BM25 over document_chunks) but no consumer: the
+ * module run never passes `ragMode` to the knowledge resolver, so enabling the
+ * card retrieves nothing. Hidden behind a flag until that last mile is wired;
+ * set VITE_RAG_FOLDER_MODE=true to show it while working on it.
+ */
+const RAG_FOLDER_MODE_ENABLED = import.meta.env.VITE_RAG_FOLDER_MODE === 'true';
+
 interface KnowledgeSourcePanelProps {
   config: KnowledgeSourceConfig;
   onChange: (config: KnowledgeSourceConfig) => void;
@@ -364,11 +373,24 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         </div>
       </SourceCard>
 
-      {/* Mode 5: Indexed Knowledge Base (RAG) - Folder-based */}
+      {/* Mode 5a: Indexed Knowledge Base (RAG) - Folder-based — flag-gated, see RAG_FOLDER_MODE_ENABLED */}
+      {!RAG_FOLDER_MODE_ENABLED && (
+        <div className="rounded-lg border border-border bg-adv-card px-3 py-2.5 opacity-70" aria-disabled="true">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-adv-gray" />
+            <span className="text-sm text-adv-gray">Indexed Knowledge Base (Folders)</span>
+            <span className="ml-auto rounded bg-adv-dark px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-adv-gray">Mode 5a</span>
+          </div>
+          <p className="mt-1 text-xs text-adv-gray">
+            Not available yet — folder retrieval is not wired into module runs in this version. Use Knowledge Collections (Mode 5b) below.
+          </p>
+        </div>
+      )}
+      {RAG_FOLDER_MODE_ENABLED && (
       <SourceCard
         icon={<Search className="h-4 w-4" />}
         title="Indexed Knowledge Base (Folders)"
-        description="Semantic search across your indexed document library. Retrieves the most relevant passages — not whole documents."
+        description="Keyword (BM25) retrieval across your indexed document library. Retrieves the most relevant passages — not whole documents."
         enabled={config.ragMode?.enabled ?? false}
         onToggle={(v) =>
           onChange({
@@ -422,12 +444,13 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
           </div>
         </div>
       </SourceCard>
+      )}
 
-      {/* Mode 5b: Collection-based RAG Search (NEW) */}
+      {/* Mode 5b: Collection-based RAG Search */}
       <SourceCard
         icon={<Database className="h-4 w-4" />}
         title="Knowledge Collections (RAG)"
-        description="Semantic search across organized knowledge collections with automatic retrieval during module execution."
+        description="Retrieves the most relevant passages from your collections during the run — local vector search fused with keyword matching. Each run reports the method actually used (vector, hybrid or keyword)."
         enabled={config.ragSearch?.enabled ?? false}
         onToggle={(v) =>
           onChange({
@@ -783,7 +806,7 @@ function IndexedFoldersList({
       {/* Empty state */}
       {indexedFolders.length === 0 && unindexedLocal.length === 0 && (
         <div className="rounded bg-adv-dark px-3 py-2 text-xs text-adv-gray">
-          No indexed folders yet. Add folders in Mode 3 (Local Folders) first, then index them here for semantic search.
+          No indexed folders yet. Add folders in Mode 3 (Local Folders) first, then index them here for keyword (BM25) retrieval.
         </div>
       )}
 

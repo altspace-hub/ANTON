@@ -2,6 +2,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
 import { hybridSearch, INSTANCE_WIDE_SEARCH } from './hybrid-search.js';
 import { createHkpService } from './hkp-service.js';
+import { packAppliesToArea } from './area-frameworks.js';
 
 /**
  * SEVEN-LAYER PROMPT STRUCTURE
@@ -442,46 +443,106 @@ export async function buildKnowledgePackLayer(
   db: DatabaseAdapter,
   context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
 ): Promise<string> {
+  return (await buildKnowledgePackLayerDetailed(db, context)).text;
+}
+
+/** One injected pack entry, with the provenance the run artifact records (Wave 2). */
+export interface PackEntry {
+  /** The line as injected into the prompt. */
+  text: string;
+  packId: string;
+  packName: string;
+  refId: string;
+  /** 1 = semantic retrieval, 2 = deterministic embedding rows, 3 = entity names. */
+  tier: 1 | 2 | 3;
+  /** Retrieval score for tier 1 (RRF/hybrid), otherwise undefined. */
+  similarity?: number;
+}
+
+export interface PackLayerResult {
+  text: string;
+  entries: PackEntry[];
+  /** The packs that had a claim on this run (after the area gate). */
+  packs: Array<{ id: string; name: string; displayName: string; version: string | null }>;
+  /** True when the run's area matched no active pack and relevance-only retrieval ran instead. */
+  areaFallback: boolean;
+}
+
+const EMPTY_PACK_LAYER: PackLayerResult = { text: '', entries: [], packs: [], areaFallback: false };
+
+/**
+ * Layer 2b with provenance (Wave 2): the same text as buildKnowledgePackLayer
+ * plus the entries injected (pack, ref, tier, score) and the packs that had a
+ * claim on the run, so the run artifact can pin what grounded the answer.
+ *
+ * Area gate (Wave 2): when the run has an area, only packs that belong to it
+ * (area-frameworks.ts) are listed and searched. Before this every active pack
+ * was listed in every run and up to 3,500 tokens of AML entity text rode on a
+ * marketing brief. An area with no matching pack gets relevance-only retrieval
+ * over all active packs (the open-chat rule) — never a dump.
+ */
+export async function buildKnowledgePackLayerDetailed(
+  db: DatabaseAdapter,
+  context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
+): Promise<PackLayerResult> {
   try {
     // Lightweight check: any active packs at all?
     const count = await db.get(
       "SELECT COUNT(*) as c FROM knowledge_packs WHERE status='active'"
     ) as { c: number } | undefined;
-    if (!count || count.c === 0) return '';
+    if (!count || count.c === 0) return EMPTY_PACK_LAYER;
 
     const rows = await db.all(
-      `SELECT id, display_name, regulatory_area, regulation_ids, entity_count
+      `SELECT id, name, display_name, version, regulatory_area, regulation_ids, entity_count
        FROM knowledge_packs WHERE status='active' ORDER BY tier ASC, display_name ASC`
-    ) as Array<{ id: string; display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+    ) as Array<{ id: string; name: string | null; display_name: string; version: string | null; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
 
-    if (rows.length === 0) return '';
+    if (rows.length === 0) return EMPTY_PACK_LAYER;
 
-    const lines: string[] = ['## ACTIVE REGULATORY KNOWLEDGE PACKS'];
-    lines.push('The following structured regulatory knowledge packs are active for this session. Use them to ground entity names, article references, and obligation details:');
-    for (const r of rows) {
-      let regs: string[] = [];
-      try { regs = JSON.parse(r.regulation_ids || '[]'); } catch { /* ignore */ }
-      lines.push(`- **${r.display_name}** (${r.regulatory_area ?? 'General'}, ${r.entity_count} entities${regs.length ? `, covers: ${regs.join(', ')}` : ''})`);
-    }
+    const areaId = context?.areaId ?? null;
+    const scoped = areaId ? rows.filter((r) => packAppliesToArea(r, areaId)) : rows;
+    const areaFallback = Boolean(areaId) && scoped.length === 0;
+    const message = context?.userMessage?.trim() ?? '';
+    // An area with no pack of its own has no claim on any listing; it may
+    // still receive a close semantic match, exactly like open chat.
+    if (areaFallback && !message) return EMPTY_PACK_LAYER;
+    const packsForRun = areaFallback ? rows : scoped;
 
     // ── Inject actual pack entity TEXT (budgeted) ─────────────────────────
     // A run with neither area nor module (open chat) has no claim on any
     // pack: it gets pack content only when retrieval finds a strong match,
     // and no pack listing at all otherwise. The listing alone told the model
-    // that AML packs were "active for this session" on every question.
-    const strict = !context?.areaId && !context?.moduleId && Boolean(context?.userMessage?.trim());
-    const entityLines = await retrievePackEntityContent(db, rows, context, strict);
-    if (strict && entityLines.length === 0) return '';
-    if (entityLines.length > 0) {
+    // that AML packs were "active for this session" on every question. An
+    // area with no pack of its own is treated the same way.
+    const strict = areaFallback || (!context?.areaId && !context?.moduleId && Boolean(message));
+    const entries = await retrievePackEntityContent(db, packsForRun, context, strict);
+    if (strict && entries.length === 0) return { ...EMPTY_PACK_LAYER, areaFallback };
+
+    // Relevance-only runs list only the packs that contributed; a run in a
+    // pack's own area lists every pack with a claim on it.
+    const usedPackIds = new Set(entries.map((e) => e.packId));
+    const listedPacks = strict ? packsForRun.filter((r) => usedPackIds.has(r.id)) : packsForRun;
+
+    const lines: string[] = ['## ACTIVE REGULATORY KNOWLEDGE PACKS'];
+    lines.push('The following structured regulatory knowledge packs are active for this session. Use them to ground entity names, article references, and obligation details:');
+    for (const r of listedPacks) {
+      let regs: string[] = [];
+      try { regs = JSON.parse(r.regulation_ids || '[]'); } catch { /* ignore */ }
+      lines.push(`- **${r.display_name}** (${r.regulatory_area ?? 'General'}, ${r.entity_count} entities${regs.length ? `, covers: ${regs.join(', ')}` : ''})`);
+    }
+    if (entries.length > 0) {
       lines.push('');
       lines.push('### Relevant pack content');
       lines.push('The following entries are drawn from the packs above. Cite the pack and entity reference when you rely on one:');
-      lines.push(...entityLines);
+      lines.push(...entries.map((e) => e.text));
     }
 
-    return lines.join('\n');
+    const packs = listedPacks
+      .map((r) => ({ id: r.id, name: r.name ?? r.id, displayName: r.display_name, version: r.version ?? null }));
+
+    return { text: lines.join('\n'), entries, packs, areaFallback };
   } catch {
-    return '';
+    return EMPTY_PACK_LAYER;
   }
 }
 
@@ -510,7 +571,7 @@ async function retrievePackEntityContent(
   /** Relevance-only: a stronger similarity floor and no deterministic dump
    *  (tiers 2-3) when semantic retrieval finds nothing. */
   strict = false,
-): Promise<string[]> {
+): Promise<PackEntry[]> {
   const activeIds = new Set(activePacks.map(p => p.id));
   const packNameById = new Map(activePacks.map(p => [p.id, p.display_name]));
   const charBudget = PACK_LAYER_TOKEN_BUDGET * 4; // ~4 chars/token
@@ -543,11 +604,12 @@ async function retrievePackEntityContent(
       const fromActivePacks = results.filter(r => activeIds.has(splitContentId(r.content_id).packId));
       const capped = applyTokenBudget(fromActivePacks, strict ? STRICT_PACK_LAYER_TOKEN_BUDGET : PACK_LAYER_TOKEN_BUDGET);
       if (capped.length > 0) {
-        return capped.map(r => {
+        return capped.map((r): PackEntry => {
           const { packId, refId } = splitContentId(r.content_id);
           const meta = (r.metadata ?? {}) as Record<string, unknown>;
           const packName = (typeof meta.packName === 'string' && meta.packName) || packNameById.get(packId) || 'Knowledge pack';
-          return formatLine(packName, String(meta.refId ?? refId), r.content_text);
+          const ref = String(meta.refId ?? refId);
+          return { text: formatLine(packName, ref, r.content_text), packId, packName, refId: ref, tier: 1, similarity: r.score };
         });
       }
     } catch {
@@ -569,7 +631,7 @@ async function retrievePackEntityContent(
     return am - bm;
   });
 
-  const lines: string[] = [];
+  const lines: PackEntry[] = [];
   let usedChars = 0;
   try {
     for (const pack of orderedPacks) {
@@ -583,7 +645,7 @@ async function retrievePackEntityContent(
       for (const row of embRows) {
         if (lines.length >= PACK_LAYER_MAX_ENTITIES || usedChars + row.content_text.length > charBudget) break;
         const { refId } = splitContentId(row.content_id);
-        lines.push(formatLine(pack.display_name, refId, row.content_text));
+        lines.push({ text: formatLine(pack.display_name, refId, row.content_text), packId: pack.id, packName: pack.display_name, refId, tier: 2 });
         usedChars += row.content_text.length;
       }
     }
@@ -616,7 +678,7 @@ async function retrievePackEntityContent(
           }
         } catch { /* ignore malformed metadata */ }
         const text = `${n.canonical_name} [${n.entity_type}]${metaText}`;
-        lines.push(formatLine(pack.display_name, n.entity_id, text));
+        lines.push({ text: formatLine(pack.display_name, n.entity_id, text), packId: pack.id, packName: pack.display_name, refId: n.entity_id, tier: 3 });
         usedChars += text.length;
       }
     }

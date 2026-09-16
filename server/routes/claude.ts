@@ -11,7 +11,9 @@ import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } f
 import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-versions.js';
 import { getModule } from '../services/module-loader.js';
 import { estimateTokens } from '../services/token-estimator.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
+import { retrieveGroundingText, type GroundingResult } from '../services/framework-text-retrieval.js';
+import { frameworksForArea } from '../services/area-frameworks.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import type { ResolvedKnowledge } from '../../src/lib/types.js';
 import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
@@ -379,13 +381,16 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       }
       // Inject guided module inputs as a structured context block before the user message
+      // The module's config (labels, guided inputs) — used for the intake
+      // rendering below and for the framework grounding query (Wave 2).
+      const runModuleCfg = moduleId ? await getModule(String(moduleId)).catch(() => undefined) : undefined;
       let finalUserMessage = userMessage;
       if (moduleInputs && typeof moduleInputs === 'object' && Object.keys(moduleInputs as object).length > 0) {
         // Wave 1: render guided inputs with the module's own field labels and
         // option labels. Before this the model saw key-derived labels and raw
         // option values ("Entity Type: bank") although 9,187 of 9,188 options
         // define a label ("Institution Type: Bank / credit institution").
-        const moduleCfg = moduleId ? await getModule(String(moduleId)).catch(() => undefined) : undefined;
+        const moduleCfg = runModuleCfg;
         const fieldById = new Map((moduleCfg?.guidedInputs ?? []).map((f) => [f.id, f] as const));
         const inputLines = Object.entries(moduleInputs as Record<string, unknown>)
           .filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
@@ -555,12 +560,29 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           ragChunks = results;
 
           if (results.length > 0) {
+            // Wave 2: say how the passages were found. Until now this block said
+            // "relevant" with a "Relevance %" whatever ran — and on this instance
+            // the vector index was unreachable, so the number was keyword density.
+            const methodWord: Record<string, string> = {
+              vector: 'vector similarity over your uploaded documents',
+              hybrid: 'vector similarity fused with keyword matching over your uploaded documents',
+              keyword: 'keyword matching over your uploaded documents (no vector index was available)',
+            };
+            const scoreLabel = (r: { score?: number; scoreKind?: string; relevanceScore?: number }): string => {
+              const s = typeof r.score === 'number' ? r.score : (r.relevanceScore ?? 0);
+              switch (r.scoreKind) {
+                case 'cosine_similarity': return `Cosine similarity: ${(s * 100).toFixed(1)}%`;
+                case 'rrf_normalised': return `Hybrid rank score: ${s.toFixed(2)} (1.0 = first in both lists)`;
+                default: return `Keyword coverage: ${(s * 100).toFixed(0)}% of query terms`;
+              }
+            };
+            const setMethod = results[0]?.method ?? 'keyword';
             ragContext = '\n\n## RETRIEVED KNOWLEDGE FROM KNOWLEDGE BASE\n\n';
-            ragContext += `I have retrieved ${results.length} relevant chunks from your knowledge base to help answer this question. Use these as reference material and cite them when applicable.\n\n`;
+            ragContext += `I have retrieved ${results.length} passages by ${methodWord[setMethod] ?? setMethod}. Use these as reference material and cite them when applicable.\n\n`;
 
             results.forEach((result, idx) => {
               const chunkText = `### Source ${idx + 1}: ${result.citation}\n` +
-                `Relevance: ${(result.relevanceScore * 100).toFixed(1)}%\n` +
+                `${scoreLabel(result)}\n` +
                 `Collection: ${result.collectionName}\n\n` +
                 `${result.content}\n\n` +
                 `---\n\n`;
@@ -756,7 +778,27 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           projectContextPrompt = await buildProjectContextSummary(db, projectRow.id, String(sessionId));
         } catch { /* non-fatal — the project layer is enrichment */ }
       }
-      const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
+      // Wave 2: the pack layer is scoped to the run's area and returns the
+      // entries it injected (pack, ref, tier, score) for the run artifact.
+      const packLayer = await buildKnowledgePackLayerDetailed(db, { areaId, moduleId, userMessage });
+      const knowledgePackPrompt = packLayer.text;
+      // Wave 2: framework article text reaches module runs. Until now the 60
+      // article-level framework files grounded Counsel's Desk, the Task Agent
+      // and the agentic tools, but never a run through this route — an FCP
+      // gap analysis received pack entity summaries and no article. The
+      // area seeds the weak scope; a regulation the user names is strong scope.
+      let frameworkGrounding: GroundingResult | null = null;
+      if (moduleId || areaId) {
+        try {
+          frameworkGrounding = await retrieveGroundingText({
+            query: [runModuleCfg?.label, userMessage].filter(Boolean).join(' '),
+            frameworkIds: frameworksForArea(areaId),
+            tokenBudget: 3000,
+          });
+        } catch { frameworkGrounding = null; }
+      }
+      const frameworkGroundingPrompt = frameworkGrounding?.text ?? '';
+      const groundingRetrievedAt = new Date().toISOString();
       // Wave 3.4 — atom-layer A/B experiment: when injection is on and the run
       // will be persisted, ~20% of runs are deterministically assigned to a
       // 'holdout' arm (hash of the user-message id — no Math.random) where the
@@ -821,6 +863,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         businessContext: businessContext || null,
         orgContextPrompt: orgContextPrompt || undefined,
         knowledgePackPrompt: knowledgePackPrompt || undefined,
+        frameworkGroundingPrompt: frameworkGroundingPrompt || undefined,
         atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
         projectContextPrompt: projectContextPrompt || undefined,
@@ -872,17 +915,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         assistantMessageId: sessionId ? assistantMessageId : null,
         lens: moduleId ? { moduleId: String(moduleId), areaId: areaId ? String(areaId) : null } : null,
         project: projectRow,
+        // Wave 2: every document-class source — uploads, project files, URLs
+        // and folder files — with budget skips flagged whatever the type. The
+        // resolver now marks a skipped URL or folder file exactly like a
+        // skipped upload; before, only uploads reached this list.
         documents: (resolved.sourceDetails ?? [])
-          .filter((d) => d.type === 'uploaded_file')
+          .filter((d) => d.type === 'uploaded_file' || d.type === 'url' || d.type === 'local_file')
           .map((d) => ({
             name: d.name,
             chars: d.charCount ?? 0,
-            source: (d.path && projectFileLabels[d.path] ? 'project' : 'upload') as 'project' | 'upload',
-            ...(d.note ? { skipped: true } : {}),
+            source: (d.type === 'url' ? 'url'
+              : d.type === 'local_file' ? 'folder'
+              : d.path && projectFileLabels[d.path] ? 'project' : 'upload') as 'project' | 'upload' | 'url' | 'folder',
+            ...(d.note ? { skipped: true, note: d.note } : {}),
           })),
+        skippedCount: resolved.skippedCount ?? 0,
+        skippedTokens: resolved.skippedTokens ?? 0,
         knowledgeSources: resolved.sourceManifest,
         ragChunks: ragChunks.length,
         packGroundingChars: knowledgePackPrompt.length,
+        // Wave 2: which packs and which framework articles grounded this run.
+        packs: packLayer.packs.map((p) => ({
+          name: p.displayName,
+          version: p.version,
+          entries: packLayer.entries.filter((e) => e.packId === p.id).length,
+        })),
+        packEntries: packLayer.entries.length,
+        frameworks: frameworkGrounding ? [...new Set(frameworkGrounding.sources.filter((s) => s.articleId).map((s) => s.frameworkName))] : [],
+        frameworkArticles: frameworkGrounding ? frameworkGrounding.sources.filter((s) => s.articleId).length : 0,
+        frameworkChars: frameworkGroundingPrompt.length,
         atomChars: atomLayerPrompt ? atomLayerPrompt.length : 0,
         orgContext: Boolean(orgContextPrompt),
         goalsValues: Boolean(goalsValuesPrompt),
@@ -916,7 +977,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
-        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string }) => {
+        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string; webSources?: Array<{ kind: 'web_search' | 'web_fetch'; query?: string; url?: string; title?: string; resultUrls?: string[]; sha256?: string; charCount?: number; retrievedAt: string; isError?: boolean }> }) => {
             // Wave 0: how this run is billed, so a NULL cost reads as "plan usage"
             // or "unknown pricing" rather than "free".
             const costBasis: 'list' | 'free' | 'plan' | 'unknown' =
@@ -1045,9 +1106,49 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 // carries the arm — entries store name/chars/sha only).
                 ...(atomArm ? { [`atom_ab_arm_${atomArm}`]: atomArm } : {}),
               });
-              const sourceManifest = resolved.sourceDetails && resolved.sourceDetails.length > 0
+              const resolverSources = resolved.sourceDetails && resolved.sourceDetails.length > 0
                 ? resolved.sourceDetails
                 : resolved.sourceManifest.map((name) => ({ type: 'summary', name, contentHashed: false }));
+              // Wave 2: pack entries and framework articles are sources too —
+              // each pinned by hash so a reader can tell exactly which
+              // regulatory text the answer was grounded in.
+              const groundingSources = [
+                ...packLayer.entries.map((e) => ({
+                  type: 'knowledge_pack_entity',
+                  name: `${e.packName} · ${e.refId}`,
+                  sha256: sha256Hex(e.text),
+                  charCount: e.text.length,
+                  retrievedAt: groundingRetrievedAt,
+                  contentHashed: true,
+                  note: `tier ${e.tier}${typeof e.similarity === 'number' ? ` · score ${e.similarity.toFixed(3)}` : ''}`,
+                })),
+                ...(frameworkGrounding?.sources ?? [])
+                  .filter((s) => s.articleId)
+                  .map((s) => ({
+                    type: 'framework_article',
+                    name: `${s.frameworkName} ${s.articleId}${s.title ? ` — ${s.title}` : ''}`,
+                    sha256: s.sha256,
+                    charCount: s.chars,
+                    retrievedAt: groundingRetrievedAt,
+                    contentHashed: Boolean(s.sha256),
+                  })),
+              ];
+              // Wave 2: pages the model searched for or fetched itself on the
+              // subscription engine — recorded from the tool events, so a
+              // web-grounded answer is no longer "not hashable at resolve time".
+              const webSources = (data.webSources ?? []).map((w) => ({
+                type: w.kind,
+                name: w.kind === 'web_fetch'
+                  ? `${w.title ? `${w.title} — ` : ''}${w.url ?? 'fetched page'}`
+                  : `search: ${w.query ?? ''}${w.resultUrls && w.resultUrls.length ? ` (${w.resultUrls.length} results)` : ''}`,
+                ...(w.url ? { url: w.url } : {}),
+                ...(w.sha256 ? { sha256: w.sha256 } : {}),
+                ...(typeof w.charCount === 'number' ? { charCount: w.charCount } : {}),
+                retrievedAt: w.retrievedAt,
+                contentHashed: Boolean(w.sha256),
+                ...(w.isError ? { note: 'tool reported an error' } : {}),
+              }));
+              const sourceManifest = [...resolverSources, ...groundingSources, ...webSources];
               void writeRunArtifact(db, {
                 messageId: assistantMessageId,
                 sessionId,
@@ -1087,7 +1188,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               provider,
               // Wave 0: the resolver's manifest (built-in / uploads / URLs / folders /
               // RAG) — the column was only ever filled by orchestrator heartbeats.
-              knowledgeSourcesUsed: resolved.sourceManifest,
+              // Wave 2: plus the packs and frameworks that grounded the run.
+              knowledgeSourcesUsed: [
+                ...resolved.sourceManifest,
+                ...packLayer.packs.map((p) => `pack: ${p.displayName}${p.version ? ` v${p.version}` : ''}`),
+                ...(frameworkGrounding ? [...new Set(frameworkGrounding.sources.filter((s) => s.articleId).map((s) => `framework: ${s.frameworkId}`))] : []),
+              ],
               thinkingLevel: thinking,
               creativity,
               writingTone: writingTone || 'professional',
@@ -1787,6 +1893,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           if (previewProject) projectContextPrompt = await buildProjectContextSummary(db, previewProject.id, sessionIdForPreview);
         } catch { /* enrichment only */ }
       }
+      // Wave 2: the preview grounds in framework text the same way a run does.
+      let previewGrounding = '';
+      if (moduleId || areaId) {
+        try {
+          const previewModule = moduleId ? await getModule(String(moduleId)).catch(() => undefined) : undefined;
+          const g = await retrieveGroundingText({
+            query: [previewModule?.label, userMessageForPreview].filter(Boolean).join(' '),
+            frameworkIds: frameworksForArea(areaId),
+            tokenBudget: 3000,
+          });
+          previewGrounding = g?.text ?? '';
+        } catch { previewGrounding = ''; }
+      }
       const previewAutoSkills = getAutoAttachSkillIds(Array.isArray(req.body.outputFormats) ? req.body.outputFormats : []);
       const previewSkills = Array.isArray(selectedSkills)
         ? [...new Set([...(selectedSkills as string[]), ...previewAutoSkills])]
@@ -1817,6 +1936,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         userProfile: userProfile || null,
         orgContextPrompt: orgContextPrompt || undefined,
         knowledgePackPrompt: knowledgePackPrompt || undefined,
+        frameworkGroundingPrompt: previewGrounding || undefined,
         atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
         projectContextPrompt: projectContextPrompt || undefined,

@@ -58,10 +58,11 @@ CREATE USER anton WITH PASSWORD 'anton';
 CREATE DATABASE anton OWNER anton;
 \q
 
-# 3. Install Ollama (optional — local LLM models + institutional-memory embeddings)
-#    NOTE: vector RAG search uses OpenAI (text-embedding-3-small via ChromaDB) and needs
-#    OPENAI_API_KEY; without it, knowledge search falls back to keyword. nomic-embed-text
-#    below powers institutional-memory/atom embeddings only, not the RAG query path.
+# 3. Install Ollama (optional — local LLM models + every embedding ANTON makes)
+#    nomic-embed-text embeds institutional-memory atoms, knowledge-pack entities
+#    AND collection-RAG document chunks into the one `embeddings` table (local,
+#    nothing leaves). No OpenAI key and no Chroma server are needed; without an
+#    embedder, collection search falls back to keyword matching and says so.
 # Download from https://ollama.com and install, then:
 ollama pull nomic-embed-text
 

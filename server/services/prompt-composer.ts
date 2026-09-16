@@ -173,6 +173,9 @@ export interface PromptComposerConfig {
   orgContextPrompt?: string;
   /** Layer 2b: Active regulatory knowledge pack summary — built by buildKnowledgePackLayer() */
   knowledgePackPrompt?: string;
+  /** Layer 2f (Wave 2): verbatim framework article text for the run's area/query —
+   *  built by retrieveGroundingText() in framework-text-retrieval.ts */
+  frameworkGroundingPrompt?: string;
   /** Layer 2c: Roaring entity intelligence (live Swedish registry, UBO, sanctions) */
   roaringEntityPrompt?: string;
   /** Layer 2d: Dow Jones screening data (sanctions, PEP, adverse media) */
@@ -410,6 +413,9 @@ export async function composeSystemPromptParts(config: PromptComposerConfig): Pr
 
   // Layer 2b: Active Regulatory Knowledge Packs — structured regulatory entity context
   pushStatic('layer2b_knowledge_pack', config.knowledgePackPrompt);
+
+  // Layer 2f: Framework article text (Wave 2) — the regulation itself, budgeted
+  pushStatic('layer2f_framework_grounding', config.frameworkGroundingPrompt);
 
   // Layer 2c: Roaring entity intelligence (Swedish registry, UBO chain, sanctions)
   pushStatic('layer2c_roaring', config.roaringEntityPrompt);

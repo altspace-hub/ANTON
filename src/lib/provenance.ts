@@ -27,6 +27,7 @@ export const LAYER_LABELS: Record<string, string> = {
   layer2c_roaring: 'Layer 2c · Roaring entity data',
   layer2d_dowjones: 'Layer 2d · Dow Jones screening',
   layer2e_atoms: 'Layer 2e · Institutional memory (atoms)',
+  layer2f_framework_grounding: 'Framework text',
   layer3_area_context: 'Layer 3 · Area context',
   layer4_module_prompt: 'Layer 4 · Module prompt',
   layer4c_guardrail: 'Layer 4c · Guardrail',
@@ -125,6 +126,140 @@ export function shortHash(hash: string | null | undefined, keep = 12): string {
 
 export function normalizeTransparencyLevel(v: unknown): 0 | 1 | 2 {
   return v === 1 || v === 2 ? v : 0;
+}
+
+// ── Sources ───────────────────────────────────────────────────
+
+/** Friendly names for run_artifacts.source_manifest `type` values (resolver + Wave 2 grounding + SDK web tools). */
+export const SOURCE_TYPE_LABELS: Record<string, string> = {
+  uploaded_file: 'Uploaded documents',
+  url: 'Online references',
+  local_file: 'Local files',
+  rag_chunk: 'Retrieved passages',
+  bm25_chunk: 'Retrieved passages (keyword)',
+  knowledge_pack_entity: 'Knowledge pack entries',
+  framework_article: 'Framework articles',
+  web_fetch: 'Web pages fetched by the model',
+  web_search: 'Web searches by the model',
+  web_search_tool: 'Web search (tool available)',
+  builtin: 'Built-in knowledge',
+  summary: 'Sources',
+};
+
+/** Display order for grouped manifests; types not listed follow in first-seen order. */
+export const SOURCE_TYPE_ORDER: ReadonlyArray<string> = [
+  'uploaded_file', 'url', 'local_file', 'rag_chunk', 'bm25_chunk', 'knowledge_pack_entity',
+  'framework_article', 'web_fetch', 'web_search', 'web_search_tool', 'builtin', 'summary',
+];
+
+export function sourceTypeLabel(type: string): string {
+  return SOURCE_TYPE_LABELS[type] ?? type;
+}
+
+export interface ManifestGroup<T extends { type: string }> {
+  type: string;
+  label: string;
+  count: number;
+  entries: T[];
+}
+
+/** Group manifest entries by type, in SOURCE_TYPE_ORDER, unknown types after in first-seen order. */
+export function groupManifestByType<T extends { type: string }>(entries: ReadonlyArray<T>): ManifestGroup<T>[] {
+  const byType = new Map<string, T[]>();
+  for (const e of entries) {
+    const list = byType.get(e.type);
+    if (list) list.push(e);
+    else byType.set(e.type, [e]);
+  }
+  const ordered: string[] = [
+    ...SOURCE_TYPE_ORDER.filter((t) => byType.has(t)),
+    ...[...byType.keys()].filter((t) => !SOURCE_TYPE_ORDER.includes(t)),
+  ];
+  return ordered.map((type) => {
+    const list = byType.get(type) ?? [];
+    return { type, label: sourceTypeLabel(type), count: list.length, entries: list };
+  });
+}
+
+/** "AMLR 2024 v1.2.0 (23 entries), EBA GL v1.0.0 (4)" — the word "entries" once, on the first pack. */
+export function packsLine(packs: ReadonlyArray<{ name: string; version: string | null; entries: number }>): string {
+  return packs
+    .map((p, i) => `${p.name}${p.version ? ` v${p.version}` : ''} (${p.entries}${i === 0 ? ` entr${p.entries === 1 ? 'y' : 'ies'}` : ''})`)
+    .join(', ');
+}
+
+/** "3 frameworks · 14 articles · ~1,200 tokens" (tokens ≈ chars / 4; omitted when 0). */
+export function frameworkLine(input: { frameworks: ReadonlyArray<string>; articles: number; chars: number }): string {
+  const n = input.frameworks.length;
+  const parts = [
+    `${n} framework${n === 1 ? '' : 's'}`,
+    `${input.articles} article${input.articles === 1 ? '' : 's'}`,
+  ];
+  if (input.chars > 0) parts.push(`~${Math.round(input.chars / 4).toLocaleString('en-GB')} tokens`);
+  return parts.join(' · ');
+}
+
+/** The resolver's budget-skip notes all share this prefix (knowledge-resolver.ts BUDGET_SKIP_NOTE). */
+export const BUDGET_SKIP_PREFIX = 'skipped — context budget';
+
+export function isBudgetSkip(note: string | null | undefined): boolean {
+  return typeof note === 'string' && note.startsWith(BUDGET_SKIP_PREFIX);
+}
+
+export type DocumentSource = 'upload' | 'project' | 'url' | 'folder';
+
+export const DOCUMENT_SOURCE_LABELS: Record<DocumentSource, string> = {
+  upload: 'upload',
+  project: 'project file',
+  url: 'URL',
+  folder: 'folder file',
+};
+
+export interface ContextDocument { name: string; chars: number; source: DocumentSource; skipped?: boolean; note?: string }
+
+export interface SkippedDocument { name: string; source: DocumentSource; sourceLabel: string; note: string; budget: boolean }
+
+/** Split the context documents into the ones in the prompt and the ones skipped, each skip with its reason. */
+export function splitDocuments(documents: ReadonlyArray<ContextDocument>): { used: ContextDocument[]; skipped: SkippedDocument[] } {
+  const used: ContextDocument[] = [];
+  const skipped: SkippedDocument[] = [];
+  for (const d of documents) {
+    if (!d.skipped) { used.push(d); continue; }
+    const note = d.note?.trim() || 'skipped';
+    skipped.push({ name: d.name, source: d.source, sourceLabel: DOCUMENT_SOURCE_LABELS[d.source] ?? d.source, note, budget: isBudgetSkip(note) });
+  }
+  return { used, skipped };
+}
+
+/** One live web-tool record rendered as a row (the SDK engine's 'source_fetched' events). */
+export interface LiveWebSourceRow {
+  kind: 'web_search' | 'web_fetch';
+  kindLabel: string;
+  /** The URL fetched, or the query issued. */
+  primary: string;
+  title: string | null;
+  charCount: number | null;
+  sha256: string | null;
+  isError: boolean;
+  retrievedAt: string;
+}
+
+export function liveWebSourceRow(r: {
+  kind: 'web_search' | 'web_fetch'; query?: string; url?: string; title?: string; resultUrls?: string[];
+  sha256?: string; charCount?: number; retrievedAt: string; isError?: boolean;
+}): LiveWebSourceRow {
+  const isSearch = r.kind === 'web_search';
+  const hits = r.resultUrls?.length ?? 0;
+  return {
+    kind: r.kind,
+    kindLabel: isSearch ? 'Web search' : 'Web page',
+    primary: isSearch ? `${r.query ?? ''}${hits > 0 ? ` (${hits} result${hits === 1 ? '' : 's'})` : ''}`.trim() : (r.url ?? 'fetched page'),
+    title: r.title ?? null,
+    charCount: typeof r.charCount === 'number' ? r.charCount : null,
+    sha256: r.sha256 ?? null,
+    isError: r.isError === true,
+    retrievedAt: r.retrievedAt,
+  };
 }
 
 // ── Caveats the model wrote about itself ──────────────────────

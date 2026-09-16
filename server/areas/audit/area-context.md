@@ -51,3 +51,5 @@ When working in the Audit & Assurance domain:
 5. **The "so what" test** — Every finding must articulate business/regulatory impact, not just describe the gap
 6. **No surprises principle** — Management should not be surprised by a finding in the final report
 7. **Proportionality** — Scope, methodology, and sample sizes should be appropriate for the risk level
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

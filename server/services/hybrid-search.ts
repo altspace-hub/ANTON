@@ -199,7 +199,13 @@ export async function hybridSearch(
   // Vector search across embeddings table. Over-fetch then scope: the store has
   // no owner dimension, so another user's outputs are removed here before they
   // reach RRF, the snippet builder or the caller.
-  const vectorResults: VectorSearchResult[] = await filterOwnedByScope(
+  // Wave 2: collection-RAG chunks now live in this table ('rag_chunk'). They
+  // belong to whoever uploaded the document, so a caller that asks for "all
+  // types" (Pathfinder, the Companion gateway) must not receive them; only a
+  // caller that names the type — the collection search, which scopes by
+  // collection — gets them.
+  const excludeRagChunks = !contentTypes;
+  const vectorResults: VectorSearchResult[] = (await filterOwnedByScope(
     db,
     await vectorStore.search({
       queryVector,
@@ -208,7 +214,7 @@ export async function hybridSearch(
       minSimilarity,
     }),
     scope,
-  );
+  )).filter((r) => !excludeRagChunks || r.content_type !== 'rag_chunk');
 
   // ── BM25 keyword search on knowledge_atoms (SQL LIKE fallback) ───────────
   const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);

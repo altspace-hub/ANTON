@@ -55,7 +55,7 @@ The Insurance & Reinsurance area covers general insurance, life and health insur
 
 ## Key Frameworks and Standards
 
-- **Solvency II (Directive 2009/138/EC)** — EU insurance capital and governance regime
+- **Solvency II (Directive 2009/138/EC)** — EU insurance capital and governance regime; amended by the Solvency II review directive (adopted 2024 [verify: application date])
 - **IFRS 17** — Insurance contracts accounting standard (effective January 2023)
 - **IDD (Directive 2016/97/EU)** — Insurance distribution and conduct regulation
 - **IFSB-8** — Takaful governance and risk management standards
@@ -81,3 +81,5 @@ The Insurance & Reinsurance area covers general insurance, life and health insur
 3. **Actuarial independence** — Actuarial opinions must be objective; commercial pressure does not change technical reality
 4. **Transparency with supervisors** — Proactive, open engagement with regulators builds the trust necessary for efficient supervision
 5. **Takaful distinctiveness** — Takaful structures must be genuinely Shari'a-compliant, not conventional insurance with Islamic branding
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

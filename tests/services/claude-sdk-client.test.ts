@@ -20,6 +20,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 import {
   buildSdkEnv,
   flattenMessages,
@@ -31,6 +32,9 @@ import {
   setSdkQueryImplForTests,
   SDK_ENGINE_MODELS,
   SDK_WEB_MAX_TURNS,
+  WEB_SOURCE_RESULT_CAP,
+  type SdkCompletionData,
+  type WebSourceRecord,
 } from '../../server/services/claude-sdk-client.js';
 import { resetSdkEngineStoreForTests } from '../../server/services/sdk-engine-store.js';
 import { getProviderFromModelId } from '../../server/services/model-adapter.js';
@@ -318,6 +322,147 @@ describe('Wave 0 — onComplete carries what the engine actually served', () => 
     expect(completion!.modelServed).toBeUndefined();
     const usage = events().find((e) => e.type === 'usage') as Record<string, unknown>;
     expect('modelServed' in usage).toBe(false);
+  });
+});
+
+// ── Wave 2: web sources recorded from tool events ───────────
+// The SDK carries a WebSearch / WebFetch call as a tool_use block on an
+// `assistant` envelope and its outcome as a tool_result block on a `user`
+// envelope, with the tool's structured output attached as `tool_use_result`
+// (sdk.d.ts SDKAssistantMessage / SDKUserMessage; sdk-tools.d.ts
+// WebSearchOutput / WebFetchOutput). Until Wave 2 the loop dropped both, so a
+// web-grounded run left no record of what it read.
+
+const WEB_TOOLS = [{ type: 'web_search_20250305', name: 'web_search' }];
+const PAGE_TEXT = 'Article 16 — Business-wide risk assessment. Obliged entities shall take appropriate steps to identify and assess the risks of money laundering and terrorist financing to which they are exposed.';
+const EUR_LEX = 'https://eur-lex.europa.eu/eli/reg/2024/1624/oj';
+const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
+
+/** SDKAssistantMessage with one tool_use block (the SDK's shape, minus fields the engine never reads). */
+const assistantToolUse = (id: string, name: string, input: Record<string, unknown>) => ({
+  type: 'assistant',
+  message: { role: 'assistant', content: [{ type: 'tool_use', id, name, input }] },
+});
+/** SDKUserMessage carrying the matching tool_result; `envelope` adds tool_use_result / timestamp. */
+const userToolResult = (toolUseId: string, content: string, envelope: Record<string, unknown> = {}, isError = false) => ({
+  type: 'user',
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, content, ...(isError ? { is_error: true } : {}) }] },
+  ...envelope,
+});
+/** WebSearchOutput: results mix the tool's commentary strings with hit lists. */
+const searchOutput = (query: string, hits: Array<{ url: string; title: string }>) => ({
+  query, results: ['Commentary the tool wrote', { tool_use_id: 'srvtoolu_1', content: hits }], durationSeconds: 1.2, searchCount: 1,
+});
+/** WebFetchOutput: `result` is the processed text, not the raw page. */
+const fetchOutput = (url: string, result: string, code = 200) => ({
+  bytes: 48_000, code, codeText: code === 200 ? 'OK' : 'Not Found', result, durationMs: 800, url,
+});
+const sourcesIn = (events: Record<string, unknown>[]) =>
+  events.filter((e) => e.type === 'source_fetched').map((e) => e.source as WebSourceRecord);
+
+describe('Wave 2 — web sources recorded from tool events', () => {
+  it('a WebFetch call and its result become a source_fetched event with sha256 + length — never the page', async () => {
+    fakeSdk([
+      textDelta('Reading the regulation. '),
+      assistantToolUse('toolu_fetch', 'WebFetch', { url: EUR_LEX, prompt: 'Extract Article 16' }),
+      userToolResult('toolu_fetch', PAGE_TEXT, { tool_use_result: fetchOutput(EUR_LEX, PAGE_TEXT), timestamp: '2026-09-16T10:00:00.000Z' }),
+      textDelta('Article 16 requires a business-wide risk assessment.'),
+      successResult(),
+    ]);
+    const { sink, events, done } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse({ ...BASE_CONFIG, tools: WEB_TOOLS }, sink, (d) => { completion = d; });
+
+    // The existing contract is untouched: stream_start first, stream_end last,
+    // and the record lands between the deltas in the order the tool ran.
+    const types = events().map((e) => e.type);
+    expect(types[0]).toBe('stream_start');
+    expect(types[types.length - 1]).toBe('stream_end');
+    expect(done()).toBe(true);
+    expect(types.indexOf('source_fetched')).toBeGreaterThan(types.indexOf('text_delta'));
+    expect(types.indexOf('source_fetched')).toBeLessThan(types.lastIndexOf('text_delta'));
+
+    const sources = sourcesIn(events());
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toEqual({
+      kind: 'web_fetch',
+      url: EUR_LEX,
+      sha256: sha256(PAGE_TEXT),
+      charCount: PAGE_TEXT.length,
+      retrievedAt: '2026-09-16T10:00:00.000Z',
+    });
+    expect(JSON.stringify(sources[0])).not.toContain('Obliged entities');
+
+    expect(completion).not.toBeNull();
+    expect(completion!.webSources).toEqual(sources);
+    expect(completion!.text).toBe('Reading the regulation. Article 16 requires a business-wide risk assessment.');
+  });
+
+  it('a WebSearch records the query and the hits the tool returned (capped), and a later fetch of a hit carries its title', async () => {
+    const hits = Array.from({ length: WEB_SOURCE_RESULT_CAP + 5 }, (_, i) => ({ url: `https://example.org/hit-${i}`, title: `Hit ${i}` }));
+    const query = 'AMLR Article 16 business-wide risk assessment';
+    fakeSdk([
+      assistantToolUse('toolu_search', 'WebSearch', { query }),
+      userToolResult('toolu_search', 'Web search results for query: …', { tool_use_result: searchOutput(query, hits) }),
+      assistantToolUse('toolu_fetch', 'WebFetch', { url: 'https://example.org/hit-3', prompt: 'Read it' }),
+      userToolResult('toolu_fetch', 'The text of hit 3.', { tool_use_result: fetchOutput('https://example.org/hit-3', 'The text of hit 3.') }),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse({ ...BASE_CONFIG, tools: WEB_TOOLS }, sink, (d) => { completion = d; });
+
+    const sources = sourcesIn(events());
+    expect(sources).toHaveLength(2);
+    expect(sources[0]).toMatchObject({ kind: 'web_search', query });
+    expect(sources[0].resultUrls).toHaveLength(WEB_SOURCE_RESULT_CAP);
+    expect(sources[0].resultUrls![0]).toBe('https://example.org/hit-0');
+    expect(sources[0].results![3]).toEqual({ url: 'https://example.org/hit-3', title: 'Hit 3' });
+    expect(sources[0]).not.toHaveProperty('sha256');
+    expect(typeof sources[0].retrievedAt).toBe('string');
+    expect(sources[1]).toMatchObject({
+      kind: 'web_fetch', url: 'https://example.org/hit-3', title: 'Hit 3',
+      sha256: sha256('The text of hit 3.'), charCount: 'The text of hit 3.'.length,
+    });
+    expect(completion!.webSources).toEqual(sources);
+  });
+
+  it('a failed fetch is recorded as an error with no hash; a search without structured output falls back to the URLs the model read', async () => {
+    fakeSdk([
+      assistantToolUse('toolu_bad', 'WebFetch', { url: 'https://example.org/gone', prompt: 'x' }),
+      userToolResult('toolu_bad', 'Error: 404 Not Found', { tool_use_result: fetchOutput('https://example.org/gone', '', 404) }, true),
+      assistantToolUse('toolu_s', 'WebSearch', { query: 'dora article 5' }),
+      userToolResult('toolu_s', 'Links: [{"title":"DORA","url":"https://eur-lex.europa.eu/eli/reg/2022/2554/oj"}]\n\nSummary text.'),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    const { sink, events } = collectingSink();
+    await streamToResponse({ ...BASE_CONFIG, tools: WEB_TOOLS }, sink);
+    const sources = sourcesIn(events());
+    expect(sources).toHaveLength(2);
+    expect(sources[0]).toEqual({ kind: 'web_fetch', url: 'https://example.org/gone', retrievedAt: expect.any(String), isError: true });
+    expect(sources[1]).toMatchObject({
+      kind: 'web_search', query: 'dora article 5',
+      resultUrls: ['https://eur-lex.europa.eu/eli/reg/2022/2554/oj'],
+      results: [{ url: 'https://eur-lex.europa.eu/eli/reg/2022/2554/oj', title: '' }],
+    });
+  });
+
+  it('ignores non-web tool calls, text-only envelopes and results with no matching call — a run without web work reports no sources', async () => {
+    fakeSdk([
+      { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'thinking aloud' }] } },
+      assistantToolUse('toolu_mcp', 'mcp__anton__search_knowledge', { query: 'x' }),
+      userToolResult('toolu_mcp', 'pack text'),
+      userToolResult('toolu_unknown', 'a result with no call'),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(events().some((e) => e.type === 'source_fetched')).toBe(false);
+    expect(completion!.webSources).toEqual([]);
   });
 });
 

@@ -17,7 +17,7 @@
  * so the run record is looked up through the session's last persisted
  * assistant row when the local id misses.
  */
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Fragment, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -33,6 +33,7 @@ import type { ContextUsed, RunArtifact, InjectedAtomRow, PersistedAssistantMessa
 import {
   layerLabel, atomArmFromLayerKey, engineLabel, costLabel, normalizeCostBasis, shortHash,
   normalizeTransparencyLevel, parseCaveatSections, defaultExpansion, summaryLine,
+  groupManifestByType, packsLine, frameworkLine, splitDocuments, liveWebSourceRow,
   type ProvenanceSectionId,
 } from '@/lib/provenance';
 
@@ -105,17 +106,6 @@ function fmtDate(iso: string | undefined): string {
   return Number.isFinite(t) ? new Date(t).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' }) : iso;
 }
 
-const SOURCE_TYPE_LABELS: Record<string, string> = {
-  builtin: 'Built-in knowledge',
-  web_search_tool: 'Web search',
-  url: 'Online reference',
-  local_file: 'Local file',
-  uploaded_file: 'Uploaded document',
-  rag_chunk: 'Retrieved passage',
-  bm25_chunk: 'Retrieved passage (keyword)',
-  summary: 'Source',
-};
-
 // ── Component ────────────────────────────────────────────────
 
 export default function ProvenancePanel(props: ProvenancePanelProps) {
@@ -130,6 +120,8 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
   const lastOutputTokens = useStreamStore((s) => s.lastOutputTokens);
   const lastCachedTokens = useStreamStore((s) => s.lastCachedTokens);
   const lastCacheCreationTokens = useStreamStore((s) => s.lastCacheCreationTokens);
+  // Wave 2: pages the model searched for / fetched itself on the SDK engine ('source_fetched' events).
+  const lastWebSources = useStreamStore((s) => s.lastWebSources);
 
   // Raw fetch state; what the panel shows is derived below (artifact / artifactStatus).
   const [artifactFetchStatus, setArtifactFetchStatus] = useState<ArtifactStatus>('idle');
@@ -145,6 +137,7 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
   const snapContext = (snap.contextUsed && typeof snap.contextUsed === 'object' ? snap.contextUsed : null) as ContextUsed | null;
   // During a run the live frame is the truth; afterwards the snapshot (persisted) wins.
   const ctx: ContextUsed | null = isStreaming ? (contextUsed ?? snapContext) : (snapContext ?? contextUsed);
+  const frameMessageId = ctx?.assistantMessageId ?? null;
 
   const messageKey = lastAssistant?.id ?? 'none';
   const [open, setOpen] = useState<Record<ProvenanceSectionId, boolean>>(() => defaultExpansion(level));
@@ -171,6 +164,9 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
     const alive = () => !cancelled && artifactReqRef.current === reqId;
     const localId = lastAssistant?.id;
     const createdAt = lastAssistant?.createdAt;
+    // Wave 1: the context frame names the id the assistant row is persisted under, and the
+    // stream store now mints the local message with it — so both usually agree. Try each once.
+    const candidateIds = [...new Set([localId, frameMessageId].filter((id): id is string => !!id))];
 
     const attempt = async (n: number): Promise<void> => {
       if (!alive()) return;
@@ -181,13 +177,18 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
       }
       setArtifactFetchStatus('loading');
       try {
-        let art = localId ? await fetchRunArtifact(sessionId, localId) : null;
+        let art: RunArtifact | null = null;
+        for (const id of candidateIds) {
+          art = await fetchRunArtifact(sessionId, id);
+          if (art || !alive()) break;
+        }
+        if (!alive()) return;
         if (!art) {
-          // A live run's id was minted in the browser — the server row has its own.
+          // Safety net for runs whose frame carried no id: the server row has its own.
           const row = await fetchLatestAssistantMessageRow(sessionId);
           if (!alive()) return;
           if (row) setResolvedRow(row);
-          if (row && row.id !== localId) art = await fetchRunArtifact(sessionId, row.id);
+          if (row && !candidateIds.includes(row.id)) art = await fetchRunArtifact(sessionId, row.id);
         }
         if (!alive()) return;
         if (art) {
@@ -212,7 +213,7 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
     };
     void attempt(0);
     return () => { cancelled = true; };
-  }, [artifactWanted, sessionId, lastAssistant?.id, lastAssistant?.createdAt]);
+  }, [artifactWanted, sessionId, lastAssistant?.id, lastAssistant?.createdAt, frameMessageId]);
   // What the panel shows: idle while streaming or without a session; a record only once it is ready.
   const artifactStatus: ArtifactStatus = artifactWanted ? artifactFetchStatus : 'idle';
   const artifact: RunArtifact | null = artifactWanted && artifactFetchStatus === 'ready' ? artifactRow : null;
@@ -355,19 +356,39 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
       sourceRows.push({ label: 'Answering as', value: mod?.label ?? ctx.lens.moduleId, color: 'text-adv-teal' });
     }
     if (ctx.project) sourceRows.push({ label: 'Project', value: ctx.project.name, color: 'text-adv-teal' });
-    const docs = ctx.documents ?? [];
-    if (docs.length > 0) {
-      const used = docs.filter((d) => !d.skipped);
-      const skipped = docs.length - used.length;
+    const { used, skipped } = splitDocuments(ctx.documents ?? []);
+    if (used.length > 0) {
       sourceRows.push({
         label: 'Documents',
-        value: `${used.map((d) => d.name).join(', ')}${skipped > 0 ? ` (+${skipped} skipped — budget)` : ''}`,
+        value: `${used.map((d) => d.name).join(', ')}${skipped.length > 0 ? ` (+${skipped.length} skipped)` : ''}`,
         color: 'text-adv-off-white',
+      });
+    } else if (skipped.length > 0) {
+      sourceRows.push({ label: 'Documents', value: `none in the prompt — ${skipped.length} skipped`, color: 'text-adv-gold' });
+    }
+    if ((ctx.skippedCount ?? 0) > 0 || skipped.length > 0) {
+      const n = ctx.skippedCount ?? skipped.length;
+      sourceRows.push({
+        label: 'Skipped for budget',
+        value: `${n} source${n === 1 ? '' : 's'}${(ctx.skippedTokens ?? 0) > 0 ? ` · ~${fmtInt(ctx.skippedTokens ?? 0)} tokens not sent` : ''}`,
+        color: 'text-adv-gold',
       });
     }
     const otherSources = (ctx.knowledgeSources ?? []).filter((s) => !/\(uploaded\)$/.test(s));
     if (otherSources.length > 0) sourceRows.push({ label: 'Knowledge', value: otherSources.join(', '), color: 'text-adv-gray' });
     if (ctx.ragChunks > 0) sourceRows.push({ label: 'Retrieved', value: `${ctx.ragChunks} passage${ctx.ragChunks === 1 ? '' : 's'}`, color: 'text-adv-gray' });
+    if (ctx.packs && ctx.packs.length > 0) {
+      sourceRows.push({ label: 'Knowledge packs', value: packsLine(ctx.packs), color: 'text-adv-teal' });
+    } else if ((ctx.packEntries ?? 0) > 0) {
+      sourceRows.push({ label: 'Knowledge packs', value: `${ctx.packEntries} entr${ctx.packEntries === 1 ? 'y' : 'ies'} grounded`, color: 'text-adv-teal' });
+    }
+    if ((ctx.frameworks && ctx.frameworks.length > 0) || (ctx.frameworkArticles ?? 0) > 0) {
+      sourceRows.push({
+        label: 'Framework text',
+        value: frameworkLine({ frameworks: ctx.frameworks ?? [], articles: ctx.frameworkArticles ?? 0, chars: ctx.frameworkChars ?? 0 }),
+        color: 'text-adv-teal',
+      });
+    }
     if (ctx.packGroundingChars > 0) sourceRows.push({ label: 'Regulatory text', value: `~${fmtInt(Math.round(ctx.packGroundingChars / 4))} tokens grounded`, color: 'text-adv-gray' });
     if (ctx.atomChars > 0) sourceRows.push({ label: 'Memory', value: `~${fmtInt(Math.round(ctx.atomChars / 4))} tokens of institutional memory`, color: 'text-adv-gray' });
     if (ctx.webSearch) sourceRows.push({ label: 'Web search', value: 'Available to the model', color: 'text-adv-teal' });
@@ -376,8 +397,15 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
     sourceRows.push({ label: 'Context', value: 'Your message and the conversation only', color: 'text-adv-gray' });
   }
 
+  // Plain derivations (a few dozen rows at most) — cheaper than memo bookkeeping.
+  const skippedDocs = splitDocuments(ctx?.documents ?? []).skipped;
   const manifest = artifact?.source_manifest ?? [];
-  const sourceCount = artifact ? manifest.length : (sourceNames?.length ?? (ctx ? ctx.knowledgeSources.length + ctx.documents.length : null));
+  const manifestGroups = groupManifestByType(manifest);
+  // The live web rows stand in until the run record (which carries the same pages, hashed) is loaded.
+  const liveWebRows = isLiveRun && !artifact ? lastWebSources.map(liveWebSourceRow) : [];
+  const sourceCount = artifact
+    ? manifest.length
+    : ((sourceNames?.length ?? (ctx ? ctx.knowledgeSources.length + ctx.documents.length : 0)) + liveWebRows.length) || (sourceNames || ctx ? 0 : null);
   const layerCount = artifact ? artifact.layer_summary.length : null;
 
   // ── Exact prompt actions ──
@@ -431,13 +459,57 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
         {/* ── Sources ── */}
         <Section id="sources" title="Sources" icon={BookOpen} count={sourceCount ?? undefined} open={open.sources} onToggle={toggle}>
           {sourceRows.length > 0 && <RowList rows={sourceRows} />}
+          {skippedDocs.length > 0 && (
+            <div className="mt-2 rounded-md border border-adv-gold/30 bg-adv-dark px-3 py-2">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-adv-gold">Skipped — not in the prompt</p>
+              <ul className="space-y-0.5 text-[11px]">
+                {skippedDocs.map((d, i) => (
+                  <li key={`${d.source}-${d.name}-${i}`} className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="truncate text-adv-off-white" title={d.name}>{d.name}</span>
+                    <span className="text-[10px] text-adv-gray">({d.sourceLabel})</span>
+                    <span className={`text-[10px] ${d.budget ? 'text-adv-gold' : 'text-adv-red'}`}>{d.note}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {liveWebRows.length > 0 && (
+            <div className="mt-2 overflow-x-auto rounded-md bg-adv-dark">
+              <p className="px-3 pt-2 text-[10px] uppercase tracking-wider text-adv-teal">
+                Web sources the model used in this run{isStreaming ? ' (live)' : ' (until the run record loads)'}
+              </p>
+              <table className="w-full text-left text-[11px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-adv-gray">
+                    <th className="px-3 py-1.5 font-medium">Kind</th>
+                    <th className="px-3 py-1.5 font-medium">URL / query</th>
+                    <th className="px-3 py-1.5 font-medium">Title</th>
+                    <th className="px-3 py-1.5 font-medium text-right">Chars</th>
+                    <th className="px-3 py-1.5 font-medium">Hash</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liveWebRows.map((w, i) => (
+                    <tr key={`${w.kind}-${w.primary}-${i}`} className="border-t border-border/60 align-top">
+                      <td className="px-3 py-1.5 text-adv-gray">{w.kindLabel}</td>
+                      <td className="max-w-[260px] truncate px-3 py-1.5 text-adv-off-white" title={w.primary}>{w.primary}</td>
+                      <td className="max-w-[200px] truncate px-3 py-1.5 text-adv-gray" title={w.title ?? undefined}>{w.title ?? '—'}</td>
+                      <td className="px-3 py-1.5 text-right text-adv-gray">{w.charCount !== null ? fmtInt(w.charCount) : '—'}</td>
+                      <td className="px-3 py-1.5 font-mono text-adv-gray" title={w.sha256 ?? undefined}>
+                        {w.isError ? <span className="font-sans italic text-adv-red">tool reported an error</span> : shortHash(w.sha256)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           {artifact ? (
             manifest.length > 0 ? (
               <div className="mt-2 overflow-x-auto rounded-md bg-adv-dark">
                 <table className="w-full text-left text-[11px]">
                   <thead>
                     <tr className="text-[10px] uppercase tracking-wider text-adv-gray">
-                      <th className="px-3 py-1.5 font-medium">Type</th>
                       <th className="px-3 py-1.5 font-medium">Name</th>
                       <th className="px-3 py-1.5 font-medium text-right">Chars</th>
                       <th className="px-3 py-1.5 font-medium">Retrieved</th>
@@ -445,18 +517,29 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {manifest.map((s, i) => (
-                      <tr key={`${s.type}-${s.name}-${i}`} className="border-t border-border/60 align-top">
-                        <td className="px-3 py-1.5 text-adv-gray">{SOURCE_TYPE_LABELS[s.type] ?? s.type}</td>
-                        <td className="max-w-[260px] truncate px-3 py-1.5 text-adv-off-white" title={s.url ?? s.path ?? s.name}>{s.name}</td>
-                        <td className="px-3 py-1.5 text-right text-adv-gray">{typeof s.charCount === 'number' ? fmtInt(s.charCount) : '—'}</td>
-                        <td className="px-3 py-1.5 text-adv-gray">{fmtDate(s.retrievedAt)}</td>
-                        <td className="px-3 py-1.5 font-mono text-adv-gray" title={s.sha256}>
-                          {s.contentHashed === false
-                            ? <span className="font-sans italic">{s.note ? s.note : 'not verifiable (model-side)'}</span>
-                            : shortHash(s.sha256)}
-                        </td>
-                      </tr>
+                    {manifestGroups.map((g) => (
+                      <Fragment key={g.type}>
+                        <tr className="border-t border-border bg-adv-dark-2">
+                          <td colSpan={4} className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-adv-teal" title={g.type}>
+                            {g.label} <span className="text-adv-gray">({g.count})</span>
+                          </td>
+                        </tr>
+                        {g.entries.map((s, i) => (
+                          <tr key={`${g.type}-${s.name}-${i}`} className="border-t border-border/60 align-top">
+                            <td className="max-w-[300px] px-3 py-1.5 text-adv-off-white" title={s.url ?? s.path ?? s.name}>
+                              <span className="block truncate">{s.name}</span>
+                              {s.note && s.contentHashed !== false && <span className="block text-[10px] text-adv-gray">{s.note}</span>}
+                            </td>
+                            <td className="px-3 py-1.5 text-right text-adv-gray">{typeof s.charCount === 'number' ? fmtInt(s.charCount) : '—'}</td>
+                            <td className="px-3 py-1.5 text-adv-gray">{fmtDate(s.retrievedAt)}</td>
+                            <td className="px-3 py-1.5 font-mono text-adv-gray" title={s.sha256}>
+                              {s.contentHashed === false
+                                ? <span className="font-sans italic">{s.note ? s.note : 'not verifiable (model-side)'}</span>
+                                : shortHash(s.sha256)}
+                            </td>
+                          </tr>
+                        ))}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>

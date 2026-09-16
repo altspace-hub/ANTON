@@ -1678,14 +1678,12 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     if (promptPreviewCache.has(moduleId)) return promptPreviewCache.get(moduleId)!;
     const result = { persona: null as string | null, role: null as string | null };
     try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const url = await import('url');
-      // Resolve relative to this source file so it works under both ts-node
-      // and the compiled dist tree.
-      const here = path.dirname(url.fileURLToPath(import.meta.url));
-      const promptPath = path.resolve(here, '..', 'prompts', `${moduleId}.md`);
-      const raw = await fs.readFile(promptPath, 'utf-8');
+      // Same resolver the module runner uses: the live server/areas prompt
+      // first, then the server/prompts ghost fallback for ids with no module
+      // dir — so the persona preview never reads a stale shadow copy.
+      const { getModuleSystemPrompt } = await import('../services/module-loader.js');
+      const raw = await getModuleSystemPrompt(moduleId);
+      if (!raw) throw new Error(`no prompt for ${moduleId}`);
       // Persona = first non-blank, non-heading paragraph after the H1
       const lines = raw.split(/\r?\n/);
       let i = 0;

@@ -732,7 +732,13 @@ export async function createAppGatewayService(db: DatabaseAdapter) {
     const { buildAtomLayer, buildOrgContextLayer, buildKnowledgePackLayer } = await import('./prompt-builder.js');
     const atomLayerPrompt = await buildAtomLayer(db, intent.areaId, intent.moduleId, message, currentSessionId);
     const orgContextPrompt = await buildOrgContextLayer(db);
-    const knowledgePackPrompt = await buildKnowledgePackLayer(db);
+    // Wave 2: scope the pack layer to the resolved area/module and the question;
+    // with no context every Companion query received every active pack.
+    const knowledgePackPrompt = await buildKnowledgePackLayer(db, {
+      areaId: intent.areaId,
+      moduleId: intent.moduleId,
+      userMessage: message,
+    });
 
     // Resolve persona: intent-level > suggested > default
     const effectivePersona = intentPersonaId || intent.suggestedPersonaId || undefined;

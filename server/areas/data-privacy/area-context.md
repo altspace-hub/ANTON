@@ -25,16 +25,20 @@ GDPR introduced the Data Protection Officer (DPO) role, mandatory for: public au
 GDPR catalysed a global wave of data protection legislation, creating a fragmented patchwork that international organisations must navigate:
 
 - **Brazil — LGPD** (Lei Geral de Proteção de Dados, 2020): Modelled closely on GDPR, with ten legal bases for processing, DPO requirement, and enforcement by the ANPD.
-- **Thailand / Singapore — PDPA**: Thailand's PDPA (2022) closely mirrors GDPR. Singapore's PDPA is more permissive but was significantly strengthened in 2021 with breach notification obligations and increased penalties.
-- **Canada — PIPEDA / Bill C-27**: PIPEDA applies federally; Quebec's Law 25 (2022) introduced GDPR-style requirements for Quebec-based organisations. Bill C-27 (Consumer Privacy Protection Act) is pending at federal level.
+- **Thailand / Singapore — PDPA**: Thailand's PDPA (2022) closely mirrors GDPR. Singapore's PDPA is more permissive but was significantly strengthened by its 2020 amendments (in force 1 February 2021) with breach notification obligations and increased penalties.
+- **Canada — PIPEDA / Bill C-27**: PIPEDA applies federally; Quebec's Law 25 (2022) introduced GDPR-style requirements for Quebec-based organisations. Bill C-27 (Consumer Privacy Protection Act) was introduced at federal level [verify: current status].
 - **South Africa — POPIA** (Protection of Personal Information Act, 2021): Eight conditions for lawful processing, mandatory Information Officers, and significant penalties.
 - **United States**: No single federal privacy law. State-by-state patchwork: California (CCPA/CPRA), Virginia (VCDPA), Colorado, Connecticut, Texas, and others. Financial sector regulated by GLBA; health by HIPAA.
 - **India — DPDP Act** (Digital Personal Data Protection Act, 2023): Consent-based model, Data Fiduciary obligations, significant penalties.
 
 ## Enforcement Surge
 
-GDPR enforcement has moved from cautious early warnings to substantial fines. Total GDPR fines exceed €4 billion since 2018 (as of 2025). Notable cases: Meta €1.2 billion (Ireland DPC, 2023 — data transfers); Amazon €746 million (Luxembourg CNPD, 2021); WhatsApp €225 million (Ireland DPC, 2021). Enforcement is no longer theoretical risk — it is a quantified financial exposure that belongs in risk registers and board reports.
+GDPR enforcement has moved from cautious early warnings to substantial fines. Cumulative GDPR fines run to several billion euros [verify: current total against the EDPB and enforcement trackers]. Notable cases: Meta €1.2 billion (Ireland DPC, 2023 — data transfers); Amazon €746 million (Luxembourg CNPD, 2021); WhatsApp €225 million (Ireland DPC, 2021). Enforcement is no longer theoretical risk — it is a quantified financial exposure that belongs in risk registers and board reports.
 
 ## Connection to Cybersecurity
 
 Data privacy and cybersecurity are distinct but deeply intertwined compliance regimes. Privacy law governs what data may be processed and on what basis; security law (DORA, NIS2, ISO 27001) governs how that data must be protected technically. A data breach is simultaneously a security incident (triggering DORA/NIS2 obligations) and a privacy incident (triggering GDPR Article 33/34 notification obligations). Organisations that manage only one regime without the other have regulatory blind spots. This area focuses on privacy compliance; the Cyber area covers the security obligations that support and intersect with it.
+
+The EU AI Act (Regulation (EU) 2024/1689) adds a third regime wherever personal data feeds an AI system: prohibited practices apply from 2 February 2025, general-purpose AI model obligations from 2 August 2025, and the high-risk regime from 2 August 2026. Privacy assessments of AI-driven processing should reference both the GDPR and the AI Act.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

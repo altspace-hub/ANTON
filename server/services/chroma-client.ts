@@ -1,34 +1,86 @@
 /**
- * chroma-client.ts — ChromaDB access for pack/document RAG.
+ * chroma-client.ts — OPTIONAL, LEGACY ChromaDB access.
  *
- * Wave 4.12 (CORE_EXPERIENCE_REVIEW_2026-06): embeddings now go through the
- * multi-provider embedding adapter (server/services/embedding-adapter.ts —
- * Ollama nomic-embed-text / OpenAI / Voyage with auto-detection), replacing
- * the hard OPENAI_API_KEY requirement. RAG works on local-only installs.
+ * Wave 2 (2026-09): ANTON no longer reads or writes collection vectors to
+ * ChromaDB. They live in the PostgreSQL `embeddings` table (see
+ * rag/chunk-embedder.ts and semantic-search.ts). What is left here:
  *
- * Model compatibility is handled honestly: every collection records the
- * embedding provider/model/dimensions in its Chroma metadata at creation.
- * When the current adapter doesn't match, the collection throws a
- * CollectionEmbeddingMismatchError ("collection needs re-embedding") instead
- * of silently mixing vector spaces; POST /api/knowledge/reembed rebuilds the
- * collection from the chunk text stored in PostgreSQL (rag_chunks is the
- * primary store — Chroma is the derived index).
+ *   • A client that is constructed ONLY when `CHROMA_URL` is set to a real
+ *     http(s) server URL, and only on first use. Nothing runs at import time.
+ *     The previous version built the client at module load from
+ *     `CHROMA_PATH=./data/chroma` — a filesystem path handed to an HTTP client
+ *     whose `path` option is the server URL — so every call threw and every
+ *     query logged a Chroma error before falling back to keyword matching.
+ *   • `isChromaAvailable()` for the intelligence health check, and
+ *     `deleteCollection()` so an operator who still runs an old Chroma server
+ *     gets its stale collection dropped when the ANTON collection is deleted.
+ *   • The pure helpers below (adapter embedding function, model-compatibility
+ *     check) — kept because they are unit-tested and still describe the
+ *     contract any external vector index would have to honour.
+ *
+ * Without CHROMA_URL every function here is a silent no-op that returns
+ * false / empty. The `chromadb` package is imported dynamically so an install
+ * without a Chroma server never loads it.
  */
 
-import { ChromaClient, Collection, type IEmbeddingFunction } from 'chromadb';
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import type { DatabaseAdapter } from '../db/database.js';
+import type { ChromaClient as ChromaClientType, IEmbeddingFunction } from 'chromadb';
 import { getEmbeddingAdapter, type EmbeddingAdapter } from './embedding-adapter.js';
 
-const CHROMA_PATH = process.env.CHROMA_PATH || path.join(process.cwd(), 'data', 'chroma');
+// ── Configuration gate ─────────────────────────────────────────────────────
 
-// Ensure ChromaDB data directory exists
-fs.ensureDirSync(CHROMA_PATH);
+let warnedIgnoredPath = false;
 
-export const chromaClient = new ChromaClient({ path: CHROMA_PATH });
+/** The configured Chroma server URL, or null when Chroma is not in use. */
+export function chromaUrl(): string | null {
+  const raw = (process.env.CHROMA_URL ?? '').trim();
+  if (!raw) {
+    if (process.env.CHROMA_PATH && !warnedIgnoredPath) {
+      warnedIgnoredPath = true;
+      console.warn(
+        '[chroma-client] CHROMA_PATH is ignored — collection vectors are stored in PostgreSQL (embeddings table). ' +
+        'Set CHROMA_URL=http://host:8000 only if you still run a ChromaDB server you want reported in health checks.',
+      );
+    }
+    return null;
+  }
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return raw;
+  } catch {
+    if (!warnedIgnoredPath) {
+      warnedIgnoredPath = true;
+      console.warn(`[chroma-client] CHROMA_URL is not an http(s) URL and is ignored: ${JSON.stringify(raw)}`);
+    }
+    return null;
+  }
+}
 
-// ── Adapter-backed embedding function ──────────────────────────────────────
+export function isChromaConfigured(): boolean {
+  return chromaUrl() !== null;
+}
+
+let clientPromise: Promise<ChromaClientType | null> | null = null;
+
+/** Lazily construct the client; null when not configured or the package fails to load. */
+async function getClient(): Promise<ChromaClientType | null> {
+  const url = chromaUrl();
+  if (!url) return null;
+  if (!clientPromise) {
+    clientPromise = (async () => {
+      try {
+        const mod = await import('chromadb');
+        return new mod.ChromaClient({ path: url });
+      } catch (err: unknown) {
+        console.warn(`[chroma-client] chromadb package unavailable: ${err instanceof Error ? err.message : String(err)}`);
+        return null;
+      }
+    })();
+  }
+  return clientPromise;
+}
+
+// ── Adapter-backed embedding function (pure) ───────────────────────────────
 
 /** Chroma IEmbeddingFunction backed by the platform embedding adapter. */
 export function createAdapterEmbeddingFunction(adapter: EmbeddingAdapter = getEmbeddingAdapter()): IEmbeddingFunction {
@@ -57,10 +109,8 @@ export class CollectionEmbeddingMismatchError extends Error {
 }
 
 /**
- * Pure compatibility check (exported for tests). Collections created before
- * this wave carry no embedding_model metadata — their compatibility is
- * unknown; we log once and proceed (Chroma itself errors on a dimension
- * mismatch), rather than inventing a guess.
+ * Pure compatibility check (exported for tests). A collection with no
+ * recorded embedding_model is of unknown compatibility and passes.
  */
 export function assertCollectionCompatible(
   collectionName: string,
@@ -74,216 +124,29 @@ export function assertCollectionCompatible(
   }
 }
 
-const legacyWarned = new Set<string>();
+// ── Remaining live surface (gated) ─────────────────────────────────────────
 
-export interface CollectionMetadata {
-  name: string;
-  displayName: string;
-  description: string;
-  documentCount: number;
-  chunkCount: number;
-  createdAt: string;
-  createdBy: string;
-  metadata: Record<string, any>; // Custom metadata schema per collection
-}
-
-/**
- * Get or create a collection (embedding via the local adapter — no OpenAI
- * key required). Throws CollectionEmbeddingMismatchError when the collection
- * was embedded with a different model than the current adapter.
- */
-export async function getOrCreateCollection(collectionName: string): Promise<Collection> {
-  const adapter = getEmbeddingAdapter();
-  let collection: Collection;
-  try {
-    collection = await chromaClient.getOrCreateCollection({
-      name: collectionName,
-      embeddingFunction: createAdapterEmbeddingFunction(adapter),
-      metadata: {
-        'hnsw:space': 'cosine', // Cosine similarity for semantic search
-        embedding_provider: adapter.provider,
-        embedding_model: adapter.model,
-        embedding_dimensions: adapter.dimensions,
-      },
-    });
-  } catch (error) {
-    throw new Error(`Failed to get/create collection ${collectionName}: ${error}`);
-  }
-  // Metadata only applies at creation — an existing collection keeps its
-  // original metadata, which is exactly what makes the mismatch detectable.
-  assertCollectionCompatible(collectionName, collection.metadata as Record<string, unknown> | undefined, adapter);
-  if (!(collection.metadata as Record<string, unknown> | undefined)?.embedding_model && !legacyWarned.has(collectionName)) {
-    legacyWarned.add(collectionName);
-    console.warn(
-      `[chroma-client] Collection "${collectionName}" predates embedding-model metadata — ` +
-      `compatibility with the current adapter (${adapter.model}) is unknown. ` +
-      `If queries fail or rank poorly, re-embed via POST /api/knowledge/reembed.`
-    );
-  }
-  return collection;
-}
-
-/**
- * List all collections
- */
-export async function listCollections(): Promise<string[]> {
-  try {
-    const collections = await chromaClient.listCollections();
-    return collections.map((c: any) => c.name || String(c));
-  } catch (error) {
-    console.error('Error listing collections:', error);
-    return [];
-  }
-}
-
-/**
- * Delete a collection
- */
-export async function deleteCollection(collectionName: string): Promise<boolean> {
-  try {
-    await chromaClient.deleteCollection({ name: collectionName });
-    return true;
-  } catch (error) {
-    console.error(`Error deleting collection ${collectionName}:`, error);
-    return false;
-  }
-}
-
-/**
- * Add documents to collection
- */
-export async function addToCollection(
-  collectionName: string,
-  ids: string[],
-  documents: string[],
-  metadatas?: Record<string, any>[]
-): Promise<boolean> {
-  try {
-    const collection = await getOrCreateCollection(collectionName);
-    await collection.add({
-      ids,
-      documents,
-      metadatas,
-    });
-    return true;
-  } catch (error) {
-    if (error instanceof CollectionEmbeddingMismatchError) throw error;
-    console.error(`Error adding to collection ${collectionName}:`, error);
-    return false;
-  }
-}
-
-/**
- * Query collection
- */
-export async function queryCollection(
-  collectionName: string,
-  queryText: string,
-  nResults: number = 10,
-  whereFilter?: Record<string, any>
-): Promise<{
-  ids: string[][];
-  documents: string[][];
-  metadatas: Record<string, any>[][];
-  distances: number[][];
-}> {
-  try {
-    const collection = await getOrCreateCollection(collectionName);
-    const results = await collection.query({
-      queryTexts: [queryText],
-      nResults,
-      where: whereFilter,
-    });
-    return results as any;
-  } catch (error) {
-    if (error instanceof CollectionEmbeddingMismatchError) throw error;
-    console.error(`Error querying collection ${collectionName}:`, error);
-    return { ids: [[]], documents: [[]], metadatas: [[]], distances: [[]] };
-  }
-}
-
-/**
- * Get collection stats
- */
-export async function getCollectionStats(collectionName: string): Promise<{ count: number }> {
-  try {
-    const collection = await getOrCreateCollection(collectionName);
-    const count = await collection.count();
-    return { count };
-  } catch (error) {
-    return { count: 0 };
-  }
-}
-
-/**
- * Delete documents from collection
- */
-export async function deleteFromCollection(collectionName: string, ids: string[]): Promise<boolean> {
-  try {
-    const collection = await getOrCreateCollection(collectionName);
-    await collection.delete({ ids });
-    return true;
-  } catch (error) {
-    console.error(`Error deleting from collection ${collectionName}:`, error);
-    return false;
-  }
-}
-
-/**
- * Re-embed a collection with the CURRENT embedding adapter (Wave 4.12).
- * Drops the Chroma collection and rebuilds it from the chunk text held in
- * PostgreSQL (rag_chunks via rag_documents) — the primary store. Used when
- * the adapter/model changed and the old vector space is incompatible.
- */
-export async function reembedCollection(
-  db: DatabaseAdapter,
-  collectionId: string,
-): Promise<{ collectionId: string; chunks: number; embedding_model: string; embedding_provider: string }> {
-  const adapter = getEmbeddingAdapter();
-  const chunks = await db.all<{ chroma_id: string; content: string; metadata: string | null }>(
-    `SELECT c.chroma_id, c.content, c.metadata
-     FROM rag_chunks c
-     JOIN rag_documents d ON d.id = c.document_id
-     WHERE d.collection_id = ?
-     ORDER BY d.id, c.chunk_index`,
-    collectionId,
-  );
-
-  // Drop the derived index; the PG chunk rows remain untouched.
-  await deleteCollection(collectionId);
-  const collection = await getOrCreateCollection(collectionId);
-
-  const usable = chunks.filter(c => c.content && c.content.trim());
-  const BATCH = 100;
-  for (let i = 0; i < usable.length; i += BATCH) {
-    const batch = usable.slice(i, i + BATCH);
-    await collection.add({
-      ids: batch.map(c => c.chroma_id),
-      documents: batch.map(c => c.content),
-      metadatas: batch.map(c => {
-        try { return c.metadata ? JSON.parse(c.metadata) : {}; } catch { return {}; }
-      }),
-    });
-  }
-
-  return {
-    collectionId,
-    chunks: usable.length,
-    embedding_model: adapter.model,
-    embedding_provider: adapter.provider,
-  };
-}
-
-/**
- * Check if ChromaDB is available. The embedder no longer gates this — the
- * adapter always exists (it degrades to zero vectors without credentials);
- * availability is purely the Chroma heartbeat.
- */
+/** True only when CHROMA_URL is set AND the server answers a heartbeat. */
 export async function isChromaAvailable(): Promise<boolean> {
+  const client = await getClient();
+  if (!client) return false;
   try {
-    await chromaClient.heartbeat();
+    await client.heartbeat();
     return true;
   } catch {
+    return false;
+  }
+}
+
+/** Drop a legacy Chroma collection. No-op (false) when Chroma is not configured. */
+export async function deleteCollection(collectionName: string): Promise<boolean> {
+  const client = await getClient();
+  if (!client) return false;
+  try {
+    await client.deleteCollection({ name: collectionName });
+    return true;
+  } catch (error) {
+    console.warn(`[chroma-client] could not delete legacy collection ${collectionName}:`, error instanceof Error ? error.message : error);
     return false;
   }
 }

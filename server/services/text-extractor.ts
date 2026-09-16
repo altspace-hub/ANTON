@@ -6,23 +6,56 @@
 
 import * as path from 'path';
 import fs from 'fs-extra';
+import { estimateTokens } from './token-estimator.js';
+
+// ── Limits ───────────────────────────────────────────────────
+
+/** Hard ceiling on file size before any parser loads it into memory (every type). */
+export const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+/** Hard ceiling on extracted characters per file; the remainder is cut with a visible note. */
+export const MAX_EXTRACTED_CHARS = 2_000_000;
+
+const MAX_FILE_MB_LABEL = `${Math.round(MAX_FILE_BYTES / 1024 / 1024)} MB`;
+
+/**
+ * Size guard shared by every extractor. Returns a CONTEXT NOTE (which stands in
+ * for the file's text, so the model and the manifest both see why it is absent)
+ * when the file is over MAX_FILE_BYTES, or null when it is safe to load.
+ */
+async function oversizeNote(filePath: string, kind: string, advice: string): Promise<string | null> {
+  const stat = await fs.stat(filePath);
+  if (stat.size <= MAX_FILE_BYTES) return null;
+  const sizeMB = (stat.size / 1024 / 1024).toFixed(1);
+  console.warn(`[extractor] ${kind} too large (${sizeMB} MB > ${MAX_FILE_MB_LABEL} limit): ${path.basename(filePath)}`);
+  return (
+    `[CONTEXT NOTE: ${path.basename(filePath)} could not be loaded — ` +
+    `file size ${sizeMB} MB exceeds the ${MAX_FILE_MB_LABEL} limit. ${advice}]`
+  );
+}
+
+/**
+ * Cut extracted text at MAX_EXTRACTED_CHARS and append a note the model and the
+ * source manifest can both see. Text within the cap is returned unchanged.
+ */
+export function capExtractedText(text: string, fileName: string): string {
+  if (text.length <= MAX_EXTRACTED_CHARS) return text;
+  console.warn(`[extractor] Extracted text truncated (${text.length} chars > ${MAX_EXTRACTED_CHARS} limit): ${fileName}`);
+  return (
+    text.slice(0, MAX_EXTRACTED_CHARS) +
+    `\n\n[CONTEXT NOTE: ${fileName} was truncated — the extracted text is ` +
+    `${text.length.toLocaleString('en-US')} characters, above the ` +
+    `${MAX_EXTRACTED_CHARS.toLocaleString('en-US')}-character limit; only the first ` +
+    `${MAX_EXTRACTED_CHARS.toLocaleString('en-US')} characters are included. ` +
+    `Split the document into smaller parts and re-upload for full coverage.]`
+  );
+}
 
 // ── Type-safe dynamic imports for ESM compatibility ──────────
 
-const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB — hard ceiling before loading into memory
-
 async function extractPdf(filePath: string): Promise<string> {
   // H2: Guard against OOM — check size before reading the whole file into memory.
-  const stat = await fs.stat(filePath);
-  if (stat.size > MAX_FILE_BYTES) {
-    const sizeMB = (stat.size / 1024 / 1024).toFixed(1);
-    console.warn(`[extractor] PDF too large (${sizeMB} MB > 50 MB limit): ${path.basename(filePath)}`);
-    return (
-      `[CONTEXT NOTE: ${path.basename(filePath)} could not be loaded — ` +
-      `file size ${sizeMB} MB exceeds the 50 MB limit. ` +
-      `Split the document into smaller parts and re-upload.]`
-    );
-  }
+  const note = await oversizeNote(filePath, 'PDF', 'Split the document into smaller parts and re-upload.');
+  if (note) return note;
 
   try {
     // pdf-parse v2: buffer passed as `data` in LoadParameters constructor
@@ -48,22 +81,18 @@ async function extractPdf(filePath: string): Promise<string> {
 }
 
 async function extractDocx(filePath: string): Promise<string> {
+  // mammoth inflates the whole .docx zip in memory — same OOM exposure as PDF/XLSX.
+  const note = await oversizeNote(filePath, 'Word document', 'Split the document into smaller parts and re-upload.');
+  if (note) return note;
+
   const mammoth = await import('mammoth');
   const result = await mammoth.extractRawText({ path: filePath });
   return result.value;
 }
 
 async function extractXlsx(filePath: string): Promise<string> {
-  const stat = await fs.stat(filePath);
-  if (stat.size > MAX_FILE_BYTES) {
-    const sizeMB = (stat.size / 1024 / 1024).toFixed(1);
-    console.warn(`[extractor] Excel too large (${sizeMB} MB > 50 MB limit): ${path.basename(filePath)}`);
-    return (
-      `[CONTEXT NOTE: ${path.basename(filePath)} could not be loaded — ` +
-      `file size ${sizeMB} MB exceeds the 50 MB limit. ` +
-      `Split the workbook into smaller files and re-upload.]`
-    );
-  }
+  const note = await oversizeNote(filePath, 'Excel', 'Split the workbook into smaller files and re-upload.');
+  if (note) return note;
 
   // Use SheetJS (xlsx) which supports both .xlsx and legacy .xls formats
   const XLSX = await import('xlsx');
@@ -82,14 +111,20 @@ async function extractXlsx(filePath: string): Promise<string> {
 }
 
 async function extractCsv(filePath: string): Promise<string> {
+  const note = await oversizeNote(filePath, 'CSV', 'Split the file into smaller parts and re-upload.');
+  if (note) return note;
   return fs.readFile(filePath, 'utf-8');
 }
 
 async function extractText(filePath: string): Promise<string> {
+  const note = await oversizeNote(filePath, 'Text file', 'Split the file into smaller parts and re-upload.');
+  if (note) return note;
   return fs.readFile(filePath, 'utf-8');
 }
 
 async function extractHtml(filePath: string): Promise<string> {
+  const note = await oversizeNote(filePath, 'HTML file', 'Split the file into smaller parts and re-upload.');
+  if (note) return note;
   const raw = await fs.readFile(filePath, 'utf-8');
   // Strip tags, decode basic entities
   return raw
@@ -119,26 +154,30 @@ export interface ExtractedFile {
 
 /**
  * Extract text from a single file. Returns null if the file type is unsupported
- * or extraction fails.
+ * or extraction fails. Every type is size-guarded before it is loaded
+ * (MAX_FILE_BYTES) and the result is capped at MAX_EXTRACTED_CHARS with a
+ * visible truncation note.
  */
 export async function extractTextFromFile(filePath: string): Promise<string | null> {
   const ext = path.extname(filePath).toLowerCase();
 
   try {
+    let text: string;
     switch (ext) {
-      case '.pdf':   return await extractPdf(filePath);
+      case '.pdf':   text = await extractPdf(filePath); break;
       case '.docx':
-      case '.doc':   return await extractDocx(filePath);
+      case '.doc':   text = await extractDocx(filePath); break;
       case '.xlsx':
-      case '.xls':   return await extractXlsx(filePath);
-      case '.csv':   return await extractCsv(filePath);
+      case '.xls':   text = await extractXlsx(filePath); break;
+      case '.csv':   text = await extractCsv(filePath); break;
       case '.txt':
-      case '.md':    return await extractText(filePath);
-      case '.html':  return await extractHtml(filePath);
+      case '.md':    text = await extractText(filePath); break;
+      case '.html':  text = await extractHtml(filePath); break;
       default:
         console.warn(`[extractor] Unsupported extension: ${ext} — ${filePath}`);
         return null;
     }
+    return capExtractedText(text, path.basename(filePath));
   } catch (err) {
     console.error(`[extractor] Failed to extract ${filePath}:`, err);
     return null;
@@ -166,7 +205,8 @@ export async function extractFiles(filePaths: string[]): Promise<ExtractedFile[]
       sizeBytes: stat.size,
       text,
       wordCount: words,
-      tokenEstimate: Math.round(words * 1.3),
+      // Same tokeniser the resolver budgets with — words×1.3 under-counted code/tables.
+      tokenEstimate: estimateTokens(text),
     });
   }
 

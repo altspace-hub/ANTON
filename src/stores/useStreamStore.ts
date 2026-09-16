@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import type { StreamEvent, Message, ContextUsed } from '@/lib/types';
+import type { StreamEvent, Message, ContextUsed, WebSourceRecord } from '@/lib/types';
 
 // ── Flush buffer (PERF-05) ────────────────────────────────────
 let _textBuf = '';
@@ -24,6 +24,9 @@ interface StreamState {
   lastSourcesUsed: string[];
   /** Wave 2: what the last answer's prompt actually held (documents, project, lens, layers). */
   lastContextUsed: ContextUsed | null;
+  /** Wave 2: the pages the SDK engine searched for or fetched during the last run,
+   *  in the order the tool events arrived. Reset when a run starts. */
+  lastWebSources: WebSourceRecord[];
   streamingText: string;
   streamingThinking: string;
   abortController: AbortController | null;
@@ -63,6 +66,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   isAssemblingContext: false,
   lastSourcesUsed: [],
   lastContextUsed: null,
+  lastWebSources: [],
   streamingText: '',
   streamingThinking: '',
   abortController: null,
@@ -97,6 +101,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       ireCurrentPhaseName: '',
       compactionOccurred: false,
       compactionMessage: '',
+      lastWebSources: [],
       // Reset accumulated tokens at start of each stream
       lastInputTokens: 0,
       lastOutputTokens: 0,
@@ -137,6 +142,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     };
 
     switch (event.type) {
+      case 'stream_start':
+        // A run emits one of these before any source; a stale list from the
+        // previous run must not sit under the new answer.
+        set({ lastWebSources: [] });
+        break;
+      case 'source_fetched':
+        set((s) => ({ lastWebSources: [...s.lastWebSources, event.source] }));
+        break;
       case 'context_assembly_start':
         set({ isAssemblingContext: true });
         break;

@@ -12,6 +12,7 @@ import {
   parseCaveatSections, isCaveatHeading, layerLabel, LAYER_LABELS, atomArmFromLayerKey,
   defaultExpansion, PROVENANCE_SECTION_ORDER, engineLabel, costLabel, normalizeCostBasis,
   shortHash, normalizeTransparencyLevel, summaryLine,
+  sourceTypeLabel, groupManifestByType, packsLine, frameworkLine, isBudgetSkip, splitDocuments, liveWebSourceRow,
 } from '../../src/lib/provenance';
 
 describe('parseCaveatSections — the model\'s own caveats', () => {
@@ -190,5 +191,67 @@ describe('engine / cost / summary labels', () => {
     expect(shortHash(undefined)).toBe('—');
     expect(summaryLine({ engine: 'anthropic_sdk', sourceCount: 3, layerCount: 9 })).toBe('Claude subscription · 3 sources · 9 layers');
     expect(summaryLine({ engine: 'anthropic', sourceCount: 1, layerCount: null })).toBe('Anthropic API · 1 source');
+  });
+});
+
+// ── Wave 2 additions ──────────────────────────────────────────
+
+describe('Wave 2 — sources', () => {
+  it('labels the new layer key and the new manifest types', () => {
+    expect(layerLabel('layer2f_framework_grounding')).toBe('Framework text');
+    expect(sourceTypeLabel('knowledge_pack_entity')).toBe('Knowledge pack entries');
+    expect(sourceTypeLabel('framework_article')).toBe('Framework articles');
+    expect(sourceTypeLabel('web_fetch')).toMatch(/fetched by the model/i);
+    expect(sourceTypeLabel('web_search')).toMatch(/searches by the model/i);
+    expect(sourceTypeLabel('something_else')).toBe('something_else');
+  });
+
+  it('groups a manifest by type with counts, in display order, unknown types last in first-seen order', () => {
+    const groups = groupManifestByType([
+      { type: 'web_fetch', name: 'a' }, { type: 'zeta', name: 'z' }, { type: 'uploaded_file', name: 'u' },
+      { type: 'knowledge_pack_entity', name: 'k1' }, { type: 'knowledge_pack_entity', name: 'k2' }, { type: 'alpha', name: 'a2' },
+    ]);
+    expect(groups.map((g) => [g.type, g.count])).toEqual([
+      ['uploaded_file', 1], ['knowledge_pack_entity', 2], ['web_fetch', 1], ['zeta', 1], ['alpha', 1],
+    ]);
+    expect(groups[1].label).toBe('Knowledge pack entries');
+    expect(groups[1].entries.map((e) => e.name)).toEqual(['k1', 'k2']);
+    expect(groupManifestByType([])).toEqual([]);
+  });
+
+  it('renders the packs line exactly as specified', () => {
+    expect(packsLine([
+      { name: 'AMLR 2024', version: '1.2.0', entries: 23 },
+      { name: 'EBA GL', version: '1.0.0', entries: 4 },
+    ])).toBe('AMLR 2024 v1.2.0 (23 entries), EBA GL v1.0.0 (4)');
+    expect(packsLine([{ name: 'DORA', version: null, entries: 1 }])).toBe('DORA (1 entry)');
+  });
+
+  it('renders the framework line with token estimate', () => {
+    expect(frameworkLine({ frameworks: ['AMLR', 'DORA', 'ISO27001'], articles: 14, chars: 4800 })).toBe('3 frameworks · 14 articles · ~1,200 tokens');
+    expect(frameworkLine({ frameworks: ['AMLR'], articles: 1, chars: 0 })).toBe('1 framework · 1 article');
+  });
+
+  it('separates used and skipped documents, recognising budget skips by their note prefix', () => {
+    const { used, skipped } = splitDocuments([
+      { name: 'policy.docx', chars: 1200, source: 'upload' },
+      { name: 'https://eba.europa.eu/gl', chars: 0, source: 'url', skipped: true, note: 'skipped — context budget reached' },
+      { name: 'big.pdf', chars: 0, source: 'folder', skipped: true, note: 'skipped — context budget: this document alone (~300,000 tokens) exceeds the whole budget (~250,000 tokens)' },
+      { name: 'https://down.example', chars: 0, source: 'url', skipped: true, note: 'fetch failed: 503' },
+      { name: 'x.md', chars: 0, source: 'project', skipped: true },
+    ]);
+    expect(used.map((d) => d.name)).toEqual(['policy.docx']);
+    expect(skipped.map((d) => [d.sourceLabel, d.budget])).toEqual([['URL', true], ['folder file', true], ['URL', false], ['project file', false]]);
+    expect(skipped[3].note).toBe('skipped');
+    expect(isBudgetSkip('skipped — context budget reached')).toBe(true);
+    expect(isBudgetSkip('fetch failed: 503')).toBe(false);
+    expect(isBudgetSkip(undefined)).toBe(false);
+  });
+
+  it('turns live web-tool records into rows', () => {
+    const fetch = liveWebSourceRow({ kind: 'web_fetch', url: 'https://x.test/a', title: 'A page', sha256: 'abc', charCount: 2000, retrievedAt: '2026-09-16T10:00:00Z' });
+    expect(fetch).toMatchObject({ kindLabel: 'Web page', primary: 'https://x.test/a', title: 'A page', charCount: 2000, sha256: 'abc', isError: false });
+    const search = liveWebSourceRow({ kind: 'web_search', query: 'AMLR article 16', resultUrls: ['u1', 'u2'], retrievedAt: 't', isError: true });
+    expect(search).toMatchObject({ kindLabel: 'Web search', primary: 'AMLR article 16 (2 results)', title: null, charCount: null, sha256: null, isError: true });
   });
 });
