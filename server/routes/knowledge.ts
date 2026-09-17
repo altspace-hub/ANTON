@@ -1,7 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import { getClient } from '../services/claude-client.js';
 import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 import { safeError } from '../lib/error-response.js';
@@ -94,7 +93,8 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   let outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
 
   async function getExtractor() {
-    if (!extractor) extractor = await createAtomExtractor(db, getClient());
+    // The extractor routes its own calls (provider-router); it takes no client.
+    if (!extractor) extractor = await createAtomExtractor(db);
     return extractor;
   }
 

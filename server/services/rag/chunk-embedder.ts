@@ -26,6 +26,7 @@
 import type { DatabaseAdapter } from '../../db/database.js';
 import { getEmbeddingAdapter, isZeroVector, type EmbeddingAdapter } from '../embedding-adapter.js';
 import { getVectorStore, type VectorStoreAdapter } from '../vector-store-adapter.js';
+import { ensureEmbeddingPin } from '../embedding-pin.js';
 
 /** The `embeddings.content_type` under which collection chunks are stored. */
 export const RAG_CHUNK_CONTENT_TYPE = 'rag_chunk';
@@ -147,6 +148,19 @@ export async function embedRagChunks(
         result.skipped++;
         result.skippedReasons.storeError++;
       }
+    }
+  }
+
+  // Wave 6: collection chunks pin the embedding provider like every other
+  // embedding (embedding-pin.ts) — this path stores through the vector store
+  // directly, so it never went through embedAndStore's pin. Only after
+  // something was stored (a batch of zero vectors pins nothing), and only on
+  // the real store (an injected store is a test seam with no settings table).
+  if (result.embedded > 0 && !deps.store) {
+    try {
+      await ensureEmbeddingPin(db, adapter);
+    } catch (err: unknown) {
+      console.warn(`[chunk-embedder] embedding pin not checked: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

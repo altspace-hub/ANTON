@@ -15,8 +15,15 @@ import {
   XCircle,
   Clock,
   X,
+  AlertTriangle,
 } from 'lucide-react';
-import { getAuthHeader, fetchCustomModules, type CustomModuleData } from '../lib/api';
+import {
+  getAuthHeader,
+  fetchCustomModules,
+  importAntonModule,
+  type BundleInjectionFinding,
+  type CustomModuleData,
+} from '../lib/api';
 
 interface AntonManifest {
   // New spec-compliant fields
@@ -73,6 +80,10 @@ export default function MarketplacePage() {
   const [preview, setPreview] = useState<PackagePreview | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null);
+  // Wave 6: an import the injection scan blocked — the findings, and whether
+  // the user has read them and chosen to import anyway.
+  const [injectionFindings, setInjectionFindings] = useState<BundleInjectionFinding[] | null>(null);
+  const [acceptFindings, setAcceptFindings] = useState(false);
   const [exportModal, setExportModal] = useState<string | null>(null);
   const [exportableModules, setExportableModules] = useState<CustomModuleData[]>([]);
   const [loadingExportList, setLoadingExportList] = useState(false);
@@ -110,6 +121,8 @@ export default function MarketplacePage() {
       }
       setPreview({ manifest, fileName: file.name, fileBuffer: buffer, file });
       setImportResult(null);
+      setInjectionFindings(null);
+      setAcceptFindings(false);
     } catch {
       setImportResult({ success: false, message: 'Failed to read file.' });
     }
@@ -128,26 +141,48 @@ export default function MarketplacePage() {
     e.target.value = '';
   }
 
-  async function handleImport() {
+  async function handleImport(acceptInjection = false) {
     if (!preview) return;
     setImporting(true);
     try {
-      const formData = new FormData();
-      formData.append('file', preview.file);
-      const res = await fetch('/api/exchange/import', {
-        method: 'POST',
-        headers: { ...getAuthHeader() },
-        body: formData,
-      });
-      if (res.ok) {
-        setImportResult({ success: true, message: `"${preview.manifest.name || preview.fileName}" imported successfully.` });
-        setPreview(null);
-      } else {
-        const data = await res.json().catch(() => ({ error: 'Import failed' }));
-        setImportResult({ success: false, message: (data as { error?: string }).error || 'Import failed.' });
+      const { status, body } = await importAntonModule(preview.file, { acceptInjectionFindings: acceptInjection });
+      const name = preview.manifest.name || preview.fileName;
+      if (status === 409) {
+        // Blocked by the injection scan: nothing was written. Show what was
+        // found; the user can read it and import anyway.
+        setInjectionFindings(body.injectionFindings ?? []);
+        setAcceptFindings(false);
+        setImportResult({ success: false, message: body.error || 'Import blocked: the bundle contains text that looks like instructions to the model.' });
+        return;
       }
-    } catch {
-      setImportResult({ success: false, message: 'Network error during import.' });
+      if (!body.success) {
+        // A 200 with success:false is a validation failure, not an import.
+        const details = (body.errors ?? []).filter(Boolean);
+        setImportResult({
+          success: false,
+          message: `"${name}" was not imported${body.error ? `: ${body.error}` : '.'}${details.length ? ` ${details.join(' ')}` : ''}`,
+        });
+        return;
+      }
+      const isNew = (d: { action: string }) => d.action === 'installed' || d.action === 'namespaced';
+      const skills = (body.installedSkills ?? []).filter(isNew).length;
+      const personas = (body.installedPersonas ?? []).filter(isNew).length;
+      const extras = [
+        skills ? `${skills} skill${skills === 1 ? '' : 's'}` : '',
+        personas ? `${personas} persona${personas === 1 ? '' : 's'}` : '',
+      ].filter(Boolean).join(' and ');
+      const warnings = body.importWarnings ?? [];
+      setImportResult({
+        success: true,
+        message: `"${name}" imported${extras ? ` with ${extras}` : ''}.`
+          + (acceptInjection ? ' The injection findings you accepted are recorded with the module.' : '')
+          + (warnings.length ? ` ${warnings.join(' ')}` : ''),
+      });
+      setInjectionFindings(null);
+      setAcceptFindings(false);
+      setPreview(null);
+    } catch (err) {
+      setImportResult({ success: false, message: err instanceof Error ? err.message : 'Network error during import.' });
     } finally {
       setImporting(false);
     }
@@ -291,16 +326,52 @@ export default function MarketplacePage() {
               </div>
             </div>
 
+            {injectionFindings && (
+              <div className="rounded-lg border border-adv-gold/60 bg-adv-gold/10 p-4 space-y-3" role="alert">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-adv-gold shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-sm text-adv-off-white">
+                    The import was stopped because this bundle contains text that reads like instructions to the AI.
+                    Nothing was installed. Read the findings before deciding.
+                  </p>
+                </div>
+                {injectionFindings.length > 0 && (
+                  <ul className="space-y-2" aria-label="Injection findings">
+                    {injectionFindings.map((f, i) => (
+                      <li key={`${f.file}-${f.patternId}-${i}`} className="text-sm text-adv-gray">
+                        <span className={f.severity === 'high' ? 'text-adv-red font-medium' : 'text-adv-gold font-medium'}>
+                          {f.severity === 'high' ? 'High' : 'Medium'}
+                        </span>
+                        {' · '}{f.label}{' · '}
+                        <span className="font-mono">{f.file}{f.line ? `:${f.line}` : ''}</span>
+                        {f.excerpt && <span className="block mt-0.5 text-adv-off-white">&ldquo;{f.excerpt}&rdquo;</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <label className="flex items-start gap-2 text-sm text-adv-off-white cursor-pointer" htmlFor="marketplace-accept-findings">
+                  <input
+                    id="marketplace-accept-findings"
+                    type="checkbox"
+                    className="mt-1"
+                    checked={acceptFindings}
+                    onChange={(e) => setAcceptFindings(e.target.checked)}
+                  />
+                  <span>I have read these findings and trust this bundle. Import it anyway and record that I accepted them.</span>
+                </label>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-1">
               <button
-                onClick={() => void handleImport()}
-                disabled={importing}
+                onClick={() => void handleImport(injectionFindings !== null && acceptFindings)}
+                disabled={importing || (injectionFindings !== null && !acceptFindings)}
                 className="flex-1 py-2.5 px-4 rounded-lg bg-adv-teal text-adv-dark font-semibold text-sm hover:bg-adv-teal-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {importing ? 'Importing...' : 'Import Package'}
+                {importing ? 'Importing...' : injectionFindings !== null ? 'Import anyway' : 'Import Package'}
               </button>
               <button
-                onClick={() => { setPreview(null); setImportResult(null); }}
+                onClick={() => { setPreview(null); setImportResult(null); setInjectionFindings(null); setAcceptFindings(false); }}
                 disabled={importing}
                 className="px-4 py-2.5 rounded-lg border border-border text-adv-gray hover:text-adv-off-white hover:border-adv-gray text-sm font-medium transition-colors"
               >

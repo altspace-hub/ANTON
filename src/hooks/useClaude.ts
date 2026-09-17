@@ -4,7 +4,7 @@ import { useStreamStore } from '@/stores/useStreamStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useConfigStore } from '@/stores/useConfigStore';
-import { streamMessage, createSession, generateSessionTitle } from '@/lib/api';
+import { streamMessage, createSession, generateSessionTitle, recordModuleUse } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
 import type { Message, StreamEvent } from '@/lib/types';
 
@@ -269,7 +269,20 @@ export function useClaude() {
       if (isFirstMessage && activeSessionId && responseText) {
         void generateSessionTitle(activeSessionId, userMessage, responseText);
       }
-      return !failed && responseText.length > 0;
+      const succeeded = !failed && responseText.length > 0;
+      // Wave 6 track H: a module run that produced an answer becomes that
+      // module's starting point next time — the config as actually sent.
+      // Fire-and-forget. Open chat records nothing: it sets moduleId to
+      // 'open-chat' and a lens borrows a module's prompt, not its settings.
+      if (succeeded && moduleId && moduleId !== 'open-chat' && !lens) {
+        void recordModuleUse(moduleId, {
+          outputFormats: selectedOutputFormats,
+          thinking: thinkingOverride ?? thinking,
+          creativity,
+          guidedInputs: moduleInputs,
+        });
+      }
+      return succeeded;
     },
     [
       sessionId, moduleId, areaId, model, thinking, creativity, precision, selectedPersonas, selectedSkills, multiPerspective,

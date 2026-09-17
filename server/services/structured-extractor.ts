@@ -288,6 +288,7 @@ export function createStructuredExtractor(db: DatabaseAdapter, opts: ExtractorOp
       jsonMode: true,
       // Post-turn bookkeeping — yields the interactive engine slot.
       background: true,
+      purpose: 'structured-extraction',
       db,
     });
     return {

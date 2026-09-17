@@ -326,6 +326,7 @@ Rules:
         ],
         maxTokens: 2048,
         jsonMode: true,
+        purpose: 'atom-extraction',
         db,
       });
 
@@ -500,6 +501,7 @@ Rules:
         messages: [{ role: 'user', content: prompt }],
         maxTokens: 1024,
         jsonMode: true,
+        purpose: 'atom-extraction',
         db,
       });
 

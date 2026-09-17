@@ -1099,6 +1099,162 @@ async function importMarketBundle(endpoint: string, file: File) {
   return res.json();
 }
 
+// ── Module fingerprint (Wave 6, track G) ───────────────────────
+
+/** The visible identity of a custom / imported module — GET /api/exchange/modules/:id/fingerprint. */
+export interface ModuleFingerprint {
+  moduleId: string;
+  /** `sha256:<hex>` — the bundle's checksum for an import, else what an export now would carry. */
+  checksum: string;
+  promptSha256: string;
+  configSha256: string;
+  guidedInputsSha256: string;
+  /** Signer display name (else first 16 hex of the pubkey); null when unsigned or built here. */
+  signedBy: string | null;
+  signerPubkey: string | null;
+  signedAt: string | null;
+  source: 'import' | 'local';
+  importedAt: string | null;
+  acceptedInjectionFindings: number;
+}
+
+/**
+ * The fingerprint of a custom / imported module. Null when the id is not a
+ * custom module (built-ins and dynamic area modules answer 404) or the
+ * request fails — callers render nothing in that case.
+ */
+export async function fetchModuleFingerprint(moduleId: string): Promise<ModuleFingerprint | null> {
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/exchange/modules/${encodeURIComponent(moduleId)}/fingerprint`);
+    if (!res.ok) return null;
+    return (await res.json()) as ModuleFingerprint;
+  } catch {
+    return null;
+  }
+}
+
+// ── Module bundle validate / import (Wave 6, track G) ─────────
+
+/** One prompt-injection finding from the bundle scan. */
+export interface BundleInjectionFinding {
+  file: string;
+  patternId: string;
+  label: string;
+  severity: 'high' | 'medium';
+  excerpt: string;
+  line: number;
+}
+
+/** The bundle-side identity, known before anything is installed. */
+export interface BundleFingerprint {
+  checksum: string | null;
+  promptSha256: string;
+  guidedInputsSha256: string;
+  configSha256: string;
+  signed: boolean;
+  signatureValid: boolean;
+  signerPubkey: string | null;
+  signerName: string | null;
+  signedAt: string | null;
+  signedBy: string | null;
+  known: boolean;
+}
+
+export interface BundleValidationIssue {
+  step: number;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  details?: string;
+}
+
+/** POST /api/exchange/validate — the dispatching validator plus, for modules, the Wave 6 inspection. */
+export interface BundleValidationResponse {
+  valid: boolean;
+  bundle_type?: string;
+  validated_depth?: 'full' | 'structural';
+  governance?: { effective_date?: string; source_url?: string; validated_by?: string; content_confirmed?: boolean };
+  notes?: string[];
+  errors: BundleValidationIssue[];
+  warnings: BundleValidationIssue[];
+  manifest?: {
+    meta?: { id: string; name: string; version: string; author: string; description: string; tags: string[]; category: string };
+  };
+  fingerprint?: BundleFingerprint;
+  injectionFindings?: BundleInjectionFinding[];
+  embedded?: {
+    skills: Array<{ id: string; name: string; version?: string }>;
+    personas: Array<{ id: string; name: string }>;
+  };
+  unresolved?: { skills: string[]; personas: string[] };
+}
+
+export interface InstalledBundleDependency {
+  bundleId: string;
+  installedId: string;
+  action: 'reused' | 'installed' | 'namespaced' | 'missing';
+  note?: string;
+}
+
+/** POST /api/exchange/import — 200 (success or validation failure), 409 (injection findings), 403 (viewer). */
+export interface ModuleImportResponse {
+  success: boolean;
+  moduleId?: string;
+  keptOriginalId?: boolean;
+  blocked?: 'injection';
+  error?: string;
+  errors?: string[];
+  warnings?: string[];
+  fingerprint?: BundleFingerprint;
+  injectionFindings?: BundleInjectionFinding[];
+  acceptedInjectionFindings?: BundleInjectionFinding[];
+  installedSkills?: InstalledBundleDependency[];
+  installedPersonas?: InstalledBundleDependency[];
+  importWarnings?: string[];
+}
+
+async function readJsonBody<T>(res: Response): Promise<T | { error: string }> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return { error: `Request failed (HTTP ${res.status})` };
+  }
+}
+
+/** Validate a .anton file without installing it. Throws with the server's message on a non-2xx. */
+export async function validateAntonBundle(file: File): Promise<BundleValidationResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetchWithAuth(`${API_BASE}/exchange/validate`, { method: 'POST', body: formData });
+  const body = await readJsonBody<BundleValidationResponse>(res);
+  if (!res.ok) {
+    const message = 'error' in body && typeof body.error === 'string' ? body.error : `Validation failed (HTTP ${res.status})`;
+    throw new Error(res.status === 403 ? `You do not have permission to import bundles (${message}).` : message);
+  }
+  return body as BundleValidationResponse;
+}
+
+/**
+ * Install a module bundle. Returns `{ status, body }` rather than throwing on
+ * 409 so the caller can show the injection findings and re-submit with
+ * `acceptInjectionFindings`. Throws on 401/403/5xx.
+ */
+export async function importAntonModule(
+  file: File,
+  options: { acceptInjectionFindings?: boolean; keepId?: boolean } = {},
+): Promise<{ status: number; body: ModuleImportResponse }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (options.keepId) formData.append('keepId', 'true');
+  if (options.acceptInjectionFindings) formData.append('acceptInjectionFindings', 'true');
+  const res = await fetchWithAuth(`${API_BASE}/exchange/import`, { method: 'POST', body: formData });
+  const body = await readJsonBody<ModuleImportResponse>(res);
+  if (res.ok || res.status === 409) {
+    return { status: res.status, body: body as ModuleImportResponse };
+  }
+  const message = 'error' in body && typeof body.error === 'string' ? body.error : `Import failed (HTTP ${res.status})`;
+  throw new Error(res.status === 403 ? `You do not have permission to import modules (${message}).` : message);
+}
+
 export function importMarketIndexAnton(file: File) { return importMarketBundle('market-index', file); }
 export function importMarketThesisAnton(file: File) { return importMarketBundle('market-thesis', file); }
 export function importMarketAtomCollectionAnton(file: File) { return importMarketBundle('market-atom-collection', file); }
@@ -1494,6 +1650,95 @@ export async function updateEngineGuards(patch: { sdkDailyRunCap: number | null 
   return engineGuardsJson(res, 'Engine guards update');
 }
 
+// ── Module access (Wave 6 track F) — which modules a team-mode role may run ──
+// Mirrors server/services/module-access.ts. Rules target viewer | analyst only;
+// an admin is never restricted. No matching rule = allowed (default open).
+
+export type ModuleAccessRuleRole = 'viewer' | 'analyst';
+export type ModuleAccessEffect = 'allow' | 'deny';
+export type ModuleAccessScope = 'module' | 'area' | 'all';
+
+export interface ModuleAccessRule {
+  id: string;
+  role: string;
+  moduleId: string | null;
+  areaId: string | null;
+  effect: ModuleAccessEffect;
+  note: string | null;
+  createdBy: string | null;
+  createdAt: string;
+}
+
+export interface NewModuleAccessRule {
+  role: ModuleAccessRuleRole;
+  moduleId?: string | null;
+  areaId?: string | null;
+  /** Required when neither moduleId nor areaId is given: the rule covers every module. */
+  wildcard?: boolean;
+  effect: ModuleAccessEffect;
+  note?: string | null;
+}
+
+export interface ModuleAccessVerdict {
+  allowed: boolean;
+  rule: { id: string; effect: ModuleAccessEffect; scope: ModuleAccessScope } | null;
+  reason: string;
+  moduleId: string | null;
+  areaId: string | null;
+  role: string | null;
+  teamMode: boolean;
+}
+
+/** How many of the catalogue's modules each restricted role may run. */
+export interface ModuleAccessPreview {
+  total: number;
+  roles: Record<string, { allowed: number; total: number }>;
+}
+
+async function jsonOrThrow<T>(res: Response, action: string): Promise<T> {
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `${action} failed (HTTP ${res.status})`);
+  }
+  return (await res.json()) as T;
+}
+
+export async function fetchModuleAccessRules(): Promise<ModuleAccessRule[]> {
+  const res = await fetchWithAuth(`${API_BASE}/module-access/rules`);
+  const data = await jsonOrThrow<{ rules: ModuleAccessRule[] }>(res, 'Module access rules request');
+  return Array.isArray(data.rules) ? data.rules : [];
+}
+
+export async function addModuleAccessRule(rule: NewModuleAccessRule): Promise<ModuleAccessRule> {
+  const res = await fetchWithAuth(`${API_BASE}/module-access/rules`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(rule),
+  });
+  const data = await jsonOrThrow<{ rule: ModuleAccessRule }>(res, 'Module access rule add');
+  return data.rule;
+}
+
+export async function removeModuleAccessRule(id: string): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/module-access/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  await jsonOrThrow<{ ok: boolean }>(res, 'Module access rule remove');
+}
+
+/** The caller's own verdict for a module; areaId is optional (the server resolves it). */
+export async function checkModuleAccess(moduleId: string | null, areaId?: string | null): Promise<ModuleAccessVerdict> {
+  const params = new URLSearchParams();
+  if (moduleId) params.set('moduleId', moduleId);
+  if (areaId) params.set('areaId', areaId);
+  const qs = params.toString();
+  const res = await fetchWithAuth(`${API_BASE}/module-access/check${qs ? `?${qs}` : ''}`);
+  return jsonOrThrow<ModuleAccessVerdict>(res, 'Module access check');
+}
+
+export async function fetchModuleAccessPreview(): Promise<ModuleAccessPreview> {
+  const res = await fetchWithAuth(`${API_BASE}/module-access/preview`);
+  return jsonOrThrow<ModuleAccessPreview>(res, 'Module access preview');
+}
+
 /**
  * The last assistant message row as the server persisted it. Needed because
  * a live run's message id is minted client-side at stream_end (the server's
@@ -1727,4 +1972,62 @@ export async function fetchRunToolCalls(runId: string, opts?: { full?: boolean }
   );
   const rows = await runRecordJson<RunToolCallRow[]>(res, 'Loading tool calls');
   return Array.isArray(rows) ? rows : [];
+}
+
+// ── Per-user module defaults (Wave 6 track H) ──────────────────────────────
+// What this person ran a module with last time, and what their profile already
+// answers for its guided form. Both calls are best-effort: a module page must
+// open and a run must complete whether or not the server has anything to say.
+
+export interface ModuleDefaults {
+  outputFormats: string[];
+  thinking: string | null;
+  creativity: string | null;
+  guidedInputs: Record<string, unknown>;
+  usedCount: number;
+}
+
+export interface ModuleDefaultsResponse {
+  /** null before the first recorded run of this module */
+  defaults: ModuleDefaults | null;
+  /** guided-field id → value the profile / org context supplies */
+  prefill: Record<string, string | string[]>;
+  /** the jurisdiction pack the profile's jurisdiction maps to */
+  jurisdictionSkill: { id: string; name: string } | null;
+}
+
+/** Last-used settings + profile prefill for a module; null on any failure. */
+export async function fetchModuleDefaults(moduleId: string): Promise<ModuleDefaultsResponse | null> {
+  try {
+    const res = await fetchWithAuth(`${API_BASE}/user-module-defaults/${encodeURIComponent(moduleId)}`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<ModuleDefaultsResponse>;
+    return {
+      defaults: data.defaults ?? null,
+      prefill: data.prefill && typeof data.prefill === 'object' ? data.prefill : {},
+      jurisdictionSkill: data.jurisdictionSkill ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface ModuleUseRecord {
+  outputFormats: string[];
+  thinking: string;
+  creativity: string;
+  guidedInputs: Record<string, unknown>;
+}
+
+/** Fire-and-forget: remember what a module was just run with. Never throws. */
+export async function recordModuleUse(moduleId: string, use: ModuleUseRecord): Promise<void> {
+  try {
+    await fetchWithAuth(`${API_BASE}/user-module-defaults/${encodeURIComponent(moduleId)}/used`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(use),
+    });
+  } catch {
+    // best-effort — the run already happened
+  }
 }

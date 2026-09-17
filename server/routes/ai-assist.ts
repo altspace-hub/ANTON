@@ -1,14 +1,19 @@
 /**
  * ai-assist.ts
  * Lightweight AI-assist endpoints for pages that previously had no Claude support.
- * All use non-streaming callSync (short, structured responses).
+ * All use the provider router's non-streaming callChat (short, structured
+ * responses) on the medium tier of the Settings default.
  * Covers: module builder, intelligence, patterns, deadlines, quality,
  *         compliance, versions, projects, skills, apprentice, analytics, workflows.
  */
 
 import { safeError } from '../lib/error-response.js';
 import { Router, Request, Response } from 'express';
-import { callSync } from '../services/claude-client.js';
+import { callChat } from '../services/provider-router.js';
+import type { DatabaseAdapter } from '../db/database.js';
+
+/** Set by the factory; lets an azure:/compat: default resolve its endpoint. */
+let routesDb: DatabaseAdapter | undefined;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -20,11 +25,15 @@ function stripAndParseJson(text: string): unknown {
 }
 
 async function ai(system: string, user: string): Promise<string> {
-  const result = await callSync({
-    model: 'claude-sonnet-4-6',
-    thinking: 'think',
+  // Medium tier (was a literal Sonnet). The db passed to the factory lets an
+  // azure:/compat: default resolve its endpoint on these routes.
+  const result = await callChat({
+    tier: 'medium',
+    thinkingLevel: 'think',
     system,
     messages: [{ role: 'user', content: user }],
+    maxTokens: 8192,
+    db: routesDb,
   });
   return result.text;
 }
@@ -36,7 +45,8 @@ async function aiJson(system: string, user: string): Promise<unknown> {
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
-export async function createAiAssistRoutes(): Promise<Router> {
+export async function createAiAssistRoutes(db?: DatabaseAdapter): Promise<Router> {
+  routesDb = db;
   const router = Router();
 
   // ── 1. Module Prompt Drafter ──────────────────────────────────────────────

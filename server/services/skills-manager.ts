@@ -17,6 +17,7 @@
 import path from 'path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
+import type { DatabaseAdapter } from '../db/database.js';
 
 const __dirname_skills = path.dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = path.join(__dirname_skills, '..', 'skills');
@@ -47,7 +48,8 @@ export interface Skill {
   tags: string[];
   applicableAreas?: string[];
   prompt: string;  // Injected as Layer 5 in PromptComposer
-  source?: 'builtin' | 'disk';
+  /** 'installed' = a row of the `skills` table (e.g. arrived inside a .anton module bundle). */
+  source?: 'builtin' | 'disk' | 'installed';
 }
 
 // ── Built-in Skill Library ────────────────────────────────────
@@ -995,21 +997,103 @@ export async function preloadDiskSkills(): Promise<number> {
   return index.size;
 }
 
-/** Synchronous — built-ins first, then the preloaded disk packs. */
+// ── Installed skills (the `skills` table) — Wave 6, track G ─────────────────
+// A module bundle carries the text of the skills it references; the importer
+// writes them to the `skills` table. The composer resolves skills
+// SYNCHRONOUSLY (resolveSkills → getSkillById), so installed rows are mirrored
+// into an in-memory index: filled once at start (preloadInstalledSkills, from
+// the exchange router factory) and on every install (registerInstalledSkill).
+// Built-ins and disk packs shadow an installed row with the same id — the
+// importer namespaces a clashing id as `bundle:<module>:<id>`, so a clash here
+// only means an identical text was reused. invalidateSkillCache() does NOT
+// clear this index: it mirrors the database, not the disk.
+
+const _installedSkillIndex = new Map<string, Skill>();
+
+export interface InstalledSkillInput {
+  id: string;
+  name: string;
+  prompt: string;
+  description?: string | null;
+  version?: string | null;
+  author?: string | null;
+  category?: string | null;
+  tags?: string[] | string | null;
+}
+
+function toInstalledSkill(row: InstalledSkillInput): Skill | null {
+  if (!row.id || typeof row.prompt !== 'string' || !row.prompt.trim()) return null;
+  let tags: string[] = [];
+  if (Array.isArray(row.tags)) {
+    tags = row.tags.filter((t): t is string => typeof t === 'string');
+  } else if (typeof row.tags === 'string' && row.tags) {
+    try {
+      const parsed: unknown = JSON.parse(row.tags);
+      if (Array.isArray(parsed)) tags = parsed.filter((t): t is string => typeof t === 'string');
+    } catch { tags = []; }
+  }
+  return {
+    id: row.id,
+    name: row.name || row.id,
+    description: row.description ?? '',
+    version: row.version ?? '1.0.0',
+    author: row.author ?? 'import',
+    category: isSkillCategory(row.category) ? row.category : 'domain',
+    tags,
+    prompt: row.prompt,
+    source: 'installed',
+  };
+}
+
+/** Make one installed skill resolvable right away (called after the importer writes the row). */
+export function registerInstalledSkill(row: InstalledSkillInput): void {
+  const skill = toInstalledSkill(row);
+  if (skill) _installedSkillIndex.set(skill.id, skill);
+}
+
+/** Drop one installed skill from the resolver (archive / delete). */
+export function unregisterInstalledSkill(id: string): void {
+  _installedSkillIndex.delete(id);
+}
+
+/**
+ * Mirror every non-archived row of the `skills` table into the resolver.
+ * Never throws — a missing table (un-migrated install) reads as zero rows.
+ * Returns the number of installed skills now resolvable.
+ */
+export async function preloadInstalledSkills(db: DatabaseAdapter): Promise<number> {
+  try {
+    const rows = await db.all<InstalledSkillInput>(
+      'SELECT id, name, description, version, author, category, prompt, tags FROM skills WHERE is_archived = 0',
+    );
+    _installedSkillIndex.clear();
+    for (const row of rows) registerInstalledSkill(row);
+    return _installedSkillIndex.size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Synchronous — built-ins first, then the preloaded disk packs, then installed rows. */
 export function getSkillById(id: string): Skill | undefined {
-  return getBuiltInSkills().find((s) => s.id === id) ?? _diskSkillIndex?.get(id);
+  return getBuiltInSkills().find((s) => s.id === id) ?? _diskSkillIndex?.get(id) ?? _installedSkillIndex.get(id);
 }
 
 /**
  * Synchronous — every skill the resolver can see right now: built-ins plus the
- * preloaded disk packs (minus any disk id shadowed by a built-in).
+ * preloaded disk packs (minus any disk id shadowed by a built-in), plus the
+ * installed rows no built-in or disk pack shadows.
  */
 export function getAllSkills(): Skill[] {
   const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
-  if (!_diskSkillIndex || _diskSkillIndex.size === 0) return builtins;
-  const builtinIds = new Set(builtins.map((s) => s.id));
-  const disk = [..._diskSkillIndex.values()].filter((s) => !builtinIds.has(s.id));
-  return [...builtins, ...disk];
+  const seen = new Set(builtins.map((s) => s.id));
+  const disk = _diskSkillIndex && _diskSkillIndex.size > 0
+    ? [..._diskSkillIndex.values()].filter((s) => !seen.has(s.id))
+    : [];
+  if (disk.length === 0 && _installedSkillIndex.size === 0) return builtins;
+  for (const s of disk) seen.add(s.id);
+  const installed = [..._installedSkillIndex.values()].filter((s) => !seen.has(s.id));
+  return [...builtins, ...disk, ...installed];
 }
 
 /**
@@ -1162,6 +1246,78 @@ export async function getSkillByIdAsync(id: string): Promise<Skill | undefined> 
 export async function resolveSkillsAsync(skillIds: string[]): Promise<string> {
   if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
   return resolveSkills(skillIds);
+}
+
+// ── Jurisdiction packs (Wave 6 track H) ───────────────────────
+// A profile says "Singapore", "SG", "MAS" or "Monetary Authority of Singapore";
+// the pack that answers is jurisdiction-sg-mas. Aliases come from each pack's
+// own metadata — the id (`jurisdiction-<iso2>-<regulator>`) and the label
+// (`Country — Regulator Name (ACRONYM)`) — plus a short hand-kept supplement
+// for what the metadata cannot yield (ISO-3 codes, common short forms).
+
+const JURISDICTION_ALIAS_SUPPLEMENT: Record<string, readonly string[]> = {
+  'jurisdiction-ae-cbuae': ['are', 'united arab emirates', 'emirates', 'dubai', 'abu dhabi'],
+  'jurisdiction-gh-bog': ['gha'],
+  'jurisdiction-hk-hkma': ['hkg', 'hong kong sar', 'hksar'],
+  'jurisdiction-in-rbi': ['ind'],
+  'jurisdiction-ke-cbk': ['ken'],
+  'jurisdiction-my-bnm': ['mys'],
+  'jurisdiction-ng-cbn': ['nga'],
+  'jurisdiction-ph-bsp': ['phl'],
+  'jurisdiction-pk-sbp': ['pak'],
+  'jurisdiction-sa-sama': ['sau', 'ksa', 'saudi', 'kingdom of saudi arabia'],
+  'jurisdiction-sg-mas': ['sgp'],
+  'jurisdiction-uk-fca': ['gb', 'gbr', 'uk', 'united kingdom', 'great britain', 'britain', 'england', 'scotland', 'wales', 'northern ireland', 'fca', 'nca'],
+};
+
+/** Lower-case, ASCII-folded, punctuation collapsed to single spaces, leading "the" dropped. */
+function normaliseJurisdictionText(value: string): string {
+  const folded = value.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return folded.replace(/^the\s+/, '');
+}
+
+/** Every phrase that names this pack, normalised. */
+function jurisdictionAliases(skill: Skill): string[] {
+  const aliases = new Set<string>();
+  const idMatch = /^jurisdiction-([a-z]{2})-([a-z0-9]+)$/i.exec(skill.id);
+  if (idMatch) {
+    aliases.add(idMatch[1].toLowerCase());
+    aliases.add(idMatch[2].toLowerCase());
+  }
+  const labelMatch = /^(.+?)\s+—\s+(.+?)\s+\(([^)]+)\)\s*$/.exec(skill.name);
+  if (labelMatch) {
+    aliases.add(normaliseJurisdictionText(labelMatch[1]));
+    aliases.add(normaliseJurisdictionText(labelMatch[2]));
+    aliases.add(normaliseJurisdictionText(labelMatch[3]));
+  }
+  for (const extra of JURISDICTION_ALIAS_SUPPLEMENT[skill.id] ?? []) aliases.add(normaliseJurisdictionText(extra));
+  aliases.delete('');
+  return [...aliases];
+}
+
+/**
+ * The jurisdiction pack a profile / org jurisdiction maps to, or null when no
+ * pack covers it (Sweden, the EU and most of the world have none yet). Matches
+ * by country name, ISO code or regulator name, case-insensitively; a two-letter
+ * code must be the whole value, anything longer may sit inside a longer phrase
+ * ("Singapore (MAS)", "Hong Kong SAR"). The longest alias wins.
+ * Sees the disk packs once `preloadDiskSkills()` has run; the built-in UK pack
+ * resolves either way.
+ */
+export function findJurisdictionSkill(jurisdiction: string): { id: string; name: string } | null {
+  const query = normaliseJurisdictionText(jurisdiction ?? '');
+  if (!query) return null;
+  const padded = ` ${query} `;
+
+  let best: { skill: Skill; length: number } | null = null;
+  for (const skill of getAllSkills()) {
+    if (skill.category !== 'jurisdiction') continue;
+    for (const alias of jurisdictionAliases(skill)) {
+      const hit = alias.length <= 2 ? query === alias : padded.includes(` ${alias} `);
+      if (hit && (!best || alias.length > best.length)) best = { skill, length: alias.length };
+    }
+  }
+  return best ? { id: best.skill.id, name: best.skill.name } : null;
 }
 
 /**

@@ -55,9 +55,10 @@ import ModelValidation from '@/components/modules/ModelValidation';
 import { Play, Square, Send, ChevronDown, ChevronRight, Coins, ShieldCheck, Check, X, Mic, MicOff, Layers, Wrench, Sparkles } from 'lucide-react';
 import SmartModelBanner from '@/components/shared/SmartModelBanner';
 import { MODELS } from '@/lib/constants';
-import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule } from '@/lib/api';
+import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule, fetchModuleDefaults } from '@/lib/api';
+import { useConfigStore } from '@/stores/useConfigStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import type { Message } from '@/lib/types';
+import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
 
 const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inputs: Record<string, unknown>) => void }>> = {
@@ -77,6 +78,15 @@ const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inp
 
 // Module prompts are now loaded from server/prompts/*.md via the API.
 // The server's PromptComposer handles all prompt assembly — no inline prompts needed here.
+
+// Wave 6 track H: the levels a stored default may carry (the server re-validates too).
+const THINKING_LEVEL_IDS: readonly ThinkingLevel[] = ['quick', 'think', 'think_hard', 'investigate', 'plan_first', 'deep_investigate'];
+const CREATIVITY_LEVEL_IDS: readonly CreativityLevel[] = ['strict', 'balanced', 'creative'];
+const isThinkingLevel = (v: unknown): v is ThinkingLevel => typeof v === 'string' && (THINKING_LEVEL_IDS as readonly string[]).includes(v);
+const isCreativityLevel = (v: unknown): v is CreativityLevel => typeof v === 'string' && (CREATIVITY_LEVEL_IDS as readonly string[]).includes(v);
+/** A guided value nobody has filled yet — the only kind a profile prefill may replace. */
+const isEmptyGuidedValue = (v: unknown): boolean =>
+  v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
 
 // GOV-06: Non-editable compliance guardrail appended to all FCP module prompts.
 const FCP_COMPLIANCE_GUARDRAIL = `**IMPORTANT LIMITATION — NON-NEGOTIABLE**
@@ -157,6 +167,20 @@ export default function ModulePage() {
   // exampleValues (keyed by guided-input id) pre-fills the guided form.
   const [moduleExample, setModuleExample] = useState<{ input: string; values?: Record<string, unknown> } | null>(null);
   const [exampleUsed, setExampleUsed] = useState(false);
+  // Wave 6 track H: the profile drives the defaults. `lastSettingsApplied`
+  // shows the one-line note once the user's last-used formats / thinking /
+  // creativity for this module replaced the catalogue defaults; it clears the
+  // moment they change any of the three. `jurisdictionPack` is the pack the
+  // profile's jurisdiction attached by itself — removable, and once removed
+  // never re-added in the same session (the dismissed ref).
+  const [lastSettingsApplied, setLastSettingsApplied] = useState(false);
+  const [jurisdictionPack, setJurisdictionPack] = useState<{ id: string; name: string } | null>(null);
+  const userTouchedConfigRef = useRef(false);
+  const jurisdictionPackDismissedRef = useRef(false);
+  const markConfigTouched = () => {
+    userTouchedConfigRef.current = true;
+    setLastSettingsApplied(false);
+  };
   const [learnOffered, setLearnOffered] = useState(false);
   const [learnSaving, setLearnSaving] = useState(false);
   const [learnDone, setLearnDone] = useState(false);
@@ -519,6 +543,55 @@ export default function ModulePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleId, sessionParam, isDynamicModule]);
 
+  // Wave 6 track H: the profile drives the defaults. Runs on the same trigger
+  // as the init effect above and resolves after it, so the person's last-used
+  // settings for this module win over the catalogue defaults — unless they
+  // have already touched formats / thinking / creativity in this session.
+  // Guided fields the profile can answer (jurisdiction, language,
+  // organisation) start filled when still empty; the jurisdiction pack the
+  // profile maps to is attached once, as a removable chip. A resumed session
+  // carries its own settings and is left alone.
+  useEffect(() => {
+    if ((!module && isDynamicModule !== true) || !moduleId) return;
+    userTouchedConfigRef.current = false;
+    jurisdictionPackDismissedRef.current = false;
+    setLastSettingsApplied(false);
+    setJurisdictionPack(null);
+    if (sessionParam) return;
+
+    let cancelled = false;
+    fetchModuleDefaults(moduleId).then((res) => {
+      if (cancelled || !res) return;
+
+      const { defaults, prefill, jurisdictionSkill } = res;
+      if (defaults && !userTouchedConfigRef.current) {
+        if (defaults.outputFormats.length > 0) setSelectedOutputFormats(defaults.outputFormats);
+        if (isThinkingLevel(defaults.thinking)) setThinking(defaults.thinking);
+        if (isCreativityLevel(defaults.creativity)) setCreativity(defaults.creativity);
+        setLastSettingsApplied(true);
+      }
+
+      // Read the live store, not the render closure: the init effect reset it in between.
+      const currentInputs = useConfigStore.getState().moduleInputs;
+      const filled: Record<string, unknown> = { ...currentInputs };
+      let changed = false;
+      for (const [fieldId, value] of Object.entries(prefill)) {
+        if (!isEmptyGuidedValue(currentInputs[fieldId])) continue;
+        filled[fieldId] = value;
+        changed = true;
+      }
+      if (changed) setModuleInputs(filled);
+
+      if (jurisdictionSkill && !jurisdictionPackDismissedRef.current) {
+        const currentSkills = useConfigStore.getState().selectedSkills;
+        if (!currentSkills.includes(jurisdictionSkill.id)) setSelectedSkills([...currentSkills, jurisdictionSkill.id]);
+        setJurisdictionPack(jurisdictionSkill);
+      }
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleId, sessionParam, isDynamicModule]);
+
   // ── Redirect coding modules to their dedicated pages ─────────────────
   const codingRouteMap: Record<string, string> = {
     'code-review-explain': '/coding/review',
@@ -732,7 +805,7 @@ export default function ModulePage() {
           )}
 
           {/* AI Controls */}
-          <ThinkingControls value={thinking} onChange={setThinking} model={model} />
+          <ThinkingControls value={thinking} onChange={(level) => { markConfigTouched(); setThinking(level); }} model={model} />
           <ModelSelector value={model} onChange={setModel} />
 
           {/* Model recommendation (Wave 3.7) — provider-aware suggestion with apply-on-click */}
@@ -751,7 +824,7 @@ export default function ModulePage() {
           {/* Writing Style Panel (replaces bare CreativitySlider) */}
           <WritingStylePanel
             creativity={creativity}
-            onCreativityChange={setCreativity}
+            onCreativityChange={(level) => { markConfigTouched(); setCreativity(level); }}
             selectedPersonas={selectedPersonas}
             onSelectedPersonasChange={setSelectedPersonas}
             multiPerspective={multiPerspective}
@@ -816,14 +889,14 @@ export default function ModulePage() {
           <ResumePanel sessionId={sessionId} />
 
           {/* Skills */}
-          {moduleId && !suggestedSkillsDismissed && suggestedSkills.length > 0 && (!selectedSkills || selectedSkills.length === 0) && (
+          {moduleId && !suggestedSkillsDismissed && suggestedSkills.length > 0 && selectedSkills.filter((id) => id !== jurisdictionPack?.id).length === 0 && (
             <div className="mb-2 px-3 py-2 bg-adv-teal/10 border border-adv-teal/30 rounded flex items-center justify-between gap-2">
               <span className="text-xs text-adv-teal">
                 Suggested for this module: {suggestedSkills.map((id) => skillCatalog.find((s) => s.id === id)?.name ?? id).join(', ')} — Apply?
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setSelectedSkills(suggestedSkills)}
+                  onClick={() => setSelectedSkills([...new Set([...selectedSkills, ...suggestedSkills])])}
                   className="text-xs px-2 py-0.5 bg-adv-teal text-adv-dark rounded hover:bg-adv-teal-dark"
                 >
                   Apply
@@ -838,6 +911,26 @@ export default function ModulePage() {
                   ×
                 </button>
               </div>
+            </div>
+          )}
+          {jurisdictionPack && selectedSkills.includes(jurisdictionPack.id) && (
+            <div className="mb-2" role="status">
+              <span className="inline-flex items-center gap-2 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-3 py-1 text-sm text-adv-teal">
+                Jurisdiction pack: {jurisdictionPack.name}
+                <button
+                  type="button"
+                  aria-label={`Remove jurisdiction pack ${jurisdictionPack.name}`}
+                  title="Remove for this session"
+                  onClick={() => {
+                    jurisdictionPackDismissedRef.current = true;
+                    setSelectedSkills(selectedSkills.filter((id) => id !== jurisdictionPack.id));
+                    setJurisdictionPack(null);
+                  }}
+                  className="rounded-full p-0.5 text-adv-teal hover:bg-adv-teal/20 hover:text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </span>
             </div>
           )}
           <SkillAttacher selected={selectedSkills} onChange={setSelectedSkills} />
@@ -897,7 +990,12 @@ export default function ModulePage() {
           )}
 
           {/* Output Formats */}
-          <OutputFormatSelector selected={selectedOutputFormats} onChange={setSelectedOutputFormats} />
+          {lastSettingsApplied && (
+            <p className="mb-1 text-sm text-adv-gray" role="status" aria-live="polite">
+              Using your last settings for this module — change them anytime
+            </p>
+          )}
+          <OutputFormatSelector selected={selectedOutputFormats} onChange={(formats) => { markConfigTouched(); setSelectedOutputFormats(formats); }} />
 
           {/* Communications Hub */}
           <CommunicationsPanel

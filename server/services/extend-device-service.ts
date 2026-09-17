@@ -7,14 +7,15 @@
  * with: pin assignment delta, BoM delta, posture delta, risk delta, and
  * (when the project is already deployed) a recommended Maintain plan shape.
  *
- * Proposal generation is real Claude (sonnet 4.6 by default) with a focused
- * prompt that grounds the model in the actual project + HKP context. Output
- * is parsed as structured JSON with defensive fallbacks if parsing fails.
+ * Proposal generation runs through the provider router on the medium tier of
+ * the Settings default (an explicit model id may be passed; a bare claude-*
+ * id is re-tiered to the configured provider), with a focused prompt that
+ * grounds the model in the actual project + HKP context. Output is parsed as
+ * structured JSON with defensive fallbacks if parsing fails or the call does.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
-import { getClient, isApiKeyConfigured } from './claude-client.js';
+import { callChat, mapModelToProvider } from './provider-router.js';
 import { parseJson } from '../lib/hardware-helpers.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -23,8 +24,8 @@ export interface ExtendDeviceInput {
   project_id: string;
   /** Free-text user description of what they want to add. */
   desired_change: string;
-  /** Default 'claude-sonnet-4-6'; opus 4.7 selectable for harder cases. */
-  model?: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
+  /** Explicit model id; default = medium tier of the Settings default. */
+  model?: string;
 }
 
 export interface PinDelta {
@@ -184,12 +185,7 @@ export function createExtendDeviceService(db: DatabaseAdapter) {
       throw new Error('Desired change description must be at least 10 characters');
     }
     const ctx = await loadContext(db, input.project_id);
-    const model = input.model ?? 'claude-sonnet-4-6';
-
-    if (!isApiKeyConfigured()) {
-      // Honest fallback: produce a structured "we don't know yet" proposal.
-      return fallbackProposal(ctx, input.desired_change, 'Anthropic API key not configured — proposal generator unavailable.');
-    }
+    const model = input.model ? mapModelToProvider(input.model) : undefined;
 
     const systemPrompt = `You produce structured "minimum-viable-change" proposals for embedded hardware projects. The user already has a working (or in-progress) project; they want to add or change ONE thing. Your job is to propose the smallest, safest change — not redesign the project.
 
@@ -259,15 +255,23 @@ ${input.desired_change.trim()}
 
 Now produce the JSON proposal following the schema in the system prompt exactly.`;
 
-    const anthropic = getClient();
-    const resp = await anthropic.messages.create({
-      model,
-      max_tokens: 2500,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    });
-    const textBlocks = resp.content.filter((b): b is Anthropic.TextBlock => b.type === 'text');
-    const raw = textBlocks.map(b => b.text).join('').trim();
+    let raw: string;
+    try {
+      const resp = await callChat({
+        model,
+        tier: 'medium',
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+        maxTokens: 2500,
+        db,
+      });
+      raw = resp.text.trim();
+    } catch (err) {
+      // Honest fallback: a structured "we don't know yet" proposal, naming why.
+      const reason = err instanceof Error ? err.message : String(err);
+      console.warn(`[extend-device-service] purpose=hw-extend-device proposal generator failed: ${reason}`);
+      return fallbackProposal(ctx, input.desired_change, `Proposal generator unavailable: ${reason}`);
+    }
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -366,7 +370,7 @@ Now produce the JSON proposal following the schema in the system prompt exactly.
           ? 'Project has a deployed fleet — any change should ship via a Maintain plan with rollback.'
           : 'Project has no deployed fleet yet — change can be made in-place.',
       },
-      open_questions: ['Re-run when an Anthropic API key is configured to get a structured proposal.'],
+      open_questions: ['Re-run once the configured AI model is reachable to get a structured proposal.'],
       parse_error: reason,
       raw_model_output: raw?.slice(0, 4000),
     };

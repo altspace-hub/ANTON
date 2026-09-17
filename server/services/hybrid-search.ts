@@ -18,6 +18,18 @@ import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 import { getEmbeddingAdapter, isZeroVector } from './embedding-adapter.js';
 import { getVectorStore, type VectorSearchResult } from './vector-store-adapter.js';
 import { retrieveChunks } from './rag/retriever.js';
+import { checkEmbeddingPin, ensureEmbeddingPin } from './embedding-pin.js';
+
+// ── Embedding pin ──────────────────────────────────────────────────────────
+//
+// The vector store scores only rows the ACTIVE embedding adapter produced:
+// `model: adapter.model` becomes `AND embedding_model = ?` in both stores, so
+// a row embedded by an earlier provider (another model, or another dimension —
+// a model implies its dimension) is never loaded, let alone scored at cosine 0
+// against a vector from a different space. Those rows still reach the caller
+// through the keyword paths below, and POST /api/embeddings/reembed-mismatched
+// brings them over. checkEmbeddingPin logs one warning per process when the
+// environment has moved away from the pinned provider (embedding-pin.ts).
 
 // ── Owner scoping ──────────────────────────────────────────────────────────
 //
@@ -205,16 +217,21 @@ export async function hybridSearch(
   // caller that names the type — the collection search, which scopes by
   // collection — gets them.
   const excludeRagChunks = !contentTypes;
-  const vectorResults: VectorSearchResult[] = (await filterOwnedByScope(
-    db,
-    await vectorStore.search({
-      queryVector,
-      topK: topK * 2,
-      contentTypes,
-      minSimilarity,
-    }),
-    scope,
-  )).filter((r) => !excludeRagChunks || r.content_type !== 'rag_chunk');
+  // Pin check (warns once on a provider change); a zero query vector means the
+  // embed itself failed — nothing can be scored against it, so the vector leg
+  // is skipped rather than loading every row to score it 0.
+  await checkEmbeddingPin(db, embeddingAdapter);
+  const vectorHits: VectorSearchResult[] = isZeroVector(queryVector)
+    ? []
+    : await vectorStore.search({
+        queryVector,
+        topK: topK * 2,
+        contentTypes,
+        model: embeddingAdapter.model,
+        minSimilarity,
+      });
+  const vectorResults: VectorSearchResult[] = (await filterOwnedByScope(db, vectorHits, scope))
+    .filter((r) => !excludeRagChunks || r.content_type !== 'rag_chunk');
 
   // ── BM25 keyword search on knowledge_atoms (SQL LIKE fallback) ───────────
   const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);
@@ -404,10 +421,15 @@ export async function findSimilar(
   const queryVector = await embeddingAdapter.embed(row.content_text);
   const contentTypes = params.sameTypeOnly ? [params.contentType] : undefined;
 
+  // Same pin rules as hybridSearch: active-model rows only, nothing on a failed embed.
+  await checkEmbeddingPin(db, embeddingAdapter);
+  if (isZeroVector(queryVector)) return [];
+
   const results = await filterOwnedByScope(db, await vectorStore.search({
     queryVector,
     topK: (params.topK ?? 10) + 1, // +1 to exclude self
     contentTypes,
+    model: embeddingAdapter.model,
     minSimilarity: 0.4,
   }), params.scope);
 
@@ -459,6 +481,9 @@ export async function embedAndStore(
     model: adapter.model,
     metadata: params.metadata,
   });
+  // The first embedding this instance stores pins its provider; later ones
+  // compare against it (embedding-pin.ts). Never throws.
+  await ensureEmbeddingPin(db, adapter);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

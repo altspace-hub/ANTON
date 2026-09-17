@@ -25,6 +25,7 @@ import {
   Atom, AlertTriangle, ClipboardList, RefreshCw, X, Info,
 } from 'lucide-react';
 import { fetchRunArtifact, fetchInjectedAtoms, fetchLatestAssistantMessageRow, fetchPromptPreview } from '@/lib/api';
+import { ModuleFingerprintLine } from './ModuleFingerprintLine';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
 import { useStreamStore } from '@/stores/useStreamStore';
 import { useSessionMetaStore } from '@/stores/useSessionStore';
@@ -460,6 +461,8 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
           {summaryLine({ engine, sourceCount, layerCount })} · Transparency level {level}
         </span>
         {artifactStatus === 'loading' && <Loader2 className="h-3 w-3 animate-spin text-adv-gray" />}
+        {/* Wave 6: the fingerprint of a custom / imported module (nothing for built-ins). */}
+        <ModuleFingerprintLine moduleId={str(snap.moduleId) ?? ctx?.lens?.moduleId ?? null} />
       </div>
       {recordLine && <p className={`mb-3 text-[11px] ${recordLine.tone}`}>{recordLine.text}</p>}
 

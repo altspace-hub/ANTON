@@ -342,13 +342,21 @@ function buildProfileBlock(p: UserProfileData): string | null {
   }
 
   if (p.industry) lines.push(`Industry: ${p.industry}.`);
-  if (p.jurisdiction) lines.push(`Operating jurisdiction: ${p.jurisdiction}.`);
+  // Wave 6 track H: the profile's jurisdiction and language drive the run.
+  // Before, the jurisdiction line was decorative and the block was skipped
+  // unless a name / role / organisation was set, so a profile that said only
+  // "Sweden" never reached the prompt and every module asked again.
+  const jurisdiction = (p.jurisdiction ?? '').trim();
+  if (jurisdiction) {
+    lines.push(`Jurisdiction: ${jurisdiction}.`);
+    lines.push(`Apply the law and terminology of ${jurisdiction} unless the task names another.`);
+  }
   if (p.experience_level) lines.push(`Experience level: ${p.experience_level}.`);
   if (p.org_size) lines.push(`Organisation size: ${p.org_size}.`);
 
-  const langCode = p.output_language || 'en';
-  const langName = PROFILE_LANG_MAP[langCode] || langCode;
-  if (langCode && langCode !== 'en') lines.push(`Preferred output language: ${langName}.`);
+  const langCode = (p.output_language ?? '').trim();
+  const langName = langCode ? (PROFILE_LANG_MAP[langCode] || langCode) : '';
+  if (langCode) lines.push(`Working language: ${langName}.`);
 
   // Focus areas (JSON array or plain text)
   let focusAreas: string[] = [];
@@ -365,8 +373,9 @@ function buildProfileBlock(p: UserProfileData): string | null {
 
   lines.push('Tailor your analysis, examples, and recommendations to this professional context. Use appropriate terminology for their industry and jurisdiction.');
 
-  // Only inject if at least one meaningful field is set
-  const hasContent = effectiveName || effectiveRole || effectiveOrg;
+  // Only inject if at least one meaningful field is set. English is the
+  // column default, so on its own it says nothing about this person.
+  const hasContent = effectiveName || effectiveRole || effectiveOrg || jurisdiction || (langCode && langCode !== 'en');
   return hasContent ? lines.join('\n') : null;
 }
 

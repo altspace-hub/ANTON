@@ -186,6 +186,7 @@ export async function runLearningForOutput(db: DatabaseAdapter, outputId: string
         messages: [{ role: 'user', content: `Summarise this workflow output in one sentence:\n\n${truncated}` }],
         maxTokens: 120,
         background: true,
+        purpose: 'memory-summary',
         db,
       });
       const summary = message.text.trim().slice(0, 500);

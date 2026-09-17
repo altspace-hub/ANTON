@@ -60,6 +60,10 @@ import { createTemporalReasoningService } from '../services/temporal-reasoning.j
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { getAtomInjectionStatus } from '../services/atom-injection-gate.js';
+import { runComplianceOnCompletion } from '../services/compliance-on-completion.js';
+import { isModuleAllowed } from '../services/module-access.js';
+import { resolveModuleAreaId } from './module-access.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
@@ -152,6 +156,31 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   }
 
   // POST /api/claude/message — streaming SSE proxy (multi-LLM)
+  /**
+   * Wave 6: per-role module access (team mode). Answers 403 and returns true
+   * when the caller's role may not run this module; solo mode, admins and
+   * modules with no matching rule pass (default open — the owner restricts).
+   * The area is taken from the request when sent, else looked up, so area
+   * rules match too. Never throws: a broken rules read allows the run.
+   */
+  async function refuseForbiddenModule(
+    req: { user?: { role?: string } },
+    res: { status: (code: number) => { json: (body: unknown) => unknown } },
+    moduleId: unknown,
+    areaId: unknown,
+  ): Promise<boolean> {
+    if (!isTeamMode() || typeof moduleId !== 'string' || !moduleId) return false;
+    try {
+      const area = typeof areaId === 'string' && areaId ? areaId : await resolveModuleAreaId(db, moduleId);
+      const verdict = await isModuleAllowed(db, { role: req.user?.role, moduleId, areaId: area, teamMode: true });
+      if (verdict.allowed) return false;
+      res.status(403).json({ error: 'Your role is not permitted to run this module. Ask an administrator.', rule: verdict.rule });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   router.post('/claude/message', validate(ClaudeMessageSchema), checkBudget, async (req, res) => {
     try {
       const {
@@ -193,6 +222,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         compactionEnabled,
         rerunOf,
       } = req.body;
+
+      if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
       //
@@ -1154,6 +1185,24 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               messagePersisted = true;
             } catch {
               // Non-fatal — message was already streamed to user
+            }
+            // Wave 6: Compliance-as-Code on completion. The seven Work rules
+            // (provenance section, placeholders, citations in regulated areas,
+            // length floor, model allow-list, unmarked figures, secrets) run in
+            // the background against this answer; violations point at the
+            // message id. Setting compliance_on_completion (default on).
+            // Never throws; only ids and derived facts are stored.
+            if (messagePersisted && data.text) {
+              void runComplianceOnCompletion(db, {
+                sessionId: String(sessionId),
+                messageId: assistantMessageId,
+                moduleId: moduleId ?? null,
+                areaId: areaId ?? null,
+                model: selectedModel,
+                text: data.text,
+                provenanceContract: configSnapshot.provenanceContract === true,
+                outputFormats: Array.isArray(outputFormats) ? outputFormats : [],
+              });
             }
             // Item 1.6: persist the run artifact — the final composed system
             // prompt exactly as passed to the LLM (closure values reflect any
@@ -2181,6 +2230,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         outputLanguage,
       } = req.body;
 
+      if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
+
       if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
         res.status(400).json({ error: 'userMessage is required.' });
         return;
@@ -2338,6 +2389,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgeSources,
         sessionId,
       } = req.body;
+
+      if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
 
       if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim()) {
         res.status(400).json({ error: 'userMessage is required' });

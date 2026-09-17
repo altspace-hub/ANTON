@@ -235,7 +235,7 @@ export async function createBundleSharingService(db: DatabaseAdapter) {
         imported: importResult.success,
         importMessage: importResult.success
           ? `Module installed${importResult.moduleId ? `: ${importResult.moduleId}` : ''}`
-          : 'Import failed — see validation errors',
+          : describeRefusedImport(importResult),
       };
     }
 
@@ -268,3 +268,26 @@ export async function createBundleSharingService(db: DatabaseAdapter) {
 }
 
 export type BundleSharingService = Awaited<ReturnType<typeof createBundleSharingService>>;
+
+/**
+ * Why a module received by mail was not installed, in words the recipient can
+ * act on. Wave 6: the injection scan blocks by default and mail has no way to
+ * opt in, so a blocked bundle names its findings and says how to import it
+ * after reading them (download it and import from the Marketplace page).
+ */
+export function describeRefusedImport(result: {
+  blocked?: 'injection';
+  injectionFindings?: Array<{ label: string; file: string; severity: string }>;
+  validation?: { errors?: Array<{ message?: string } | string> };
+}): string {
+  if (result.blocked === 'injection') {
+    const findings = result.injectionFindings ?? [];
+    const listed = findings.slice(0, 5).map((f) => `${f.label} (${f.file}, ${f.severity})`).join('; ');
+    const more = findings.length > 5 ? `; and ${findings.length - 5} more` : '';
+    return `Import blocked: the bundle contains text that reads like instructions to the model${listed ? ` — ${listed}${more}` : ''}. Nothing was installed. Review the findings, then import the file from the Marketplace page and accept them if you trust the sender.`;
+  }
+  const errors = (result.validation?.errors ?? [])
+    .map((e) => (typeof e === 'string' ? e : e.message ?? ''))
+    .filter(Boolean);
+  return errors.length ? `Import failed: ${errors.slice(0, 3).join('; ')}` : 'Import failed — the bundle did not validate.';
+}

@@ -95,6 +95,7 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
         // Post-turn bookkeeping. On the subscription engine (two slots) an
         // interactive run must never queue behind a quality score.
         background: true,
+        purpose: 'quality-score',
         db,
       });
       llmText = chat.text;

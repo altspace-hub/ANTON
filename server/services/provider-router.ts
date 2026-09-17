@@ -44,8 +44,11 @@ import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
-import { MODEL_CAPABILITIES, getThinkingConfig } from '../config/model-capabilities.js';
+import { MODEL_CAPABILITIES, getThinkingConfig, estimateCost } from '../config/model-capabilities.js';
 import { getEffectiveDefaultModel } from './default-model-store.js';
+import { enqueueAudit } from './audit-queue.js';
+import type { AuditEntry } from './auditLogger.js';
+import { capabilityModelId } from './engine-model-id.js';
 import { resolveOllamaNumCtx } from './context-budget.js';
 import {
   convertClaudeToolsToOpenAI,
@@ -106,6 +109,15 @@ export interface StreamChatConfig {
   seed?: number;
   /** Database adapter — required for Azure OpenAI config resolution */
   db?: import('../db/database.js').DatabaseAdapter;
+  /**
+   * Track E: name the utility this call serves ('quality-score',
+   * 'atom-extraction', 'session-conclusion', …) and callChat writes an
+   * audit_log row for it — module_id `utility:<purpose>`, the resolved
+   * provider and model, tokens, cost on the same basis as a module run — so
+   * the ledger sees the background calls that used to run unrecorded. Needs
+   * `db` as well; streaming callers are audited by their routes.
+   */
+  purpose?: string;
 }
 
 export interface ChatResult {
@@ -747,11 +759,101 @@ async function streamChatMistral(
 
 // ── Non-Streaming Chat ─────────────────────────────────────────
 
+export interface UtilityAuditInput {
+  purpose: string;
+  provider: string;
+  modelId: string;
+  thinkingLevel?: string;
+  seed?: number;
+  /** Uncached input tokens, as ChatResult reports them. */
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
+  status: 'success' | 'error';
+}
+
+/**
+ * The audit_log row for one utility call, on the chat route's cost basis:
+ * registry pricing → list cost; ollama → 0; a subscription engine (plan usage)
+ * or an unpriced provider (azure/compat) → undefined, so the queue keeps NULL
+ * rather than a phantom or a "free".
+ *
+ * Priced cost: uncached input at list, cache reads at the cached-input rate,
+ * cache writes at 1.25× list. estimateCost() takes cached tokens as a SUBSET of
+ * its input figure, so reads and writes are added to the input it is given and
+ * the 0.25× write premium on top.
+ */
+export function buildUtilityAuditEntry(input: UtilityAuditInput): AuditEntry {
+  const isEngine = input.provider === 'anthropic_sdk' || input.provider === 'openai_codex';
+  const bareModel = capabilityModelId(input.modelId);
+  const caps = isEngine ? undefined : MODEL_CAPABILITIES[bareModel];
+  const cacheRead = input.cacheReadTokens ?? 0;
+  const cacheCreate = input.cacheCreationTokens ?? 0;
+  const estimatedCostUsd = caps
+    ? estimateCost(bareModel, input.inputTokens + cacheRead + cacheCreate, input.outputTokens, cacheRead)
+      + (cacheCreate / 1_000_000) * caps.pricing.inputPerMillion * 0.25
+    : input.provider === 'ollama' ? 0 : undefined;
+  return {
+    moduleId: `utility:${input.purpose}`,
+    model: input.modelId,
+    provider: input.provider,
+    thinkingLevel: input.thinkingLevel,
+    writingTone: 'professional',
+    emojiEnabled: false,
+    structuredReasoning: false,
+    transparencyLevel: 0,
+    inputTokenCount: input.inputTokens,
+    outputTokenCount: input.outputTokens,
+    cachedTokens: cacheRead,
+    cacheCreationTokens: cacheCreate,
+    estimatedCostUsd,
+    responseStatus: input.status,
+    seed: input.seed,
+  };
+}
+
 /**
  * Non-streaming chat completion. Returns the full response.
  * Used by routes that need a complete response (scoring, bridges, etc.)
+ *
+ * With `purpose` + `db` set the call is audited (see buildUtilityAuditEntry):
+ * one row on success with the real token counts, one on failure with status
+ * 'error' before the error is rethrown.
  */
 export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
+  if (!config.purpose || !config.db) return dispatchCallChat(config);
+
+  const modelId = resolveModel(config.model, config.tier);
+  let provider: string;
+  try {
+    provider = getProviderFromModelId(modelId, config.db);
+  } catch {
+    provider = 'anthropic';
+  }
+  const purpose = config.purpose;
+  const audit = (status: 'success' | 'error', usage: Partial<ChatResult>): void => {
+    enqueueAudit(buildUtilityAuditEntry({
+      purpose, provider, modelId,
+      thinkingLevel: config.thinkingLevel, seed: config.seed,
+      inputTokens: usage.inputTokens || 0,
+      outputTokens: usage.outputTokens || 0,
+      cacheReadTokens: usage.cacheReadTokens || 0,
+      cacheCreationTokens: usage.cacheCreationTokens || 0,
+      status,
+    }));
+  };
+  try {
+    const result = await dispatchCallChat(config);
+    audit('success', result);
+    return result;
+  } catch (err) {
+    audit('error', {});
+    throw err;
+  }
+}
+
+async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
   const modelId = resolveModel(config.model, config.tier);
   let provider: string;
   try {

@@ -228,9 +228,48 @@ export function listServerPersonaIds(): string[] {
   return Object.keys(EXPERT_ROLE_INSTRUCTIONS);
 }
 
+// ── Imported personas (Wave 6) ──────────────────────────────────────────────
+// A module bundle carries the text of the personas it references; the
+// importer writes them to the `personas` table. The composer resolves personas
+// SYNCHRONOUSLY, so installed rows are mirrored into an in-memory index: filled
+// once at boot (preloadInstalledPersonas) and on every install
+// (registerInstalledPersona). The server map and the client registry shadow an
+// installed row with the same id — the importer namespaces a clashing id as
+// `bundle:<module>:<id>`, so a clash here only means an identical text.
+
+const _installedPersonaIndex = new Map<string, string>();
+
+/** Make one installed persona resolvable now. Blank prompts are ignored. */
+export function registerInstalledPersona(id: string, prompt: string): void {
+  if (!id || typeof prompt !== 'string' || !prompt.trim()) return;
+  _installedPersonaIndex.set(id, prompt);
+}
+
+/**
+ * Load every non-archived row of `personas` into the index. Never throws —
+ * a missing table (un-migrated install) reads as zero rows. Returns the count.
+ */
+export async function preloadInstalledPersonas(db: DatabaseAdapter): Promise<number> {
+  try {
+    const rows = await db.all<{ id: string; prompt: string }>(
+      'SELECT id, prompt FROM personas WHERE is_archived = 0',
+    );
+    _installedPersonaIndex.clear();
+    for (const row of rows) registerInstalledPersona(row.id, row.prompt);
+    return _installedPersonaIndex.size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Test seam. */
+export function resetInstalledPersonasForTests(): void {
+  _installedPersonaIndex.clear();
+}
+
 /**
  * The instruction text for one persona id: the server map first, then the
- * client registry, else ''.
+ * client registry, then personas installed from a bundle, else ''.
  * Own-property lookup only, so 'constructor' and friends are unknown ids,
  * not Object.prototype members.
  */
@@ -238,7 +277,7 @@ export function resolvePersonaInstruction(id: string): string {
   if (Object.prototype.hasOwnProperty.call(EXPERT_ROLE_INSTRUCTIONS, id)) {
     return EXPERT_ROLE_INSTRUCTIONS[id];
   }
-  return CLIENT_PERSONA_INSTRUCTIONS.get(id) ?? '';
+  return CLIENT_PERSONA_INSTRUCTIONS.get(id) ?? _installedPersonaIndex.get(id) ?? '';
 }
 
 const MULTI_PERSPECTIVE_INSTRUCTION = `## MULTI-PERSPECTIVE ANALYSIS

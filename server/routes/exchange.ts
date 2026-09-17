@@ -1,8 +1,13 @@
 import { Router } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { isTeamMode, requireRole } from '../middleware/role-guards.js';
+import { inspectModuleBundle } from '../services/anton-importer.js';
+import { preloadInstalledSkills } from '../services/skills-manager.js';
 import {
+  computeModuleFingerprint,
   bundleModuleToAnton,
   bundleBuiltinModuleToAnton,
   bundleComplianceRuleset,
@@ -35,8 +40,51 @@ import {
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
+const analystOrAbove = requireRole('analyst');
+
+/**
+ * Wave 6: who may change this instance through the exchange — install a
+ * bundle, or validate one (validation records the signer for trust-on-first-
+ * use, which decides whether a later bundle shows as "known signer").
+ * TEAM mode: an authenticated analyst or admin; a viewer is refused.
+ * SOLO mode: the operator (authMiddleware stamps them) always passes.
+ * Mounted BEFORE multer so a refused upload is never buffered.
+ */
+export function requireExchangeContributor(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+  if (!isTeamMode()) {
+    next();
+    return;
+  }
+  analystOrAbove(req, res, next);
+}
+
+/**
+ * Wave 6: a viewer may still export (a download is a read), but never AS the
+ * instance — an export route that signs would otherwise sign body-supplied
+ * content (audience profiles, review panels) with the instance identity key.
+ * In team mode a viewer's export is forced unsigned.
+ */
+function viewersExportUnsigned(req: Request, _res: Response, next: NextFunction): void {
+  if (isTeamMode() && req.user?.role !== 'analyst' && req.user?.role !== 'admin') {
+    const body: Record<string, unknown> = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {};
+    body.sign = false;
+    req.body = body;
+  }
+  next();
+}
+
 export async function createExchangeRoutes(db: DatabaseAdapter) {
   const router = Router();
+
+  // Wave 6: skills installed from bundles live in the `skills` table; the
+  // composer resolves skills synchronously, so mirror them into its index.
+  void preloadInstalledSkills(db);
+
+  router.use(['/exchange/export', '/exchange/export-bundle', '/exchange/export-run'], viewersExportUnsigned);
 
   /**
    * Opt-in Ed25519 provenance (Wave 2.4): sign the finished bundle's manifest
@@ -92,7 +140,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
           tags = [],
           license = 'CC-BY-4.0',
         } = req.body;
-        buffer = await bundleBuiltinModuleToAnton(moduleId, { authorName, authorOrg, description, tags, license, governance });
+        buffer = await bundleBuiltinModuleToAnton(moduleId, { authorName, authorOrg, description, tags, license, governance }, db);
       }
 
       // Opt-in Ed25519 provenance (Wave 2.4) — on unless sign === false
@@ -106,10 +154,29 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // Wave 6: the visible identity of a custom / imported module —
+  // { checksum, promptSha256, configSha256, signedBy, signedAt, … }.
+  // 404 for anything that is not a custom module (built-ins have no bundle).
+  router.get('/exchange/modules/:id/fingerprint', async (req, res) => {
+    try {
+      const fingerprint = await computeModuleFingerprint(db, req.params.id);
+      if (!fingerprint) {
+        res.status(404).json({ error: 'Not a custom module' });
+        return;
+      }
+      res.json(fingerprint);
+    } catch (e) {
+      res.status(500).json({ error: safeError(e) });
+    }
+  });
+
   // Validate a .anton file without installing.
   // Dispatching validator (Wave 2.1): response carries
   //   { bundle_type, validated_depth: 'full' | 'structural', governance?, notes? }
-  router.post('/exchange/validate', upload.single('file'), async (req, res) => {
+  // Wave 6, module bundles also: { fingerprint, injectionFindings, embedded,
+  // unresolved } — what the import modal shows BEFORE anything is installed.
+  // Embedded-file integrity failures are errors (valid: false).
+  router.post('/exchange/validate', requireExchangeContributor, upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
@@ -119,7 +186,23 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       const result = await validateAntonFile(req.file.buffer, db);
       // Map is not JSON-serializable — surface file names only.
       const { files, ...rest } = result;
-      res.json({ ...rest, files: files ? [...files.keys()] : undefined });
+      const isModule = result.bundle_type === 'module' && !!result.manifest;
+      const inspection = isModule ? inspectModuleBundle(req.file.buffer, result) : null;
+      res.json({
+        ...rest,
+        valid: rest.valid && (inspection ? inspection.errors.length === 0 : true),
+        errors: [...rest.errors, ...(inspection?.errors ?? [])],
+        warnings: [...rest.warnings, ...(inspection?.warnings ?? [])],
+        files: files ? [...files.keys()] : undefined,
+        ...(inspection
+          ? {
+              fingerprint: inspection.fingerprint,
+              injectionFindings: inspection.injectionFindings,
+              embedded: inspection.embedded,
+              unresolved: inspection.unresolved,
+            }
+          : {}),
+      });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
     }
@@ -348,7 +431,9 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   // multipart field reproduce=true the run is replayed verbatim right away
   // (through the rerun route's own replayRun). Otherwise `replay` says
   // 'recompose' and why — the caller picks a model and calls /api/rerun.
-  router.post('/exchange/import-run', upload.single('file'), async (req, res) => {
+  // Wave 6: the same role gate as every other import (analyst or admin in team
+  // mode; solo passes) — with reproduce=true this spends a model call.
+  router.post('/exchange/import-run', requireExchangeContributor, upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
@@ -401,7 +486,18 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
 
   // Import a .anton file to user's custom modules (works in solo and authenticated mode).
   // Optional multipart field keepId=true keeps the original module id when free (Wave 2.8).
-  router.post('/exchange/import', upload.single('file'), async (req, res) => {
+  //
+  // Wave 6:
+  //   • team mode requires an analyst or admin (solo passes) — viewers get 403;
+  //   • the prompt-injection scan BLOCKS by default: 409
+  //       { success: false, blocked: 'injection', error, injectionFindings[],
+  //         fingerprint, acceptWith: { field: 'acceptInjectionFindings', value: true }, … }
+  //     Re-submit with the multipart field acceptInjectionFindings=true to
+  //     import anyway; the accepted findings come back in
+  //     `acceptedInjectionFindings` and are stored with the module;
+  //   • embedded skills / personas are installed and reported per id
+  //     (`installedSkills`, `installedPersonas`: reused | installed | namespaced | missing).
+  router.post('/exchange/import', requireExchangeContributor, upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
@@ -409,13 +505,12 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
 
     try {
       const keepId = req.body?.keepId === 'true' || req.body?.keepId === true;
-      const result = await importAntonFile(req.file.buffer, db, undefined, { keepId });
+      const acceptInjectionFindings =
+        req.body?.acceptInjectionFindings === 'true' || req.body?.acceptInjectionFindings === true;
+      const result = await importAntonFile(req.file.buffer, db, req.user?.id, { keepId, acceptInjectionFindings });
       // Flattened report for the UI (the validation Map doesn't serialize) +
       // governance display at import time (Wave 2.6).
-      res.json({
-        success: result.success,
-        moduleId: result.moduleId,
-        keptOriginalId: result.keptOriginalId,
+      const report = {
         bundle_type: result.validation.bundle_type,
         validated_depth: result.validation.validated_depth,
         governance: result.validation.governance,
@@ -423,6 +518,32 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
         notes: result.validation.notes,
         errors: result.validation.errors.map((e) => e.details ? `${e.message} — ${e.details}` : e.message),
         warnings: result.validation.warnings.map((w) => w.message),
+        fingerprint: result.fingerprint,
+      };
+
+      if (result.blocked === 'injection') {
+        const findings = result.injectionFindings ?? [];
+        res.status(409).json({
+          success: false,
+          blocked: 'injection',
+          error: `Import blocked: the bundle contains ${findings.length} prompt-injection pattern${findings.length === 1 ? '' : 's'}. Review them, then re-submit with acceptInjectionFindings=true to import anyway.`,
+          injectionFindings: findings,
+          acceptWith: { field: 'acceptInjectionFindings', value: true },
+          ...report,
+        });
+        return;
+      }
+
+      res.json({
+        success: result.success,
+        moduleId: result.moduleId,
+        keptOriginalId: result.keptOriginalId,
+        ...report,
+        injectionFindings: result.injectionFindings ?? [],
+        acceptedInjectionFindings: result.acceptedInjectionFindings ?? [],
+        installedSkills: result.installedSkills ?? [],
+        installedPersonas: result.installedPersonas ?? [],
+        importWarnings: result.importWarnings ?? [],
       });
     } catch (e) {
       res.status(500).json({ error: safeError(e) });
@@ -481,25 +602,26 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     }
   }
 
-  router.post('/exchange/import-bundle/market-index', upload.single('file'), (req, res) => {
+  // Wave 6: every market import writes to this instance — same guard as /exchange/import.
+  router.post('/exchange/import-bundle/market-index', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketIndex);
   });
-  router.post('/exchange/import-bundle/market-thesis', upload.single('file'), (req, res) => {
+  router.post('/exchange/import-bundle/market-thesis', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketThesis);
   });
-  router.post('/exchange/import-bundle/market-atom-collection', upload.single('file'), (req, res) => {
+  router.post('/exchange/import-bundle/market-atom-collection', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketAtomCollection);
   });
-  router.post('/exchange/import-bundle/market-strategy-pack', upload.single('file'), (req, res) => {
+  router.post('/exchange/import-bundle/market-strategy-pack', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketStrategyPack);
   });
-  router.post('/exchange/import-bundle/market-investigation', upload.single('file'), (req, res) => {
+  router.post('/exchange/import-bundle/market-investigation', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketInvestigation);
   });
-  router.post('/exchange/import-bundle/market-data-source-config', upload.single('file'), (req, res) => {
+  router.post('/exchange/import-bundle/market-data-source-config', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketDataSourceConfig);
   });
-  router.post('/exchange/import-bundle/market-intelligence-model', upload.single('file'), (req, res) => {
+  router.post('/exchange/import-bundle/market-intelligence-model', requireExchangeContributor, upload.single('file'), (req, res) => {
     handleMarketImport(req, res, importMarketIntelligenceModel);
   });
 

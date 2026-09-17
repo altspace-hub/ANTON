@@ -292,6 +292,7 @@ export async function writeSessionConclusion(
         background: true,
         jsonMode: true,
         maxTokens: 700,
+        purpose: 'session-conclusion',
         db,
         system: CONCLUSION_SYSTEM_PROMPT,
         messages: [{
