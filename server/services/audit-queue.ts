@@ -75,7 +75,9 @@ async function flush(): Promise<void> {
           e.outputTokenCount ?? 0,
           e.cachedTokens ?? 0,
           e.cacheCreationTokens ?? 0,
-          e.estimatedCostUsd ?? 0,
+          // Wave 0: unknown pricing stays NULL in the ledger (excluded by SUM),
+          // matching messages.cost — a 0 here read as "free" for subscription runs.
+          e.estimatedCostUsd ?? null,
           e.responseStatus ?? 'success',
           e.seed ?? null,
           e.userId ?? null,

@@ -1,16 +1,19 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
-import { getBuiltInSkills } from '../services/skills-manager.js';
+import { getAllSkills, getSkillById } from '../services/skills-manager.js';
 
 export async function createSkillsRoutes(db: DatabaseAdapter) {
   const router = Router();
 
-  // GET /api/skills — list all skills (built-in + custom from DB)
+  // GET /api/skills — every skill the resolver can see (built-ins + the
+  // server/skills/ disk packs), without prompt bodies: the disk packs alone
+  // carry ~330 KB of prompt text and this list loads with every ModulePage.
+  // GET /api/skills/:id returns one skill with its prompt.
   router.get('/skills', async (_req, res) => {
     try {
-      const builtIn = getBuiltInSkills();
-      res.json(builtIn);
+      const safe = getAllSkills().map(({ prompt: _p, ...rest }) => rest);
+      res.json(safe);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch skills' });
     }
@@ -61,11 +64,10 @@ export async function createSkillsRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // GET /api/skills/:id — get skill with full prompt
+  // GET /api/skills/:id — get skill (built-in or disk pack) with full prompt
   router.get('/skills/:id', async (req, res) => {
     try {
-      const skills = getBuiltInSkills();
-      const skill = skills.find((s) => s.id === req.params.id);
+      const skill = getSkillById(req.params.id);
       if (!skill) { res.status(404).json({ error: 'Skill not found' }); return; }
       res.json(skill);
     } catch (error) {

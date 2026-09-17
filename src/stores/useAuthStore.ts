@@ -13,7 +13,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isTeamMode: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, mfaToken?: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setIsTeamMode: (value: boolean) => void;
@@ -27,15 +27,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setIsTeamMode: (value: boolean) => set({ isTeamMode: value }),
 
-  login: async (username: string, password: string) => {
+  login: async (username: string, password: string, mfaToken?: string) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(mfaToken ? { username, password, mfaToken } : { username, password }),
     });
     if (!res.ok) {
-      const err = await res.json() as { error?: string };
-      throw new Error(err.error || 'Login failed');
+      const err = await res.json() as { error?: string; mfaRequired?: boolean };
+      // mfaRequired tells LoginPage to show the code field instead of just an error —
+      // the server sets it both when no code was sent and when the code was wrong, so
+      // the user can retype without starting the login over.
+      const failure = new Error(err.error || 'Login failed') as Error & { mfaRequired?: boolean };
+      failure.mfaRequired = err.mfaRequired === true;
+      throw failure;
     }
     const data = await res.json() as { user: AuthUser; token: string };
     safeStorage.setItem('openexpert-token', data.token);

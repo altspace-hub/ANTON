@@ -24,11 +24,34 @@ import type { Request, Response, NextFunction } from 'express';
  *  pre-resolution value and silently report the wrong mode. */
 export const isTeamMode = (): boolean => process.env.DEPLOYMENT_MODE === 'team';
 
-export function requireRole(role: 'admin' | 'analyst' | 'viewer') {
-  const ROLE_LEVELS: Record<string, number> = { viewer: 0, analyst: 1, admin: 2 };
+/**
+ * The only roles ANTON recognises. Anything else is an unprovisioned account, not a
+ * privilege level — see requireRole below for why that distinction is load-bearing.
+ * routes/admin.ts allowlists writes to users.role against this list.
+ */
+export const USER_ROLES = ['viewer', 'analyst', 'admin'] as const;
+export type UserRole = typeof USER_ROLES[number];
+
+/** True only for one of the three known roles. */
+export function isUserRole(value: unknown): value is UserRole {
+  return typeof value === 'string' && (USER_ROLES as readonly string[]).includes(value);
+}
+
+const ROLE_LEVELS: Record<UserRole, number> = { viewer: 0, analyst: 1, admin: 2 };
+
+export function requireRole(role: UserRole) {
   return function (req: Request, res: Response, next: NextFunction) {
     if (!req.user) { res.status(401).json({ error: 'Not authenticated' }); return; }
-    if (ROLE_LEVELS[req.user.role] < ROLE_LEVELS[role]) {
+    // FAIL CLOSED on an unknown role. This used to read
+    //   if (ROLE_LEVELS[req.user.role] < ROLE_LEVELS[role])
+    // which for a role outside the three above evaluates `undefined < 2` — false — so
+    // the guard called next() and treated an UNRECOGNISED role as more privileged than
+    // admin. An account created via POST /api/admin/users with role:'member' (the API
+    // took any string until this was fixed alongside) then passed every /api/admin/*
+    // check. Do not "simplify" this back to a single comparison: the undefined case is
+    // the whole point.
+    const level = ROLE_LEVELS[req.user.role as UserRole];
+    if (level === undefined || level < ROLE_LEVELS[role]) {
       res.status(403).json({ error: 'Insufficient permissions' });
       return;
     }

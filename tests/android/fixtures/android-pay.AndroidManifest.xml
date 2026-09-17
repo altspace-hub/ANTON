@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:networkSecurityConfig="@xml/network_security_config">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Deep link: a `futurechain:pay?…` URI from chat / email /
+                 browser opens Pay straight into the Review pipeline.
+                 Comm + Business emit exactly this scheme (services/.../qr.ts,
+                 schedule-to-payment.ts). BROWSABLE so a tapped link in any
+                 app resolves here; the WebView handler in App.tsx runs the
+                 URI through the SAME decodePaymentUri → Review → confirm
+                 path as a scanned QR (validation + address-poisoning gate
+                 are never bypassed). Only the `futurechain` scheme is
+                 registered — `fc` is not used for payment URIs anywhere in
+                 the suite. -->
+            <!-- `futurechain:pay?…` is an OPAQUE URI (no `//` authority), so
+                 the filter registers the SCHEME only — adding android:host
+                 would require a hierarchical `futurechain://…` and would NOT
+                 match the opaque form the suite emits. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="futurechain" />
+            </intent-filter>
+
+            <!-- NFC tap-to-pay AUTO-OPEN. When this phone reads a merchant's
+                 emulated NDEF tag carrying a `futurechain:pay?…` URI record,
+                 Android fires ACTION_NDEF_DISCOVERED. Declaring this filter makes
+                 Android launch Pay DIRECTLY (cold or warm) into the deep-link →
+                 Review pipeline instead of the system "empty tag" TagViewer —
+                 which is only the lower-priority TAG_DISCOVERED fallback. When the
+                 Tap-to-pay screen is open its reader mode (foreground dispatch)
+                 still wins and handles the read in-app; this filter is the path
+                 for when Pay is backgrounded or closed. Scheme-only to match the
+                 opaque `futurechain:pay?…` URI, same as the VIEW filter above. -->
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="futurechain" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+
+        <!-- Phase 2 device-attestation — Google Play Integrity API
+             cloud project binding. FcDeviceAttestationPlugin reads
+             this at isAvailable() / requestIntegrityToken() time and
+             passes it to IntegrityTokenRequest.setCloudProjectNumber().
+             Value comes from @string/google_cloud_project_number
+             (declared in res/values/strings.xml — replace placeholder
+             before prod ship). -->
+        <meta-data
+            android:name="com.google.android.play.integrity.PROJECT_NUMBER"
+            android:value="@string/google_cloud_project_number" />
+
+        <!-- FCM-pushed notifications use the ANTON chevron, not the app icon. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Camera only — the QR/barcode scanner is pure web and calls
+         getUserMedia({ video: … }) with no audio track (src/pay/pages/ScanScreen.tsx).
+         RECORD_AUDIO used to be declared here; it was inherited from the Comm
+         manifest this file was cloned from and nothing in this app ever asked
+         for a microphone. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Payment reminders. POST_NOTIFICATIONS is Android 13+; the plugin asks at
+         runtime. SCHEDULE_EXACT_ALARM gates the AlarmManager path the
+         LocalNotifications plugin uses for far-future reminders.
+
+         NOTE for the Play submission: USE_EXACT_ALARM is a restricted permission
+         granted only to apps whose CORE function is an alarm clock or calendar.
+         A payment reminder is unlikely to qualify, and declaring it invites a
+         policy rejection. If Play objects, drop USE_EXACT_ALARM and keep
+         SCHEDULE_EXACT_ALARM (which is user-grantable), or move reminders to
+         inexact alarms, which is almost certainly good enough for a due-date
+         nudge. Left declared for now because the scheduling feature does use it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <!-- Deliberately NOT declared, having been removed on 2026-07-29:
+         ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, READ_MEDIA_IMAGES,
+         READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE, RECORD_AUDIO.
+
+         All six arrived with the clone from android-comm, which really does have
+         an event location picker and a photo library. This app has neither: there
+         is no Geolocation plugin registered in capacitor.plugins.json and not one
+         reference to geolocation, image picking or audio capture anywhere under
+         src/pay. Each one would have obliged a Data Safety declaration and a
+         prominent-disclosure justification for data the app never touches — on a
+         payments app, which is exactly where a reviewer looks hardest.
+
+         Add one back only alongside the feature that needs it. -->
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- NFC tap-to-pay (reader mode). required=false so non-NFC phones still
+         install and use the QR scanner. -->
+    <uses-permission android:name="android.permission.NFC" />
+    <uses-feature android:name="android.hardware.nfc" android:required="false" />
+</manifest>

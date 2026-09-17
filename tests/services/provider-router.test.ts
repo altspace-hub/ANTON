@@ -150,3 +150,44 @@ describe('M5 — configured DEFAULT_MODEL overrides env-priority for specialty r
     expect(mapModelToProvider('claude-sonnet-4-6')).toBe('claude-sonnet-4-6'); // anthropic passthrough
   });
 });
+
+describe('subscription engine (sdk:) as the default — the router follows it', () => {
+  // Before 2026-09-07 an sdk: default fell through getConfiguredProvider to
+  // "ANTHROPIC_API_KEY is set → anthropic", so all 66 mapModelToProvider sites
+  // and every tier caller billed the (unfunded) key. The key is deliberately
+  // present in these cases: that is the configuration that was broken.
+  it('sends large-tier work to the configured default, even with an Anthropic key present', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'sdk:claude-opus-5' });
+    expect(resolveModel('large')).toBe('sdk:claude-opus-5');
+    expect(mapModelToProvider('claude-opus-4-8')).toBe('sdk:claude-opus-5');
+    expect(mapModelToProvider('claude-opus-5')).toBe('sdk:claude-opus-5');
+  });
+
+  it('keeps Haiku/Sonnet-class work on Sonnet 5 rather than promoting it to the Opus default', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'sdk:claude-opus-5' });
+    expect(resolveModel('medium')).toBe('sdk:claude-sonnet-5');
+    expect(resolveModel('small')).toBe('sdk:claude-sonnet-5');
+    expect(mapModelToProvider('claude-haiku-4-5-20251001')).toBe('sdk:claude-sonnet-5');
+    expect(mapModelToProvider('claude-sonnet-4-6')).toBe('sdk:claude-sonnet-5');
+  });
+
+  it('lets a user who picked another engine model keep it for the large tier', () => {
+    setEnv({ DEFAULT_MODEL: 'sdk:claude-fable-5-1' });
+    expect(resolveModel('large')).toBe('sdk:claude-fable-5-1');
+    expect(mapModelToProvider('claude-opus-4-8')).toBe('sdk:claude-fable-5-1');
+  });
+
+  it('never re-tiers an id that already names an engine or another provider', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'sdk:claude-opus-5' });
+    // engagements pass the resolved product default through here — it must survive
+    expect(mapModelToProvider('sdk:claude-opus-5')).toBe('sdk:claude-opus-5');
+    expect(mapModelToProvider('sdk:claude-sonnet-5')).toBe('sdk:claude-sonnet-5');
+    expect(mapModelToProvider('mistral-large-latest')).toBe('mistral-large-latest');
+  });
+
+  it('uses the codex default for every tier — no tier catalogue, like Ollama', () => {
+    setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'codex:gpt-5.4' });
+    expect(resolveModel('small')).toBe('codex:gpt-5.4');
+    expect(mapModelToProvider('claude-opus-4-8')).toBe('codex:gpt-5.4');
+  });
+});

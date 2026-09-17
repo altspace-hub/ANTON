@@ -22,7 +22,7 @@ import { createAgentService } from '../services/agent-service.js';
 import { createAgentProcessor } from '../services/agent-processor.js';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
 import type { createRadarFetcher } from '../services/radar-fetcher.js';
-import { hybridSearch } from '../services/hybrid-search.js';
+import { hybridSearch, NO_OWNED_CONTENT } from '../services/hybrid-search.js';
 import { callChat, resolveModel } from '../services/provider-router.js';
 import { createAppMailService, type MailProviderKind } from '../services/app-mail-service.js';
 import type { ModuleDefinition } from '../../src/lib/types.js';
@@ -1678,14 +1678,12 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     if (promptPreviewCache.has(moduleId)) return promptPreviewCache.get(moduleId)!;
     const result = { persona: null as string | null, role: null as string | null };
     try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const url = await import('url');
-      // Resolve relative to this source file so it works under both ts-node
-      // and the compiled dist tree.
-      const here = path.dirname(url.fileURLToPath(import.meta.url));
-      const promptPath = path.resolve(here, '..', 'prompts', `${moduleId}.md`);
-      const raw = await fs.readFile(promptPath, 'utf-8');
+      // Same resolver the module runner uses: the live server/areas prompt
+      // first, then the server/prompts ghost fallback for ids with no module
+      // dir — so the persona preview never reads a stale shadow copy.
+      const { getModuleSystemPrompt } = await import('../services/module-loader.js');
+      const raw = await getModuleSystemPrompt(moduleId);
+      if (!raw) throw new Error(`no prompt for ${moduleId}`);
       // Persona = first non-blank, non-heading paragraph after the H1
       const lines = raw.split(/\r?\n/);
       let i = 0;
@@ -1947,6 +1945,11 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         query: question,
         topK: 5,
         includeDocumentChunks: false, // no folderPaths → atoms + chunks only via vector
+        // appAuth authenticates a `connected_users` row, not a desktop user, and there
+        // is no contentTypes filter here — so an instance-wide search would hand a
+        // paired phone the operator's own verbatim session output under the label
+        // "the org's own KB". NO_OWNED_CONTENT keeps the shared material and drops it.
+        scope: NO_OWNED_CONTENT,
       }).catch(() => []);
 
       const sources = hits.slice(0, 5).map((h, i) => {

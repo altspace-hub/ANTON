@@ -7,7 +7,9 @@
  * context window and derives a safe knowledge budget from it.
  *
  * Window resolution order:
- *   1. MODEL_CAPABILITIES registry (Claude / GPT / Gemini / Mistral).
+ *   1. MODEL_CAPABILITIES registry (Claude / GPT / Gemini / Mistral). An
+ *      sdk:<model> id is looked up by its underlying model — the engine's
+ *      model has the engine's window (engine-model-id.ts).
  *   2. ollama:<model> → Ollama /api/show model_info context_length
  *      (cached per model; 32k fallback when unreachable/unknown).
  *   3. compat:<slug>:<model> → the endpoint's optional context_window
@@ -25,6 +27,7 @@
 
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
+import { capabilityModelId } from './engine-model-id.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 const DEFAULT_LOCAL_CONTEXT = 32_768;
@@ -96,7 +99,7 @@ export async function resolveContextWindow(
   modelId: string,
   db?: DatabaseAdapter,
 ): Promise<number> {
-  const caps = MODEL_CAPABILITIES[modelId];
+  const caps = MODEL_CAPABILITIES[capabilityModelId(modelId)];
   if (caps) return caps.maxContextWindow;
 
   if (modelId.startsWith('ollama:')) {
@@ -139,7 +142,7 @@ export async function resolveContextBudget(
     return Math.min(LONG_CONTEXT_BUDGET, envCap);
   }
 
-  const caps = MODEL_CAPABILITIES[modelId];
+  const caps = MODEL_CAPABILITIES[capabilityModelId(modelId)];
   const outputReserve = Math.min(caps?.maxOutputTokens ?? 8_192, MAX_OUTPUT_RESERVE);
   const budget = Math.max(MIN_BUDGET, window - outputReserve - SYSTEM_PROMPT_RESERVE);
   return Math.min(budget, envCap);

@@ -12,6 +12,20 @@
 //     persists the artifact + audit log + (optional) output_version link
 //
 // Renderer implementation modules are dynamically imported on first use.
+//
+// Wave 3 (2026-09-16):
+//   • Experimental renderers stay registered but are hidden from listings
+//     unless asked for (`includeExperimental`) — the route grants that to
+//     admins only.
+//   • A content-aware renderer (content_types / requires_fields) is offered
+//     BEFORE any payload exists, flagged `needs_extraction`, with the
+//     content type resolved from the module — extraction now runs on
+//     demand, so hiding these until a payload turned up would have hidden
+//     them for good.
+//   • runRenderer fails loudly: every failure lands in renderer_audit_log as
+//     a `failed` event with its message, and surfaces as a RendererRunError
+//     that names the stage. renderer_audit_log had two rows on the dev
+//     database, both 'invoked', with nothing to say why nothing followed.
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
@@ -19,10 +33,9 @@ import path from 'path';
 import fs from 'fs/promises';
 import {
   type RendererDefinition,
-  type RegistryEntry,
   type RenderContext,
-  type RenderResult,
   type RenderFn,
+  type RenderResult,
   evaluateRequiresField,
 } from './renderer-registry.types.js';
 import { BUILTIN_RENDERERS } from './renderer-registry.builtin.js';
@@ -35,6 +48,8 @@ import {
 
 const OUTPUT_ROOT = process.env.OUTPUT_DIR ?? path.join(process.cwd(), 'outputs');
 const ARTIFACTS_SUBDIR = 'renderer-artifacts';
+/** renderer_audit_log.details is JSONB; keep one failure readable in a list. */
+const MAX_AUDIT_MESSAGE_LEN = 1_000;
 
 interface SessionRow {
   id: string;
@@ -51,7 +66,49 @@ interface MessageRow {
   content: string;
 }
 
-export function createRendererRegistry(db: DatabaseAdapter) {
+export type RendererRunStage = 'lookup' | 'precondition' | 'render' | 'persist';
+
+/**
+ * A renderer run that did not produce an artifact. `stage` says where it
+ * stopped, so the route can pick a status and the panel can say whether the
+ * renderer, its input, or the instance is at fault.
+ */
+export class RendererRunError extends Error {
+  readonly stage: RendererRunStage;
+  readonly rendererId: string;
+  readonly sessionId: string;
+  constructor(stage: RendererRunStage, rendererId: string, sessionId: string, message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'RendererRunError';
+    this.stage = stage;
+    this.rendererId = rendererId;
+    this.sessionId = sessionId;
+  }
+}
+
+export type RendererAuditEvent = 'invoked' | 'succeeded' | 'failed' | 'validation_failed' | 'extraction_missing';
+
+/** A definition as offered for one session — `needs_extraction` means the
+ *  session has no structured payload yet and pressing it extracts first. */
+export type ApplicableRenderer = RendererDefinition & { needs_extraction: boolean };
+
+/** A renderer that cannot run on the Markdown alone. */
+export function rendererNeedsStructured(def: Pick<RendererDefinition, 'applies_when'>): boolean {
+  const aw = def.applies_when ?? {};
+  return (Array.isArray(aw.content_types) && aw.content_types.length > 0)
+    || (Array.isArray(aw.requires_fields) && aw.requires_fields.length > 0);
+}
+
+export interface RendererRegistryDeps {
+  /** Content type for a session whose extraction has not run yet — the
+   *  module's declared contentType. Default: module-loader via the
+   *  extraction queue's resolver. Injected by tests. */
+  resolveContentType?: (moduleId: string | null) => Promise<ContentType>;
+  /** Test seam: resolve a render function without importing a module. */
+  resolveRenderFn?: (def: RendererDefinition) => Promise<RenderFn>;
+}
+
+export function createRendererRegistry(db: DatabaseAdapter, deps: RendererRegistryDeps = {}) {
   // In-memory cache of resolved render functions (by renderer_module path)
   const renderFnCache = new Map<string, RenderFn>();
 
@@ -95,16 +152,27 @@ export function createRendererRegistry(db: DatabaseAdapter) {
 
   // ── Querying ──────────────────────────────────────────────────────────
 
-  async function listRenderers(opts?: { includeDisabled?: boolean }): Promise<RendererDefinition[]> {
+  /**
+   * Enabled renderers. Experimental ones are registered and runnable by id
+   * but hidden from listings unless `includeExperimental` — seven of the
+   * seventeen built-ins are experimental, and a panel that shows them to
+   * every user shows unfinished work as product.
+   */
+  async function listRenderers(opts?: { includeDisabled?: boolean; includeExperimental?: boolean }): Promise<RendererDefinition[]> {
+    const hidden: string[] = [];
+    if (!opts?.includeDisabled) hidden.push('disabled');
+    if (!opts?.includeExperimental) hidden.push('experimental');
+    const where = hidden.length === 0
+      ? ''
+      : `WHERE status NOT IN (${hidden.map(() => '?').join(', ')}) `;
     const rows = await db.all<{
       id: string; label: string; description: string | null; category: string;
       trigger: string; applies_when: unknown; output: unknown;
       renderer_module: string; preview_module: string | null;
       phase: number; status: string; sort_order: number;
     }>(
-      opts?.includeDisabled
-        ? `SELECT * FROM renderers ORDER BY category, sort_order, label`
-        : `SELECT * FROM renderers WHERE status != 'disabled' ORDER BY category, sort_order, label`,
+      `SELECT * FROM renderers ${where}ORDER BY category, sort_order, label`,
+      ...hidden,
     );
     return rows.map(rowToDefinition);
   }
@@ -119,34 +187,52 @@ export function createRendererRegistry(db: DatabaseAdapter) {
     return row ? rowToDefinition(row) : null;
   }
 
-  async function getApplicableRenderers(sessionId: string): Promise<RendererDefinition[]> {
+  async function resolveContentType(moduleId: string | null): Promise<ContentType> {
+    if (deps.resolveContentType) return deps.resolveContentType(moduleId);
+    const { resolveModuleContentType } = await import('./structured-extraction-queue.js');
+    return resolveModuleContentType(moduleId);
+  }
+
+  /**
+   * The renderers this session can use. With a payload, the filters are
+   * exact (content type + required fields). Without one, the content type
+   * comes from the module and content-aware renderers are offered flagged
+   * `needs_extraction` — the run route extracts first, then re-checks the
+   * required fields against what came back.
+   */
+  async function getApplicableRenderers(sessionId: string, opts?: { includeExperimental?: boolean }): Promise<ApplicableRenderer[]> {
     const session = await loadSession(sessionId);
     if (!session) return [];
-    const all = await listRenderers();
-    const contentType = session.content_type;
-    const sector = session.sector;
+    const all = await listRenderers({ includeExperimental: opts?.includeExperimental });
     const payload = coerceStructured(session);
-    return all.filter(def => {
-      if (def.trigger === 'upfront') return false;
+    const contentType = session.content_type ?? (await resolveContentType(session.module_id ?? null));
+    const sector = session.sector;
+    const out: ApplicableRenderer[] = [];
+    for (const def of all) {
+      if (def.trigger === 'upfront') continue;
       const aw = def.applies_when;
       // Content type filter
       if (aw.content_types && aw.content_types.length > 0) {
-        if (!contentType || !aw.content_types.includes(contentType as ContentType)) return false;
+        if (!contentType || !aw.content_types.includes(contentType as ContentType)) continue;
       }
       // Sector filter (Phase 2+; Phase 1 renderers don't specify)
       if (aw.sectors && aw.sectors.length > 0) {
-        if (!sector || !aw.sectors.includes(sector)) return false;
+        if (!sector || !aw.sectors.includes(sector)) continue;
       }
-      // Required-fields filter — needs a payload; if extraction missing, hide
-      // any renderer that depends on specific fields.
-      if (aw.requires_fields && aw.requires_fields.length > 0) {
-        if (!payload) return false;
+      // Required-fields filter — exact once a payload exists. Before that the
+      // renderer is offered as needing extraction; the fields are checked
+      // again after the on-demand extraction, against real data.
+      const needsStructured = rendererNeedsStructured(def);
+      if (aw.requires_fields && aw.requires_fields.length > 0 && payload) {
+        let ok = true;
         for (const expr of aw.requires_fields) {
-          if (!evaluateRequiresField(payload.body, expr)) return false;
+          if (!evaluateRequiresField(payload.body, expr)) { ok = false; break; }
         }
+        if (!ok) continue;
       }
-      return true;
-    });
+      out.push({ ...def, needs_extraction: needsStructured && !payload });
+    }
+    return out;
   }
 
   // ── Execution ─────────────────────────────────────────────────────────
@@ -159,128 +245,156 @@ export function createRendererRegistry(db: DatabaseAdapter) {
   ): Promise<{ artifact_id: number; file_path: string; preview_path?: string; validation?: unknown; metadata: Record<string, unknown>; duration_ms: number; tokens_consumed?: number }> {
     const started = Date.now();
     const session = await loadSession(sessionId);
-    if (!session) throw new Error(`Session not found: ${sessionId}`);
+    if (!session) throw new RendererRunError('lookup', rendererId, sessionId, `Session not found: ${sessionId}`);
     const def = await getRenderer(rendererId);
-    if (!def) throw new Error(`Renderer not found: ${rendererId}`);
-    if (def.status === 'disabled') throw new Error(`Renderer ${rendererId} is disabled`);
+    if (!def) throw new RendererRunError('lookup', rendererId, sessionId, `Renderer not found: ${rendererId}`);
+    if (def.status === 'disabled') throw new RendererRunError('lookup', rendererId, sessionId, `Renderer ${rendererId} is disabled`);
 
     await logAudit({ sessionId, rendererId, userId, event: 'invoked', details: { options } });
 
-    // Build the RenderContext
-    const payload = coerceStructured(session);
-    if (!payload) {
-      // Some renderers are fine without structured (e.g. plain-language, pdf of any session).
-      // But renderers that specified content_types or requires_fields must not run without it.
-      const aw = def.applies_when;
-      const needsStructured = (aw.content_types && aw.content_types.length > 0)
-        || (aw.requires_fields && aw.requires_fields.length > 0);
-      if (needsStructured) {
+    try {
+      // Build the RenderContext
+      const payload = coerceStructured(session);
+      if (!payload && rendererNeedsStructured(def)) {
+        // Some renderers are fine without structured (e.g. plain-language, pdf of any session).
+        // But renderers that specified content_types or requires_fields must not run without it.
         await logAudit({ sessionId, rendererId, userId, event: 'extraction_missing', details: {} });
-        throw new Error(`Renderer ${rendererId} requires a structured payload, but extraction has not completed for this session.`);
+        throw new RendererRunError('precondition', rendererId, sessionId,
+          `Renderer ${rendererId} requires a structured payload, but extraction has not completed for this session.`);
       }
+
+      const markdown = await loadLatestMarkdown(sessionId);
+      const brandTemplate = await loadBrandTemplate(session.user_id);
+      // Company-uploaded LaTeX class/style files. Scoped to the SESSION's owner —
+      // see loadLatexBrandAssets for why that, and not the caller, is the right
+      // subject. Empty on every instance that has never uploaded one, which is
+      // what keeps the .tex export unchanged for everybody else.
+      const latexAssets = await loadLatexBrandAssets(db, session.user_id);
+      const ctx: RenderContext = {
+        session: {
+          id: session.id,
+          module_id: session.module_id,
+          title: session.title,
+          area_id: (payload?.area_id as string | null) ?? null,
+          content_type: isContentType(session.content_type) ? session.content_type : null,
+          sector: session.sector,
+          user_id: session.user_id,
+        },
+        options,
+        brand_template: brandTemplate ?? undefined,
+        markdown: markdown ?? undefined,
+        latex_assets: latexAssets.length > 0 ? latexAssets : undefined,
+      };
+
+      // Resolve + execute the render function
+      let result: RenderResult;
+      try {
+        const renderFn = await resolveRenderFn(def);
+        result = await renderFn(
+          payload ?? buildFallbackPayload(session, markdown ?? ''),
+          ctx,
+        );
+      } catch (err) {
+        throw new RendererRunError('render', rendererId, sessionId,
+          `${def.label} failed: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
+      }
+
+      const durationMs = Date.now() - started;
+
+      // Persist artifact + output_versions link in a single transaction so the
+      // artifact can never exist without its version row, and concurrent
+      // runRenderer calls serialise on the version_number (session_id, ver)
+      // UNIQUE constraint.
+      let artifactId: number;
+      try {
+        const fileSize = result.file_size_bytes
+          ?? (await tryStatSize(resolveArtifactAbsPath(result.file_path)));
+        ({ artifactId } = await db.transaction(async (tx) => {
+          const artifactRow = await tx.get<{ id: number }>(
+            `INSERT INTO rendered_artifacts
+              (session_id, renderer_id, output_version_id, file_path, preview_path,
+               file_type, mime_type, file_size_bytes, validation, metadata, options,
+               duration_ms, tokens_consumed, created_by)
+             VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             RETURNING id`,
+            sessionId, rendererId,
+            result.file_path, result.preview_path ?? null,
+            result.file_type, result.mime_type, fileSize ?? null,
+            result.validation ? JSON.stringify(result.validation) : null,
+            JSON.stringify(result.metadata ?? {}),
+            JSON.stringify(options),
+            durationMs, result.tokens_consumed ?? null,
+            userId ?? null,
+          );
+          if (!artifactRow) throw new Error('Failed to insert rendered_artifacts row');
+
+          // Lock current max version for this session to avoid version-number
+          // collisions under concurrent runRenderer calls.
+          const maxRow = await tx.get<{ maxv: number | string | null }>(
+            `SELECT COALESCE(MAX(version_number), 0) AS maxv
+             FROM output_versions WHERE session_id = ? FOR UPDATE`,
+            sessionId,
+          );
+          const nextVersion = Number(maxRow?.maxv ?? 0) + 1;
+          const ovId = `ov_${randomUUID()}`;
+          await tx.run(
+            `INSERT INTO output_versions (id, session_id, version_number, content, metadata, is_current, user_id)
+             VALUES (?, ?, ?, ?, ?, FALSE, ?)`,
+            ovId, sessionId, nextVersion,
+            `[renderer:${rendererId}] → ${result.file_path}`,
+            JSON.stringify({ renderer_id: rendererId, artifact_id: artifactRow.id, file_type: result.file_type }),
+            userId ?? null,
+          );
+          await tx.run(
+            `UPDATE rendered_artifacts SET output_version_id = ? WHERE id = ?`,
+            ovId, artifactRow.id,
+          );
+          return { artifactId: artifactRow.id };
+        }));
+      } catch (err) {
+        throw new RendererRunError('persist', rendererId, sessionId,
+          `${def.label} produced its file but the artifact could not be recorded: ${err instanceof Error ? err.message : String(err)}`, { cause: err });
+      }
+
+      await logAudit({
+        sessionId, rendererId, userId, event: 'succeeded',
+        artifactId,
+        details: { duration_ms: durationMs, file_type: result.file_type },
+      });
+
+      return {
+        artifact_id: artifactId,
+        file_path: result.file_path,
+        preview_path: result.preview_path,
+        validation: result.validation,
+        metadata: result.metadata,
+        duration_ms: durationMs,
+        tokens_consumed: result.tokens_consumed,
+      };
+    } catch (err) {
+      const runError = err instanceof RendererRunError
+        ? err
+        : new RendererRunError('render', rendererId, sessionId, err instanceof Error ? err.message : String(err), { cause: err });
+      // The precondition branch has already written its own event.
+      if (runError.stage !== 'precondition') {
+        await logAudit({
+          sessionId, rendererId, userId, event: 'failed',
+          details: {
+            stage: runError.stage,
+            message: runError.message.slice(0, MAX_AUDIT_MESSAGE_LEN),
+            duration_ms: Date.now() - started,
+          },
+        });
+      }
+      console.warn(`[renderer-registry] ${rendererId} failed at ${runError.stage} for session ${sessionId}: ${runError.message}`);
+      throw runError;
     }
-
-    const markdown = await loadLatestMarkdown(sessionId);
-    const brandTemplate = await loadBrandTemplate(session.user_id);
-    // Company-uploaded LaTeX class/style files. Scoped to the SESSION's owner —
-    // see loadLatexBrandAssets for why that, and not the caller, is the right
-    // subject. Empty on every instance that has never uploaded one, which is
-    // what keeps the .tex export unchanged for everybody else.
-    const latexAssets = await loadLatexBrandAssets(db, session.user_id);
-    const ctx: RenderContext = {
-      session: {
-        id: session.id,
-        module_id: session.module_id,
-        title: session.title,
-        area_id: (payload?.area_id as string | null) ?? null,
-        content_type: isContentType(session.content_type) ? session.content_type : null,
-        sector: session.sector,
-        user_id: session.user_id,
-      },
-      options,
-      brand_template: brandTemplate ?? undefined,
-      markdown: markdown ?? undefined,
-      latex_assets: latexAssets.length > 0 ? latexAssets : undefined,
-    };
-
-    // Resolve + execute the render function
-    const renderFn = await resolveRenderFn(def);
-    const result = await renderFn(
-      payload ?? buildFallbackPayload(session, markdown ?? ''),
-      ctx,
-    );
-
-    const durationMs = Date.now() - started;
-
-    // Persist artifact + output_versions link in a single transaction so the
-    // artifact can never exist without its version row, and concurrent
-    // runRenderer calls serialise on the version_number (session_id, ver)
-    // UNIQUE constraint.
-    const fileSize = result.file_size_bytes
-      ?? (await tryStatSize(resolveArtifactAbsPath(result.file_path)));
-    const { artifactId } = await db.transaction(async (tx) => {
-      const artifactRow = await tx.get<{ id: number }>(
-        `INSERT INTO rendered_artifacts
-          (session_id, renderer_id, output_version_id, file_path, preview_path,
-           file_type, mime_type, file_size_bytes, validation, metadata, options,
-           duration_ms, tokens_consumed, created_by)
-         VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         RETURNING id`,
-        sessionId, rendererId,
-        result.file_path, result.preview_path ?? null,
-        result.file_type, result.mime_type, fileSize ?? null,
-        result.validation ? JSON.stringify(result.validation) : null,
-        JSON.stringify(result.metadata ?? {}),
-        JSON.stringify(options),
-        durationMs, result.tokens_consumed ?? null,
-        userId ?? null,
-      );
-      if (!artifactRow) throw new Error('Failed to insert rendered_artifacts row');
-
-      // Lock current max version for this session to avoid version-number
-      // collisions under concurrent runRenderer calls.
-      const maxRow = await tx.get<{ maxv: number | string | null }>(
-        `SELECT COALESCE(MAX(version_number), 0) AS maxv
-         FROM output_versions WHERE session_id = ? FOR UPDATE`,
-        sessionId,
-      );
-      const nextVersion = Number(maxRow?.maxv ?? 0) + 1;
-      const ovId = `ov_${randomUUID()}`;
-      await tx.run(
-        `INSERT INTO output_versions (id, session_id, version_number, content, metadata, is_current, user_id)
-         VALUES (?, ?, ?, ?, ?, FALSE, ?)`,
-        ovId, sessionId, nextVersion,
-        `[renderer:${rendererId}] → ${result.file_path}`,
-        JSON.stringify({ renderer_id: rendererId, artifact_id: artifactRow.id, file_type: result.file_type }),
-        userId ?? null,
-      );
-      await tx.run(
-        `UPDATE rendered_artifacts SET output_version_id = ? WHERE id = ?`,
-        ovId, artifactRow.id,
-      );
-      return { artifactId: artifactRow.id };
-    });
-
-    await logAudit({
-      sessionId, rendererId, userId, event: 'succeeded',
-      artifactId,
-      details: { duration_ms: durationMs, file_type: result.file_type },
-    });
-
-    return {
-      artifact_id: artifactId,
-      file_path: result.file_path,
-      preview_path: result.preview_path,
-      validation: result.validation,
-      metadata: result.metadata,
-      duration_ms: durationMs,
-      tokens_consumed: result.tokens_consumed,
-    };
   }
 
   // ── Internals ─────────────────────────────────────────────────────────
 
   async function resolveRenderFn(def: RendererDefinition): Promise<RenderFn> {
+    if (deps.resolveRenderFn) return deps.resolveRenderFn(def);
     const cached = renderFnCache.get(def.renderer_module);
     if (cached) return cached;
     const mod = await import(def.renderer_module);
@@ -361,7 +475,7 @@ export function createRendererRegistry(db: DatabaseAdapter) {
     sessionId: string;
     rendererId: string;
     userId?: string | null;
-    event: 'invoked' | 'succeeded' | 'failed' | 'validation_failed' | 'extraction_missing';
+    event: RendererAuditEvent;
     artifactId?: number;
     details?: Record<string, unknown>;
   }): Promise<void> {
@@ -383,6 +497,9 @@ export function createRendererRegistry(db: DatabaseAdapter) {
     getRenderer,
     getApplicableRenderers,
     runRenderer,
+    /** The route records what happened around a run (on-demand extraction
+     *  that failed, required fields missing after it) in the same log. */
+    audit: logAudit,
     // exported for testing
     _evaluateRequiresField: evaluateRequiresField,
   };

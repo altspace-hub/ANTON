@@ -14,11 +14,16 @@ import {
   RefreshCw, AlertTriangle, CheckCircle2, Circle,
   ChevronDown, Loader2, Trash2, ExternalLink,
   Paperclip, Upload, X, FolderOpen, MessageSquare,
-  RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock,
+  RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock, FileArchive,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
-import type { KnowledgeSourceConfig } from '@/lib/types';
+import AddToEvidencePackPanel from '@/pages/evidence-pack/AddToEvidencePackPanel';
+import RunRecordPanel from '@/components/shared/RunRecordPanel';
+import { getStoredDefaultModel } from '@/stores/useSettingsStore';
+import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
+import ModelSelector from '@/components/shared/ModelSelector';
 import KnowledgeSourcePanel from '@/components/shared/KnowledgeSourcePanel';
+import GapInterviewChat, { type InterviewTurn, type InterviewNoteDraft } from '@/components/gap-assessment/GapInterviewChat';
 import { useExport } from '@/hooks/useExport';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -116,6 +121,12 @@ interface Assessment {
   scope_config: string;
   context_config: string;
   status: string;
+  /** Wave 3: a run in progress on the server that the wizard can re-attach to.
+   *  Wave 5: 'lost' — the row was mid-run but the server restarted underneath it. */
+  run_job?:
+    | { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; error?: string }
+    | { status: 'lost'; startedAt?: undefined; interruptedAt: string | null }
+    | null;
   current_step: number;
   article_scores: string;
   capability_view: string | null;
@@ -131,7 +142,45 @@ interface Framework {
   articleCount: number;
   themes: string[];
   articles: Array<{ id: string; title: string; theme: string; requirement: string }>;
+  /** Which kind of specialist assesses it (server: gap-domains.ts). */
+  domain?: string;
 }
+
+/** Entity types offered per assessment domain — the list was banks only,
+ *  so a SaaS company assessing GDPR or a hospital assessing ISO 27001 could
+ *  not even name what it was. */
+const ENTITY_TYPES_BY_DOMAIN: Record<string, string[]> = {
+  'aml': ['Credit institution', 'Payment institution', 'E-money institution', 'Crypto-asset service provider (CASP)', 'Investment firm', 'Insurance undertaking', 'Asset manager', 'Fund administrator', 'Trust or company service provider', 'Law firm / notary', 'Real estate agent', 'Gambling operator'],
+  'sanctions': ['Credit institution', 'Payment institution', 'Investment firm', 'Insurance undertaking', 'Exporter / manufacturer', 'Shipping / logistics company', 'Trading company', 'Corporate group'],
+  'ict-resilience': ['Credit institution', 'Payment institution', 'Investment firm', 'Insurance undertaking', 'Crypto-asset service provider (CASP)', 'ICT third-party service provider', 'Market infrastructure'],
+  'infosec': ['SaaS / technology company', 'Financial services firm', 'Healthcare provider', 'Public body', 'Merchant / retailer', 'Managed service provider', 'Manufacturer'],
+  'privacy': ['SaaS / technology company', 'Financial services firm', 'Healthcare provider', 'Public body', 'Retailer / e-commerce', 'Employer (HR processing)', 'Marketing / adtech company'],
+  'ai-governance': ['AI system provider', 'AI system deployer', 'Financial services firm', 'Healthcare provider', 'Public body', 'Employer using AI in HR'],
+  'anti-bribery': ['Corporate group', 'Financial services firm', 'Construction / infrastructure company', 'Extractives / energy company', 'Pharmaceutical company', 'Public body'],
+  'financial-conduct': ['Credit institution', 'Investment firm', 'Insurance undertaking', 'Asset manager', 'Fund administrator', 'Payment institution'],
+  'digital-assets': ['Crypto-asset service provider (CASP)', 'Stablecoin issuer', 'Payment institution', 'E-money institution', 'Credit institution', 'Fintech platform'],
+  'esg': ['Listed company', 'Large undertaking', 'Financial services firm', 'Subsidiary of a non-EU parent'],
+  'corporate-governance': ['Private limited company', 'Public limited company', 'Financial services firm', 'Charity / not-for-profit'],
+  'online-safety': ['Social media platform', 'Search service', 'Online marketplace', 'Gaming / streaming service', 'Messaging service'],
+  'compliance': ['Financial services firm', 'Corporate group', 'SaaS / technology company', 'Public body', 'Healthcare provider', 'Other regulated organisation'],
+};
+
+/** Interview roles suggested per domain — the datalist listed AML roles only. */
+const INTERVIEW_ROLES_BY_DOMAIN: Record<string, string[]> = {
+  'aml': ['MLRO / Compliance Officer', 'Head of AML Operations', 'KYC Team Lead', 'Transaction Monitoring Analyst', 'Head of Risk', 'Internal Audit', 'Board Member / NED', 'Front-line Relationship Manager', 'IT / Data Team', 'Legal Counsel'],
+  'sanctions': ['Head of Sanctions', 'Screening Team Lead', 'Trade Finance Operations', 'Head of Compliance', 'Legal Counsel', 'Internal Audit', 'Export Control Officer'],
+  'ict-resilience': ['CIO / CTO', 'CISO', 'Head of IT Operations', 'Third-Party Risk Manager', 'Business Continuity Manager', 'Head of Risk', 'Internal Audit', 'Incident Manager'],
+  'infosec': ['CISO', 'Security Operations Lead', 'IT Infrastructure Manager', 'DevOps / Platform Lead', 'Data Protection Officer', 'Internal Audit', 'HR (joiners/leavers)'],
+  'privacy': ['Data Protection Officer', 'Head of Legal', 'CISO', 'Marketing Lead', 'HR Director', 'Product Owner', 'Customer Service Lead'],
+  'ai-governance': ['Head of AI / ML', 'Data Science Lead', 'Product Owner', 'Data Protection Officer', 'Head of Risk', 'Legal Counsel', 'Model Validation'],
+  'anti-bribery': ['Chief Compliance Officer', 'Head of Procurement', 'Sales Director', 'Finance Director', 'Internal Audit', 'Legal Counsel', 'Country Manager'],
+  'financial-conduct': ['Head of Compliance', 'Head of Product', 'Head of Distribution', 'Conduct Risk Manager', 'Head of Risk', 'Internal Audit', 'Board Member / NED'],
+  'digital-assets': ['Chief Compliance Officer', 'Head of Custody', 'Head of Trading / Markets', 'CISO', 'Head of Risk', 'Legal Counsel', 'Finance Director'],
+  'esg': ['Head of Sustainability', 'CFO / Financial Controller', 'Head of Procurement', 'HR Director', 'Investor Relations', 'Internal Audit'],
+  'corporate-governance': ['Company Secretary', 'Board Chair', 'Non-Executive Director', 'CFO', 'General Counsel', 'Internal Audit'],
+  'online-safety': ['Head of Trust & Safety', 'Content Moderation Lead', 'Product Owner', 'Legal Counsel', 'Data Protection Officer', 'Head of Engineering'],
+  'compliance': ['Head of Compliance', 'Head of Risk', 'Head of Operations', 'Legal Counsel', 'Internal Audit', 'Board Member / NED', 'IT / Data Team'],
+};
 
 interface ProgressEvent {
   type: string;
@@ -213,18 +262,6 @@ interface InterviewNote {
   notes: string;
 }
 
-const INTERVIEW_ROLE_SUGGESTIONS = [
-  'MLRO / Compliance Officer',
-  'Head of AML Operations',
-  'KYC Team Lead',
-  'Transaction Monitoring Analyst',
-  'Head of Risk',
-  'Internal Audit',
-  'Board Member / NECD',
-  'Front-line Relationship Manager',
-  'IT / Data Team',
-  'Legal Counsel',
-];
 
 interface IterationSummary {
   id: string;
@@ -248,7 +285,8 @@ interface IterationComparison {
 // ── Multi-format export dropdown ─────────────────────────────────────────────
 function ExportDropdown({ label, buildContent, filename, isExporting, doExport }: {
   label: string;
-  buildContent: () => string;
+  /** Receives the target format: a spreadsheet wants different shape to a document. */
+  buildContent: (format: string) => string;
   filename: string;
   isExporting: boolean;
   doExport: (format: string, content: string, metadata?: Record<string, unknown>) => Promise<void>;
@@ -264,7 +302,7 @@ function ExportDropdown({ label, buildContent, filename, isExporting, doExport }
 
   const handleExport = async (format: string) => {
     setOpen(false);
-    const content = buildContent();
+    const content = buildContent(format);
     if (format === 'md') {
       const blob = new Blob([content], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -413,6 +451,13 @@ function GapAssessmentWizardInner() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [findings, setFindings] = useState<Array<ArticleFinding & { framework: string }>>([]);
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  // The assessment's domain: the frameworks' shared domain, generic when they mix.
+  const assessmentDomain = (() => {
+    const domains = new Set(frameworks.map(f => f.domain ?? 'compliance'));
+    return domains.size === 1 ? [...domains][0] : 'compliance';
+  })();
+  const entityTypeOptions = ENTITY_TYPES_BY_DOMAIN[assessmentDomain] ?? ENTITY_TYPES_BY_DOMAIN.compliance;
+  const interviewRoleSuggestions = INTERVIEW_ROLES_BY_DOMAIN[assessmentDomain] ?? INTERVIEW_ROLES_BY_DOMAIN.compliance;
   const [currentStep, setCurrentStep] = useState(1);
   const [contextConfig, setContextConfig] = useState({
     entityType: 'Credit institution',
@@ -421,37 +466,21 @@ function GapAssessmentWizardInner() {
     maturity: 3,
     concerns: '',
     documents: '',
-    modelTier: 'sonnet' as string,
+    // The instance default (seeded from the server at boot) — a hardcoded bare
+    // Claude id here was routed to the metered API client, so a fresh
+    // assessment on a subscription-only instance failed every batch.
+    modelTier: getStoredDefaultModel() as string,
+    // Wave 2 (2026-09-08): the control interview ANTON ran, kept with Step 3.
+    interviewConversation: [] as InterviewTurn[],
   });
 
-  // Fetch available non-Claude models for the model selector
-  const [extraModels, setExtraModels] = useState<Array<{ id: string; label: string; provider: string }>>([]);
-  useEffect(() => {
-    // Azure deployments
-    fetch('/api/azure-openai/deployments')
-      .then(r => r.ok ? r.json() : { deployments: [] })
-      .then((data: { deployments?: Array<{ deploymentName: string; displayName: string | null; modelName: string; isActive: boolean }> }) => {
-        const models: Array<{ id: string; label: string; provider: string }> = [];
-        for (const d of (data.deployments ?? []).filter(d => d.isActive !== false)) {
-          models.push({ id: `azure:${d.deploymentName}`, label: d.displayName || d.deploymentName, provider: 'Azure' });
-        }
-        // Check provider status for Mistral/OpenAI
-        fetch('/api/settings/provider-status')
-          .then(r => r.json())
-          .then((status: Record<string, boolean>) => {
-            if (status.MISTRAL_API_KEY) {
-              models.push({ id: 'mistral-large-latest', label: 'Mistral Large 3', provider: 'Mistral' });
-            }
-            if (status.OPENAI_API_KEY) {
-              models.push({ id: 'gpt-5.4', label: 'GPT-5.4', provider: 'OpenAI' });
-              models.push({ id: 'gpt-4o', label: 'GPT-4o', provider: 'OpenAI' });
-            }
-            setExtraModels(models);
-          })
-          .catch(() => setExtraModels(models));
-      })
-      .catch(() => {});
-  }, []);
+  /** Human label for a stored modelTier — legacy aliases plus real model ids. */
+  const modelTierLabel = (tier: string): string => {
+    if (tier === 'opus') return 'Opus 4.8 (deep reasoning)';
+    if (tier === 'sonnet') return 'Sonnet 4.6 (standard)';
+    return tier;
+  };
+
   const [scopeConfig, setScopeConfig] = useState<{ selectedThemes: string[] }>({ selectedThemes: [] });
   const [progressEvents, setProgressEvents] = useState<ProgressEvent[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -487,6 +516,8 @@ function GapAssessmentWizardInner() {
   const [evidenceManifest, setEvidenceManifest] = useState<EvidenceManifestEntry[]>([]);
   // Wave 1.7 — re-assessment mode toggle (only meaningful when iterations exist)
   const [reassessMode, setReassessMode] = useState(false);
+  /** Batches the last run reported as failed — offered for a targeted retry. */
+  const [failedBatches, setFailedBatches] = useState<Array<{ framework: string; batchIndex: number }>>([]);
   // Wave 2.7 — second-opinion lane (comparison slot, never overwrites findings)
   const [soTier, setSoTier] = useState('');
   const [soRunning, setSoRunning] = useState(false);
@@ -514,6 +545,8 @@ function GapAssessmentWizardInner() {
   const [iterations, setIterations] = useState<IterationSummary[]>([]);
   const [comparison, setComparison] = useState<IterationComparison | null>(null);
   const [showIterationPanel, setShowIterationPanel] = useState(false);
+  // Wave 3: "Add to evidence pack" on the results panel
+  const [showEvidencePanel, setShowEvidencePanel] = useState(false);
   const [iterationNotes, setIterationNotes] = useState('');
   const [iterationDocs, setIterationDocs] = useState<EvidenceDocument[]>([]);
   const [iterDragging, setIterDragging] = useState(false);
@@ -614,6 +647,19 @@ function GapAssessmentWizardInner() {
   }, [id]);
 
   useEffect(() => { loadAssessment(); }, [loadAssessment]);
+
+  // Wave 3: a run still going on the server (this page was reloaded) is
+  // picked back up — every frame so far, then live — on Step 4.
+  const attachedRunRef = useRef<string | null>(null);
+  useEffect(() => {
+    const run = assessment?.run_job;
+    if (!assessment || !run || run.status !== 'running' || isRunning) return;
+    if (attachedRunRef.current === run.startedAt) return;
+    attachedRunRef.current = run.startedAt;
+    setCurrentStep(4);
+    void attachRun();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment?.id, assessment?.run_job?.status, assessment?.run_job?.startedAt]);
 
   // ── Pre-fill context from Org Context (only for fresh assessments on step 1-3) ──
   useEffect(() => {
@@ -719,6 +765,31 @@ function GapAssessmentWizardInner() {
     };
   }, [contextConfig, knowledgeSources]);
 
+  // Wave 2 (2026-09-08): a completed interview turn. The notes ANTON recorded
+  // are filed under the interviewee's role (one card per role, one line per
+  // note) so they remain ordinary, editable interview evidence; the
+  // conversation and the notes are persisted together without leaving Step 3.
+  const handleInterviewTurn = useCallback(async (turns: InterviewTurn[], notes: InterviewNoteDraft[]) => {
+    let nextIvs = interviews;
+    if (notes.length > 0) {
+      nextIvs = [...interviews];
+      for (const n of notes) {
+        const line = `${n.articles.length > 0 ? `[${n.articles.join(', ')}] ` : ''}${n.text}`;
+        const idx = nextIvs.findIndex(i => i.role.trim().toLowerCase() === n.role.trim().toLowerCase());
+        if (idx >= 0) nextIvs[idx] = { ...nextIvs[idx], notes: `${nextIvs[idx].notes.trim()}\n- ${line}`.trim() };
+        else nextIvs.push({ id: crypto.randomUUID(), role: n.role, notes: `- ${line}` });
+      }
+      setInterviews(nextIvs);
+    }
+    setContextConfig(c => ({ ...c, interviewConversation: turns }));
+    if (!id) return;
+    await fetchWithAuth(`/api/gap-assessments/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ context_config: { ...buildEnrichedContext(evidenceDocs, nextIvs), interviewConversation: turns } }),
+    });
+  }, [interviews, evidenceDocs, buildEnrichedContext, id]);
+
   const saveContext = async () => {
     if (!id) return;
     const enrichedContext = buildEnrichedContext(evidenceDocs, interviews);
@@ -733,19 +804,32 @@ function GapAssessmentWizardInner() {
   };
 
   // ── Run assessment (SSE) ───────────────────────────────────────────────────
-  const runAssessment = async () => {
+  const runAssessment = async (retryBatches?: Array<{ framework: string; batchIndex: number }>) => streamRun('start', retryBatches);
+  /** Wave 3: a run outlives the request — a reloaded wizard picks it back up. */
+  const attachRun = async () => streamRun('attach');
+
+  const streamRun = async (mode: 'start' | 'attach', retryBatches?: Array<{ framework: string; batchIndex: number }>) => {
     if (!id || isRunning) return;
     setIsRunning(true);
     setProgressEvents([]);
+    setFailedBatches([]);
 
     try {
-      const response = await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
-      });
+      const response = mode === 'start'
+        ? await fetchWithAuth(`/api/gap-assessments/${id}/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...(reassessMode && iterations.length > 0 ? { mode: 'reassess' } : {}),
+            ...(retryBatches && retryBatches.length > 0 ? { retryBatches } : {}),
+          }),
+        })
+        : await fetchWithAuth(`/api/gap-assessments/${id}/run/stream`);
 
-      if (!response.ok || !response.body) throw new Error('Stream failed');
+      if (!response.ok || !response.body) {
+        const detail = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(detail.error ?? `Run failed (${response.status})`);
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -763,6 +847,12 @@ function GapAssessmentWizardInner() {
               const next = [...prev, event];
               return next.length > 200 ? next.slice(next.length - 200) : next;
             });
+            // A partial failure: the server lists the batches that failed and
+            // did NOT mark the assessment complete — offer a targeted retry.
+            const failed = (event as unknown as { failedBatches?: Array<{ framework: string; batchIndex: number }> }).failedBatches;
+            if (event.type === 'error' && Array.isArray(failed) && failed.length > 0) {
+              setFailedBatches(failed);
+            }
             if (event.type === 'batch_complete' && event.findings) {
               // Capture batch thinking/reasoning
               if ((event as unknown as Record<string, unknown>).thinking) {
@@ -809,10 +899,15 @@ function GapAssessmentWizardInner() {
     if (currentStep === 5) void loadSecondOpinion();
   }, [currentStep, loadSecondOpinion]);
 
-  // Default the second-opinion model to the opposite Claude tier of the primary run
+  // Seed the second opinion with a model that is NOT the one that produced the
+  // findings — a challenge from the same model is not a second opinion. The
+  // old rule flipped between two hardcoded tiers; now that any model can be
+  // primary, fall back to the other Claude family and only then to a default.
   useEffect(() => {
     if (currentStep === 5 && !soTier) {
-      setSoTier(contextConfig.modelTier === 'opus' ? 'sonnet' : 'opus');
+      const primary = String(contextConfig.modelTier);
+      const primaryIsOpus = primary === 'opus' || /opus/i.test(primary);
+      setSoTier(primaryIsOpus ? 'claude-sonnet-4-6' : 'claude-opus-4-8');
     }
   }, [currentStep, contextConfig.modelTier, soTier]);
 
@@ -975,6 +1070,155 @@ function GapAssessmentWizardInner() {
   };
 
   // ── Markdown builders (reused for multi-format export) ─────────────────────
+  /**
+   * Cell-safe text for a markdown table.
+   *
+   * The xlsx converter splits rows on a naive `split('|')` with no escape
+   * handling, so a single pipe in free text silently shifts every later column.
+   * Newlines end the row outright. Markdown emphasis is stripped because Excel
+   * has no idea what `**bold**` means and renders the asterisks literally —
+   * which is how "**Framework:** amlr-2024" ended up in a cell.
+   */
+  const cell = (v: unknown, max = 1200): string => {
+    const t = String(v ?? '')
+      .replace(/\r?\n+/g, ' · ')
+      .replace(/\|/g, '/')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/^#+\s*/gm, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    return t.length > max ? t.slice(0, max - 1) + '…' : t;
+  };
+
+  /**
+   * Findings as a spreadsheet rather than a document.
+   *
+   * The document form emits one `###` section per article, and the converter
+   * turns every heading that contains a table into its own sheet — so a
+   * 90-article framework produced a 93-tab workbook that nobody can navigate,
+   * each tab holding a five-cell table and the rest of the prose stacked in
+   * column A. One row per article instead: sortable, filterable, pivotable.
+   */
+  const buildFindingsSpreadsheet = useCallback(() => {
+    const title = assessment?.title || 'Gap Assessment';
+    const docName = (docId: string) => evidenceManifest.find(m => m.docId === docId)?.name || docId;
+    const avg = findings.length > 0
+      ? Math.round(findings.reduce((s2, f) => s2 + (f.numericScore || 0), 0) / findings.length) : 0;
+
+    let md = `# Gap Assessment — ${cell(title)}
+
+`;
+
+    md += `## Score Summary
+
+| Score | Count | Share |
+|---|---|---|
+`;
+    for (const sc of ['red', 'amber', 'yellow', 'green'] as const) {
+      const n = findings.filter(f => f.score === sc).length;
+      const pct = findings.length ? Math.round((n / findings.length) * 100) : 0;
+      md += `| ${sc.charAt(0).toUpperCase() + sc.slice(1)} | ${n} | ${pct}% |
+`;
+    }
+    md += `| Overall | ${findings.length} | ${avg}% |
+
+`;
+
+    md += `## Findings
+
+`;
+    md += `| Article | Title | Score | % | Priority | Documented | Implemented | Tested | Evidenced | Owner assigned | Requirement | Current state | Gaps & recommendations | Evidence refs | Status |
+`;
+    md += `|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+`;
+    for (const f of findings) {
+      const c = f.criteria;
+      const status = [
+        f.overrideKind ? `overridden (${f.overrideKind})` : '',
+        f.carriedForward ? 'carried forward' : '',
+        (f.rubricVersion === null || f.rubricVersion === undefined) ? 'legacy scoring' : '',
+      ].filter(Boolean).join('; ');
+      md += `| ${cell(f.articleId, 40)} | ${cell(f.articleTitle, 120)} | ${f.score} | ${f.numericScore || 0}% | ${f.priority} `
+        + `| ${c?.documented ?? ''} | ${c?.implemented ?? ''} | ${c?.tested ?? ''} | ${c?.evidenced ?? ''} | ${c?.ownerAssigned ?? ''} `
+        + `| ${cell(f.requirement)} | ${cell(f.currentState)} | ${cell(f.notes)} | ${f.evidenceRefs?.length ?? 0} | ${cell(status, 80)} |
+`;
+    }
+
+    const refRows = findings.flatMap(f => (f.evidenceRefs ?? []).map(r => ({ f, r })));
+    if (refRows.length > 0) {
+      md += `
+## Evidence
+
+| Article | Title | Document | Quote |
+|---|---|---|---|
+`;
+      for (const { f, r } of refRows) {
+        const rr = r as unknown as { docId?: string; quote?: string; excerpt?: string; text?: string };
+        md += `| ${cell(f.articleId, 40)} | ${cell(f.articleTitle, 120)} | ${cell(docName(String(rr.docId ?? '')), 120)} `
+          + `| ${cell(rr.quote ?? rr.excerpt ?? rr.text ?? '')} |
+`;
+      }
+    }
+    return md;
+  }, [findings, assessment, evidenceManifest]);
+
+  /**
+   * Roadmap as a spreadsheet. The phases already ARE structured data —
+   * phases[].items[] with owner, effort, priority, deadline and risk — and the
+   * document form flattens that into prose headings, which the converter then
+   * had no table to find in. The result was a single "Output" sheet with 684
+   * lines stacked in column A. One row per action restores the structure that
+   * was there all along.
+   */
+  const buildRoadmapSpreadsheet = useCallback(() => {
+    let md = `# Remediation Roadmap — ${cell(assessment?.title || 'Gap Assessment')}
+
+`;
+    md += `## Actions
+
+`;
+    md += `| Phase | Timeframe | Action | Owner | Effort | Priority | Description | Rationale | Regulatory deadline | Risk if delayed | Resources | Success metrics |
+`;
+    md += `|---|---|---|---|---|---|---|---|---|---|---|---|
+`;
+    for (const phase of roadmap?.phases ?? []) {
+      for (const item of phase.items ?? []) {
+        md += `| ${cell(phase.name, 60)} | ${cell(phase.timeframe, 40)} | ${cell(item.title, 160)} | ${cell(item.owner, 60)} `
+          + `| ${cell(item.effort, 40)} | ${cell(item.priority, 30)} | ${cell(item.description)} | ${cell(item.rationale)} `
+          + `| ${cell(item.regulatoryDeadline, 60)} | ${cell(item.riskIfDelayed)} | ${cell(item.resourceRequirements)} `
+          + `| ${cell(item.successMetrics)} |
+`;
+      }
+    }
+    const summary: Array<[string, unknown]> = [
+      ['Estimated FTE', roadmap?.estimatedFTE],
+      ['Estimated budget', roadmap?.estimatedBudget],
+      ['Governance model', roadmap?.governanceModel],
+    ].filter(([, v]) => v) as Array<[string, unknown]>;
+    if (summary.length > 0) {
+      md += `
+## Roadmap Summary
+
+| Item | Value |
+|---|---|
+`;
+      for (const [k, v] of summary) md += `| ${k} | ${cell(v)} |
+`;
+    }
+    if (roadmap?.keyRisks?.length) {
+      md += `
+## Key Risks
+
+| # | Risk |
+|---|---|
+`;
+      roadmap.keyRisks.forEach((r, i) => { md += `| ${i + 1} | ${cell(r)} |
+`; });
+    }
+    return md;
+  }, [roadmap, assessment]);
+
   const buildFindingsMarkdown = useCallback(() => {
     const title = assessment?.title || 'Gap Assessment';
     const date = new Date().toISOString().slice(0, 10);
@@ -1098,6 +1342,31 @@ function GapAssessmentWizardInner() {
     if (roadmap?.governanceModel) md += `## Governance Model\n${roadmap.governanceModel}\n\n`;
     return md;
   }, [roadmap, assessment]);
+
+  /**
+   * Complete report. For xlsx the per-article sections are replaced by the
+   * wide findings/evidence/roadmap tables — a document wants narrative depth,
+   * a workbook wants one row per thing and a filter across the top.
+   */
+  const buildFullAssessmentSpreadsheet = useCallback(() => {
+    let md = buildFindingsSpreadsheet();
+    if (capabilities.length > 0) {
+      md += `
+## Capability Themes
+
+| Theme | Maturity | Summary |
+|---|---|---|
+`;
+      for (const c of capabilities) {
+        const cc = c as unknown as { theme?: string; name?: string; maturity?: unknown; summary?: unknown; description?: unknown };
+        md += `| ${cell(cc.theme ?? cc.name ?? '', 120)} | ${cell(cc.maturity ?? '', 40)} | ${cell(cc.summary ?? cc.description ?? '')} |
+`;
+      }
+    }
+    if (roadmap) md += `
+` + buildRoadmapSpreadsheet().replace(/^# .*$/m, '');
+    return md;
+  }, [buildFindingsSpreadsheet, buildRoadmapSpreadsheet, capabilities, roadmap]);
 
   const buildFullAssessmentMarkdown = useCallback(() => {
     let md = `# Complete Gap Assessment Report — ${assessment?.title || 'Gap Assessment'}\n\n`;
@@ -1384,14 +1653,9 @@ function GapAssessmentWizardInner() {
                   value={contextConfig.entityType}
                   onChange={e => setContextConfig(c => ({ ...c, entityType: e.target.value }))}
                 >
-                  <option>Credit institution</option>
-                  <option>Payment institution</option>
-                  <option>E-money institution</option>
-                  <option>Crypto-asset service provider (CASP)</option>
-                  <option>Investment firm</option>
-                  <option>Insurance undertaking</option>
-                  <option>Asset manager</option>
-                  <option>Fund administrator</option>
+                  {/* A stored value outside this domain's list stays selectable — never silently changed. */}
+                  {!entityTypeOptions.includes(contextConfig.entityType) && <option>{contextConfig.entityType}</option>}
+                  {entityTypeOptions.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div>
@@ -1438,50 +1702,25 @@ function GapAssessmentWizardInner() {
               />
             </div>
 
-            {/* ── AI Model Tier ─────────────────────────────────────────── */}
+            {/* ── AI Model ──────────────────────────────────────────────── */}
             <div className="rounded-xl border border-border bg-adv-card p-4">
               <label className="mb-2 block text-xs font-medium text-adv-gray">AI Analysis Depth</label>
-              <p className="text-[11px] text-adv-gray mb-3">Choose the AI model for all assessment stages. Opus provides deeper reasoning but costs more and takes longer.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setContextConfig(c => ({ ...c, modelTier: 'sonnet' }))}
-                  className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === 'sonnet' ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'sonnet' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                    <span className="text-sm font-medium text-adv-off-white">Sonnet 4.6</span>
-                  </div>
-                  <p className="text-[11px] text-adv-gray leading-snug">Fast &amp; thorough. Deep thinking (32K budget) on every stage. Good for standard assessments.</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setContextConfig(c => ({ ...c, modelTier: 'opus' }))}
-                  className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === 'opus' ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === 'opus' ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                    <span className="text-sm font-medium text-adv-off-white">Opus 4.8</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-adv-gold/20 text-adv-gold font-medium">Deep</span>
-                  </div>
-                  <p className="text-[11px] text-adv-gray leading-snug">Maximum reasoning depth. Adaptive thinking at full effort. Best for critical, company-shaping assessments.</p>
-                </button>
-                {extraModels.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setContextConfig(c => ({ ...c, modelTier: m.id }))}
-                    className={`rounded-lg border p-3 text-left transition-all ${contextConfig.modelTier === m.id ? 'border-adv-teal bg-adv-teal/10' : 'border-border hover:border-adv-gray'}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className={`h-2.5 w-2.5 rounded-full ${contextConfig.modelTier === m.id ? 'bg-adv-teal' : 'bg-adv-gray/40'}`} />
-                      <span className="text-sm font-medium text-adv-off-white">{m.label}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-medium">{m.provider}</span>
-                    </div>
-                    <p className="text-[11px] text-adv-gray leading-snug">{m.provider} model. Good for multi-provider comparison or when Claude is unavailable.</p>
-                  </button>
-                ))}
-              </div>
+              <p className="text-[11px] text-adv-gray mb-3">
+                Choose the model for all assessment stages. Claude Opus reasons deepest but costs more and takes
+                longer; Sonnet is the balanced default. Subscription engines run through your Claude sign-in
+                instead of an API key.
+              </p>
+              {/* The shared selector, as everywhere else in ANTON — it already
+                  carries the full model registry plus Azure deployments,
+                  OpenAI-compatible endpoints, local Ollama and the sdk:/codex:
+                  subscription engines. The bespoke picker this replaced named
+                  two Claude versions inline and hand-assembled a short list of
+                  extras, so it went stale every time the registry moved and
+                  could never offer a subscription engine at all. */}
+              <ModelSelector
+                value={contextConfig.modelTier as ModelId}
+                onChange={(m) => setContextConfig(c => ({ ...c, modelTier: m as string }))}
+              />
             </div>
 
             {/* ── Evidence Documents ─────────────────────────────────────── */}
@@ -1550,6 +1789,15 @@ function GapAssessmentWizardInner() {
               )}
             </div>
 
+            {/* Wave 2 (2026-09-08): the control interview — ANTON asks, the notes write themselves. */}
+            {id && (
+              <GapInterviewChat
+                assessmentId={id}
+                conversation={Array.isArray(contextConfig.interviewConversation) ? contextConfig.interviewConversation : []}
+                onTurn={handleInterviewTurn}
+              />
+            )}
+
             {/* ── Interview Notes ────────────────────────────────────────── */}
             <div className="rounded-xl border border-border bg-adv-card p-4">
               <div className="flex items-center justify-between mb-3">
@@ -1585,7 +1833,7 @@ function GapAssessmentWizardInner() {
                             onChange={e => updateInterview(interview.id, 'role', e.target.value)}
                           />
                           <datalist id={`role-list-${interview.id}`}>
-                            {INTERVIEW_ROLE_SUGGESTIONS.map(r => <option key={r} value={r} />)}
+                            {interviewRoleSuggestions.map(r => <option key={r} value={r} />)}
                           </datalist>
                         </div>
                         <button type="button" onClick={() => removeInterview(interview.id)} className="text-adv-gray hover:text-adv-red transition-colors" title="Remove interview">
@@ -1652,6 +1900,22 @@ function GapAssessmentWizardInner() {
               <p className="text-sm text-adv-gray">Claude will assess articles in batches of 12. This may take several minutes for large frameworks.</p>
             </div>
 
+            {/* Wave 5: the server restarted underneath this run — say so, with the way forward. */}
+            {!isRunning && progressEvents.length === 0 && assessment?.run_job?.status === 'lost' && (
+              <div role="alert" className="flex flex-col gap-3 rounded-xl border border-adv-gold/40 bg-adv-gold/10 p-4 sm:flex-row sm:items-center">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-adv-gold" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-adv-off-white">This run was interrupted by a server restart — start the assessment again.</p>
+                  {assessment.run_job.interruptedAt && (
+                    <p className="mt-0.5 text-xs text-adv-gray">Marked interrupted {new Date(assessment.run_job.interruptedAt).toLocaleString()}.</p>
+                  )}
+                </div>
+                <button onClick={() => runAssessment()} className="flex shrink-0 items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                  <RefreshCw className="h-4 w-4" /> Start again
+                </button>
+              </div>
+            )}
+
             {!isRunning && progressEvents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-border bg-adv-card text-center">
                 <Play className="mb-3 h-10 w-10 text-adv-teal" />
@@ -1660,7 +1924,7 @@ function GapAssessmentWizardInner() {
                   Entity: {contextConfig.entityType} — {contextConfig.jurisdiction}<br />
                   Frameworks: {fwIds.join(', ')}<br />
                   Maturity: {MATURITY_LABELS[contextConfig.maturity]} ({contextConfig.maturity}/5)<br />
-                  Model: {contextConfig.modelTier === 'opus' ? 'Opus 4.8 (deep reasoning)' : 'Sonnet 4.6 (standard)'}
+                  Model: {modelTierLabel(contextConfig.modelTier)}
                 </p>
                 {iterations.length > 0 && (
                   <label className="mb-4 flex max-w-md items-start gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal/5 px-3 py-2.5 text-left cursor-pointer">
@@ -1678,7 +1942,7 @@ function GapAssessmentWizardInner() {
                     </span>
                   </label>
                 )}
-                <button onClick={runAssessment} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                <button onClick={() => runAssessment()} className="flex items-center gap-2 rounded-lg bg-adv-teal px-6 py-3 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                   <Play className="h-4 w-4" /> {reassessMode && iterations.length > 0 ? 'Start Re-assessment' : 'Start Assessment'}
                 </button>
               </div>
@@ -1688,8 +1952,8 @@ function GapAssessmentWizardInner() {
               <div className="rounded-xl border border-border bg-adv-card">
                 <div ref={progressRef} className="max-h-80 overflow-y-auto p-4 space-y-2 font-mono text-xs">
                   {progressEvents.map((e, i) => (
-                    <div key={i} className={`flex items-start gap-2 ${e.type === 'error' ? 'text-red-400' : e.type === 'complete' ? 'text-adv-green' : e.type === 'batch_complete' ? 'text-adv-teal' : 'text-adv-gray'}`}>
-                      {e.type === 'error' ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
+                    <div key={i} className={`flex items-start gap-2 ${(e.type === 'error' || e.type === 'batch_error') ? 'text-red-400' : e.type === 'complete' ? 'text-adv-green' : e.type === 'batch_complete' ? 'text-adv-teal' : 'text-adv-gray'}`}>
+                      {(e.type === 'error' || e.type === 'batch_error') ? <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" /> : e.type === 'complete' ? <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0" /> : <Circle className="h-3 w-3 mt-0.5 shrink-0" />}
                       <span>{e.message || e.type}</span>
                       {e.type === 'batch_complete' && e.batchIndex !== undefined && e.totalBatches !== undefined && (
                         <span className="ml-auto text-adv-gray">{e.batchIndex + 1}/{e.totalBatches}</span>
@@ -1703,7 +1967,15 @@ function GapAssessmentWizardInner() {
                     </div>
                   )}
                 </div>
-                {!isRunning && findings.length > 0 && (
+                {!isRunning && failedBatches.length > 0 && (
+                  <div className="flex items-center gap-3 border-t border-adv-red/30 bg-adv-red/5 p-4">
+                    <button onClick={() => runAssessment(failedBatches)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                      <RefreshCw className="h-4 w-4" /> Retry {failedBatches.length} failed batch{failedBatches.length === 1 ? '' : 'es'}
+                    </button>
+                    <span className="text-xs text-adv-gray">The assessment is not complete. Batches that succeeded are kept; only the failed ones re-run.</span>
+                  </div>
+                )}
+                {!isRunning && failedBatches.length === 0 && findings.length > 0 && (
                   <div className="border-t border-border p-4">
                     <button onClick={() => goToStep(5)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
                       View Scoring ({findings.length} findings) <ChevronRight className="h-4 w-4" />
@@ -1771,6 +2043,19 @@ function GapAssessmentWizardInner() {
                   {batchReasoning}
                 </div>
               </details>
+            )}
+
+            {/* Wave 5: the run record of every batch — the engine's reads, searches and turns */}
+            {id && !isRunning && (
+              <div className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft overflow-hidden">
+                <RunRecordPanel
+                  parentKind="gap_batch"
+                  parentId={id}
+                  title="Run records — tool calls & transcript per batch"
+                  refreshKey={findings.length}
+                  className=""
+                />
+              </div>
             )}
 
             {/* Average compliance score */}
@@ -2088,18 +2373,12 @@ function GapAssessmentWizardInner() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <select
-                    value={soTier}
-                    onChange={e => setSoTier(e.target.value)}
-                    disabled={soRunning}
-                    className="rounded-lg border border-border bg-adv-dark px-2 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none"
-                  >
-                    {contextConfig.modelTier !== 'opus' && <option value="opus">Claude Opus 4.8</option>}
-                    {contextConfig.modelTier !== 'sonnet' && <option value="sonnet">Claude Sonnet 4.6</option>}
-                    {extraModels.filter(m => m.id !== contextConfig.modelTier).map(m => (
-                      <option key={m.id} value={m.id}>{m.label} ({m.provider})</option>
-                    ))}
-                  </select>
+                  {/* Second opinion deliberately uses the same selector as the
+                      primary choice, so any model the assessment can run on can
+                      also challenge it. */}
+                  <div className="w-56">
+                    <ModelSelector value={soTier as ModelId} onChange={(m) => setSoTier(m as string)} />
+                  </div>
                   <button
                     onClick={runSecondOpinion}
                     disabled={soRunning || !soTier || findings.length === 0}
@@ -2237,7 +2516,7 @@ function GapAssessmentWizardInner() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <ExportDropdown label="Export Findings" buildContent={buildFindingsMarkdown} filename={`findings-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+              <ExportDropdown label="Export Findings" buildContent={(fmt) => (fmt === 'xlsx' ? buildFindingsSpreadsheet() : buildFindingsMarkdown())} filename={`findings-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
               {capabilities.length > 0 ? (
                 <>
                   <button
@@ -2286,7 +2565,7 @@ function GapAssessmentWizardInner() {
                         Cards
                       </button>
                     </div>
-                    <ExportDropdown label="Export" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                    <ExportDropdown label="Export" buildContent={() => buildCapabilityMarkdown()} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                   </>
                 )}
                 <button onClick={runSynthesis} className="flex items-center gap-1.5 text-xs text-adv-gray hover:text-adv-teal transition-colors">
@@ -2524,7 +2803,7 @@ function GapAssessmentWizardInner() {
                   <button onClick={() => setCurrentStep(5)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Scoring
                   </button>
-                  <ExportDropdown label="Export Capability Report" buildContent={buildCapabilityMarkdown} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <ExportDropdown label="Export Capability Report" buildContent={() => buildCapabilityMarkdown()} filename={`capability-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                   {boardSummary ? (
                     <>
                       <button onClick={() => setCurrentStep(7)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
@@ -2585,7 +2864,7 @@ function GapAssessmentWizardInner() {
                   <button onClick={() => setCurrentStep(6)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Capabilities
                   </button>
-                  <ExportDropdown label="Export Board Summary" buildContent={buildBoardMarkdown} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <ExportDropdown label="Export Board Summary" buildContent={() => buildBoardMarkdown()} filename={`board-summary-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                   {roadmap ? (
                     <>
                       <button onClick={() => setCurrentStep(8)} className="flex items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
@@ -2695,7 +2974,7 @@ function GapAssessmentWizardInner() {
                   <button onClick={() => setCurrentStep(7)} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm text-adv-gray hover:text-adv-off-white transition-colors">
                     <ChevronLeft className="h-4 w-4" /> Board Summary
                   </button>
-                  <ExportDropdown label="Export Roadmap" buildContent={buildRoadmapMarkdown} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
+                  <ExportDropdown label="Export Roadmap" buildContent={(fmt) => (fmt === 'xlsx' ? buildRoadmapSpreadsheet() : buildRoadmapMarkdown())} filename={`roadmap-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`} isExporting={isExporting} doExport={doExport} />
                 </div>
               </div>
             )}
@@ -2709,7 +2988,7 @@ function GapAssessmentWizardInner() {
             <div className="flex items-center gap-3 flex-wrap">
               <ExportDropdown
                 label="Export Complete Assessment"
-                buildContent={buildFullAssessmentMarkdown}
+                buildContent={(fmt) => (fmt === 'xlsx' ? buildFullAssessmentSpreadsheet() : buildFullAssessmentMarkdown())}
                 filename={`full-assessment-${assessment?.title || 'gap'}-${new Date().toISOString().slice(0, 10)}`}
                 isExporting={isExporting}
                 doExport={doExport}
@@ -2720,7 +2999,24 @@ function GapAssessmentWizardInner() {
               >
                 <RotateCcw className="h-4 w-4" /> {showIterationPanel ? 'Hide Iteration Panel' : `New Iteration${iterations.length > 0 ? ` (${iterations.length} previous)` : ''}`}
               </button>
+              <button
+                onClick={() => setShowEvidencePanel(!showEvidencePanel)}
+                className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal-soft px-4 py-2.5 text-sm text-adv-teal hover:bg-adv-teal/10 transition-colors"
+              >
+                <FileArchive className="h-4 w-4" /> {showEvidencePanel ? 'Hide Evidence Pack' : 'Add to evidence pack'}
+              </button>
             </div>
+
+            {/* Wave 3: this assessment, its findings, second opinions and iterations into a signed pack */}
+            {showEvidencePanel && id && (
+              <div className="rounded-xl border border-border bg-adv-card p-4">
+                <AddToEvidencePackPanel
+                  scope={{ type: 'gap_assessment', assessmentId: id }}
+                  defaultTitle={`Evidence — ${assessment?.title || 'gap assessment'}`}
+                  subjectLabel="gap assessment"
+                />
+              </div>
+            )}
 
             {/* Iteration history */}
             {iterations.length > 0 && (

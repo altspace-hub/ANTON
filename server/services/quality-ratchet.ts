@@ -40,11 +40,15 @@ Respond ONLY with valid JSON:
 
 export async function createQualityRatchet(db: DatabaseAdapter) {
 
-  // Auto-heal: ensure score_reasoning column exists (backward-compatible with older DBs)
+  // Auto-heal: ensure score_reasoning column exists (backward-compatible with
+  // older DBs). Was a pragma_table_info query — SQLite-only, errored on
+  // PostgreSQL on every boot and the catch silently disabled this guard.
   try {
-    const cols = await db.all("SELECT name FROM pragma_table_info('quality_scores')") as Array<{ name: string }>;
-    const colNames = cols.map((c) => c.name);
-    if (!colNames.includes('score_reasoning')) {
+    const col = await db.get<{ c: number | string }>(
+      `SELECT COUNT(*) AS c FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'quality_scores' AND column_name = 'score_reasoning'`
+    );
+    if (Number(col?.c ?? 0) === 0) {
       await db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
     }
   } catch { /* table might not exist yet — init.ts will create it */ }
@@ -67,6 +71,9 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     let strengths: string[] = [];
     let weaknesses: string[] = [];
     let improvementSuggestion = '';
+    // What produced the numbers — the routed utility model when its JSON
+    // parsed, 'heuristic' on either fallback. Written to quality_scores.model_used.
+    let scoredWith = 'heuristic';
 
     // LLM scoring via the provider mapping (review 3.1): the configured
     // utility model on whatever provider is set up — an Ollama/Mistral
@@ -85,6 +92,10 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
         }],
         maxTokens: 500,
         jsonMode: true,
+        // Post-turn bookkeeping. On the subscription engine (two slots) an
+        // interactive run must never queue behind a quality score.
+        background: true,
+        purpose: 'quality-score',
         db,
       });
       llmText = chat.text;
@@ -113,6 +124,7 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
         strengths = parsed.strengths ?? [];
         weaknesses = parsed.weaknesses ?? [];
         improvementSuggestion = parsed.improvement_suggestion ?? '';
+        scoredWith = model;
         void recordParseOutcome(db, 'quality-ratchet', model, true);
       } catch (e) {
         // Unparseable scoring JSON — heuristic fallback, counted per
@@ -125,7 +137,9 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
       scores = heuristicScore(params.content);
     }
 
-    // Store score — try with reasoning first; fall back gracefully if column doesn't exist yet
+    // Store score — try with reasoning first; fall back gracefully if column doesn't exist yet.
+    // scored_by is 'system' for every automated score; model_used names the scorer;
+    // origin (migration 272) defaults to 'run' — only real outputs land here.
     const id = `qs_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const reasoningJson = JSON.stringify({ strengths, weaknesses, improvementSuggestion });
     let inserted = false;
@@ -133,25 +147,30 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
       await db.run(`
         INSERT INTO quality_scores
           (id, session_id, module_id, area_id, content_hash, score_overall,
-           score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count, score_reasoning)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count,
+           scored_by, model_used, score_reasoning)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
          scores.overall, scores.completeness, scores.accuracy,
-         scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
+         scores.structure, scores.actionability, scores.citations, wordCount,
+         'system', scoredWith, reasoningJson);
       inserted = true;
-    } catch (insertErr: any) {
-      if (insertErr?.message?.includes('score_reasoning')) {
+    } catch (insertErr: unknown) {
+      const insertMessage = insertErr instanceof Error ? insertErr.message : String(insertErr);
+      if (insertMessage.includes('score_reasoning')) {
         // Column doesn't exist yet — add it now and retry
         try {
           await db.exec('ALTER TABLE quality_scores ADD COLUMN score_reasoning TEXT DEFAULT NULL');
           await db.run(`
             INSERT INTO quality_scores
               (id, session_id, module_id, area_id, content_hash, score_overall,
-               score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count, score_reasoning)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+               score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count,
+               scored_by, model_used, score_reasoning)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `, id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
              scores.overall, scores.completeness, scores.accuracy,
-             scores.structure, scores.actionability, scores.citations, wordCount, reasoningJson);
+             scores.structure, scores.actionability, scores.citations, wordCount,
+             'system', scoredWith, reasoningJson);
           inserted = true;
         } catch { /* give up on reasoning, fall through */ }
       }
@@ -161,11 +180,13 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
       await db.run(`
         INSERT INTO quality_scores
           (id, session_id, module_id, area_id, content_hash, score_overall,
-           score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           score_completeness, score_accuracy, score_structure, score_actionability, score_citations, word_count,
+           scored_by, model_used)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, id, params.sessionId ?? null, params.moduleId, params.areaId ?? null, hash,
          scores.overall, scores.completeness, scores.accuracy,
-         scores.structure, scores.actionability, scores.citations, wordCount);
+         scores.structure, scores.actionability, scores.citations, wordCount,
+         'system', scoredWith);
     }
 
     // Check regression against baseline
@@ -241,7 +262,7 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
 
   async function getModuleQualityTrend(moduleId: string, limit = 20) {
     const scores = await db.all(`
-      SELECT * FROM quality_scores WHERE module_id = ? ORDER BY scored_at DESC LIMIT ?
+      SELECT * FROM quality_scores WHERE module_id = ? AND origin = 'run' ORDER BY scored_at DESC LIMIT ?
     `, moduleId, limit) as any[];
     const baseline = await db.get('SELECT * FROM quality_baselines WHERE module_id = ?', moduleId) as any;
     return { scores: scores.reverse(), baseline };
@@ -259,7 +280,7 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     for (const row of rows) {
       // Get last 5 scores for this module
       const recentScores = await db.all(
-        `SELECT score_overall FROM quality_scores WHERE module_id = ? ORDER BY scored_at DESC LIMIT 5`,
+        `SELECT score_overall FROM quality_scores WHERE module_id = ? AND origin = 'run' ORDER BY scored_at DESC LIMIT 5`,
         row.module_id
       ) as Array<{ score_overall: number }>;
 

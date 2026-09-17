@@ -12,6 +12,12 @@ import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { runAgentic, type AgentToolDefinition } from './sdk-agentic-runner.js';
+import { writeRunArtifactV2, buildAgenticRunArtifactInput } from './run-artifact-writer.js';
+import { isSdkModel } from './engine-model-id.js';
+import { retrieveGroundingText } from './framework-text-retrieval.js';
+import { z } from 'zod';
+import { frameworkDomain, domainForFrameworks, domainProfile, type GapDomain } from './gap-domains.js';
 import {
   computeScoring,
   scoringForManual,
@@ -33,31 +39,70 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Supports Claude tiers + any custom model ID (Azure, Mistral, OpenAI, etc.)
 export type GapModelTier = 'sonnet' | 'opus' | string;
 
+/**
+ * Resolve a stored tier or model id to the model + reasoning budget to run with.
+ *
+ * 'sonnet' and 'opus' are legacy aliases from when the wizard offered exactly
+ * two choices; assessments saved before 2026-08-19 still carry them, so they
+ * keep resolving. Everything else is a real model id from the shared selector,
+ * including subscription engines (sdk:/codex: prefixed).
+ *
+ * Matching is by FAMILY rather than exact id. The alias branch used to be the
+ * only way to get 'investigate' thinking and the larger synthesis budget, so
+ * picking Claude by its actual id — 'claude-opus-4-8' rather than 'opus' —
+ * would silently drop to the generic branch and assess with less reasoning than
+ * the same model selected the old way. Prefixes are stripped first so
+ * 'sdk:claude-opus-5' is recognised as Opus.
+ */
 function getModelConfig(tier: GapModelTier) {
-  if (tier === 'opus') {
+  const bare = String(tier).replace(/^(sdk|codex):/, '');
+  const isOpus = tier === 'opus' || /(^|[-/])opus/i.test(bare);
+  const isSonnet = tier === 'sonnet' || /(^|[-/])sonnet/i.test(bare);
+  // Any other Claude — Fable, Haiku, or a family that does not exist yet.
+  // sdk:claude-fable-5 is one of three models the subscription engine actually
+  // offers today, and without this branch it would assess at think_hard/64K
+  // while its two siblings got investigate/128K, for no reason a user could
+  // see. Output budget stays conservative because the family is unknown;
+  // reasoning depth does not, because it is still Claude.
+  const isOtherClaude = !isOpus && !isSonnet && /^claude[-.]/i.test(bare);
+
+  // Aliases resolve to the current default of their family; a real id is used
+  // verbatim so the selector's choice is honoured exactly.
+  if (isOpus) {
     return {
-      model: 'claude-opus-4-8' as string,
+      model: (tier === 'opus' ? 'claude-opus-4-8' : String(tier)) as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 16000,
       maxTokensSynthesis: 128_000,
     };
   }
-  if (tier === 'sonnet') {
+  if (isSonnet) {
     return {
-      model: 'claude-sonnet-4-6' as string,
+      model: (tier === 'sonnet' ? 'claude-sonnet-4-6' : String(tier)) as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 40000,
       maxTokensSynthesis: 128_000,
     };
   }
-  // Custom model ID (Azure, Mistral, OpenAI, etc.)
+  if (isOtherClaude) {
+    return {
+      model: String(tier),
+      thinkingLevel: 'investigate' as string,
+      maxTokensBatch: 16000,
+      maxTokensSynthesis: 128_000,
+    };
+  }
+  // Any other model — Azure, Mistral, OpenAI, Gemini, Ollama, OpenAI-compatible.
   return {
-    model: tier,
+    model: String(tier),
     thinkingLevel: 'think_hard' as string,
     maxTokensBatch: 16384,
     maxTokensSynthesis: 64000,
   };
 }
+
+/** Exposed for tests: the resolution above is easy to regress silently. */
+export const __getModelConfig = getModelConfig;
 
 // callChat from provider-router replaces the old streamCollect helper.
 // It handles Anthropic, Mistral, OpenAI, Gemini, and Ollama in a single call.
@@ -76,6 +121,8 @@ export interface Framework {
   articleCount: number;
   themes: string[];
   articles: FrameworkArticle[];
+  /** Which kind of specialist assesses it — derived from gap-domains.ts at load. */
+  domain?: GapDomain;
 }
 
 export interface ArticleFinding {
@@ -403,6 +450,7 @@ function loadFramework(frameworkId: string): Framework | null {
     const filePath = path.join(frameworkDir, `${frameworkId}.json`);
     if (!fs.existsSync(filePath)) return null;
     const fw = fs.readJsonSync(filePath) as Framework;
+    fw.domain = frameworkDomain(fw.id ?? frameworkId);
     frameworkCache.set(frameworkId, fw);
     return fw;
   } catch (err) {
@@ -419,7 +467,7 @@ export function listAvailableFrameworks(): Omit<Framework, 'articles'>[] {
     return files.map(f => {
       const fw = fs.readJsonSync(path.join(frameworkDir, f)) as Framework;
       const { articles: _articles, ...meta } = fw;
-      return meta;
+      return { ...meta, domain: frameworkDomain(fw.id) };
     });
   } catch {
     return [];
@@ -436,7 +484,11 @@ function buildAssessmentSystemPrompt(context: {
   segments: string;
   maturity: number;
   concerns: string;
-}, hasEvidence: boolean, reassess: boolean): string {
+}, hasEvidence: boolean, reassess: boolean, domain: GapDomain = 'compliance'): string {
+  // The assessor is the framework's kind of specialist — a DORA run was
+  // judged by "a senior AML/CFT compliance specialist" and its output
+  // talked about AML maturity.
+  const profile = domainProfile(domain);
   const groundingRules = hasEvidence
     ? `Grounding rules for "currentState":
 - Describe THIS entity's ACTUAL current state, grounded in the evidence documents and interview notes provided with this assessment. Reference the specific document or interview you are drawing on.
@@ -452,12 +504,12 @@ function buildAssessmentSystemPrompt(context: {
 - If something changed, return "changed": true with the FULL criteria, fresh currentState/notes, and a "changeReason" (1-2 sentences naming the specific evidence that moved the answer). changeReason is MANDATORY whenever any criterion answer differs from the baseline.`
     : '';
 
-  return `You are a senior AML/CFT compliance specialist conducting a structured gap assessment.
+  return `You are a ${profile.assessorPersona} conducting a structured gap assessment.
 
 Entity: ${context.entityType}
 Jurisdiction(s): ${context.jurisdiction}
 Customer segments: ${context.segments}
-Current AML maturity (self-rated): ${context.maturity}/5
+Current ${profile.label} maturity (self-rated): ${context.maturity}/5
 Known concerns: ${context.concerns || 'None specified'}
 
 Your task is to assess the entity's compliance with the articles listed below. For each article you provide STRUCTURED CRITERION FACTS — you do NOT assign scores, RAG bands, or priorities. A deterministic, versioned rubric computes those from your facts after the run. Put all of your judgement into answering the criteria truthfully and into the narrative fields.
@@ -738,7 +790,7 @@ function buildFinding(
 }
 
 export async function runAssessmentBatch(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   frameworkId: string,
   articleBatch: FrameworkArticle[],
   contextConfig: Record<string, unknown>,
@@ -750,6 +802,29 @@ export async function runAssessmentBatch(
   opts?: {
     /** Prior-iteration baseline keyed by articleId — activates re-assessment mode (Wave 1.7). */
     baseline?: Record<string, BaselineFinding>;
+    /** Claude-format tools from the knowledge resolver (web search). The route
+     *  resolved them for years and dropped them here, so the Step 3 "Web search"
+     *  toggle changed the prompt's promises and nothing else. */
+    tools?: Array<{ type: string; name?: string; [key: string]: unknown }>;
+    /** Wave 3: on the subscription engine the batch reads evidence on demand
+     *  through tools instead of a 120k-character paste. */
+    agentic?: {
+      /** Framework/pack ids search_knowledge is scoped to. */
+      packIds?: string[];
+      /** Tool activity, for the run's progress feed. */
+      onEvent?: (event: { type: string; message: string }) => void;
+    };
+    /** Wave 5: what the batch's run record belongs to (run_artifacts parent
+     *  'gap_batch', parent_id `<assessmentId>:<frameworkId>:<batchIndex>`).
+     *  Without it the record is written under 'unlinked' and cannot be
+     *  found by assessment. */
+    runRecord?: {
+      assessmentId: string;
+      /** The assessment's session, when it has one. */
+      sessionId?: string | null;
+      /** 'primary' (default) or 'second_opinion'. */
+      lane?: string;
+    };
   }
 ): Promise<AssessmentBatchResult> {
   const framework = loadFramework(frameworkId);
@@ -779,28 +854,148 @@ export async function runAssessmentBatch(
   const baseline = opts?.baseline && Object.keys(opts.baseline).length > 0 ? opts.baseline : undefined;
 
   const hasEvidence = evidenceText.length > 0;
-  const baseSystem = buildAssessmentSystemPrompt(context, hasEvidence, !!baseline);
+  const baseSystem = buildAssessmentSystemPrompt(context, hasEvidence, !!baseline, framework.domain ?? frameworkDomain(frameworkId));
   const idListNote = evidenceItems.length > 0
     ? `\nEach item has a stable id in [brackets] — cite those ids in evidenceRefs.\n`
     : '';
-  const evidenceSection = hasEvidence
-    ? `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe following evidence was provided by the assessor. Use this to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Quote or reference specific documents/interviews where applicable. Where the evidence does not cover an article, say so explicitly per the grounding rules above.${idListNote}\n${evidenceText}`
-    : '';
-  const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
 
   const mc = getModelConfig(modelTier);
   // For custom model IDs (azure:*, gpt-*, mistral-*), use directly; for Claude tiers, map via provider
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
-  const result = await callChat({
-    model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
-    system: systemPrompt,
-    messages: [{ role: 'user', content: buildBatchUserMessage(articleBatch, framework, hasEvidence, baseline) }],
-    maxTokens: mc.maxTokensBatch,
-    thinkingLevel: mc.thinkingLevel,
-    db,
-  });
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
+  const routedModel = mapModelToProvider(mc.model);
+  const userMessage = buildBatchUserMessage(articleBatch, framework, hasEvidence, baseline);
 
-  const rawFindings = JSON.parse(extractJson(result.text, 'array')) as RawBatchFinding[];
+  let resultText = '';
+  let resultThinking = '';
+  if (opts?.agentic && isSdkModel(routedModel) && evidenceItems.length > 0) {
+    // ── Wave 3: evidence on demand ────────────────────────────────────────
+    // The batch used to receive the evidence as one paste cut at 120,000
+    // characters — the one real run here uploaded 247k and lost half without
+    // a word. On the subscription engine the batch gets a manifest with an
+    // excerpt of each item and reads the rest through tools, so nothing is
+    // cut and quotes are checked against the FULL text of every item.
+    for (const i of evidenceItems) shownTextByDocId.set(i.docId, i.text);
+    const EXCERPT_CHARS = 1_200;
+    const manifest = evidenceItems.map((i) =>
+      `### ${i.kind === 'interview' ? 'INTERVIEW' : 'DOCUMENT'} [${i.docId}]: ${i.name} — ${i.text.length.toLocaleString('en-GB')} characters\n${i.text.slice(0, EXCERPT_CHARS)}${i.text.length > EXCERPT_CHARS ? '\n… (excerpt — call read_evidence for the rest)' : ''}`,
+    ).join('\n\n---\n\n');
+    const evidenceSection = `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe assessor provided ${evidenceItems.length} evidence item(s), listed below with an excerpt each. Use them to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Before scoring an article that an item bears on, call read_evidence with its id to read the relevant part in full; quote only text you have read. Where the evidence does not cover an article, say so explicitly per the grounding rules above.${idListNote}\n${manifest}`;
+    const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
+
+    const READ_CHARS = 30_000;
+    const byId = new Map(evidenceItems.map((i) => [i.docId, i]));
+    const tools: AgentToolDefinition[] = [
+      {
+        name: 'read_evidence',
+        description: 'Read an evidence item in full by its id (from the list in your instructions). Long items are returned in 30,000-character pages; pass offset to continue.',
+        schema: { doc_id: z.string().describe('The evidence id, e.g. doc-3f2a…'), offset: z.number().int().min(0).optional().describe('Character offset to start from (default 0)') },
+        handler: async (args) => {
+          const item = byId.get(String(args.doc_id ?? '').trim());
+          if (!item) return `No evidence item with id "${String(args.doc_id ?? '')}". Known ids: ${evidenceItems.map((i) => i.docId).join(', ')}.`;
+          const offset = Math.max(0, Number(args.offset ?? 0) || 0);
+          const page = item.text.slice(offset, offset + READ_CHARS);
+          const more = offset + READ_CHARS < item.text.length ? `\n\n… continues — call again with offset ${offset + READ_CHARS} (total ${item.text.length.toLocaleString('en-GB')} characters).` : '';
+          return `### [${item.docId}] ${item.name} (characters ${offset.toLocaleString('en-GB')}–${Math.min(item.text.length, offset + READ_CHARS).toLocaleString('en-GB')})\n${page}${more}`;
+        },
+      },
+      {
+        name: 'search_evidence',
+        description: 'Find which evidence items mention a term or phrase, with a short context around each hit.',
+        schema: { term: z.string().describe('A word or phrase to look for, case-insensitive') },
+        handler: async (args) => {
+          const term = String(args.term ?? '').trim().toLowerCase();
+          if (!term) return 'Give a term to search for.';
+          const hits: string[] = [];
+          for (const item of evidenceItems) {
+            const lower = item.text.toLowerCase();
+            let from = 0; let count = 0;
+            while (count < 3) {
+              const at = lower.indexOf(term, from);
+              if (at < 0) break;
+              hits.push(`[${item.docId}] ${item.name} @${at}: …${item.text.slice(Math.max(0, at - 120), at + term.length + 120).replace(/\s+/g, ' ')}…`);
+              from = at + term.length; count += 1;
+            }
+          }
+          return hits.length > 0 ? hits.join('\n') : `No evidence item mentions "${term}".`;
+        },
+      },
+      {
+        name: 'search_knowledge',
+        description: "Search the framework's requirement text and ANTON's regulatory knowledge packs for an obligation, article or topic. Returns the matching text with citations.",
+        schema: { query: z.string().describe('What to look for') },
+        handler: async (args) => {
+          const grounding = await retrieveGroundingText({ query: String(args.query ?? ''), packIds: opts.agentic?.packIds ?? [frameworkId], db, tokenBudget: 1500 });
+          return grounding?.text ?? 'Nothing relevant found.';
+        },
+      },
+    ];
+    const webSearch = Boolean(opts.tools?.some((t) => t.type === 'web_search_20250305'));
+    const onEvent = opts.agentic.onEvent;
+    const agenticConfig: Parameters<typeof runAgentic>[0] = {
+      model: routedModel,
+      thinking: mc.thinkingLevel as Parameters<typeof runAgentic>[0]['thinking'],
+      system: systemPrompt,
+      prompt: userMessage,
+      tools,
+      webSearch,
+      maxTurns: 14,
+    };
+    const run = await runAgentic(agenticConfig, (event) => {
+      if (!onEvent) return;
+      if (event.type === 'tool_call') {
+        const input = Object.values(event.input).map((v) => String(v)).join(' · ').slice(0, 80);
+        onEvent({ type: 'batch_tool', message: `${event.name.replace(/_/g, ' ')}: ${input}` });
+      } else if (event.type === 'tool_result' && event.isError) {
+        onEvent({ type: 'batch_tool', message: `${event.name.replace(/_/g, ' ')} failed: ${event.output.slice(0, 120)}` });
+      }
+    });
+    // Wave 5: the batch's run record — the prompt as sent, the hashes of what
+    // went in and came out, the engine, the transcript and every tool call —
+    // written whether the run completed or failed. Fire-and-forget: the
+    // batch never waits on the ledger, and a ledger failure is only logged.
+    if (db) {
+      void writeRunArtifactV2(db, buildAgenticRunArtifactInput({
+        parentKind: 'gap_batch',
+        parentId: `${opts.runRecord?.assessmentId ?? 'unlinked'}:${frameworkId}:${batchIndex}`,
+        sessionId: opts.runRecord?.sessionId ?? null,
+        config: agenticConfig,
+        result: run,
+        requestParams: {
+          framework: frameworkId,
+          batchIndex,
+          totalBatches,
+          articles: articleBatch.map((a) => a.id),
+          lane: opts.runRecord?.lane ?? 'primary',
+          modelTier,
+          reassessment: Boolean(baseline),
+        },
+      }));
+    }
+    if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the batch');
+    resultText = run.text;
+    resultThinking = run.thinking;
+  } else {
+    const evidenceSection = hasEvidence
+      ? `\n\n## EVIDENCE DOCUMENTS & INTERVIEW NOTES\nThe following evidence was provided by the assessor. Use this to produce SPECIFIC, evidence-based findings about THIS entity rather than generic assessments. Quote or reference specific documents/interviews where applicable. Where the evidence does not cover an article, say so explicitly per the grounding rules above.${idListNote}\n${evidenceText}`
+      : '';
+    const systemPrompt = [extraSystemContext?.trim(), baseSystem, evidenceSection].filter(Boolean).join('\n\n---\n\n');
+    const result = await callChat({
+      model: routedModel,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      maxTokens: mc.maxTokensBatch,
+      thinkingLevel: mc.thinkingLevel,
+      tools: opts?.tools,
+      db,
+    });
+    resultText = result.text;
+    resultThinking = result.thinking || '';
+  }
+
+  const rawFindings = JSON.parse(extractJson(resultText, 'array')) as RawBatchFinding[];
   const byArticleId = new Map<string, RawBatchFinding>();
   for (const r of rawFindings) {
     if (r && typeof r === 'object' && typeof r.articleId === 'string') byArticleId.set(r.articleId, r);
@@ -820,18 +1015,21 @@ export async function runAssessmentBatch(
     findings.push(buildFinding(article, raw, evidenceIndex, b));
   }
 
-  return { framework: frameworkId, findings, batchIndex, totalBatches, thinking: result.thinking || '' };
+  return { framework: frameworkId, findings, batchIndex, totalBatches, thinking: resultThinking };
 }
 
 export async function synthesiseCapabilityView(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
   modelTier: GapModelTier = 'sonnet',
   db?: DatabaseAdapter
 ): Promise<{ json: string; reasoning: string }> {
   const findingsSummary = Object.entries(allFindings).map(([fw, findings]) => {
-    const summary = findings.map(f => `${f.articleId}: ${f.score} (${f.priority}) — ${f.notes}`).join('\n');
+    // currentState carries the "No evidence provided — based on stated
+    // maturity level" caveat the prompt below asks the model to carry
+    // through; without it the synthesis presented assumed states as observed gaps.
+    const summary = findings.map(f => `${f.articleId}: ${f.score} (${f.priority})\n  Current state: ${f.currentState}\n  Notes: ${f.notes}`).join('\n');
     return `### Framework: ${fw}\n${summary}`;
   }).join('\n\n');
 
@@ -840,13 +1038,16 @@ export async function synthesiseCapabilityView(
   const criticalCount = Object.values(allFindings).flat().filter(f => f.priority === 'critical').length;
 
   const mc = getModelConfig(modelTier);
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mc.model : mapModelToProvider(mc.model),
+    model: mapModelToProvider(mc.model),
     maxTokens: mc.maxTokensSynthesis,
     thinkingLevel: mc.thinkingLevel,
     db,
-    system: `You are a senior compliance transformation advisor with 20+ years of experience in AML/CFT regulatory implementation across Nordic and European financial institutions.
+    system: `You are a ${domainProfile(domainForFrameworks(Object.keys(allFindings))).advisorPersona}.
 
 Synthesise the article-level gap findings below into 8-12 cross-cutting capability themes. Each theme spans one or more regulatory articles and reflects a real organisational capability (not just a regulation grouping).
 
@@ -904,7 +1105,7 @@ Return a JSON array of capability themes:
 }
 
 export async function generateBoardSummary(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
@@ -932,13 +1133,16 @@ export async function generateBoardSummary(
   const frameworkNames = Object.keys(allFindings).join(', ');
 
   const mcBoard = getModelConfig(modelTier);
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mcBoard.model : mapModelToProvider(mcBoard.model),
+    model: mapModelToProvider(mcBoard.model),
     maxTokens: mcBoard.maxTokensSynthesis,
     thinkingLevel: mcBoard.thinkingLevel,
     db,
-    system: `You are a senior compliance advisor with deep experience presenting to boards of Nordic and European financial institutions. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
+    system: `You are a ${domainProfile(domainForFrameworks(Object.keys(allFindings))).boardPersona}. Draft a comprehensive board briefing that is decision-ready. Use plain language. No jargon. Every sentence must be decision-relevant.
 
 Truthfulness rule: where the underlying findings are marked "No evidence provided — based on stated maturity level", make clear to the board that those points reflect the stated maturity level rather than reviewed evidence — never present them as observed facts about this institution.
 
@@ -947,7 +1151,7 @@ Structure:
 **Entity:** [entity type] | **Date:** ${new Date().toISOString().slice(0, 10)} | **Frameworks assessed:** ${frameworkNames}
 
 ### Overall Compliance Posture
-[2-3 paragraph executive overview: overall risk level, comparison to regulatory expectations, and urgency assessment. Include estimated financial exposure range if enforcement action were taken (consider typical FI fines in the jurisdiction).]
+[2-3 paragraph executive overview: overall risk level, comparison to regulatory expectations, and urgency assessment. Do NOT state a financial exposure figure unless the findings or the knowledge provided to you contain one; otherwise write "Financial exposure was not quantified in this assessment."]
 
 ### What's Working
 - [3-5 positives — concrete, specific, citing evidence]
@@ -958,7 +1162,7 @@ For each of the top 5-7 issues:
 > [3-4 sentences: what the gap is, why it matters to the board, estimated financial/reputational risk if unaddressed, and regulatory timeline pressure]
 
 ### Peer Comparison Context
-[Brief note on how similar institutions in the jurisdiction/sector typically score on these dimensions. Flag areas where the entity is behind peer norms.]
+[Only if peer data was provided in the findings or knowledge above. Otherwise write exactly: "No peer data was provided to this assessment." Never invent peer norms.]
 
 ### Regulatory Timeline Pressure
 | Regulatory Milestone | Date | Risk If Not Compliant |
@@ -971,6 +1175,7 @@ For each of the top 5-7 issues:
 3. [...]
 
 ### Estimated Remediation Investment
+Head this table with the sentence: "Illustrative order-of-magnitude ranges — not derived from this assessment; to be validated with the programme team."
 | Category | Estimated Range | Timing |
 |---|---|---|
 | Personnel / FTE | [range] | [when needed] |
@@ -1007,7 +1212,7 @@ ${capabilityView}`,
 }
 
 export async function generateRoadmap(
-  anthropic: Anthropic,
+  anthropic: Anthropic | null,
   capabilityView: string,
   allFindings: Record<string, ArticleFinding[]>,
   contextConfig: Record<string, unknown>,
@@ -1024,13 +1229,16 @@ export async function generateRoadmap(
   ).join('\n');
 
   const mcRoad = getModelConfig(modelTier);
-  const isCustomModel = modelTier !== 'sonnet' && modelTier !== 'opus';
+  // Every id goes through the router: a bare Claude id follows the configured
+  // engine (an sdk: default → the subscription), engine/provider ids pass
+  // through untouched. The old "custom model" branch sent a bare Claude id —
+  // the wizard's former default — straight to the metered API client.
   const result = await callChat({
-    model: isCustomModel ? mcRoad.model : mapModelToProvider(mcRoad.model),
+    model: mapModelToProvider(mcRoad.model),
     maxTokens: mcRoad.maxTokensSynthesis,
     thinkingLevel: mcRoad.thinkingLevel,
     db,
-    system: `You are a compliance transformation programme manager with extensive experience delivering AML/CFT remediation programmes for Nordic and European financial institutions. Build a detailed, phased remediation roadmap.
+    system: `You are a ${domainProfile(domainForFrameworks(Object.keys(allFindings))).programmePersona}. Build a detailed, phased remediation roadmap.
 
 Return a JSON object:
 {

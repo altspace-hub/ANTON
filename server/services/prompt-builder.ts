@@ -1,7 +1,10 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
-import { hybridSearch } from './hybrid-search.js';
+import { hybridSearch, INSTANCE_WIDE_SEARCH, type HybridSearchResult } from './hybrid-search.js';
 import { createHkpService } from './hkp-service.js';
+import { packAppliesToArea } from './area-frameworks.js';
+import { getAtomInjectionStatus, type AtomInjectionStatus } from './atom-injection-gate.js';
+import { EXPERT_ROLES } from '../../src/lib/expert-roles.js';
 
 /**
  * SEVEN-LAYER PROMPT STRUCTURE
@@ -55,6 +58,38 @@ Before producing any output, create an explicit plan:
 3. State your assumptions
 4. Identify any gaps in the provided information
 5. Present this plan, then execute it systematically`;
+
+// ── Layer 4c: compliance guardrail (Wave 1, 2026-09-16) ──────────────────────
+// GOV-06 defined this text on the client (ModulePage) and appended it only when
+// the user edited the prompt, so a default FCP run never carried it: the latest
+// FCP run's stored prompt had no trace of it on either engine. It is now a
+// server-side layer for the regulated areas below, recorded in the run artifact
+// as `layer4c_guardrail`. The client copy is left in place; the composer skips
+// this layer when the module prompt already contains the marker line.
+export const COMPLIANCE_GUARDRAIL_MARKER = 'IMPORTANT LIMITATION — NON-NEGOTIABLE';
+
+export const COMPLIANCE_GUARDRAIL = `**${COMPLIANCE_GUARDRAIL_MARKER}**
+You do NOT make compliance decisions, give legal advice, or replace professional judgment.
+You provide analysis, structured information, and decision support to human experts who retain full professional responsibility for all compliance and legal conclusions.
+Every output must include appropriate caveats where decisions depend on facts or legal interpretation not visible in this analysis.`;
+
+/** Areas whose modules always carry the guardrail. One place to change. */
+export const GUARDRAIL_AREAS: ReadonlySet<string> = new Set([
+  'fcp',
+  'legal',
+  'tax-transfer-pricing',
+  'data-privacy',
+  'payments-dora',
+  'blockchain',
+]);
+
+/** The guardrail text for an area, or null when the area is not regulated in this sense
+ *  or the module prompt already carries the marker (a user-edited prompt from the client). */
+export function guardrailForArea(areaId: string | undefined, modulePrompt: string): string | null {
+  if (!areaId || !GUARDRAIL_AREAS.has(areaId)) return null;
+  if (modulePrompt.includes(COMPLIANCE_GUARDRAIL_MARKER)) return null;
+  return COMPLIANCE_GUARDRAIL;
+}
 
 const EXPERT_ROLE_INSTRUCTIONS: Record<string, string> = {
   // ── General (non-domain) ──────────────────────────────────────────────────────
@@ -172,6 +207,79 @@ const EXPERT_ROLE_INSTRUCTIONS: Record<string, string> = {
   'for-low-literacy': "Write for someone with limited reading ability or low formal education. Maximum 10 words per sentence. Use only the most common words in the language. Avoid any abstract concepts — every idea must be made concrete with a real-life example. If a visual would help (diagram, simple drawing), describe it in [brackets]. Use numbered lists for any sequence of steps. Read every sentence aloud: if it sounds complicated when spoken, simplify it. The goal is that every adult — regardless of education level — can understand and act on this.",
 };
 
+// ── One persona registry (Wave 4b, 2026-09-17) ───────────────────────────────
+// The picker (src/lib/expert-roles.ts) and this map drifted: six ids the user
+// could select — compliance-counsel, criminal-court-expert, eu-regulatory-lawyer,
+// fcp-investigations-expert, international-aml-law, sanctions-lawyer — had no
+// text here, so choosing them injected nothing, silently, although the client
+// registry already carried a full promptInstruction for each. The server map
+// stays authoritative for the ids it has (its text is not changed); an id it
+// lacks is answered from the client registry. The ids that exist only here
+// (ct-* panel roles, nadia-ux, sara-risk) are used by core-team-panel.ts and
+// stay. tests/services/persona-registry-parity.test.ts pins both sets.
+const CLIENT_PERSONA_INSTRUCTIONS: ReadonlyMap<string, string> = new Map(
+  EXPERT_ROLES
+    .filter((r) => typeof r.promptInstruction === 'string' && r.promptInstruction.trim().length > 0)
+    .map((r) => [r.id, r.promptInstruction]),
+);
+
+/** The ids this file carries text for — the server side of the parity test. */
+export function listServerPersonaIds(): string[] {
+  return Object.keys(EXPERT_ROLE_INSTRUCTIONS);
+}
+
+// ── Imported personas (Wave 6) ──────────────────────────────────────────────
+// A module bundle carries the text of the personas it references; the
+// importer writes them to the `personas` table. The composer resolves personas
+// SYNCHRONOUSLY, so installed rows are mirrored into an in-memory index: filled
+// once at boot (preloadInstalledPersonas) and on every install
+// (registerInstalledPersona). The server map and the client registry shadow an
+// installed row with the same id — the importer namespaces a clashing id as
+// `bundle:<module>:<id>`, so a clash here only means an identical text.
+
+const _installedPersonaIndex = new Map<string, string>();
+
+/** Make one installed persona resolvable now. Blank prompts are ignored. */
+export function registerInstalledPersona(id: string, prompt: string): void {
+  if (!id || typeof prompt !== 'string' || !prompt.trim()) return;
+  _installedPersonaIndex.set(id, prompt);
+}
+
+/**
+ * Load every non-archived row of `personas` into the index. Never throws —
+ * a missing table (un-migrated install) reads as zero rows. Returns the count.
+ */
+export async function preloadInstalledPersonas(db: DatabaseAdapter): Promise<number> {
+  try {
+    const rows = await db.all<{ id: string; prompt: string }>(
+      'SELECT id, prompt FROM personas WHERE is_archived = 0',
+    );
+    _installedPersonaIndex.clear();
+    for (const row of rows) registerInstalledPersona(row.id, row.prompt);
+    return _installedPersonaIndex.size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Test seam. */
+export function resetInstalledPersonasForTests(): void {
+  _installedPersonaIndex.clear();
+}
+
+/**
+ * The instruction text for one persona id: the server map first, then the
+ * client registry, then personas installed from a bundle, else ''.
+ * Own-property lookup only, so 'constructor' and friends are unknown ids,
+ * not Object.prototype members.
+ */
+export function resolvePersonaInstruction(id: string): string {
+  if (Object.prototype.hasOwnProperty.call(EXPERT_ROLE_INSTRUCTIONS, id)) {
+    return EXPERT_ROLE_INSTRUCTIONS[id];
+  }
+  return CLIENT_PERSONA_INSTRUCTIONS.get(id) ?? _installedPersonaIndex.get(id) ?? '';
+}
+
 const MULTI_PERSPECTIVE_INSTRUCTION = `## MULTI-PERSPECTIVE ANALYSIS
 Analyze the problem from multiple expert viewpoints sequentially:
 1. **Legal/Regulatory perspective** — What do the rules require? What are the legal risks?
@@ -202,8 +310,8 @@ export function getPlanningInstruction(): string {
 export function getExpertRoleInstruction(role: string | string[]): string {
   const roles = Array.isArray(role) ? role : [role];
   const instructions = roles
-    .map((r) => EXPERT_ROLE_INSTRUCTIONS[r])
-    .filter(Boolean);
+    .map((r) => resolvePersonaInstruction(r))
+    .filter((text) => text.length > 0);
   if (instructions.length === 0) return '';
   if (instructions.length === 1) return `## EXPERT ROLE\n${instructions[0]}`;
   // Multiple personas: enumerate them
@@ -410,46 +518,121 @@ export async function buildKnowledgePackLayer(
   db: DatabaseAdapter,
   context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
 ): Promise<string> {
+  return (await buildKnowledgePackLayerDetailed(db, context)).text;
+}
+
+/** One injected pack entry, with the provenance the run artifact records (Wave 2). */
+export interface PackEntry {
+  /** The line as injected into the prompt. */
+  text: string;
+  packId: string;
+  packName: string;
+  refId: string;
+  /** 1 = semantic retrieval, 2 = deterministic embedding rows, 3 = entity names. */
+  tier: 1 | 2 | 3;
+  /** Retrieval score for tier 1 (RRF/hybrid), otherwise undefined. */
+  similarity?: number;
+}
+
+export interface PackLayerResult {
+  text: string;
+  entries: PackEntry[];
+  /** The packs that had a claim on this run (after the area gate). */
+  packs: Array<{ id: string; name: string; displayName: string; version: string | null }>;
+  /** True when the run's area matched no active pack and relevance-only retrieval ran instead. */
+  areaFallback: boolean;
+}
+
+const EMPTY_PACK_LAYER: PackLayerResult = { text: '', entries: [], packs: [], areaFallback: false };
+
+/**
+ * Layer 2b with provenance (Wave 2): the same text as buildKnowledgePackLayer
+ * plus the entries injected (pack, ref, tier, score) and the packs that had a
+ * claim on the run, so the run artifact can pin what grounded the answer.
+ *
+ * Area gate (Wave 2): when the run has an area, only packs that belong to it
+ * (area-frameworks.ts) are listed and searched. Before this every active pack
+ * was listed in every run and up to 3,500 tokens of AML entity text rode on a
+ * marketing brief. An area with no matching pack gets relevance-only retrieval
+ * over all active packs (the open-chat rule) — never a dump.
+ */
+export async function buildKnowledgePackLayerDetailed(
+  db: DatabaseAdapter,
+  context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
+): Promise<PackLayerResult> {
   try {
     // Lightweight check: any active packs at all?
     const count = await db.get(
       "SELECT COUNT(*) as c FROM knowledge_packs WHERE status='active'"
     ) as { c: number } | undefined;
-    if (!count || count.c === 0) return '';
+    if (!count || count.c === 0) return EMPTY_PACK_LAYER;
 
     const rows = await db.all(
-      `SELECT id, display_name, regulatory_area, regulation_ids, entity_count
+      `SELECT id, name, display_name, version, regulatory_area, regulation_ids, entity_count
        FROM knowledge_packs WHERE status='active' ORDER BY tier ASC, display_name ASC`
-    ) as Array<{ id: string; display_name: string; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
+    ) as Array<{ id: string; name: string | null; display_name: string; version: string | null; regulatory_area: string | null; regulation_ids: string; entity_count: number }>;
 
-    if (rows.length === 0) return '';
+    if (rows.length === 0) return EMPTY_PACK_LAYER;
+
+    const areaId = context?.areaId ?? null;
+    const scoped = areaId ? rows.filter((r) => packAppliesToArea(r, areaId)) : rows;
+    const areaFallback = Boolean(areaId) && scoped.length === 0;
+    const message = context?.userMessage?.trim() ?? '';
+    // An area with no pack of its own has no claim on any listing; it may
+    // still receive a close semantic match, exactly like open chat.
+    if (areaFallback && !message) return EMPTY_PACK_LAYER;
+    const packsForRun = areaFallback ? rows : scoped;
+
+    // ── Inject actual pack entity TEXT (budgeted) ─────────────────────────
+    // A run with neither area nor module (open chat) has no claim on any
+    // pack: it gets pack content only when retrieval finds a strong match,
+    // and no pack listing at all otherwise. The listing alone told the model
+    // that AML packs were "active for this session" on every question. An
+    // area with no pack of its own is treated the same way.
+    const strict = areaFallback || (!context?.areaId && !context?.moduleId && Boolean(message));
+    const entries = await retrievePackEntityContent(db, packsForRun, context, strict);
+    if (strict && entries.length === 0) return { ...EMPTY_PACK_LAYER, areaFallback };
+
+    // Relevance-only runs list only the packs that contributed; a run in a
+    // pack's own area lists every pack with a claim on it.
+    const usedPackIds = new Set(entries.map((e) => e.packId));
+    const listedPacks = strict ? packsForRun.filter((r) => usedPackIds.has(r.id)) : packsForRun;
 
     const lines: string[] = ['## ACTIVE REGULATORY KNOWLEDGE PACKS'];
     lines.push('The following structured regulatory knowledge packs are active for this session. Use them to ground entity names, article references, and obligation details:');
-    for (const r of rows) {
+    for (const r of listedPacks) {
       let regs: string[] = [];
       try { regs = JSON.parse(r.regulation_ids || '[]'); } catch { /* ignore */ }
       lines.push(`- **${r.display_name}** (${r.regulatory_area ?? 'General'}, ${r.entity_count} entities${regs.length ? `, covers: ${regs.join(', ')}` : ''})`);
     }
-
-    // ── Inject actual pack entity TEXT (budgeted) ─────────────────────────
-    const entityLines = await retrievePackEntityContent(db, rows, context);
-    if (entityLines.length > 0) {
+    if (entries.length > 0) {
       lines.push('');
       lines.push('### Relevant pack content');
       lines.push('The following entries are drawn from the packs above. Cite the pack and entity reference when you rely on one:');
-      lines.push(...entityLines);
+      lines.push(...entries.map((e) => e.text));
     }
 
-    return lines.join('\n');
+    const packs = listedPacks
+      .map((r) => ({ id: r.id, name: r.name ?? r.id, displayName: r.display_name, version: r.version ?? null }));
+
+    return { text: lines.join('\n'), entries, packs, areaFallback };
   } catch {
-    return '';
+    return EMPTY_PACK_LAYER;
   }
 }
 
 /** Token budget for injected pack entity text (~same scale as buildAtomLayer). */
 const PACK_LAYER_TOKEN_BUDGET = 3500;
 const PACK_LAYER_MAX_ENTITIES = 60;
+/**
+ * Open chat (strict mode) gets a much smaller, more relevant slice. The
+ * "context used" line (Wave 2) showed ~18k characters of pack text riding on
+ * a question about an engagement letter — relevance-only was still too
+ * generous. A dozen close matches, a quarter of the module budget.
+ */
+const STRICT_PACK_LAYER_TOKEN_BUDGET = 900;
+const STRICT_PACK_LAYER_MAX_ENTITIES = 12;
+const STRICT_PACK_MIN_SIMILARITY = 0.55;
 
 /**
  * Retrieve the most relevant pack entity text for the current session,
@@ -460,7 +643,10 @@ async function retrievePackEntityContent(
   db: DatabaseAdapter,
   activePacks: Array<{ id: string; display_name: string; regulatory_area: string | null }>,
   context?: { areaId?: string | null; moduleId?: string | null; userMessage?: string | null },
-): Promise<string[]> {
+  /** Relevance-only: a stronger similarity floor and no deterministic dump
+   *  (tiers 2-3) when semantic retrieval finds nothing. */
+  strict = false,
+): Promise<PackEntry[]> {
   const activeIds = new Set(activePacks.map(p => p.id));
   const packNameById = new Map(activePacks.map(p => [p.id, p.display_name]));
   const charBudget = PACK_LAYER_TOKEN_BUDGET * 4; // ~4 chars/token
@@ -483,24 +669,32 @@ async function retrievePackEntityContent(
       const results = await hybridSearch(db, {
         query,
         contentTypes: ['knowledge_pack_entity'],
-        topK: PACK_LAYER_MAX_ENTITIES,
-        minSimilarity: 0.25,
+        topK: strict ? STRICT_PACK_LAYER_MAX_ENTITIES : PACK_LAYER_MAX_ENTITIES,
+        minSimilarity: strict ? STRICT_PACK_MIN_SIMILARITY : 0.25,
         includeDocumentChunks: false,
+        // Pack entities are instance-wide reference material with no owner column,
+        // and the prompt layer has no request to derive a principal from anyway.
+        scope: INSTANCE_WIDE_SEARCH,
       });
       const fromActivePacks = results.filter(r => activeIds.has(splitContentId(r.content_id).packId));
-      const capped = applyTokenBudget(fromActivePacks, PACK_LAYER_TOKEN_BUDGET);
+      const capped = applyTokenBudget(fromActivePacks, strict ? STRICT_PACK_LAYER_TOKEN_BUDGET : PACK_LAYER_TOKEN_BUDGET);
       if (capped.length > 0) {
-        return capped.map(r => {
+        return capped.map((r): PackEntry => {
           const { packId, refId } = splitContentId(r.content_id);
           const meta = (r.metadata ?? {}) as Record<string, unknown>;
           const packName = (typeof meta.packName === 'string' && meta.packName) || packNameById.get(packId) || 'Knowledge pack';
-          return formatLine(packName, String(meta.refId ?? refId), r.content_text);
+          const ref = String(meta.refId ?? refId);
+          return { text: formatLine(packName, ref, r.content_text), packId, packName, refId: ref, tier: 1, similarity: r.score };
         });
       }
     } catch {
       // Embeddings/vector search unavailable — fall through to deterministic path
     }
   }
+
+  // Strict mode is relevance or nothing — the deterministic tiers below
+  // dump whatever packs are active, which is exactly the off-task text.
+  if (strict) return [];
 
   // ── Tier 2: deterministic — embedding rows by pack prefix (retain descriptions) ──
   // Area-matched packs first (substring match on regulatory_area/name is the
@@ -512,7 +706,7 @@ async function retrievePackEntityContent(
     return am - bm;
   });
 
-  const lines: string[] = [];
+  const lines: PackEntry[] = [];
   let usedChars = 0;
   try {
     for (const pack of orderedPacks) {
@@ -526,7 +720,7 @@ async function retrievePackEntityContent(
       for (const row of embRows) {
         if (lines.length >= PACK_LAYER_MAX_ENTITIES || usedChars + row.content_text.length > charBudget) break;
         const { refId } = splitContentId(row.content_id);
-        lines.push(formatLine(pack.display_name, refId, row.content_text));
+        lines.push({ text: formatLine(pack.display_name, refId, row.content_text), packId: pack.id, packName: pack.display_name, refId, tier: 2 });
         usedChars += row.content_text.length;
       }
     }
@@ -559,7 +753,7 @@ async function retrievePackEntityContent(
           }
         } catch { /* ignore malformed metadata */ }
         const text = `${n.canonical_name} [${n.entity_type}]${metaText}`;
-        lines.push(formatLine(pack.display_name, n.entity_id, text));
+        lines.push({ text: formatLine(pack.display_name, n.entity_id, text), packId: pack.id, packName: pack.display_name, refId: n.entity_id, tier: 3 });
         usedChars += text.length;
       }
     }
@@ -569,13 +763,67 @@ async function retrievePackEntityContent(
   return lines;
 }
 
+/** One atom as injected, with the provenance the run artifact and the UI record (Wave 4). */
+export interface AtomLayerAtom {
+  id: string;
+  content: string;
+  category: string;
+  atomType: string;
+  confidence: number;
+  /** Retrieval score after boosts (hybrid) or the confidence (sql_fallback). */
+  score: number;
+  /** 'hybrid' | 'sql_fallback' */
+  method: string;
+  sourceModuleId: string | null;
+  /** ISO timestamp ('' when the row has none). */
+  createdAt: string;
+}
+
+export interface AtomLayerResult {
+  /** The text to inject: the project lessons block (always) plus the general block (gated). */
+  text: string;
+  /** The general-block atoms that went in — [] when gated off or nothing passed the rules. */
+  atoms: AtomLayerAtom[];
+  gate: AtomInjectionStatus;
+  /** True when the general atom block is part of `text`. */
+  applied: boolean;
+  /** Why it did or did not apply — the gate's reason, or what retrieval found. */
+  reason: string;
+  /** Characters of the Coding Studio lessons block (never gated). */
+  lessonsChars: number;
+}
+
+export interface AtomLayerOptions {
+  areaId?: string | null;
+  moduleId?: string | null;
+  userMessage?: string | null;
+  sessionId?: string | null;
+  /** The assistant message the answer is persisted under — binds a rating to the answer. */
+  messageId?: string | null;
+  /** ANTON Studio Phase 4: a coding-project run always gets its own lessons block. */
+  codingProjectId?: string | null;
+  /** The user running this; in team mode only their own and unowned atoms are injected. */
+  ownerUserId?: string | null;
+  teamMode?: boolean;
+  /** Build the general block regardless of the gate (a caller that has its own reason). */
+  bypassGate?: boolean;
+}
+
+/** The block says what it is: memory, not evidence. */
+export const ATOM_LAYER_HEADER = '## PRIOR KNOWLEDGE ATOMS (memory from earlier runs — not verified sources)';
+export const ATOM_LAYER_INSTRUCTION = 'Treat these as hints to check, not as evidence. Do not cite them as sources.';
+/** Five atoms at most — a 09-13 FCP run carried five boilerplate atoms at RRF 0.012–0.016. */
+export const ATOM_LAYER_MAX_ATOMS = 5;
+/** An atom older than this must have earned a positive rating to be injected again. */
+export const ATOM_LAYER_STALE_DAYS = 180;
+const ATOM_LAYER_TOKEN_BUDGET = 4000;
+const ATOM_LAYER_STALE_MS = ATOM_LAYER_STALE_DAYS * 86_400_000;
+
 /**
- * Build a knowledge atom layer — injects relevant high-confidence atoms
- * from the same area/module as prior-work context for Claude.
- *
- * Uses full hybrid search (vector similarity + BM25 keyword + RRF fusion)
- * with ANTON-specific boosts (confidence, recency, area/module, superseded).
- * Falls back to the original SQL query when hybrid search is unavailable.
+ * Build a knowledge atom layer — relevant prior atoms from the same area/module
+ * as memory for the model. Thin wrapper over buildAtomLayerDetailed for the
+ * callers that only want the text (app-gateway, the preview route, Coding
+ * Studio); they are gated exactly like the module run.
  */
 export async function buildAtomLayer(
   db: DatabaseAdapter,
@@ -583,126 +831,247 @@ export async function buildAtomLayer(
   moduleId?: string | null,
   userMessage?: string | null,
   sessionId?: string | null,
-  // ANTON Studio Phase 4: when set, this is a coding-project run — prepend a
-  // "## LESSONS FROM THIS PROJECT" block (its own captured atoms) and boost
-  // same-project atoms in the relevance rank. Backward-compatible: non-coding
-  // runs (undefined) are completely unaffected.
   codingProjectId?: string | null,
 ): Promise<string> {
+  return (await buildAtomLayerDetailed(db, { areaId, moduleId, userMessage, sessionId, codingProjectId })).text;
+}
+
+/**
+ * Layer 6 (memory) with its provenance — Wave 4: inject only when it earns its place.
+ *
+ * The Coding Studio lessons block (codingProjectId) is always built and never
+ * gated: it is the project's own captured failures and review flags. The
+ * general atom block is built only when the gate applies (atom-injection-gate.ts)
+ * or the caller bypasses it, and then under the relevance rules:
+ *   - hybrid retrieval as before (vector + BM25 + RRF, ANTON boosts, token budget);
+ *   - no 'status.*' atoms (open-chat boilerplate such as "Claude is ready…");
+ *   - an atom older than 180 days needs at least one positive rating;
+ *   - in team mode only the user's own atoms and unowned atoms;
+ *   - at most five atoms;
+ *   - every injected atom is written to retrieval_feedback with the message id,
+ *     so a thumbs rating binds to the answer it went into.
+ * Never throws: on any failure the result carries the lessons block only.
+ */
+export async function buildAtomLayerDetailed(
+  db: DatabaseAdapter,
+  opts: AtomLayerOptions,
+): Promise<AtomLayerResult> {
+  const lessonsBlock = opts.codingProjectId
+    ? await buildProjectLessonsBlock(db, opts.codingProjectId)
+    : '';
+  const lessonsChars = lessonsBlock.length;
+  const gate = await getAtomInjectionStatus(db);
+  const lessonsOnly = (reason: string): AtomLayerResult =>
+    ({ text: lessonsBlock, atoms: [], gate, applied: false, reason, lessonsChars });
+
+  if (!(opts.bypassGate || gate.applies)) return lessonsOnly(gate.reason);
+
+  let retrieved: { atoms: AtomLayerAtom[]; method: string };
   try {
-    // Build the project-lessons block FIRST so it is always injected for a coding
-    // run (even when the hybrid ranker buries the project's own atoms behind
-    // higher-scoring general ones). Prepended to whatever the general layer returns.
-    const lessonsBlock = codingProjectId
-      ? await buildProjectLessonsBlock(db, codingProjectId)
-      : '';
-    const withLessons = (general: string): string => {
-      if (!lessonsBlock) return general;
-      return general ? `${lessonsBlock}\n\n${general}` : lessonsBlock;
-    };
-
-    // ── Try full hybrid search if we have a user message ─────────────────
-    if (userMessage && userMessage.trim().length > 5) {
-      try {
-        // Full vector + BM25 + RRF fusion via hybridSearch
-        const results = await hybridSearch(db, {
-          query: userMessage.trim(),
-          contentTypes: ['knowledge_atom'],
-          topK: 25,
-          minSimilarity: 0.25,
-        });
-
-        if (!Array.isArray(results) || results.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));
-
-        // Enrich results with metadata from knowledge_atoms table.
-        // Hybrid search metadata may be sparse (old embeddings), so we
-        // always fetch the authoritative atom data from the DB.
-        const atomIds = results.map(r => r.content_id);
-        const placeholders = atomIds.map(() => '?').join(',');
-        const atomRows = await db.all(
-          `SELECT id, content, atom_type, category, confidence, source_area_id, source_module_id,
-                  created_at, superseded_by, coding_project_id
-           FROM knowledge_atoms WHERE id IN (${placeholders})`,
-          ...atomIds
-        ) as Array<{ id: string; content: string; atom_type: string; category: string;
-          confidence: number; source_area_id: string | null; source_module_id: string | null;
-          created_at: string; superseded_by: string | null; coding_project_id: string | null;
-        }>;
-
-        const atomMap = new Map(atomRows.map(a => [a.id, a]));
-
-        // Merge hybrid search scores with authoritative atom metadata
-        const enriched = results
-          .filter(r => atomMap.has(r.content_id))
-          .map(r => {
-            const atom = atomMap.get(r.content_id)!;
-            return {
-              ...r,
-              content_text: atom.content, // Use DB content (authoritative)
-              metadata: {
-                ...r.metadata,
-                category: atom.category,
-                atom_type: atom.atom_type,
-                confidence: atom.confidence,
-                source_area_id: atom.source_area_id,
-                source_module_id: atom.source_module_id,
-                created_at: atom.created_at,
-                is_superseded: atom.superseded_by ? 1 : 0,
-                coding_project_id: atom.coding_project_id,
-              } as Record<string, unknown>,
-            };
-          });
-
-        if (enriched.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));
-
-        // Apply ANTON boosts (confidence, recency, area/module + project relevance, superseded)
-        const boosted = await applyAntonBoosts(enriched, { areaId, moduleId, codingProjectId }, db);
-
-        // Apply token budget cap
-        const capped = applyTokenBudget(boosted, 4000);
-
-        if (capped.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));
-
-        // ── Log retrieval feedback (non-blocking) ──────────────────────────
-        if (sessionId) {
-          try {
-            for (const item of capped) {
-              await db.run(
-                `INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method, retrieval_score)
-                 VALUES (?, ?, ?, ?)`,
-                sessionId, item.content_id, 'hybrid', item.score
-              );
-            }
-          } catch {
-            // Non-fatal — retrieval_feedback table may not exist yet
-          }
-        }
-
-        const lines = [
-          '## PRIOR KNOWLEDGE ATOMS',
-          'The following insights were retrieved by relevance to your query from recent completed work. Reference them as supporting evidence when relevant:',
-          '',
-        ];
-        for (const r of capped) {
-          const meta = r.metadata;
-          const cat = meta.category || 'general';
-          const type = meta.atom_type || 'insight';
-          const conf = typeof meta.confidence === 'number' ? Math.round(meta.confidence * 100) : 80;
-          lines.push(`- [${cat}/${type}] ${r.content_text} (${conf}% confidence)`);
-        }
-        return withLessons(lines.join('\n'));
-
-      } catch (hybridErr) {
-        // Hybrid search failed — fall through to SQL fallback
-        console.warn('[buildAtomLayer] Hybrid search unavailable, using SQL fallback:', hybridErr instanceof Error ? hybridErr.message : hybridErr);
-      }
-    }
-
-    // ── SQL fallback (original behaviour) ────────────────────────────────
-    return withLessons(await buildAtomLayerFallback(db, areaId));
-  } catch {
-    return '';
+    retrieved = await retrieveGeneralAtoms(db, opts);
+  } catch (err) {
+    console.warn('[buildAtomLayer] retrieval failed (non-fatal):', err instanceof Error ? err.message : err);
+    return lessonsOnly('Memory retrieval failed; nothing injected');
   }
+  if (retrieved.atoms.length === 0) {
+    return lessonsOnly(
+      opts.areaId || (opts.userMessage && opts.userMessage.trim().length > 5)
+        ? 'No prior atoms passed the relevance rules for this run'
+        : 'No area or message to retrieve prior atoms against',
+    );
+  }
+
+  await recordRetrieval(db, opts, retrieved.atoms);
+
+  const general = renderAtomBlock(retrieved.atoms);
+  const text = lessonsBlock ? `${lessonsBlock}\n\n${general}` : general;
+  const reason = opts.bypassGate && !gate.applies ? `Gate bypassed by the caller (${gate.reason})` : gate.reason;
+  return { text, atoms: retrieved.atoms, gate, applied: true, reason, lessonsChars };
+}
+
+interface AtomRow {
+  id: string;
+  content: string;
+  atom_type: string;
+  category: string;
+  confidence: number;
+  source_area_id: string | null;
+  source_module_id: string | null;
+  created_at: string | Date | null;
+  superseded_by: string | null;
+  coding_project_id: string | null;
+  owner_user_id?: string | null;
+}
+
+function isoOf(value: string | Date | null | undefined): string {
+  if (value instanceof Date) return Number.isFinite(value.getTime()) ? value.toISOString() : '';
+  return typeof value === 'string' ? value : '';
+}
+
+function ageMs(createdAt: string, now: number): number {
+  const t = Date.parse(createdAt);
+  return Number.isFinite(t) ? Math.max(0, now - t) : 0;
+}
+
+/** Rules that do not depend on ratings: project scope, no status.*, team-mode ownership. */
+function passesStaticRules(a: AtomRow, opts: AtomLayerOptions): boolean {
+  // A Coding Studio project's atoms (review flags, test failures) are that
+  // project's lessons — they only belong in that project's runs. They are
+  // 98.6% of all atoms on this instance and were retrieved everywhere.
+  if (a.coding_project_id && a.coding_project_id !== (opts.codingProjectId ?? null)) return false;
+  if (typeof a.atom_type === 'string' && a.atom_type.startsWith('status.')) return false;
+  if (opts.teamMode) {
+    const owner = a.owner_user_id ?? null;
+    if (owner !== null && owner !== (opts.ownerUserId ?? null)) return false;
+  }
+  return true;
+}
+
+/**
+ * The stale rule in one query: of the atoms older than 180 days, which have a
+ * positive rating? A failed read keeps none of them (conservative).
+ */
+async function dropStaleUnrated(db: DatabaseAdapter, rows: AtomRow[], now: number): Promise<AtomRow[]> {
+  const stale = rows.filter((a) => ageMs(isoOf(a.created_at), now) > ATOM_LAYER_STALE_MS);
+  if (stale.length === 0) return rows;
+  let rated = new Set<string>();
+  try {
+    const placeholders = stale.map(() => '?').join(',');
+    const fb = await db.all<{ atom_id: string }>(
+      `SELECT DISTINCT atom_id FROM retrieval_feedback WHERE was_relevant = 1 AND atom_id IN (${placeholders})`,
+      ...stale.map((a) => a.id),
+    );
+    rated = new Set(fb.map((r) => r.atom_id));
+  } catch {
+    // retrieval_feedback unreadable — no stale atom can prove itself
+  }
+  const staleIds = new Set(stale.map((a) => a.id));
+  return rows.filter((a) => !staleIds.has(a.id) || rated.has(a.id));
+}
+
+async function retrieveGeneralAtoms(
+  db: DatabaseAdapter,
+  opts: AtomLayerOptions,
+): Promise<{ atoms: AtomLayerAtom[]; method: string }> {
+  const { areaId, userMessage } = opts;
+
+  // ── Hybrid search when there is a user message ──────────────────────────
+  if (userMessage && userMessage.trim().length > 5) {
+    try {
+      // Full vector + BM25 + RRF fusion via hybridSearch. A run with no area
+      // (open chat) has no relevance boost to lean on, so it demands a
+      // stronger match: at 0.25 a kickoff-agenda question pulled in 25
+      // Coding Studio review flags as "supporting evidence".
+      const results = await hybridSearch(db, {
+        query: userMessage.trim(),
+        contentTypes: ['knowledge_atom'],
+        topK: 25,
+        minSimilarity: areaId ? 0.25 : 0.45,
+        // Atoms are instance-wide memory; ownership is applied below, per row.
+        scope: INSTANCE_WIDE_SEARCH,
+      });
+
+      if (Array.isArray(results) && results.length > 0) {
+        const atoms = await rankHybridAtoms(db, results, opts);
+        if (atoms.length > 0) return { atoms, method: 'hybrid' };
+      }
+    } catch (hybridErr) {
+      console.warn('[buildAtomLayer] Hybrid search unavailable, using SQL fallback:', hybridErr instanceof Error ? hybridErr.message : hybridErr);
+    }
+  }
+
+  // ── SQL fallback ────────────────────────────────────────────────────────
+  return { atoms: await buildAtomLayerFallback(db, opts), method: 'sql_fallback' };
+}
+
+async function rankHybridAtoms(
+  db: DatabaseAdapter,
+  results: HybridSearchResult[],
+  opts: AtomLayerOptions,
+): Promise<AtomLayerAtom[]> {
+  const now = Date.now();
+  // Enrich results with the authoritative atom rows (hybrid-search metadata
+  // may be sparse on old embeddings). Inactive atoms never come back.
+  const atomIds = results.map((r) => r.content_id);
+  const placeholders = atomIds.map(() => '?').join(',');
+  const atomRows = await db.all<AtomRow>(
+    `SELECT id, content, atom_type, category, confidence, source_area_id, source_module_id,
+            created_at, superseded_by, coding_project_id, owner_user_id
+     FROM knowledge_atoms WHERE id IN (${placeholders}) AND is_active = 1`,
+    ...atomIds,
+  );
+
+  const kept = await dropStaleUnrated(db, atomRows.filter((a) => passesStaticRules(a, opts)), now);
+  const atomMap = new Map(kept.map((a) => [a.id, a]));
+
+  const enriched = results
+    .filter((r) => atomMap.has(r.content_id))
+    .map((r) => {
+      const atom = atomMap.get(r.content_id)!;
+      return {
+        ...r,
+        content_text: atom.content,
+        metadata: {
+          ...r.metadata,
+          category: atom.category,
+          atom_type: atom.atom_type,
+          confidence: atom.confidence,
+          source_area_id: atom.source_area_id,
+          source_module_id: atom.source_module_id,
+          created_at: isoOf(atom.created_at),
+          is_superseded: atom.superseded_by ? 1 : 0,
+          coding_project_id: atom.coding_project_id,
+        } as Record<string, unknown>,
+      };
+    });
+  if (enriched.length === 0) return [];
+
+  // ANTON boosts (confidence, recency, area/module + project relevance, superseded, ratings),
+  // then the token budget, then the hard cap.
+  const boosted = await applyAntonBoosts(enriched, { areaId: opts.areaId, moduleId: opts.moduleId, codingProjectId: opts.codingProjectId }, db);
+  const capped = applyTokenBudget(boosted, ATOM_LAYER_TOKEN_BUDGET).slice(0, ATOM_LAYER_MAX_ATOMS);
+
+  return capped.map((r): AtomLayerAtom => {
+    const atom = atomMap.get(r.content_id)!;
+    return {
+      id: atom.id,
+      content: atom.content,
+      category: atom.category || 'general',
+      atomType: atom.atom_type || 'insight',
+      confidence: typeof atom.confidence === 'number' ? atom.confidence : 0.8,
+      score: r.score,
+      method: 'hybrid',
+      sourceModuleId: atom.source_module_id ?? null,
+      createdAt: isoOf(atom.created_at),
+    };
+  });
+}
+
+/** Write the injected set so a rating can bind to this answer. Non-fatal. */
+async function recordRetrieval(db: DatabaseAdapter, opts: AtomLayerOptions, atoms: AtomLayerAtom[]): Promise<void> {
+  if (!opts.sessionId) return;
+  try {
+    for (const a of atoms) {
+      await db.run(
+        `INSERT INTO retrieval_feedback (session_id, atom_id, retrieval_method, retrieval_score, message_id)
+         VALUES (?, ?, ?, ?, ?)`,
+        opts.sessionId, a.id, a.method, a.score, opts.messageId ?? null,
+      );
+    }
+  } catch {
+    // Non-fatal — the layer still goes in; only the rating link is lost
+  }
+}
+
+function renderAtomBlock(atoms: AtomLayerAtom[]): string {
+  const lines = [ATOM_LAYER_HEADER, ATOM_LAYER_INSTRUCTION, ''];
+  for (const a of atoms) {
+    const conf = Math.round(a.confidence * 100);
+    const origin = [a.sourceModuleId ? `from ${a.sourceModuleId}` : '', a.createdAt ? a.createdAt.slice(0, 10) : '']
+      .filter(Boolean).join(', ');
+    lines.push(`- [${a.category}/${a.atomType}] ${a.content} (${conf}% confidence${origin ? `; ${origin}` : ''})`);
+  }
+  return lines.join('\n');
 }
 
 /**
@@ -751,40 +1120,59 @@ async function buildProjectLessonsBlock(
   }
 }
 
-/** Original SQL-only atom retrieval — used as fallback when hybrid search is unavailable. */
+/**
+ * SQL-only atom retrieval — the fallback when hybrid search is unavailable.
+ * Reached only through buildAtomLayerDetailed, so it is gated the same way,
+ * and it applies the same rules it can express in SQL (no status.*, no
+ * project atoms, team-mode ownership, at most five). Its 30-day window makes
+ * the 180-day rule moot here.
+ */
 async function buildAtomLayerFallback(
   db: DatabaseAdapter,
-  areaId?: string | null,
-): Promise<string> {
+  opts: AtomLayerOptions,
+): Promise<AtomLayerAtom[]> {
   try {
-    const conditions = ['ka.is_active = 1', "ka.created_at >= NOW() - INTERVAL '30 days'", 'ka.confidence >= 0.7'];
-    const params: unknown[] = [];
+    // No area means no relevance signal at all: the fallback would be the
+    // most confident atoms of the last 30 days from anywhere in the product.
+    // For an open-chat question that is noise dressed as evidence.
+    const areaId = opts.areaId;
+    if (!areaId) return [];
 
-    if (areaId) {
-      conditions.push('(ka.source_area_id = ? OR ka.source_area_id IS NULL)');
-      params.push(areaId);
+    const conditions = [
+      'ka.is_active = 1',
+      "ka.created_at >= NOW() - INTERVAL '30 days'",
+      'ka.confidence >= 0.7',
+      'ka.coding_project_id IS NULL',
+      "ka.atom_type NOT LIKE 'status.%'",
+      '(ka.source_area_id = ? OR ka.source_area_id IS NULL)',
+    ];
+    const params: unknown[] = [areaId];
+    if (opts.teamMode) {
+      conditions.push('(ka.owner_user_id = ? OR ka.owner_user_id IS NULL)');
+      params.push(opts.ownerUserId ?? '');
     }
 
-    const atoms = await db.all(`
-      SELECT ka.content, ka.atom_type, ka.category, ka.confidence
+    const rows = await db.all<AtomRow>(`
+      SELECT ka.id, ka.content, ka.atom_type, ka.category, ka.confidence, ka.source_module_id, ka.created_at
       FROM knowledge_atoms ka
       WHERE ${conditions.join(' AND ')}
       ORDER BY ka.confidence DESC, ka.created_at DESC
-      LIMIT 15
-    `, ...params) as Array<{ content: string; atom_type: string; category: string; confidence: number;
-    }>;
+      LIMIT ${ATOM_LAYER_MAX_ATOMS}
+    `, ...params);
 
-    if (atoms.length === 0) return '';
-
-    const lines = ['## PRIOR KNOWLEDGE ATOMS',
-      'The following insights were extracted from recent completed work. Reference them as supporting evidence when relevant:',
-      ''];
-    for (const a of atoms) {
-      lines.push(`- [${a.category}/${a.atom_type}] ${a.content} (${Math.round(a.confidence * 100)}% confidence)`);
-    }
-    return lines.join('\n');
+    return rows.map((a): AtomLayerAtom => ({
+      id: a.id,
+      content: a.content,
+      category: a.category || 'general',
+      atomType: a.atom_type || 'insight',
+      confidence: typeof a.confidence === 'number' ? a.confidence : 0.8,
+      score: typeof a.confidence === 'number' ? a.confidence : 0.8,
+      method: 'sql_fallback',
+      sourceModuleId: a.source_module_id ?? null,
+      createdAt: isoOf(a.created_at),
+    }));
   } catch {
-    return '';
+    return [];
   }
 }
 

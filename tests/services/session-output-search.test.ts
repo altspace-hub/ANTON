@@ -15,12 +15,11 @@
  *     path entirely — so this proves the KEYWORD FALLBACK alone meets the
  *     bar (installs without any embedding provider still get search).
  *
- * Requires DATABASE_URL (env or .env); skips otherwise.
+ * Requires DATABASE_URL (from tests/setup/db-guard.ts); skips otherwise.
  */
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 // Mock ONLY getEmbeddingAdapter; keep cosine/serialize/isZeroVector real
 // (the SQLite vector store imports those from the same module).
@@ -50,14 +49,9 @@ vi.mock('../../server/services/embedding-adapter.js', async (importOriginal) => 
 });
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch {
-    return undefined;
-  }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();
@@ -204,6 +198,10 @@ describeOrSkip('session_output: embed write path + paraphrase retrieval fixture'
         query,
         contentTypes: ['session_output'],
         topK: 5,
+        // This fixture asserts RETRIEVAL, not isolation — it seeds one operator's
+        // outputs and checks a paraphrase finds them. Owner scoping is covered by
+        // tests/lib/owned-row.test.ts against a real database.
+        scope: hybrid.INSTANCE_WIDE_SEARCH,
       });
       const ids = results.map((r) => r.content_id);
       expect(ids).toContain(messageIdByKey.get(expectKey));
@@ -222,6 +220,7 @@ describeOrSkip('session_output: embed write path + paraphrase retrieval fixture'
       query: 'transaction monitoring thresholds recalibrated quarterly',
       contentTypes: ['checkpoint'],
       topK: 5,
+      scope: hybrid.INSTANCE_WIDE_SEARCH,
     });
     expect(results.every((r) => r.content_type !== 'session_output')).toBe(true);
   });

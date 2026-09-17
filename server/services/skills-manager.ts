@@ -7,15 +7,36 @@
  * Two sources:
  * 1. BUILT_IN_SKILLS — defined inline below (synchronous, always available)
  * 2. Disk skills — loaded from server/skills/{id}/skill.json + skill-content.md
- *    These are loaded lazily on first async call and merged with built-ins.
+ *    `preloadDiskSkills()` (called once at server boot from server/index.ts)
+ *    reads them into an in-memory index so that the SYNCHRONOUS resolvers the
+ *    prompt composer and the routes use — getSkillById / getAllSkills /
+ *    resolveSkills — see disk packs too. Before preload, only built-ins resolve.
+ *    Built-ins win on an id clash.
  */
 
 import path from 'path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
+import type { DatabaseAdapter } from '../db/database.js';
 
 const __dirname_skills = path.dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = path.join(__dirname_skills, '..', 'skills');
+
+/**
+ * Every category a skill may declare. The last two come from the disk packs
+ * under server/skills/ (`technical`: AAOIFI / IFSB standards; `thematic`:
+ * crop database, livestock diseases) — a skill.json category outside this list
+ * is loaded as `domain` with a warning rather than dropped.
+ */
+export const SKILL_CATEGORIES = [
+  'language', 'communication', 'methodology', 'domain', 'style', 'jurisdiction', 'technical', 'thematic',
+] as const;
+
+export type SkillCategory = typeof SKILL_CATEGORIES[number];
+
+export function isSkillCategory(value: unknown): value is SkillCategory {
+  return typeof value === 'string' && (SKILL_CATEGORIES as readonly string[]).includes(value);
+}
 
 export interface Skill {
   id: string;
@@ -23,11 +44,12 @@ export interface Skill {
   description: string;
   version: string;
   author: string;
-  category: 'language' | 'communication' | 'methodology' | 'domain' | 'style' | 'jurisdiction';
+  category: SkillCategory;
   tags: string[];
   applicableAreas?: string[];
   prompt: string;  // Injected as Layer 5 in PromptComposer
-  source?: 'builtin' | 'disk';
+  /** 'installed' = a row of the `skills` table (e.g. arrived inside a .anton module bundle). */
+  source?: 'builtin' | 'disk' | 'installed';
 }
 
 // ── Built-in Skill Library ────────────────────────────────────
@@ -943,8 +965,135 @@ export function getBuiltInSkills(): Skill[] {
   return _cachedSkills;
 }
 
+/**
+ * Disk packs, once `preloadDiskSkills()` has run. Keyed by id; a built-in with
+ * the same id shadows the disk entry (see getSkillById).
+ */
+let _diskSkillIndex: Map<string, Skill> | null = null;
+
+/** True once the disk packs have been read into the synchronous index. */
+export function isDiskSkillsPreloaded(): boolean {
+  return _diskSkillIndex !== null;
+}
+
+/**
+ * Read every server/skills/{id} pack into the in-memory index the synchronous
+ * resolvers consult. Idempotent. Called once at server start; a failure is the
+ * caller's to log — the built-ins keep working either way.
+ * Returns the number of disk packs indexed.
+ */
+export async function preloadDiskSkills(): Promise<number> {
+  const disk = await loadDiskSkills();
+  const index = new Map<string, Skill>();
+  for (const skill of disk) {
+    if (!skill.id) continue;
+    if (index.has(skill.id)) {
+      console.warn(`[skills-manager] duplicate disk skill id '${skill.id}' — keeping the first one loaded`);
+      continue;
+    }
+    index.set(skill.id, skill);
+  }
+  _diskSkillIndex = index;
+  return index.size;
+}
+
+// ── Installed skills (the `skills` table) — Wave 6, track G ─────────────────
+// A module bundle carries the text of the skills it references; the importer
+// writes them to the `skills` table. The composer resolves skills
+// SYNCHRONOUSLY (resolveSkills → getSkillById), so installed rows are mirrored
+// into an in-memory index: filled once at start (preloadInstalledSkills, from
+// the exchange router factory) and on every install (registerInstalledSkill).
+// Built-ins and disk packs shadow an installed row with the same id — the
+// importer namespaces a clashing id as `bundle:<module>:<id>`, so a clash here
+// only means an identical text was reused. invalidateSkillCache() does NOT
+// clear this index: it mirrors the database, not the disk.
+
+const _installedSkillIndex = new Map<string, Skill>();
+
+export interface InstalledSkillInput {
+  id: string;
+  name: string;
+  prompt: string;
+  description?: string | null;
+  version?: string | null;
+  author?: string | null;
+  category?: string | null;
+  tags?: string[] | string | null;
+}
+
+function toInstalledSkill(row: InstalledSkillInput): Skill | null {
+  if (!row.id || typeof row.prompt !== 'string' || !row.prompt.trim()) return null;
+  let tags: string[] = [];
+  if (Array.isArray(row.tags)) {
+    tags = row.tags.filter((t): t is string => typeof t === 'string');
+  } else if (typeof row.tags === 'string' && row.tags) {
+    try {
+      const parsed: unknown = JSON.parse(row.tags);
+      if (Array.isArray(parsed)) tags = parsed.filter((t): t is string => typeof t === 'string');
+    } catch { tags = []; }
+  }
+  return {
+    id: row.id,
+    name: row.name || row.id,
+    description: row.description ?? '',
+    version: row.version ?? '1.0.0',
+    author: row.author ?? 'import',
+    category: isSkillCategory(row.category) ? row.category : 'domain',
+    tags,
+    prompt: row.prompt,
+    source: 'installed',
+  };
+}
+
+/** Make one installed skill resolvable right away (called after the importer writes the row). */
+export function registerInstalledSkill(row: InstalledSkillInput): void {
+  const skill = toInstalledSkill(row);
+  if (skill) _installedSkillIndex.set(skill.id, skill);
+}
+
+/** Drop one installed skill from the resolver (archive / delete). */
+export function unregisterInstalledSkill(id: string): void {
+  _installedSkillIndex.delete(id);
+}
+
+/**
+ * Mirror every non-archived row of the `skills` table into the resolver.
+ * Never throws — a missing table (un-migrated install) reads as zero rows.
+ * Returns the number of installed skills now resolvable.
+ */
+export async function preloadInstalledSkills(db: DatabaseAdapter): Promise<number> {
+  try {
+    const rows = await db.all<InstalledSkillInput>(
+      'SELECT id, name, description, version, author, category, prompt, tags FROM skills WHERE is_archived = 0',
+    );
+    _installedSkillIndex.clear();
+    for (const row of rows) registerInstalledSkill(row);
+    return _installedSkillIndex.size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Synchronous — built-ins first, then the preloaded disk packs, then installed rows. */
 export function getSkillById(id: string): Skill | undefined {
-  return getBuiltInSkills().find((s) => s.id === id);
+  return getBuiltInSkills().find((s) => s.id === id) ?? _diskSkillIndex?.get(id) ?? _installedSkillIndex.get(id);
+}
+
+/**
+ * Synchronous — every skill the resolver can see right now: built-ins plus the
+ * preloaded disk packs (minus any disk id shadowed by a built-in), plus the
+ * installed rows no built-in or disk pack shadows.
+ */
+export function getAllSkills(): Skill[] {
+  const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
+  const seen = new Set(builtins.map((s) => s.id));
+  const disk = _diskSkillIndex && _diskSkillIndex.size > 0
+    ? [..._diskSkillIndex.values()].filter((s) => !seen.has(s.id))
+    : [];
+  if (disk.length === 0 && _installedSkillIndex.size === 0) return builtins;
+  for (const s of disk) seen.add(s.id);
+  const installed = [..._installedSkillIndex.values()].filter((s) => !seen.has(s.id));
+  return [...builtins, ...disk, ...installed];
 }
 
 /**
@@ -999,8 +1148,10 @@ export function getAutoAttachSkillIds(outputFormats: string[]): string[] {
 }
 
 // ── Disk-based skills ─────────────────────────────────────────
-// Loaded from server/skills/{id}/skill.json + skill-content.md
-// Merged with built-ins on first async request (disk overrides built-in on ID clash).
+// Loaded from server/skills/{id}/skill.json + skill-content.md.
+// `preloadDiskSkills()` above feeds them into the synchronous index; the
+// async helpers below preload on demand and then defer to the sync resolvers,
+// so both paths apply one precedence rule (built-in wins on an id clash).
 
 let _diskSkillsCache: Skill[] | null = null;
 
@@ -1041,13 +1192,22 @@ async function loadDiskSkills(): Promise<Skill[]> {
         ? (await fs.readFile(contentPath, 'utf-8')).trim()
         : '';
 
+      let category: SkillCategory = 'domain';
+      if (raw.category === undefined) {
+        // no category declared — 'domain' is the documented default
+      } else if (isSkillCategory(raw.category)) {
+        category = raw.category;
+      } else {
+        console.warn(`[skills-manager] ${entry.name}/skill.json declares unknown category '${raw.category}' — loaded as 'domain' (known: ${SKILL_CATEGORIES.join(', ')})`);
+      }
+
       diskSkills.push({
         id: raw.id,
         name: raw.label ?? raw.name ?? raw.id,
         description: raw.description ?? '',
         version: raw.version ?? '1.0.0',
         author: raw.author ?? 'openEXPERT',
-        category: (raw.category as Skill['category']) ?? 'domain',
+        category,
         tags: raw.tags ?? [],
         applicableAreas: raw.applicableAreas,
         prompt,
@@ -1064,38 +1224,108 @@ async function loadDiskSkills(): Promise<Skill[]> {
 }
 
 /**
- * Returns all skills — built-ins merged with disk skills.
- * Disk skills override built-ins with the same ID.
+ * Returns all skills — built-ins merged with disk skills — preloading the disk
+ * packs first if server start has not done so yet (tests, ad-hoc scripts).
  */
 export async function getAllSkillsAsync(): Promise<Skill[]> {
-  const disk = await loadDiskSkills();
-  const diskIds = new Set(disk.map((s) => s.id));
-  const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
-  return [...builtins.filter((s) => !diskIds.has(s.id)), ...disk];
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return getAllSkills();
 }
 
 /**
- * Get a skill by ID — checks disk skills first, then built-ins.
+ * Get a skill by ID, preloading the disk packs on demand.
  */
 export async function getSkillByIdAsync(id: string): Promise<Skill | undefined> {
-  const all = await getAllSkillsAsync();
-  return all.find((s) => s.id === id);
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return getSkillById(id);
 }
 
 /**
- * Resolve skill IDs including disk skills.
+ * Resolve skill IDs, preloading the disk packs on demand.
  */
 export async function resolveSkillsAsync(skillIds: string[]): Promise<string> {
-  if (!skillIds || skillIds.length === 0) return '';
-  const all = await getAllSkillsAsync();
-  const index = new Map(all.map((s) => [s.id, s]));
-  const skills = skillIds.map((id) => index.get(id)).filter(Boolean) as Skill[];
-  if (skills.length === 0) return '';
-  if (skills.length === 1) return skills[0].prompt;
-  return skills.map((s) => s.prompt).join('\n\n---\n\n');
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return resolveSkills(skillIds);
 }
 
+// ── Jurisdiction packs (Wave 6 track H) ───────────────────────
+// A profile says "Singapore", "SG", "MAS" or "Monetary Authority of Singapore";
+// the pack that answers is jurisdiction-sg-mas. Aliases come from each pack's
+// own metadata — the id (`jurisdiction-<iso2>-<regulator>`) and the label
+// (`Country — Regulator Name (ACRONYM)`) — plus a short hand-kept supplement
+// for what the metadata cannot yield (ISO-3 codes, common short forms).
+
+const JURISDICTION_ALIAS_SUPPLEMENT: Record<string, readonly string[]> = {
+  'jurisdiction-ae-cbuae': ['are', 'united arab emirates', 'emirates', 'dubai', 'abu dhabi'],
+  'jurisdiction-gh-bog': ['gha'],
+  'jurisdiction-hk-hkma': ['hkg', 'hong kong sar', 'hksar'],
+  'jurisdiction-in-rbi': ['ind'],
+  'jurisdiction-ke-cbk': ['ken'],
+  'jurisdiction-my-bnm': ['mys'],
+  'jurisdiction-ng-cbn': ['nga'],
+  'jurisdiction-ph-bsp': ['phl'],
+  'jurisdiction-pk-sbp': ['pak'],
+  'jurisdiction-sa-sama': ['sau', 'ksa', 'saudi', 'kingdom of saudi arabia'],
+  'jurisdiction-sg-mas': ['sgp'],
+  'jurisdiction-uk-fca': ['gb', 'gbr', 'uk', 'united kingdom', 'great britain', 'britain', 'england', 'scotland', 'wales', 'northern ireland', 'fca', 'nca'],
+};
+
+/** Lower-case, ASCII-folded, punctuation collapsed to single spaces, leading "the" dropped. */
+function normaliseJurisdictionText(value: string): string {
+  const folded = value.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return folded.replace(/^the\s+/, '');
+}
+
+/** Every phrase that names this pack, normalised. */
+function jurisdictionAliases(skill: Skill): string[] {
+  const aliases = new Set<string>();
+  const idMatch = /^jurisdiction-([a-z]{2})-([a-z0-9]+)$/i.exec(skill.id);
+  if (idMatch) {
+    aliases.add(idMatch[1].toLowerCase());
+    aliases.add(idMatch[2].toLowerCase());
+  }
+  const labelMatch = /^(.+?)\s+—\s+(.+?)\s+\(([^)]+)\)\s*$/.exec(skill.name);
+  if (labelMatch) {
+    aliases.add(normaliseJurisdictionText(labelMatch[1]));
+    aliases.add(normaliseJurisdictionText(labelMatch[2]));
+    aliases.add(normaliseJurisdictionText(labelMatch[3]));
+  }
+  for (const extra of JURISDICTION_ALIAS_SUPPLEMENT[skill.id] ?? []) aliases.add(normaliseJurisdictionText(extra));
+  aliases.delete('');
+  return [...aliases];
+}
+
+/**
+ * The jurisdiction pack a profile / org jurisdiction maps to, or null when no
+ * pack covers it (Sweden, the EU and most of the world have none yet). Matches
+ * by country name, ISO code or regulator name, case-insensitively; a two-letter
+ * code must be the whole value, anything longer may sit inside a longer phrase
+ * ("Singapore (MAS)", "Hong Kong SAR"). The longest alias wins.
+ * Sees the disk packs once `preloadDiskSkills()` has run; the built-in UK pack
+ * resolves either way.
+ */
+export function findJurisdictionSkill(jurisdiction: string): { id: string; name: string } | null {
+  const query = normaliseJurisdictionText(jurisdiction ?? '');
+  if (!query) return null;
+  const padded = ` ${query} `;
+
+  let best: { skill: Skill; length: number } | null = null;
+  for (const skill of getAllSkills()) {
+    if (skill.category !== 'jurisdiction') continue;
+    for (const alias of jurisdictionAliases(skill)) {
+      const hit = alias.length <= 2 ? query === alias : padded.includes(` ${alias} `);
+      if (hit && (!best || alias.length > best.length)) best = { skill, length: alias.length };
+    }
+  }
+  return best ? { id: best.skill.id, name: best.skill.name } : null;
+}
+
+/**
+ * Drop every cache, including the preloaded disk index — after this only the
+ * built-ins resolve until `preloadDiskSkills()` runs again.
+ */
 export function invalidateSkillCache(): void {
   _diskSkillsCache = null;
+  _diskSkillIndex = null;
   _cachedSkills = null;
 }

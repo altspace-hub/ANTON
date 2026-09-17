@@ -36,7 +36,7 @@
 <main>
 <h1>Privacy Policy</h1>
 <p><strong>For ANTON and the ANTON apps — Companion, Comm, Pay, Business and Agent.</strong></p>
-<p>Version 1.0 · Last updated 29 July 2026</p>
+<p>Version 1.1 · Last updated 5 September 2026</p>
 <hr>
 <h2>The short version</h2>
 <p>These apps are local-first. Your documents, messages, contacts, receipts and private keys stay on your own device or your own server. There is no account system, we cannot read your messages, and we do not sell or share your data with advertisers.</p>
@@ -77,8 +77,13 @@
 <p>If you use a wallet, a payment you send is signed on your device and broadcast to the <strong>public FutureChain ledger</strong>.</p>
 <blockquote>
 <p><strong>This is public and permanent.</strong> Anyone can read it, and it cannot be deleted, edited or withdrawn — not by you, and not by us.</p>
-<p>What is written on-chain includes the amount and fee, the sender and recipient addresses, the payer's name, and any reference or message you attach — in the clear, <em>not</em> encrypted. For transfers of €1,000 or more, where transfer-of-funds rules require it, the originator's postal address is included too. Payments below that threshold omit the address.</p>
+<p>What is public includes the amount and fee, the sender and recipient addresses, the time, and the block it settled in.</p>
 </blockquote>
+<p>A payment also carries a structured ISO 20022 message alongside it, containing the payer's name, any reference you attach, and — for transfers of €1,000 or more, where transfer-of-funds rules require it — the originator's postal address. Two things about that message matter, and both are easy to get wrong:</p>
+<ul>
+<li><strong>It is not encrypted.</strong> The protocol field it travels in is named <code>encrypted_data</code>, which is a misnomer. Treat anything you put in a payment reference as readable by whoever handles the payment.</li>
+<li><strong>Today it is discarded after screening.</strong> The node that settles your payment reads the message to run compliance screening, then drops it: it is not written to the public ledger and is not retrievable afterwards — not by us, not by the recipient, not by you. If a node operator later enables message storage, the message becomes retrievable by readers the recipient has authorised, and this policy will be updated before that happens.</li>
+</ul>
 <p>Reading your balance or history sends your wallet address to the node you have configured, which lets that node's operator associate the address with your IP address. You can point the app at a different node, including one you run yourself.</p>
 <p>Converting between FutureChain and ordinary currency is arranged between you and your own exchange partner. That relationship, and any identity checks it involves, is between you and them; the apps are not a party to it and hold none of that data.</p>
 <h3>3.4 Pairing and abuse prevention — Companion, Comm, Pay, Business</h3>

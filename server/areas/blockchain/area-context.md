@@ -11,8 +11,9 @@ The digital asset sector has moved from regulatory grey zone to fully regulated 
 |---|---|---|
 | MiCA — Regulation (EU) 2023/1114 | CASPs, EMT/ART/utility token issuers | Stablecoins: 30 Jun 2024; CASPs: 30 Dec 2024 |
 | TFR — Regulation (EU) 2023/1113 (Transfer of Funds) | CASP transfers of crypto-assets | 30 Dec 2024 |
-| AMLR — Regulation (EU) 2024/1624 | All obliged entities incl. CASPs | Phased from 2027 (CASPs earlier under AMLD6) |
-| AMLD6 — Directive (EU) 2018/843 | VASPs as obliged entities | In force (transitioning to AMLR) |
+| AMLR — Regulation (EU) 2024/1624 | All obliged entities incl. CASPs | Applies from 10 July 2027 [verify: any earlier CASP-specific milestones] |
+| AMLD5 — Directive (EU) 2018/843 [verify: directive number] | VASPs as obliged entities | In force (transitioning to AMLR) |
+| AMLD6 — Directive (EU) 2024/1640 | Institutional and supervisory framework (replaces AMLD4) | Applies from 10 July 2027 [verify: staggered transposition deadlines] |
 | DORA — Regulation (EU) 2022/2554 | ICT risk for financial entities incl. CASPs | 17 Jan 2025 |
 | DLT Pilot Regime — Regulation (EU) 2022/858 | Tokenised financial instruments | In force (pilot) |
 | MiFID II | Crypto qualifying as financial instruments | In force |
@@ -75,3 +76,5 @@ The digital asset sector has moved from regulatory grey zone to fully regulated 
 6. **DeFi remains unsettled** — be explicit about regulatory ambiguity; do not overstate the clarity of the rules
 7. **FATF standards inform EU law** — EBA guidelines consistently reference FATF guidance; treat FATF as highly persuasive even where not binding
 8. **Blockchain analytics are probabilistic** — risk scores and cluster attributions carry uncertainty; always caveat
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

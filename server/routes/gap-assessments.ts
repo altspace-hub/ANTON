@@ -5,6 +5,7 @@
  */
 
 import { safeError } from '../lib/error-response.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -22,6 +23,7 @@ import {
   extractEvidenceItems,
   buildEvidenceManifest,
   mapFindingRow,
+  __getModelConfig,
   type FrameworkArticle,
   type GapModelTier,
   type GapFindingRow,
@@ -29,6 +31,9 @@ import {
   type OverrideRequestBody,
 } from '../services/gap-assessment-engine.js';
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
+import { domainForFrameworks, domainProfile } from '../services/gap-domains.js';
+import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import { lostRunJob, gapRunJobKey } from '../services/run-recovery.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import {
   computeOpinionAgreement,
@@ -43,6 +48,7 @@ import { compareIterations, buildSinceLastAssessmentSection } from '../services/
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { bundleGapAssessmentToAnton } from '../services/anton-bundler.js';
 import { signAntonBundle } from '../services/anton-bundle-signing.js';
+import { createOutputStore, type StoreOutputParams } from '../services/output-store.js';
 import { fileURLToPath } from 'url';
 
 const __filename_local = fileURLToPath(import.meta.url);
@@ -53,10 +59,228 @@ function getUserId(req: Request): string {
   return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
 }
 
+// ── Memory feed (Wave 4b, 2026-09-17) ───────────────────────────────────────
+//
+// A finished assessment is the most structured output ANTON produces, and
+// none of it reached the learning ledger: only the chat route stored an
+// output, so the Gap Assessor never learned. Both completion points — the
+// roadmap (status 'complete') and a recorded iteration — now store one
+// compact rendering through output-store, whose pipeline summarises and
+// extracts atoms after the tick and records its progress on the row.
+// Fire-and-forget: the response never waits on it and never fails for it.
+
+/** The stored rendering stays inside the summariser's and extractor's windows. */
+export const GAP_MEMORY_TEXT_MAX_CHARS = 12_000;
+
+export interface GapMemoryFinding {
+  framework: string;
+  articleId: string;
+  articleTitle?: string | null;
+  score?: string | null;
+  priority?: string | null;
+  currentState?: string | null;
+  notes?: string | null;
+}
+
+export interface GapMemoryRenderInput {
+  title: string;
+  frameworks: string[];
+  findings: GapMemoryFinding[];
+  /** The roadmap as stored (JSON string) or parsed; anything unreadable is left out. */
+  roadmap: unknown;
+}
+
+export interface GapMemoryStepInput extends GapMemoryRenderInput {
+  assessmentId: string;
+  /** 0 for the roadmap; the iteration number for a recorded iteration. */
+  stepIndex: number;
+  stepName: string;
+  userId: string;
+}
+
+interface RoadmapItemLite { title: string; priority: string | null; effort: string | null; articleIds: string[] }
+interface RoadmapPhaseLite { name: string; timeframe: string | null; objective: string | null; items: RoadmapItemLite[] }
+interface RoadmapLite { phases: RoadmapPhaseLite[]; criticalPath: string[]; keyRisks: string[] }
+
+const SCORE_ORDER: Record<string, number> = { red: 0, amber: 1, yellow: 2, green: 3 };
+
+function oneLine(value: unknown, max: number): string {
+  return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function stringList(value: unknown, max: number): string[] {
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === 'string').map(v => oneLine(v, max)).filter(Boolean)
+    : [];
+}
+
+/** Tolerant read of the roadmap JSON the generator returns (phases → items). */
+function parseRoadmapLite(raw: unknown): RoadmapLite | null {
+  let value: unknown = raw;
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch { return null; }
+  }
+  if (!value || typeof value !== 'object') return null;
+  const obj = value as Record<string, unknown>;
+  if (!Array.isArray(obj.phases)) return null;
+  const phases: RoadmapPhaseLite[] = obj.phases
+    .filter((p): p is Record<string, unknown> => Boolean(p) && typeof p === 'object')
+    .map(p => ({
+      name: oneLine(p.name, 120) || 'Phase',
+      timeframe: oneLine(p.timeframe, 60) || null,
+      objective: oneLine(p.objective, 200) || null,
+      items: (Array.isArray(p.items) ? p.items : [])
+        .filter((i): i is Record<string, unknown> => Boolean(i) && typeof i === 'object')
+        .map(i => ({
+          title: oneLine(i.title, 120),
+          priority: oneLine(i.priority, 20) || null,
+          effort: oneLine(i.effort, 10) || null,
+          articleIds: stringList(i.articleIds, 40),
+        }))
+        .filter(i => i.title.length > 0),
+    }));
+  return { phases, criticalPath: stringList(obj.criticalPath, 40), keyRisks: stringList(obj.keyRisks, 160) };
+}
+
+/** Cut at a line boundary under the cap and say so, rather than split a finding mid-sentence. */
+function capText(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const marker = '\n…(truncated)';
+  const room = max - marker.length;
+  const cut = text.lastIndexOf('\n', room);
+  return text.slice(0, cut > room / 2 ? cut : room) + marker;
+}
+
+/** The ANTON area an assessment's atoms belong to, from its frameworks' shared domain. */
+export function gapAssessmentAreaId(frameworks: string[]): string {
+  switch (domainForFrameworks(frameworks)) {
+    case 'infosec':
+    case 'ict-resilience':
+      return 'cyber';
+    case 'privacy':
+      return 'data-privacy';
+    case 'esg':
+      return 'esg';
+    case 'ai-governance':
+      return 'risk';
+    default:
+      return 'fcp';
+  }
+}
+
+/** gap_assessments.frameworks is a JSON array; anything else reads as no frameworks. */
+export function parseAssessmentFrameworks(raw: unknown): string[] {
+  if (Array.isArray(raw)) return stringList(raw, 80);
+  if (typeof raw !== 'string') return [];
+  try { return stringList(JSON.parse(raw), 80); } catch { return []; }
+}
+
+/**
+ * The compact text memory learns from: every finding as one line (worst
+ * first, so a cap keeps the ones that matter) and the roadmap's headline
+ * items. Deterministic, never longer than GAP_MEMORY_TEXT_MAX_CHARS.
+ */
+export function renderGapAssessmentMemoryText(input: GapMemoryRenderInput): string {
+  const lines: string[] = [];
+  lines.push(`Gap assessment: ${oneLine(input.title, 200) || 'Untitled'}`);
+  if (input.frameworks.length > 0) lines.push(`Frameworks: ${input.frameworks.join(', ')}`);
+
+  const findings = [...input.findings].sort(
+    (a, b) => (SCORE_ORDER[a.score ?? ''] ?? 9) - (SCORE_ORDER[b.score ?? ''] ?? 9),
+  );
+  const count = (score: string) => findings.filter(f => f.score === score).length;
+  lines.push(`Findings (${findings.length}): ${count('red')} red, ${count('amber')} amber, ${count('yellow')} yellow, ${count('green')} green`);
+  for (const f of findings) {
+    const status = [f.score, f.priority].filter(Boolean).join('/');
+    const finding = oneLine(f.notes, 240) || oneLine(f.currentState, 240);
+    const title = oneLine(f.articleTitle, 80);
+    lines.push(`- ${f.framework} ${f.articleId}${title ? ` (${title})` : ''}${status ? ` [${status}]` : ''}${finding ? `: ${finding}` : ''}`);
+  }
+
+  const roadmap = parseRoadmapLite(input.roadmap);
+  if (roadmap && roadmap.phases.length > 0) {
+    lines.push('');
+    lines.push('Roadmap:');
+    for (const phase of roadmap.phases) {
+      lines.push(`${phase.name}${phase.timeframe ? ` (${phase.timeframe})` : ''}${phase.objective ? `: ${phase.objective}` : ''}`);
+      for (const item of phase.items) {
+        const meta = [item.priority, item.effort].filter(Boolean).join('/');
+        const articles = item.articleIds.length > 0 ? ` — ${item.articleIds.join(', ')}` : '';
+        lines.push(`  - ${item.title}${meta ? ` [${meta}]` : ''}${articles}`);
+      }
+    }
+    if (roadmap.criticalPath.length > 0) lines.push(`Critical path: ${roadmap.criticalPath.join(' → ')}`);
+    if (roadmap.keyRisks.length > 0) lines.push(`Key risks: ${roadmap.keyRisks.join('; ')}`);
+  }
+
+  return capText(lines.join('\n'), GAP_MEMORY_TEXT_MAX_CHARS);
+}
+
+/** The exact row a completed assessment step stores — one place, so the tests and the routes agree. */
+export function buildGapAssessmentOutputParams(input: GapMemoryStepInput): StoreOutputParams {
+  return {
+    executionId: input.assessmentId,
+    workflowId: `gap-assessment:${input.assessmentId}`,
+    stepIndex: input.stepIndex,
+    stepType: 'gap_assessment',
+    areaId: gapAssessmentAreaId(input.frameworks),
+    moduleId: 'gap-analysis',
+    outputData: { text: renderGapAssessmentMemoryText(input) },
+    workflowName: `Gap assessment: ${oneLine(input.title, 200) || 'Untitled'}`,
+    stepName: input.stepName,
+    userId: input.userId,
+  };
+}
+
+/** The article_scores blob (framework → findings) as the flat list memory renders. */
+function flattenArticleFindings(allFindings: Record<string, ArticleFindingLite[]>): GapMemoryFinding[] {
+  return Object.entries(allFindings).flatMap(([framework, findings]) =>
+    (Array.isArray(findings) ? findings : []).map(f => ({
+      framework,
+      articleId: String(f.articleId ?? ''),
+      articleTitle: f.articleTitle ?? null,
+      score: f.score ?? null,
+      priority: f.priority ?? null,
+      currentState: f.currentState ?? null,
+      notes: f.notes ?? null,
+    })),
+  );
+}
+
+type ArticleFindingLite = Partial<Pick<import('../services/gap-assessment-engine.js').ArticleFinding,
+  'articleId' | 'articleTitle' | 'score' | 'priority' | 'currentState' | 'notes'>>;
+
 export async function createGapAssessmentsRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Promise<Router> {
   const router = Router();
   const engine = await createGapAssessmentEngine(db);
+
+  // Wave 4b: one store per router, created on first use (the same lazy
+  // pattern claude.ts uses). feedMemory never throws and never delays a
+  // response — the ledger row records what the pipeline does with it.
+  let _outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
+  async function getOutputStore() {
+    if (!_outputStore) _outputStore = await createOutputStore(db);
+    return _outputStore;
+  }
+  function feedMemory(input: GapMemoryStepInput): void {
+    void (async () => {
+      try {
+        const store = await getOutputStore();
+        await store.storeOutput(buildGapAssessmentOutputParams(input));
+      } catch (err) {
+        console.warn('[gap-assessments] memory feed failed (non-fatal):', err instanceof Error ? err.message : err);
+      }
+    })();
+  }
+  const assessmentTitle = (row: unknown): string =>
+    oneLine((row as { title?: unknown } | undefined)?.title, 200) || 'Untitled';
+  // Kept for the engine function signatures; the LLM calls themselves go
+  // through provider-router and the routes gate on hasClaudeEngine().
   const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20 * 60 * 1000 }) : null);
+  /** Assessment ids with a run in progress in this process. */
+  const runsInFlight = new Set<string>();
+  /** An explicitly injected client (tests, or a funded key) is a Claude path too. */
+  const engineAvailable = (): boolean => hasClaudeEngine() || Boolean(anthropic);
 
   // ── List available frameworks ───────────────────────────────────────────────
   router.get('/gap-assessments/frameworks', async (_req: Request, res: Response) => {
@@ -83,7 +307,7 @@ export async function createGapAssessmentsRoutes(db: DatabaseAdapter, sharedAnth
 
   // ── Generate custom framework via AI ────────────────────────────────────────
   router.post('/gap-assessments/frameworks/generate', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'AI not available' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const { name, description, regulationUrl, documentText, articleHints } = req.body as {
       name?: string;
@@ -256,7 +480,11 @@ Generate the complete framework JSON now.`;
       // Map snake_case DB columns to camelCase for frontend (incl. criterion facts,
       // evidence refs, override + carry-forward metadata — Wave 1.1/1.2/1.5/1.7)
       const mappedFindings = findings.map(mapFindingRow);
-      res.json({ assessment, findings: mappedFindings });
+      // Wave 3: a run in progress (or just finished) that the wizard can re-attach to.
+      // Wave 5: with no job to attach to, a row still marked mid-run means the
+      // server restarted underneath it — answer { status: 'lost' }, never null.
+      const run_job = getStepJobSummary(gapRunJobKey(req.params.id as string)) ?? lostRunJob(assessment as Record<string, unknown>);
+      res.json({ assessment: { ...(assessment as Record<string, unknown>), run_job }, findings: mappedFindings });
     } catch (err) {
       console.error('[gap-assessments] get error:', err);
       res.status(500).json({ error: 'Failed to get assessment' });
@@ -284,6 +512,137 @@ Generate the complete framework JSON now.`;
     } catch (err) {
       console.error('[gap-assessments] patch error:', err);
       res.status(500).json({ error: 'Failed to update assessment' });
+    }
+  });
+
+  // ── Control interview (Wave 2, 2026-09-08) ─────────────────────────────────
+  // POST /api/gap-assessments/:id/interview/turn  { messages }
+  // Step 3 asked for "interview notes" in a blank textarea, so the consultant
+  // had to know which questions establish the five facts each article is
+  // scored on. ANTON now runs the interview: the articles in scope, theme by
+  // theme, in the words of the specialist the framework calls for, and it
+  // records what the interviewee said as attributed, article-referenced notes
+  // carried in a trailing <interview_update> block. The wizard keeps the
+  // conversation with the rest of Step 3 and files the notes as evidence.
+  router.post('/gap-assessments/:id/interview/turn', async (req: Request, res: Response) => {
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+    const uid = getUserId(req);
+    const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    try {
+      const body = (req.body ?? {}) as { messages?: unknown };
+      const history = (Array.isArray(body.messages) ? body.messages : [])
+        .filter((t): t is { role: 'user' | 'assistant'; content: string } =>
+          Boolean(t) && typeof t === 'object' && ((t as { role?: unknown }).role === 'user' || (t as { role?: unknown }).role === 'assistant') && typeof (t as { content?: unknown }).content === 'string')
+        .slice(-40)
+        .map((t) => ({ role: t.role, content: t.content.slice(0, 6000) }));
+
+      const frameworkIds = JSON.parse(assessment.frameworks || '[]') as string[];
+      const scopeConfig = JSON.parse(assessment.scope_config || '{}') as { selectedThemes?: string[] };
+      const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
+      const selectedThemes = new Set(Array.isArray(scopeConfig.selectedThemes) ? scopeConfig.selectedThemes.map(String) : []);
+
+      const articleLines: string[] = [];
+      const frameworkNames: string[] = [];
+      let articleChars = 0;
+      for (const fwId of frameworkIds) {
+        const fw = getFramework(fwId);
+        if (!fw) continue;
+        frameworkNames.push(fw.name);
+        for (const a of fw.articles) {
+          if (selectedThemes.size > 0 && !selectedThemes.has(a.theme)) continue;
+          const line = `- ${fw.shortName} ${a.id} — ${a.title} [${a.theme}]: ${a.requirement}`;
+          if (articleChars + line.length > 16000) { articleLines.push('- … (further articles omitted for length)'); break; }
+          articleLines.push(line);
+          articleChars += line.length;
+        }
+      }
+
+      const evidence = extractEvidenceItems(contextConfig);
+      const documentNames = evidence.filter((e) => e.kind === 'document').map((e) => e.name);
+      const recorded = evidence.filter((e) => e.kind === 'interview').map((e) => `### ${e.name}\n${e.text.slice(0, 1500)}`);
+      const persona = domainProfile(domainForFrameworks(frameworkIds)).assessorPersona;
+      const str = (k: string): string => (typeof contextConfig[k] === 'string' ? String(contextConfig[k]) : '');
+
+      const systemPrompt = `You are ANTON, a ${persona}, conducting a structured control interview for a compliance gap assessment against ${frameworkNames.join(' and ') || 'the selected framework'}.
+
+ENTITY: ${str('entityType') || 'not stated'} — ${str('jurisdiction') || 'jurisdiction not stated'}; segments: ${str('segments') || 'not stated'}; self-assessed maturity ${String(contextConfig.maturity ?? '?')}/5.
+STATED CONCERNS: ${str('concerns') || 'none stated'}
+
+The assessment scores every article on five facts: documented, implemented, tested, evidenced, owner assigned. Your questions must establish those facts for the articles in scope, in the interviewee's own words — which policy, which system or process, when it was last tested and by whom, what evidence exists, who owns it. A control that is documented but never tested is the common gap; ask about testing and evidence explicitly.
+
+ARTICLES IN SCOPE (${articleLines.length}):
+${articleLines.join('\n') || '- (none — the scope has no articles)'}
+
+EVIDENCE ALREADY UPLOADED: ${documentNames.join('; ') || 'none'}
+INTERVIEW NOTES ALREADY RECORDED:
+${recorded.join('\n\n') || '(none yet)'}
+
+HOW TO RUN THE INTERVIEW
+- If you do not yet know who you are speaking with, ask for their role first (MLRO, Head of Compliance, CISO, DPO, Head of Operations — whatever fits the framework); otherwise use the role given.
+- Take the articles theme by theme. Ask 2-3 questions per turn — the ones that discriminate most. Never re-ask what the recorded notes or uploaded evidence already answer.
+- After each answer, record what was said as interview notes: factual, attributed to the role, referencing the article ids, in the interviewee's words where they are telling ("CDD refresh is 3 years for all customers — no risk-based differentiation"). "Did not know" is a finding too — record it.
+- Keep going until every theme in scope is covered or the interviewee says they are done; then set "done": true and summarise the themes with the weakest answers.
+- End every reply with exactly one machine-readable block, even when nothing was recorded:
+<interview_update>
+{"notes": [{"role": "MLRO", "articles": ["Art.12"], "text": "…"}], "done": false}
+</interview_update>
+  Only record what the interviewee actually said in this turn — never your own questions or assumptions.`;
+
+      const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
+      const model = mapModelToProvider(__getModelConfig(modelTier).model);
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+
+      const messages = history.length > 0
+        ? history
+        : [{ role: 'user' as const, content: 'Start the interview. Confirm what you already have, then ask your first questions.' }];
+
+      let text = '';
+      try {
+        const result = await streamChat({ model, system: systemPrompt, messages, maxTokens: 4000, thinkingLevel: 'think' }, res);
+        text = result.text;
+      } catch (err) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const notes: Array<{ role: string; articles: string[]; text: string }> = [];
+      let done = false;
+      const block = text.match(/<interview_update>([\s\S]*?)<\/interview_update>/i);
+      if (block) {
+        try {
+          const upd = JSON.parse(block[1].trim()) as { notes?: unknown; done?: unknown };
+          done = upd.done === true;
+          for (const n of Array.isArray(upd.notes) ? upd.notes.slice(0, 20) : []) {
+            const item = n as { role?: unknown; articles?: unknown; text?: unknown };
+            const noteText = typeof item.text === 'string' ? item.text.trim().slice(0, 2000) : '';
+            if (!noteText) continue;
+            notes.push({
+              role: typeof item.role === 'string' && item.role.trim() ? item.role.trim().slice(0, 100) : 'Interviewee',
+              articles: Array.isArray(item.articles) ? item.articles.filter((a): a is string => typeof a === 'string').map((a) => a.slice(0, 40)).slice(0, 20) : [],
+              text: noteText,
+            });
+          }
+        } catch (err) {
+          console.warn('[gap-assessments] interview update block unreadable:', err instanceof Error ? err.message : err);
+        }
+      }
+      res.write(`data: ${JSON.stringify({ type: 'interview_update', notes, done })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.end();
+    } catch (err) {
+      if (res.headersSent) {
+        res.write(`data: ${JSON.stringify({ type: 'error', error: safeError(err) })}\n\n`);
+        res.end();
+      } else {
+        res.status(500).json({ error: safeError(err) });
+      }
     }
   });
 
@@ -322,12 +681,40 @@ Generate the complete framework JSON now.`;
   // Triggers chunked Claude calls for the selected frameworks/articles.
   // Streams progress events to the client via SSE.
   router.post('/gap-assessments/:id/run', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
     if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
 
+    // One run per assessment at a time: a second Start (or a reload mid-run
+    // that showed "Ready to assess" again) launched concurrent runs writing
+    // the same rows.
+    const assessmentId = req.params.id as string;
+    if (runsInFlight.has(assessmentId)) {
+      // Wave 3: a run in progress is a job — a second Start (or a reloaded
+      // page) attaches to it instead of being told to wait.
+      const running = getStepJob(`gap-run:${assessmentId}`);
+      if (running && running.status === 'running') return attachToStepJob(running, res);
+      return res.status(409).json({ error: 'This assessment is already running — wait for it to finish before starting again.' });
+    }
+    runsInFlight.add(assessmentId);
+
+    // Retry of specific batches after a partial failure (see the end of the loop).
+    const retryBatches = (req.body ?? {}) as { retryBatches?: Array<{ framework: string; batchIndex: number }> };
+    const retrySet = Array.isArray(retryBatches.retryBatches) && retryBatches.retryBatches.length > 0
+      ? new Set(retryBatches.retryBatches.map((b) => `${b.framework}::${b.batchIndex}`))
+      : null;
+    const failedBatches: Array<{ framework: string; batchIndex: number; error: string }> = [];
+    let attemptedBatches = 0;
+    const previousStatus = String(assessment.status ?? '');
+
+    // Wave 3 (2026-09-08): the run is a job that outlives this request. A
+    // reloaded wizard re-attaches (GET /gap-assessments/:id/run/stream) and
+    // sees every frame so far. Inside the job, `res` is the job's sink — the
+    // body below is unchanged.
+    const { job } = startStepJob(`gap-run:${assessmentId}`, { assessment_id: assessmentId, title: String((assessment as Record<string, unknown>).title ?? '') }, async (sink) => {
+    const res = sink as unknown as Response;
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -345,7 +732,8 @@ Generate the complete framework JSON now.`;
       const scopeConfig = JSON.parse(assessment.scope_config || '{}') as { selectedThemes?: string[]; selectedArticles?: string[] };
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      await db.run("UPDATE gap_assessments SET status = 'assessing', current_step = 4, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
+      // Wave 5: a fresh run clears the mark a restart left (run-recovery.ts).
+      await db.run("UPDATE gap_assessments SET status = 'assessing', current_step = 4, interrupted_at = NULL, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
 
       // ── Evidence manifest (Wave 1.5): id + sha256 per evidence item ───────
       const evidenceItems = extractEvidenceItems(contextConfig);
@@ -377,21 +765,30 @@ Generate the complete framework JSON now.`;
         }
       }
 
-      // Build org context + knowledge pack layers to enrich every Claude batch call
+      // Build org context + knowledge pack layers to enrich every Claude batch call.
+      // The pack layer is given the frameworks and concerns as its query so it
+      // retrieves relevant entities — called with no context it dumped every
+      // active pack (three AML packs) into every batch of a DORA or GDPR run.
       const orgContextLayer = await buildOrgContextLayer(db, uid);
-      const knowledgePackLayer = await buildKnowledgePackLayer(db);
+      const knowledgePackLayer = await buildKnowledgePackLayer(db, {
+        userMessage: [...frameworks, String(contextConfig.concerns || '')].filter(Boolean).join(' '),
+      });
 
       // Resolve knowledge sources (RAG, folders, web search, URLs) if configured
       let knowledgeContext = '';
+      let knowledgeTools: Array<{ type: string; name?: string; [key: string]: unknown }> | undefined;
       if (contextConfig.knowledgeSources && typeof contextConfig.knowledgeSources === 'object') {
         try {
           sendEvent({ type: 'status', status: 'resolving', message: 'Resolving knowledge sources (folders, RAG, web)...' });
           const resolved = await resolveKnowledgeSources(
             contextConfig.knowledgeSources as Parameters<typeof resolveKnowledgeSources>[0],
             [],
-            { db, userQuery: String(contextConfig.concerns || 'AML compliance gap assessment'), contextBudget: 100_000 }
+            { db, userQuery: String(contextConfig.concerns || `${frameworks.join(' ')} compliance gap assessment`), contextBudget: 100_000 }
           );
           knowledgeContext = [resolved.systemPromptAdditions, resolved.contextDocuments].filter(Boolean).join('\n\n');
+          // The web-search tool the resolver built is handed to every batch —
+          // it used to be discarded here while the prompt told the model to use it.
+          knowledgeTools = resolved.tools.length > 0 ? (resolved.tools as typeof knowledgeTools) : undefined;
           if (resolved.sourceManifest?.length) {
             sendEvent({ type: 'info', message: `Knowledge sources loaded: ${resolved.sourceManifest.join(', ')} (~${resolved.tokenEstimate.toLocaleString()} tokens)` });
           }
@@ -405,9 +802,12 @@ Generate the complete framework JSON now.`;
 
       // Model tier: 'opus'/'sonnet' for Claude, or a custom model ID (azure:*, gpt-*, mistral-*, etc.)
       const modelTier: GapModelTier = (contextConfig.modelTier as GapModelTier | undefined) || 'sonnet';
-      const tierLabel = modelTier === 'opus' ? 'Opus 4.8 (deep reasoning)'
-        : modelTier === 'sonnet' ? 'Sonnet 4.6 (standard)'
-        : modelTier;
+      // Wave 0: name the model the router will actually run for this tier
+      // (sdk:claude-opus-5 on the subscription engine), not a hard-coded 4.x label.
+      const routedModelForTier = mapModelToProvider(__getModelConfig(modelTier).model);
+      const tierLabel = modelTier === 'opus' ? `${routedModelForTier} (deep reasoning)`
+        : modelTier === 'sonnet' ? `${routedModelForTier} (standard)`
+        : routedModelForTier;
       sendEvent({ type: 'status', status: 'assessing', message: `Starting assessment with ${tierLabel}...` });
 
       for (const frameworkId of frameworks) {
@@ -442,6 +842,11 @@ Generate the complete framework JSON now.`;
 
         for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
           const batch = batches[batchIdx];
+          if (retrySet && !retrySet.has(`${frameworkId}::${batchIdx}`)) {
+            sendEvent({ type: 'info', framework: frameworkId, batchIndex: batchIdx, message: `Batch ${batchIdx + 1}/${batches.length} kept from the previous run` });
+            continue;
+          }
+          attemptedBatches += 1;
           sendEvent({
             type: 'batch_start',
             framework: frameworkId,
@@ -473,7 +878,21 @@ Generate the complete framework JSON now.`;
               extraSystemContext || undefined,
               modelTier,
               db,
-              batchBaseline ? { baseline: batchBaseline } : undefined
+              {
+                baseline: batchBaseline,
+                tools: knowledgeTools,
+                // Wave 5: the batch's run record belongs to this assessment.
+                runRecord: {
+                  assessmentId,
+                  sessionId: (assessment as { session_id?: string | null }).session_id ?? null,
+                },
+                // Wave 3: on the subscription engine the batch reads evidence
+                // through tools; its tool activity lands in the progress feed.
+                agentic: {
+                  packIds: frameworks,
+                  onEvent: (e) => sendEvent({ type: 'info', framework: frameworkId, batchIndex: batchIdx, message: `Batch ${batchIdx + 1}: ${e.message}` }),
+                },
+              }
             );
 
             // Save findings to DB
@@ -502,6 +921,7 @@ Generate the complete framework JSON now.`;
           } catch (batchErr) {
             const errMsg = batchErr instanceof Error ? batchErr.message : String(batchErr);
             console.error(`[gap-assessments] batch ${batchIdx + 1} error:`, errMsg);
+            failedBatches.push({ framework: frameworkId, batchIndex: batchIdx, error: errMsg });
             sendEvent({
               type: 'batch_error',
               framework: frameworkId,
@@ -515,6 +935,24 @@ Generate the complete framework JSON now.`;
         sendEvent({ type: 'framework_complete', framework: frameworkId });
       }
 
+      // A run with failed batches is not complete. It used to advance to the
+      // scoring step and say "Assessment complete" regardless — 9 of the 13
+      // assessments on this instance sit at Step 5 with zero findings. Now the
+      // status stays where it was and the client gets the list to retry.
+      if (failedBatches.length > 0) {
+        if (previousStatus && previousStatus !== 'assessing') {
+          await db.run('UPDATE gap_assessments SET status = ?, current_step = 4, updated_at = ? WHERE id = ?', previousStatus, new Date().toISOString(), req.params.id as string);
+        }
+        sendEvent({
+          type: 'error',
+          failedBatches: failedBatches.map(({ framework, batchIndex }) => ({ framework, batchIndex })),
+          error: failedBatches[0].error,
+          message: `${failedBatches.length} of ${attemptedBatches} batches failed — the assessment is NOT complete. First error: ${failedBatches[0].error.slice(0, 160)}`,
+        });
+        res.end();
+        return;
+      }
+
       await db.run("UPDATE gap_assessments SET status = 'scoring', current_step = 5, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
 
       sendEvent({ type: 'complete', message: 'Assessment complete. Proceed to scoring view (Step 5).' });
@@ -524,7 +962,20 @@ Generate the complete framework JSON now.`;
       console.error('[gap-assessments] run error:', err);
       sendEvent({ type: 'error', error: safeError(err) });
       res.end();
+    } finally {
+      runsInFlight.delete(assessmentId);
     }
+    });
+    attachToStepJob(job, res);
+  });
+
+  // ── GET /api/gap-assessments/:id/run/stream — re-attach to a run ──────────
+  router.get('/gap-assessments/:id/run/stream', async (req: Request, res: Response) => {
+    const assessment = await engine.getAssessmentForUser(req.params.id as string, getUserId(req));
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+    const job = getStepJob(`gap-run:${req.params.id as string}`);
+    if (!job) return res.status(404).json({ error: 'No run in progress for this assessment' });
+    attachToStepJob(job, res);
   });
 
   // ── Second-opinion lane (Wave 2.7) ──────────────────────────────────────────
@@ -536,7 +987,7 @@ Generate the complete framework JSON now.`;
     tier === 'opus' ? 'claude-opus-4-8' : tier === 'sonnet' ? 'claude-sonnet-4-6' : tier;
 
   router.post('/gap-assessments/:id/second-opinion', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -578,8 +1029,14 @@ Generate the complete framework JSON now.`;
 
     try {
       // Same enrichment layers as the primary run — the only variable is the model.
+      // Wave 2: the second opinion queries the pack layer with the same
+      // frameworks + concerns as the primary run; called with no context it
+      // dumped every active pack into every batch.
       const orgContextLayer = await buildOrgContextLayer(db, uid);
-      const knowledgePackLayer = await buildKnowledgePackLayer(db);
+      const opinionFrameworks = JSON.parse((assessment as unknown as { frameworks?: string | null }).frameworks || '[]') as string[];
+      const knowledgePackLayer = await buildKnowledgePackLayer(db, {
+        userMessage: [...opinionFrameworks, String(contextConfig.concerns || '')].filter(Boolean).join(' '),
+      });
       let knowledgeContext = '';
       if (contextConfig.knowledgeSources && typeof contextConfig.knowledgeSources === 'object') {
         try {
@@ -628,7 +1085,17 @@ Generate the complete framework JSON now.`;
             // rubric, different model. No baseline: this is an independent read.
             const result = await runAssessmentBatch(
               anthropic, frameworkId, batch, contextConfig, batchIdx, batches.length,
-              extraSystemContext || undefined, requestedTier, db
+              extraSystemContext || undefined, requestedTier, db,
+              {
+                // Wave 5: run record under this assessment, second-opinion lane.
+                runRecord: { assessmentId: req.params.id as string, lane: 'second_opinion' },
+                // Wave 3: the second opinion reads evidence the way the primary
+                // run does — on demand through tools, nothing cut at 120k.
+                agentic: {
+                  packIds: [frameworkId],
+                  onEvent: (e) => sendEvent({ type: 'info', framework: frameworkId, batchIndex: batchIdx, message: `Batch ${batchIdx + 1}: ${e.message}` }),
+                },
+              }
             );
             for (const f of result.findings) {
               await db.run(
@@ -734,7 +1201,7 @@ Generate the complete framework JSON now.`;
 
   // ── Synthesise capability view (Step 6) ────────────────────────────────────
   router.post('/gap-assessments/:id/synthesise', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -768,7 +1235,7 @@ Generate the complete framework JSON now.`;
 
   // ── Generate board summary (Step 7) ────────────────────────────────────────
   router.post('/gap-assessments/:id/board-summary', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -815,7 +1282,7 @@ Generate the complete framework JSON now.`;
 
   // ── Generate roadmap (Step 8) ───────────────────────────────────────────────
   router.post('/gap-assessments/:id/roadmap', async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Claude API not configured' });
+    if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
 
     const uid = getUserId(req);
     const assessment = await engine.getAssessmentForUser(req.params.id as string, uid);
@@ -830,6 +1297,18 @@ Generate the complete framework JSON now.`;
       const result = await generateRoadmap(anthropic, assessment.capability_view, allFindings, contextConfig, modelTier, db);
 
       await db.run('UPDATE gap_assessments SET roadmap = ?, roadmap_reasoning = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?', result.json, result.reasoning || null, 'complete', new Date().toISOString(), req.params.id as string);
+
+      // Wave 4b: the assessment is complete — its findings and roadmap feed memory.
+      feedMemory({
+        assessmentId: req.params.id as string,
+        title: assessmentTitle(assessment),
+        frameworks: parseAssessmentFrameworks(assessment.frameworks),
+        findings: flattenArticleFindings(allFindings),
+        roadmap: result.json,
+        stepIndex: 0,
+        stepName: 'Roadmap',
+        userId: uid,
+      });
 
       const roadmap = JSON.parse(result.json);
       res.json({ roadmap, reasoning: result.reasoning });
@@ -909,6 +1388,26 @@ Generate the complete framework JSON now.`;
           JSON.stringify(scoreSummary),
           notes || null,
           uid,);
+
+      // Wave 4b: a recorded iteration is a completed assessment pass — it feeds memory.
+      feedMemory({
+        assessmentId: req.params.id as string,
+        title: assessmentTitle(assessment),
+        frameworks: parseAssessmentFrameworks(assessment.frameworks),
+        findings: mapped.map(m => ({
+          framework: m.framework,
+          articleId: m.articleId,
+          articleTitle: m.articleTitle,
+          score: m.score,
+          priority: m.priority,
+          currentState: m.currentState,
+          notes: m.notes,
+        })),
+        roadmap: assessment.roadmap,
+        stepIndex: iterNum,
+        stepName: `Iteration ${iterNum}`,
+        userId: uid,
+      });
 
       res.json({ iterationId, iterationNumber: iterNum, scoreSummary });
     } catch (err) {

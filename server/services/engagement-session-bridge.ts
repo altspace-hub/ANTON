@@ -24,6 +24,26 @@
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { getModelConfig } from '../types/modelAdapter.js';
+import { createOutputStore } from './output-store.js';
+import { writeSessionConclusion } from './session-conclusion.js';
+
+/**
+ * The area an engagement's atoms belong to: its first domain area as a
+ * slug (engagements.domain_areas is free text from the setup form, so
+ * "Financial Crime Prevention" becomes 'financial-crime-prevention'; an
+ * area id such as 'fcp' passes through unchanged). Null when there is none.
+ */
+export function engagementAreaId(domainAreasJson: unknown): string | null {
+  let parsed: unknown = domainAreasJson;
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed); } catch { return null; }
+  }
+  if (!Array.isArray(parsed)) return null;
+  const first = parsed.find((d): d is string => typeof d === 'string' && d.trim().length > 0);
+  if (!first) return null;
+  const slug = first.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  return slug || null;
+}
 
 export interface IterationBridgeInput {
   engagementId: string;
@@ -92,10 +112,12 @@ export async function bridgeIterationToSession(
     randomUUID(), sessionId, input.userContent, now,
   );
 
+  // Hoisted so the conclusion writer can name the message it concludes from.
+  const assistantMessageId = randomUUID();
   await db.run(
     `INSERT INTO messages (id, session_id, role, content, thinking_content, token_count, cost, model_id, config_snapshot, created_at)
      VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?)`,
-    randomUUID(), sessionId, input.outputContent,
+    assistantMessageId, sessionId, input.outputContent,
     input.thinkingContent, input.outputTokens, cost, input.model,
     JSON.stringify(config), now,
   );
@@ -105,5 +127,65 @@ export async function bridgeIterationToSession(
     sessionId, input.iterationId,
   );
 
+  await feedIterationMemory(db, input, sessionId, assistantMessageId);
+
   return { sessionId };
+}
+
+/**
+ * Wave 4b (2026-09-17): the iteration feeds memory the way a module run
+ * does. An engagement iteration is the longest-form output ANTON produces
+ * and none of it reached the learning ledger — only the chat route stored
+ * an output. The output row is stored here (its pipeline summarises and
+ * extracts atoms after the tick and records its progress on the row) and
+ * the session's running conclusion is written from the assistant message.
+ * Both are non-fatal: the bridged session is already saved.
+ */
+async function feedIterationMemory(
+  db: DatabaseAdapter,
+  input: IterationBridgeInput,
+  sessionId: string,
+  assistantMessageId: string,
+): Promise<void> {
+  let areaId: string | null = null;
+  try {
+    const row = await db.get<{ domain_areas: string | null }>(
+      'SELECT domain_areas FROM engagements WHERE id = ?', input.engagementId,
+    );
+    areaId = engagementAreaId(row?.domain_areas);
+  } catch { /* the area is a hint, not a requirement */ }
+
+  try {
+    const store = await createOutputStore(db);
+    await store.storeOutput({
+      executionId: sessionId,
+      workflowId: `engagement:${input.engagementId}`,
+      stepIndex: input.iterationNumber,
+      stepType: 'engagement_iteration',
+      areaId: areaId ?? undefined,
+      moduleId: 'engagement',
+      outputData: { text: input.outputContent },
+      workflowName: `Engagement: ${input.engagementTitle}`,
+      stepName: input.workstreamTitle || `Iteration ${input.iterationNumber}`,
+      userId: input.userId,
+    });
+  } catch (err) {
+    console.warn('[engagement-session-bridge] memory feed failed (non-fatal):', err instanceof Error ? err.message : err);
+  }
+
+  try {
+    // Never rejects by contract; the catch is for a replaced implementation.
+    void writeSessionConclusion(db, {
+      sessionId,
+      messageId: assistantMessageId,
+      userId: input.userId,
+      moduleId: 'engagement',
+      areaId,
+      assistantText: input.outputContent,
+    }).catch((err: unknown) => {
+      console.warn('[engagement-session-bridge] session conclusion failed (non-fatal):', err instanceof Error ? err.message : err);
+    });
+  } catch (err) {
+    console.warn('[engagement-session-bridge] session conclusion failed (non-fatal):', err instanceof Error ? err.message : err);
+  }
 }

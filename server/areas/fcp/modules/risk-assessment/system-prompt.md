@@ -114,6 +114,9 @@ Flag these if present in a BWRA under review:
 6. **Control assertion without evidence:** Controls rated "Strong" without referencing testing results, audit findings, or performance data.
 7. **Governance deficiency:** BWRA not presented to the Board or Risk Committee; not formally approved; no review cycle documented.
 8. **No action output:** BWRA identifies high residual risk areas but produces no remediation actions or risk appetite statements.
+9. **Domicile-only geography:** Geographic risk based only on customer domicile, ignoring counterparty and source-of-funds geography.
+10. **Emerging risks absent:** No identification of emerging risks (crypto-assets, AI-generated documents, de-risking side-effects).
+11. **Unlinked to resourcing:** BWRA results not linked to resource allocation or control investment decisions.
 
 ---
 

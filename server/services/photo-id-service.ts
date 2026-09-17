@@ -6,16 +6,68 @@
  * identification + a counterfeit risk score, grounded in the active HKP's
  * reference markings (FCC ID, IC ID, package, antenna style, etc.).
  *
- * The vision call is real (Claude sonnet 4.6 is the default for cost +
- * quality balance on this task; opus 4.7 available via opts.model). The
- * scoring is deterministic: the model returns a structured JSON record
- * which we parse and clamp. If the model returns malformed JSON, we surface
- * the raw text and a low-confidence verdict rather than fabricating values.
+ * The vision call is real. The scoring is deterministic: the model returns a
+ * structured JSON record which we parse and clamp. If the model returns
+ * malformed JSON, we surface the raw text and a low-confidence verdict rather
+ * than fabricating values.
+ *
+ * Vision is the one place that cannot ride the provider router: callChat's
+ * messages carry text only, and the subscription (`sdk:`) engine is a text
+ * engine. So this service keeps the shared Anthropic API client — behind an
+ * explicit gate (`resolveVisionModel`): the model that will look at the photos
+ * is the medium tier of the Settings default (or an explicit API model id the
+ * caller passes), and only when that resolves to the Anthropic API with a key
+ * does the call go out. Under an `sdk:` default, Mistral, Ollama or a missing
+ * key the service answers with a clear "needs an API-key model for images"
+ * error instead of silently billing whatever key happens to be in the env.
+ * tests/lint/no-router-bypass.test.ts allow-lists this file for that reason.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
 import { getClient, isApiKeyConfigured } from './claude-client.js';
+import { resolveModel } from './provider-router.js';
+import { getProviderFromModelId } from './model-adapter.js';
+import { ServiceError } from '../lib/hardware-helpers.js';
+
+// ── Vision gate ───────────────────────────────────────────────────────────────
+
+export const VISION_NEEDS_API_MODEL = 'Photo identification needs an API-key Claude model for images';
+
+function providerOf(modelId: string): string {
+  try {
+    return getProviderFromModelId(modelId);
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
+ * The model that will look at the photos, or a 503 ServiceError saying why
+ * none can. `requested` is an explicit caller choice (an API model id);
+ * otherwise the medium tier of the configured default — which under an
+ * `sdk:` default is the text-only engine and is refused, key or no key.
+ */
+export function resolveVisionModel(requested?: string | null): { model: string; provider: 'anthropic' } {
+  const candidate = requested?.trim() || resolveModel('medium');
+  const provider = providerOf(candidate);
+  if (provider !== 'anthropic') {
+    throw new ServiceError(
+      503,
+      `${VISION_NEEDS_API_MODEL} — the configured model (${candidate}, ${provider}) is text-only for ANTON. `
+        + 'Set ANTHROPIC_API_KEY and choose a claude-* API model in Settings, or pass an API model id explicitly.',
+      'vision_unavailable',
+    );
+  }
+  if (!isApiKeyConfigured()) {
+    throw new ServiceError(
+      503,
+      `${VISION_NEEDS_API_MODEL} — ANTHROPIC_API_KEY is not configured (model ${candidate}).`,
+      'vision_unavailable',
+    );
+  }
+  return { model: candidate, provider: 'anthropic' };
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +85,8 @@ export interface PhotoIdInput {
   /** Free-text user context: where they sourced the module, etc. */
   context?: string | null;
   photos: PhotoInput[];
-  model?: 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001';
+  /** Explicit API model id for the vision call; default = medium tier of the Settings default (see resolveVisionModel). */
+  model?: string;
 }
 
 export interface PhotoIdResult {
@@ -134,9 +187,9 @@ async function loadHkpContext(db: DatabaseAdapter, hkpId: string | null | undefi
 export function createPhotoIdService(db: DatabaseAdapter) {
 
   async function identify(input: PhotoIdInput): Promise<PhotoIdResult> {
-    if (!isApiKeyConfigured()) {
-      throw new Error('Anthropic API key not configured — cannot run photo identification');
-    }
+    // The gate runs before any work: an instance whose default is the text-only
+    // engine learns that here, not from a silent API charge.
+    const { model } = resolveVisionModel(input.model);
     if (input.photos.length === 0) {
       throw new Error('At least one photo is required');
     }
@@ -145,7 +198,6 @@ export function createPhotoIdService(db: DatabaseAdapter) {
     }
 
     const ref = await loadHkpContext(db, input.hkp_id, input.family_id);
-    const model = input.model ?? 'claude-sonnet-4-6';
 
     const systemPrompt = `You are the hardware photo identifier for ANTON's Hardware Build pillar. You receive one or more photos of a hardware module and must:
 
@@ -199,6 +251,8 @@ Photos follow.`;
       })),
     ];
 
+    // Gated above to the Anthropic API provider: the only path that takes images.
+    console.log(`[photo-id-service] purpose=hw-diagnose-photo-id model=${model} photos=${input.photos.length}`);
     const anthropic = getClient();
     const resp = await anthropic.messages.create({
       model,

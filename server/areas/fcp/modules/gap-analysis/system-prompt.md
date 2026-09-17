@@ -30,6 +30,8 @@ Systematically compare the client's current AML/CFT framework — policies, proc
 | **Low** | Minor procedural gap, documentation deficiency, or optimisation opportunity; does not affect the substantive operation of the control. |
 | **Compliant** | Requirement is met; document evidence of compliance clearly so it can be used in regulatory conversations. |
 
+Do not rate a requirement "Compliant" unless you have reviewed documentation that evidences the control. Absence of a gap finding is not the same as confirmed compliance.
+
 ---
 
 ## GAP CATEGORISATION TYPES
@@ -42,6 +44,17 @@ Classify each gap by root cause type — this drives the right remediation works
 - **Control gap:** A required preventive, detective, or corrective control is absent, ineffective, or not tested.
 - **Data / technology gap:** Required data is not collected, is poor quality, is inaccessible in time, or the system cannot perform the required function.
 - **People / training gap:** Staff competency, awareness, or capacity is insufficient to meet requirements.
+
+Alongside the root-cause type, classify the *nature* of each gap — do not default to binary compliant/non-compliant:
+
+| Nature | Definition | Example |
+|---|---|---|
+| **Absence** | Required element is completely missing | No EDD procedure for high-risk third countries |
+| **Partial** | Element exists but does not fully satisfy the requirement | CDD policy covers individuals but not legal arrangements |
+| **Superseded** | Element exists but is based on a superseded requirement (e.g., pre-AMLR) | Policy references AMLD4 rather than AMLR 2024/1624 |
+| **Conflicting** | Two internal documents set out contradictory obligations | CDD policy and onboarding procedure disagree on the BO threshold |
+| **Undocumented** | Practice exists operationally but is not captured in policy/procedure | Staff perform EDD informally but no procedure documents this |
+| **Quality deficiency** | Element exists and is documented but the quality is insufficient | TM thresholds are set but not reviewed or calibrated |
 
 ---
 

@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   anthropicUsesAdaptive,
+  anthropicSupportsXhigh,
   anthropicEffort,
   anthropicBudgetTokens,
   azureReasoningEffort,
@@ -17,8 +18,12 @@ import {
 } from '../../server/services/thinking-map.js';
 
 describe('thinking-map — Anthropic', () => {
-  it('classifies adaptive models (Fable 5 / Opus 4.8 / Sonnet 4.6) vs budget models', () => {
+  it('classifies adaptive models (Fable 5.x / Claude 5 / Opus 4.8 / Sonnet 4.6) vs budget models', () => {
+    // Fable 5.x REJECTS budget_tokens — a miss here is not "worse thinking", it is a 400 on every run.
+    expect(anthropicUsesAdaptive('claude-fable-5-1')).toBe(true);
     expect(anthropicUsesAdaptive('claude-fable-5')).toBe(true);
+    expect(anthropicUsesAdaptive('claude-opus-5')).toBe(true);
+    expect(anthropicUsesAdaptive('claude-sonnet-5')).toBe(true);
     expect(anthropicUsesAdaptive('claude-opus-4-8')).toBe(true);
     expect(anthropicUsesAdaptive('claude-sonnet-4-6')).toBe(true);
     // Older models use budget_tokens — NOT adaptive (model-adapter used to send
@@ -29,13 +34,27 @@ describe('thinking-map — Anthropic', () => {
     expect(anthropicUsesAdaptive('claude-haiku-4-5-20251001')).toBe(false);
   });
 
-  it('maps effort for adaptive models', () => {
-    expect(anthropicEffort('quick')).toBe('low');
-    expect(anthropicEffort('think')).toBe('medium');
-    expect(anthropicEffort('think_hard')).toBe('high');
+  it('maps effort for adaptive models — the xhigh rung is reachable on models that have it', () => {
+    expect(anthropicEffort('quick', 'claude-opus-5')).toBe('low');
+    expect(anthropicEffort('think', 'claude-opus-5')).toBe('medium');
+    expect(anthropicEffort('think_hard', 'claude-opus-5')).toBe('high');
+    expect(anthropicEffort('investigate', 'claude-opus-5')).toBe('xhigh');
+    expect(anthropicEffort('plan_first', 'claude-fable-5-1')).toBe('xhigh');
+    expect(anthropicEffort('deep_investigate', 'claude-opus-5')).toBe('max');
+  });
+
+  it('folds xhigh to max for models that predate it, and when no model is given', () => {
+    // 'max' is what those levels sent before the ladder grew — nothing changes
+    // for a model that cannot use the rung, and an unknown model never gets a
+    // value that would 400.
+    expect(anthropicSupportsXhigh('claude-fable-5-1')).toBe(true);
+    expect(anthropicSupportsXhigh('claude-opus-4-8')).toBe(true);
+    expect(anthropicSupportsXhigh('claude-sonnet-4-6')).toBe(false);
+    expect(anthropicSupportsXhigh('claude-haiku-4-5-20251001')).toBe(false);
+    expect(anthropicEffort('investigate', 'claude-sonnet-4-6')).toBe('max');
+    expect(anthropicEffort('plan_first', 'claude-sonnet-4-6')).toBe('max');
     expect(anthropicEffort('investigate')).toBe('max');
-    expect(anthropicEffort('plan_first')).toBe('max');
-    expect(anthropicEffort('deep_investigate')).toBe('max');
+    expect(anthropicEffort('think_hard', 'claude-sonnet-4-6')).toBe('high'); // lower rungs untouched
   });
 
   it('maps budget_tokens for older models — think_hard canonicalised to 10000 (not 16384)', () => {

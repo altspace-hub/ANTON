@@ -3522,6 +3522,17 @@ export const MODELS: ModelInfo[] = [
     costTier: 2,
   },
   {
+    id: 'claude-fable-5-1',
+    label: 'Claude Fable 5.1',
+    description: 'Newest Claude — the Mythos-class tier above Opus. 1M context, 128k output, xhigh effort for long agentic work. Adaptive thinking only. Pricing assumed equal to Fable 5.',
+    inputCostPer1M: 10,
+    outputCostPer1M: 50,
+    maxOutput: 128000,
+    provider: 'anthropic',
+    contextWindow: 1000000,
+    costTier: 3,
+  },
+  {
     id: 'claude-fable-5',
     label: 'Claude Fable 5',
     description: 'Most powerful Claude — a new tier above Opus. 1M context, 128k output. For the hardest reasoning and long-horizon agentic work. Note: ~2× Opus pricing. Adaptive thinking only. Knowledge cutoff Jan 2026.',
@@ -3838,7 +3849,23 @@ export function providerForModelId(modelId: string): string {
   if (modelId.startsWith('ollama:')) return 'ollama';
   if (modelId.startsWith('compat:')) return 'compat';
   if (modelId.startsWith('azure:')) return 'azure';
+  // Wave 0: subscription engines carry a Claude / OpenAI model under a prefix.
+  // Strip it so thinking granularity, pricing and badges describe the model
+  // that runs — the picker used to tell users that levels "won't change the
+  // output" on the instance default.
+  if (modelId.startsWith('sdk:')) {
+    return MODELS.find((m) => m.id === modelId.slice(4))?.provider ?? 'anthropic';
+  }
+  if (modelId.startsWith('codex:')) return 'openai';
   return MODELS.find((m) => m.id === modelId)?.provider ?? 'unknown';
+}
+
+/**
+ * How a model id is billed: `subscription` for the Claude Code / Codex engines
+ * (plan usage — tokens are real, dollars are not), `api` for everything else.
+ */
+export function engineForModelId(modelId: string): 'subscription' | 'api' {
+  return modelId.startsWith('sdk:') || modelId.startsWith('codex:') ? 'subscription' : 'api';
 }
 
 export function thinkingGranularity(provider?: string, model?: string): ThinkingGranularity {
@@ -3891,18 +3918,10 @@ export const CREATIVITY_LEVELS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// ── Module default skills & knowledge categories ────────────────────────────
-
-export const MODULE_DEFAULT_SKILLS: Record<string, string[]> = {
-  'gap-analysis': ['fcp-compliance', 'regulatory-analysis'],
-  'sanctions-advisory': ['sanctions-expert'],
-  'document-creation': ['fcp-compliance', 'document-drafting'],
-  'regulatory-monitor': ['regulatory-analysis'],
-  'training-content': ['training-design'],
-  'data-management': ['data-analysis'],
-  'risk-assessment': ['risk-assessment', 'regulatory-analysis'],
-  'investigation-support': ['investigation-support', 'fcp-compliance'],
-};
+// ── Module knowledge categories ──────────────────────────────────────────────
+// Skill suggestions are no longer a client-side map: a module recommends skills
+// through `recommendedSkills` in its module.json (served by GET /api/modules/:id
+// and validated against the skill library by server/services/module-loader.ts).
 
 export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
   'gap-analysis': ['regulation', 'case_law', 'client'],

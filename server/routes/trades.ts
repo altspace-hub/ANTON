@@ -17,11 +17,11 @@
  * POST /api/trades/templates/:id/set-default — mark template as default for its document type
  */
 
-import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { getRoutedUtilityModel } from '../services/utility-model.js';
+import { callChat } from '../services/provider-router.js';
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import { isApiKeyConfigured, getClient } from '../services/claude-client.js';
 import { safeError } from '../lib/error-response.js';
 import multer from 'multer';
 import path from 'path';
@@ -100,10 +100,8 @@ export async function createTradesRoutes(db: DatabaseAdapter) {
   // Returns extracted business identity fields for pre-filling the form.
 
   router.post('/trades/identity/extract', upload.single('file'), async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(503).json({ error: 'API key not configured' });
-      return;
-    }
+    // No API-key gate: extraction runs on the routed utility model, which may
+    // be keyless (subscription engine, Ollama). A provider failure is a 500.
 
     let filePath: string | undefined;
     try {
@@ -168,15 +166,16 @@ Return a JSON object with this structure (use null for fields not found):
 For numeric fields (hourlyRate, travelRate, defaultPaymentTerms): return the number only if clearly stated, otherwise null.
 For vatRegistered: return true if VAT number or moms reg is present, false if explicitly unregistered, null if unknown.`;
 
-      const client = getClient();
-      const response = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 1024,
+      const response = await callChat({
+        model: await getRoutedUtilityModel(db),
+        maxTokens: 1024,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
+        jsonMode: true,
+        db,
       });
 
-      const raw = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '{}';
+      const raw = response.text.trim() || '{}';
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       const extracted = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
@@ -290,10 +289,8 @@ For vatRegistered: return true if VAT number or moms reg is present, false if ex
   // Accepts: multipart with 'file' field OR JSON body with { text: string, documentType: string }
 
   router.post('/trades/templates/extract', upload.single('file'), async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(503).json({ error: 'API key not configured' });
-      return;
-    }
+    // No API-key gate: extraction runs on the routed utility model, which may
+    // be keyless (subscription engine, Ollama). A provider failure is a 500.
 
     try {
       const documentType = (req.body?.documentType || 'invoice') as string;
@@ -366,15 +363,16 @@ Return a JSON object with this structure:
   "notes": "any observations or things the user should confirm"
 }`;
 
-      const client = getClient();
-      const response = await client.messages.create({
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 2048,
+      const response = await callChat({
+        model: await getRoutedUtilityModel(db),
+        maxTokens: 2048,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
+        jsonMode: true,
+        db,
       });
 
-      const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '{}';
+      const text = response.text.trim() || '{}';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       const extracted = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 

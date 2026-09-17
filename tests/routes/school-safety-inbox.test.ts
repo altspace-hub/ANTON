@@ -18,6 +18,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 const SCHOOL = readFileSync(join(process.cwd(), 'server/routes/school.ts'), 'utf8');
 const PAGE = readFileSync(join(process.cwd(), 'src/pages/school/SafetyInboxPage.tsx'), 'utf8');
@@ -159,13 +160,9 @@ describe('it is reachable', () => {
 });
 
 // ── Does the scope actually refuse an unrelated teacher? ─────────────────────
-const DATABASE_URL = (() => {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const m = readFileSync(join(process.cwd(), '.env'), 'utf8').match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
-})();
+// tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+// this run; a test never reads .env to find a database.
+const DATABASE_URL = resolveTestDatabaseUrl();
 const d = DATABASE_URL ? describe : describe.skip;
 
 d('the scope discriminates', () => {

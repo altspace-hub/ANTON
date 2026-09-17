@@ -11,6 +11,8 @@ import {
 } from '../services/missions/mission-checkpoint.js';
 import { resolveCallerIdentity } from '../services/missions/mission-identity.js';
 import { safeError } from '../lib/error-response.js';
+import { createMissionOwnerGuard, createMissionTaskGuard } from './mission-access.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 function sendIdentityError(res: import('express').Response, err: unknown): void {
   const msg = safeError(err);
@@ -21,6 +23,13 @@ function sendIdentityError(res: import('express').Response, err: unknown): void 
 
 export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
   const router = Router();
+
+  // Attached per route: '/missions/deliveries/retry' and '/missions/classify-risk' are
+  // collection paths a router.use('/missions/:id', …) would capture and 404.
+  const missionOwner = createMissionOwnerGuard(db);
+  // Ownership is the guard above; this one stops a task from ANOTHER mission being
+  // acted on through a mission id the caller does happen to own.
+  const taskInMission = createMissionTaskGuard(db);
   const delivery = createMissionDelivery(db);
 
   const deliverySchema = z.object({
@@ -40,7 +49,7 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
     task_id: z.string().optional(),
   }).strict();
 
-  router.post('/missions/:id/deliver', async (req, res) => {
+  router.post('/missions/:id/deliver', missionOwner, async (req, res) => {
     try {
       const parsed = deliverySchema.safeParse(req.body);
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
@@ -61,7 +70,7 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.get('/missions/:id/deliveries', async (req, res) => {
+  router.get('/missions/:id/deliveries', missionOwner, async (req, res) => {
     try {
       const items = await delivery.listDeliveries(String(req.params.id));
       res.json({ success: true, deliveries: items });
@@ -70,7 +79,8 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/deliveries/retry', async (_req, res) => {
+  // Instance-wide retry across every mission's failed deliveries — operator action.
+  router.post('/missions/deliveries/retry', requireAdminOrSolo, async (_req, res) => {
     try {
       try { await resolveCallerIdentity(db, undefined); }
       catch (err) { sendIdentityError(res, err); return; }
@@ -98,7 +108,7 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Parallel-review checkpoint (BEEHIVE-backed) ────────────────────────
-  router.post('/missions/:id/tasks/:taskId/parallel-review', async (req, res) => {
+  router.post('/missions/:id/tasks/:taskId/parallel-review', missionOwner, taskInMission, async (req, res) => {
     try {
       const schema = z.object({
         question: z.string().min(1).max(4000),
@@ -135,7 +145,9 @@ export function createMissionDeliveryRoutes(db: DatabaseAdapter): Router {
   });
 
   // ── Poll BEEHIVE-backed checkpoints for resolution ─────────────────────
-  router.post('/missions/:id/tasks/poll-checkpoints', async (req, res) => {
+  // NOTE: 'poll-checkpoints' sits where :taskId would. If a POST /missions/:id/tasks/:taskId
+  // is ever added ABOVE this line, it captures this path with taskId='poll-checkpoints'.
+  router.post('/missions/:id/tasks/poll-checkpoints', missionOwner, async (req, res) => {
     try {
       try { await resolveCallerIdentity(db, undefined); }
       catch (err) { sendIdentityError(res, err); return; }

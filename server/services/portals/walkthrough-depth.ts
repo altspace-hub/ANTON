@@ -25,6 +25,7 @@ import {
   type AntonThinkingLevel,
   type ModelCapabilities,
 } from '../../config/model-capabilities.js';
+import { capabilityModelId } from '../engine-model-id.js';
 
 export type WalkthroughDepth = 'simple' | 'standard' | 'deep';
 
@@ -43,7 +44,7 @@ export function getWalkthroughDepth(
 ): WalkthroughDepth {
   if (thinkingLevel === 'quick') return 'simple';
 
-  const caps: ModelCapabilities | undefined = MODEL_CAPABILITIES[modelId];
+  const caps: ModelCapabilities | undefined = MODEL_CAPABILITIES[capabilityModelId(modelId)];
   // Unknown model → conservative default.
   if (!caps) return 'standard';
 

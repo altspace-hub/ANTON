@@ -1,8 +1,8 @@
 import { safeError } from '../lib/error-response.js';
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { semanticSearch, keywordSearch, getChunkContext } from '../services/semantic-search.js';
-import { hybridSearch, findSimilar, embedAndStore } from '../services/hybrid-search.js';
+import { searchCollections, keywordSearch, getChunkContext } from '../services/semantic-search.js';
+import { hybridSearch, findSimilar, embedAndStore, searchScopeForRequest } from '../services/hybrid-search.js';
 import { getVectorStore } from '../services/vector-store-adapter.js';
 
 export async function createSearchRoutes(db: DatabaseAdapter) {
@@ -32,6 +32,9 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
         topK: topK || 10,
         folderPaths: folderPaths || [],
         minSimilarity,
+        // Without this, a keyword is enough to read any colleague's assistant
+        // output in team mode — the side door around sessions.ts's own guard.
+        scope: searchScopeForRequest(req),
       });
       res.json({ results, count: results.length });
     } catch (error) {
@@ -58,7 +61,7 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
       if (!contentType || !contentId) {
         return res.status(400).json({ error: 'contentType and contentId are required' });
       }
-      const results = await findSimilar(db, { contentType, contentId, topK, sameTypeOnly });
+      const results = await findSimilar(db, { contentType, contentId, topK, sameTypeOnly, scope: searchScopeForRequest(req) });
       res.json({ results, count: results.length });
     } catch (error) {
       console.error('Find similar error:', error);
@@ -111,35 +114,51 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
   });
 
   /**
-   * POST /api/search/semantic
-   * Semantic search across ChromaDB knowledge collections (legacy — for collection-based search).
+   * POST /api/search/semantic  and  POST /api/search/hybrid
+   * Retrieval over knowledge collections (rag_chunks + the embeddings table).
+   * Both names reach the same path now; the response says which method
+   * actually ran (`method`: vector | hybrid | keyword) and what `score`
+   * measures (`scoreKind`). "semantic" in the URL is historical — do not
+   * label the results from the URL, label them from `method`.
    */
-  router.post('/search/semantic', async (req, res) => {
+  const collectionSearchHandler = async (req: import('express').Request, res: import('express').Response) => {
     try {
-      const { query, collections, topK, filters, rerank } = req.body;
+      const { query, collections, topK, filters, rerank, minSimilarity } = req.body as {
+        query?: string; collections?: string[]; topK?: number; filters?: Record<string, unknown>;
+        rerank?: boolean; minSimilarity?: number;
+      };
       if (!query || !collections || collections.length === 0) {
         return res.status(400).json({ error: 'Query and collections required' });
       }
-      const results = await semanticSearch(db, { query, collections, topK: topK || 10, filters, rerank: rerank ?? false });
-      res.json({ results, count: results.length });
+      const set = await searchCollections(db, { query, collections, topK: topK || 10, filters, rerank: rerank ?? false, minSimilarity });
+      res.json({
+        results: set.results,
+        count: set.results.length,
+        method: set.method,
+        scoreKind: set.scoreKind,
+        methodLabel: set.methodLabel,
+        diagnostics: set.diagnostics,
+      });
     } catch (error) {
-      console.error('Semantic search error:', error);
+      console.error('Collection search error:', error);
       res.status(500).json({ error: safeError(error) });
     }
-  });
+  };
+  router.post('/search/semantic', collectionSearchHandler);
+  router.post('/search/hybrid', collectionSearchHandler);
 
   /**
    * POST /api/search/keyword
-   * Keyword search across ChromaDB knowledge collections (legacy).
+   * Keyword-only retrieval over knowledge collections. Labelled as such.
    */
   router.post('/search/keyword', async (req, res) => {
     try {
-      const { query, collections, limit } = req.body;
+      const { query, collections, limit } = req.body as { query?: string; collections?: string[]; limit?: number };
       if (!query || !collections || collections.length === 0) {
         return res.status(400).json({ error: 'Query and collections required' });
       }
       const results = await keywordSearch(db, query, collections, limit || 10);
-      res.json({ results, count: results.length });
+      res.json({ results, count: results.length, method: 'keyword', scoreKind: 'keyword_density' });
     } catch (error) {
       console.error('Keyword search error:', error);
       res.status(500).json({ error: safeError(error) });
@@ -147,32 +166,14 @@ export async function createSearchRoutes(db: DatabaseAdapter) {
   });
 
   /**
-   * POST /api/search/hybrid
-   * Hybrid search across ChromaDB knowledge collections (legacy — use POST /api/search for new code).
-   */
-  router.post('/search/hybrid', async (req, res) => {
-    try {
-      const { query, collections, topK, filters, rerank } = req.body;
-      if (!query || !collections || collections.length === 0) {
-        return res.status(400).json({ error: 'Query and collections required' });
-      }
-      const { hybridSearch: legacyHybrid } = await import('../services/semantic-search.js');
-      const results = await legacyHybrid(db, { query, collections, topK: topK || 10, filters, rerank: rerank ?? false });
-      res.json({ results, count: results.length });
-    } catch (error) {
-      console.error('Hybrid search error:', error);
-      res.status(500).json({ error: safeError(error) });
-    }
-  });
-
-  /**
    * GET /api/search/context/:chunkId
-   * Get surrounding chunks for context (ChromaDB collections).
+   * Surrounding chunks of a collection chunk (by rag_chunks.id or legacy chroma_id).
    */
   router.get('/search/context/:chunkId', async (req, res) => {
     try {
       const contextSize = parseInt(req.query.contextSize as string) || 2;
-      const results = getChunkContext(db, req.params.chunkId, contextSize);
+      // Without the await this serialised a pending Promise as `{}`.
+      const results = await getChunkContext(db, req.params.chunkId, contextSize);
       res.json({ results });
     } catch (error) {
       console.error('Context retrieval error:', error);

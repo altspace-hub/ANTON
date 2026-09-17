@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
-import { streamToResponse, callSync, isApiKeyConfigured } from '../services/claude-client.js';
+import { callChat, streamChat, setSSEHeaders } from '../services/provider-router.js';
 import { generatePptx, resolveBrand, type PresentationBrand } from '../services/export-pptx.js';
 import { safeError } from '../lib/error-response.js';
 
@@ -24,11 +24,6 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
 
   // POST /api/presentations/consult — streaming expert consultation turn
   router.post('/presentations/consult', async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(500).json({ error: 'API key not configured.' });
-      return;
-    }
-
     const { messages } = req.body as {
       messages: Array<{ role: 'user' | 'assistant'; content: string }>;
     };
@@ -38,19 +33,34 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
       return;
     }
 
+    // Large tier of the Settings default, streamed through the router. The page
+    // reads `text_delta` frames and stops at [DONE]; the router writes only the
+    // deltas, so this handler owns the headers and the terminator.
     try {
-      await streamToResponse(
+      setSSEHeaders(res);
+      await streamChat(
         {
-          model: 'claude-opus-4-8',
-          thinking: 'think',
+          tier: 'large',
+          thinkingLevel: 'think',
           system: loadExpertPrompt(),
           messages,
+          maxTokens: 16000,
+          db,
         },
         res
       );
+      res.write('data: [DONE]\n\n');
+      res.end();
     } catch (error) {
       const message = safeError(error);
-      if (!res.headersSent) res.status(500).json({ error: message });
+      console.warn(`[presentations] purpose=presentation-consult failed: ${error instanceof Error ? error.message : String(error)}`);
+      if (!res.headersSent) {
+        res.status(500).json({ error: message });
+      } else if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      }
     }
   });
 
@@ -172,11 +182,6 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
 
   // POST /api/presentations/generate — generate .pptx from a brief (direct, no script execution)
   router.post('/presentations/generate', async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(500).json({ error: 'API key not configured.' });
-      return;
-    }
-
     const { id, brief } = req.body as {
       id?: string;
       brief: {
@@ -333,11 +338,14 @@ FORMATTING RULES:
 
 
 
-      const result = await callSync({
-        model: 'claude-opus-4-8',
-        thinking: 'think',
+      // Whole deck in one answer: large tier of the Settings default.
+      const result = await callChat({
+        tier: 'large',
+        thinkingLevel: 'think',
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
+        maxTokens: 32000,
+        db,
       });
 
       // Read brand settings from the user profile (graceful fallback to defaults)

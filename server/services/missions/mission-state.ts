@@ -5,6 +5,7 @@
 
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../../db/database.js';
+import { createOutputStore, MIN_LEARNABLE_CHARS } from '../output-store.js';
 import type {
   Mission,
   MissionStatus,
@@ -92,6 +93,24 @@ interface DependencyRow {
   depends_on_task_id: string;
   dependency_type: string;
 }
+
+/** What the memory feed needs to name a task's output row (Wave 4b). */
+interface TaskMemoryRow {
+  title: string;
+  module_id: string | null;
+  area_id: string | null;
+  mission_id: string;
+  sort_order: number | string | null;
+  mission_title: string;
+  created_by: string;
+}
+
+/** Params: task id. Exported so a test can answer it by identity. */
+export const TASK_MEMORY_SQL = `SELECT t.title, t.module_id, t.area_id, t.mission_id, t.sort_order,
+          m.title AS mission_title, m.created_by
+     FROM missions.mission_tasks t
+     JOIN missions.missions m ON m.id = t.mission_id
+    WHERE t.id = ?`;
 
 interface ActivityRow {
   id: number | string;
@@ -353,8 +372,18 @@ export function createMissionState(db: DatabaseAdapter) {
     createdBy?: string;
     pillar?: string;
     limit?: number;
+    /**
+     * The tenant boundary, from ownerFilter(req, 'created_by'). Distinct from
+     * `createdBy`, which is a caller-chosen filter and therefore cannot be one: a
+     * request that simply omits it must not see other people's missions. Empty in solo
+     * mode and for admins. Background callers (the runner) pass nothing and stay
+     * instance-wide, which is what a scheduler must be.
+     */
+    ownerScope?: { sql: string; params: readonly string[] };
   }): Promise<Mission[]> {
-    const where: string[] = [];
+    // Starts at 1=1 so ownerScope's leading ' AND ' is always well-formed, even when
+    // every optional filter is absent — the shape ownerFilter documents.
+    const where: string[] = ['1=1'];
     const args: unknown[] = [];
     if (filter?.status) {
       const statuses = Array.isArray(filter.status) ? filter.status : [filter.status];
@@ -366,7 +395,8 @@ export function createMissionState(db: DatabaseAdapter) {
       where.push('created_by = ?');
       args.push(filter.createdBy);
     }
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const whereSql = `WHERE ${where.join(' AND ')}${filter?.ownerScope?.sql ?? ''}`;
+    args.push(...(filter?.ownerScope?.params ?? []));
     args.push(filter?.limit ?? 100);
     const rows = await db.all<MissionRow>(
       `SELECT * FROM missions.missions ${whereSql} ORDER BY created_at DESC LIMIT ?`,
@@ -462,6 +492,45 @@ export function createMissionState(db: DatabaseAdapter) {
       output.quality ?? null, output.confidence ?? null,
       id,
     );
+    await feedTaskMemory(id, output);
+  }
+
+  // Wave 4b (2026-09-17): a completed task feeds memory through the ledger.
+  // Missions ran for months without a single output row: only the chat
+  // route stored one, so nothing a mission produced was ever learned. This
+  // is the one place a task's output is finalised, so every executor
+  // (LLM, browser, api_call, database_query) passes through it. Control
+  // markers (parallel_group / conditional record provider 'control') and
+  // outputs too short to carry anything are left out. Never throws.
+  let _outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
+  async function getOutputStore() {
+    if (!_outputStore) _outputStore = await createOutputStore(db);
+    return _outputStore;
+  }
+
+  async function feedTaskMemory(taskId: string, output: { full: string; provider: string }): Promise<void> {
+    if (output.provider === 'control') return;
+    const text = (output.full ?? '').trim();
+    if (text.length < MIN_LEARNABLE_CHARS) return;
+    try {
+      const row = await db.get<TaskMemoryRow>(TASK_MEMORY_SQL, taskId);
+      if (!row) return;
+      const store = await getOutputStore();
+      await store.storeOutput({
+        executionId: row.mission_id,
+        workflowId: `mission:${row.mission_id}`,
+        stepIndex: Number(row.sort_order ?? 0),
+        stepType: 'mission_task',
+        areaId: row.area_id ?? undefined,
+        moduleId: row.module_id ?? 'mission',
+        outputData: { text: output.full },
+        workflowName: `Mission: ${row.mission_title}`,
+        stepName: row.title,
+        userId: row.created_by,
+      });
+    } catch (err) {
+      console.warn('[mission-state] memory feed failed (non-fatal) for task', taskId, err instanceof Error ? err.message : err);
+    }
   }
 
   /**

@@ -15,6 +15,15 @@ vi.mock('../../server/services/hybrid-search.js', () => ({
   hybridSearch: vi.fn(),
   embedAndStore: vi.fn(),
   findSimilar: vi.fn(),
+  // Value exports, not just functions. A factory mock replaces the WHOLE module, so an
+  // export it omits throws on first access — and prompt-builder reads
+  // INSTANCE_WIDE_SEARCH inside the semantic path's `try`, whose bare `catch` swallows
+  // the throw and falls through to the deterministic fallback. Every assertion about
+  // the semantic path then failed with nothing anywhere saying why. Keep this factory
+  // in step with hybrid-search.js's exports.
+  INSTANCE_WIDE_SEARCH: { kind: 'instance' },
+  NO_OWNED_CONTENT: { kind: 'none' },
+  searchScopeForRequest: vi.fn(() => ({ kind: 'instance' })),
 }));
 
 import { hybridSearch } from '../../server/services/hybrid-search.js';

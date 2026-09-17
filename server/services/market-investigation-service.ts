@@ -22,6 +22,22 @@ interface InvestigationRow {
 
 export async function createMarketInvestigationService(db: DatabaseAdapter) {
 
+  /**
+   * Create an investigation, or return the existing one for the same
+   * (trigger_type, trigger_reference).
+   *
+   * Idempotency is load-bearing, not a nicety. The auto-dispatch step in
+   * runPredictionValidation scans EVERY validated prediction on every run, not
+   * just the ones validated in that run — so an unguarded INSERT re-created an
+   * investigation for the same anomaly every single pass. By 2026-05-02 that
+   * had turned 21 genuinely anomalous predictions into 1,419 investigations
+   * (67.6 copies each; one prediction was re-investigated 84 times) and 1,051
+   * why-chains, each of which is an LLM job. The queue could never drain
+   * because it was being refilled faster than it was worked.
+   *
+   * A null triggerReference means "not keyed to anything" — manual and ad-hoc
+   * investigations keep the old create-always behaviour.
+   */
   async function createInvestigation(params: {
     triggerType: string;
     triggerReference?: string;
@@ -29,6 +45,16 @@ export async function createMarketInvestigationService(db: DatabaseAdapter) {
     question: string;
     assignedConsul?: string;
   }) {
+    if (params.triggerReference) {
+      const existing = await db.get<{ id: string }>(
+        `SELECT id FROM market_investigation_tasks
+          WHERE trigger_type = ? AND trigger_reference = ?
+          ORDER BY created_at ASC LIMIT 1`,
+        params.triggerType, params.triggerReference,
+      );
+      if (existing) return existing.id;
+    }
+
     const id = `minv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await db.run(`
       INSERT INTO market_investigation_tasks (id, trigger_type, trigger_reference, title, question, assigned_consul)

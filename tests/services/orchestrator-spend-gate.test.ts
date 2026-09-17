@@ -9,8 +9,11 @@ import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
 import {
   evaluateSpendGate,
   checkSpendGate,
+  checkAndRecordSpendGate,
   getSpendGateThreshold,
   DEFAULT_UNRATED_PAUSE_THRESHOLD,
+  SPEND_GATE_STATE_KEY,
+  type SpendGateStateRecord,
 } from '../../server/services/orchestrator-spend-gate.js';
 
 // ── Pure evaluator ───────────────────────────────────────────────────────────
@@ -138,5 +141,90 @@ describe('checkSpendGate (db-backed)', () => {
     (db as { all: unknown }).all = async () => { throw new Error('relation does not exist'); };
     const state = await checkSpendGate(db);
     expect(state.paused).toBe(false);
+  });
+});
+
+// ── Skipped-cycle record ─────────────────────────────────────────────────────
+//
+// A heartbeat the gate skips writes no trail and no audit row; the persisted
+// gate state is the one record it leaves. checkAndRecordSpendGate is called
+// once per scheduled cycle, so paused_cycles counts the skipped cycles.
+
+function makeStatefulDb(ratingsNewestFirst: () => Array<string | null>) {
+  const settings = new Map<string, string>();
+  const notifications: unknown[][] = [];
+  const db: DatabaseAdapter = {
+    dialect: 'postgresql' as DatabaseAdapter['dialect'],
+    async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+      if (sql.includes('FROM app_settings')) {
+        const value = settings.get(String(params[0]));
+        return value === undefined ? undefined : ({ value } as T);
+      }
+      return undefined;
+    },
+    async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
+      if (sql.includes('FROM orchestrator_proposals')) {
+        return ratingsNewestFirst().slice(0, Number(params[0] ?? 10)).map((r) => ({ human_rating: r })) as T[];
+      }
+      return [];
+    },
+    async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+      if (sql.includes('INSERT INTO app_settings')) settings.set(String(params[0]), String(params[1]));
+      if (sql.includes('INSERT INTO notifications')) notifications.push(params);
+      return { changes: 1, lastInsertRowid: 0 } as RunResult;
+    },
+    async exec() { /* noop */ },
+    async transaction<T>(fn: (tx: DatabaseAdapter) => Promise<T>): Promise<T> { return fn(db); },
+    async close() { /* noop */ },
+  };
+  const state = (): SpendGateStateRecord | undefined => {
+    const raw = settings.get(SPEND_GATE_STATE_KEY);
+    return raw ? JSON.parse(raw) as SpendGateStateRecord : undefined;
+  };
+  return { db, state, notifications };
+}
+
+describe('checkAndRecordSpendGate (skipped-cycle record)', () => {
+  it('counts each skipped cycle while paused, keeps changed_at, and drops the counter on resume', async () => {
+    let ratings: Array<string | null> = new Array(10).fill(null);
+    const { db, state, notifications } = makeStatefulDb(() => ratings);
+
+    // Cycle 1: the gate closes — a transition, so a notification, counter = 1.
+    expect((await checkAndRecordSpendGate(db)).paused).toBe(true);
+    const closed = state();
+    expect(closed).toMatchObject({ paused: true, threshold: 10, paused_cycles: 1 });
+    expect(typeof closed?.changed_at).toBe('string');
+    expect(closed?.last_paused_cycle_at).toBe(closed?.changed_at);
+    expect(notifications).toHaveLength(1);
+
+    // Cycles 2 and 3: still paused — no transition, no notification, counter climbs.
+    await checkAndRecordSpendGate(db);
+    await checkAndRecordSpendGate(db);
+    const stillClosed = state();
+    expect(stillClosed).toMatchObject({ paused: true, paused_cycles: 3, changed_at: closed?.changed_at });
+    expect(notifications).toHaveLength(1);
+
+    // A rating inside the window reopens the gate; the counter is not carried over.
+    ratings = ['relevant', ...new Array(9).fill(null)];
+    expect((await checkAndRecordSpendGate(db)).paused).toBe(false);
+    const open = state();
+    expect(open?.paused).toBe(false);
+    expect(open?.paused_cycles).toBeUndefined();
+    expect(open?.last_paused_cycle_at).toBeUndefined();
+    expect(open?.changed_at).not.toBe(closed?.changed_at);
+  });
+
+  it('a legacy state record without the counter starts counting from the next skipped cycle', async () => {
+    const ratings: Array<string | null> = new Array(10).fill(null);
+    const { db, state, notifications } = makeStatefulDb(() => ratings);
+    await db.run(
+      'INSERT INTO app_settings (key, value) VALUES (?, ?)',
+      SPEND_GATE_STATE_KEY,
+      JSON.stringify({ paused: true, changed_at: '2026-06-11T10:30:00.251Z', threshold: 10 }),
+    );
+
+    await checkAndRecordSpendGate(db);
+    expect(state()).toMatchObject({ paused: true, changed_at: '2026-06-11T10:30:00.251Z', paused_cycles: 1 });
+    expect(notifications).toHaveLength(0);
   });
 });

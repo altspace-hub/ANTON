@@ -1,5 +1,5 @@
-import { getAnthropicUtilityModelSync } from './utility-model.js';
-import { getClient } from './claude-client.js';
+import { getRoutedUtilityModelSync } from './utility-model.js';
+import { callChat } from './provider-router.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -84,8 +84,6 @@ export async function verifyCitations(text: string, sourceManifest?: string[]): 
     return [];
   }
 
-  const client = getClient();
-
   const citationList = citations.map((c, i) => `${i + 1}. ${c}`).join('\n');
 
   // ATTR-04: Include source manifest context in the prompt if available
@@ -118,18 +116,17 @@ Example format:
   {"citation": "Article 999 AMLR", "verified": false, "comment": "AMLR (Regulation 2024/1624) does not contain an Article 999.", "sourceMatch": "uncertain"}
 ]`;
 
-  const response = await client.messages.create({
-    model: getAnthropicUtilityModelSync(),
-    max_tokens: 4096,
+  // Through provider-router, so the configured engine answers. This used to
+  // build a raw Anthropic client on the metered key — "Verify citations" on
+  // every module output failed on a subscription-only instance.
+  const response = await callChat({
+    model: getRoutedUtilityModelSync(),
     system: systemPrompt,
     messages: [{ role: 'user', content: userMessage }],
+    maxTokens: 4096,
+    jsonMode: true,
   });
-
-  // Extract text content from the response
-  const rawText = response.content
-    .filter((block) => block.type === 'text')
-    .map((block) => (block as { type: 'text'; text: string }).text)
-    .join('');
+  const rawText = response.text;
 
   // Parse JSON — strip any accidental markdown code fences
   const jsonText = rawText

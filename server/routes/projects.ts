@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { createProjectWorkspace, deleteProjectWorkspace } from '../services/workspace.js';
 import { safeError } from '../lib/error-response.js';
+import { resolveProjectAccess } from '../services/project-context.js';
 
 export async function createProjectRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -26,7 +27,8 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       if (IS_TEAM_MODE && userRole !== 'admin') {
         // In team mode, non-admins only see projects they're a member of
         projects = await db.all(
-          `SELECT p.*, COUNT(s.id) as session_count
+          `SELECT p.*, COUNT(s.id) as session_count,
+                  EXISTS (SELECT 1 FROM coding_projects cp WHERE cp.project_id = p.id) AS is_coding
            FROM projects p
            LEFT JOIN sessions s ON s.project_id = p.id
            INNER JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
@@ -36,7 +38,8 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
         , userId);
       } else {
         projects = await db.all(
-          `SELECT p.*, COUNT(s.id) as session_count
+          `SELECT p.*, COUNT(s.id) as session_count,
+                  EXISTS (SELECT 1 FROM coding_projects cp WHERE cp.project_id = p.id) AS is_coding
            FROM projects p
            LEFT JOIN sessions s ON s.project_id = p.id
            WHERE p.status != 'deleted'
@@ -142,7 +145,7 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
           COALESCE(AVG(qs.score_overall),0) as avg_quality
         FROM sessions s
         LEFT JOIN audit_log a ON a.session_id = s.id
-        LEFT JOIN quality_scores qs ON qs.session_id = s.id
+        LEFT JOIN quality_scores qs ON qs.session_id = s.id AND qs.origin = 'run'
         WHERE s.project_id = ?
       `, id) as {
         session_count: number;
@@ -210,14 +213,35 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // PATCH /api/sessions/:id/project — assign session to project
+  // PATCH /api/sessions/:id/project — assign session to project.
+  // Wave 4 (2026-09-17): the same gate as session creation. This route
+  // accepted any project id for any session — no existence check, no
+  // membership check, no session ownership — so a team-mode caller could
+  // pull a stranger's session into a project they were not part of.
   router.patch('/sessions/:id/project', async (req, res) => {
     try {
-      const { projectId } = req.body as { projectId: string | null };
-      await db.run('UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?', projectId || null, new Date().toISOString(), req.params.id);
-      res.json({ ok: true });
+      const raw = (req.body as { projectId?: unknown }).projectId;
+      if (raw !== null && raw !== undefined && typeof raw !== 'string') {
+        return res.status(400).json({ error: 'projectId must be a string or null' });
+      }
+      const projectId = typeof raw === 'string' && raw.trim() ? raw.trim() : null;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+      const sessionId = String(req.params.id);
+      const session = await db.get('SELECT id, user_id FROM sessions WHERE id = ?', sessionId) as { id: string; user_id: string | null } | undefined;
+      if (!session) return res.status(404).json({ error: 'Session not found' });
+      if (IS_TEAM_MODE && userRole !== 'admin' && session.user_id && session.user_id !== userId) {
+        return res.status(403).json({ error: 'Not your session' });
+      }
+      if (projectId) {
+        const access = await resolveProjectAccess(db, { projectId, userId, userRole, teamMode: IS_TEAM_MODE });
+        if (access === 'not_found') return res.status(404).json({ error: 'Project not found' });
+        if (access === 'forbidden') return res.status(403).json({ error: 'Not a member of this project' });
+      }
+      await db.run('UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?', projectId, new Date().toISOString(), sessionId);
+      res.json({ ok: true, projectId });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to assign project' });
+      res.status(500).json({ error: safeError(error) });
     }
   });
 

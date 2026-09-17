@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
-import { callSync } from '../services/claude-client.js';
+import { callChat } from '../services/provider-router.js';
 import { ingestLocalProject } from '../services/project-ingestor.js';
 import { safeError } from '../lib/error-response.js';
 
@@ -170,9 +170,12 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
       const dimensionResults: any[] = [];
 
       for (const dim of DIMENSIONS) {
-        const result = await callSync({
-          model: 'claude-sonnet-4-5-20250929',
-          thinking: 'think',
+        // Medium tier of the Settings default (was a literal Sonnet 4.5).
+        const result = await callChat({
+          tier: 'medium',
+          thinkingLevel: 'think',
+          maxTokens: 8192,
+          db,
           system: buildDimensionAnalysisPrompt(dim.name, dim.persona),
           messages: [{
             role: 'user',
@@ -274,9 +277,12 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
       const generatedFiles: any[] = [];
 
       for (const instrType of instructionTypes) {
-        const result = await callSync({
-          model: 'claude-sonnet-4-5-20250929',
-          thinking: 'think_hard',
+        // Medium tier of the Settings default (was a literal Sonnet 4.5).
+        const result = await callChat({
+          tier: 'medium',
+          thinkingLevel: 'think_hard',
+          maxTokens: 16000,
+          db,
           system: `You are generating a ${instrType.type} instruction file for "${profile.display_name}". This file contains specific steering instructions to bring a project back into alignment with its goals.
 
 Format the output as a complete ${profile.primary_filename}-style Markdown file that the AI coding tool can directly use.

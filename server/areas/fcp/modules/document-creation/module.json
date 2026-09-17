@@ -94,6 +94,9 @@
     "fcp-expert",
     "legal-expert"
   ],
+  "recommendedSkills": [
+    "amlr-article-reference"
+  ],
   "tags": [
     "documents",
     "policy",

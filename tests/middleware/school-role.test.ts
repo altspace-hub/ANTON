@@ -20,6 +20,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 const MIDDLEWARE = readFileSync(join(process.cwd(), 'server/middleware/auth.ts'), 'utf8');
 const AUTH_ROUTES = readFileSync(join(process.cwd(), 'server/routes/auth.ts'), 'utf8');
@@ -126,13 +127,9 @@ describe('the roles written match the roles read', () => {
  * the write path actually run, because the original bug was invisible at the string
  * level: every one of those files looked entirely reasonable.
  */
-const DATABASE_URL = (() => {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const m = readFileSync(join(process.cwd(), '.env'), 'utf8').match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch { return undefined; }
-})();
+// tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+// this run; a test never reads .env to find a database.
+const DATABASE_URL = resolveTestDatabaseUrl();
 
 const d = DATABASE_URL ? describe : describe.skip;
 

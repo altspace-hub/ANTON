@@ -43,6 +43,10 @@ export interface EngagementData {
   workstream_plan_confirmed: number;
   enable_as_benchmark: number;
   scope_confirmed_at: string | null;
+  /** Wave 2: set by POST /:id/complete, cleared by /reopen. */
+  completed_at?: string | null;
+  /** Wave 3: an execution in progress on the server that the page can re-attach to. */
+  run_job?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; toolCalls: number; turns: number; error?: string } | null;
   documents: EngagementDocument[];
   scope_items: ScopeItem[];
   workstreams: Workstream[];
@@ -50,6 +54,8 @@ export interface EngagementData {
   deliverables: Deliverable[];
   boundaries: Boundary[];
   client_intelligence: ClientIntelligence | null;
+  /** Wave 2: the model-led intake conversation (JSON array of turns). */
+  intake_conversation?: string | null;
   iterations: Iteration[];
   stakeholders: Stakeholder[];
   peer_benchmarks: PeerBenchmark[];
@@ -132,6 +138,8 @@ export interface ClientIntelligence {
   engagement_trigger: string | null;
   client_maturity_signal: string | null;
   sensitivities: string | null;
+  /** 0/1 — whether ANTON may research the client online during intake. */
+  online_research_authorised?: number | null;
 }
 
 export interface Iteration {
@@ -507,6 +515,8 @@ type PhaseStatus = 'done' | 'active' | 'pending';
 
 function getPhaseStatuses(engagement: EngagementData): Record<string, PhaseStatus> {
   const order = ['setup','team','scope_agreement','client_intelligence','expert_config','resource_collection','good_example','workstream_planning','execution','review','quality_gate'];
+  // A completed engagement has every phase behind it.
+  if (engagement.status === 'completed') return Object.fromEntries(order.map((p) => [p, 'done' as PhaseStatus]));
   const currentPhaseIdx = order.indexOf(STATUS_PHASE_MAP[engagement.status] || 'setup');
   return Object.fromEntries(order.map((p, i) => [
     p,

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, Navigate } from 'react-router-dom';
-import { MODULES, MODULE_DEFAULT_SKILLS, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
+import { MODULES, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
 import type { KnowledgeSourceConfig, KnowledgeLibraryEntry } from '@/lib/types';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useStreamStore } from '@/stores/useStreamStore';
 import { useClaude } from '@/hooks/useClaude';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
+import { useSkillCatalog, readRecommendedSkills } from '@/hooks/useSkills';
 import { getRecommendedExportFormats } from '@/lib/output-format-definitions';
 import ThinkingControls from '@/components/shared/ThinkingControls';
 import WritingStylePanel from '@/components/shared/WritingStylePanel';
@@ -32,9 +33,10 @@ import StatusIndicator from '@/components/shared/StatusIndicator';
 import RevelationTrailPanel, { IREPhaseProgress } from '@/components/shared/RevelationTrailPanel';
 import ExportBar from '@/components/shared/ExportBar';
 import TransformPanel from '@/components/shared/TransformPanel';
-import HumanOversightGate from '@/components/shared/HumanOversightGate';
+import HumanOversightGate, { OVERSIGHT_GATED_MODULES } from '@/components/shared/HumanOversightGate';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
+import { PromptPreviewChip } from '@/components/shared/ProvenancePanel';
 import InjectedAtomsPanel from '@/components/shared/InjectedAtomsPanel';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import { SeedControl } from '@/components/shared/SeedControl';
@@ -53,9 +55,10 @@ import ModelValidation from '@/components/modules/ModelValidation';
 import { Play, Square, Send, ChevronDown, ChevronRight, Coins, ShieldCheck, Check, X, Mic, MicOff, Layers, Wrench, Sparkles } from 'lucide-react';
 import SmartModelBanner from '@/components/shared/SmartModelBanner';
 import { MODELS } from '@/lib/constants';
-import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule } from '@/lib/api';
+import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule, fetchModuleDefaults } from '@/lib/api';
+import { useConfigStore } from '@/stores/useConfigStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import type { Message } from '@/lib/types';
+import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
 
 const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inputs: Record<string, unknown>) => void }>> = {
@@ -75,6 +78,15 @@ const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inp
 
 // Module prompts are now loaded from server/prompts/*.md via the API.
 // The server's PromptComposer handles all prompt assembly — no inline prompts needed here.
+
+// Wave 6 track H: the levels a stored default may carry (the server re-validates too).
+const THINKING_LEVEL_IDS: readonly ThinkingLevel[] = ['quick', 'think', 'think_hard', 'investigate', 'plan_first', 'deep_investigate'];
+const CREATIVITY_LEVEL_IDS: readonly CreativityLevel[] = ['strict', 'balanced', 'creative'];
+const isThinkingLevel = (v: unknown): v is ThinkingLevel => typeof v === 'string' && (THINKING_LEVEL_IDS as readonly string[]).includes(v);
+const isCreativityLevel = (v: unknown): v is CreativityLevel => typeof v === 'string' && (CREATIVITY_LEVEL_IDS as readonly string[]).includes(v);
+/** A guided value nobody has filled yet — the only kind a profile prefill may replace. */
+const isEmptyGuidedValue = (v: unknown): boolean =>
+  v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
 
 // GOV-06: Non-editable compliance guardrail appended to all FCP module prompts.
 const FCP_COMPLIANCE_GUARDRAIL = `**IMPORTANT LIMITATION — NON-NEGOTIABLE**
@@ -114,7 +126,7 @@ export default function ModulePage() {
     deliberationEnabled, setDeliberationEnabled,
     setPlainTextMode, setMultiAgentEnabled,
     plainTextMode,
-    isAssemblingContext, lastSourcesUsed,
+    isAssemblingContext, lastSourcesUsed, lastContextUsed,
   } = useSessionStore();
 
   const { runMessage, stopStreaming, isStreaming, streamingText, streamingThinking, messages, lastInputTokens, lastOutputTokens, ireChainId, ireCurrentPhase, ireTotalPhases, ireCurrentPhaseName } = useClaude();
@@ -139,6 +151,15 @@ export default function ModulePage() {
   const [reviewedAt, setReviewedAt] = useState<string | null>(null);
   const [reviewUpdating, setReviewUpdating] = useState(false);
   const [suggestedSkillsDismissed, setSuggestedSkillsDismissed] = useState(false);
+  // Skills this module's module.json recommends (`recommendedSkills`), read from
+  // the config the server serves. Only ids the skill catalogue actually has are
+  // offered — the banner never attaches an id the resolver would drop.
+  const [moduleRecommendedSkills, setModuleRecommendedSkills] = useState<string[]>([]);
+  const { skills: skillCatalog } = useSkillCatalog();
+  const suggestedSkills = useMemo(
+    () => moduleRecommendedSkills.filter((id) => skillCatalog.some((s) => s.id === id)),
+    [moduleRecommendedSkills, skillCatalog],
+  );
   const [suggestedLibraryEntries, setSuggestedLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
   const [activePacks, setActivePacks] = useState<Array<{ display_name: string; entity_count: number; relationship_count: number }>>([]);
   const [myWayActive, setMyWayActive] = useState(false);
@@ -146,6 +167,20 @@ export default function ModulePage() {
   // exampleValues (keyed by guided-input id) pre-fills the guided form.
   const [moduleExample, setModuleExample] = useState<{ input: string; values?: Record<string, unknown> } | null>(null);
   const [exampleUsed, setExampleUsed] = useState(false);
+  // Wave 6 track H: the profile drives the defaults. `lastSettingsApplied`
+  // shows the one-line note once the user's last-used formats / thinking /
+  // creativity for this module replaced the catalogue defaults; it clears the
+  // moment they change any of the three. `jurisdictionPack` is the pack the
+  // profile's jurisdiction attached by itself — removable, and once removed
+  // never re-added in the same session (the dismissed ref).
+  const [lastSettingsApplied, setLastSettingsApplied] = useState(false);
+  const [jurisdictionPack, setJurisdictionPack] = useState<{ id: string; name: string } | null>(null);
+  const userTouchedConfigRef = useRef(false);
+  const jurisdictionPackDismissedRef = useRef(false);
+  const markConfigTouched = () => {
+    userTouchedConfigRef.current = true;
+    setLastSettingsApplied(false);
+  };
   const [learnOffered, setLearnOffered] = useState(false);
   const [learnSaving, setLearnSaving] = useState(false);
   const [learnDone, setLearnDone] = useState(false);
@@ -212,6 +247,7 @@ export default function ModulePage() {
   // ITEM 4: Skill suggestion banner
   useEffect(() => {
     if (!moduleId) return;
+    setModuleRecommendedSkills([]); // the module-load effects below refill it from the served config
     const dismissed = localStorage.getItem(`dismissed-skills-${moduleId}`);
     if (dismissed) { setSuggestedSkillsDismissed(true); return; }
     setSuggestedSkillsDismissed(false);
@@ -369,6 +405,7 @@ export default function ModulePage() {
         if (!cfg) return;
         if (cfg.areaId) setAreaId(cfg.areaId);
         if (cfg.guidedInputs) setGuidedInputFields(cfg.guidedInputs);
+        setModuleRecommendedSkills(readRecommendedSkills(cfg));
       });
       // Restore saved config + conversation history from the DB.
       fetchSession(sessionParam).then((data) => {
@@ -455,6 +492,7 @@ export default function ModulePage() {
           if (!cfg) return;
           if (cfg.areaId) setAreaId(cfg.areaId);
           if (cfg.guidedInputs) setGuidedInputFields(cfg.guidedInputs);
+          setModuleRecommendedSkills(readRecommendedSkills(cfg));
           if (typeof cfg.defaults?.transparencyLevel === 'number') {
             setTransparencyLevel(cfg.defaults.transparencyLevel as 0 | 1 | 2);
           }
@@ -479,6 +517,7 @@ export default function ModulePage() {
         if (Array.isArray(defs.outputFormats)) setSelectedOutputFormats(defs.outputFormats);
         if (dynamicCfg.areaId) setAreaId(dynamicCfg.areaId);
         if (dynamicCfg.guidedInputs) setGuidedInputFields(dynamicCfg.guidedInputs);
+        setModuleRecommendedSkills(readRecommendedSkills(dynamicCfg));
         if (typeof defs.transparencyLevel === 'number') {
           setTransparencyLevel(defs.transparencyLevel as 0 | 1 | 2);
         }
@@ -501,6 +540,55 @@ export default function ModulePage() {
 
       setKnowledgeSources(defaultKS);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleId, sessionParam, isDynamicModule]);
+
+  // Wave 6 track H: the profile drives the defaults. Runs on the same trigger
+  // as the init effect above and resolves after it, so the person's last-used
+  // settings for this module win over the catalogue defaults — unless they
+  // have already touched formats / thinking / creativity in this session.
+  // Guided fields the profile can answer (jurisdiction, language,
+  // organisation) start filled when still empty; the jurisdiction pack the
+  // profile maps to is attached once, as a removable chip. A resumed session
+  // carries its own settings and is left alone.
+  useEffect(() => {
+    if ((!module && isDynamicModule !== true) || !moduleId) return;
+    userTouchedConfigRef.current = false;
+    jurisdictionPackDismissedRef.current = false;
+    setLastSettingsApplied(false);
+    setJurisdictionPack(null);
+    if (sessionParam) return;
+
+    let cancelled = false;
+    fetchModuleDefaults(moduleId).then((res) => {
+      if (cancelled || !res) return;
+
+      const { defaults, prefill, jurisdictionSkill } = res;
+      if (defaults && !userTouchedConfigRef.current) {
+        if (defaults.outputFormats.length > 0) setSelectedOutputFormats(defaults.outputFormats);
+        if (isThinkingLevel(defaults.thinking)) setThinking(defaults.thinking);
+        if (isCreativityLevel(defaults.creativity)) setCreativity(defaults.creativity);
+        setLastSettingsApplied(true);
+      }
+
+      // Read the live store, not the render closure: the init effect reset it in between.
+      const currentInputs = useConfigStore.getState().moduleInputs;
+      const filled: Record<string, unknown> = { ...currentInputs };
+      let changed = false;
+      for (const [fieldId, value] of Object.entries(prefill)) {
+        if (!isEmptyGuidedValue(currentInputs[fieldId])) continue;
+        filled[fieldId] = value;
+        changed = true;
+      }
+      if (changed) setModuleInputs(filled);
+
+      if (jurisdictionSkill && !jurisdictionPackDismissedRef.current) {
+        const currentSkills = useConfigStore.getState().selectedSkills;
+        if (!currentSkills.includes(jurisdictionSkill.id)) setSelectedSkills([...currentSkills, jurisdictionSkill.id]);
+        setJurisdictionPack(jurisdictionSkill);
+      }
+    });
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleId, sessionParam, isDynamicModule]);
 
@@ -717,7 +805,7 @@ export default function ModulePage() {
           )}
 
           {/* AI Controls */}
-          <ThinkingControls value={thinking} onChange={setThinking} model={model} />
+          <ThinkingControls value={thinking} onChange={(level) => { markConfigTouched(); setThinking(level); }} model={model} />
           <ModelSelector value={model} onChange={setModel} />
 
           {/* Model recommendation (Wave 3.7) — provider-aware suggestion with apply-on-click */}
@@ -736,7 +824,7 @@ export default function ModulePage() {
           {/* Writing Style Panel (replaces bare CreativitySlider) */}
           <WritingStylePanel
             creativity={creativity}
-            onCreativityChange={setCreativity}
+            onCreativityChange={(level) => { markConfigTouched(); setCreativity(level); }}
             selectedPersonas={selectedPersonas}
             onSelectedPersonasChange={setSelectedPersonas}
             multiPerspective={multiPerspective}
@@ -797,15 +885,18 @@ export default function ModulePage() {
           {/* Injected Knowledge Atoms */}
           <InjectedAtomsPanel sessionId={sessionId} />
 
+          {/* Session conclusion — written after each answer; mounted whenever a session exists */}
+          <ResumePanel sessionId={sessionId} />
+
           {/* Skills */}
-          {moduleId && !suggestedSkillsDismissed && (MODULE_DEFAULT_SKILLS[moduleId]?.length ?? 0) > 0 && (!selectedSkills || selectedSkills.length === 0) && (
+          {moduleId && !suggestedSkillsDismissed && suggestedSkills.length > 0 && selectedSkills.filter((id) => id !== jurisdictionPack?.id).length === 0 && (
             <div className="mb-2 px-3 py-2 bg-adv-teal/10 border border-adv-teal/30 rounded flex items-center justify-between gap-2">
               <span className="text-xs text-adv-teal">
-                Suggested skills for this module — Apply?
+                Suggested for this module: {suggestedSkills.map((id) => skillCatalog.find((s) => s.id === id)?.name ?? id).join(', ')} — Apply?
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setSelectedSkills(MODULE_DEFAULT_SKILLS[moduleId] ?? [])}
+                  onClick={() => setSelectedSkills([...new Set([...selectedSkills, ...suggestedSkills])])}
                   className="text-xs px-2 py-0.5 bg-adv-teal text-adv-dark rounded hover:bg-adv-teal-dark"
                 >
                   Apply
@@ -820,6 +911,26 @@ export default function ModulePage() {
                   ×
                 </button>
               </div>
+            </div>
+          )}
+          {jurisdictionPack && selectedSkills.includes(jurisdictionPack.id) && (
+            <div className="mb-2" role="status">
+              <span className="inline-flex items-center gap-2 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-3 py-1 text-sm text-adv-teal">
+                Jurisdiction pack: {jurisdictionPack.name}
+                <button
+                  type="button"
+                  aria-label={`Remove jurisdiction pack ${jurisdictionPack.name}`}
+                  title="Remove for this session"
+                  onClick={() => {
+                    jurisdictionPackDismissedRef.current = true;
+                    setSelectedSkills(selectedSkills.filter((id) => id !== jurisdictionPack.id));
+                    setJurisdictionPack(null);
+                  }}
+                  className="rounded-full p-0.5 text-adv-teal hover:bg-adv-teal/20 hover:text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-adv-teal"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              </span>
             </div>
           )}
           <SkillAttacher selected={selectedSkills} onChange={setSelectedSkills} />
@@ -879,7 +990,12 @@ export default function ModulePage() {
           )}
 
           {/* Output Formats */}
-          <OutputFormatSelector selected={selectedOutputFormats} onChange={setSelectedOutputFormats} />
+          {lastSettingsApplied && (
+            <p className="mb-1 text-sm text-adv-gray" role="status" aria-live="polite">
+              Using your last settings for this module — change them anytime
+            </p>
+          )}
+          <OutputFormatSelector selected={selectedOutputFormats} onChange={(formats) => { markConfigTouched(); setSelectedOutputFormats(formats); }} />
 
           {/* Communications Hub */}
           <CommunicationsPanel
@@ -1041,6 +1157,7 @@ export default function ModulePage() {
             )}
 
             <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
               {isStreaming ? (
                 <button
                   onClick={stopStreaming}
@@ -1068,6 +1185,19 @@ export default function ModulePage() {
                   )}
                 </button>
               )}
+              {/* Wave 1: the prompt a run would carry right now — same fields as Run, composed server-side */}
+              <PromptPreviewChip
+                disabled={isStreaming}
+                config={{
+                  model, thinking, creativity, precision, moduleId, areaId: areaId ?? undefined, systemPrompt,
+                  selectedOutputFormats, plainTextMode, selectedPersonas, selectedSkills, multiPerspective,
+                  metaCognitiveEnabled, structureReference, referenceOutput, transparencyLevel, writingTone,
+                  emojiEnabled, nativeReasoningEnabled, atomInjectionEnabled, audience, channel, outputLanguage,
+                  knowledgeSources: knowledgeSources as unknown as Record<string, unknown>,
+                  uploadedFileIds, sessionId, userMessage: userInput,
+                }}
+              />
+              </div>
               {/* Cost estimate (TOKEN-04) — shown before run whenever context is non-trivial */}
               {!isStreaming && estimatedInputTokens > 200 && (
                 <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray'}`}>
@@ -1141,13 +1271,6 @@ export default function ModulePage() {
           </div>
         )}
 
-        {/* Session Resume Panel — shown when resuming a paused session */}
-        {sessionId && messages.length === 0 && !isStreaming && (
-          <div className="shrink-0 pb-3">
-            <ResumePanel sessionId={sessionId} />
-          </div>
-        )}
-
         {/* Scrollable output area — everything flows naturally */}
         <div className="flex-1 overflow-auto space-y-3">
           {/* Deliberation Panel (replaces conversation thread when enabled) */}
@@ -1205,7 +1328,7 @@ export default function ModulePage() {
           {outputContent && !isStreaming && (
             <>
               {/* EUAI-02: Human oversight sign-off for high-risk FCP modules */}
-              {sessionId && ['gap-analysis', 'sanctions-advisory', 'investigation-support'].includes(moduleId ?? '') && (
+              {sessionId && (OVERSIGHT_GATED_MODULES as readonly string[]).includes(moduleId ?? '') && (
                 <HumanOversightGate
                   sessionId={sessionId}
                   moduleId={moduleId ?? ''}
@@ -1221,6 +1344,7 @@ export default function ModulePage() {
                 thinking,
                 creativity,
                 sessionId: sessionId ?? undefined,
+                messageId: lastAssistantMessage?.id,
                 documentsLoaded: files.filter(f => f.status === 'done').map(f => f.name),
               })}
               isExporting={isExporting}
@@ -1365,6 +1489,7 @@ export default function ModulePage() {
             onUpgradeThinking={(level) => setThinking(level)}
             configSnapshot={lastAssistantConfigSnapshot}
             sourceManifest={lastSourcesUsed}
+            contextUsed={lastContextUsed}
             rerunOf={lastAssistantMessage?.rerunOf ?? null}
           />
         )}

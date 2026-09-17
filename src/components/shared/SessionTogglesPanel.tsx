@@ -75,7 +75,7 @@ export default function SessionTogglesPanel({
   onAtomCollectionChange,
 }: SessionTogglesPanelProps) {
   const isOpusOrSonnet =
-    currentModel === 'claude-fable-5' || currentModel === 'claude-opus-4-8' || currentModel === 'claude-sonnet-4-6' || currentModel === 'claude-sonnet-4-5-20250929';
+    currentModel === 'claude-fable-5-1' || currentModel === 'claude-fable-5' || currentModel === 'claude-opus-4-8' || currentModel === 'claude-sonnet-4-6' || currentModel === 'claude-sonnet-4-5-20250929';
   return (
     <div className="rounded-xl border border-border bg-adv-card p-4 space-y-4">
       {/* ── Output Controls ── */}
@@ -225,7 +225,7 @@ export default function SessionTogglesPanel({
                 <div className="text-xs text-adv-off-white">Use prior insights</div>
                 <p className="mt-0.5 text-xs text-adv-gray">
                   {atomInjectionEnabled
-                    ? 'Recent findings injected as context'
+                    ? 'In auto mode prior findings go in only once memory has earned its place: 100 module atoms and 30 ratings.'
                     : 'Clean slate — no prior knowledge used'}
                 </p>
               </div>

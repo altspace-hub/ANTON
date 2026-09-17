@@ -1,4 +1,5 @@
-import type { OutputFormat } from './types';
+// '.js' so the server build (nodenext; claude.ts imports this file) resolves it too.
+import type { OutputFormat } from './types.js';
 
 export const OUTPUT_FORMATS: OutputFormat[] = [
   // ── STRATEGIC ──────────────────────────────────────────────
@@ -242,6 +243,55 @@ Dimensions:
 
 For each dimension: Current state, Required changes, Effort (H/M/L), Priority, Dependencies.
 End with: Overall impact summary matrix and recommended sequencing.`,
+  },
+  {
+    id: 'risk-register',
+    label: 'Risk Register',
+    icon: 'ShieldAlert',
+    description: 'One row per risk: driver, likelihood, impact, inherent, controls, residual, owner, review date',
+    category: 'analytical',
+    exportFormats: ['xlsx', 'docx'],
+    estimatedLength: '2-6 pages',
+    audience: 'Risk committee, MLRO, management',
+    promptInstruction: `## OUTPUT FORMAT: RISK REGISTER
+Produce a risk register as a table — one row per risk.
+
+Columns:
+| Risk ID | Risk | Driver | Likelihood | Impact | Inherent | Controls | Residual | Owner | Review Date |
+
+Scoring: Likelihood and Impact on a 1-5 scale (1 = rare / negligible, 5 = almost certain / severe). State the scale above the table.
+- Inherent — the risk level before controls (from Likelihood and Impact)
+- Controls — the specific controls that reduce the risk, each rated Strong / Adequate / Weak
+- Residual — the risk level after the listed controls; never higher than Inherent
+- Owner — a role, not a person's name, unless the source names one
+- Review Date — the next review date if stated; otherwise "TBD" — do not invent dates
+
+Sort by: Residual descending (highest residual first), then Inherent descending.
+Include: Summary statistics (count per residual band, top 3 residual risks) and a short note on any risk outside appetite.`,
+  },
+  {
+    id: 'entity-register',
+    label: 'Entity Register',
+    icon: 'Database',
+    description: 'One row per entity: type, jurisdiction, role, ownership %, screening status, source',
+    category: 'analytical',
+    exportFormats: ['xlsx', 'docx'],
+    estimatedLength: '1-5 pages',
+    audience: 'Compliance, onboarding, investigations',
+    promptInstruction: `## OUTPUT FORMAT: ENTITY REGISTER
+Produce an entity register as a table — one row per legal entity, natural person, or asset that plays a role in the structure.
+
+Columns:
+| Entity ID | Entity | Type | Jurisdiction | Role | Ownership % | Screening Status | Source |
+
+- Type — legal entity / natural person / trust / fund / vehicle / asset
+- Role — the part it plays (parent, subsidiary, UBO, director, nominee, counterparty, intermediary, …)
+- Ownership % — the direct percentage held in the entity above it; "n/a" where ownership does not apply; leave blank rather than guess
+- Screening Status — Clear / Hit — under review / Hit — confirmed / Not screened
+- Source — the document, register or statement the row rests on
+
+Sort by: ownership chain order (ultimate parent first), then alphabetically within a level.
+Include: Summary (entities per jurisdiction, count of screening hits) and an explicit list of gaps — entities whose ownership or screening is unknown.`,
   },
 
   {

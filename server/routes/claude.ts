@@ -4,11 +4,20 @@ import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
-import { runIterativeReasoning, getRevelationChain } from '../services/iterative-reasoning.js';
+import { runIterativeReasoning, getRevelationChain, ireSupportedProvider } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createOutputStore } from '../services/output-store.js';
-import { composeSystemPrompt, composeSystemPromptSplit } from '../services/prompt-composer.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildAtomLayer } from '../services/prompt-builder.js';
+import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } from '../services/prompt-composer.js';
+import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-versions.js';
+import { getModule } from '../services/module-loader.js';
+import { estimateTokens } from '../services/token-estimator.js';
+import { buildOutputInstruction } from '../../src/lib/output-format-definitions.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayer, buildAtomLayerDetailed } from '../services/prompt-builder.js';
+import { buildProjectContext } from '../services/project-context.js';
+import { buildResumeContextIfDue } from '../services/session-resume.js';
+import { writeSessionConclusion } from '../services/session-conclusion.js';
+import { retrieveGroundingText, type GroundingResult } from '../services/framework-text-retrieval.js';
+import { frameworksForArea } from '../services/area-frameworks.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import type { ResolvedKnowledge } from '../../src/lib/types.js';
 import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
@@ -34,7 +43,10 @@ import { semanticSearch } from '../services/semantic-search.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
-import { streamToResponse as sdkStreamToResponse } from '../services/claude-sdk-client.js';
+import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
+import { capabilityModelId } from '../services/engine-model-id.js';
+import { mapModelToProvider, callChat } from '../services/provider-router.js';
+import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
@@ -47,12 +59,70 @@ import { buildCompactionConfig, buildContextManagementParam } from '../services/
 import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
+import { getAtomInjectionStatus } from '../services/atom-injection-gate.js';
+import { runComplianceOnCompletion } from '../services/compliance-on-completion.js';
+import { isModuleAllowed } from '../services/module-access.js';
+import { resolveModuleAreaId } from './module-access.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
-import { getAnthropicUtilityModel } from '../services/utility-model.js';
+import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
 import { computeRunCostUsd } from '../services/run-cost.js';
+import { anthropicEffort } from '../services/thinking-map.js';
 
 const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || './uploads');
+
+/**
+ * Abort a stream that has STALLED, not one that is merely taking a while.
+ *
+ * The per-thinking-level ceilings were applied as absolute wall-clock limits:
+ * a run was killed at the ceiling even while it was streaming tokens the whole
+ * way. A model-validation prompt of 77k characters with two structured output
+ * formats exceeds the 300s `think` ceiling comfortably — so it started, did
+ * real work, and was cut off mid-answer with "Operation aborted". The bigger
+ * and more valuable the request, the more reliably it failed.
+ *
+ * The ceilings were tuned for time to FIRST token ("runtime spawn adds seconds
+ * before first token"), which is what they govern here. Once output is flowing,
+ * only silence is a fault: each write resets an idle window. A generous
+ * absolute ceiling remains as a backstop against a genuinely wedged stream.
+ *
+ * Returns a stop() for the caller's finally block.
+ */
+function armIdleAbort(
+  res: { write: (chunk: string) => boolean; on: (ev: string, fn: () => void) => unknown },
+  abort: () => void,
+  opts: { firstTokenMs: number; idleMs?: number; ceilingMs?: number },
+): () => void {
+  const idleMs = opts.idleMs ?? 180_000;        // silence AFTER output began
+  const ceilingMs = opts.ceilingMs ?? 1_800_000; // 30 min hard backstop
+  let stopped = false;
+  let idleTimer: NodeJS.Timeout;
+
+  const ceilingTimer = setTimeout(() => { if (!stopped) abort(); }, ceilingMs);
+  idleTimer = setTimeout(() => { if (!stopped) abort(); }, opts.firstTokenMs);
+
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    clearTimeout(idleTimer);
+    clearTimeout(ceilingTimer);
+  };
+
+  // Every byte written to the client is evidence the run is alive.
+  const originalWrite = res.write.bind(res);
+  res.write = (chunk: string): boolean => {
+    if (!stopped) {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => { if (!stopped) abort(); }, idleMs);
+    }
+    return originalWrite(chunk);
+  };
+
+  res.on('close', stop);
+  res.on('finish', stop);
+  return stop;
+}
 
 export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   const router = Router();
@@ -86,6 +156,31 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   }
 
   // POST /api/claude/message — streaming SSE proxy (multi-LLM)
+  /**
+   * Wave 6: per-role module access (team mode). Answers 403 and returns true
+   * when the caller's role may not run this module; solo mode, admins and
+   * modules with no matching rule pass (default open — the owner restricts).
+   * The area is taken from the request when sent, else looked up, so area
+   * rules match too. Never throws: a broken rules read allows the run.
+   */
+  async function refuseForbiddenModule(
+    req: { user?: { role?: string } },
+    res: { status: (code: number) => { json: (body: unknown) => unknown } },
+    moduleId: unknown,
+    areaId: unknown,
+  ): Promise<boolean> {
+    if (!isTeamMode() || typeof moduleId !== 'string' || !moduleId) return false;
+    try {
+      const area = typeof areaId === 'string' && areaId ? areaId : await resolveModuleAreaId(db, moduleId);
+      const verdict = await isModuleAllowed(db, { role: req.user?.role, moduleId, areaId: area, teamMode: true });
+      if (verdict.allowed) return false;
+      res.status(403).json({ error: 'Your role is not permitted to run this module. Ask an administrator.', rule: verdict.rule });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   router.post('/claude/message', validate(ClaudeMessageSchema), checkBudget, async (req, res) => {
     try {
       const {
@@ -128,6 +223,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         rerunOf,
       } = req.body;
 
+      if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
+
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
       //
       // Model-resolution precedence (highest first), CODING_STUDIO_DESIGN §C-req7:
@@ -163,6 +260,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             }
           }
         } catch { /* non-fatal — policy table may not exist on older DBs */ }
+      }
+
+      // A bare Claude id with no API key configured follows the configured
+      // engine — the rule every specialty route already gets from
+      // provider-router. A browser with no saved model sends the literal
+      // fallback id; on a subscription-only instance that must not end in
+      // "add ANTHROPIC_API_KEY to your .env".
+      if (policyModel.startsWith('claude-') && !isApiKeyConfigured()) {
+        policyModel = mapModelToProvider(policyModel);
       }
 
       // Determine provider and validate API key
@@ -258,6 +364,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // The id is hoisted because it doubles as the deterministic unit for the
       // atom-layer A/B arm assignment (Wave 3.4) further down.
       const userMessageId = sessionId && userMessage ? crypto.randomUUID() : null;
+      // Wave 1: the assistant message id is minted before dispatch and sent to
+      // the page in the "context used" frame, so the answer the user is looking
+      // at carries the same id as its persisted row and run artifact. Before
+      // this the row id was minted inside onComplete and the browser minted its
+      // own at stream end, so the artifact route 404'd until a reload.
+      const assistantMessageId = crypto.randomUUID();
       if (sessionId && userMessage) {
         try {
           await db.run(
@@ -305,13 +417,28 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       }
       // Inject guided module inputs as a structured context block before the user message
+      // The module's config (labels, guided inputs) — used for the intake
+      // rendering below and for the framework grounding query (Wave 2).
+      const runModuleCfg = moduleId ? await getModule(String(moduleId)).catch(() => undefined) : undefined;
       let finalUserMessage = userMessage;
       if (moduleInputs && typeof moduleInputs === 'object' && Object.keys(moduleInputs as object).length > 0) {
+        // Wave 1: render guided inputs with the module's own field labels and
+        // option labels. Before this the model saw key-derived labels and raw
+        // option values ("Entity Type: bank") although 9,187 of 9,188 options
+        // define a label ("Institution Type: Bank / credit institution").
+        const moduleCfg = runModuleCfg;
+        const fieldById = new Map((moduleCfg?.guidedInputs ?? []).map((f) => [f.id, f] as const));
         const inputLines = Object.entries(moduleInputs as Record<string, unknown>)
           .filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0))
           .map(([k, v]) => {
-            const label = k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            const value = Array.isArray(v) ? (v as unknown[]).join(', ') : String(v);
+            const field = fieldById.get(k);
+            const label = field?.label?.trim() || k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+            const render = (x: unknown): string => {
+              const raw = String(x);
+              const opt = field?.options?.find((o) => o.value === raw);
+              return opt?.label ?? raw;
+            };
+            const value = Array.isArray(v) ? (v as unknown[]).map(render).join(', ') : render(v);
             return `- **${label}:** ${value}`;
           });
         if (inputLines.length > 0) {
@@ -373,6 +500,37 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           return ok;
         });
 
+      // Project (matter) documents (Wave 2, 2026-09-08): a session inside a
+      // project reads the project's files as if they were attached to the
+      // turn — the project is the container, so its documents ride along.
+      // Newest ten, images excluded, budgeted by the resolver like uploads.
+      let projectRow: { id: string; name: string } | null = null;
+      const projectFileLabels: Record<string, string> = {};
+      const projectDocumentPaths: string[] = [];
+      if (sessionId) {
+        try {
+          projectRow = (await db.get(
+            'SELECT p.id, p.name FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
+            String(sessionId),
+          ) as { id: string; name: string } | undefined) ?? null;
+          if (projectRow) {
+            const rows = await db.all(
+              'SELECT file_path, original_name, extension FROM project_files WHERE project_id = ? ORDER BY created_at DESC LIMIT 10',
+              projectRow.id,
+            ) as Array<{ file_path: string; original_name: string; extension: string | null }>;
+            for (const f of rows) {
+              const ext = String(f.extension || path.extname(f.original_name)).toLowerCase();
+              if (IMAGE_EXTENSIONS_SERVER.has(ext)) continue;
+              const resolvedPath = path.resolve(f.file_path);
+              if (uploadedFilePaths.includes(resolvedPath) || projectDocumentPaths.includes(resolvedPath)) continue;
+              projectDocumentPaths.push(resolvedPath);
+              projectFileLabels[resolvedPath] = `${f.original_name} (project: ${projectRow.name})`;
+            }
+          }
+        } catch { /* non-fatal — project documents are enrichment */ }
+      }
+      const allDocumentPaths = [...uploadedFilePaths, ...projectDocumentPaths];
+
       // Capability-aware knowledge budget (plan 2.15): derived from the
       // session model's real context window — 800k for 1M-context Claude
       // (unchanged), ~104k for Mistral Large, the trained window for
@@ -381,14 +539,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Derived from the capability table, not a hardcoded id list — every new
       // 1M-context model would otherwise silently be treated as short-context and
       // pick up a long-context beta header it does not need (see line ~1120).
-      const is1MModel = (MODEL_CAPABILITIES[model]?.maxContextWindow ?? 0) >= 1_000_000;
-      const knowledgeBudget = await resolveContextBudget(model, db as DatabaseAdapter);
+      // Keyed by the model the run will actually use (selectedModel — after
+      // compliance enforce_model / area default / instance default), with an
+      // sdk: prefix stripped: the engine's model has the engine's window. Keyed
+      // by the raw request field, the sdk: default missed the table and got a
+      // 16k budget on a 1M model.
+      const is1MModel = (MODEL_CAPABILITIES[capabilityModelId(selectedModel)]?.maxContextWindow ?? 0) >= 1_000_000;
+      const knowledgeBudget = await resolveContextBudget(selectedModel, db as DatabaseAdapter);
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
       // Set SSE headers early so we can stream progress before the Claude API call starts.
       const hasLocalFolders = !!(knowledgeSources as any)?.modes?.localFolder?.enabled &&
         ((knowledgeSources as any)?.modes?.localFolder?.folderPaths?.length ?? 0) > 0;
-      const hasUploadedFiles = uploadedFilePaths.length > 0 || imageFileIds.length > 0;
+      const hasUploadedFiles = allDocumentPaths.length > 0 || imageFileIds.length > 0;
       const needsEarlySSE = hasLocalFolders || hasUploadedFiles;
 
       const sendProgress = (event: object) => res.write(`data: ${JSON.stringify(event)}\n\n`);
@@ -405,7 +568,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
       const resolved: ResolvedKnowledge = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths, { contextBudget: knowledgeBudget })
+        ? await resolveKnowledgeSources(knowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
@@ -433,12 +596,29 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           ragChunks = results;
 
           if (results.length > 0) {
+            // Wave 2: say how the passages were found. Until now this block said
+            // "relevant" with a "Relevance %" whatever ran — and on this instance
+            // the vector index was unreachable, so the number was keyword density.
+            const methodWord: Record<string, string> = {
+              vector: 'vector similarity over your uploaded documents',
+              hybrid: 'vector similarity fused with keyword matching over your uploaded documents',
+              keyword: 'keyword matching over your uploaded documents (no vector index was available)',
+            };
+            const scoreLabel = (r: { score?: number; scoreKind?: string; relevanceScore?: number }): string => {
+              const s = typeof r.score === 'number' ? r.score : (r.relevanceScore ?? 0);
+              switch (r.scoreKind) {
+                case 'cosine_similarity': return `Cosine similarity: ${(s * 100).toFixed(1)}%`;
+                case 'rrf_normalised': return `Hybrid rank score: ${s.toFixed(2)} (1.0 = first in both lists)`;
+                default: return `Keyword coverage: ${(s * 100).toFixed(0)}% of query terms`;
+              }
+            };
+            const setMethod = results[0]?.method ?? 'keyword';
             ragContext = '\n\n## RETRIEVED KNOWLEDGE FROM KNOWLEDGE BASE\n\n';
-            ragContext += `I have retrieved ${results.length} relevant chunks from your knowledge base to help answer this question. Use these as reference material and cite them when applicable.\n\n`;
+            ragContext += `I have retrieved ${results.length} passages by ${methodWord[setMethod] ?? setMethod}. Use these as reference material and cite them when applicable.\n\n`;
 
             results.forEach((result, idx) => {
               const chunkText = `### Source ${idx + 1}: ${result.citation}\n` +
-                `Relevance: ${(result.relevanceScore * 100).toFixed(1)}%\n` +
+                `${scoreLabel(result)}\n` +
                 `Collection: ${result.collectionName}\n\n` +
                 `${result.content}\n\n` +
                 `---\n\n`;
@@ -469,6 +649,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       }
 
+      // Wave 3: server-built output-format instruction (Layer 6b). The browser
+      // still sends its own copy; when it also sends the format ids the server
+      // rebuilds the instruction from the same library and prefers that.
+      const serverOutputInstruction: string | undefined =
+        Array.isArray(outputFormats) && outputFormats.length > 0
+          ? (buildOutputInstruction(outputFormats as string[]) || (outputInstruction as string | undefined))
+          : (outputInstruction as string | undefined);
       // Auto-attach output-format-specific skills (e.g., pptx-generation for PowerPoint output)
       const autoAttachIds = getAutoAttachSkillIds(Array.isArray(outputFormats) ? outputFormats : []);
       const mergedSkills = Array.isArray(selectedSkills)
@@ -624,8 +811,52 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // knowledge additions, reference documents, etc.) are sent in a second uncached block.
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
       const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
-      const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
-      const knowledgePackPrompt = await buildKnowledgePackLayer(db, { areaId, moduleId, userMessage });
+      // Wave 4: the resume block is injected only when the session is picked up
+      // again after a break (RESUME_GAP_MINUTES); the conversation history
+      // already carries recent context, so on a continuous run it stays out.
+      const resumeDue = sessionId ? await buildResumeContextIfDue(db, String(sessionId)) : null;
+      const resumeContextPrompt = resumeDue?.text ?? '';
+      // The project (matter) this session belongs to: what was concluded in its
+      // other sessions rides along. buildProjectContextSummary had existed for
+      // months with no caller — sessions never carried a project_id at creation.
+      // Wave 4: the project layer reads what the sibling sessions CONCLUDED
+      // (sessions.summary + their conclusion's decisions), the matter brief and
+      // the engagement linked to the project — not the first 200 words of each
+      // last answer — and checks membership first in team mode.
+      let projectContextPrompt = '';
+      if (sessionId && projectRow) {
+        try {
+          const pc = await buildProjectContext(db, {
+            projectId: projectRow.id,
+            currentSessionId: String(sessionId),
+            userId: (req as any).user?.id ?? 'default',
+            userRole: (req as any).user?.role ?? null,
+            teamMode: process.env.DEPLOYMENT_MODE === 'team',
+          });
+          projectContextPrompt = pc.text;
+        } catch { /* non-fatal — the project layer is enrichment */ }
+      }
+      // Wave 2: the pack layer is scoped to the run's area and returns the
+      // entries it injected (pack, ref, tier, score) for the run artifact.
+      const packLayer = await buildKnowledgePackLayerDetailed(db, { areaId, moduleId, userMessage });
+      const knowledgePackPrompt = packLayer.text;
+      // Wave 2: framework article text reaches module runs. Until now the 60
+      // article-level framework files grounded Counsel's Desk, the Task Agent
+      // and the agentic tools, but never a run through this route — an FCP
+      // gap analysis received pack entity summaries and no article. The
+      // area seeds the weak scope; a regulation the user names is strong scope.
+      let frameworkGrounding: GroundingResult | null = null;
+      if (moduleId || areaId) {
+        try {
+          frameworkGrounding = await retrieveGroundingText({
+            query: [runModuleCfg?.label, userMessage].filter(Boolean).join(' '),
+            frameworkIds: frameworksForArea(areaId),
+            tokenBudget: 3000,
+          });
+        } catch { frameworkGrounding = null; }
+      }
+      const frameworkGroundingPrompt = frameworkGrounding?.text ?? '';
+      const groundingRetrievedAt = new Date().toISOString();
       // Wave 3.4 — atom-layer A/B experiment: when injection is on and the run
       // will be persisted, ~20% of runs are deterministically assigned to a
       // 'holdout' arm (hash of the user-message id — no Math.random) where the
@@ -640,23 +871,45 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // itself still applies to reruns exactly like the original run.
       const atomInjectionOn = atomInjectionEnabled !== false;
       let atomArm: 'injected' | 'holdout' | null = null;
+      // Wave 4b: no arm while the injection gate is closed — a 'holdout' tagged
+      // on a run that could not have been injected anyway would count a
+      // non-treatment as a treatment and bias the experiment.
       if (
         userMessageId && // type narrowing — the predicate also checks it
         isExperimentSubject({ isRerun: !!rerunOf, atomInjectionOn, sessionId, userMessageId }) &&
-        await isAtomAbEnabled(db)
+        await isAtomAbEnabled(db) &&
+        (await getAtomInjectionStatus(db)).applies
       ) {
         atomArm = assignAtomArm(userMessageId);
       }
-      const atomLayerPrompt = atomInjectionOn && atomArm !== 'holdout'
-        ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null)
-        : '';
+      // Wave 4: the layer goes through the injection gate (Settings
+      // atom_injection_mode: auto | on | off; auto injects only once 100 module
+      // atoms and 30 ratings exist), binds each injected atom to this answer's
+      // id so a rating is per answer, and reports what it did in contextUsed.
+      const atomLayer = atomInjectionOn && atomArm !== 'holdout'
+        ? await buildAtomLayerDetailed(db, {
+            areaId,
+            moduleId,
+            userMessage,
+            sessionId: sessionId ? String(sessionId) : null,
+            messageId: sessionId ? assistantMessageId : null,
+            ownerUserId: (req as any).user?.id ?? null,
+            teamMode: process.env.DEPLOYMENT_MODE === 'team',
+          })
+        : null;
+      const atomLayerPrompt = atomLayer?.text ?? '';
       // Finding #9: drop an 'injected' arm whose atom layer came back empty so the
       // A/B experiment is not biased toward "atoms don't help" by runs that never
       // actually injected anything. resolveFinalArm leaves 'holdout'/null as-is.
       atomArm = resolveFinalArm(atomArm, atomLayerPrompt);
+      // A run without an area gets the user's universal ('all'-scoped) values
+      // and nothing else. Defaulting the domain to 'finance' handed every
+      // open-chat question the Markets strategy and paper-trading constraints
+      // as HARD rules — a stored run shows a kickoff-agenda request being
+      // rewritten into an AMLR project under them.
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
         (req as any).user?.id || 'default',
-        areaId || 'finance'
+        areaId || 'general'
       );
 
       const promptComposerConfig = {
@@ -665,7 +918,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         systemPromptOverride: systemPrompt,
         creativity: creativity || 'balanced',
         thinking: thinking || 'think_hard',
-        outputInstruction,
+        // Wave 3: the output-format instruction is built on the server from the
+        // selected format ids (same library the browser used), so sync/MCP
+        // callers get it too and the run artifact hashes text the server owns.
+        outputInstruction: serverOutputInstruction,
         plainTextMode: !!plainTextMode,
         selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
         selectedSkills: mergedSkills,
@@ -685,8 +941,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         businessContext: businessContext || null,
         orgContextPrompt: orgContextPrompt || undefined,
         knowledgePackPrompt: knowledgePackPrompt || undefined,
+        frameworkGroundingPrompt: frameworkGroundingPrompt || undefined,
         atomLayerPrompt: atomLayerPrompt || undefined,
         resumeContextPrompt: resumeContextPrompt || undefined,
+        projectContextPrompt: projectContextPrompt || undefined,
         goalsValuesPrompt: goalsValuesPrompt || undefined,
       } as const;
 
@@ -698,20 +956,105 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           || selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6'
           || selectedModel === 'claude-sonnet-4-5-20250929');
 
+      // Wave 1: one composition for every engine (same block order on the API
+      // and the subscription engine); the parts list feeds the per-layer
+      // hashes in the run artifact and the prompt-version bookkeeping.
+      const composed = await composeSystemPromptParts(promptComposerConfig);
       let composedPrompt: string;
       let staticSystemPrompt: string | undefined;
 
       if (isCachingModel) {
-        const split = await composeSystemPromptSplit(promptComposerConfig);
-        composedPrompt = split.dynamicPart;   // dynamic portion → system string in StreamConfig
-        staticSystemPrompt = split.staticPart; // static portion → cached block
+        composedPrompt = composed.dynamicPart;   // dynamic portion → system string in StreamConfig
+        staticSystemPrompt = composed.staticPart; // static portion → cached block
       } else {
-        composedPrompt = await composeSystemPrompt(promptComposerConfig);
+        composedPrompt = composed.full;
         staticSystemPrompt = undefined;
       }
 
       // Merge tools from knowledge resolver (web search) with any request-level tools
       const tools = resolved.tools as Array<{ type: string; name: string }>;
+
+      // Wave 2 (2026-09-08): what this answer is built from — sent to the page
+      // as a "context used" frame before the model call and kept on the
+      // message's config snapshot. It records what is actually in the prompt
+      // (documents, project, lens, knowledge layers), not what was toggled.
+      // Wave 0: the effort word the ladder resolves for this level on this
+      // model — recorded so "how hard did it think" is a fact, not a level name.
+      // Only Anthropic-family engines express effort; others record null.
+      const resolvedEffort: string | null =
+        provider === 'anthropic' || provider === 'anthropic_sdk'
+          ? anthropicEffort((thinking || 'think_hard') as Parameters<typeof anthropicEffort>[0], capabilityModelId(selectedModel))
+          : null;
+      const contextUsed = {
+        model: selectedModel,
+        thinking: String(thinking || 'think_hard'),
+        engine: provider,
+        effort: resolvedEffort,
+        assistantMessageId: sessionId ? assistantMessageId : null,
+        lens: moduleId ? { moduleId: String(moduleId), areaId: areaId ? String(areaId) : null } : null,
+        project: projectRow,
+        // Wave 2: every document-class source — uploads, project files, URLs
+        // and folder files — with budget skips flagged whatever the type. The
+        // resolver now marks a skipped URL or folder file exactly like a
+        // skipped upload; before, only uploads reached this list.
+        documents: (resolved.sourceDetails ?? [])
+          .filter((d) => d.type === 'uploaded_file' || d.type === 'url' || d.type === 'local_file')
+          .map((d) => ({
+            name: d.name,
+            chars: d.charCount ?? 0,
+            source: (d.type === 'url' ? 'url'
+              : d.type === 'local_file' ? 'folder'
+              : d.path && projectFileLabels[d.path] ? 'project' : 'upload') as 'project' | 'upload' | 'url' | 'folder',
+            ...(d.note ? { skipped: true, note: d.note } : {}),
+          })),
+        skippedCount: resolved.skippedCount ?? 0,
+        skippedTokens: resolved.skippedTokens ?? 0,
+        knowledgeSources: resolved.sourceManifest,
+        ragChunks: ragChunks.length,
+        packGroundingChars: knowledgePackPrompt.length,
+        // Wave 2: which packs and which framework articles grounded this run.
+        packs: packLayer.packs.map((p) => ({
+          name: p.displayName,
+          version: p.version,
+          entries: packLayer.entries.filter((e) => e.packId === p.id).length,
+        })),
+        packEntries: packLayer.entries.length,
+        frameworks: frameworkGrounding ? [...new Set(frameworkGrounding.sources.filter((s) => s.articleId).map((s) => s.frameworkName))] : [],
+        frameworkArticles: frameworkGrounding ? frameworkGrounding.sources.filter((s) => s.articleId).length : 0,
+        frameworkChars: frameworkGroundingPrompt.length,
+        atomChars: atomLayerPrompt ? atomLayerPrompt.length : 0,
+        // Wave 4: what the memory gate decided for this run and which atoms
+        // (by id) went in — the page and the run artifact both read this.
+        atoms: atomLayer
+          ? {
+              applied: atomLayer.applied,
+              reason: atomLayer.reason,
+              ids: atomLayer.atoms.map((a) => a.id),
+              count: atomLayer.atoms.length,
+              mode: atomLayer.gate.mode,
+              moduleAtoms: atomLayer.gate.moduleAtoms,
+              ratings: atomLayer.gate.ratings,
+              thresholds: atomLayer.gate.thresholds,
+            }
+          : {
+              applied: false,
+              reason: atomArm === 'holdout' ? 'A/B holdout arm for this run' : 'Memory injection switched off for this session',
+              ids: [],
+              count: 0,
+              mode: 'auto' as const,
+              moduleAtoms: 0,
+              ratings: 0,
+              thresholds: { moduleAtoms: 0, ratings: 0 },
+            },
+        orgContext: Boolean(orgContextPrompt),
+        goalsValues: Boolean(goalsValuesPrompt),
+        resumeContext: Boolean(resumeContextPrompt),
+        // Wave 4: sizes, not booleans, for the layers that carry memory.
+        projectContextChars: projectContextPrompt.length,
+        goalsValuesChars: goalsValuesPrompt.length,
+        resumeContextChars: resumeContextPrompt.length,
+        webSearch: tools.some((t) => t.type === 'web_search_20250305'),
+      };
 
       // Log composed prompt length for debugging
       const promptLengthDesc = staticSystemPrompt
@@ -739,10 +1082,39 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
-        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[] }) => {
+        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string; webSources?: Array<{ kind: 'web_search' | 'web_fetch'; query?: string; url?: string; title?: string; resultUrls?: string[]; sha256?: string; charCount?: number; retrievedAt: string; isError?: boolean }> }) => {
+            // Wave 0: how this run is billed, so a NULL cost reads as "plan usage"
+            // or "unknown pricing" rather than "free".
+            const costBasis: 'list' | 'free' | 'plan' | 'unknown' =
+              isSdkEngineModel || isCodexEngineModel ? 'plan' : isOllamaModel ? 'free' : hasKnownPricing ? 'list' : 'unknown';
+            // Wave 1: content-addressed versions of the prompts this run used —
+            // the module prompt (file or the user's override) and the ground
+            // prompt — so the audit row names the exact text, not "latest".
+            const modulePromptPart = composed.parts.find((p) => p.key === 'layer4_module_prompt');
+            const modulePromptVersion = moduleId && modulePromptPart
+              ? await ensurePromptVersion(db, String(moduleId), modulePromptPart.text, systemPrompt ? 'user-override' : 'system')
+              : null;
+            const foundationVersion = await ensurePromptVersion(db, FOUNDATION_PROMPT_ID, foundationPromptText());
             // Build config snapshot first — used in both INSERT and UPDATE below
             const configSnapshot = {
               model: selectedModel,
+              // Wave 1: what the run was actually built from, pinned.
+              mergedSkills: mergedSkills ?? [],
+              moduleInputs: moduleInputs && typeof moduleInputs === 'object' ? moduleInputs : null,
+              userTurnSha256: sha256Hex(finalUserMessage),
+              modulePromptVersionId: modulePromptVersion?.id ?? null,
+              modulePromptVersion: modulePromptVersion?.version ?? null,
+              modulePromptSha256: modulePromptPart ? sha256Hex(modulePromptPart.text) : null,
+              foundationVersionId: foundationVersion?.id ?? null,
+              guardrailApplied: composed.parts.some((p) => p.key === 'layer4c_guardrail'),
+              provenanceContract: composed.parts.some((p) => p.key === 'layer7_provenance_contract'),
+              // Wave 0: engine, resolved effort and the model the engine actually
+              // served (a dated snapshot id where the API/SDK reports one).
+              engine: provider,
+              effort: resolvedEffort,
+              modelServed: data.modelServed ?? null,
+              costBasis,
+              engineCostUsd: data.engineCostUsd ?? null,
               thinking: req.body.thinking,
               creativity: req.body.creativity,
               transparencyLevel: req.body.transparencyLevel,
@@ -766,6 +1138,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               multiAgentStyle: req.body.multiAgentStyle || null,
               precision: req.body.precision || null,
               channel: req.body.channel || null,
+              // Wave 2: what was actually in the prompt (see contextUsed above),
+              // plus (Wave 0) the served model once the engine has reported it.
+              contextUsed: { ...contextUsed, modelServed: data.modelServed ?? null },
             };
             // CACHE-03: include cache read/write tokens and compute cache-adjusted cost.
             // Computed BEFORE the message INSERT so the real per-call cost is persisted
@@ -789,7 +1164,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             });
             // Item 1.6: the assistant message id is captured so the run artifact
             // (composed prompt + pinned source manifest) can FK to this exact row.
-            const assistantMessageId = crypto.randomUUID();
+            // (assistantMessageId is minted before dispatch — see the context frame.)
             let messagePersisted = false;
             try {
               await db.run(`INSERT INTO messages (id, session_id, role, content, thinking_content, content_blocks, token_count, cost, model_id, config_snapshot, created_at)
@@ -811,6 +1186,24 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             } catch {
               // Non-fatal — message was already streamed to user
             }
+            // Wave 6: Compliance-as-Code on completion. The seven Work rules
+            // (provenance section, placeholders, citations in regulated areas,
+            // length floor, model allow-list, unmarked figures, secrets) run in
+            // the background against this answer; violations point at the
+            // message id. Setting compliance_on_completion (default on).
+            // Never throws; only ids and derived facts are stored.
+            if (messagePersisted && data.text) {
+              void runComplianceOnCompletion(db, {
+                sessionId: String(sessionId),
+                messageId: assistantMessageId,
+                moduleId: moduleId ?? null,
+                areaId: areaId ?? null,
+                model: selectedModel,
+                text: data.text,
+                provenanceContract: configSnapshot.provenanceContract === true,
+                outputFormats: Array.isArray(outputFormats) ? outputFormats : [],
+              });
+            }
             // Item 1.6: persist the run artifact — the final composed system
             // prompt exactly as passed to the LLM (closure values reflect any
             // post-composition mutation, e.g. web-search strip / Bing append on
@@ -820,28 +1213,80 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               const fullComposedPrompt = staticSystemPrompt
                 ? `${staticSystemPrompt}\n\n${composedPrompt}`
                 : composedPrompt;
+              // Wave 0: when the engine hands back the exact string it sent
+              // (the SDK client rewords the web-search instruction after this
+              // route composed the prompt), pin that — not the pre-rewording text.
+              const sentPrompt = data.systemPromptSent ?? fullComposedPrompt;
+              // Wave 1: every layer the composer assembled, each with its own
+              // hash — foundation, profile, style, area, module, guardrail,
+              // personas, skills, output format, contract, transparency, docs —
+              // preceded by the whole string the engine received.
               const layerSummary = buildLayerSummary({
-                'composed_static_layers_1_3_cached': staticSystemPrompt ?? '',
-                [staticSystemPrompt ? 'composed_dynamic' : 'composed_full']: composedPrompt,
-                'layer2a_org_context': orgContextPrompt,
-                'layer2b_knowledge_pack': knowledgePackPrompt,
-                'layer4a_resume_context': resumeContextPrompt,
-                'layer6_atoms': atomLayerPrompt,
-                'goals_values': goalsValuesPrompt,
-                'business_context': businessContext ?? '',
-                'layer6_knowledge_system_additions': resolved.systemPromptAdditions,
-                'layer6_reference_documents': resolved.contextDocuments,
+                composed_full: sentPrompt,
+                ...(staticSystemPrompt ? { composed_static_cached: staticSystemPrompt, composed_dynamic: composedPrompt } : {}),
+                ...Object.fromEntries(composed.parts.map((p) => [p.key, p.text])),
                 // Wave 3.4: the A/B arm rides in the layer summary (entry name
                 // carries the arm — entries store name/chars/sha only).
                 ...(atomArm ? { [`atom_ab_arm_${atomArm}`]: atomArm } : {}),
               });
-              const sourceManifest = resolved.sourceDetails && resolved.sourceDetails.length > 0
+              const resolverSources = resolved.sourceDetails && resolved.sourceDetails.length > 0
                 ? resolved.sourceDetails
                 : resolved.sourceManifest.map((name) => ({ type: 'summary', name, contentHashed: false }));
+              // Wave 2: pack entries and framework articles are sources too —
+              // each pinned by hash so a reader can tell exactly which
+              // regulatory text the answer was grounded in.
+              const groundingSources = [
+                ...packLayer.entries.map((e) => ({
+                  type: 'knowledge_pack_entity',
+                  name: `${e.packName} · ${e.refId}`,
+                  sha256: sha256Hex(e.text),
+                  charCount: e.text.length,
+                  retrievedAt: groundingRetrievedAt,
+                  contentHashed: true,
+                  note: `tier ${e.tier}${typeof e.similarity === 'number' ? ` · score ${e.similarity.toFixed(3)}` : ''}`,
+                })),
+                ...(frameworkGrounding?.sources ?? [])
+                  .filter((s) => s.articleId)
+                  .map((s) => ({
+                    type: 'framework_article',
+                    name: `${s.frameworkName} ${s.articleId}${s.title ? ` — ${s.title}` : ''}`,
+                    sha256: s.sha256,
+                    charCount: s.chars,
+                    retrievedAt: groundingRetrievedAt,
+                    contentHashed: Boolean(s.sha256),
+                  })),
+              ];
+              // Wave 2: pages the model searched for or fetched itself on the
+              // subscription engine — recorded from the tool events, so a
+              // web-grounded answer is no longer "not hashable at resolve time".
+              const webSources = (data.webSources ?? []).map((w) => ({
+                type: w.kind,
+                name: w.kind === 'web_fetch'
+                  ? `${w.title ? `${w.title} — ` : ''}${w.url ?? 'fetched page'}`
+                  : `search: ${w.query ?? ''}${w.resultUrls && w.resultUrls.length ? ` (${w.resultUrls.length} results)` : ''}`,
+                ...(w.url ? { url: w.url } : {}),
+                ...(w.sha256 ? { sha256: w.sha256 } : {}),
+                ...(typeof w.charCount === 'number' ? { charCount: w.charCount } : {}),
+                retrievedAt: w.retrievedAt,
+                contentHashed: Boolean(w.sha256),
+                ...(w.isError ? { note: 'tool reported an error' } : {}),
+              }));
+              // Wave 4: the memory atoms that went in are sources too — pinned
+              // by id and hash, labelled as memory rather than evidence.
+              const atomSources = (atomLayer?.atoms ?? []).map((a) => ({
+                type: 'knowledge_atom',
+                name: `${a.id}${a.sourceModuleId ? ` · ${a.sourceModuleId}` : ''}`,
+                sha256: sha256Hex(a.content),
+                charCount: a.content.length,
+                retrievedAt: groundingRetrievedAt,
+                contentHashed: true,
+                note: `memory, not a verified source · ${a.method} · score ${a.score.toFixed(3)}`,
+              }));
+              const sourceManifest = [...resolverSources, ...groundingSources, ...webSources, ...atomSources];
               void writeRunArtifact(db, {
                 messageId: assistantMessageId,
                 sessionId,
-                composedPrompt: fullComposedPrompt,
+                composedPrompt: sentPrompt,
                 layerSummary,
                 sourceManifest,
               });
@@ -863,21 +1308,26 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 });
               }
             }
-            // GOV-02: look up current system_prompt version for this module
-            let systemPromptVersionId: string | undefined;
-            if (moduleId) {
-              try {
-                const spRow = await db.get(`SELECT id FROM system_prompts WHERE module_id = ? AND deprecated_at IS NULL ORDER BY created_at DESC LIMIT 1`
-                , moduleId) as { id: string } | undefined;
-                systemPromptVersionId = spRow?.id;
-              } catch { /* non-fatal */ }
-            }
+            // GOV-02 (Wave 1): the exact, content-addressed version row of the
+            // module prompt this run composed — never a "latest row" lookup.
+            const systemPromptVersionId: string | undefined = modulePromptVersion?.id;
             // RATE-04: use async audit queue instead of synchronous write
             enqueueAudit({
               sessionId,
               moduleId,
               areaId,
               model: selectedModel,
+              // Wave 0: the resolved engine, not the queue's 'anthropic' default —
+              // every row used to say anthropic, Mistral and Azure included.
+              provider,
+              // Wave 0: the resolver's manifest (built-in / uploads / URLs / folders /
+              // RAG) — the column was only ever filled by orchestrator heartbeats.
+              // Wave 2: plus the packs and frameworks that grounded the run.
+              knowledgeSourcesUsed: [
+                ...resolved.sourceManifest,
+                ...packLayer.packs.map((p) => `pack: ${p.displayName}${p.version ? ` v${p.version}` : ''}`),
+                ...(frameworkGrounding ? [...new Set(frameworkGrounding.sources.filter((s) => s.articleId).map((s) => `framework: ${s.frameworkId}`))] : []),
+              ],
               thinkingLevel: thinking,
               creativity,
               writingTone: writingTone || 'professional',
@@ -1009,12 +1459,30 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 }).catch(() => { /* non-fatal */ });
               } catch { /* non-fatal */ }
             }
+            // Wave 4: the session's running conclusion — what was concluded,
+            // decided, left open and planned — written by the utility model after
+            // every answer into session_snapshots + sessions.summary. The project
+            // layer and the resume block read it. Same privacy gate as atoms.
+            // Fire-and-forget: it never rejects, and it runs after the engine
+            // slot is released (the SDK client releases before onComplete).
+            if (atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
+              void writeSessionConclusion(db, {
+                sessionId: String(sessionId),
+                messageId: assistantMessageId,
+                userId: req.user?.id || 'default',
+                moduleId: moduleId ?? null,
+                areaId: areaId ?? null,
+                assistantText: data.text,
+              });
+            }
             // Auto-extract knowledge atoms from this session output (non-blocking fire-and-forget)
             // This populates Knowledge Graph, Intelligence Dashboard, and Pattern Detection
             // Skipped when user disables atom collection (playground / clean-slate mode)
-            if (atomCollectionEnabled !== false && data.text && data.text.length > 200) {
+            // Wave 4: module runs only. Open chat produced 32 atoms in six months,
+            // every one of them boilerplate that later came back as "evidence".
+            if (atomCollectionEnabled !== false && moduleId && data.text && data.text.length > 200) {
               try {
-                const workflowId = `module:${moduleId || 'general'}`;
+                const workflowId = `module:${moduleId}`;
                 const store = await getSessionOutputStore();
                 const outputId = await store.storeOutput({
                   executionId: sessionId,
@@ -1110,7 +1578,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // message instead of silently truncating a ~900k prompt.
       if (resolved.tokenEstimate > knowledgeBudget) {
         res.status(400).json({
-          error: `Context too large for ${model}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
+          error: `Context too large for ${selectedModel}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
                  `Trim knowledge sources, use Summary mode for online references, or pick a larger-context model.`,
           code: 'CONTEXT_TOO_LARGE',
           tokenEstimate: resolved.tokenEstimate,
@@ -1141,20 +1609,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         return;
       }
 
+      // The "context used" frame goes out before the model call so the page can
+      // show what the prompt holds while the answer streams. Headers may not
+      // be set yet; every engine branch below sets them only when absent.
+      if (!res.headersSent) {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+      }
+      sendProgress({ type: 'context_used', context: contextUsed });
+
       // Route to the correct provider adapter
       if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
         // Subscription execution engines — the Claude Agent SDK or Codex SDK
         // subprocess, authenticated by this machine's Claude Code / ChatGPT
-        // login (no API key). Neither has ANTON's web_search tool, so strip
-        // the web-search instructions exactly as the non-Anthropic branch does.
-        const sdkPrompt = composedPrompt
-          .replace(/## WEB SEARCH ENABLED\n[^\n]*Use the web_search tool[^\n]*/g, '')
-          .replace(/\n{3,}/g, '\n\n');
+        // login (no API key). The Claude engine grants its own WebSearch /
+        // WebFetch tools when the run's knowledge mode asked for web search
+        // (and rewords the instruction to name them); Codex has no web tools,
+        // so its prompt is stripped exactly as the non-Anthropic branch does.
+        const sdkWebRun = provider === 'anthropic_sdk' && sdkWebToolsRequested(tools);
+        const sdkPrompt = provider === 'openai_codex' ? stripWebSearchInstructions(composedPrompt) : composedPrompt;
 
         const sdkAbort = new AbortController();
         req.on('close', () => sdkAbort.abort());
         // Runtime spawn adds seconds before first token — same shape as the
         // API path's per-thinking-level ceilings, one notch more generous.
+        // These govern TIME TO FIRST TOKEN, which is what they were tuned for.
         const sdkTimeouts: Record<string, number> = {
           quick: 180_000,
           think: 300_000,
@@ -1163,9 +1646,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           plan_first: 600_000,
           deep_investigate: 600_000,
         };
-        const sdkTimeoutId = setTimeout(() => sdkAbort.abort(), sdkTimeouts[thinking as string] || 420_000);
-        res.on('close', () => clearTimeout(sdkTimeoutId));
-        res.on('finish', () => clearTimeout(sdkTimeoutId));
+        const stopSdkTimers = armIdleAbort(res, () => sdkAbort.abort(), {
+          firstTokenMs: sdkTimeouts[thinking as string] || 420_000,
+          // A web run is silent while a page is fetched; give it more idle room.
+          ...(sdkWebRun ? { idleMs: 420_000 } : {}),
+        });
 
         const engineStream = provider === 'anthropic_sdk' ? sdkStreamToResponse : codexStreamToResponse;
         try {
@@ -1178,12 +1663,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               messages,
               signal: sdkAbort.signal,
               sourceManifest: resolved.sourceManifest,
+              tools: sdkWebRun ? tools : undefined,
             },
             res,
             onComplete,
           );
         } finally {
-          clearTimeout(sdkTimeoutId);
+          stopSdkTimers();
         }
       } else if (provider === 'anthropic') {
         // Use existing Anthropic streaming.
@@ -1211,16 +1697,19 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       };
       const baseTimeout = Number(process.env.CLAUDE_REQUEST_TIMEOUT_MS) || thinkingTimeouts[thinking as string] || 300_000;
       const timeoutMs = Math.max(baseTimeout, thinkingTimeouts[thinking as string] || 300_000);
-      const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
-      res.on('close', () => clearTimeout(timeoutId));
-      res.on('finish', () => clearTimeout(timeoutId));
+      // Same idle semantics as the SDK path: this ceiling is a time-to-first-token
+      // budget, not a cap on how long a healthy answer may take to write.
+      const stopApiTimers = armIdleAbort(res, () => abortController.abort(), { firstTokenMs: timeoutMs });
 
       try {
       // IRE branch: route to iterative reasoning engine when explicitly enabled
       // or when thinking level is 'deep_investigate'
       const ireThinkingLevel = thinking as string;
+      // Wave 5: the phases run through the router, so the subscription engine
+      // (anthropic_sdk) is a supported provider — before this the two deepest
+      // levels were one call at max effort on the default engine (0 chains).
       const useIRE = (iterativeReasoningEnabled === true || ireThinkingLevel === 'deep_investigate')
-        && provider === 'anthropic'
+        && ireSupportedProvider(provider)
         && ['think_hard', 'investigate', 'plan_first', 'deep_investigate'].includes(ireThinkingLevel);
 
       if (useIRE) {
@@ -1290,7 +1779,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         recordFailure(status);
         throw streamErr;
       } finally {
-        clearTimeout(timeoutId);
+        stopApiTimers();
       }
       } else {
         // Non-Anthropic providers: set SSE headers, stream, then finalize
@@ -1528,8 +2017,64 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
-      // Compose the full system prompt
-      const composedPrompt = await composeSystemPrompt({
+      // Wave 1: the preview composes the same layers as a run — org context,
+      // knowledge packs, memory atoms, goals & values, resume and project
+      // context, auto-attached format skills, the guardrail and the provenance
+      // contract — so "what will be sent" is what is sent. The previous preview
+      // omitted seven of those layers. The atom A/B arm is not drawn here: a
+      // preview is not a run.
+      const sessionIdForPreview = typeof req.body.sessionId === 'string' && req.body.sessionId ? req.body.sessionId : undefined;
+      const userMessageForPreview =
+        typeof req.body.userMessage === 'string' ? req.body.userMessage
+        : typeof req.body.message === 'string' ? req.body.message
+        : '';
+      const previewUserId = (req as { user?: { id?: string } }).user?.id || 'default';
+      const [orgContextPrompt, knowledgePackPrompt, goalsValuesPrompt, resumeContextPrompt] = await Promise.all([
+        buildOrgContextLayer(db, previewUserId),
+        buildKnowledgePackLayer(db, { areaId, moduleId, userMessage: userMessageForPreview }),
+        temporalReasoning.buildGoalsValuesLayer(previewUserId, areaId || 'general'),
+        sessionIdForPreview ? buildResumeContextLayer(db, sessionIdForPreview) : Promise.resolve(''),
+      ]);
+      const atomLayerPrompt = req.body.atomInjectionEnabled !== false
+        ? await buildAtomLayer(db, areaId, moduleId, userMessageForPreview, sessionIdForPreview ?? null)
+        : '';
+      let projectContextPrompt = '';
+      if (sessionIdForPreview) {
+        try {
+          const previewProject = await db.get(
+            'SELECT p.id FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
+            sessionIdForPreview,
+          ) as { id: string } | undefined;
+          if (previewProject) {
+            projectContextPrompt = (await buildProjectContext(db, {
+              projectId: previewProject.id,
+              currentSessionId: sessionIdForPreview,
+              userId: previewUserId,
+              userRole: (req as any).user?.role ?? null,
+              teamMode: process.env.DEPLOYMENT_MODE === 'team',
+            })).text;
+          }
+        } catch { /* enrichment only */ }
+      }
+      // Wave 2: the preview grounds in framework text the same way a run does.
+      let previewGrounding = '';
+      if (moduleId || areaId) {
+        try {
+          const previewModule = moduleId ? await getModule(String(moduleId)).catch(() => undefined) : undefined;
+          const g = await retrieveGroundingText({
+            query: [previewModule?.label, userMessageForPreview].filter(Boolean).join(' '),
+            frameworkIds: frameworksForArea(areaId),
+            tokenBudget: 3000,
+          });
+          previewGrounding = g?.text ?? '';
+        } catch { previewGrounding = ''; }
+      }
+      const previewAutoSkills = getAutoAttachSkillIds(Array.isArray(req.body.outputFormats) ? req.body.outputFormats : []);
+      const previewSkills = Array.isArray(selectedSkills)
+        ? [...new Set([...(selectedSkills as string[]), ...previewAutoSkills])]
+        : previewAutoSkills.length > 0 ? previewAutoSkills : undefined;
+
+      const composed = await composeSystemPromptParts({
         moduleId,
         areaId,
         systemPromptOverride: systemPrompt,
@@ -1538,7 +2083,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         outputInstruction,
         plainTextMode: !!plainTextMode,
         selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
-        selectedSkills: Array.isArray(selectedSkills) ? selectedSkills : undefined,
+        selectedSkills: previewSkills,
         multiPerspective: !!multiPerspective,
         metaCognitiveEnabled: !!metaCognitiveEnabled,
         structureReference,
@@ -1552,17 +2097,26 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgeSystemAdditions: resolved.systemPromptAdditions,
         knowledgeContextDocuments: resolved.contextDocuments,
         userProfile: userProfile || null,
+        orgContextPrompt: orgContextPrompt || undefined,
+        knowledgePackPrompt: knowledgePackPrompt || undefined,
+        frameworkGroundingPrompt: previewGrounding || undefined,
+        atomLayerPrompt: atomLayerPrompt || undefined,
+        resumeContextPrompt: resumeContextPrompt || undefined,
+        projectContextPrompt: projectContextPrompt || undefined,
+        goalsValuesPrompt: goalsValuesPrompt || undefined,
       });
-
-      // Estimate tokens (~4 chars per token)
-      const estimatedTokens = Math.ceil(composedPrompt.length / 4);
+      const composedPrompt = composed.full;
 
       res.json({
         prompt: composedPrompt,
-        estimatedTokens,
+        // The same estimator the run's context budget uses, not chars/4.
+        estimatedTokens: estimateTokens(composedPrompt),
         knowledgeTokenEstimate: resolved.tokenEstimate,
         sourceManifest: resolved.sourceManifest,
-        model: model || 'claude-opus-4-8',
+        model: model || getEffectiveDefaultModel() || null,
+        layers: composed.parts.map((p) => ({ key: p.key, chars: p.text.length, cacheable: p.cacheable })),
+        staticChars: composed.staticPart.length,
+        dynamicChars: composed.dynamicPart.length,
       });
     } catch (error) {
       res.status(500).json({ error: safeError(error) });
@@ -1675,6 +2229,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         channel,
         outputLanguage,
       } = req.body;
+
+      if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
 
       if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
         res.status(400).json({ error: 'userMessage is required.' });
@@ -1834,6 +2390,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         sessionId,
       } = req.body;
 
+      if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
+
       if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim()) {
         res.status(400).json({ error: 'userMessage is required' });
         return;
@@ -1943,8 +2501,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
   router.post('/claude/verify-citations', async (req, res) => {
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      if (!hasClaudeEngine()) {
+        res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
         return;
       }
 
@@ -1969,8 +2527,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // module-loader (full corpus), not from the client. Any client-provided module
   // list is ignored (kept in the body for backwards compatibility only).
   router.post('/modules/smart-search', async (req, res) => {
-    if (!isApiKeyConfigured()) {
-      res.status(503).json({ error: 'API key not configured' });
+    if (!hasClaudeEngine()) {
+      res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
       return;
     }
 
@@ -2007,24 +2565,26 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
       const candidates = scored.slice(0, MAX_CANDIDATES).map(s => s.m);
 
-      const client = getClient();
       const moduleList = candidates
         .map(m => `- ${m.id}: ${m.label} — ${(m.description ?? '').slice(0, 160)}`)
         .join('\n');
 
-      const response = await client.messages.create({
-        // Wave 3.8: raw-Anthropic site — honours a Claude utility override,
-        // falls back to the default Haiku for non-Anthropic utility models.
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 512,
+      // Through provider-router on the routed utility model — this was a raw
+      // Anthropic client on the metered key, so Home's "Find the right module"
+      // errored on every query on a subscription-only instance.
+      const response = await callChat({
+        model: await getRoutedUtilityModel(db),
         system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
         messages: [{
           role: 'user',
           content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as a JSON array:\n[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]`,
         }],
+        maxTokens: 512,
+        jsonMode: true,
+        db,
       });
 
-      const text = response.content[0]?.type === 'text' ? response.content[0].text.trim() : '[]';
+      const text = response.text.trim() || '[]';
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
 

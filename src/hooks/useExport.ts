@@ -9,6 +9,8 @@ export interface ExportMetadata {
   thinking?: string;
   moduleId?: string;
   sessionId?: string;
+  /** Wave 3: the assistant message being exported — binds the provenance appendix to its run. */
+  messageId?: string;
   creativity?: string;
   /** ATTR-02: names of documents/sources loaded during this analysis */
   documentsLoaded?: string[];

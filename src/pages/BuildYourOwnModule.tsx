@@ -786,12 +786,13 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
             {availableSkills.length === 0 ? (
               <p className="text-xs text-adv-gray">Loading skills...</p>
             ) : (
-              (['methodology', 'domain', 'language', 'communication', 'style', 'jurisdiction'] as const).map((cat) => {
+              (['methodology', 'domain', 'technical', 'thematic', 'jurisdiction', 'language', 'communication', 'style'] as const).map((cat) => {
                 const catSkills = availableSkills.filter((s) => s.category === cat);
                 if (catSkills.length === 0) return null;
                 const catLabels: Record<string, string> = {
-                  methodology: 'Methodology', domain: 'Domain', language: 'Language',
-                  communication: 'Communication', style: 'Style', jurisdiction: 'Jurisdiction',
+                  methodology: 'Methodology', domain: 'Domain', technical: 'Technical standards',
+                  thematic: 'Thematic knowledge', jurisdiction: 'Jurisdiction', language: 'Language',
+                  communication: 'Communication', style: 'Style',
                 };
                 return (
                   <div key={cat}>

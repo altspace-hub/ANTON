@@ -65,9 +65,10 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 4. Control framework assessment (per AML/CFT function: CDD, TM, SAR, screening, governance, training)
 5. Residual risk matrix (inherent × controls → residual)
 6. Key findings and risk concentrations
-7. Risk appetite statement (proposed for Board approval)
-8. Action plan (addressing high and critical residual risks)
-9. Approval and review record
+7. Emerging and horizon risks
+8. Risk appetite statement (proposed for Board approval)
+9. Action plan (addressing high and critical residual risks)
+10. Approval and review record
 
 **Governance requirement:** BWRA must be presented to and approved by the Board or equivalent body. Review triggered by: annual review cycle, material business change, regulatory change, supervisory examination.
 
@@ -110,6 +111,8 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 8. Performance metrics (false positive rate; SAR conversion rate; backlog management)
 9. Record-keeping (alert records; investigation notes; disposition records)
 
+**Alert-handling decision tree (include as a figure or numbered flow):** alert generated → initial review within [X] business days → sufficient information? → *Yes:* assess suspicion → suspicious: escalate to MLRO → MLRO review → file STR or dismiss with documented rationale · *No:* request additional information → timeout → escalate
+
 ---
 
 ### 5. SAR/STR Reporting Procedure
@@ -130,6 +133,11 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 7. Record-keeping (SAR register; case files; GoAML submission confirmation)
 8. Post-filing customer relationship management
 9. Reporting statistics (quarterly report to Board/senior management)
+10. Cross-border and group notification (AMLR group-wide policy obligations — when and how the group compliance function is informed)
+11. Defensive filing vs. substantive suspicion — the institution's documented policy position
+12. Staff protection from liability for good-faith reports
+
+**SAR narrative structure (for SAR summaries within the procedure):** Background (subject; customer since; relationship overview) → Activity (what transactions or behaviour triggered the concern) → Analysis (why unusual relative to expected profile; typology match) → Conclusion (why the MLRO determined the activity is or may be suspicious) → Supporting documentation (exhibits listed)
 
 ---
 
@@ -146,6 +154,9 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 6. Licensing and derogation procedures (OFAC licences; EU derogations)
 7. Record-keeping (screening logs; disposition records; blocking notifications)
 8. Correspondent bank notifications (for payment processing: SWIFT screening obligations)
+9. Matching thresholds and criteria (name similarity; corroborating identifiers)
+10. False positive management and calibration (review cycle; documented dismissal rationale)
+11. Ongoing screening triggers (new designations; list updates; customer data changes)
 
 ---
 
@@ -185,6 +196,7 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 7. Open audit and inspection findings — status and target dates
 8. Resource and capacity (compliance staffing; system changes)
 9. Decisions requested of the Board (risk appetite updates; policy approvals; resource approvals)
+10. Forward look (upcoming regulatory deadlines and programme priorities for the next period)
 
 ---
 

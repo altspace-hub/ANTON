@@ -25,6 +25,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import type AnthropicSDK from '@anthropic-ai/sdk';
 import { requireAuth } from '../middleware/auth.js';
+import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import {
   runHeartbeatCycle,
   createReasoningTrail, addTrailEntry, completeTrail,
@@ -36,6 +37,7 @@ import {
   getMeridianPersonaContext,
 } from '../services/orchestrator-demo.js';
 import { checkSpendGate, checkAndRecordSpendGate } from '../services/orchestrator-spend-gate.js';
+import { getHeartbeatStatus } from '../services/orchestrator-heartbeat.js';
 
 export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Promise<Router> {
   const router = Router();
@@ -53,14 +55,18 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       ) as { c: number }).c;
 
       const spendGate = await checkSpendGate(db);
+      // enabled / scheduled / earned-or-idle with the reason, last cycle,
+      // cycles in the last hour, and the compiled-in limits.
+      const heartbeat = await getHeartbeatStatus(db);
 
       res.json({
         stage,
         config,
         lastHeartbeat,
         unreadBriefings,
-        apiConfigured: !!anthropic,
+        apiConfigured: !!anthropic || isSdkEngineEnabled(),
         spendGate,
+        heartbeat,
       });
     } catch (err) {
       console.error('[orchestrator] status error:', err);
@@ -124,7 +130,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
   // ── Generate briefing on demand ──────────────────────────────────────────
   router.post('/orchestrator/briefings/generate', requireAuth, async (_req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+    if (!anthropic && !isSdkEngineEnabled()) return res.status(503).json({ error: 'No Claude engine available — add an Anthropic API key or enable the SDK engine in Settings → Execution engines' });
     try {
       const result = await runHeartbeatCycle(db, anthropic, 'on_demand', true);
       res.json({ result });
@@ -330,11 +336,18 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
         WHERE id = 'default'
       `, by);
 
-      // Log the disable event
-      await db.run(`
-        INSERT INTO orchestrator_heartbeats (ran_at, trigger_type, action, signals_evaluated, error_message)
-        VALUES (NOW(), 'system', 'fully_disabled', 0, ?)
-      `, `Orchestrator fully disabled by ${by}. Reason: ${reason ?? 'Not provided'}`);
+      // Log the disable event. The insert used to name columns this table does
+      // not have (trigger_type, action, signals_evaluated) and no id, so the
+      // disable succeeded and the route then answered 500. Non-fatal now: the
+      // config row above is what disables the orchestrator.
+      try {
+        await db.run(`
+          INSERT INTO orchestrator_heartbeats (id, ran_at, signals_checked, signals_significant, action_taken, status, error_message)
+          VALUES (?, NOW(), 0, 0, 'fully_disabled', 'ok', ?)
+        `, randomUUID(), `Orchestrator fully disabled by ${by}. Reason: ${reason ?? 'Not provided'}`);
+      } catch (logErr) {
+        console.warn('[orchestrator] could not record the disable event:', logErr instanceof Error ? logErr.message : logErr);
+      }
 
       console.warn(`[orchestrator] ⛔ FULLY DISABLED by ${by}. Reason: ${reason ?? 'none'}`);
       res.json({ ok: true, fully_disabled: true, disabled_by: by });
@@ -343,9 +356,13 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
     }
   });
 
-  // ── Hard limits (read-only — cannot be overridden) ────────────────────────
+  // ── Hard limits (read-only — compiled in, no API changes them) ────────────
   router.get('/orchestrator/limits', requireAuth, async (_req: Request, res: Response) => {
-    res.json({ limits: ORCHESTRATOR_HARD_LIMITS });
+    res.json({
+      limits: ORCHESTRATOR_HARD_LIMITS,
+      readOnly: true,
+      note: 'Hard limits are compiled in; they cannot be changed through the API.',
+    });
   });
 
   // ── Kill switch: reset to Observer ───────────────────────────────────────
@@ -692,7 +709,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
 
   // ── Management report ─────────────────────────────────────────────────────
   router.get('/orchestrator/report', requireAuth, async (req: Request, res: Response) => {
-    if (!anthropic) return res.status(503).json({ error: 'Anthropic API not configured' });
+    if (!anthropic && !isSdkEngineEnabled()) return res.status(503).json({ error: 'No Claude engine available — add an Anthropic API key or enable the SDK engine in Settings → Execution engines' });
     try {
       const period = (req.query.period as string) === 'month' ? 'month' : 'week';
       const report = await generateManagementReport(db, anthropic, period);
@@ -780,12 +797,17 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
     try {
       const { detectPatterns, recordPatternDetection } = await import('../services/orchestrator-pattern-engine.js');
       const patterns = await detectPatterns(db);
-      const recorded: string[] = [];
+      // `patterns_recorded` counted non-null proposal IDs, but this call site
+      // always passes briefingId=null, so no proposal is ever created and the
+      // count was structurally always 0 — success and total failure looked
+      // identical to anyone reading this response.
+      let recorded = 0;
+      let failed = 0;
       for (const p of patterns.slice(0, 5)) {
-        const pid = await recordPatternDetection(db, p, null);
-        if (pid) recorded.push(pid);
+        const r = await recordPatternDetection(db, p, null);
+        if (r.ok) recorded++; else failed++;
       }
-      res.json({ patterns_detected: patterns.length, patterns_recorded: recorded.length, patterns });
+      res.json({ patterns_detected: patterns.length, patterns_recorded: recorded, patterns_failed: failed, patterns });
     } catch (err) {
       console.error('[orchestrator] pattern detect error:', err);
       res.status(500).json({ error: safeError(err) });
@@ -832,7 +854,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   router.post('/orchestrator/demo/advance', requireAuth, async (_req: Request, res: Response) => {
     try {
       const { day, done } = await advanceSimulationDay(db);
-      if (!done && anthropic) {
+      if (!done && (anthropic || isSdkEngineEnabled())) {
         // Trigger a heartbeat cycle for the new day's signals
         runHeartbeatCycle(db, anthropic, 'on_demand', false).catch(() => {});
       }

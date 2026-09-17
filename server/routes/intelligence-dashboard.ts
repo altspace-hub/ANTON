@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import Anthropic from '@anthropic-ai/sdk';
 import { createInsightsGenerator } from '../services/insights-generator.js';
 import { getAtomAbStats, setAtomAbEnabled } from '../services/atom-ab.js';
 import { getCodingAtomAbStats } from '../services/coding-atom-stats.js';
 import { getCodingAtomAbReport } from '../services/coding-atom-ab-report.js';
+import { getAtomInjectionStatus, setAtomInjectionMode, isAtomInjectionMode } from '../services/atom-injection-gate.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
@@ -16,13 +16,8 @@ function errMsg(err: unknown): string {
 
 export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   const router = Router();
-  // Constructed inside the factory (NOT at module scope) so the boot-time
-  // persisted-key loader (env-keys-store.ts) has already populated
-  // process.env.ANTHROPIC_API_KEY by the time this runs.
-  const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || '',
-  });
-  const insights = await createInsightsGenerator(db, anthropic);
+  // Insights run through the provider router (utility tier) — no client here.
+  const insights = await createInsightsGenerator(db);
 
   // GET /api/intelligence/summary — aggregate stats for dashboard
   router.get('/intelligence/summary', async (req, res) => {
@@ -90,6 +85,34 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       res.json({ ok: true, enabled });
     } catch (error: unknown) {
       console.error('[intelligence/atom-ab/toggle]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // GET /api/intelligence/atom-injection — Wave 4: the memory-injection gate.
+  // Mode (auto / on / off), the two counts against their thresholds, whether
+  // the general atom layer currently applies, and the reason in one sentence.
+  // Always a fresh read (the dashboard is not the hot path).
+  router.get('/intelligence/atom-injection', async (_req, res) => {
+    try {
+      res.json(await getAtomInjectionStatus(db, { fresh: true }));
+    } catch (error: unknown) {
+      console.error('[intelligence/atom-injection]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // POST /api/intelligence/atom-injection/mode — body { mode: 'auto' | 'on' | 'off' }.
+  router.post('/intelligence/atom-injection/mode', async (req, res) => {
+    try {
+      const { mode } = (req.body ?? {}) as { mode?: unknown };
+      if (!isAtomInjectionMode(mode)) {
+        return res.status(400).json({ error: "mode must be 'auto', 'on' or 'off'" });
+      }
+      await setAtomInjectionMode(db, mode);
+      res.json(await getAtomInjectionStatus(db, { fresh: true }));
+    } catch (error: unknown) {
+      console.error('[intelligence/atom-injection/mode]', error);
       res.status(500).json({ error: errMsg(error) });
     }
   });
@@ -201,7 +224,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/distribution', async (req, res) => {
     try {
       const timeRange = (req.query.timeRange as string) || 'week';
-      const distribution = insights.getAtomDistribution({ timeRange: timeRange as any });
+      const distribution = await insights.getAtomDistribution({ timeRange: timeRange as 'day' | 'week' | 'month' | 'all' });
       res.json(distribution);
     } catch (error: unknown) {
       console.error('[intelligence/distribution]', error);
@@ -213,7 +236,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/top-entities', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-      const topEntities = insights.getTopEntities(limit);
+      const topEntities = await insights.getTopEntities(limit);
       res.json(topEntities);
     } catch (error: unknown) {
       console.error('[intelligence/top-entities]', error);
@@ -225,7 +248,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/sentiment-trend', async (req, res) => {
     try {
       const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
-      const trend = insights.getSentimentTrend(days);
+      const trend = await insights.getSentimentTrend(days);
       res.json(trend);
     } catch (error: unknown) {
       console.error('[intelligence/sentiment-trend]', error);

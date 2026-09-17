@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, ClipboardList, Puzzle, ThumbsUp, ThumbsDown, Copy, Check, RefreshCw, Loader2, ShieldCheck, ChevronDown, ChevronUp, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom } from 'lucide-react';
+import { Search, Sparkles, Brain, Puzzle, ThumbsUp, ThumbsDown, Check, Loader2, ShieldCheck, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom, FileArchive, Repeat } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
+import AddToEvidencePackPanel from '@/pages/evidence-pack/AddToEvidencePackPanel';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
 import FeedbackWidget from '@/components/shared/FeedbackWidget';
 import ModelSelector from '@/components/shared/ModelSelector';
 import RerunComparison, { type RerunComparisonData } from '@/components/shared/RerunComparison';
-import { fetchPromptPreview, createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate } from '@/lib/api';
-import { buildOutputInstruction } from '@/lib/output-format-definitions';
-import type { ModelId } from '@/lib/types';
+import ProvenancePanel from '@/components/shared/ProvenancePanel';
+import { createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate, rerunMessage } from '@/lib/api';
+import type { ModelId, ContextUsed } from '@/lib/types';
 
 // ── Types ────────────────────────────────────────────────────
 
-type PanelId = 'citations' | 'review' | 'thinking' | 'prompt' | 'feedback' | 'save' | 'trust' | 'trail' | 'history' | 'rerun' | 'exportRun' | null;
+type PanelId = 'citations' | 'review' | 'thinking' | 'feedback' | 'save' | 'trust' | 'provenance' | 'history' | 'rerun' | 'exportRun' | 'evidence' | null;
 
 interface OutputToolbarProps {
   /** The last assistant output text (for citations & review) */
@@ -63,6 +64,8 @@ interface OutputToolbarProps {
   onUpgradeThinking?: (level: 'think_hard' | 'investigate') => void;
   /** Per-message config snapshot — used for accurate "How ANTON Thought" display on old sessions */
   configSnapshot?: Record<string, unknown> | null;
+  /** Wave 2: what the last answer's prompt actually held (live; the snapshot wins after reload). */
+  contextUsed?: ContextUsed | null;
   /** ATTR-04: Source manifest from last request — passed to CitationVerifier for cross-checking */
   sourceManifest?: string[];
   /** Wave 2.3: when the displayed output is itself a rerun, the original message id */
@@ -79,14 +82,14 @@ interface DistilledExample { user: string; assistant: string }
 
 const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentType<{ className?: string }>; streamingOnly?: boolean }> = [
   { id: 'trust', label: 'Trust Score', icon: ShieldCheck },
-  { id: 'trail', label: 'How ANTON Thought', icon: Layers },
+  { id: 'provenance', label: 'Provenance', icon: Layers },
   { id: 'citations', label: 'Citations', icon: Search },
   { id: 'review', label: 'Review', icon: Sparkles },
   { id: 'thinking', label: 'Thinking', icon: Brain, streamingOnly: false },
   { id: 'history', label: 'History', icon: History },
   { id: 'rerun', label: 'Rerun with…', icon: GitCompare },
   { id: 'exportRun', label: 'Export run', icon: FileDown },
-  { id: 'prompt', label: 'Full Prompt', icon: ClipboardList },
+  { id: 'evidence', label: 'Evidence', icon: FileArchive },
   { id: 'feedback', label: 'Feedback', icon: ThumbsUp },
   { id: 'save', label: 'Save', icon: Puzzle },
 ];
@@ -98,38 +101,16 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     outputContent, model, sessionId, isStreaming,
     streamingThinking, thinkingContent,
     moduleId, areaId, systemPrompt, creativity, thinking,
-    plainTextMode, selectedPersonas, selectedSkills,
+    selectedPersonas, selectedSkills,
     multiPerspective, metaCognitiveEnabled, structureReference,
-    transparencyLevel, writingTone, emojiEnabled,
-    audience, channel, outputLanguage, knowledgeSources, uploadedFileIds,
+    transparencyLevel, writingTone,
+    audience, channel, outputLanguage,
     moduleLabel, moduleIcon, selectedOutputFormats, knowledgeSourcesRaw,
     onSaveSuccess, onApplyReview, onUpgradeThinking,
-    configSnapshot, sourceManifest, rerunOf, conversation,
+    configSnapshot, contextUsed, sourceManifest, rerunOf, conversation,
   } = props;
 
-  // Derive trail display values — prefer per-message configSnapshot over live store state
-  const snap = configSnapshot ?? {};
-  const trailModel      = (snap.model as string)                ?? model;
-  const trailThinking   = (snap.thinking as string)             ?? thinking ?? 'quick';
-  const trailCreativity = (snap.creativity as string)           ?? creativity ?? 'balanced';
-  const trailTransp     = (snap.transparencyLevel as 0 | 1 | 2) ?? transparencyLevel ?? 0;
-  const trailTone       = (snap.writingTone as string)          ?? writingTone;
-  const trailAudience   = (snap.audience as string)             ?? audience;
-  const trailChannel    = (snap.channel as string)              ?? channel;
-  const trailLang       = (snap.outputLanguage as string)       ?? outputLanguage;
-  const trailPersonas   = (snap.selectedPersonas as string[])   ?? selectedPersonas;
-  const trailSkills     = (snap.selectedSkills as string[])     ?? selectedSkills;
-  const trailMeta       = (snap.metaCognitiveEnabled as boolean) ?? metaCognitiveEnabled;
-  const trailMultiPersp = (snap.multiPerspective as boolean)    ?? multiPerspective;
-  const trailStructRef  = (snap.structureReference as typeof structureReference) ?? structureReference;
-
   const [activePanel, setActivePanel] = useState<PanelId>(null);
-
-  // Full Prompt state
-  const [promptText, setPromptText] = useState('');
-  const [promptTokens, setPromptTokens] = useState(0);
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptCopied, setPromptCopied] = useState(false);
 
   // Save module state
   const [saveModuleName, setSaveModuleName] = useState('');
@@ -267,76 +248,33 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const isStreamingThinking = isStreaming && !!streamingThinking;
   const displayThinking = isStreaming ? streamingThinking : thinkingContent;
 
-  // ── Full Prompt fetch ──────────────────────────────────────
+  // ── Rerun with… (Wave 2.3 recompose, Wave 5 verbatim replay) ──
 
-  const handleLoadPrompt = async () => {
-    setPromptLoading(true);
-    try {
-      const result = await fetchPromptPreview({
-        model,
-        thinking,
-        creativity,
-        moduleId,
-        areaId,
-        systemPrompt,
-        outputInstruction: buildOutputInstruction(selectedOutputFormats) || undefined,
-        plainTextMode,
-        selectedPersonas,
-        selectedSkills,
-        multiPerspective,
-        metaCognitiveEnabled,
-        structureReference,
-        transparencyLevel,
-        writingTone,
-        emojiEnabled,
-        audience,
-        channel,
-        outputLanguage,
-        knowledgeSources,
-        uploadedFileIds,
-      });
-      setPromptText(result.prompt);
-      setPromptTokens(result.estimatedTokens);
-    } catch {
-      setPromptText('Failed to load prompt. Please try again.');
-    } finally {
-      setPromptLoading(false);
-    }
-  };
+  const [rerunMode, setRerunMode] = useState<'recompose' | 'replay' | null>(null);
 
-  const handleCopyPrompt = async () => {
-    await navigator.clipboard.writeText(promptText);
-    setPromptCopied(true);
-    setTimeout(() => setPromptCopied(false), 2000);
-  };
-
-  // ── Rerun with… (Wave 2.3) ─────────────────────────────────
-
-  const handleRerun = async () => {
+  const handleRerun = async (mode: 'recompose' | 'replay') => {
     if (!sessionId || rerunLoading) return;
-    if (rerunModel === lastRunModel) {
+    if (mode === 'recompose' && rerunModel === lastRunModel) {
       setRerunError('Pick a different model — this output was already produced by that model.');
       return;
     }
     setRerunLoading(true);
+    setRerunMode(mode);
     setRerunError(null);
     try {
-      const res = await fetchWithAuth('/api/rerun', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, newModelId: rerunModel, areaId }),
-      });
-      const data = (await res.json()) as RerunComparisonData & { error?: string };
-      if (!res.ok) {
-        setRerunError(String(data.error ?? 'Rerun failed'));
-        return;
-      }
+      const data = mode === 'replay'
+        // Replay: the stored prompt, the stored history, the model that served the
+        // original — no model pick, no pipeline. The server fails closed (409) when
+        // the record is truncated or the model is no longer served.
+        ? await rerunMessage({ sessionId, mode: 'replay' })
+        : await rerunMessage({ sessionId, mode: 'recompose', newModelId: rerunModel, areaId });
       setRerunData(data);
       setShowComparison(true);
     } catch (err) {
       setRerunError(err instanceof Error ? err.message : 'Rerun failed');
     } finally {
       setRerunLoading(false);
+      setRerunMode(null);
     }
   };
 
@@ -472,7 +410,8 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           const isThinkingChip = chip.id === 'thinking';
           const isFeedbackChip = chip.id === 'feedback';
           const isFeedbackDone = isFeedbackChip && feedbackDone;
-          const disabled = (isStreaming && !isThinkingChip) || ((chip.id === 'rerun' || chip.id === 'exportRun') && !sessionId);
+          const isProvenanceChip = chip.id === 'provenance';
+          const disabled = (isStreaming && !isThinkingChip && !isProvenanceChip) || ((chip.id === 'rerun' || chip.id === 'exportRun' || chip.id === 'evidence') && !sessionId);
 
           return (
             <button
@@ -559,56 +498,20 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </div>
           )}
 
-          {/* ── Full Prompt Panel ─────────────────────────── */}
-          {activePanel === 'prompt' && (
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-medium text-adv-off-white">Composed System Prompt</span>
-                <div className="flex items-center gap-2">
-                  {promptTokens > 0 && (
-                    <span className="text-[11px] text-adv-gray">
-                      ~{promptTokens.toLocaleString()} tokens
-                    </span>
-                  )}
-                  {promptText && (
-                    <button
-                      onClick={handleCopyPrompt}
-                      className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors"
-                    >
-                      {promptCopied ? <Check className="h-3 w-3 text-adv-green" /> : <Copy className="h-3 w-3" />}
-                      {promptCopied ? 'Copied' : 'Copy'}
-                    </button>
-                  )}
-                  <button
-                    onClick={handleLoadPrompt}
-                    disabled={promptLoading}
-                    className="flex items-center gap-1 rounded-md bg-adv-teal/10 border border-adv-teal/30 px-2.5 py-1 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
-                  >
-                    {promptLoading ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
-                    )}
-                    {promptText ? 'Refresh' : 'Load Prompt'}
-                  </button>
-                </div>
-              </div>
-              {promptText ? (
-                <pre className="rounded-lg bg-adv-dark p-3 text-xs text-adv-gray font-mono whitespace-pre-wrap leading-relaxed">
-                  {promptText}
-                </pre>
-              ) : (
-                <div className="rounded-lg bg-adv-dark p-4 text-center">
-                  <ClipboardList className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
-                  <p className="text-sm text-adv-gray">
-                    Click &quot;Load Prompt&quot; to see the full system prompt being sent to Claude.
-                  </p>
-                  <p className="mt-1 text-xs text-adv-gray">
-                    This includes all layers: foundation, module prompt, personas, skills, output format instructions, and knowledge sources.
-                  </p>
-                </div>
-              )}
-            </div>
+          {/* ── Provenance Panel (Wave 1 — explainability contract) ── */}
+          {activePanel === 'provenance' && (
+            <ProvenancePanel
+              sessionId={sessionId}
+              outputContent={outputContent}
+              isStreaming={isStreaming}
+              configSnapshot={configSnapshot ?? null}
+              contextUsed={contextUsed ?? null}
+              sourceNames={sourceManifest}
+              live={{
+                model, thinking, creativity, transparencyLevel, writingTone, audience, channel, outputLanguage,
+                selectedPersonas, selectedSkills, metaCognitiveEnabled, multiPerspective, structureReference,
+              }}
+            />
           )}
 
           {/* ── Rerun with… Panel (Wave 2.3) ──────────────── */}
@@ -627,20 +530,43 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <ModelSelector value={rerunModel} onChange={setRerunModel} variant="dropdown" />
                 <button
-                  onClick={handleRerun}
+                  onClick={() => handleRerun('recompose')}
                   disabled={rerunLoading || !sessionId || rerunModel === lastRunModel}
+                  aria-label="Rerun with another model and compare"
                   className="flex h-[42px] items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 text-xs font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50"
                 >
-                  {rerunLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitCompare className="h-3.5 w-3.5" />}
-                  {rerunLoading ? 'Running…' : 'Run comparison'}
+                  {rerunLoading && rerunMode === 'recompose' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitCompare className="h-3.5 w-3.5" />}
+                  {rerunLoading && rerunMode === 'recompose' ? 'Running…' : 'Run comparison'}
                 </button>
               </div>
               {rerunModel === lastRunModel && !rerunLoading && (
                 <p className="mt-2 text-[11px] text-adv-gray">Pick a different model than the one that produced this output.</p>
               )}
-              {rerunLoading && (
+              {/* Wave 5: verbatim replay — same model, the stored prompt byte-for-byte */}
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
+                <button
+                  onClick={() => handleRerun('replay')}
+                  disabled={rerunLoading || !sessionId}
+                  aria-label="Replay verbatim with the same model and the stored prompt"
+                  title="Sends the stored system prompt and conversation byte-for-byte to the model that served the original, then reports whether the output hash matches."
+                  className="flex h-[38px] items-center justify-center gap-2 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-3 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20 disabled:opacity-50"
+                >
+                  {rerunLoading && rerunMode === 'replay' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Repeat className="h-3.5 w-3.5" />}
+                  {rerunLoading && rerunMode === 'replay' ? 'Replaying…' : 'Same model, verbatim'}
+                </button>
+                <p className="min-w-[12rem] flex-1 text-[11px] leading-relaxed text-adv-gray">
+                  Replays the pinned prompt and history against the model that served this output — no fresh composition, no knowledge lookup —
+                  and reports model, prompt and output hash equality. Fails closed if the prompt was truncated or the model is no longer served.
+                </p>
+              </div>
+              {rerunLoading && rerunMode === 'recompose' && (
                 <p className="mt-2 text-[11px] text-adv-gray">
                   The rerun goes through the full pipeline (knowledge resolution, prompt assembly, model call) — this can take a few minutes for deep-thinking runs.
+                </p>
+              )}
+              {rerunLoading && rerunMode === 'replay' && (
+                <p className="mt-2 text-[11px] text-adv-gray">
+                  Replaying the stored prompt — one model call, no composition. Deep-thinking runs can still take a few minutes.
                 </p>
               )}
               {rerunError && (
@@ -652,7 +578,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   className="mt-3 flex items-center gap-1.5 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
                 >
                   <GitCompare className="h-3.5 w-3.5" />
-                  Reopen last comparison ({rerunData.rerun.modelId})
+                  Reopen last {rerunData.mode === 'replay' ? 'replay' : 'comparison'} ({rerunData.rerun.modelId})
                 </button>
               )}
             </div>
@@ -697,6 +623,15 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               </div>
               {exportError && <p className="mt-2 text-xs text-adv-red">{exportError}</p>}
             </div>
+          )}
+
+          {/* ── Evidence Panel (Wave 3 — the pack walks the real surface) ── */}
+          {activePanel === 'evidence' && sessionId && (
+            <AddToEvidencePackPanel
+              scope={{ type: 'session', sessionId }}
+              defaultTitle={`Evidence — ${moduleLabel || 'session'} ${new Date().toISOString().slice(0, 10)}`}
+              subjectLabel="session"
+            />
           )}
 
           {/* ── Feedback Panel ────────────────────────────── */}
@@ -1074,37 +1009,6 @@ export default function OutputToolbar(props: OutputToolbarProps) {
             </div>
           )}
 
-          {/* ── How ANTON Thought Panel ───────────────────── */}
-          {activePanel === 'trail' && (
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <Layers className="h-4 w-4 text-adv-teal" />
-                <span className="text-xs font-medium text-adv-off-white">How ANTON Thought</span>
-              </div>
-              <div className="space-y-1.5">
-                {([
-                  { label: 'Model', value: trailModel, color: 'text-adv-blue' },
-                  { label: 'Thinking', value: trailThinking, color: 'text-adv-teal' },
-                  { label: 'Creativity', value: trailCreativity, color: 'text-adv-teal' },
-                  { label: 'Transparency', value: `Level ${trailTransp}`, color: 'text-adv-gray' },
-                  ...(trailTone ? [{ label: 'Tone', value: trailTone, color: 'text-adv-gray' }] : []),
-                  ...(trailAudience ? [{ label: 'Audience', value: trailAudience, color: 'text-adv-gray' }] : []),
-                  ...(trailChannel ? [{ label: 'Channel', value: trailChannel, color: 'text-adv-gray' }] : []),
-                  ...(trailLang && trailLang !== 'en' ? [{ label: 'Language', value: trailLang, color: 'text-adv-gray' }] : []),
-                  ...(trailPersonas && trailPersonas.length > 0 ? [{ label: 'Personas', value: trailPersonas.join(', '), color: 'text-adv-gold' }] : []),
-                  ...(trailSkills && trailSkills.length > 0 ? [{ label: 'Skills', value: trailSkills.join(', '), color: 'text-adv-gold' }] : []),
-                  ...(trailMultiPersp ? [{ label: 'Multi-Perspective', value: 'Enabled', color: 'text-adv-teal' }] : []),
-                  ...(trailMeta ? [{ label: 'Meta-Cognitive', value: 'Enabled', color: 'text-adv-teal' }] : []),
-                  ...(trailStructRef ? [{ label: 'Structure Ref', value: trailStructRef.mode + (trailStructRef.fileName ? ` · ${trailStructRef.fileName}` : ''), color: 'text-adv-gray' }] : []),
-                ] as { label: string; value: string; color: string }[]).map(({ label, value, color }) => (
-                  <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-adv-dark px-3 py-2">
-                    <span className="shrink-0 text-[11px] text-adv-gray">{label}</span>
-                    <span className={`max-w-[60%] truncate text-right text-[11px] font-medium ${color}`} title={value}>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

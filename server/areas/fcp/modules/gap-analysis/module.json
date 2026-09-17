@@ -186,6 +186,10 @@
     "fcp-expert",
     "legal-expert"
   ],
+  "recommendedSkills": [
+    "amlr-article-reference",
+    "control-evidence-scoring"
+  ],
   "tags": [
     "amlr",
     "gap-analysis",

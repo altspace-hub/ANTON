@@ -100,6 +100,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "sanctions-compliance-officer"
+  ],
   "tags": [
     "sanctions",
     "ofac",

@@ -21,6 +21,13 @@
  * Haiku 4.5: 200k context (unchanged).
  */
 
+// The effort ladder is owned by thinking-map.ts (a pure leaf — it imports only
+// a type). getThinkingConfig used to carry its own copy, and the two disagreed
+// on plan_first ('high' here, 'max' there) — which effort a run got depended on
+// which route it took. One import ends that; config → services is otherwise
+// not a direction this codebase uses, hence the note.
+import { anthropicEffort, type AnthropicEffort } from '../services/thinking-map.js';
+
 // ── Types ───────────────────────────────────────────────────────────
 
 export interface ModelCapabilities {
@@ -58,7 +65,7 @@ export interface ThinkingConfig {
   /** API thinking type */
   thinkingType: 'adaptive' | 'enabled' | 'none';
   /** For adaptive: the effort level */
-  effort?: 'low' | 'medium' | 'high' | 'max';
+  effort?: AnthropicEffort;
   /** For enabled (manual): the budget_tokens value */
   budgetTokens?: number;
   /** The max_tokens to set on the API request (thinking + response) */
@@ -133,6 +140,27 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
       inputPerMillion: 10,
       outputPerMillion: 50,
       cachedInputPerMillion: 1.00,     // 90% discount
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
+  'claude-fable-5-1': {
+    // Claude Fable 5.1 (2026-09) — the Mythos-class tier above Opus, 1M context,
+    // adaptive thinking only (budget_tokens is rejected), supports 'xhigh'.
+    // Pricing assumed equal to Fable 5; verify against the catalogue before
+    // relying on cost display for this id — it only affects the API path.
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 10,
+      outputPerMillion: 50,
+      cachedInputPerMillion: 1.00,
       premiumThreshold: null,
       premiumInputMultiplier: 1,
       premiumOutputMultiplier: 1,
@@ -702,6 +730,17 @@ export function getThinkingConfig(
     return { thinkingType: 'none', maxTokens: 4096, requiresInterleavedThinkingBeta: false };
   }
 
+  // One effort ladder for every adaptive model — thinking-map.ts owns it and
+  // clamps 'xhigh' to 'max' for models that predate the rung — so this table
+  // can no longer disagree with the SDK engine and claude-client. Only the
+  // per-model output ceiling stays here.
+  const adaptive = (level: AntonThinkingLevel, maxTokens: number): ThinkingConfig => ({
+    thinkingType: 'adaptive',
+    effort: anthropicEffort(level, modelId),
+    maxTokens,
+    requiresInterleavedThinkingBeta: false,
+  });
+
   // ─── Adaptive-thinking models (effort parameter) ──
   // Fable 5, Opus 5, Sonnet 5, Opus 4.8 — same effort mapping as 4.7 for
   // consistency with users' learned baseline. Per Anthropic docs the API default
@@ -712,12 +751,12 @@ export function getThinkingConfig(
   // same fact is exactly how Opus 4.8 and 4.7 drifted apart before.
   if (caps.supportsAdaptiveThinking && !caps.supportsExtendedThinking) {
     const mapping: Record<string, ThinkingConfig> = {
-      'quick':            { thinkingType: 'adaptive', effort: 'low',    maxTokens: 16_384,  requiresInterleavedThinkingBeta: false },
-      'think':            { thinkingType: 'adaptive', effort: 'medium', maxTokens: 32_768,  requiresInterleavedThinkingBeta: false },
-      'think_hard':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
-      'investigate':      { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
-      'plan_first':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
-      'deep_investigate': { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
+      'quick':            adaptive('quick', 16_384),
+      'think':            adaptive('think', 32_768),
+      'think_hard':       adaptive('think_hard', 65_536),
+      'investigate':      adaptive('investigate', 128_000),
+      'plan_first':       adaptive('plan_first', 65_536),
+      'deep_investigate': adaptive('deep_investigate', 128_000),
     };
     return mapping[antonThinkingLevel] || mapping['think'];
   }
@@ -728,12 +767,12 @@ export function getThinkingConfig(
   // consistent UX across Opus generations.
   if (modelId === 'claude-opus-4-6') {
     const mapping: Record<string, ThinkingConfig> = {
-      'quick':            { thinkingType: 'adaptive', effort: 'low',    maxTokens: 16_384,  requiresInterleavedThinkingBeta: false },
-      'think':            { thinkingType: 'adaptive', effort: 'medium', maxTokens: 32_768,  requiresInterleavedThinkingBeta: false },
-      'think_hard':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
-      'investigate':      { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
-      'plan_first':       { thinkingType: 'adaptive', effort: 'high',   maxTokens: 65_536,  requiresInterleavedThinkingBeta: false },
-      'deep_investigate': { thinkingType: 'adaptive', effort: 'max',    maxTokens: 128_000, requiresInterleavedThinkingBeta: false },
+      'quick':            adaptive('quick', 16_384),
+      'think':            adaptive('think', 32_768),
+      'think_hard':       adaptive('think_hard', 65_536),
+      'investigate':      adaptive('investigate', 128_000),
+      'plan_first':       adaptive('plan_first', 65_536),
+      'deep_investigate': adaptive('deep_investigate', 128_000),
     };
     return mapping[antonThinkingLevel] || mapping['think'];
   }
@@ -741,42 +780,12 @@ export function getThinkingConfig(
   // ─── Opus 4.7: Adaptive thinking (effort parameter) ────────
   if (modelId === 'claude-opus-4-7') {
     const mapping: Record<string, ThinkingConfig> = {
-      'quick': {
-        thinkingType: 'adaptive',
-        effort: 'low',
-        maxTokens: 16_384,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'think': {
-        thinkingType: 'adaptive',
-        effort: 'medium',
-        maxTokens: 32_768,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'think_hard': {
-        thinkingType: 'adaptive',
-        effort: 'high',
-        maxTokens: 65_536,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'investigate': {
-        thinkingType: 'adaptive',
-        effort: 'max',
-        maxTokens: 128_000,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'plan_first': {
-        thinkingType: 'adaptive',
-        effort: 'high',
-        maxTokens: 65_536,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'deep_investigate': {
-        thinkingType: 'adaptive',
-        effort: 'max',
-        maxTokens: 128_000,
-        requiresInterleavedThinkingBeta: false,
-      },
+      'quick':            adaptive('quick', 16_384),
+      'think':            adaptive('think', 32_768),
+      'think_hard':       adaptive('think_hard', 65_536),
+      'investigate':      adaptive('investigate', 128_000),
+      'plan_first':       adaptive('plan_first', 65_536),
+      'deep_investigate': adaptive('deep_investigate', 128_000),
     };
     return mapping[antonThinkingLevel] || mapping['think'];
   }
@@ -784,42 +793,12 @@ export function getThinkingConfig(
   // ─── Sonnet 4.6: Adaptive thinking (preferred) ─────────────
   if (modelId === 'claude-sonnet-4-6') {
     const mapping: Record<string, ThinkingConfig> = {
-      'quick': {
-        thinkingType: 'adaptive',
-        effort: 'low',
-        maxTokens: 16_384,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'think': {
-        thinkingType: 'adaptive',
-        effort: 'medium',
-        maxTokens: 32_768,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'think_hard': {
-        thinkingType: 'adaptive',
-        effort: 'high',
-        maxTokens: 64_000,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'investigate': {
-        thinkingType: 'adaptive',
-        effort: 'max',
-        maxTokens: 64_000,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'plan_first': {
-        thinkingType: 'adaptive',
-        effort: 'high',
-        maxTokens: 64_000,
-        requiresInterleavedThinkingBeta: false,
-      },
-      'deep_investigate': {
-        thinkingType: 'adaptive',
-        effort: 'max',
-        maxTokens: 64_000,
-        requiresInterleavedThinkingBeta: false,
-      },
+      'quick':            adaptive('quick', 16_384),
+      'think':            adaptive('think', 32_768),
+      'think_hard':       adaptive('think_hard', 64_000),
+      'investigate':      adaptive('investigate', 64_000),
+      'plan_first':       adaptive('plan_first', 64_000),
+      'deep_investigate': adaptive('deep_investigate', 64_000),
     };
     return mapping[antonThinkingLevel] || mapping['think'];
   }

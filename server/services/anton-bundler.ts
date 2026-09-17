@@ -32,6 +32,24 @@ import {
 // Wave 2.2 (module-run bundles): the extractor's exact cache key, so a cached
 // structured payload only ships when it provably belongs to THIS message.
 import { structuredContentHash, safeContentType } from './structured-extractor.js';
+// Wave 6 (track G — a shared module arrives whole): the default-config shape,
+// the checksum recipe and the embedded skill/persona file format live in a
+// pure module the importer shares, so export and import cannot drift.
+import {
+  flattenModuleConfig,
+  stripLocalBookkeeping,
+  computeModuleChecksum,
+  serialiseBundleJson,
+  sha256Hex,
+  embeddedFileName,
+  renderEmbeddedMarkdown,
+} from './anton-module-config.js';
+import {
+  resolveEmbeddedSkills,
+  resolveEmbeddedPersonas,
+  type EmbeddedSkill,
+  type EmbeddedPersona,
+} from './anton-bundle-embeds.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Built-in module definitions live on disk under server/areas/<area>/modules/<id>/ */
@@ -83,6 +101,21 @@ interface ModuleExportData {
   createdAt?: string;
   updatedAt?: string;
   governance?: GovernanceMetadata;
+  /** Wave 6: the text of every skill / persona the module references. */
+  embeddedSkills?: EmbeddedSkill[];
+  embeddedPersonas?: EmbeddedPersona[];
+  /** Referenced ids no source on this instance could resolve — listed, not silent. */
+  unresolvedSkills?: string[];
+  unresolvedPersonas?: string[];
+}
+
+/** One embedded skill/persona file as listed in manifest.embedded (Wave 6). */
+export interface EmbeddedManifestEntry {
+  id: string;
+  file: string;
+  sha256: string;
+  name: string;
+  version?: string;
 }
 
 /**
@@ -173,11 +206,25 @@ interface AntonManifest extends SpecManifest {
   security: {
     checksum: string;
     signedBy?: string;
+    /** Wave 6: per-file hashes so a fingerprint needs no recomputation. */
+    prompt_sha256?: string;
+    guided_inputs_sha256?: string;
+    config_sha256?: string;
   };
   content: {
     systemPromptFile: 'system-prompt.md';
     guidedInputsFile: 'guided-inputs.json';
     defaultConfigFile: 'default-config.json';
+  };
+  /** Wave 6: the skill / persona texts that travel with the module, each hashed. */
+  embedded?: {
+    skills: EmbeddedManifestEntry[];
+    personas: EmbeddedManifestEntry[];
+  };
+  /** Wave 6: referenced ids the exporter could not resolve — the importer warns. */
+  unresolved?: {
+    skills: string[];
+    personas: string[];
   };
 }
 
@@ -331,10 +378,17 @@ export async function bundleModuleToAnton(
   }
 
   // Parse config blob (stores model defaults, tags, etc.)
-  const configBlob: Record<string, unknown> =
+  const rawConfig: Record<string, unknown> =
     module.config && typeof module.config === 'string'
       ? (JSON.parse(module.config) as Record<string, unknown>)
       : {};
+  // Wave 6: what travels is the flat, top-level shape the loader reads —
+  // minus this instance's import bookkeeping (a re-export is a new bundle).
+  const configBlob = stripLocalBookkeeping(flattenModuleConfig(rawConfig));
+
+  // Wave 6: the referenced skills and personas travel WITH their text.
+  const skills = await resolveEmbeddedSkills(db, Array.isArray(configBlob.skills) ? configBlob.skills : []);
+  const personas = await resolveEmbeddedPersonas(db, Array.isArray(configBlob.personas) ? configBlob.personas : []);
 
   // The config blob IS the default config (personas, output formats, skills, model settings, etc.)
   // Extract any extra fields that have their own top-level keys, use the rest as defaultConfig
@@ -355,6 +409,10 @@ export async function bundleModuleToAnton(
     createdAt: module.created_at as string,
     updatedAt: module.updated_at as string,
     governance: metadata.governance,
+    embeddedSkills: skills.embedded,
+    embeddedPersonas: personas.embedded,
+    unresolvedSkills: skills.missing,
+    unresolvedPersonas: personas.missing,
   };
 
   return buildModuleAntonArchive(exportData);
@@ -379,7 +437,9 @@ export async function bundleBuiltinModuleToAnton(
     license?: string;
     version?: string;
     governance?: GovernanceMetadata;
-  } = {}
+  } = {},
+  /** Wave 6: lets installed (imported) skills / personas resolve too; null = static sources only. */
+  db: DatabaseAdapter | null = null,
 ): Promise<Buffer> {
   // Find which area contains this module by scanning area directories
   let moduleDir: string | null = null;
@@ -410,6 +470,14 @@ export async function bundleBuiltinModuleToAnton(
     systemPrompt = readFileSync(promptPath, 'utf-8');
   }
 
+  // Wave 6: module.json nests the run defaults under `defaults.{…}` and names
+  // the lists recommendedPersonas/recommendedSkills; the custom-module loader
+  // reads top-level keys. Flatten HERE so the bundle is the shape the importer
+  // stores (the importer flattens too, for bundles written before this).
+  const flatConfig = flattenModuleConfig(moduleConfig);
+  const skills = await resolveEmbeddedSkills(db, Array.isArray(flatConfig.skills) ? flatConfig.skills : []);
+  const personas = await resolveEmbeddedPersonas(db, Array.isArray(flatConfig.personas) ? flatConfig.personas : []);
+
   const now = new Date().toISOString();
   const exportData: ModuleExportData = {
     id: moduleId,
@@ -421,7 +489,11 @@ export async function bundleBuiltinModuleToAnton(
     guidedInputs: Array.isArray(moduleConfig.guidedInputs) ? (moduleConfig.guidedInputs as unknown[]) : [],
     // The full module.json IS the default config — mirrors the custom path
     // where the config blob goes into default-config.json wholesale.
-    defaultConfig: moduleConfig,
+    defaultConfig: flatConfig,
+    embeddedSkills: skills.embedded,
+    embeddedPersonas: personas.embedded,
+    unresolvedSkills: skills.missing,
+    unresolvedPersonas: personas.missing,
     author: metadata.authorName || 'openEXPERT Team',
     organization: metadata.authorOrg || 'ANTON',
     version: metadata.version || '1.0.0',
@@ -452,19 +524,57 @@ function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
   zip.addFile('system-prompt.md', Buffer.from(systemPromptContent, 'utf-8'));
 
   // 2. Add guided-inputs.json
-  const guidedInputsContent = JSON.stringify(exportData.guidedInputs || [], null, 2);
+  const guidedInputsContent = serialiseBundleJson(exportData.guidedInputs || []);
   zip.addFile('guided-inputs.json', Buffer.from(guidedInputsContent, 'utf-8'));
 
   // 3. Add default-config.json
-  const defaultConfigContent = JSON.stringify(exportData.defaultConfig || {}, null, 2);
+  const defaultConfigContent = serialiseBundleJson(exportData.defaultConfig || {});
   zip.addFile('default-config.json', Buffer.from(defaultConfigContent, 'utf-8'));
 
-  // 4. Calculate checksum of all content
-  const contentHash = crypto.createHash('sha256');
-  contentHash.update(systemPromptContent);
-  contentHash.update(guidedInputsContent);
-  contentHash.update(defaultConfigContent);
-  const checksum = contentHash.digest('hex');
+  // 4. Calculate checksum of all content — the pinned three-file recipe
+  // anton-validator recomputes; the embedded files below are attested by
+  // their own sha256 in the (signed) manifest, not by this checksum.
+  const checksum = computeModuleChecksum(systemPromptContent, guidedInputsContent, defaultConfigContent);
+
+  // 4b. Wave 6: embedded skill / persona texts as skills/<id>.md, personas/<id>.md
+  const takenNames = new Set<string>();
+  const embeddedSkillEntries: EmbeddedManifestEntry[] = [];
+  for (const skill of exportData.embeddedSkills ?? []) {
+    const file = embeddedFileName('skills', skill.id, takenNames);
+    const body = renderEmbeddedMarkdown({
+      id: skill.id,
+      name: skill.name,
+      description: skill.description,
+      version: skill.version,
+      author: skill.author,
+      category: skill.category,
+      tags: skill.tags ? JSON.stringify(skill.tags) : undefined,
+    }, skill.prompt);
+    const bytes = Buffer.from(body, 'utf-8');
+    zip.addFile(file, bytes);
+    embeddedSkillEntries.push({ id: skill.id, file, sha256: sha256Hex(bytes), name: skill.name, version: skill.version });
+  }
+  const embeddedPersonaEntries: EmbeddedManifestEntry[] = [];
+  for (const persona of exportData.embeddedPersonas ?? []) {
+    const file = embeddedFileName('personas', persona.id, takenNames);
+    const body = renderEmbeddedMarkdown({
+      id: persona.id,
+      name: persona.name,
+      description: persona.description,
+      category: persona.category,
+    }, persona.prompt);
+    const bytes = Buffer.from(body, 'utf-8');
+    zip.addFile(file, bytes);
+    embeddedPersonaEntries.push({ id: persona.id, file, sha256: sha256Hex(bytes), name: persona.name });
+  }
+
+  // dependencies.* stays the prompt heuristic it always was: the validator's
+  // step 5 looks those ids up in the skills/personas TABLES only, so listing
+  // built-in skill ids there would warn "not found" for every one of them.
+  // The module's real references travel as manifest.embedded (with text) and
+  // manifest.unresolved (without) — the importer reads those.
+  const requiredSkills = extractSkillDependencies(exportData.systemPrompt);
+  const requiredPersonas = extractPersonaDependencies(exportData.systemPrompt);
 
   // Build final manifest — spec-compliant fields + legacy fields for backward compat with importer
   const specPart = buildSpecManifest({
@@ -477,7 +587,7 @@ function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
     organization: exportData.organization,
     tags: exportData.tags,
     license: exportData.license,
-    contentsCount: { modules: 1 },
+    contentsCount: { modules: 1, skills: embeddedSkillEntries.length, personas: embeddedPersonaEntries.length },
     createdAt: exportData.createdAt,
     updatedAt: exportData.updatedAt,
     // Wave 2.8: derive providers from the module's actual config instead of
@@ -506,19 +616,31 @@ function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
       color: exportData.color || '#2DD4A8',
     },
     dependencies: {
-      requiredSkills: extractSkillDependencies(exportData.systemPrompt),
-      requiredPersonas: extractPersonaDependencies(exportData.systemPrompt),
+      requiredSkills,
+      requiredPersonas,
       minAntonVersion: '1.0.0',
     },
     security: {
       checksum: `sha256:${checksum}`,
+      prompt_sha256: sha256Hex(systemPromptContent),
+      guided_inputs_sha256: sha256Hex(guidedInputsContent),
+      config_sha256: sha256Hex(defaultConfigContent),
     },
     content: {
       systemPromptFile: 'system-prompt.md',
       guidedInputsFile: 'guided-inputs.json',
       defaultConfigFile: 'default-config.json',
     },
+    embedded: {
+      skills: embeddedSkillEntries,
+      personas: embeddedPersonaEntries,
+    },
   };
+  const unresolvedSkills = exportData.unresolvedSkills ?? [];
+  const unresolvedPersonas = exportData.unresolvedPersonas ?? [];
+  if (unresolvedSkills.length > 0 || unresolvedPersonas.length > 0) {
+    manifest.unresolved = { skills: unresolvedSkills, personas: unresolvedPersonas };
+  }
 
   zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf-8'));
 
@@ -534,6 +656,137 @@ function buildModuleAntonArchive(exportData: ModuleExportData): Buffer {
   );
 
   return buffer;
+}
+
+// ── Module fingerprint (Wave 6) ────────────────────────────────────
+
+/**
+ * What the importer records with an installed module about the bundle it
+ * came from (custom_modules.config.bundleProvenance). Local bookkeeping —
+ * stripped from re-exports.
+ */
+export interface BundleProvenanceRecord {
+  checksum: string;
+  promptSha256: string;
+  guidedInputsSha256: string;
+  configSha256: string;
+  signed: boolean;
+  signatureValid: boolean;
+  signerPubkey: string | null;
+  signerName: string | null;
+  signedAt: string | null;
+  bundleId: string | null;
+  bundleVersion: string | null;
+  importedAt: string;
+  acceptedInjectionFindings: Array<{ file: string; patternId: string; label: string; excerpt: string; line: number }>;
+  installedSkills: Array<{ bundleId: string; installedId: string; action: string }>;
+  installedPersonas: Array<{ bundleId: string; installedId: string; action: string }>;
+}
+
+/** The visible identity of a custom module: the bundle checksum and who signed it. */
+export interface ModuleFingerprint {
+  moduleId: string;
+  /** `sha256:<hex>` — the bundle's security.checksum for an import, else what an export now would carry. */
+  checksum: string;
+  promptSha256: string;
+  configSha256: string;
+  guidedInputsSha256: string;
+  /** Display name of the signer, else the first 16 hex of the pubkey, else null (unsigned / local). */
+  signedBy: string | null;
+  signerPubkey: string | null;
+  signedAt: string | null;
+  source: 'import' | 'local';
+  importedAt: string | null;
+  acceptedInjectionFindings: number;
+}
+
+export function readBundleProvenance(config: Record<string, unknown>): BundleProvenanceRecord | null {
+  const raw = config.bundleProvenance;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.checksum !== 'string') return null;
+  const s = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
+  return {
+    checksum: r.checksum,
+    promptSha256: s(r.promptSha256) ?? '',
+    guidedInputsSha256: s(r.guidedInputsSha256) ?? '',
+    configSha256: s(r.configSha256) ?? '',
+    signed: r.signed === true,
+    signatureValid: r.signatureValid === true,
+    signerPubkey: s(r.signerPubkey),
+    signerName: s(r.signerName),
+    signedAt: s(r.signedAt),
+    bundleId: s(r.bundleId),
+    bundleVersion: s(r.bundleVersion),
+    importedAt: s(r.importedAt) ?? '',
+    acceptedInjectionFindings: Array.isArray(r.acceptedInjectionFindings)
+      ? (r.acceptedInjectionFindings as BundleProvenanceRecord['acceptedInjectionFindings'])
+      : [],
+    installedSkills: Array.isArray(r.installedSkills) ? (r.installedSkills as BundleProvenanceRecord['installedSkills']) : [],
+    installedPersonas: Array.isArray(r.installedPersonas) ? (r.installedPersonas as BundleProvenanceRecord['installedPersonas']) : [],
+  };
+}
+
+/**
+ * The fingerprint of a custom module. For an IMPORTED module it is the
+ * bundle's own checksum and signer (what the sender signed); for a module
+ * built here it is the checksum an export would carry right now, unsigned.
+ * Returns null when the module does not exist.
+ */
+export async function computeModuleFingerprint(
+  db: DatabaseAdapter,
+  moduleId: string,
+): Promise<ModuleFingerprint | null> {
+  const module = await db.get<{ id: string; system_prompt: string | null; config: string | null }>(
+    'SELECT id, system_prompt, config FROM custom_modules WHERE id = ?',
+    moduleId,
+  );
+  if (!module) return null;
+
+  let rawConfig: Record<string, unknown> = {};
+  if (typeof module.config === 'string' && module.config) {
+    try { rawConfig = JSON.parse(module.config) as Record<string, unknown>; } catch { rawConfig = {}; }
+  } else if (module.config && typeof module.config === 'object') {
+    rawConfig = module.config as Record<string, unknown>;
+  }
+
+  const provenance = readBundleProvenance(rawConfig);
+  const systemPrompt = module.system_prompt ?? '';
+  const exportConfig = stripLocalBookkeeping(flattenModuleConfig(rawConfig));
+  const guidedJson = serialiseBundleJson(exportConfig.guidedInputs ?? []);
+  const configJson = serialiseBundleJson(exportConfig);
+
+  if (provenance) {
+    return {
+      moduleId: module.id,
+      checksum: provenance.checksum,
+      promptSha256: provenance.promptSha256 || sha256Hex(systemPrompt),
+      configSha256: provenance.configSha256 || sha256Hex(configJson),
+      guidedInputsSha256: provenance.guidedInputsSha256 || sha256Hex(guidedJson),
+      signedBy: provenance.signed && provenance.signatureValid
+        ? (provenance.signerName ?? (provenance.signerPubkey ? provenance.signerPubkey.slice(0, 16) : null))
+        : null,
+      signerPubkey: provenance.signed && provenance.signatureValid ? provenance.signerPubkey : null,
+      signedAt: provenance.signed && provenance.signatureValid ? provenance.signedAt : null,
+      source: 'import',
+      importedAt: provenance.importedAt || null,
+      acceptedInjectionFindings: provenance.acceptedInjectionFindings.length,
+    };
+  }
+
+  return {
+    moduleId: module.id,
+    checksum: `sha256:${computeModuleChecksum(systemPrompt, guidedJson, configJson)}`,
+    promptSha256: sha256Hex(systemPrompt),
+    configSha256: sha256Hex(configJson),
+    guidedInputsSha256: sha256Hex(guidedJson),
+    signedBy: null,
+    signerPubkey: null,
+    signedAt: null,
+    source: 'local',
+    importedAt: null,
+    acceptedInjectionFindings: 0,
+  };
 }
 
 // ── Coding Area Bundle Exports ──────────────────────────────────

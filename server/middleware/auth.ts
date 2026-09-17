@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import type { DatabaseAdapter } from '../db/database.js';
 import { SOLO_USER_ID } from './user-constants.js';
+import { isUserRole } from './role-guards.js';
 
 // Re-export so existing `import { SOLO_USER_ID } from '../middleware/auth.js'` keeps
 // working; the value itself lives in the side-effect-free user-constants module.
@@ -35,6 +36,24 @@ declare global {
       user?: AuthUser;
     }
   }
+}
+
+/**
+ * Report an unrecognised users.role once per account, then treat it as 'viewer'.
+ * Warned once rather than per request: this runs on every authenticated call, and a
+ * per-request line would bury the one message an operator needs to see. Only the user
+ * id and the offending role literal are logged — no username, no token.
+ */
+const warnedUnknownRole = new Set<string>();
+function floorUnknownRole(userId: string, role: string | null): 'viewer' {
+  if (!warnedUnknownRole.has(userId)) {
+    warnedUnknownRole.add(userId);
+    console.warn(
+      `[auth] user ${userId} has unrecognised role ${JSON.stringify(role)} — treating as 'viewer'. ` +
+      `Set it to viewer, analyst or admin via PATCH /api/admin/users/${userId}.`,
+    );
+  }
+  return 'viewer';
 }
 
 export async function createAuthMiddleware(db: DatabaseAdapter) {
@@ -82,8 +101,16 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
       //      they can teach on the following Monday.
       //
       // routes/friends.ts already reads this column live for the same reason.
-      const session = await db.get<{ school_role: string | null }>(
-        `SELECT u.school_role
+      //
+      // u.role is read live for that same reason and a sharper one. It used to come
+      // from payload.role — the value baked into the token at login — so PATCH
+      // /api/admin/users/:id {role:'viewer'} demoted a compromised or departed admin
+      // in the users table while their existing 7-day token still said 'admin' on
+      // every request. They could re-promote themselves before it expired. Deletion
+      // was always immediate (user_sessions cascades); demotion was not. This column
+      // rides along on the join that was already happening, so it costs no extra query.
+      const session = await db.get<{ role: string | null; school_role: string | null }>(
+        `SELECT u.role, u.school_role
            FROM user_sessions s
            JOIN users u ON u.id = s.user_id
           WHERE s.token = ? AND s.expires_at > NOW()`,
@@ -98,7 +125,13 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
       req.user = {
         id: payload.id,
         username: payload.username,
-        role: payload.role,
+        // A role the codebase does not know is not a privilege level — it is an
+        // unprovisioned account (users.role has no CHECK constraint, and the API took
+        // any string until 2026-09). Floor it at 'viewer' rather than passing it
+        // through: requireRole now fails closed on an unknown role, so passing it
+        // through would lock the account out of everything, and a lockout is a worse
+        // outcome than least privilege for what is usually an admin's typo.
+        role: isUserRole(session.role) ? session.role : floorUnknownRole(payload.id, session.role),
         display_name: payload.display_name,
         school_role: session.school_role ?? undefined,
       };

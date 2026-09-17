@@ -37,17 +37,25 @@ function warnPlaintextOnce(): void {
   );
 }
 
-// ── Encryption (mirror of app-enrollment-service.ts so we don't have to ──
-//    expose those private helpers; both write into the same table). ──────
-
-function encKey(): Buffer | null {
-  const hex = process.env.INSTANCE_KEY_ENCRYPTION_KEY?.trim();
-  if (!hex || hex.length !== 64) return null;
-  try { return Buffer.from(hex, 'hex'); } catch { return null; }
-}
+// ── Encryption ──────────────────────────────────────────────────────────
+//
+// This used to be a local MIRROR of app-enrollment-service's helper, with a
+// comment saying so. The mirror is exactly how the bug survived: when that
+// service learned to distinguish 'absent' from 'set but unusable', this copy
+// did not, and kept treating a malformed key as 'not configured' — falling back
+// to writing the Ed25519 private key in PLAINTEXT into instance_identity, the
+// same row the other service was refusing to touch. Its check was
+// 'hex.length !== 64' with no charset test, so a 64-character string with one
+// typo'd digit decoded short and passed.
+//
+// Now imported rather than mirrored. getEncryptionKey() returns null only when
+// the variable is genuinely absent, and THROWS InstanceKeyConfigError when it is
+// present and unusable, so every signing path here fails closed instead of
+// silently downgrading.
+import { getEncryptionKey } from '../app-enrollment-service.js';
 
 function encryptPrivkey(plaintextHex: string): { encrypted: Buffer; iv: Buffer } | null {
-  const k = encKey();
+  const k = getEncryptionKey();
   if (!k) return null;
   const iv = require('node:crypto').randomBytes(12) as Buffer;
   const cipher = createCipheriv('aes-256-gcm', k, iv);
@@ -57,7 +65,7 @@ function encryptPrivkey(plaintextHex: string): { encrypted: Buffer; iv: Buffer }
 }
 
 function decryptPrivkey(encrypted: Buffer, iv: Buffer): string {
-  const k = encKey();
+  const k = getEncryptionKey();
   if (!k) throw new Error('INSTANCE_KEY_ENCRYPTION_KEY missing — cannot decrypt signing key');
   const tag = encrypted.subarray(encrypted.length - 16);
   const ct = encrypted.subarray(0, encrypted.length - 16);

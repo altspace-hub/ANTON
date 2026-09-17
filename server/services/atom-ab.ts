@@ -154,7 +154,7 @@ export async function getAtomAbStats(db: DatabaseAdapter): Promise<AtomAbStats> 
      )
      SELECT sa.arm AS arm, COUNT(q.id) AS scored, AVG(q.score_overall) AS mean_quality
      FROM session_arm sa
-     JOIN quality_scores q ON q.session_id = sa.session_id
+     JOIN quality_scores q ON q.session_id = sa.session_id AND q.origin = 'run'
      GROUP BY sa.arm`,
   ) as Array<{ arm: AtomArm; scored: number | string; mean_quality: number | string | null }>;
   for (const r of qualityRows) {

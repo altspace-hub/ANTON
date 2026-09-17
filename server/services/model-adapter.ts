@@ -128,7 +128,7 @@ class AnthropicAdapter extends BaseAdapter {
     // all other Claude models (Sonnet 4.5, Haiku, Opus 4.6/4.7).
     if (anthropicUsesAdaptive(req.model)) {
       (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
-      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking) };
+      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking, req.model) };
     } else {
       const budget = this.mapThinkingBudget(thinking);
       if (budget > 0) {
@@ -182,7 +182,7 @@ class AnthropicAdapter extends BaseAdapter {
     // Anthropic thinking (single-source thinking-map.ts) — see sendRequest above.
     if (anthropicUsesAdaptive(req.model)) {
       (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
-      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking) };
+      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking, req.model) };
     } else {
       const budget = this.mapThinkingBudget(thinking);
       if (budget > 0) {

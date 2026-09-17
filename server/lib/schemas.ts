@@ -5,6 +5,11 @@ import { z } from 'zod';
 export const LoginSchema = z.object({
   username: z.string().min(1).max(100).trim(),
   password: z.string().min(1).max(1000),
+  // Second factor, only required for an account with users.mfa_enabled set. It has to
+  // be declared here: validate() replaces req.body with the PARSED object, and a Zod
+  // object strips unknown keys — an undeclared mfaToken would silently never reach the
+  // login handler, which is how you ship an MFA check that always sees "no code given".
+  mfaToken: z.string().regex(/^\d{6}$/, 'MFA code must be 6 digits').optional(),
 });
 
 export const ForgotPasswordSchema = z.object({
@@ -68,6 +73,9 @@ export const ExportSchema = z.object({
     thinking: z.string().max(50).optional(),
     moduleId: z.string().max(100).optional(),
     sessionId: z.string().max(100).optional(),
+    // Wave 3: the assistant message being exported, so the provenance
+    // appendix binds to the exact run (falls back to the session's latest).
+    messageId: z.string().max(100).optional(),
     creativity: z.string().max(50).optional(),
     // ATTR-02: sources & scope
     documentsLoaded: z.array(z.string().max(300)).max(100).optional(),
@@ -190,9 +198,24 @@ export const TaskMessageSchema = z.object({
   content: z.string().min(1).max(10_000).trim(),
 });
 
+/** One step of a plan the model authored for THIS task (a deliverable, not a UI click). */
+export const TaskPlanStepSchema = z.object({
+  step: z.number().int().min(1).max(20),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  /** A catalogue module whose prompt should run this step. */
+  module_id: z.string().max(120).optional(),
+  /** A seeded ANTON capability (cap-*) this step uses. */
+  capability_id: z.string().max(120).optional(),
+  output_format: z.string().max(120).optional(),
+});
+
 export const TaskSelectApproachSchema = z.object({
   approach_id: z.string().min(1).max(100),
   config: z.record(z.string(), z.unknown()).optional().default({}),
+  /** The proposal's own plan. Persisted with the choice so execution runs
+   *  the steps the user approved, not a template's. */
+  execution_steps: z.array(TaskPlanStepSchema).max(12).optional(),
 });
 
 export const TaskIngestSchema = z.object({

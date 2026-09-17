@@ -4,12 +4,15 @@ import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from '.
 
 // ── Types ──────────────────────────────────────────────────
 
-type ModelId = 'claude-fable-5' | 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+type ModelId = 'claude-fable-5-1' | 'claude-fable-5' | 'claude-opus-5' | 'claude-sonnet-5' | 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 // Models that support prompt caching via cache_control: { type: "ephemeral" }
 const CACHE_SUPPORTED_MODELS: ReadonlySet<ModelId> = new Set([
+  'claude-fable-5-1',
   'claude-fable-5',
+  'claude-opus-5',
+  'claude-sonnet-5',
   'claude-opus-4-8',
   'claude-sonnet-4-6',
   'claude-sonnet-4-5-20250929',
@@ -69,6 +72,9 @@ export interface StreamCompletionData {
   /** Full content array from the API response (includes thinking blocks with signatures).
    *  Must be preserved and replayed in subsequent turns when thinking is enabled. */
   rawContentBlocks?: unknown[];
+  /** Wave 0: the model id the API reports on the final message (the served
+   *  snapshot, e.g. a dated id), recorded so a run can name what actually ran. */
+  modelServed?: string;
 }
 
 interface ContentBlock {
@@ -123,7 +129,10 @@ async function withRetry<T>(factory: () => Promise<T>): Promise<T> {
 // Keep in sync with server/config/model-capabilities.ts (maxOutputTokens).
 // Opus 4.8: 128 000 | Sonnet 4.6/4.5: 64 000 | Haiku 4.5: 8 192 | fallback: 32 000
 const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
+  'claude-fable-5-1':            128_000,
   'claude-fable-5':              128_000,
+  'claude-opus-5':               128_000,
+  'claude-sonnet-5':             128_000,
   'claude-opus-4-8':             128_000,
   'claude-sonnet-4-6':            64_000,
   'claude-sonnet-4-5-20250929':   64_000,
@@ -143,7 +152,7 @@ function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
   if (anthropicUsesAdaptive(model)) {
     return {
       thinking: { type: 'adaptive' as const },
-      output_config: { effort: anthropicEffort(level) },
+      output_config: { effort: anthropicEffort(level, model) },
     };
   }
 
@@ -315,7 +324,9 @@ export async function streamToResponse(
     // The 1M-context beta is only needed for Sonnet 4.5 above 200k tokens.
     const betaHeaders: string[] = [];
     const isThinkingEnabled = Object.keys(thinkingConfig).length > 0;
-    const isAdaptiveModel = config.model === 'claude-opus-4-8' || config.model === 'claude-sonnet-4-6';
+    // Same catalogue test as the thinking config above — a second literal list
+    // here is how Opus 5 ran with a beta header it does not take.
+    const isAdaptiveModel = anthropicUsesAdaptive(config.model);
     if (isThinkingEnabled && !isAdaptiveModel) {
       betaHeaders.push('interleaved-thinking-2025-05-14');
     }
@@ -449,6 +460,11 @@ export async function streamToResponse(
       finalOutputTokens = finalUsage.output_tokens || 0;
     }
 
+    // Wave 0: the served model id (a dated snapshot on the API) rides on the
+    // usage event so the trail can name what ran without a reload.
+    const servedModel = typeof (finalMessage as { model?: unknown }).model === 'string'
+      ? (finalMessage as { model: string }).model
+      : undefined;
     sendEvent({
       type: 'usage',
       inputTokens: finalInputTokens,
@@ -456,6 +472,7 @@ export async function streamToResponse(
       thinkingTokens: 0,
       cacheCreationTokens: finalUsage.cache_creation_input_tokens || 0,
       cacheReadTokens: finalUsage.cache_read_input_tokens || 0,
+      ...(servedModel ? { modelServed: servedModel } : {}),
     });
 
     const textBlockCount = contentBlocks.filter(b => b.type === 'text').length;
@@ -477,6 +494,7 @@ export async function streamToResponse(
         cacheReadTokens: finalUsage.cache_read_input_tokens || 0,
         cacheCreationTokens: finalUsage.cache_creation_input_tokens || 0,
         rawContentBlocks: finalMessage.content as unknown[],
+        modelServed: servedModel,
       });
     }
 

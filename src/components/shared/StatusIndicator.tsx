@@ -1,5 +1,5 @@
 import { Coins, Zap, TrendingDown } from 'lucide-react';
-import { getModelPricing } from '../../lib/constants';
+import { engineForModelId, getModelPricing } from '../../lib/constants';
 
 interface StatusIndicatorProps {
   inputTokens: number;
@@ -61,7 +61,11 @@ export default function StatusIndicator({
   if (inputTokens === 0 && outputTokens === 0 && !isStreaming) return null;
 
   const hasCacheData = cachedTokens > 0 || cacheCreationTokens > 0;
-  const savingsHint = inputTokens > 0 ? modelSavingsComparison(inputTokens, outputTokens, model) : null;
+  // Wave 0: a subscription engine has no per-token bill. Show the real token
+  // count (cache reads included — they are most of a long prompt) and say
+  // "plan usage" instead of printing dollars derived from a fallback price list.
+  const isPlanUsage = engineForModelId(model) === 'subscription';
+  const savingsHint = inputTokens > 0 && !isPlanUsage ? modelSavingsComparison(inputTokens, outputTokens, model) : null;
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-adv-dark-2 px-3 py-2">
@@ -77,14 +81,14 @@ export default function StatusIndicator({
           <>
             <div className="flex items-center gap-1.5 text-xs text-adv-gray">
               <Zap className="h-3 w-3" />
-              <span>{formatTokens(inputTokens)} in</span>
+              <span>{formatTokens(isPlanUsage ? inputTokens + cachedTokens + cacheCreationTokens : inputTokens)} in</span>
               <span className="text-adv-gray">·</span>
               <span>{formatTokens(outputTokens)} out</span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-adv-gray">
+            <div className="flex items-center gap-1.5 text-xs text-adv-gray" title={isPlanUsage ? 'Runs on your Claude subscription. Tokens are counted; no per-run charge applies.' : undefined}>
               <Coins className="h-3 w-3" />
-              <span>{estimateCost(inputTokens, outputTokens, model, cachedTokens, cacheCreationTokens)}</span>
+              <span>{isPlanUsage ? 'Plan usage' : estimateCost(inputTokens, outputTokens, model, cachedTokens, cacheCreationTokens)}</span>
             </div>
           </>
         )}
@@ -106,7 +110,7 @@ export default function StatusIndicator({
             <div className="flex items-center gap-2 text-xs text-adv-teal">
               <Zap className="h-3.5 w-3.5" />
               <span>
-                Cached: {formatTokens(cachedTokens)} tokens (saved ~{estimateCacheSavings(cachedTokens, model)})
+                Cached: {formatTokens(cachedTokens)} tokens{isPlanUsage ? '' : ` (saved ~${estimateCacheSavings(cachedTokens, model)})`}
               </span>
             </div>
           )}

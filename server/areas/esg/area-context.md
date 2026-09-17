@@ -14,6 +14,7 @@ Mandatory sustainability reporting for large and listed EU companies. Replaces t
 - FY 2025 (reporting in 2026): All other large companies (>250 employees, >€40M turnover, >€20M balance sheet — meeting 2 of 3)
 - FY 2026 (reporting in 2027): Listed SMEs (with opt-out until 2028)
 - FY 2028 (reporting in 2029): Non-EU companies with significant EU turnover (>€150M)
+- [verify: the 2025 CSRD "Omnibus" package (stop-the-clock directive and scope proposals) changed the wave 2 and wave 3 dates above — confirm the current timeline and scope thresholds before relying on this table]
 
 ### ESRS — European Sustainability Reporting Standards
 Issued by EFRAG, adopted by European Commission. The actual disclosure requirements.
@@ -78,7 +79,7 @@ The DMA is the foundation of all CSRD reporting. It determines which ESRS standa
 ## Assurance Requirements
 
 - CSRD mandates **limited assurance** from the outset (attestation that report is reasonable)
-- Pathway to **reasonable assurance** (audit-equivalent) from 2028 as standards develop
+- Pathway to **reasonable assurance** (audit-equivalent) as standards develop [verify: target date]
 - Internal controls over sustainability information are now essential — analogous to ICFR (Internal Controls over Financial Reporting)
 
 ## Common Implementation Challenges
@@ -89,3 +90,5 @@ The DMA is the foundation of all CSRD reporting. It determines which ESRS standa
 4. **Value chain reach** — Understanding suppliers' and customers' sustainability practices
 5. **Estimation methodologies** — Many data points will require estimation; methodology must be documented and defensible
 6. **Assurance readiness** — Controls, documentation, and audit trails must be established before year-end
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

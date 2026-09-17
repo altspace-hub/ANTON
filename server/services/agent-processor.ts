@@ -335,8 +335,22 @@ ${toolDescriptions}`;
   /**
    * Route a query to the best matching agent based on keywords and patterns.
    */
-  async function routeQuery(query: string): Promise<{ agentId: string; agentName: string; confidence: number } | null> {
-    const activeAgents = await agentService.listAgents({ status: 'active' });
+  /**
+   * Pick the best-matching active agent for a query.
+   *
+   * `scope` is an owner predicate from `ownerFilter(req, 'created_by')`. The
+   * authenticated route (POST /api/agents/route) passes it so a team-mode user is not
+   * routed onto another tenant's agent — which would both name that agent and hand back
+   * an id, re-opening by the side door the enumeration listAgents now refuses. The two
+   * deliberately cross-tenant callers (the /agents/public/route storefront and inbound
+   * p2p task routing) pass nothing and stay instance-wide, which is the whole point of
+   * a storefront.
+   */
+  async function routeQuery(
+    query: string,
+    scope: { sql: string; params: string[] } = { sql: '', params: [] },
+  ): Promise<{ agentId: string; agentName: string; confidence: number } | null> {
+    const activeAgents = await agentService.listAgents({ status: 'active' }, scope);
     if (activeAgents.length === 0) return null;
 
     let bestMatch: { agentId: string; agentName: string; confidence: number } | null = null;

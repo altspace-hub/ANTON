@@ -24,6 +24,7 @@ import { mkdirSync, existsSync, unlinkSync } from 'fs';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import type Anthropic from '@anthropic-ai/sdk';
+import { searchScopeForRequest } from '../services/hybrid-search.js';
 import {
   dispatchQuickSearch,
   dispatchThoroughSearch,
@@ -156,12 +157,18 @@ export function createPathfinderRoutes(
 
     const client = anthropic ?? null;
     try {
+      // The engine's local-knowledge step searches every embedded content type,
+      // session_output included, so it needs a principal — and `uid` is not one:
+      // getUserId() falls back to the literal 'solo', which would scope a team-mode
+      // search to a user that does not exist. searchScopeForRequest reads req.user
+      // and defers to the same solo/admin rule as every other guard on the instance.
+      const scope = searchScopeForRequest(req);
       if (depth === 'quick') {
-        await dispatchQuickSearch(db, query.trim(), uid, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
+        await dispatchQuickSearch(db, query.trim(), uid, scope, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
       } else if (depth === 'thorough') {
-        await dispatchThoroughSearch(db, query.trim(), uid, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
+        await dispatchThoroughSearch(db, query.trim(), uid, scope, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
       } else {
-        await dispatchDeepSearch(db, query.trim(), uid, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
+        await dispatchDeepSearch(db, query.trim(), uid, scope, threadId, documentContext, client, callbacks, abortController.signal, searchContext, searchMode);
       }
     } catch (err) {
       sendEvent(res, { type: 'error', message: safeError(err) });

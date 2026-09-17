@@ -13,7 +13,7 @@
 import { Router } from 'express';
 import { getAreas, getArea, getModule, getAllModules, getModuleSystemPrompt } from '../services/module-loader.js';
 import { getPersonas, getPersona } from '../services/personas-manager.js';
-import { getAllSkillsAsync } from '../services/skills-manager.js';
+import { getAllSkills } from '../services/skills-manager.js';
 
 const router = Router();
 
@@ -129,11 +129,12 @@ router.get('/personas/:id', async (req, res) => {
 });
 
 // ── All skills (built-in + disk) ──────────────────────────────
+// Same list and shape as GET /api/skills (routes/skills.ts): the disk packs are
+// preloaded at boot into the synchronous index, so no async load here.
 
 router.get('/skills/all', async (_req, res) => {
   try {
-    const skills = await getAllSkillsAsync();
-    const safe = skills.map(({ prompt: _p, ...rest }) => rest);
+    const safe = getAllSkills().map(({ prompt: _p, ...rest }) => rest);
     res.json(safe);
   } catch {
     res.status(500).json({ error: 'Failed to load skills' });

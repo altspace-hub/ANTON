@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { Users, ChevronRight, Plus, Trash2, Building, Globe, Shield, AlertTriangle } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
 import type { EngagementData, ClientIntelligence } from '@/pages/EngagementWorkspacePage';
+import EngagementIntakeChat from './EngagementIntakeChat';
 
 interface Props {
   engagement: EngagementData;
@@ -74,6 +75,14 @@ export default function EngagementClientIntelligence({ engagement, onUpdate, onN
           Build a structured understanding of who the client is. This context is injected into every execution step so ANTON's outputs reflect the client's actual business, not generic assumptions.
         </p>
       </div>
+
+      {/* Wave 2 (2026-09-08): the model-led intake — answer questions, the form fills. */}
+      <EngagementIntakeChat
+        engagementId={engagement.id}
+        conversation={engagement.intake_conversation}
+        onApplied={onReload}
+        researchAllowed={Boolean(existing?.online_research_authorised)}
+      />
 
       {/* Entity & Structure */}
       <Section title="Entity & Structure" icon={Building}>

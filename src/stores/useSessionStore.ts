@@ -131,6 +131,7 @@ interface SessionState extends SessionMetaState {
   isStreaming: boolean;
   isAssemblingContext: boolean;
   lastSourcesUsed: string[];
+  lastContextUsed: import('@/lib/types').ContextUsed | null;
   streamingText: string;
   streamingThinking: string;
   abortController: AbortController | null;
@@ -267,6 +268,7 @@ export function useSessionStore(): SessionState {
     isStreaming: stream.isStreaming,
     isAssemblingContext: stream.isAssemblingContext,
     lastSourcesUsed: stream.lastSourcesUsed,
+    lastContextUsed: stream.lastContextUsed,
     streamingText: stream.streamingText,
     streamingThinking: stream.streamingThinking,
     abortController: stream.abortController,

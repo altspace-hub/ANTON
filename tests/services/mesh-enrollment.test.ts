@@ -11,7 +11,6 @@
  *   - public_https enrollments are unchanged (no mesh fields emitted)
  */
 
-import 'dotenv/config';
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 import { ed25519, edwardsToMontgomeryPub } from '@noble/curves/ed25519';
 

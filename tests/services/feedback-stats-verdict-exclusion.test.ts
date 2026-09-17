@@ -7,22 +7,16 @@
  * only, so those NULL-rating verdict rows inflated `count`, diluted avgRating, and
  * added a spurious "null" distribution key. The fix adds `AND rating IS NOT NULL`.
  *
- * Requires DATABASE_URL (env or .env) + migration 226; skips otherwise. No LLM.
+ * Requires DATABASE_URL (from tests/setup/db-guard.ts) + migration 226; skips otherwise. No LLM.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch {
-    return undefined;
-  }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();

@@ -41,7 +41,14 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
         body: fd,
       });
       if (!res.ok) throw new Error(await res.text());
+      const created = await res.json().catch(() => null) as { id?: string } | null;
       onReload();
+      // Extract straight away for the documents that define the engagement —
+      // a second click nobody knew to make is how letters sat "uploaded" with
+      // an empty Scope page behind them.
+      if (created?.id && (docType === 'engagement_letter' || docType === 'project_plan')) {
+        await extractDoc(created.id, docType);
+      }
     } catch (e) {
       setError(String(e));
     } finally {
@@ -160,14 +167,22 @@ export default function EngagementSetup({ engagement, onUpdate, onNext, onReload
         <ExtractionPreview engagement={engagement} />
       )}
 
-      {/* Next button */}
-      <div className="flex justify-end pt-2">
+      {/* Next button — extraction is the default path; skipping it is an explicit choice */}
+      <div className="flex items-center justify-end gap-4 pt-2">
+        {letterDoc && !hasExtracted && !extracting && (
+          <button
+            onClick={onNext}
+            className="text-xs text-adv-gray hover:text-adv-off-white hover:underline underline-offset-2"
+          >
+            Skip extraction — I will add the scope manually
+          </button>
+        )}
         <button
-          onClick={onNext}
-          disabled={!letterDoc}
+          onClick={hasExtracted ? onNext : () => { if (letterDoc) extractDoc(letterDoc.id, 'engagement_letter'); }}
+          disabled={!letterDoc || !!extracting}
           className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-adv-teal text-adv-dark text-sm font-medium hover:bg-adv-teal-dark disabled:opacity-40 transition-colors"
         >
-          {hasExtracted ? 'Review Scope' : letterDoc ? 'Continue Without Extraction' : 'Upload letter to continue'}
+          {hasExtracted ? 'Review Scope' : letterDoc ? (extracting ? 'Extracting…' : 'Extract with ANTON') : 'Upload letter to continue'}
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

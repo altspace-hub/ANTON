@@ -76,10 +76,36 @@ export interface CreateWalletParams {
   walletType: 'human' | 'agent';
   ownerAddress?: string;
   agentId?: string;
+  /**
+   * The USER who owns this wallet — `fc_wallets.owner_user_id` (migration 265).
+   * Distinct from `ownerAddress`, which names a parent WALLET, not a person.
+   *
+   * HTTP callers must pass `req.user.id`; it is what every later list / unlock /
+   * spend is scoped against. Omitted (or null) writes an unattributed row, which is
+   * correct only for instance-level callers with no user session — the API-key
+   * gateway and mission-budget. On a team install an unattributed wallet is
+   * invisible to non-admins, so leaving this out of a user-facing path is a
+   * lockout, not a leak.
+   */
+  ownerUserId?: string | null;
   /** Force real-mode keygen even if `fc_connection_config.stub_mode` is
    *  true (e.g. for integration tests). Default: follows the config. */
   forceRealKeygen?: boolean;
 }
+
+/**
+ * An owner predicate produced by `ownerFilter(req, 'owner_user_id')`
+ * (server/middleware/ownership.ts). Empty means unscoped — correct for solo mode,
+ * for admins, and for the instance-level callers (fc-gateway, app-gateway,
+ * mission-budget) that run under an API key or a mission approval rather than a
+ * user session. Same shape collection-manager.getCollectionDocuments takes.
+ */
+export interface WalletOwnerScope {
+  sql: string;
+  params: string[];
+}
+
+const UNSCOPED: WalletOwnerScope = { sql: '', params: [] };
 
 export interface CreateWalletResult {
   id: string;
@@ -110,9 +136,30 @@ export async function createFCWalletService(
 ) {
   // ─── Read path (unchanged from the stub) ──────────────────────────
 
-  async function getWallets() {
+  /** Columns safe to hand to a caller that may serialise the row into an
+   *  HTTP response. Deliberately EXCLUDES the at-rest key material added
+   *  by migrations 210/211 — privkey_encrypted, privkey_iv,
+   *  mnemonic_encrypted, mnemonic_iv (and pubkey, which nothing reads
+   *  here). `getWallets()` is the list feed behind
+   *  GET /api/futurechain/wallets, GET /api/app/org/:id/wallet and the
+   *  public gateway /balance route; a `SELECT *` here shipped the
+   *  encrypted privkey AND the BIP-39 mnemonic ciphertext to every one of
+   *  those responses, which on a default SOLO install is an offline-
+   *  crackable copy of the wallet. Ciphertext is still key material —
+   *  never put it on the wire. Do NOT restore `SELECT *`: if a caller
+   *  needs the privkey it must go through getDecryptedPrivkey(), which
+   *  reads the columns itself and writes an audit record. */
+  const PUBLIC_WALLET_COLUMNS =
+    'id, name, wallet_file_name, address, wallet_type, owner_wallet_address, agent_id, ' +
+    'balance_raw, balance_ftc, utxo_count, balance_updated_at, is_active, ' +
+    'created_at, updated_at, sdk_schema_version';
+
+  /** `scope` comes from `ownerFilter(req, 'owner_user_id')`. Omitting it lists every
+   *  wallet on the instance — see WalletOwnerScope for who is allowed to do that. */
+  async function getWallets(scope: WalletOwnerScope = UNSCOPED) {
     return await db.all<WalletRow>(
-      'SELECT * FROM fc_wallets WHERE is_active = TRUE ORDER BY wallet_type, created_at',
+      `SELECT ${PUBLIC_WALLET_COLUMNS} FROM fc_wallets WHERE is_active = TRUE${scope.sql} ORDER BY wallet_type, created_at`,
+      ...scope.params,
     );
   }
   async function getHumanWallet() {
@@ -160,10 +207,14 @@ export async function createFCWalletService(
       // ── STUB MODE — legacy behaviour, demo address + demo balance ──
       const address = `fc_STUB_${Math.random().toString(36).slice(2, 14)}`;
       await db.run(
-        `INSERT INTO fc_wallets (id, name, wallet_file_name, address, wallet_type, owner_wallet_address, agent_id, balance_ftc, sdk_schema_version)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        `INSERT INTO fc_wallets (id, name, wallet_file_name, address, wallet_type, owner_wallet_address, agent_id, owner_user_id, balance_ftc, sdk_schema_version)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         id, params.name, fileName, address, params.walletType,
         params.ownerAddress ?? null, params.agentId ?? null,
+        // owner_user_id sits BEFORE balance_ftc on purpose: the CRUD tests assert the
+        // demo balance is the LAST bind, and a security column is not worth breaking
+        // an unrelated assertion over.
+        params.ownerUserId ?? null,
         params.walletType === 'human' ? 100.0 : 10.0,
       );
       return { id, address, name: params.name, walletType: params.walletType, sdkSchemaVersion: 1 };
@@ -196,12 +247,13 @@ export async function createFCWalletService(
     await db.run(
       `INSERT INTO fc_wallets (
          id, name, wallet_file_name, address, wallet_type, owner_wallet_address, agent_id,
-         balance_ftc, balance_raw,
+         owner_user_id, balance_ftc, balance_raw,
          pubkey, privkey_encrypted, privkey_iv, mnemonic_encrypted, mnemonic_iv,
          sdk_schema_version, key_version
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 2, ?)`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, 2, ?)`,
       id, params.name, fileName, sdkW.address, params.walletType,
       params.ownerAddress ?? null, params.agentId ?? null,
+      params.ownerUserId ?? null,
       pubkeyBuf,
       encPriv ? encPriv.encrypted : privkeyBuf,
       encPriv ? encPriv.iv : null,
@@ -335,16 +387,22 @@ export async function createFCWalletService(
 
   // ─── Balance refresh — Phase 2 hits real RPC when configured ──────
 
-  async function refreshBalances() {
+  /** `scope` restricts BOTH the rows refreshed and the rows returned. A team
+   *  non-admin refreshing every tenant's balances would also get them all back in
+   *  the response, which is the same leak GET /futurechain/wallets had. */
+  async function refreshBalances(scope: WalletOwnerScope = UNSCOPED) {
     if (await shouldUseStub()) {
-      await db.run('UPDATE fc_wallets SET balance_updated_at = NOW() WHERE is_active = TRUE');
-      return await getWallets();
+      await db.run(
+        `UPDATE fc_wallets SET balance_updated_at = NOW() WHERE is_active = TRUE${scope.sql}`,
+        ...scope.params,
+      );
+      return await getWallets(scope);
     }
     const cfg = await getConnectionConfig?.();
     const nodeUrl = cfg?.node_url;
-    if (!nodeUrl) return await getWallets();
+    if (!nodeUrl) return await getWallets(scope);
     const client = new RpcClient({ endpoint: nodeUrl, timeoutMs: 8_000 });
-    const rows = await getWallets();
+    const rows = await getWallets(scope);
     for (const row of rows) {
       if ((row.sdk_schema_version ?? 1) < 2) continue; // stub wallets: skip
       try {
@@ -358,7 +416,7 @@ export async function createFCWalletService(
         console.warn(`[${COMPONENT}] refreshBalances: ${row.address} failed: ${(e as Error).message}`);
       }
     }
-    return await getWallets();
+    return await getWallets(scope);
   }
 
   return {

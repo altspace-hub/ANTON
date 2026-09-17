@@ -24,9 +24,8 @@
  */
 
 import { createHash } from 'crypto';
-import type Anthropic from '@anthropic-ai/sdk';
 import type { DatabaseAdapter } from '../db/database.js';
-import { getClient, isApiKeyConfigured } from './claude-client.js';
+import { callChat } from './provider-router.js';
 import { parseJson, ServiceError } from '../lib/hardware-helpers.js';
 
 // ── Vocabulary ────────────────────────────────────────────────────────────────
@@ -355,9 +354,8 @@ function englishSkeletonFor(kind: CapacityArtefactKind, ctx: GenerationContext):
   return lines.join('\n');
 }
 
-async function claudeLocalizedFor(kind: CapacityArtefactKind, ctx: GenerationContext): Promise<string> {
+async function claudeLocalizedFor(db: DatabaseAdapter, kind: CapacityArtefactKind, ctx: GenerationContext): Promise<string> {
   const def = CAPACITY_ARTEFACT_REGISTRY.find(r => r.kind === kind)!;
-  const anthropic = getClient();
 
   const sections = def.sections.map((s, i) => `${i + 1}. ${s}`).join('\n');
   const regional = ctx.regional_alternatives.length
@@ -421,31 +419,32 @@ ${cases}
 
 Now produce the document in ${ctx.project.working_language}, following the section list exactly.`;
 
-  const resp = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 3000,
+  // Medium tier of the Settings default — operator documentation, not a
+  // one-line utility call and not a board pack.
+  const resp = await callChat({
+    tier: 'medium',
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
+    maxTokens: 3000,
+    db,
   });
-
-  // Extract text content
-  const textBlocks = resp.content.filter((b): b is Anthropic.TextBlock => b.type === 'text');
-  return textBlocks.map(b => b.text).join('').trim();
+  return resp.text.trim();
 }
 
-async function generateContent(kind: CapacityArtefactKind, ctx: GenerationContext): Promise<{ content: string; generatorKind: GeneratorKind }> {
-  if (!isApiKeyConfigured()) {
-    return { content: englishSkeletonFor(kind, ctx), generatorKind: 'english-skeleton-fallback' };
-  }
+async function generateContent(db: DatabaseAdapter, kind: CapacityArtefactKind, ctx: GenerationContext): Promise<{ content: string; generatorKind: GeneratorKind }> {
+  // No key gate: the router follows whatever provider the instance is set to
+  // (an `sdk:` default needs no key at all). A failed call — engine disabled,
+  // no provider configured, network — lands in the catch and the English
+  // skeleton, which is what the gate used to produce, with the reason logged.
   try {
-    const content = await claudeLocalizedFor(kind, ctx);
+    const content = await claudeLocalizedFor(db, kind, ctx);
     if (!content || content.length < 200) {
       // Defensive: empty or near-empty model output → fallback
       return { content: englishSkeletonFor(kind, ctx), generatorKind: 'english-skeleton-fallback' };
     }
     return { content, generatorKind: 'claude-localized' };
   } catch (err) {
-    console.warn('[humanitarian-service] Claude generation failed, falling back to English skeleton:', err instanceof Error ? err.message : err);
+    console.warn('[humanitarian-service] purpose=hw-humanitarian-artefact generation failed, falling back to English skeleton:', err instanceof Error ? err.message : err);
     return { content: englishSkeletonFor(kind, ctx), generatorKind: 'english-skeleton-fallback' };
   }
 }
@@ -543,7 +542,7 @@ export function createHumanitarianService(db: DatabaseAdapter) {
     const def = CAPACITY_ARTEFACT_REGISTRY.find(r => r.kind === input.kind);
     if (!def) throw new Error(`Unknown capacity-transfer artefact kind: ${input.kind}`);
 
-    const { content, generatorKind } = await generateContent(input.kind, ctx);
+    const { content, generatorKind } = await generateContent(db, input.kind, ctx);
     const inputsSnapshot = {
       family_id: ctx.project.family_id,
       region: ctx.project.region,

@@ -11,7 +11,7 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Local-first web application that enables consultants, lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a structured, guided interface — no command-line knowledge required.
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.
-**Primary AI:** Anthropic Claude (`claude-opus-4-8` default). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
+**Primary AI:** Anthropic Claude. The default model is the Settings pick (`app_settings.default_model`); this instance runs `sdk:claude-opus-5` on the subscription SDK engine (`server/services/claude-sdk-client.ts` — the machine's Claude Code login, no API key). With an API key and no Settings pick the tier default is `claude-opus-4-8`. Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
 **Companion App:** PWA + Capacitor Android wrapper at `src/app/` — separate Vite build (`dist/app/`) for end-users on phones.
 **Design philosophy:** "Start with the problem, not the solution." Every module begins with a clear problem statement and pre-configured AI behaviour. Users can override everything, but the defaults should produce excellent results for someone who just clicks "Run."
 
@@ -58,10 +58,11 @@ CREATE USER anton WITH PASSWORD 'anton';
 CREATE DATABASE anton OWNER anton;
 \q
 
-# 3. Install Ollama (optional — local LLM models + institutional-memory embeddings)
-#    NOTE: vector RAG search uses OpenAI (text-embedding-3-small via ChromaDB) and needs
-#    OPENAI_API_KEY; without it, knowledge search falls back to keyword. nomic-embed-text
-#    below powers institutional-memory/atom embeddings only, not the RAG query path.
+# 3. Install Ollama (optional — local LLM models + every embedding ANTON makes)
+#    nomic-embed-text embeds institutional-memory atoms, knowledge-pack entities
+#    AND collection-RAG document chunks into the one `embeddings` table (local,
+#    nothing leaves). No OpenAI key and no Chroma server are needed; without an
+#    embedder, collection search falls back to keyword matching and says so.
 # Download from https://ollama.com and install, then:
 ollama pull nomic-embed-text
 
@@ -95,7 +96,7 @@ pnpm run build && pnpm run start
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
 | Database | PostgreSQL | 16+ |
-| Primary AI | Anthropic Claude | claude-opus-4-8 (Opus 4.8) |
+| Primary AI | Anthropic Claude | Settings default — `sdk:claude-opus-5` here (subscription engine); `claude-opus-4-8` is the API tier default |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, Mistral, Ollama | — |
 | File processing | mammoth (docx), pdf-parse, xlsx | — |
 | Export | docx, exceljs, pdfkit, pptxgenjs, fountain | — |
@@ -183,7 +184,8 @@ Claude is the default and most deeply integrated. Other providers work through a
 
 | Provider | Env Variable | Default Model | Adapter File |
 |---|---|---|---|
-| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-4-8` | Built-in (`claude-client.ts`) |
+| Anthropic (subscription engine) | none — Claude Code login; enable in Settings → Execution engines (`SDK_ENGINE_ENABLED`) | `sdk:claude-opus-5` | `server/services/claude-sdk-client.ts` |
+| Anthropic (API) | `ANTHROPIC_API_KEY` | `claude-opus-4-8` | Built-in (`claude-client.ts`) |
 | OpenAI | `OPENAI_API_KEY` | `gpt-4o` | `server/services/model-adapter.ts` |
 | Azure OpenAI | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` | (per deployment) | `server/services/adapters/azureOpenaiAdapter.ts` |
 | Google | `GOOGLE_API_KEY` | `gemini-2.0-flash` | `server/services/model-adapter.ts` |
@@ -194,17 +196,20 @@ Azure OpenAI supports reasoning models (o3, o4-mini) with effort mapping, multi-
 
 Set the API key in `.env` to enable each provider. Users switch models in the UI per session.
 
+**Every LLM call site follows the Settings default.** `server/services/provider-router.ts` (`getConfiguredProvider` / `resolveModel` / `mapModelToProvider`) resolves hardcoded `claude-*` ids and `large` / `medium` / `small` tiers to the configured engine — under an `sdk:` default, large-tier work runs the default model and medium/small run `sdk:claude-sonnet-5` so utility calls are not promoted to Opus. Never construct an Anthropic client in a new route: go through `streamChat` / `callChat`, which carry the SDK engine's branches (including streaming, via a forwarding sink). Capability lookups (context budget, 1M checks, output ceilings) must strip the engine prefix with `capabilityModelId()` from `server/services/engine-model-id.ts`; an id that will be dispatched must keep it. The SDK engine is a text engine — the one opt-in exception is ANTON's `web_search` tool, which grants exactly `WebSearch` + `WebFetch` for that run.
+
 ### Thinking Levels
 
-| Level | Description | Claude Opus 4.8 | Sonnet/Haiku |
+| Level | Description | Adaptive Claude (Fable 5.x, Opus 5, Sonnet 5, Opus 4.8, Sonnet 4.6) | Budget models (Sonnet 4.5, Haiku 4.5) |
 |---|---|---|---|
 | `quick` | No deep reasoning | `effort: 'low'` | thinking disabled |
 | `think` | Standard reasoning | `effort: 'medium'` | `budget_tokens: 4096` |
-| `think_hard` | Deep reasoning | `effort: 'high'` | `budget_tokens: 16384` |
-| `investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
-| `plan_first` | Plan then execute | `effort: 'max'` | `budget_tokens: 32768` |
+| `think_hard` | Deep reasoning | `effort: 'high'` | `budget_tokens: 10000` |
+| `investigate` | Extended reasoning | `effort: 'xhigh'` (`'max'` on Sonnet 4.6, which lacks the rung) | `budget_tokens: 32768` |
+| `plan_first` | Plan then execute | `effort: 'xhigh'` (same clamp) | `budget_tokens: 32768` |
+| `deep_investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
 
-For `claude-opus-4-8`, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for Opus.
+For adaptive models, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for them — Fable 5.x rejects it with a 400. The ladder lives in exactly one place, `server/services/thinking-map.ts`: `anthropicEffort(level, model)` clamps `xhigh` to `max` on models that predate it, and `model-capabilities.ts` derives its per-model config from it rather than keeping a second table.
 
 ### Export Pipeline
 
@@ -503,6 +508,8 @@ When adding features, ask: *which layer does this serve, and does it make the ne
 - **550+ Expert Modules** — Across FCP, legal, healthcare, finance, PE/VC, education, NGO, creative
 - **School Mode** — Educational interface with teacher oversight
 - **Multi-format Export** — Every output exportable to md/docx/xlsx/pdf/pptx
+- **Memory (knowledge atoms)** — module runs (never open chat) store their output in `workflow_outputs` with a learning ledger (`learning_status` pending → summarised → learned / skipped / failed); the summary + extraction run after the SDK slot is released and an hourly sweep (`server/services/memory-sweep.ts`, `MEMORY_SWEEP_DISABLED`) finishes refused ones. The extractor (`atom-extractor.ts`) records entities, drops `status.*` chatter, dedupes by `content_hash` and sets `owner_user_id`. Injection into Work runs goes through `server/services/atom-injection-gate.ts` (Settings `atom_injection_mode`: auto | on | off; auto waits for 100 module atoms + 30 ratings) via `buildAtomLayerDetailed`; injected atom ids ride in `contextUsed.atoms` and `retrieval_feedback.message_id`. Atom lifecycle (supersede / deactivate / delete / subject-search / by-subject erasure) lives in `server/routes/knowledge.ts`. After every answer `session-conclusion.ts` writes the session's conclusion (one `session_snapshots` row per answer + `sessions.summary`; the "Session conclusion" panel reads it); `project-context.ts` reads those, the matter brief and the engagement of the project. The Gap Assessor, engagement iterations and mission tasks feed the same ledger. Settings → "Memory & governance" (`/api/settings/memory-governance`) holds `atom_injection_mode`, `oversight_blocks_export` and `structured_extraction_auto`.
+- **Run record, replay and governance (Waves 5–6)** — every engine path writes `run_artifacts` (message runs plus agentic `gap_batch` / `task_step` / `engagement_step` parents, with `run_tool_calls`; `server/services/run-artifact-writer.ts`, read via `/api/run-artifacts/*`). `POST /api/rerun` with `mode: 'replay'` sends the stored prompt byte-for-byte to the served model and fails closed when that model is gone. The two deepest thinking levels run as revelation chains through the router on every Claude engine. The agentic runner wraps tool results as untrusted data and hands the subprocess an allow-listed environment; `sdk_daily_run_cap` caps subscription runs. After every answer the seven Work compliance rules run (`server/services/compliance-on-completion.ts`, setting `compliance_on_completion`); every changing API request writes `audit_events`; `callChat({ purpose })` audits utility calls. Team mode checks per-role module access (`server/services/module-access.ts`). Module bundles embed skill and persona text and block on injection findings unless `acceptInjectionFindings` is sent. `tests/lint/no-router-bypass.test.ts` fails on a new `getClient()` / `new Anthropic` / `callSync` site; the embedding provider is pinned in app_settings (`server/services/embedding-pin.ts`).
 - **Output Transformation System** (Phase 1) — Post-hoc renderer registry + Transform Panel. Every module run produces Markdown + a structured JSON payload (via Haiku-based extractor, cached by content hash); renderers are declared in `server/services/renderer-registry.builtin.ts` and filtered per-session by content type + required fields. Built-in renderers: the 5 existing exports + Mermaid flowchart / Gantt / sequence / mindmap, SVG risk heatmap, executive one-pager, plain-language, board deck, standalone HTML, devil's advocate + regulator's-eye reviews. Adding a new format = a single file in `server/services/renderers/` + a registry entry.
 
 ---
@@ -526,8 +533,10 @@ See `.env.example` for the complete list. Key variables:
 | `MAX_CONTEXT_TOKENS` | No | Max context window (default: 900000) |
 | `ALLOWED_FOLDER_PATHS` | No | Comma-separated whitelist for filesystem-connector access |
 | `VECTOR_BACKEND` | No | Embeddings-table vector engine: `sqlite` (default, in-process JS cosine) or `pgvector` (Postgres HNSW; needs the pgvector extension + `POST /api/embeddings/backfill-vec`). Auto-falls back to JS if unavailable. |
-| `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. |
+| `MARKETS_AUTOMATION` | No | `true` opts in to the token/data-spending markets crons (~20 jobs). Unset = only free deterministic loops run. The `MARKETS_*_DISABLED` flags below are finer overrides within an enabled tier. |
+| `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. Markets LLM calls run on the Settings → "Markets AI model" choice (app_settings `markets_model`, e.g. `sdk:claude-opus-5` for subscription auth); unset falls back to the utility model. |
 | `MARKETS_FETCH_DISABLED` | No | `true` pauses every external markets data fetch (FMP, news, RSS). |
+| `MARKETS_REBALANCE_SHADOW` | No | `true` records what scheduled rebalancing WOULD trade without moving any holding, so prediction→portfolio attribution accrues before anything is risked. Only active while `MARKETS_AUTOREBALANCE_DISABLED=true`; the two are alternatives, not layers. Shadow rows carry `trigger_type='shadow'` and are reported apart from executed P&L in Markets → Learning → Portfolio Impact. |
 | `RADAR_AUTOMATION_DISABLED` | No | `true` disables radar auto-scan + scheduled radar cron. Manual UI scans still work. |
 
 ---

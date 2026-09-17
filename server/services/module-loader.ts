@@ -18,6 +18,7 @@ import fs from 'fs-extra';
 import { watch as fsWatch } from 'node:fs';
 import { fileURLToPath } from 'url';
 import type { AreaConfig, ModuleConfig, LoadedArea } from '../types/area-config.js';
+import { getSkillById, isDiskSkillsPreloaded } from './skills-manager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AREAS_DIR = path.join(__dirname, '..', 'areas');
@@ -26,6 +27,32 @@ const AREAS_DIR = path.join(__dirname, '..', 'areas');
 
 let _areas: LoadedArea[] | null = null;
 let _moduleIndex: Map<string, ModuleConfig> | null = null; // moduleId → module
+
+// Modules already warned about for a `recommendedSkills` id no skill has. The
+// dev watcher reloads every module on each edit; one warning per module is enough.
+const _warnedRecommendedSkills = new Set<string>();
+
+/**
+ * Check a module's `recommendedSkills` against the skill library and warn ONCE
+ * per module for ids no skill has — the class of bug the client-side
+ * MODULE_DEFAULT_SKILLS map carried for months (eight ids that never existed,
+ * attached on "Apply" and printed by the trail as injected).
+ * Skipped until the disk packs are preloaded, so a module loaded during boot
+ * is not reported for a pack that is about to appear.
+ * Returns the unknown ids (empty when all resolve or the check was skipped).
+ */
+export function validateRecommendedSkills(moduleId: string, recommendedSkills: unknown): string[] {
+  if (!Array.isArray(recommendedSkills) || !isDiskSkillsPreloaded()) return [];
+  const unknown: string[] = [];
+  for (const id of recommendedSkills) {
+    if (typeof id !== 'string' || !getSkillById(id)) unknown.push(String(id));
+  }
+  if (unknown.length > 0 && !_warnedRecommendedSkills.has(moduleId)) {
+    _warnedRecommendedSkills.add(moduleId);
+    console.warn(`[module-loader] module '${moduleId}' recommends skill(s) that do not exist: ${unknown.join(', ')}`);
+  }
+  return unknown;
+}
 
 // ── Dev-mode file watcher ─────────────────────────────────────
 // Invalidates cache whenever any area JSON/MD file changes so
@@ -54,6 +81,7 @@ async function loadModule(modulePath: string, areaId: string): Promise<ModuleCon
   try {
     const config: ModuleConfig = await fs.readJson(configPath);
     config.areaId = areaId;
+    validateRecommendedSkills(config.id, config.recommendedSkills);
 
     if (await fs.pathExists(promptPath)) {
       config.systemPrompt = (await fs.readFile(promptPath, 'utf-8')).trim();

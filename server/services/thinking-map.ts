@@ -18,31 +18,60 @@ import type { ThinkingLevel } from '../../src/lib/types.js';
 
 // ── Anthropic ────────────────────────────────────────────────────────────────
 
-export type AnthropicEffort = 'low' | 'medium' | 'high' | 'max';
+export type AnthropicEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 /** Adaptive-effort models (thinking:{type:'adaptive'} + output_config.effort).
  *  Everything else uses the budget_tokens mechanism below. Keep in sync with the
- *  Anthropic model catalogue — budget_tokens is deprecated on these. */
+ *  Anthropic model catalogue — budget_tokens is deprecated on these, and Fable
+ *  5.x REJECTS it (400), so a model missing from this list is not "slightly
+ *  worse", it fails every request. */
 export function anthropicUsesAdaptive(model: string): boolean {
-  return model === 'claude-fable-5'
+  return model === 'claude-fable-5-1'
+    || model === 'claude-fable-5'
     || model === 'claude-opus-5'
     || model === 'claude-sonnet-5'
     || model === 'claude-opus-4-8'
     || model === 'claude-sonnet-4-6';
 }
 
+/** Models that accept effort 'xhigh' — Opus 4.7 and later, Sonnet 5, the Fable
+ *  tier. Sonnet 4.6 and the 4.5 generation stop at 'max'. Same catalogue
+ *  discipline as anthropicUsesAdaptive. */
+export function anthropicSupportsXhigh(model: string): boolean {
+  return model === 'claude-fable-5-1'
+    || model === 'claude-fable-5'
+    || model === 'claude-opus-5'
+    || model === 'claude-sonnet-5'
+    || model === 'claude-opus-4-8'
+    || model === 'claude-opus-4-7';
+}
+
+/**
+ * Six ANTON levels onto five Anthropic efforts. The top three used to collapse
+ * to 'max', which left the 'xhigh' rung — the one Anthropic recommends for long
+ * agentic work on Claude 5 — unreachable from ANTON. Same shape as the OpenAI
+ * ladder below: investigate/plan_first take xhigh, deep_investigate takes max.
+ */
 const ANTHROPIC_EFFORT: Record<ThinkingLevel, AnthropicEffort> = {
   quick: 'low',
   think: 'medium',
   think_hard: 'high',
-  investigate: 'max',
-  plan_first: 'max',
+  investigate: 'xhigh',
+  plan_first: 'xhigh',
   deep_investigate: 'max',
 };
 
-/** Effort for an adaptive-thinking Anthropic model. */
-export function anthropicEffort(level: ThinkingLevel): AnthropicEffort {
-  return ANTHROPIC_EFFORT[level];
+/**
+ * Effort for an adaptive-thinking Anthropic model, clamped to what it accepts.
+ * 'xhigh' folds to 'max' when the model is not given or predates the rung —
+ * exactly the value those levels sent before the ladder grew, so nothing
+ * changes for a model that cannot use it, and an unknown model never gets a
+ * value that would 400.
+ */
+export function anthropicEffort(level: ThinkingLevel, model?: string): AnthropicEffort {
+  const effort = ANTHROPIC_EFFORT[level];
+  if (effort === 'xhigh' && !(model && anthropicSupportsXhigh(model))) return 'max';
+  return effort;
 }
 
 // Canonical budget_tokens per level for older Anthropic models (Sonnet 4.5, Haiku).

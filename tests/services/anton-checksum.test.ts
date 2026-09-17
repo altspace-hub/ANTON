@@ -378,6 +378,13 @@ describe('market import endpoints validate the bundle first (F1.3)', () => {
     const { createExchangeRoutes } = await import('../../server/routes/exchange.js');
     const app = express();
     app.use(express.json());
+    // In server/index.ts the exchange router sits below authMiddleware, which
+    // always stamps req.user (solo: a synthetic admin). The import routes now
+    // require it (Wave 6 role guard), so the harness models that middleware.
+    app.use((req, _res, next) => {
+      (req as unknown as { user: { id: string; username: string; role: 'admin' } }).user = { id: 'solo', username: 'solo', role: 'admin' };
+      next();
+    });
     app.use('/api', await createExchangeRoutes(importerDb.db));
     await new Promise<void>((resolve) => {
       server = app.listen(0, '127.0.0.1', () => resolve());

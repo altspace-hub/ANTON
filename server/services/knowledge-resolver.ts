@@ -9,6 +9,25 @@
  *   3. localFolder     — Scan folder(s), extract text from all supported files
  *   4. combinedMode    — Instruction layer for multi-source priority/merge
  *   5. ragMode         — BM25 retrieval from pre-indexed folder chunks
+ *
+ * Packing order and the budget (Wave 2, 2026-09-16 — budget fairness):
+ *   The user's own material is packed first, then the references it asked
+ *   for, then retrieval:
+ *     uploads → project documents → online references → local folders → RAG chunks
+ *   (uploads and project documents arrive together in `uploadedFilePaths`,
+ *   uploads first — the caller orders them.) Before this, sources were packed
+ *   in request order (URLs → folders → uploads), so an early URL could crowd
+ *   out the user's own attachment.
+ *
+ *   Every source is packed WHOLE or SKIPPED WHOLE. A source that would push
+ *   the total past the budget is skipped, recorded in `sourceDetails` with a
+ *   note starting "skipped — context budget", counted in
+ *   `skippedCount` / `skippedTokens`, and the next source is tried — a
+ *   smaller one may still fit. The resolver therefore never returns a
+ *   `tokenEstimate` above the budget by its own inclusion decision. Every
+ *   source is measured (extracted / fetched) even when it ends up skipped,
+ *   so the skip carries its real size — that is the visibility the user
+ *   needs to decide whether to raise MAX_CONTEXT_TOKENS or trim sources.
  */
 
 import path from 'path';
@@ -16,6 +35,7 @@ import crypto from 'crypto';
 import fs from 'fs-extra';
 import type { DatabaseAdapter } from '../db/database.js';
 
+import { checkFolderPath } from '../lib/folder-guard.js';
 import { extractTextFromFile } from './text-extractor.js';
 import { fetchUrl } from './url-fetcher.js';
 import { retrieveChunks } from './rag/retriever.js';
@@ -43,6 +63,21 @@ const MAX_FILES_TOTAL = 5_000;
 const MAX_CONTEXT_TOKENS = Number(process.env.MAX_CONTEXT_TOKENS) || 900_000;
 const ESTIMATED_SYSTEM_PROMPT_TOKENS = 8_000;
 const AVAILABLE_CONTEXT_TOKENS = MAX_CONTEXT_TOKENS - ESTIMATED_SYSTEM_PROMPT_TOKENS;
+
+/**
+ * The one note every budget skip carries, whatever the source type — the UI
+ * matches on the "skipped — context budget" prefix (and claude.ts flags any
+ * uploaded_file row with a note as skipped). Same text the uploads path has
+ * always used, so existing detection keeps working.
+ */
+export const BUDGET_SKIP_NOTE = 'skipped — context budget reached';
+
+/** A source that would not fit even into an EMPTY budget — says so, so the
+ *  user knows trimming other sources will not help; only a bigger budget or a
+ *  smaller document will. Shares the "skipped — context budget" prefix. */
+export function budgetTooLargeNote(tokens: number, budget: number): string {
+  return `skipped — context budget: this document alone (~${tokens.toLocaleString('en-US')} tokens) exceeds the whole budget (~${budget.toLocaleString('en-US')} tokens)`;
+}
 
 async function scanFolder(
   folderPath: string,
@@ -93,6 +128,9 @@ export async function resolveKnowledgeSources(
     /** Model-aware token budget (resolveContextBudget in context-budget.ts).
      *  Falls back to the env/900k default when omitted. */
     contextBudget?: number;
+    /** Display name per uploaded path — project files carry a random
+     *  on-disk name, and the model should see "Engagement letter.pdf (project)". */
+    fileLabels?: Record<string, string>;
   },
 ): Promise<ResolvedKnowledge> {
   const result: ResolvedKnowledge = {
@@ -102,6 +140,8 @@ export async function resolveKnowledgeSources(
     tokenEstimate: 0,
     sourceManifest: [],
     sourceDetails: [],
+    skippedCount: 0,
+    skippedTokens: 0,
   };
   const sourceDetails = result.sourceDetails!;
   const resolvedAt = () => new Date().toISOString();
@@ -112,9 +152,32 @@ export async function resolveKnowledgeSources(
   // Use caller-provided budget (e.g. 800k for 1M context beta), else env/default.
   const effectiveBudget = options?.contextBudget ?? AVAILABLE_CONTEXT_TOKENS;
 
+  // usedTokens counts the extracted source text only (every estimate via
+  // estimateTokens — one tokenizer for the whole resolver). The resolver's
+  // own headers and separators are a few tokens per source and are covered
+  // by the system-prompt reserve that context-budget.ts subtracts.
   let usedTokens = 0;
+  let skippedCount = 0;
+  let skippedTokens = 0;
   const contextParts: string[] = [];
   const systemParts: string[] = [];
+
+  /**
+   * Whole-or-skip: the note when a source of `tokens` cannot be packed on top
+   * of what is already used, undefined when it fits. Never includes a source
+   * that would cross the budget.
+   */
+  const budgetSkipNote = (tokens: number): string | undefined => {
+    if (tokens > effectiveBudget) return budgetTooLargeNote(tokens, effectiveBudget);
+    if (usedTokens + tokens > effectiveBudget) return BUDGET_SKIP_NOTE;
+    return undefined;
+  };
+  const recordSkip = (type: string, tokens: number): void => {
+    skippedCount += 1;
+    skippedTokens += tokens;
+    // Type and sizes only — never the source name (CLAUDE.md: no PII in logs).
+    console.warn(`[resolver] skipped ${type} — context budget (${usedTokens}/${effectiveBudget} used, +${tokens} would not fit)`);
+  };
 
   // ── MODE 1: Claude's Own Knowledge + Web Search ─────────────────────────────
 
@@ -146,18 +209,46 @@ export async function resolveKnowledgeSources(
     });
   }
 
+  // ── Uploaded files + project documents — the user's own material, packed first ──
+
+  if (uploadedFilePaths.length > 0) {
+    for (const filePath of uploadedFilePaths) {
+      const label = options?.fileLabels?.[filePath] ?? path.basename(filePath);
+      const text = await extractTextFromFile(filePath);
+      if (!text) continue;
+
+      const tokens = estimateTokens(text);
+      const skipNote = budgetSkipNote(tokens);
+      if (skipNote) {
+        contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${label}`);
+        sourceDetails.push({ type: 'uploaded_file', name: label, path: filePath, charCount: text.length, contentHashed: false, note: skipNote });
+        recordSkip('uploaded_file', tokens);
+        continue;
+      }
+
+      contextParts.push(
+        `\n### UPLOADED DOCUMENT: ${label}\n\n${text}`
+      );
+      usedTokens += tokens;
+      result.sourceManifest.push(`${label} (uploaded)`);
+      sourceDetails.push({
+        type: 'uploaded_file',
+        name: label,
+        path: filePath,
+        sha256: contentSha256(text),
+        charCount: text.length,
+        retrievedAt: resolvedAt(),
+        contentHashed: true,
+      });
+    }
+  }
+
   // ── MODE 2: Online Reference URLs ────────────────────────────────────────────
 
   if (config.modes.onlineReference?.enabled && config.modes.onlineReference.urls.length > 0) {
     result.sourceManifest.push(`${config.modes.onlineReference.urls.length} online reference(s)`);
 
     for (const url of config.modes.onlineReference.urls) {
-      if (usedTokens >= effectiveBudget) {
-        contextParts.push(`\n### ONLINE REFERENCE (SKIPPED — context budget reached): ${url}`);
-        sourceDetails.push({ type: 'url', name: url, url, contentHashed: false, note: 'skipped — context budget reached' });
-        continue;
-      }
-
       const fetchResult = await fetchUrl(url, config.modes.onlineReference.fetchDepth || 'full');
 
       if (fetchResult.error) {
@@ -168,11 +259,23 @@ export async function resolveKnowledgeSources(
         continue;
       }
 
+      // The fetcher's own tokenEstimate is a words×1.3 heuristic; the budget
+      // is enforced with the resolver's tokenizer so every source is measured
+      // the same way.
+      const tokens = estimateTokens(fetchResult.text);
+      const skipNote = budgetSkipNote(tokens);
+      if (skipNote) {
+        contextParts.push(`\n### ONLINE REFERENCE (SKIPPED — context budget): ${url}`);
+        sourceDetails.push({ type: 'url', name: fetchResult.title || url, url, charCount: fetchResult.text.length, contentHashed: false, note: skipNote });
+        recordSkip('url', tokens);
+        continue;
+      }
+
       const titleLine = fetchResult.title ? ` — ${fetchResult.title}` : '';
       contextParts.push(
         `\n### ONLINE REFERENCE: ${url}${titleLine}\n${fetchResult.text}`
       );
-      usedTokens += fetchResult.tokenEstimate;
+      usedTokens += tokens;
       sourceDetails.push({
         type: 'url',
         name: fetchResult.title || url,
@@ -188,9 +291,14 @@ export async function resolveKnowledgeSources(
   // ── MODE 3: Local Folder(s) ─────────────────────────────────────────────────
 
   if (config.modes.localFolder?.enabled && config.modes.localFolder.folderPaths.length > 0) {
-    const extensions = config.modes.localFolder.fileFilter?.length
-      ? config.modes.localFolder.fileFilter
+    // The file filter arrives in the same request body as the folder paths, so it
+    // is NOT a trust boundary: an unclamped filter of [''] matches every
+    // extensionless file (id_rsa, credentials…) and ['.pem'] would harvest keys.
+    // Intersect with SUPPORTED_EXTENSIONS — the caller may narrow, never widen.
+    const requestedExtensions = config.modes.localFolder.fileFilter?.length
+      ? config.modes.localFolder.fileFilter.map(e => String(e).toLowerCase())
       : SUPPORTED_EXTENSIONS;
+    const extensions = requestedExtensions.filter(e => SUPPORTED_EXTENSIONS.includes(e));
     const recursive = config.modes.localFolder.recursive ?? true;
     let totalFilesIndexed = 0;
 
@@ -200,7 +308,25 @@ export async function resolveKnowledgeSources(
         continue;
       }
 
-      const allFilePaths = await scanFolder(folderPath, recursive, extensions);
+      // folderPaths comes straight off the POST /api/claude/message body and
+      // ends at fs.readdir + extractTextFromFile, i.e. arbitrary host files
+      // pasted into the prompt. Same whitelist the folder browser enforces
+      // (CLAUDE.md pattern 6); skip the folder rather than failing the whole run
+      // so one bad path does not lose the user's other sources.
+      const guard = checkFolderPath(folderPath);
+      if (!guard.ok) {
+        contextParts.push(`\n### LOCAL FOLDER (REFUSED — ${guard.error}; add it to ALLOWED_FOLDER_PATHS to use it): ${folderPath}`);
+        sourceDetails.push({
+          type: 'local_folder',
+          name: folderPath,
+          path: folderPath,
+          contentHashed: false,
+          note: `refused — ${guard.error}`,
+        });
+        continue;
+      }
+
+      const allFilePaths = await scanFolder(guard.resolved, recursive, extensions);
       // TOKEN-05: Cap per-folder and apply remaining total budget
       const remainingTotal = MAX_FILES_TOTAL - totalFilesIndexed;
       const filePaths = allFilePaths
@@ -213,16 +339,18 @@ export async function resolveKnowledgeSources(
       totalFilesIndexed += filePaths.length;
 
       for (const filePath of filePaths) {
-        if (usedTokens >= effectiveBudget) {
-          contextParts.push(`\n### LOCAL DOCUMENT (SKIPPED — context budget): ${path.basename(filePath)}`);
-          sourceDetails.push({ type: 'local_file', name: path.basename(filePath), path: filePath, contentHashed: false, note: 'skipped — context budget reached' });
-          continue;
-        }
-
         const text = await extractTextFromFile(filePath);
         if (!text) continue;
 
         const tokens = estimateTokens(text);
+        const skipNote = budgetSkipNote(tokens);
+        if (skipNote) {
+          contextParts.push(`\n### LOCAL DOCUMENT (SKIPPED — context budget): ${path.basename(filePath)}`);
+          sourceDetails.push({ type: 'local_file', name: path.basename(filePath), path: filePath, charCount: text.length, contentHashed: false, note: skipNote });
+          recordSkip('local_file', tokens);
+          continue;
+        }
+
         contextParts.push(
           `\n### LOCAL DOCUMENT: ${path.basename(filePath)}\nSource folder: ${folderPath}\n\n${text}`
         );
@@ -238,38 +366,6 @@ export async function resolveKnowledgeSources(
           contentHashed: true,
         });
       }
-    }
-  }
-
-  // ── Uploaded files (always included if present) ───────────────────────────
-
-  if (uploadedFilePaths.length > 0) {
-    for (const filePath of uploadedFilePaths) {
-      if (usedTokens >= effectiveBudget) {
-        console.warn(`[resolver] SKIPPING ${path.basename(filePath)} — budget exhausted (${usedTokens}/${effectiveBudget})`);
-        contextParts.push(`\n### UPLOADED FILE (SKIPPED — context budget): ${path.basename(filePath)}`);
-        sourceDetails.push({ type: 'uploaded_file', name: path.basename(filePath), path: filePath, contentHashed: false, note: 'skipped — context budget reached' });
-        continue;
-      }
-
-      const text = await extractTextFromFile(filePath);
-      if (!text) continue;
-
-      const tokens = estimateTokens(text);
-      contextParts.push(
-        `\n### UPLOADED DOCUMENT: ${path.basename(filePath)}\n\n${text}`
-      );
-      usedTokens += tokens;
-      result.sourceManifest.push(`${path.basename(filePath)} (uploaded)`);
-      sourceDetails.push({
-        type: 'uploaded_file',
-        name: path.basename(filePath),
-        path: filePath,
-        sha256: contentSha256(text),
-        charCount: text.length,
-        retrievedAt: resolvedAt(),
-        contentHashed: true,
-      });
     }
   }
 
@@ -293,7 +389,7 @@ export async function resolveKnowledgeSources(
     );
   }
 
-  // ── MODE 5: RAG Retrieval (Semantic Vector Search or BM25) ──────────────────
+  // ── MODE 5: RAG Retrieval (Semantic Vector Search or BM25) — packed last ────
 
   if (options?.ragMode?.enabled && options.db && options.userQuery) {
     const { folderPaths, collections, topK = 10, minScore = 0.1, useSemanticSearch = true, rerank = false } = options.ragMode;
@@ -312,16 +408,41 @@ export async function resolveKnowledgeSources(
         const filtered = searchResults.filter(r => r.relevanceScore >= minScore);
 
         if (filtered.length > 0) {
+          // Wave 2: name the method that actually ran (the set's `method`) and
+          // what its score means, instead of "semantic search" unconditionally.
+          const setMethod = filtered[0]?.method ?? 'keyword';
+          const methodWord: Record<string, string> = {
+            vector: 'vector similarity',
+            hybrid: 'vector similarity fused with keyword matching',
+            keyword: 'keyword matching (no vector index was available)',
+          };
+          const scoreLabel = (r: { score?: number; scoreKind?: string; relevanceScore?: number }): string => {
+            const s = typeof r.score === 'number' ? r.score : (r.relevanceScore ?? 0);
+            switch (r.scoreKind) {
+              case 'cosine_similarity': return `cosine similarity ${(s * 100).toFixed(1)}%`;
+              case 'rrf_normalised': return `hybrid rank score ${s.toFixed(2)}`;
+              default: return `keyword coverage ${(s * 100).toFixed(0)}%`;
+            }
+          };
           const ragParts: string[] = [];
           ragParts.push('## RETRIEVED KNOWLEDGE');
-          ragParts.push('The following passages were retrieved from your knowledge base using semantic search as most relevant to this query.\n');
+          ragParts.push(`The following passages were retrieved from your knowledge base by ${methodWord[setMethod] ?? setMethod} as most relevant to this query.\n`);
+          let included = 0;
 
           for (const result of filtered) {
-            const relevancePercent = (result.relevanceScore * 100).toFixed(1);
-            ragParts.push(`--- [${result.citation}] (Relevance: ${relevancePercent}%) ---`);
+            const tokens = estimateTokens(result.content);
+            const skipNote = budgetSkipNote(tokens);
+            if (skipNote) {
+              sourceDetails.push({ type: 'rag_chunk', name: result.citation, charCount: result.content.length, contentHashed: false, note: skipNote });
+              recordSkip('rag_chunk', tokens);
+              continue;
+            }
+
+            ragParts.push(`--- [${result.citation}] (${scoreLabel(result)}) ---`);
             ragParts.push(result.content);
             ragParts.push('');
-            usedTokens += estimateTokens(result.content);
+            usedTokens += tokens;
+            included += 1;
             sourceDetails.push({
               type: 'rag_chunk',
               name: result.citation,
@@ -330,13 +451,12 @@ export async function resolveKnowledgeSources(
               retrievedAt: resolvedAt(),
               contentHashed: true,
             });
-
-            // Stop if we exceed context budget
-            if (usedTokens >= effectiveBudget) break;
           }
 
-          contextParts.unshift(ragParts.join('\n'));
-          result.sourceManifest.push(`${filtered.length} semantic search results from ${collections.length} collection(s)`);
+          if (included > 0) {
+            contextParts.push(ragParts.join('\n'));
+            result.sourceManifest.push(`${included} ${setMethod} search results from ${collections.length} collection(s)`);
+          }
         }
       } catch (error) {
         console.error('Semantic search failed, falling back to BM25 if available:', error);
@@ -350,11 +470,24 @@ export async function resolveKnowledgeSources(
         const ragParts: string[] = [];
         ragParts.push('## RETRIEVED RELEVANT PASSAGES');
         ragParts.push('The following passages were retrieved from your indexed document library as most relevant to this query.\n');
+        let included = 0;
+
         for (const chunk of retrieved) {
+          // Measured here, not taken from the index's stored token_count, so
+          // the budget sees one tokenizer across every source.
+          const tokens = estimateTokens(chunk.text);
+          const skipNote = budgetSkipNote(tokens);
+          if (skipNote) {
+            sourceDetails.push({ type: 'bm25_chunk', name: `${chunk.documentName}#${chunk.chunkIndex + 1}`, charCount: chunk.text.length, contentHashed: false, note: skipNote });
+            recordSkip('bm25_chunk', tokens);
+            continue;
+          }
+
           ragParts.push(`--- [Document: ${chunk.documentName}, Chunk ${chunk.chunkIndex + 1}] ---`);
           ragParts.push(chunk.text);
           ragParts.push('');
-          usedTokens += chunk.tokenCount;
+          usedTokens += tokens;
+          included += 1;
           sourceDetails.push({
             type: 'bm25_chunk',
             name: `${chunk.documentName}#${chunk.chunkIndex + 1}`,
@@ -364,8 +497,11 @@ export async function resolveKnowledgeSources(
             contentHashed: true,
           });
         }
-        contextParts.unshift(ragParts.join('\n'));
-        result.sourceManifest.push(`${retrieved.length} BM25 passages from ${folderPaths.length} indexed folder(s)`);
+
+        if (included > 0) {
+          contextParts.push(ragParts.join('\n'));
+          result.sourceManifest.push(`${included} BM25 passages from ${folderPaths.length} indexed folder(s)`);
+        }
       }
     }
   }
@@ -377,6 +513,8 @@ export async function resolveKnowledgeSources(
     ? `## REFERENCE DOCUMENTS\n${contextParts.join('\n\n---\n')}`
     : '';
   result.tokenEstimate = usedTokens;
+  result.skippedCount = skippedCount;
+  result.skippedTokens = skippedTokens;
 
   return result;
 }

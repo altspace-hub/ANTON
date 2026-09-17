@@ -6,6 +6,7 @@ import { useAuthStore } from './stores/useAuthStore';
 import { ensureCsrfToken } from './lib/api';
 import PWAInstallPrompt from './components/shared/PWAInstallPrompt';
 import { CommandPalette } from './components/shared/CommandPalette';
+import { syncDefaultModelFromServer } from './lib/default-model-sync';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 
 // Global error boundary — prevents blank-page crashes
@@ -306,6 +307,7 @@ const MarketIndexCreatePage = lazy(() => import('./pages/markets/MarketIndexCrea
 const MarketLearningPage = lazy(() => import('./pages/markets/MarketLearningPage'));
 const MarketInvestigationPage = lazy(() => import('./pages/markets/MarketInvestigationPage'));
 const MarketWorkflowsPage = lazy(() => import('./pages/markets/MarketWorkflowsPage'));
+const MarketDeadLettersPage = lazy(() => import('./pages/markets/MarketDeadLettersPage'));
 const MarketComputationPage = lazy(() => import('./pages/markets/MarketComputationPage'));
 const MarketAtomsPage = lazy(() => import('./pages/markets/MarketAtomsPage'));
 const MarketWhyChainsPage = lazy(() => import('./pages/markets/MarketWhyChainsPage'));
@@ -403,6 +405,12 @@ export default function App() {
     document.documentElement.dir = rtlLanguages.includes(i18n.language) ? 'rtl' : 'ltr';
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
+
+  // Adopt the instance default model on this browser — a device that never
+  // opened Settings otherwise boots on a bare API id (see default-model-sync.ts).
+  useEffect(() => {
+    void syncDefaultModelFromServer();
+  }, []);
 
   // Restore language preference from user profile on mount (best-effort).
   // localStorage wins for anonymous/solo users; profile wins when it differs.
@@ -757,6 +765,7 @@ export default function App() {
           <Route path="/markets/learning" element={<MarketLearningPage />} />
           <Route path="/markets/investigations" element={<MarketInvestigationPage />} />
           <Route path="/markets/workflows" element={<MarketWorkflowsPage />} />
+          <Route path="/markets/dead-letters" element={<MarketDeadLettersPage />} />
           <Route path="/markets/computation" element={<MarketComputationPage />} />
           <Route path="/markets/atoms" element={<MarketAtomsPage />} />
           <Route path="/markets/why-chains" element={<MarketWhyChainsPage />} />

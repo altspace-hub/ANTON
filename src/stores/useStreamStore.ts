@@ -8,7 +8,7 @@
  */
 
 import { create } from 'zustand';
-import type { StreamEvent, Message } from '@/lib/types';
+import type { StreamEvent, Message, ContextUsed, WebSourceRecord } from '@/lib/types';
 
 // ── Flush buffer (PERF-05) ────────────────────────────────────
 let _textBuf = '';
@@ -22,6 +22,11 @@ interface StreamState {
   isStreaming: boolean;
   isAssemblingContext: boolean;
   lastSourcesUsed: string[];
+  /** Wave 2: what the last answer's prompt actually held (documents, project, lens, layers). */
+  lastContextUsed: ContextUsed | null;
+  /** Wave 2: the pages the SDK engine searched for or fetched during the last run,
+   *  in the order the tool events arrived. Reset when a run starts. */
+  lastWebSources: WebSourceRecord[];
   streamingText: string;
   streamingThinking: string;
   abortController: AbortController | null;
@@ -60,6 +65,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
   isStreaming: false,
   isAssemblingContext: false,
   lastSourcesUsed: [],
+  lastContextUsed: null,
+  lastWebSources: [],
   streamingText: '',
   streamingThinking: '',
   abortController: null,
@@ -94,6 +101,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       ireCurrentPhaseName: '',
       compactionOccurred: false,
       compactionMessage: '',
+      lastWebSources: [],
       // Reset accumulated tokens at start of each stream
       lastInputTokens: 0,
       lastOutputTokens: 0,
@@ -134,11 +142,22 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     };
 
     switch (event.type) {
+      case 'stream_start':
+        // A run emits one of these before any source; a stale list from the
+        // previous run must not sit under the new answer.
+        set({ lastWebSources: [] });
+        break;
+      case 'source_fetched':
+        set((s) => ({ lastWebSources: [...s.lastWebSources, event.source] }));
+        break;
       case 'context_assembly_start':
         set({ isAssemblingContext: true });
         break;
       case 'context_assembly_complete':
         set({ isAssemblingContext: false });
+        break;
+      case 'context_used':
+        set({ lastContextUsed: event.context });
         break;
       case 'thinking_delta':
         _thinkBuf += event.content;
@@ -155,6 +174,12 @@ export const useStreamStore = create<StreamState>((set, get) => ({
           lastOutputTokens: s.lastOutputTokens + (event.outputTokens || 0),
           lastCachedTokens: s.lastCachedTokens + (event.cacheReadTokens || 0),
           lastCacheCreationTokens: s.lastCacheCreationTokens + (event.cacheCreationTokens || 0),
+          // Wave 0: the engine names the model it served only at the end of the
+          // run; merge it into the live "context used" frame so the trail shows
+          // it without a reload.
+          ...(event.modelServed && s.lastContextUsed
+            ? { lastContextUsed: { ...s.lastContextUsed, modelServed: event.modelServed } }
+            : {}),
         }));
         break;
 
@@ -199,7 +224,9 @@ export const useStreamStore = create<StreamState>((set, get) => ({
         const fullThinking = state.streamingThinking + _thinkBuf;
         _textBuf = ''; _thinkBuf = '';
         const message: Message = {
-          id: crypto.randomUUID(),
+          // Wave 1: use the id the server persists the row under (sent in the
+          // context frame) so the run artifact resolves without a reload.
+          id: state.lastContextUsed?.assistantMessageId || crypto.randomUUID(),
           sessionId: sessionId || '',
           role: 'assistant',
           content: fullText,
