@@ -73,6 +73,7 @@ import { createKnowledgeGraphRoutes } from './routes/knowledge-graph.js';
 import { createIntelligenceDashboardRoutes } from './routes/intelligence-dashboard.js';
 import { createPatternDetectionRoutes } from './routes/pattern-detection.js';
 import { createPatternDetection } from './services/pattern-detection.js';
+import { startMemorySweep } from './services/memory-sweep.js';
 import { createCommandRoutes } from './routes/commands.js';
 import { createComplianceRoutes } from './routes/compliance.js';
 import { createDataRoutes } from './routes/data.js';
@@ -413,6 +414,15 @@ setTimeout(async () => {
     console.error('[pattern-detection] Initial scan error:', error);
   }
 }, 30000);
+
+// Memory sweep (Wave 4): outputs whose learning never finished — the summary
+// lost the engine slot, the extractor failed, the server restarted — are
+// retried hourly, oldest first. MEMORY_SWEEP_DISABLED=true turns it off.
+try {
+  startMemorySweep(db);
+} catch (error) {
+  console.warn('[memory-sweep] failed to start:', error instanceof Error ? error.message : error);
+}
 
 // MCP authentication guard (any deployment mode — was team-only, which left the full
 // unauthenticated tool surface reachable from the LAN on solo installs).

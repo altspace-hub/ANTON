@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import type Anthropic from '@anthropic-ai/sdk';
 import { callChat } from './provider-router.js';
@@ -6,18 +7,65 @@ import { recordParseOutcome } from './parse-telemetry.js';
 import { embedAndStore } from './hybrid-search.js';
 
 // ── Taxonomy ────────────────────────────────────────────────────────────────
+//
+// Wave 4 (2026-09-17): the `status.*` family is gone. On the live database it
+// produced boilerplate — "Claude is ready to provide analytical assistance…" —
+// that the retrieval layer later injected into prompts as supporting evidence.
+// A returned atom that still names a status.* type is discarded (see
+// isDroppedAtomType), as is anything that reads as the assistant talking
+// about itself (isAssistantChatter).
 
-const ATOM_TYPE_TAXONOMY = `
+export const ATOM_TYPE_TAXONOMY = `
   observation.finding, observation.measurement, observation.comparison,
   observation.anomaly, observation.correlation,
   decision.approval, decision.rejection, decision.escalation, decision.override, decision.deferral,
   action.creation, action.modification, action.communication, action.assignment,
   risk.identified, risk.assessed, risk.mitigated, risk.accepted, risk.materialized,
-  status.system_health, status.project_progress, status.compliance_state, status.performance,
   recommendation.ai_suggestion, recommendation.human_suggestion, recommendation.best_practice
 `.trim();
 
+/** The entity kinds an atom may reference; anything else is stored as 'other'. */
+export const ENTITY_TYPES = ['organisation', 'person', 'regulation', 'product', 'jurisdiction', 'system', 'other'] as const;
+export type EntityType = typeof ENTITY_TYPES[number];
+
+/** The assistant describing itself is not knowledge about the user's world. */
+export const ASSISTANT_CHATTER_RE = /\b(I am|I'm|Claude|the assistant|ready to (help|provide|assist))\b/i;
+
+export function isAssistantChatter(content: string): boolean {
+  return ASSISTANT_CHATTER_RE.test(content);
+}
+
+export function isDroppedAtomType(atomType: string): boolean {
+  return atomType.trim().toLowerCase().startsWith('status.');
+}
+
+/**
+ * sha256 hex of the lower-cased, trimmed content — the same normalisation
+ * migration 275 used to backfill knowledge_atoms.content_hash, so a new atom
+ * can be refused against the whole existing table, not just its own module.
+ */
+export function contentHashOf(content: string): string {
+  return createHash('sha256').update(content.trim().toLowerCase(), 'utf8').digest('hex');
+}
+
+/** knowledge_entity_refs.entity_id: a slug of the lower-cased name. */
+export function entitySlug(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120);
+}
+
+function normaliseEntityType(type: unknown): EntityType {
+  const t = typeof type === 'string' ? type.trim().toLowerCase() : '';
+  return (ENTITY_TYPES as readonly string[]).includes(t) ? (t as EntityType) : 'other';
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
+
+interface RawEntity { type?: unknown; name?: unknown; id?: unknown }
 
 interface RawAtom {
   content: string;
@@ -26,11 +74,13 @@ interface RawAtom {
   subcategory?: string;
   sentiment?: string;
   temporal_type?: string;
-  entities?: Array<{ type: string; id: string; name?: string }>;
+  entities?: RawEntity[];
   confidence?: number;
   valid_until?: string | null;
   tags?: string[];
 }
+
+interface NormalisedEntity { type: EntityType; id: string; name: string }
 
 interface KnowledgeAtomRow {
   id: string;
@@ -53,6 +103,8 @@ interface KnowledgeAtomRow {
   created_at: string;
   superseded_by: string | null;
   is_active: number;
+  owner_user_id?: string | null;
+  content_hash?: string | null;
 }
 
 interface EntityRefRow {
@@ -74,7 +126,49 @@ interface WorkflowOutputRow {
   output_data: string;
   workflow_name: string;
   step_name: string;
+  created_by: string | null;
 }
+
+/** What one extraction did. Callers that ignore it keep working. */
+export interface ExtractAtomsResult {
+  /** Atoms written to knowledge_atoms. */
+  inserted: number;
+  /** Atoms refused because an active atom with the same content_hash exists (any module). */
+  duplicates: number;
+  /** Atoms discarded as status.* boilerplate, assistant chatter or malformed. */
+  dropped: number;
+  /** knowledge_entity_refs rows written. */
+  entities: number;
+}
+
+const EMPTY_RESULT: ExtractAtomsResult = { inserted: 0, duplicates: 0, dropped: 0, entities: 0 };
+
+/**
+ * The statements, exported so a test can answer them by identity and so
+ * tests/db/query-column-drift.test.ts can run them against a real schema.
+ */
+export const ATOM_EXTRACTOR_SQL = {
+  /** Params: output id. */
+  output: 'SELECT * FROM workflow_outputs WHERE id = ?',
+  /** Params: content_hash. An inactive duplicate does not block — retiring an atom must let a corrected one in. */
+  activeDuplicate: 'SELECT id FROM knowledge_atoms WHERE content_hash = ? AND is_active = 1 LIMIT 1',
+  /** Params: id, source_output_id, source_workflow_id, source_execution_id, source_area_id, source_module_id,
+   *  content, atom_type, confidence, category, subcategory, sentiment, temporal_type, entities, tags,
+   *  valid_until, content_hash, owner_user_id. */
+  insertAtom: `
+    INSERT INTO knowledge_atoms
+      (id, source_output_id, source_workflow_id, source_execution_id, source_area_id, source_module_id,
+       content, atom_type, confidence, category, subcategory, sentiment, temporal_type,
+       entities, tags, valid_until, content_hash, owner_user_id, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+  `,
+  /** Params: atom_id, entity_type, entity_id, entity_name, relationship. */
+  insertEntityRef: `
+    INSERT INTO knowledge_entity_refs (atom_id, entity_type, entity_id, entity_name, relationship)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT DO NOTHING
+  `,
+} as const;
 
 // ── Tolerant JSON-array parsing ─────────────────────────────────────────────
 //
@@ -132,6 +226,29 @@ export function parseJsonArrayTolerant<T>(text: string): T[] | null {
   return null;
 }
 
+/** The entities the model returned, normalised and de-duplicated per atom. */
+export function normaliseEntities(raw: unknown): NormalisedEntity[] {
+  if (!Array.isArray(raw)) return [];
+  const out: NormalisedEntity[] = [];
+  const seen = new Set<string>();
+  for (const ent of raw as RawEntity[]) {
+    if (!ent || typeof ent !== 'object') continue;
+    const nameSource = typeof ent.name === 'string' && ent.name.trim() ? ent.name
+      : typeof ent.id === 'string' && ent.id.trim() ? ent.id
+      : null;
+    if (!nameSource) continue;
+    const name = nameSource.trim().slice(0, 200);
+    const id = entitySlug(name);
+    if (!id) continue;
+    const type = normaliseEntityType(ent.type);
+    const key = `${type}:${id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ type, id, name });
+  }
+  return out;
+}
+
 // ── Factory ─────────────────────────────────────────────────────────────────
 
 /**
@@ -143,23 +260,20 @@ export function parseJsonArrayTolerant<T>(text: string): T[] | null {
  * default Haiku — unchanged behaviour on Anthropic installs).
  */
 export async function createAtomExtractor(db: DatabaseAdapter, _client?: Anthropic) {
-  // ── SQL templates (prepared statements replaced by adapter calls) ───────
-
-  const INSERT_ATOM_SQL = `
-    INSERT INTO knowledge_atoms
-      (id, source_output_id, source_workflow_id, source_execution_id, source_area_id, source_module_id,
-       content, atom_type, confidence, category, subcategory, sentiment, temporal_type,
-       entities, tags, valid_until, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-  `;
-
   // ── Extract atoms from a stored workflow output ───────────────────────────
 
-  async function extractAtoms(outputId: string): Promise<void> {
-    const output = await db.get('SELECT * FROM workflow_outputs WHERE id = ?', outputId) as WorkflowOutputRow | undefined;
+  /**
+   * Learn from one stored output. Throws when the LLM call itself fails
+   * (the message is preserved — "SDK engine busy" must reach the sweep so it
+   * can stop the pass) or when nothing it tried to write could be written;
+   * every caller wraps the call. A parseable-but-empty answer is not a
+   * failure: it returns zeros and parse-telemetry records the outcome.
+   */
+  async function extractAtoms(outputId: string): Promise<ExtractAtomsResult> {
+    const output = await db.get(ATOM_EXTRACTOR_SQL.output, outputId) as WorkflowOutputRow | undefined;
     if (!output) {
       console.warn('[atom-extractor] Output not found:', outputId);
-      return;
+      return { ...EMPTY_RESULT };
     }
 
     let outputData: unknown;
@@ -174,20 +288,21 @@ export async function createAtomExtractor(db: DatabaseAdapter, _client?: Anthrop
     const truncated = dataStr.length > 3000 ? dataStr.slice(0, 3000) + '...(truncated)' : dataStr;
 
     const systemPrompt = `You are extracting knowledge atoms from a workflow output.
-A knowledge atom is a single, discrete, meaningful piece of information.
+A knowledge atom is a single, discrete, meaningful piece of information about the user's world — a finding, decision, action, risk or recommendation.
 
 For each atom, provide JSON with exactly these fields:
 - content: The knowledge as one clear sentence (required)
 - atom_type: Pick from: ${ATOM_TYPE_TAXONOMY} (required)
-- category: observation | decision | action | risk | status | recommendation (required)
+- category: observation | decision | action | risk | recommendation (required)
 - subcategory: more specific label (optional)
 - sentiment: positive | negative | neutral | warning | critical (optional)
 - confidence: 0.0–1.0 (optional, default 0.8)
+- entities: array of { "type": organisation | person | regulation | product | jurisdiction | system | other, "name": the entity exactly as written } — every organisation, person, regulation, product, jurisdiction or system the atom is about (required; use [] when there are none)
 
 Rules:
 - Extract 3–8 atoms maximum. Focus on the most important findings only.
-- Prioritise: decisions, risks, anomalies, measurements, status changes.
-- Skip: boilerplate, procedural steps, routine confirmations.
+- Prioritise: decisions, risks, anomalies, measurements, changes of state.
+- Skip: boilerplate, procedural steps, routine confirmations, greetings, and anything about the assistant itself (its readiness, capabilities or limitations) — those are not knowledge.
 - Return ONLY a valid JSON array of atom objects — no markdown, no explanation.
 - Keep each "content" field under 150 characters.`;
 
@@ -221,61 +336,71 @@ Rules:
         parsed === null ? `unparseable atom array (${chat.text.slice(0, 120)})` : undefined);
       rawAtoms = parsed ?? [];
     } catch (err) {
-      console.error('[atom-extractor] LLM call failed for output', outputId, `(model ${model})`, err);
-      return;
+      console.error('[atom-extractor] LLM call failed for output', outputId, `(model ${model})`, err instanceof Error ? err.message : err);
+      throw err;
     }
 
     // Persist each atom
-    let insertedAtomIds: string[] = [];
-    try {
-      const ids: string[] = [];
-      for (const raw of rawAtoms) {
-        if (!raw.content || !raw.atom_type || !raw.category) continue;
+    const result: ExtractAtomsResult = { ...EMPTY_RESULT };
+    const insertedAtomIds: string[] = [];
+    let insertErrors = 0;
+    for (const raw of rawAtoms) {
+      if (!raw || typeof raw.content !== 'string' || typeof raw.atom_type !== 'string' || typeof raw.category !== 'string') {
+        result.dropped++;
+        continue;
+      }
+      const content = raw.content.trim().slice(0, 2000);
+      if (!content || isDroppedAtomType(raw.atom_type) || isAssistantChatter(content)) {
+        result.dropped++;
+        continue;
+      }
+
+      const contentHash = contentHashOf(content);
+      const entities = normaliseEntities(raw.entities);
+
+      try {
+        const duplicate = await db.get(ATOM_EXTRACTOR_SQL.activeDuplicate, contentHash) as { id: string } | undefined;
+        if (duplicate) {
+          result.duplicates++;
+          continue;
+        }
 
         const atomId = `atom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-        await db.run(INSERT_ATOM_SQL,
+        await db.run(ATOM_EXTRACTOR_SQL.insertAtom,
           atomId,
           output.id,
           output.workflow_id,
           output.execution_id,
           output.area_id ?? null,
           output.module_id ?? null,
-          raw.content.slice(0, 2000),
+          content,
           raw.atom_type,
           typeof raw.confidence === 'number' ? raw.confidence : 0.8,
           raw.category,
           raw.subcategory ?? null,
           raw.sentiment ?? null,
           raw.temporal_type ?? null,
-          raw.entities ? JSON.stringify(raw.entities) : null,
-          raw.tags ? JSON.stringify(raw.tags) : null,
+          entities.length > 0 ? JSON.stringify(entities) : null,
+          Array.isArray(raw.tags) ? JSON.stringify(raw.tags) : null,
           raw.valid_until ?? null,
+          contentHash,
+          output.created_by ?? null,
         );
+        insertedAtomIds.push(atomId);
+        result.inserted++;
 
-        ids.push(atomId);
-
-        // Store individual entity refs for graph traversal
-        if (Array.isArray(raw.entities)) {
-          for (const ent of raw.entities) {
-            if (!ent.type || !ent.id) continue;
-            await db.run(`
-    INSERT INTO knowledge_entity_refs (atom_id, entity_type, entity_id, entity_name, relationship)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT DO NOTHING
-  `,
-              atomId,
-              ent.type,
-              String(ent.id),
-              ent.name ?? null,
-              null,
-            );
-          }
+        // Entity refs for graph traversal and the data-subject lookup.
+        for (const ent of entities) {
+          await db.run(ATOM_EXTRACTOR_SQL.insertEntityRef, atomId, ent.type, ent.id, ent.name, null);
+          result.entities++;
         }
+      } catch (err) {
+        insertErrors++;
+        console.error('[atom-extractor] DB insert failed for output', outputId, err instanceof Error ? err.message : err);
       }
-      insertedAtomIds = ids;
-    } catch (err) {
-      console.error('[atom-extractor] DB insert failed for output', outputId, err);
+    }
+    if (insertErrors > 0 && result.inserted === 0) {
+      throw new Error(`atom insert failed for output ${outputId} (${insertErrors} atom(s))`);
     }
 
     // Fire-and-forget: embed each atom for semantic search (non-blocking)
@@ -294,6 +419,7 @@ Rules:
               source_area_id: atom.source_area_id,
               source_module_id: atom.source_module_id,
               source_workflow_id: atom.source_workflow_id,
+              owner_user_id: atom.owner_user_id ?? null,
               confidence: atom.confidence,
               created_at: atom.created_at,
               is_superseded: atom.superseded_by ? 1 : 0,
@@ -311,6 +437,8 @@ Rules:
         console.warn('[atom-extractor] relationship detection failed (non-fatal):', err instanceof Error ? err.message : err);
       });
     }
+
+    return result;
   }
 
   // ── Detect relationships between atoms ─────────────────────────────────

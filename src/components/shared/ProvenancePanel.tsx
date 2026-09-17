@@ -219,22 +219,35 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
   const artifact: RunArtifact | null = artifactWanted && artifactFetchStatus === 'ready' ? artifactRow : null;
 
   // ── Memory atoms — loaded when the section is open; keyed so a new session/answer starts empty ──
-  const atomsKey = `${sessionId ?? ''}:${messageKey}`;
-  const [atomsState, setAtomsState] = useState<{ key: string; rows: InjectedAtomRow[] | null; loading: boolean }>({ key: '', rows: null, loading: false });
+  // Wave 4: rows are bound to the answer (retrieval_feedback.message_id). A run
+  // without a frame (older answer) falls back to the session-wide list, labelled.
+  const atomsMessageId = frameMessageId ?? lastAssistant?.id ?? null;
+  const atomsKey = `${sessionId ?? ''}:${messageKey}:${atomsMessageId ?? ''}`;
+  const [atomsState, setAtomsState] = useState<{ key: string; rows: InjectedAtomRow[] | null; loading: boolean; sessionWide: boolean }>({ key: '', rows: null, loading: false, sessionWide: false });
   const atoms = atomsState.key === atomsKey ? atomsState.rows : null;
   const atomsLoading = atomsState.key === atomsKey && atomsState.loading;
+  const atomsSessionWide = atomsState.key === atomsKey && atomsState.sessionWide;
   useEffect(() => {
     if (!open.memory || !sessionId || atoms !== null || atomsLoading) return;
     let cancelled = false;
     const key = atomsKey;
     const load = async () => {
-      setAtomsState({ key, rows: null, loading: true });
-      const rows = await fetchInjectedAtoms(sessionId).catch((): InjectedAtomRow[] => []);
-      if (!cancelled) setAtomsState({ key, rows, loading: false });
+      setAtomsState({ key, rows: null, loading: true, sessionWide: false });
+      let rows = await fetchInjectedAtoms(sessionId, atomsMessageId).catch((): InjectedAtomRow[] => []);
+      let sessionWide = false;
+      if (rows.length === 0 && atomsMessageId && !frameMessageId) {
+        // An answer with no frame predates the binding — show what the session holds, labelled as such.
+        rows = await fetchInjectedAtoms(sessionId).catch((): InjectedAtomRow[] => []);
+        sessionWide = rows.length > 0;
+      }
+      if (!cancelled) setAtomsState({ key, rows, loading: false, sessionWide });
     };
     void load();
     return () => { cancelled = true; };
-  }, [open.memory, sessionId, atoms, atomsLoading, atomsKey]);
+  }, [open.memory, sessionId, atoms, atomsLoading, atomsKey, atomsMessageId, frameMessageId]);
+  // The frame's own list of what went in, joined with the fetched rows for content.
+  const atomRowsById = useMemo(() => new Map((atoms ?? []).map((a) => [a.atom_id, a])), [atoms]);
+  const frameAtomIds = ctx?.atoms?.ids ?? [];
 
   // ── Derived facts ──
   const engine = str(snap.engine) ?? ctx?.engine;
@@ -592,23 +605,65 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
         </Section>
 
         {/* ── Memory ── */}
-        <Section id="memory" title="Memory" icon={Atom} count={atoms?.length} open={open.memory} onToggle={toggle}>
+        <Section id="memory" title="Memory" icon={Atom} count={ctx?.atoms ? ctx.atoms.count : atoms?.length} open={open.memory} onToggle={toggle}>
           {atomArm && (
             <p className="mb-2 text-[11px] text-adv-gray">
               A/B arm: <span className="font-medium text-adv-off-white">{atomArm}</span>
               {atomArm === 'holdout' ? ' — the memory layer was withheld for this run (effectiveness experiment).' : ''}
             </p>
           )}
+          {ctx?.atoms && (
+            <div className="mb-2 rounded-md bg-adv-dark px-3 py-2 text-[11px]">
+              <p>
+                <span className="text-adv-gray">Prior atoms: </span>
+                <span className={`font-medium ${ctx.atoms.applied ? 'text-adv-teal' : 'text-adv-gold'}`}>
+                  {ctx.atoms.applied ? `applied — ${ctx.atoms.count} atom${ctx.atoms.count === 1 ? '' : 's'} in the prompt` : 'not applied'}
+                </span>
+                <span className="text-adv-gray"> · {ctx.atoms.reason}</span>
+              </p>
+              <p className="mt-0.5 text-adv-gray">
+                Mode {ctx.atoms.mode} · {fmtInt(ctx.atoms.moduleAtoms)} / {fmtInt(ctx.atoms.thresholds.moduleAtoms)} module atoms · {fmtInt(ctx.atoms.ratings)} / {fmtInt(ctx.atoms.thresholds.ratings)} ratings.
+                {' '}Injected atoms are memory from earlier runs, not verified sources.
+              </p>
+            </div>
+          )}
           {ctx && ctx.atomChars > 0 && (
-            <p className="mb-2 text-[11px] text-adv-gray">~{fmtInt(Math.round(ctx.atomChars / 4))} tokens of institutional memory were in the prompt.</p>
+            <p className="mb-2 text-[11px] text-adv-gray">
+              ~{fmtInt(Math.round(ctx.atomChars / 4))} tokens of memory were in the prompt
+              {(ctx.projectContextChars ?? 0) > 0 || (ctx.goalsValuesChars ?? 0) > 0 || (ctx.resumeContextChars ?? 0) > 0
+                ? ` (project context ${fmtInt(ctx.projectContextChars ?? 0)} chars · goals & values ${fmtInt(ctx.goalsValuesChars ?? 0)} chars · resume ${fmtInt(ctx.resumeContextChars ?? 0)} chars)`
+                : ''}.
+            </p>
           )}
           {!sessionId ? (
             <p className="text-[11px] text-adv-gray">No session — atoms are only recorded for persisted runs.</p>
           ) : atomsLoading ? (
             <div className="flex items-center gap-2 text-[11px] text-adv-gray"><Loader2 className="h-3 w-3 animate-spin" /> Loading injected atoms…</div>
+          ) : frameAtomIds.length > 0 ? (
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-adv-gray">Atoms injected into this answer, in prompt order</p>
+              {frameAtomIds.map((id) => {
+                const a = atomRowsById.get(id);
+                return (
+                  <div key={id} className="rounded-md bg-adv-dark px-3 py-2">
+                    <p className="line-clamp-2 text-[11px] leading-relaxed text-adv-off-white" title={a?.content ?? id}>{a?.content ?? `Atom ${id} (content not loaded)`}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-adv-gray">
+                      <span className="font-mono" title={id}>{id.length > 14 ? `${id.slice(0, 14)}…` : id}</span>
+                      {a && <span className="rounded-full border border-border px-1.5 py-0.5">{a.retrieval_method || 'hybrid'}</span>}
+                      {a && <span>score {Number.isFinite(a.retrieval_score) ? a.retrieval_score.toFixed(2) : '—'}</span>}
+                      {a?.category && <span>{a.category}</span>}
+                      {a?.atom_type && <span>{a.atom_type}</span>}
+                      {a && a.was_relevant !== null && a.was_relevant !== undefined && <span className={a.was_relevant === 1 ? 'text-adv-green' : 'text-adv-red'}>{a.was_relevant === 1 ? 'rated relevant' : 'rated not relevant'}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : atoms && atoms.length > 0 ? (
             <div className="space-y-1.5">
-              <p className="text-[10px] uppercase tracking-wider text-adv-gray">Atoms injected in this session, by retrieval score</p>
+              <p className="text-[10px] uppercase tracking-wider text-adv-gray">
+                {atomsSessionWide ? 'Atoms injected in this session (older run — not bound to one answer), by retrieval score' : 'Atoms injected into this answer, by retrieval score'}
+              </p>
               {atoms.map((a) => (
                 <div key={a.atom_id} className="rounded-md bg-adv-dark px-3 py-2">
                   <p className="line-clamp-2 text-[11px] leading-relaxed text-adv-off-white" title={a.content}>{a.content}</p>
@@ -624,7 +679,11 @@ export default function ProvenancePanel(props: ProvenancePanelProps) {
               ))}
             </div>
           ) : (
-            <p className="text-[11px] text-adv-gray">No institutional-memory atoms were injected in this session.</p>
+            <p className="text-[11px] text-adv-gray">
+              {ctx?.atoms
+                ? (ctx.atoms.applied ? 'The frame lists no atom ids for this answer.' : `No prior atoms were injected into this answer — ${ctx.atoms.reason}.`)
+                : 'No institutional-memory atoms were injected into this answer.'}
+            </p>
           )}
         </Section>
 

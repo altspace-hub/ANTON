@@ -30,6 +30,9 @@ import {
   streamToResponse,
   completeText,
   setSdkQueryImplForTests,
+  activeSdkRunsForTests,
+  tryAcquireSdkSlot,
+  releaseSdkSlot,
   SDK_ENGINE_MODELS,
   SDK_WEB_MAX_TURNS,
   WEB_SOURCE_RESULT_CAP,
@@ -135,6 +138,7 @@ describe('buildSdkEnv — subscription auth by key absence', () => {
       delete process.env.ANTHROPIC_API_KEY;
     }
   });
+
 });
 
 // ── 2. Containment: text engine, nothing granted ────────────
@@ -463,6 +467,90 @@ describe('Wave 2 — web sources recorded from tool events', () => {
     await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
     expect(events().some((e) => e.type === 'source_fetched')).toBe(false);
     expect(completion!.webSources).toEqual([]);
+  });
+});
+
+// ── Wave 4: the slot is the subprocess's, not the request's ──
+// Live finding 2026-09-16: onComplete ran INSIDE the slot. The learning
+// pipeline it starts asks for a background slot (capped at 1 of 2) while the
+// interactive slot that spawned it was still counted — refused "SDK engine
+// busy" on every run, so nothing was ever learned. The slot must be back
+// before onComplete is invoked, released exactly once, and released on every
+// failure path too.
+
+describe('Wave 4 — the slot is released before onComplete runs', () => {
+  it('activeSdkRuns is already back to its previous value when onComplete is invoked', async () => {
+    fakeSdk([textDelta('Hello'), successResult()]);
+    const { sink } = collectingSink();
+    const before = activeSdkRunsForTests();
+    let seenInsideOnComplete: number | null = null;
+    await streamToResponse(BASE_CONFIG, sink, () => { seenInsideOnComplete = activeSdkRunsForTests(); });
+    expect(seenInsideOnComplete).toBe(before);
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('a background slot can be taken from inside onComplete — the exact request the learning pipeline makes', async () => {
+    fakeSdk([textDelta('Hello'), successResult()]);
+    const { sink } = collectingSink();
+    const before = activeSdkRunsForTests();
+    let refusal: string | null | undefined;
+    await streamToResponse(BASE_CONFIG, sink, () => {
+      refusal = tryAcquireSdkSlot(true);   // background: capped at MAX_BACKGROUND_SDK_RUNS = 1
+      if (refusal === null) releaseSdkSlot();
+    });
+    expect(refusal).toBeNull();
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('negative control: with the interactive slot still held, the same background acquire is refused', () => {
+    const before = activeSdkRunsForTests();
+    expect(tryAcquireSdkSlot(false)).toBeNull();          // an interactive run holding its slot
+    try {
+      expect(tryAcquireSdkSlot(true)).toMatch(/SDK engine busy/);
+    } finally {
+      releaseSdkSlot();
+    }
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('an error thrown inside onComplete still leaves the count correct (no double release)', async () => {
+    fakeSdk([textDelta('Hello'), successResult()]);
+    const { sink, done } = collectingSink();
+    const before = activeSdkRunsForTests();
+    await expect(streamToResponse(BASE_CONFIG, sink, () => { throw new Error('ledger write failed'); })).resolves.toBeUndefined();
+    expect(activeSdkRunsForTests()).toBe(before);
+    expect(done()).toBe(true);
+  });
+
+  it('a throwing SDK releases the slot exactly once', async () => {
+    setSdkQueryImplForTests(() => {
+      // eslint-disable-next-line require-yield
+      return (async function* (): AsyncGenerator<{ type: string }> {
+        throw new Error('spawn ENOENT');
+      })();
+    });
+    const { sink } = collectingSink();
+    const before = activeSdkRunsForTests();
+    await streamToResponse(BASE_CONFIG, sink, () => { throw new Error('must not be called'); });
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('a refused run (engine busy) never touches the count', async () => {
+    const before = activeSdkRunsForTests();
+    expect(tryAcquireSdkSlot(false)).toBeNull();
+    expect(tryAcquireSdkSlot(false)).toBeNull();          // both interactive slots taken
+    try {
+      const calls = fakeSdk([successResult()]);
+      const { sink, events } = collectingSink();
+      await streamToResponse(BASE_CONFIG, sink, () => { throw new Error('must not be called'); });
+      expect(calls).toHaveLength(0);
+      expect((events().find((e) => e.type === 'error') as { message: string }).message).toMatch(/SDK engine busy/);
+      expect(activeSdkRunsForTests()).toBe(before + 2);
+    } finally {
+      releaseSdkSlot();
+      releaseSdkSlot();
+    }
+    expect(activeSdkRunsForTests()).toBe(before);
   });
 });
 

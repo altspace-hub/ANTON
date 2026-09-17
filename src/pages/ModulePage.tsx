@@ -812,6 +812,9 @@ export default function ModulePage() {
           {/* Injected Knowledge Atoms */}
           <InjectedAtomsPanel sessionId={sessionId} />
 
+          {/* Session conclusion — written after each answer; mounted whenever a session exists */}
+          <ResumePanel sessionId={sessionId} />
+
           {/* Skills */}
           {moduleId && !suggestedSkillsDismissed && suggestedSkills.length > 0 && (!selectedSkills || selectedSkills.length === 0) && (
             <div className="mb-2 px-3 py-2 bg-adv-teal/10 border border-adv-teal/30 rounded flex items-center justify-between gap-2">
@@ -1167,13 +1170,6 @@ export default function ModulePage() {
                 ))}
               </ul>
             )}
-          </div>
-        )}
-
-        {/* Session Resume Panel — shown when resuming a paused session */}
-        {sessionId && messages.length === 0 && !isStreaming && (
-          <div className="shrink-0 pb-3">
-            <ResumePanel sessionId={sessionId} />
           </div>
         )}
 

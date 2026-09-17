@@ -22,8 +22,17 @@ import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-en
 import { createCitationLedger, VERIFICATION_DISCLAIMER, type CitationInput } from '../services/citation-ledger.js';
 import { bundleLegalResearchSessionToAnton } from '../services/anton-bundler.js';
 import { signAntonBundle } from '../services/anton-bundle-signing.js';
+import { resolveProjectAccess } from '../services/project-context.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Lazy read — a module-scope snapshot would evaluate before index.ts resolves
+// DEPLOYMENT_MODE (see middleware/auth.ts).
+const isTeamMode = () => process.env.DEPLOYMENT_MODE === 'team';
+
+/** The session row with the name of the project it is filed under. */
+const SESSION_WITH_PROJECT_SQL =
+  'SELECT s.*, p.name AS project_name FROM legal_research_sessions s LEFT JOIN projects p ON p.id = s.project_id WHERE s.id = ? AND s.user_id = ?';
 
 // ── The matter (Wave 2, 2026-09-08) ─────────────────────────────────────────
 // A session used to open on a blank textarea: nothing recorded about the
@@ -187,6 +196,28 @@ function getUserId(req: Request): string {
   return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
 }
 
+function getUserRole(req: Request): string | null {
+  return (req as unknown as { user?: { role?: string } }).user?.role ?? null;
+}
+
+/**
+ * Wave 4: the matter lives in a project. A project id from the client is
+ * accepted only when the project exists and, in team mode, the caller may
+ * see it. Returns the id to store, or the refusal already written to `res`.
+ */
+async function acceptProjectId(db: DatabaseAdapter, req: Request, res: Response, raw: unknown): Promise<{ ok: true; projectId: string | null } | { ok: false }> {
+  if (raw === null || raw === '') return { ok: true, projectId: null };
+  if (typeof raw !== 'string' || !raw.trim()) {
+    res.status(400).json({ error: 'projectId must be a string or null' });
+    return { ok: false };
+  }
+  const projectId = raw.trim();
+  const access = await resolveProjectAccess(db, { projectId, userId: getUserId(req), userRole: getUserRole(req), teamMode: isTeamMode() });
+  if (access === 'not_found') { res.status(404).json({ error: 'Project not found' }); return { ok: false }; }
+  if (access === 'forbidden') { res.status(403).json({ error: 'Not a member of this project' }); return { ok: false }; }
+  return { ok: true, projectId };
+}
+
 function loadBasePrompt(): string {
   try {
     const p = path.join(__dirname, '..', 'prompts', 'counsels-desk.md');
@@ -233,7 +264,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
     try {
       const uid = getUserId(req);
       const sessions = await db.all(
-        `SELECT id, title, mode, expert_role, created_at, updated_at
+        `SELECT id, title, mode, expert_role, project_id, created_at, updated_at
          FROM legal_research_sessions WHERE user_id = ?
          ORDER BY updated_at DESC LIMIT 50`
       , uid);
@@ -248,8 +279,8 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
   router.post('/legal-research', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const { title, mode, expert_role, active_knowledge_packs } = req.body as {
-        title?: string; mode?: string; expert_role?: string; active_knowledge_packs?: unknown;
+      const { title, mode, expert_role, active_knowledge_packs, projectId } = req.body as {
+        title?: string; mode?: string; expert_role?: string; active_knowledge_packs?: unknown; projectId?: unknown;
       };
       // The page has always sent its default pack selection; the route dropped
       // it, so every session was stored with '[]' and the Knowledge Packs
@@ -257,11 +288,14 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
       const packs = Array.isArray(active_knowledge_packs)
         ? active_knowledge_packs.filter((p): p is string => typeof p === 'string' && p.length > 0 && p.length <= 100).slice(0, 20)
         : [];
+      // Wave 4: a matter can be born inside a project.
+      const project = projectId === undefined ? { ok: true as const, projectId: null } : await acceptProjectId(db, req, res, projectId);
+      if (!project.ok) return;
       const id = randomUUID();
       const now = new Date().toISOString();
       await db.run(
-        `INSERT INTO legal_research_sessions (id, title, mode, expert_role, active_knowledge_packs, user_id, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO legal_research_sessions (id, title, mode, expert_role, active_knowledge_packs, user_id, project_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ,
         id,
         title || 'Untitled Legal Research',
@@ -269,10 +303,11 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
         expert_role || 'eu-regulatory-lawyer',
         JSON.stringify(packs),
         uid,
+        project.projectId,
         now,
         now
       );
-      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ?', id);
+      const session = await db.get(SESSION_WITH_PROJECT_SQL, id, uid);
       res.status(201).json({ session });
     } catch (err) {
       console.error('[legal-research] create error:', err);
@@ -284,7 +319,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
   router.get('/legal-research/:id', async (req: Request, res: Response) => {
     try {
       const uid = getUserId(req);
-      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid);
+      const session = await db.get(SESSION_WITH_PROJECT_SQL, req.params.id, uid);
       if (!session) return res.status(404).json({ error: 'Session not found' });
       res.json({ session });
     } catch (err) {
@@ -311,13 +346,19 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
         if (!cleaned) return res.status(400).json({ error: 'documents must be an array of { id, name, text }' });
         updates.documents = JSON.stringify(cleaned);
       }
+      // Wave 4: file the matter under a project (string) or take it out (null).
+      if (req.body.projectId !== undefined) {
+        const project = await acceptProjectId(db, req, res, req.body.projectId);
+        if (!project.ok) return;
+        updates.project_id = project.projectId;
+      }
       if (Object.keys(updates).length === 0) return res.json({ ok: true });
 
       // Keys are guaranteed safe: sourced from the allowed whitelist above
       const sets = Object.keys(updates).map(k => `${k} = ?`).join(', ');
       const vals = [...Object.values(updates), new Date().toISOString(), req.params.id, uid];
       await db.run(`UPDATE legal_research_sessions SET ${sets}, updated_at = ? WHERE id = ? AND user_id = ?`, ...vals);
-      const session = await db.get('SELECT * FROM legal_research_sessions WHERE id = ? AND user_id = ?', req.params.id, uid);
+      const session = await db.get(SESSION_WITH_PROJECT_SQL, req.params.id, uid);
       res.json({ session });
     } catch (err) {
       console.error('[legal-research] update error:', err);

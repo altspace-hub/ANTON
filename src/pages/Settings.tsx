@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchWithAuth } from '@/lib/api';
+import {
+  fetchWithAuth, fetchMemoryGovernance, updateMemoryGovernance, type MemoryGovernance, type MemoryGovernancePatch,
+} from '@/lib/api';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -443,6 +445,11 @@ export default function Settings() {
   // Double-check (four-eyes) — optional second-model review. Off by default.
   const [doubleCheckEnabled, setDoubleCheckEnabled] = useState<boolean>(false);
   const [verifierModel, setVerifierModel] = useState<string>('claude-haiku-4-5-20251001');
+  // Wave 4b: memory & governance — the injection gate, sign-off before export,
+  // automatic structured extraction. null until the first load answers.
+  const [memoryGovernance, setMemoryGovernance] = useState<MemoryGovernance | null>(null);
+  const [memoryGovernanceError, setMemoryGovernanceError] = useState<string | null>(null);
+
 
   // Wave 3.9: honest background-intelligence status (red/amber/green strip)
   const intelHealth = useIntelligenceHealth();
@@ -612,6 +619,7 @@ export default function Settings() {
     loadUtilityModel();
     loadMarketsModel();
     loadDoubleCheck();
+    loadMemoryGovernance();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
 
@@ -716,6 +724,39 @@ export default function Settings() {
       body: JSON.stringify({ model }),
     }).catch(() => { /* non-fatal */ });
     flash();
+  }
+
+  // Wave 4b — memory & governance. Loaded once; every change is written
+  // straight away and the state is replaced with what the server answers.
+  async function loadMemoryGovernance() {
+    try {
+      setMemoryGovernance(await fetchMemoryGovernance());
+      setMemoryGovernanceError(null);
+    } catch (err) {
+      setMemoryGovernanceError(err instanceof Error ? err.message : 'Could not load memory & governance settings');
+    }
+  }
+
+  async function handleUpdateMemoryGovernance(patch: MemoryGovernancePatch) {
+    const previous = memoryGovernance;
+    if (!previous) return;
+    // Optimistic — the control moves at once; a failed save puts it back.
+    setMemoryGovernance({
+      ...previous,
+      atomInjection: patch.atomInjectionMode !== undefined
+        ? { ...previous.atomInjection, mode: patch.atomInjectionMode }
+        : previous.atomInjection,
+      oversightBlocksExport: patch.oversightBlocksExport ?? previous.oversightBlocksExport,
+      structuredExtractionAuto: patch.structuredExtractionAuto ?? previous.structuredExtractionAuto,
+    });
+    setMemoryGovernanceError(null);
+    try {
+      setMemoryGovernance(await updateMemoryGovernance(patch));
+      flash();
+    } catch (err) {
+      setMemoryGovernance(previous);
+      setMemoryGovernanceError(err instanceof Error ? err.message : 'Could not save — the previous value stands');
+    }
   }
 
   function handleSetThinking(thinking: ThinkingLevel) {
@@ -1019,6 +1060,7 @@ export default function Settings() {
               </div>
             )}
           </div>
+
         </div>
       )}
 
@@ -1590,6 +1632,7 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
+
               </div>
             )}
 
@@ -1901,6 +1944,105 @@ export default function Settings() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Memory & governance (Wave 4b) — what learned memory reaches a Work run,
+          whether an unsigned gated run may leave, and whether every run pays
+          for a structured extraction. Same chip/toggle pattern as Double-check. */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-adv-teal" />
+          <h2 className="text-sm font-semibold text-adv-white">{t('settings.memoryGovernance', 'Memory & governance')}</h2>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          {t('settings.memoryGovernanceDesc', 'What learned memory reaches a Work run, whether a high-stakes run may be exported before a professional has signed it off, and whether every run pays for a structured extraction.')}
+        </p>
+
+        <div className="mt-5 space-y-5">
+          {/* Memory injection into Work runs — auto / on / off, with the gate's live reason */}
+          <div>
+            <label htmlFor="memory-injection-mode" className="mb-2 block text-sm text-adv-gray">
+              {t('settings.memoryInjection', 'Memory injection into Work runs')}
+            </label>
+            <select
+              id="memory-injection-mode"
+              value={memoryGovernance?.atomInjection.mode ?? 'auto'}
+              disabled={!memoryGovernance}
+              onChange={(e) => {
+                const mode = e.target.value;
+                if (mode === 'auto' || mode === 'on' || mode === 'off') handleUpdateMemoryGovernance({ atomInjectionMode: mode });
+              }}
+              className="w-full max-w-md rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
+            >
+              <option value="auto">{t('settings.memoryInjectionAuto', 'Auto — inject once memory has earned its place')}</option>
+              <option value="on">{t('common.on', 'On')}</option>
+              <option value="off">{t('common.off', 'Off')}</option>
+            </select>
+            <p className="mt-2 text-xs text-adv-gray" aria-live="polite">
+              {memoryGovernance
+                ? memoryGovernance.atomInjection.reason
+                : t('settings.memoryInjectionLoading', 'Reading the memory gate…')}
+            </p>
+          </div>
+
+          {/* Professional sign-off before export — the three EU AI Act gated modules */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span id="oversight-blocks-export-label" className="text-sm text-adv-gray">
+                {t('settings.oversightBlocksExport', 'Require professional sign-off before export')}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleUpdateMemoryGovernance({ oversightBlocksExport: !memoryGovernance?.oversightBlocksExport })}
+                disabled={!memoryGovernance}
+                role="switch"
+                aria-checked={!!memoryGovernance?.oversightBlocksExport}
+                aria-labelledby="oversight-blocks-export-label"
+                className={`${CHIP_BASE} ${memoryGovernance?.oversightBlocksExport ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+              >
+                {memoryGovernance?.oversightBlocksExport ? t('common.on', 'On') : t('common.off', 'Off')}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.oversightBlocksExportDesc', 'When on, a run of the three gated modules — Gap Analysis, Sanctions Advisory and Investigation Support — cannot be exported until a professional has signed it off. Off by default: the sign-off is recorded either way; this only decides whether an unsigned export is refused.')}
+            </p>
+          </div>
+
+          {/* Structured extraction after every run — costs a model turn on the subscription engine */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span id="structured-extraction-auto-label" className="text-sm text-adv-gray">
+                {t('settings.structuredExtractionAuto', 'Extract structured data automatically after every run')}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleUpdateMemoryGovernance({ structuredExtractionAuto: !memoryGovernance?.structuredExtractionAuto })}
+                disabled={!memoryGovernance}
+                role="switch"
+                aria-checked={!!memoryGovernance?.structuredExtractionAuto}
+                aria-labelledby="structured-extraction-auto-label"
+                className={`${CHIP_BASE} ${memoryGovernance?.structuredExtractionAuto ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+              >
+                {memoryGovernance?.structuredExtractionAuto ? t('common.on', 'On') : t('common.off', 'Off')}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.structuredExtractionAutoDesc', 'Feeds the Transform panel (spreadsheets, decks, diagrams) without waiting. On the subscription engine this costs one extra model turn per run, so it defaults off there; off, the extraction runs the first time a transform needs it.')}
+              {memoryGovernance && (
+                <>
+                  {' '}
+                  {memoryGovernance.structuredExtractionAutoDefault
+                    ? t('settings.structuredExtractionDefaultOn', 'Default for the current model: on.')
+                    : t('settings.structuredExtractionDefaultOff', 'Default for the current model: off.')}
+                </>
+              )}
+            </p>
+          </div>
+
+          {memoryGovernanceError && (
+            <p className="text-xs text-adv-red" role="alert">{memoryGovernanceError}</p>
+          )}
         </div>
       </div>
 

@@ -24,6 +24,8 @@ import {
   EntityNode,
 } from '../features/intelligence/types';
 import { useNavigate } from 'react-router-dom';
+import { fetchAtomInjectionStatus, setAtomInjectionMode } from '../lib/api';
+import type { AtomInjectionStatus, AtomInjectionMode } from '../lib/types';
 
 // Wave 3.4 — atom-layer A/B experiment stats (GET /api/intelligence/atom-ab)
 interface AtomAbArmStats {
@@ -81,6 +83,10 @@ export default function IntelligenceDashboard() {
   const [atomAb, setAtomAb] = useState<AtomAbStats | null>(null);
   const [atomAbToggling, setAtomAbToggling] = useState(false);
   const [codingAtomAb, setCodingAtomAb] = useState<CodingAtomAbStats | null>(null);
+  // Wave 4 — the memory-injection gate (GET /api/intelligence/atom-injection)
+  const [atomGate, setAtomGate] = useState<AtomInjectionStatus | null>(null);
+  const [atomGateSaving, setAtomGateSaving] = useState(false);
+  const [atomGateError, setAtomGateError] = useState<string | null>(null);
 
   // Temporal data
   const [atomsPerDay, setAtomsPerDay] = useState<TemporalDataPoint[]>([]);
@@ -164,6 +170,13 @@ export default function IntelligenceDashboard() {
       console.error('Failed to load coding-atom A/B stats:', err);
     }
 
+    // Load the memory-injection gate independently (Wave 4)
+    try {
+      setAtomGate(await fetchAtomInjectionStatus());
+    } catch (err) {
+      console.error('Failed to load memory injection status:', err);
+    }
+
     // Load temporal data independently
     try {
       const [atomsRes, patternsRes2, activityRes, qualityRes] = await Promise.all([
@@ -202,6 +215,19 @@ export default function IntelligenceDashboard() {
       console.error('Failed to toggle atom A/B experiment:', error);
     } finally {
       setAtomAbToggling(false);
+    }
+  }
+
+  async function handleAtomGateMode(mode: AtomInjectionMode) {
+    if (!atomGate || atomGateSaving || mode === atomGate.mode) return;
+    setAtomGateSaving(true);
+    setAtomGateError(null);
+    try {
+      setAtomGate(await setAtomInjectionMode(mode));
+    } catch (error) {
+      setAtomGateError(error instanceof Error ? error.message : 'Could not change the mode');
+    } finally {
+      setAtomGateSaving(false);
     }
   }
 
@@ -302,6 +328,62 @@ export default function IntelligenceDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Memory injection gate (Wave 4 — inject only when it earns its place) */}
+          {atomGate && (
+            <div className="bg-card border border-border rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <Atom className="w-4 h-4 text-adv-teal" />
+                  <span className="text-sm font-medium text-adv-off-white">Memory injection</span>
+                  <span className="text-xs text-adv-gray">
+                    — prior atoms go into Work runs only once memory has earned its place. Coding Studio project lessons are never gated.
+                  </span>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-adv-gray">
+                  Mode
+                  <select
+                    value={atomGate.mode}
+                    onChange={(e) => void handleAtomGateMode(e.target.value as AtomInjectionMode)}
+                    disabled={atomGateSaving}
+                    aria-label="Memory injection mode"
+                    className="bg-secondary border border-border rounded px-2 py-1 text-sm text-adv-off-white disabled:opacity-50"
+                  >
+                    <option value="auto">Auto — once the thresholds are met</option>
+                    <option value="on">On — always inject</option>
+                    <option value="off">Off — never inject</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-secondary border border-border rounded-lg p-3">
+                  <div className="text-xs text-adv-gray mb-1">Module atoms</div>
+                  <div className={`text-xl font-bold ${atomGate.moduleAtoms >= atomGate.thresholds.moduleAtoms ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                    {atomGate.moduleAtoms} <span className="text-sm font-normal text-adv-gray">/ {atomGate.thresholds.moduleAtoms}</span>
+                  </div>
+                  <div className="text-xs text-adv-gray mt-1">learned from module runs (lint and Coding Studio atoms excluded)</div>
+                </div>
+                <div className="bg-secondary border border-border rounded-lg p-3">
+                  <div className="text-xs text-adv-gray mb-1">Ratings</div>
+                  <div className={`text-xl font-bold ${atomGate.ratings >= atomGate.thresholds.ratings ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                    {atomGate.ratings} <span className="text-sm font-normal text-adv-gray">/ {atomGate.thresholds.ratings}</span>
+                  </div>
+                  <div className="text-xs text-adv-gray mt-1">thumbs given on injected atoms</div>
+                </div>
+                <div className="bg-secondary border border-border rounded-lg p-3">
+                  <div className="text-xs text-adv-gray mb-1">Status</div>
+                  <div className={`text-xl font-bold ${atomGate.applies ? 'text-adv-teal' : 'text-adv-gold'}`}>
+                    {atomGate.applies ? 'Injecting' : 'Not injecting'}
+                  </div>
+                  <div className="text-xs text-adv-gray mt-1">{atomGate.ready ? 'thresholds met' : 'thresholds not yet met'}</div>
+                </div>
+              </div>
+
+              <p className="mt-3 text-sm text-adv-off-white">{atomGate.reason}.</p>
+              {atomGateError && <p className="mt-1 text-xs text-red-400">{atomGateError}</p>}
+            </div>
+          )}
 
           {/* Atom layer effectiveness (Wave 3.4 A/B experiment) */}
           {atomAb && (

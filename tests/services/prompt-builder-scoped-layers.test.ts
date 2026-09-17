@@ -30,6 +30,7 @@ vi.mock('../../server/services/hybrid-search.js', () => ({
 
 import { hybridSearch } from '../../server/services/hybrid-search.js';
 import { buildKnowledgePackLayer, buildAtomLayer } from '../../server/services/prompt-builder.js';
+import { ATOM_INJECTION_GATE_SQL, resetAtomInjectionGateCache } from '../../server/services/atom-injection-gate.js';
 
 const hybridSearchMock = vi.mocked(hybridSearch);
 
@@ -62,7 +63,7 @@ function packDb(): DatabaseAdapter {
   } as DatabaseAdapter;
 }
 
-beforeEach(() => { hybridSearchMock.mockReset(); });
+beforeEach(() => { hybridSearchMock.mockReset(); resetAtomInjectionGateCache(); });
 
 describe('buildKnowledgePackLayer — a run with no area and no module (open chat)', () => {
   it('returns nothing — not even the pack listing — when semantic retrieval finds no strong match', async () => {
@@ -98,7 +99,8 @@ describe('buildKnowledgePackLayer — a run with no area and no module (open cha
   });
 });
 
-/** Fake adapter for the atom layer: two atoms, one of them a Coding Studio project's review flag. */
+/** Fake adapter for the atom layer: two atoms, one of them a Coding Studio project's review flag.
+ *  The memory gate (Wave 4) is forced on here — these tests are about scope, not the gate. */
 function atomDb() {
   const seen: string[] = [];
   const atoms = [
@@ -107,7 +109,11 @@ function atomDb() {
   ];
   const db = {
     dialect: 'postgresql',
-    async get() { return undefined; },
+    async get(sql: string) {
+      if (sql === ATOM_INJECTION_GATE_SQL.mode) return { value: 'on' };
+      if (sql === ATOM_INJECTION_GATE_SQL.moduleAtoms || sql === ATOM_INJECTION_GATE_SQL.ratings) return { c: 0 };
+      return undefined;
+    },
     async all<T>(sql: string): Promise<T[]> {
       seen.push(sql);
       if (/FROM knowledge_atoms ka/.test(sql)) return [];            // the no-area fallback query — must not be reached

@@ -12,6 +12,20 @@ import { createAtomExtractor } from './atom-extractor.js';
 import { computeDiff, computeStats, buildSemanticSummary } from './version-diff.js';
 import { embedAndStore } from './hybrid-search.js';
 
+/** learning_error is a reason, not a stack trace (same cap as output-store). */
+const LEARNING_ERROR_MAX_CHARS = 500;
+
+/**
+ * The ledger writes for a directly-extracted coding output (Wave 4b).
+ * Exported so a test can answer them by identity.
+ */
+export const CODING_LEDGER_SQL = {
+  /** Params: output id. */
+  markLearned: "UPDATE workflow_outputs SET learning_status = 'learned', learned_at = NOW(), learning_attempts = learning_attempts + 1 WHERE id = ?",
+  /** Params: error (≤ 500 chars), output id. */
+  markFailed: "UPDATE workflow_outputs SET learning_status = 'failed', learning_error = ?, learning_attempts = learning_attempts + 1 WHERE id = ?",
+} as const;
+
 // ── ANTON Studio Phase 4: project-scoped coding-atoms (active memory) ────────
 //
 // Coding signals become PROJECT-SCOPED atoms (knowledge_atoms.coding_project_id
@@ -233,16 +247,18 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
     moduleId: string
   ): Promise<void> {
     try {
-      // Check if workflow_outputs table exists
-      if (!tableExists('workflow_outputs')) {
+      // Check if workflow_outputs table exists. (The await was missing, so
+      // the check never skipped — a Promise is always truthy.)
+      if (!(await tableExists('workflow_outputs'))) {
         console.warn('[coding-integration] workflow_outputs table not found, skipping knowledge extraction');
         return;
       }
 
-      if (!anthropicClient) {
-        console.warn('[coding-integration] No Anthropic client provided, skipping knowledge extraction');
-        return;
-      }
+      // No client gate (Wave 4b, 2026-09-17): every caller constructs this
+      // service as createCodingIntegration(db), so the old "no Anthropic
+      // client → skip" branch meant coding outputs were never learned at
+      // all. The extractor takes its model from provider-router and ignores
+      // the client; it runs under the SDK engine like every other runner.
 
       // Create a minimal workflow_output row for the atom extractor
       const outputId = randomUUID();
@@ -254,7 +270,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
           (id, workflow_id, execution_id, step_index, step_type, output_data,
            module_id, area_id, created_by, workflow_name, step_name)
         VALUES (?, ?, ?, 0, 'text', ?, ?, 'coding', 'system', ?, ?)
-      `, 
+      `,
         outputId,
         workflowId,
         executionId,
@@ -264,8 +280,20 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
         `${phase}-output`
       );
 
-      const extractor = await createAtomExtractor(db, anthropicClient);
-      await extractor.extractAtoms(outputId);
+      // The ledger tells the truth (Wave 4b): this path extracts directly
+      // instead of going through output-store's pipeline, so it records the
+      // outcome itself. Without this the row sat at 'pending' for ever and
+      // the hourly sweep re-extracted it. No summary is written here —
+      // coding outputs carry none, and that is acceptable.
+      try {
+        const extractor = await createAtomExtractor(db, anthropicClient);
+        await extractor.extractAtoms(outputId);
+        await db.run(CODING_LEDGER_SQL.markLearned, outputId);
+      } catch (err) {
+        const message = (err instanceof Error ? err.message : String(err)).slice(0, LEARNING_ERROR_MAX_CHARS);
+        await db.run(CODING_LEDGER_SQL.markFailed, message, outputId);
+        throw err;
+      }
 
       console.log(`[coding-integration] Knowledge extracted for project ${projectId}, phase ${phase}`);
     } catch (error) {

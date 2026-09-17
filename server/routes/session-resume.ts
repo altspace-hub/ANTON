@@ -29,6 +29,8 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
 
 import { createSessionResumeService, type CreateSnapshotInput } from '../services/session-resume.js';
+import { writeSessionConclusion } from '../services/session-conclusion.js';
+import { safeError } from '../lib/error-response.js';
 
 export async function createSessionResumeRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -86,16 +88,42 @@ export async function createSessionResumeRoutes(db: DatabaseAdapter): Promise<Ro
     }
   });
 
-  // ── Auto-generate snapshot ─────────────────────────────────────────────────
+  // ── Conclude the session now (Wave 4b: the conclusion has a reader) ────────
+  // The same writer that runs after every answer, on demand: the session's
+  // latest assistant message is concluded through writeSessionConclusion,
+  // which is idempotent per message and never throws. The old heuristic
+  // (autoGenerateSnapshot — the first 300 chars of the last answer) is no
+  // longer reachable from here. 404 when the session has no answer yet;
+  // otherwise 200 { written, reason, snapshot } where snapshot is the latest
+  // row after the call — the running conclusion when the write was refused
+  // ("too short", "already written", "in flight"), the new one when it wrote.
   router.post('/sessions/:sessionId/snapshots/auto', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const sessionId = String(req.params.sessionId);
-      const snapshot = await resumeService.autoGenerateSnapshot(sessionId, userId);
-      res.status(201).json({ snapshot });
+      const latest = await db.get<{ id: string; content: string | null }>(
+        `SELECT id, content FROM messages
+         WHERE session_id = ? AND role = 'assistant'
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        sessionId,
+      );
+      if (!latest) return res.status(404).json({ error: 'No answer to conclude from yet' });
+      const session = await db.get<{ module_id: string | null }>(
+        'SELECT module_id FROM sessions WHERE id = ?', sessionId,
+      );
+      const result = await writeSessionConclusion(db, {
+        sessionId,
+        messageId: String(latest.id),
+        userId,
+        moduleId: session?.module_id ?? null,
+        assistantText: latest.content ?? '',
+      });
+      const snapshot = await resumeService.getLatestSnapshot(sessionId);
+      res.json({ written: result.written, reason: result.reason ?? null, snapshot });
     } catch (err) {
-      console.error('[session-resume] auto snapshot error:', err);
-      res.status(500).json({ error: 'Failed to generate snapshot' });
+      console.error('[session-resume] auto conclusion error:', err);
+      res.status(500).json({ error: safeError(err) });
     }
   });
 

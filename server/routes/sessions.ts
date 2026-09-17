@@ -3,6 +3,11 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { ilike } from '../db/dialect-helpers.js';
 import { callChat } from '../services/provider-router.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
+import { resolveProjectAccess } from '../services/project-context.js';
+
+// Lazy read — a module-scope snapshot would evaluate before index.ts resolves
+// DEPLOYMENT_MODE (see middleware/auth.ts).
+const isTeamMode = () => process.env.DEPLOYMENT_MODE === 'team';
 
 /** Neutral on purpose: the old browser-side prompt titled every chat as an
  *  "FCP compliance consultation", whatever it was about. */
@@ -93,6 +98,14 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       // set by a later PATCH, and containment that needs a second step after
       // the work is done is containment nobody performs: 0 of 54 sessions here.
       const project = typeof projectId === 'string' && projectId.trim() ? projectId.trim() : null;
+      // Wave 4: a project id was stored unchecked — any string, any project,
+      // any caller — and the run then read that project's sessions. The
+      // project must exist and, in team mode, be one the caller belongs to.
+      if (project) {
+        const access = await resolveProjectAccess(db, { projectId: project, userId: userId ?? 'solo', userRole: req.user?.role ?? null, teamMode: isTeamMode() });
+        if (access === 'not_found') { res.status(404).json({ error: 'Project not found' }); return; }
+        if (access === 'forbidden') { res.status(403).json({ error: 'Not a member of this project' }); return; }
+      }
       await db.run('INSERT INTO sessions (id, module_id, title, config, user_id, project_id) VALUES (?, ?, ?, ?, ?, ?)', id,
         moduleId,
         title,

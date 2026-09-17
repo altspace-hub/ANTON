@@ -390,10 +390,38 @@ export interface ContextUsed {
   packGroundingChars: number;
   /** Characters of institutional-memory atoms injected (0 = none). */
   atomChars: number;
+  /** Wave 4: the memory gate's verdict for this run and the atoms that went in. */
+  atoms?: {
+    applied: boolean;
+    reason: string;
+    ids: string[];
+    count: number;
+    mode: AtomInjectionMode;
+    moduleAtoms: number;
+    ratings: number;
+    thresholds: { moduleAtoms: number; ratings: number };
+  };
+  /** Wave 4: characters of the other memory layers (0 = none). */
+  projectContextChars?: number;
+  goalsValuesChars?: number;
+  resumeContextChars?: number;
   orgContext: boolean;
   goalsValues: boolean;
   resumeContext: boolean;
   webSearch: boolean;
+}
+
+export type AtomInjectionMode = 'auto' | 'on' | 'off';
+
+/** Mirror of server/services/atom-injection-gate.ts AtomInjectionStatus (GET /api/intelligence/atom-injection). */
+export interface AtomInjectionStatus {
+  mode: AtomInjectionMode;
+  ready: boolean;
+  applies: boolean;
+  moduleAtoms: number;
+  ratings: number;
+  thresholds: { moduleAtoms: number; ratings: number };
+  reason: string;
 }
 
 /**
@@ -603,6 +631,8 @@ export interface InjectedAtomRow {
   retrieval_score: number;
   injected_at: string;
   was_relevant: number | null;
+  /** Wave 4: the answer this atom went into (null for rows written before migration 275). */
+  message_id?: string | null;
   content: string;
   atom_type: string;
   category: string;

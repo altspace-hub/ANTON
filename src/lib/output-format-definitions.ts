@@ -1,4 +1,5 @@
-import type { OutputFormat } from './types';
+// '.js' so the server build (nodenext; claude.ts imports this file) resolves it too.
+import type { OutputFormat } from './types.js';
 
 export const OUTPUT_FORMATS: OutputFormat[] = [
   // ── STRATEGIC ──────────────────────────────────────────────

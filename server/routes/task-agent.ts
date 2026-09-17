@@ -23,7 +23,6 @@ import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
-import { createAtomExtractor } from '../services/atom-extractor.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
@@ -360,13 +359,6 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     return _missionController;
   }
 
-  // Lazy atom extractor — creates workflow_output + extracts knowledge atoms on task completion
-  let _atomExtractor: ReturnType<typeof createAtomExtractor> | null = null;
-  function getAtomExtractor() {
-    if (!_atomExtractor) _atomExtractor = createAtomExtractor(db, ai);
-    return _atomExtractor;
-  }
-
   /** Create a workflow_output row and fire-and-forget atom extraction */
   async function emitTaskAtoms(task: TaskRow, output: string, stepName: string, stepIndex: number) {
     try {
@@ -392,9 +384,11 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
         `ANTON Task: ${task.title}`,
         stepName,
       );
-      // Fire-and-forget atom extraction (non-blocking)
-      void getAtomExtractor()
-        .then((extractor) => extractor.extractAtoms(outputId))
+      // Wave 4: through the learning ledger (workflow_outputs.learning_status),
+      // so a refused or failed extraction is recorded and the hourly sweep
+      // finishes it — a bare extractAtoms() left the row 'pending' for ever.
+      void import('../services/output-store.js')
+        .then(({ runLearningForOutput }) => runLearningForOutput(db, outputId))
         .catch((err: unknown) => {
           console.warn('[task-agent] atom extraction failed (non-fatal):', err instanceof Error ? err.message : err);
         });

@@ -22,6 +22,7 @@ import TransformPanel from '@/components/shared/TransformPanel';
 import SkillAttacher from '@/components/platform/SkillAttacher';
 import SessionTogglesPanel from '@/components/shared/SessionTogglesPanel';
 import InjectedAtomsPanel from '@/components/shared/InjectedAtomsPanel';
+import { ResumePanel } from '@/components/shared/ResumePanel';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -588,6 +589,7 @@ export default function PromptPage() {
               onAtomCollectionChange={setAtomCollectionEnabled}
             />
             <InjectedAtomsPanel sessionId={sessionId} />
+            <ResumePanel sessionId={sessionId} />
             <FileUploader files={files} onUpload={upload} onRemove={remove} />
           </div>
         </div>

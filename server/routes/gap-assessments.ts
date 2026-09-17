@@ -47,6 +47,7 @@ import { compareIterations, buildSinceLastAssessmentSection } from '../services/
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { bundleGapAssessmentToAnton } from '../services/anton-bundler.js';
 import { signAntonBundle } from '../services/anton-bundle-signing.js';
+import { createOutputStore, type StoreOutputParams } from '../services/output-store.js';
 import { fileURLToPath } from 'url';
 
 const __filename_local = fileURLToPath(import.meta.url);
@@ -57,9 +58,221 @@ function getUserId(req: Request): string {
   return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
 }
 
+// ── Memory feed (Wave 4b, 2026-09-17) ───────────────────────────────────────
+//
+// A finished assessment is the most structured output ANTON produces, and
+// none of it reached the learning ledger: only the chat route stored an
+// output, so the Gap Assessor never learned. Both completion points — the
+// roadmap (status 'complete') and a recorded iteration — now store one
+// compact rendering through output-store, whose pipeline summarises and
+// extracts atoms after the tick and records its progress on the row.
+// Fire-and-forget: the response never waits on it and never fails for it.
+
+/** The stored rendering stays inside the summariser's and extractor's windows. */
+export const GAP_MEMORY_TEXT_MAX_CHARS = 12_000;
+
+export interface GapMemoryFinding {
+  framework: string;
+  articleId: string;
+  articleTitle?: string | null;
+  score?: string | null;
+  priority?: string | null;
+  currentState?: string | null;
+  notes?: string | null;
+}
+
+export interface GapMemoryRenderInput {
+  title: string;
+  frameworks: string[];
+  findings: GapMemoryFinding[];
+  /** The roadmap as stored (JSON string) or parsed; anything unreadable is left out. */
+  roadmap: unknown;
+}
+
+export interface GapMemoryStepInput extends GapMemoryRenderInput {
+  assessmentId: string;
+  /** 0 for the roadmap; the iteration number for a recorded iteration. */
+  stepIndex: number;
+  stepName: string;
+  userId: string;
+}
+
+interface RoadmapItemLite { title: string; priority: string | null; effort: string | null; articleIds: string[] }
+interface RoadmapPhaseLite { name: string; timeframe: string | null; objective: string | null; items: RoadmapItemLite[] }
+interface RoadmapLite { phases: RoadmapPhaseLite[]; criticalPath: string[]; keyRisks: string[] }
+
+const SCORE_ORDER: Record<string, number> = { red: 0, amber: 1, yellow: 2, green: 3 };
+
+function oneLine(value: unknown, max: number): string {
+  return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function stringList(value: unknown, max: number): string[] {
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === 'string').map(v => oneLine(v, max)).filter(Boolean)
+    : [];
+}
+
+/** Tolerant read of the roadmap JSON the generator returns (phases → items). */
+function parseRoadmapLite(raw: unknown): RoadmapLite | null {
+  let value: unknown = raw;
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch { return null; }
+  }
+  if (!value || typeof value !== 'object') return null;
+  const obj = value as Record<string, unknown>;
+  if (!Array.isArray(obj.phases)) return null;
+  const phases: RoadmapPhaseLite[] = obj.phases
+    .filter((p): p is Record<string, unknown> => Boolean(p) && typeof p === 'object')
+    .map(p => ({
+      name: oneLine(p.name, 120) || 'Phase',
+      timeframe: oneLine(p.timeframe, 60) || null,
+      objective: oneLine(p.objective, 200) || null,
+      items: (Array.isArray(p.items) ? p.items : [])
+        .filter((i): i is Record<string, unknown> => Boolean(i) && typeof i === 'object')
+        .map(i => ({
+          title: oneLine(i.title, 120),
+          priority: oneLine(i.priority, 20) || null,
+          effort: oneLine(i.effort, 10) || null,
+          articleIds: stringList(i.articleIds, 40),
+        }))
+        .filter(i => i.title.length > 0),
+    }));
+  return { phases, criticalPath: stringList(obj.criticalPath, 40), keyRisks: stringList(obj.keyRisks, 160) };
+}
+
+/** Cut at a line boundary under the cap and say so, rather than split a finding mid-sentence. */
+function capText(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const marker = '\n…(truncated)';
+  const room = max - marker.length;
+  const cut = text.lastIndexOf('\n', room);
+  return text.slice(0, cut > room / 2 ? cut : room) + marker;
+}
+
+/** The ANTON area an assessment's atoms belong to, from its frameworks' shared domain. */
+export function gapAssessmentAreaId(frameworks: string[]): string {
+  switch (domainForFrameworks(frameworks)) {
+    case 'infosec':
+    case 'ict-resilience':
+      return 'cyber';
+    case 'privacy':
+      return 'data-privacy';
+    case 'esg':
+      return 'esg';
+    case 'ai-governance':
+      return 'risk';
+    default:
+      return 'fcp';
+  }
+}
+
+/** gap_assessments.frameworks is a JSON array; anything else reads as no frameworks. */
+export function parseAssessmentFrameworks(raw: unknown): string[] {
+  if (Array.isArray(raw)) return stringList(raw, 80);
+  if (typeof raw !== 'string') return [];
+  try { return stringList(JSON.parse(raw), 80); } catch { return []; }
+}
+
+/**
+ * The compact text memory learns from: every finding as one line (worst
+ * first, so a cap keeps the ones that matter) and the roadmap's headline
+ * items. Deterministic, never longer than GAP_MEMORY_TEXT_MAX_CHARS.
+ */
+export function renderGapAssessmentMemoryText(input: GapMemoryRenderInput): string {
+  const lines: string[] = [];
+  lines.push(`Gap assessment: ${oneLine(input.title, 200) || 'Untitled'}`);
+  if (input.frameworks.length > 0) lines.push(`Frameworks: ${input.frameworks.join(', ')}`);
+
+  const findings = [...input.findings].sort(
+    (a, b) => (SCORE_ORDER[a.score ?? ''] ?? 9) - (SCORE_ORDER[b.score ?? ''] ?? 9),
+  );
+  const count = (score: string) => findings.filter(f => f.score === score).length;
+  lines.push(`Findings (${findings.length}): ${count('red')} red, ${count('amber')} amber, ${count('yellow')} yellow, ${count('green')} green`);
+  for (const f of findings) {
+    const status = [f.score, f.priority].filter(Boolean).join('/');
+    const finding = oneLine(f.notes, 240) || oneLine(f.currentState, 240);
+    const title = oneLine(f.articleTitle, 80);
+    lines.push(`- ${f.framework} ${f.articleId}${title ? ` (${title})` : ''}${status ? ` [${status}]` : ''}${finding ? `: ${finding}` : ''}`);
+  }
+
+  const roadmap = parseRoadmapLite(input.roadmap);
+  if (roadmap && roadmap.phases.length > 0) {
+    lines.push('');
+    lines.push('Roadmap:');
+    for (const phase of roadmap.phases) {
+      lines.push(`${phase.name}${phase.timeframe ? ` (${phase.timeframe})` : ''}${phase.objective ? `: ${phase.objective}` : ''}`);
+      for (const item of phase.items) {
+        const meta = [item.priority, item.effort].filter(Boolean).join('/');
+        const articles = item.articleIds.length > 0 ? ` — ${item.articleIds.join(', ')}` : '';
+        lines.push(`  - ${item.title}${meta ? ` [${meta}]` : ''}${articles}`);
+      }
+    }
+    if (roadmap.criticalPath.length > 0) lines.push(`Critical path: ${roadmap.criticalPath.join(' → ')}`);
+    if (roadmap.keyRisks.length > 0) lines.push(`Key risks: ${roadmap.keyRisks.join('; ')}`);
+  }
+
+  return capText(lines.join('\n'), GAP_MEMORY_TEXT_MAX_CHARS);
+}
+
+/** The exact row a completed assessment step stores — one place, so the tests and the routes agree. */
+export function buildGapAssessmentOutputParams(input: GapMemoryStepInput): StoreOutputParams {
+  return {
+    executionId: input.assessmentId,
+    workflowId: `gap-assessment:${input.assessmentId}`,
+    stepIndex: input.stepIndex,
+    stepType: 'gap_assessment',
+    areaId: gapAssessmentAreaId(input.frameworks),
+    moduleId: 'gap-analysis',
+    outputData: { text: renderGapAssessmentMemoryText(input) },
+    workflowName: `Gap assessment: ${oneLine(input.title, 200) || 'Untitled'}`,
+    stepName: input.stepName,
+    userId: input.userId,
+  };
+}
+
+/** The article_scores blob (framework → findings) as the flat list memory renders. */
+function flattenArticleFindings(allFindings: Record<string, ArticleFindingLite[]>): GapMemoryFinding[] {
+  return Object.entries(allFindings).flatMap(([framework, findings]) =>
+    (Array.isArray(findings) ? findings : []).map(f => ({
+      framework,
+      articleId: String(f.articleId ?? ''),
+      articleTitle: f.articleTitle ?? null,
+      score: f.score ?? null,
+      priority: f.priority ?? null,
+      currentState: f.currentState ?? null,
+      notes: f.notes ?? null,
+    })),
+  );
+}
+
+type ArticleFindingLite = Partial<Pick<import('../services/gap-assessment-engine.js').ArticleFinding,
+  'articleId' | 'articleTitle' | 'score' | 'priority' | 'currentState' | 'notes'>>;
+
 export async function createGapAssessmentsRoutes(db: DatabaseAdapter, sharedAnthropic?: Anthropic | undefined): Promise<Router> {
   const router = Router();
   const engine = await createGapAssessmentEngine(db);
+
+  // Wave 4b: one store per router, created on first use (the same lazy
+  // pattern claude.ts uses). feedMemory never throws and never delays a
+  // response — the ledger row records what the pipeline does with it.
+  let _outputStore: Awaited<ReturnType<typeof createOutputStore>> | null = null;
+  async function getOutputStore() {
+    if (!_outputStore) _outputStore = await createOutputStore(db);
+    return _outputStore;
+  }
+  function feedMemory(input: GapMemoryStepInput): void {
+    void (async () => {
+      try {
+        const store = await getOutputStore();
+        await store.storeOutput(buildGapAssessmentOutputParams(input));
+      } catch (err) {
+        console.warn('[gap-assessments] memory feed failed (non-fatal):', err instanceof Error ? err.message : err);
+      }
+    })();
+  }
+  const assessmentTitle = (row: unknown): string =>
+    oneLine((row as { title?: unknown } | undefined)?.title, 200) || 'Untitled';
   // Kept for the engine function signatures; the LLM calls themselves go
   // through provider-router and the routes gate on hasClaudeEngine().
   const anthropic = sharedAnthropic ?? (process.env.ANTHROPIC_API_KEY ? new AnthropicSDK({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20 * 60 * 1000 }) : null);
@@ -1073,6 +1286,18 @@ HOW TO RUN THE INTERVIEW
 
       await db.run('UPDATE gap_assessments SET roadmap = ?, roadmap_reasoning = ?, current_step = 8, status = ?, updated_at = ? WHERE id = ?', result.json, result.reasoning || null, 'complete', new Date().toISOString(), req.params.id as string);
 
+      // Wave 4b: the assessment is complete — its findings and roadmap feed memory.
+      feedMemory({
+        assessmentId: req.params.id as string,
+        title: assessmentTitle(assessment),
+        frameworks: parseAssessmentFrameworks(assessment.frameworks),
+        findings: flattenArticleFindings(allFindings),
+        roadmap: result.json,
+        stepIndex: 0,
+        stepName: 'Roadmap',
+        userId: uid,
+      });
+
       const roadmap = JSON.parse(result.json);
       res.json({ roadmap, reasoning: result.reasoning });
     } catch (err) {
@@ -1151,6 +1376,26 @@ HOW TO RUN THE INTERVIEW
           JSON.stringify(scoreSummary),
           notes || null,
           uid,);
+
+      // Wave 4b: a recorded iteration is a completed assessment pass — it feeds memory.
+      feedMemory({
+        assessmentId: req.params.id as string,
+        title: assessmentTitle(assessment),
+        frameworks: parseAssessmentFrameworks(assessment.frameworks),
+        findings: mapped.map(m => ({
+          framework: m.framework,
+          articleId: m.articleId,
+          articleTitle: m.articleTitle,
+          score: m.score,
+          priority: m.priority,
+          currentState: m.currentState,
+          notes: m.notes,
+        })),
+        roadmap: assessment.roadmap,
+        stepIndex: iterNum,
+        stepName: `Iteration ${iterNum}`,
+        userId: uid,
+      });
 
       res.json({ iterationId, iterationNumber: iterNum, scoreSummary });
     } catch (err) {

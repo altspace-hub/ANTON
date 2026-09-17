@@ -37,7 +37,12 @@ function fakeDb() {
   const runs: Array<{ sql: string; params: unknown[] }> = [];
   const db = {
     dialect: 'postgresql',
-    get: vi.fn(async () => undefined),
+    // Wave 4: creation now checks that the project exists (404 otherwise), so
+    // the fake knows the one project these tests place a session in.
+    get: vi.fn(async (sql: string, ...params: unknown[]) =>
+      (/FROM projects/.test(sql) && params[0] === 'proj-acme')
+        ? { id: 'proj-acme', name: 'Acme', description: null, project_goal: null, user_id: 'alice' }
+        : undefined),
     all: vi.fn(async () => []),
     run: vi.fn(async (sql: string, ...params: unknown[]) => { runs.push({ sql, params }); return { changes: 1, lastInsertRowid: 0 }; }),
     exec: vi.fn(async () => undefined),

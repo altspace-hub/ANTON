@@ -6,6 +6,7 @@
  */
 
 import { safeError } from '../lib/error-response.js';
+import { resolveProjectAccess } from '../services/project-context.js';
 import { Router, Request, Response, NextFunction } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
@@ -311,10 +312,12 @@ export async function createEngagementsRoutes(db: DatabaseAdapter): Promise<Rout
       if (IS_TEAM() && userRole !== 'admin' && existing.user_id !== userId)
         return res.status(403).json({ error: 'Only the engagement owner can link to a project' });
       const { project_id } = req.body as { project_id: string | null };
-      // Validate project exists if provided
+      // Wave 4: the project must exist and, in team mode, the caller must be
+      // its owner, a member or an admin — the same gate a session gets.
       if (project_id) {
-        const project = await db.get('SELECT id FROM projects WHERE id = ?', project_id);
-        if (!project) return res.status(404).json({ error: 'Project not found' });
+        const access = await resolveProjectAccess(db, { projectId: project_id, userId, userRole, teamMode: IS_TEAM() });
+        if (access === 'not_found') return res.status(404).json({ error: 'Project not found' });
+        if (access === 'forbidden') return res.status(403).json({ error: 'Not a member of this project' });
       }
       await db.run("UPDATE engagements SET project_id = ?, updated_at = NOW() WHERE id = ?", project_id || null, String(req.params.id));
       logChange(String(req.params.id), 'setup', project_id ? 'project_linked' : 'project_unlinked',

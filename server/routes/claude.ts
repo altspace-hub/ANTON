@@ -12,7 +12,10 @@ import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-ve
 import { getModule } from '../services/module-loader.js';
 import { estimateTokens } from '../services/token-estimator.js';
 import { buildOutputInstruction } from '../../src/lib/output-format-definitions.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayer, buildAtomLayerDetailed } from '../services/prompt-builder.js';
+import { buildProjectContext } from '../services/project-context.js';
+import { buildResumeContextIfDue } from '../services/session-resume.js';
+import { writeSessionConclusion } from '../services/session-conclusion.js';
 import { retrieveGroundingText, type GroundingResult } from '../services/framework-text-retrieval.js';
 import { frameworksForArea } from '../services/area-frameworks.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
@@ -56,6 +59,7 @@ import { buildCompactionConfig, buildContextManagementParam } from '../services/
 import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
 import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
+import { getAtomInjectionStatus } from '../services/atom-injection-gate.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
@@ -776,14 +780,29 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // knowledge additions, reference documents, etc.) are sent in a second uncached block.
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
       const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
-      const resumeContextPrompt = sessionId ? await buildResumeContextLayer(db, String(sessionId)) : '';
+      // Wave 4: the resume block is injected only when the session is picked up
+      // again after a break (RESUME_GAP_MINUTES); the conversation history
+      // already carries recent context, so on a continuous run it stays out.
+      const resumeDue = sessionId ? await buildResumeContextIfDue(db, String(sessionId)) : null;
+      const resumeContextPrompt = resumeDue?.text ?? '';
       // The project (matter) this session belongs to: what was concluded in its
       // other sessions rides along. buildProjectContextSummary had existed for
       // months with no caller — sessions never carried a project_id at creation.
+      // Wave 4: the project layer reads what the sibling sessions CONCLUDED
+      // (sessions.summary + their conclusion's decisions), the matter brief and
+      // the engagement linked to the project — not the first 200 words of each
+      // last answer — and checks membership first in team mode.
       let projectContextPrompt = '';
       if (sessionId && projectRow) {
         try {
-          projectContextPrompt = await buildProjectContextSummary(db, projectRow.id, String(sessionId));
+          const pc = await buildProjectContext(db, {
+            projectId: projectRow.id,
+            currentSessionId: String(sessionId),
+            userId: (req as any).user?.id ?? 'default',
+            userRole: (req as any).user?.role ?? null,
+            teamMode: process.env.DEPLOYMENT_MODE === 'team',
+          });
+          projectContextPrompt = pc.text;
         } catch { /* non-fatal — the project layer is enrichment */ }
       }
       // Wave 2: the pack layer is scoped to the run's area and returns the
@@ -821,16 +840,33 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // itself still applies to reruns exactly like the original run.
       const atomInjectionOn = atomInjectionEnabled !== false;
       let atomArm: 'injected' | 'holdout' | null = null;
+      // Wave 4b: no arm while the injection gate is closed — a 'holdout' tagged
+      // on a run that could not have been injected anyway would count a
+      // non-treatment as a treatment and bias the experiment.
       if (
         userMessageId && // type narrowing — the predicate also checks it
         isExperimentSubject({ isRerun: !!rerunOf, atomInjectionOn, sessionId, userMessageId }) &&
-        await isAtomAbEnabled(db)
+        await isAtomAbEnabled(db) &&
+        (await getAtomInjectionStatus(db)).applies
       ) {
         atomArm = assignAtomArm(userMessageId);
       }
-      const atomLayerPrompt = atomInjectionOn && atomArm !== 'holdout'
-        ? await buildAtomLayer(db, areaId, moduleId, userMessage, sessionId ? String(sessionId) : null)
-        : '';
+      // Wave 4: the layer goes through the injection gate (Settings
+      // atom_injection_mode: auto | on | off; auto injects only once 100 module
+      // atoms and 30 ratings exist), binds each injected atom to this answer's
+      // id so a rating is per answer, and reports what it did in contextUsed.
+      const atomLayer = atomInjectionOn && atomArm !== 'holdout'
+        ? await buildAtomLayerDetailed(db, {
+            areaId,
+            moduleId,
+            userMessage,
+            sessionId: sessionId ? String(sessionId) : null,
+            messageId: sessionId ? assistantMessageId : null,
+            ownerUserId: (req as any).user?.id ?? null,
+            teamMode: process.env.DEPLOYMENT_MODE === 'team',
+          })
+        : null;
+      const atomLayerPrompt = atomLayer?.text ?? '';
       // Finding #9: drop an 'injected' arm whose atom layer came back empty so the
       // A/B experiment is not biased toward "atoms don't help" by runs that never
       // actually injected anything. resolveFinalArm leaves 'holdout'/null as-is.
@@ -956,9 +992,36 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         frameworkArticles: frameworkGrounding ? frameworkGrounding.sources.filter((s) => s.articleId).length : 0,
         frameworkChars: frameworkGroundingPrompt.length,
         atomChars: atomLayerPrompt ? atomLayerPrompt.length : 0,
+        // Wave 4: what the memory gate decided for this run and which atoms
+        // (by id) went in — the page and the run artifact both read this.
+        atoms: atomLayer
+          ? {
+              applied: atomLayer.applied,
+              reason: atomLayer.reason,
+              ids: atomLayer.atoms.map((a) => a.id),
+              count: atomLayer.atoms.length,
+              mode: atomLayer.gate.mode,
+              moduleAtoms: atomLayer.gate.moduleAtoms,
+              ratings: atomLayer.gate.ratings,
+              thresholds: atomLayer.gate.thresholds,
+            }
+          : {
+              applied: false,
+              reason: atomArm === 'holdout' ? 'A/B holdout arm for this run' : 'Memory injection switched off for this session',
+              ids: [],
+              count: 0,
+              mode: 'auto' as const,
+              moduleAtoms: 0,
+              ratings: 0,
+              thresholds: { moduleAtoms: 0, ratings: 0 },
+            },
         orgContext: Boolean(orgContextPrompt),
         goalsValues: Boolean(goalsValuesPrompt),
         resumeContext: Boolean(resumeContextPrompt),
+        // Wave 4: sizes, not booleans, for the layers that carry memory.
+        projectContextChars: projectContextPrompt.length,
+        goalsValuesChars: goalsValuesPrompt.length,
+        resumeContextChars: resumeContextPrompt.length,
         webSearch: tools.some((t) => t.type === 'web_search_20250305'),
       };
 
@@ -1159,7 +1222,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 contentHashed: Boolean(w.sha256),
                 ...(w.isError ? { note: 'tool reported an error' } : {}),
               }));
-              const sourceManifest = [...resolverSources, ...groundingSources, ...webSources];
+              // Wave 4: the memory atoms that went in are sources too — pinned
+              // by id and hash, labelled as memory rather than evidence.
+              const atomSources = (atomLayer?.atoms ?? []).map((a) => ({
+                type: 'knowledge_atom',
+                name: `${a.id}${a.sourceModuleId ? ` · ${a.sourceModuleId}` : ''}`,
+                sha256: sha256Hex(a.content),
+                charCount: a.content.length,
+                retrievedAt: groundingRetrievedAt,
+                contentHashed: true,
+                note: `memory, not a verified source · ${a.method} · score ${a.score.toFixed(3)}`,
+              }));
+              const sourceManifest = [...resolverSources, ...groundingSources, ...webSources, ...atomSources];
               void writeRunArtifact(db, {
                 messageId: assistantMessageId,
                 sessionId,
@@ -1336,12 +1410,30 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 }).catch(() => { /* non-fatal */ });
               } catch { /* non-fatal */ }
             }
+            // Wave 4: the session's running conclusion — what was concluded,
+            // decided, left open and planned — written by the utility model after
+            // every answer into session_snapshots + sessions.summary. The project
+            // layer and the resume block read it. Same privacy gate as atoms.
+            // Fire-and-forget: it never rejects, and it runs after the engine
+            // slot is released (the SDK client releases before onComplete).
+            if (atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
+              void writeSessionConclusion(db, {
+                sessionId: String(sessionId),
+                messageId: assistantMessageId,
+                userId: req.user?.id || 'default',
+                moduleId: moduleId ?? null,
+                areaId: areaId ?? null,
+                assistantText: data.text,
+              });
+            }
             // Auto-extract knowledge atoms from this session output (non-blocking fire-and-forget)
             // This populates Knowledge Graph, Intelligence Dashboard, and Pattern Detection
             // Skipped when user disables atom collection (playground / clean-slate mode)
-            if (atomCollectionEnabled !== false && data.text && data.text.length > 200) {
+            // Wave 4: module runs only. Open chat produced 32 atoms in six months,
+            // every one of them boilerplate that later came back as "evidence".
+            if (atomCollectionEnabled !== false && moduleId && data.text && data.text.length > 200) {
               try {
-                const workflowId = `module:${moduleId || 'general'}`;
+                const workflowId = `module:${moduleId}`;
                 const store = await getSessionOutputStore();
                 const outputId = await store.storeOutput({
                   executionId: sessionId,
@@ -1901,7 +1993,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             'SELECT p.id FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
             sessionIdForPreview,
           ) as { id: string } | undefined;
-          if (previewProject) projectContextPrompt = await buildProjectContextSummary(db, previewProject.id, sessionIdForPreview);
+          if (previewProject) {
+            projectContextPrompt = (await buildProjectContext(db, {
+              projectId: previewProject.id,
+              currentSessionId: sessionIdForPreview,
+              userId: previewUserId,
+              userRole: (req as any).user?.role ?? null,
+              teamMode: process.env.DEPLOYMENT_MODE === 'team',
+            })).text;
+          }
         } catch { /* enrichment only */ }
       }
       // Wave 2: the preview grounds in framework text the same way a run does.

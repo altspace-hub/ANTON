@@ -340,28 +340,36 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
   });
 
   // ── GET /feedback/:sessionId — Retrieval feedback for a session ──────────
+  // Wave 4: `?messageId=` narrows to the atoms injected into ONE answer
+  // (retrieval_feedback.message_id, migration 275), so the thumbs under an
+  // answer rate what went into that answer and not the whole session.
 
   router.get('/feedback/:sessionId', async (req, res) => {
     try {
       const { sessionId } = req.params;
+      const messageId = typeof req.query.messageId === 'string' && req.query.messageId.trim()
+        ? req.query.messageId.trim()
+        : null;
       // Finding #3: db.get returns a single row (or undefined), but this endpoint
       // returns a LIST of injected atoms. db.get cast to an array meant injectedAtoms
       // was one object and total was undefined; with no rows, db.get → undefined and
       // `rows.length` threw → 500. db.all returns the array the UI (OutputToolbar /
       // InjectedAtomsPanel) iterates, and [] for an empty session (no 500).
-      const rows = await db.all(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant,
+      const where = messageId ? 'WHERE rf.session_id = ? AND rf.message_id = ?' : 'WHERE rf.session_id = ?';
+      const params = messageId ? [sessionId, messageId] : [sessionId];
+      const rows = await db.all(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant, rf.message_id,
                 ka.content, ka.atom_type, ka.category, ka.confidence
          FROM retrieval_feedback rf
          LEFT JOIN knowledge_atoms ka ON ka.id = rf.atom_id
-         WHERE rf.session_id = ?
+         ${where}
          ORDER BY rf.retrieval_score DESC`
-      , sessionId) as Array<{
+      , ...params) as Array<{
         atom_id: string; retrieval_method: string; retrieval_score: number;
-        injected_at: string; was_relevant: number | null;
+        injected_at: string; was_relevant: number | null; message_id: string | null;
         content: string; atom_type: string; category: string; confidence: number;
       }>;
 
-      res.json({ sessionId, injectedAtoms: rows, total: rows.length });
+      res.json({ sessionId, messageId, injectedAtoms: rows, total: rows.length });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }

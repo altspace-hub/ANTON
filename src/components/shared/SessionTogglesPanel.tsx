@@ -225,7 +225,7 @@ export default function SessionTogglesPanel({
                 <div className="text-xs text-adv-off-white">Use prior insights</div>
                 <p className="mt-0.5 text-xs text-adv-gray">
                   {atomInjectionEnabled
-                    ? 'Recent findings injected as context'
+                    ? 'In auto mode prior findings go in only once memory has earned its place: 100 module atoms and 30 ratings.'
                     : 'Clean slate — no prior knowledge used'}
                 </p>
               </div>

@@ -6,6 +6,7 @@ import { createInsightsGenerator } from '../services/insights-generator.js';
 import { getAtomAbStats, setAtomAbEnabled } from '../services/atom-ab.js';
 import { getCodingAtomAbStats } from '../services/coding-atom-stats.js';
 import { getCodingAtomAbReport } from '../services/coding-atom-ab-report.js';
+import { getAtomInjectionStatus, setAtomInjectionMode, isAtomInjectionMode } from '../services/atom-injection-gate.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
@@ -90,6 +91,34 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       res.json({ ok: true, enabled });
     } catch (error: unknown) {
       console.error('[intelligence/atom-ab/toggle]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // GET /api/intelligence/atom-injection — Wave 4: the memory-injection gate.
+  // Mode (auto / on / off), the two counts against their thresholds, whether
+  // the general atom layer currently applies, and the reason in one sentence.
+  // Always a fresh read (the dashboard is not the hot path).
+  router.get('/intelligence/atom-injection', async (_req, res) => {
+    try {
+      res.json(await getAtomInjectionStatus(db, { fresh: true }));
+    } catch (error: unknown) {
+      console.error('[intelligence/atom-injection]', error);
+      res.status(500).json({ error: errMsg(error) });
+    }
+  });
+
+  // POST /api/intelligence/atom-injection/mode — body { mode: 'auto' | 'on' | 'off' }.
+  router.post('/intelligence/atom-injection/mode', async (req, res) => {
+    try {
+      const { mode } = (req.body ?? {}) as { mode?: unknown };
+      if (!isAtomInjectionMode(mode)) {
+        return res.status(400).json({ error: "mode must be 'auto', 'on' or 'off'" });
+      }
+      await setAtomInjectionMode(db, mode);
+      res.json(await getAtomInjectionStatus(db, { fresh: true }));
+    } catch (error: unknown) {
+      console.error('[intelligence/atom-injection/mode]', error);
       res.status(500).json({ error: errMsg(error) });
     }
   });

@@ -2,7 +2,25 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface GoalsProfile {
+/**
+ * Where a goals profile's time horizons are injected. 'markets' (the column
+ * default) keeps them to the Markets pillar; 'all' widens them to every run.
+ */
+export type GoalsAppliesTo = 'markets' | 'all';
+export const GOALS_APPLIES_TO: readonly GoalsAppliesTo[] = ['markets', 'all'];
+
+export function isGoalsAppliesTo(v: unknown): v is GoalsAppliesTo {
+  return v === 'markets' || v === 'all';
+}
+
+/**
+ * Domains whose decisions the Markets pillar's goals profile and learned
+ * temporal patterns bear on. Everything else ('fcp', 'legal', 'hr', …) is a
+ * Work run and only sees the horizons when the owner set applies_to = 'all'.
+ */
+export const MARKET_DOMAINS: ReadonlySet<string> = new Set(['finance', 'markets']);
+
+export interface GoalsProfile {
   id: string;
   user_id: string;
   today_focus: string[];
@@ -10,6 +28,7 @@ interface GoalsProfile {
   this_month_goals: string[];
   this_year_goals: string[];
   this_decade_vision: string;
+  applies_to: GoalsAppliesTo;
   created_at: string;
   updated_at: string;
 }
@@ -91,7 +110,7 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
   // ── Goals Profile CRUD ──────────────────────────────────────────────────
 
   async function getGoalsProfile(userId = 'default'): Promise<GoalsProfile | null> {
-    const row = await db.get<GoalsProfile & { today_focus: string; this_week_goals: string; this_month_goals: string; this_year_goals: string }>(
+    const row = await db.get<Omit<GoalsProfile, 'applies_to'> & { today_focus: string; this_week_goals: string; this_month_goals: string; this_year_goals: string; applies_to?: string | null }>(
       'SELECT * FROM goals_profiles WHERE user_id = ?', userId
     );
     if (!row) return null;
@@ -101,10 +120,15 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
       this_week_goals: typeof row.this_week_goals === 'string' ? JSON.parse(row.this_week_goals) : (row.this_week_goals ?? []),
       this_month_goals: typeof row.this_month_goals === 'string' ? JSON.parse(row.this_month_goals) : (row.this_month_goals ?? []),
       this_year_goals: typeof row.this_year_goals === 'string' ? JSON.parse(row.this_year_goals) : (row.this_year_goals ?? []),
+      // Anything but an explicit 'all' stays Markets-scoped (the column default).
+      applies_to: row.applies_to === 'all' ? 'all' : 'markets',
     };
   }
 
   async function upsertGoalsProfile(userId: string, data: Partial<GoalsProfile>): Promise<void> {
+    if (data.applies_to !== undefined && !isGoalsAppliesTo(data.applies_to)) {
+      throw new Error(`applies_to must be one of ${GOALS_APPLIES_TO.join(', ')}`);
+    }
     const existing = await db.get('SELECT id FROM goals_profiles WHERE user_id = ?', userId);
     if (existing) {
       const sets: string[] = [];
@@ -114,6 +138,7 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
       if (data.this_month_goals !== undefined) { sets.push('this_month_goals = ?, month_updated_at = NOW()'); vals.push(JSON.stringify(data.this_month_goals)); }
       if (data.this_year_goals !== undefined) { sets.push('this_year_goals = ?, year_updated_at = NOW()'); vals.push(JSON.stringify(data.this_year_goals)); }
       if (data.this_decade_vision !== undefined) { sets.push('this_decade_vision = ?, decade_updated_at = NOW()'); vals.push(data.this_decade_vision); }
+      if (data.applies_to !== undefined) { sets.push('applies_to = ?'); vals.push(data.applies_to); }
       if (sets.length > 0) {
         sets.push('updated_at = NOW()');
         vals.push(userId);
@@ -122,14 +147,15 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
     } else {
       const id = `gp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       await db.run(`
-        INSERT INTO goals_profiles (id, user_id, today_focus, this_week_goals, this_month_goals, this_year_goals, this_decade_vision)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO goals_profiles (id, user_id, today_focus, this_week_goals, this_month_goals, this_year_goals, this_decade_vision, applies_to)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `, id, userId,
          JSON.stringify(data.today_focus ?? []),
          JSON.stringify(data.this_week_goals ?? []),
          JSON.stringify(data.this_month_goals ?? []),
          JSON.stringify(data.this_year_goals ?? []),
-         data.this_decade_vision ?? ''
+         data.this_decade_vision ?? '',
+         data.applies_to ?? 'markets'
       );
     }
   }
@@ -208,11 +234,8 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
 
   // ── Core: Decision Context ──────────────────────────────────────────────
 
-  /** Domains whose decisions the Markets pillar's learned temporal patterns bear on. */
-  const MARKET_DOMAINS: ReadonlySet<string> = new Set(['finance', 'markets']);
-
   async function getDecisionContext(userId = 'default', domain = 'finance'): Promise<DecisionContext> {
-    const [horizons, strategy, values, conflictRules, temporalPatterns] = await Promise.all([
+    const [profile, strategy, values, conflictRules, temporalPatterns] = await Promise.all([
       getGoalsProfile(userId),
       getActiveStrategy(userId, domain),
       getValuesConstraints(userId, domain),
@@ -225,6 +248,14 @@ export async function createTemporalReasoningService(db: DatabaseAdapter) {
           )
         : Promise.resolve([] as Array<{ content: string; confidence: number; horizon: string | null }>),
     ]);
+    // goals_profiles is keyed by user only, and the one row is written from
+    // the Markets Goals page. Before applies_to, the market_atoms gate above
+    // stopped the learned patterns leaking into Work runs but the horizons
+    // still went everywhere: the first edit on that page put "this week:
+    // rebalance into tech" into every legal, FCP and HR run as an "active
+    // time horizon". Horizons now follow the same domain gate unless the
+    // owner explicitly widened the profile to all of ANTON.
+    const horizons = profile && (MARKET_DOMAINS.has(domain) || profile.applies_to === 'all') ? profile : null;
     return { horizons, strategy, values, conflictRules, temporalPatterns };
   }
 

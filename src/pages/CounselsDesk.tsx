@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
 import IntakeChat from '@/components/shared/IntakeChat';
+import ProjectChip from '@/components/shared/ProjectChip';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,9 @@ interface LegalSession {
   matter_brief?: string;
   /** Wave 2: the intake conversation (JSON array of turns). */
   intake_conversation?: string;
+  /** Wave 4: the project (matter container) this research is filed under. */
+  project_id?: string | null;
+  project_name?: string | null;
 }
 
 interface MatterDocument { id: string; name: string; text: string }
@@ -324,6 +328,22 @@ export default function CounselsDesk() {
     if (!r.ok) throw new Error('Could not save the document to the session');
     const { session } = await r.json();
     setActiveSession(session);
+  }, [activeSession]);
+
+  // Wave 4: file the matter under a project (or take it out) so its brief
+  // reaches every run in that project, and their conclusions reach it.
+  const setSessionProject = useCallback(async (projectId: string | null) => {
+    if (!activeSession) return;
+    try {
+      const r = await fetchWithAuth(`/api/legal-research/${activeSession.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!r.ok) return;
+      const { session } = await r.json();
+      setActiveSession(session);
+    } catch { /* the chip keeps showing the stored project */ }
   }, [activeSession]);
 
   const attachDocuments = useCallback(async (files: FileList | null) => {
@@ -890,6 +910,15 @@ export default function CounselsDesk() {
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-sm font-semibold text-adv-off-white truncate">{activeSession.title}</h1>
+            {/* Wave 4: the project this matter is filed under */}
+            <div className="mt-1">
+              <ProjectChip
+                project={activeSession.project_id ? { id: activeSession.project_id, name: activeSession.project_name ?? 'Project' } : null}
+                disabled={loadingSession}
+                onPick={(picked) => void setSessionProject(picked.id)}
+                onClear={() => void setSessionProject(null)}
+              />
+            </div>
             {/* Wave 2: the documents the matter concerns */}
             {(() => {
               const docs = parseMatterDocuments(activeSession.documents);

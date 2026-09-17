@@ -345,6 +345,7 @@ interface SdkUserEnvelope { type: 'user'; message?: { content?: unknown }; tool_
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
+
 const isToolUseBlock = (v: unknown): v is SdkToolUseBlock =>
   isRecord(v) && v.type === 'tool_use' && typeof v.id === 'string' && typeof v.name === 'string';
 const isToolResultBlock = (v: unknown): v is SdkToolResultBlock =>
@@ -623,6 +624,19 @@ export async function streamToResponse(
   }
 
   activeRuns++;
+  // The slot is the SUBPROCESS's, not the request's. It is released the moment
+  // the stream has ended — BEFORE onComplete runs — and exactly once. Live
+  // finding 2026-09-16: onComplete used to run inside the slot, and the
+  // learning pipeline it kicks off (summary → atoms, background:true) asked
+  // for a background slot while the interactive slot it was spawned from was
+  // still counted. With MAX_BACKGROUND_SDK_RUNS = 1 that request was refused
+  // "SDK engine busy" on every single run, so nothing was ever learned.
+  let slotReleased = false;
+  const releaseSlot = (): void => {
+    if (slotReleased) return;
+    slotReleased = true;
+    activeRuns--;
+  };
   const contentBlocks: ContentBlock[] = [];
   let currentText = '';
   let currentThinking = '';
@@ -733,6 +747,11 @@ export async function streamToResponse(
     res.write('data: [DONE]\n\n');
     res.end();
 
+    // The subprocess has exited: give the slot back before the caller's
+    // completion work runs, so background learning spawned from here can
+    // take a slot of its own.
+    releaseSlot();
+
     // A schema-constrained turn ends on the structured_output attachment with
     // no trailing assistant text — the object IS the completion.
     if (onComplete && (currentText || structuredOutput !== undefined)) {
@@ -756,7 +775,9 @@ export async function streamToResponse(
     res.write('data: [DONE]\n\n');
     res.end();
   } finally {
-    activeRuns--;
+    // No-op when the success path already released; the release for every
+    // failure path (SDK threw, onComplete threw).
+    releaseSlot();
   }
 }
 

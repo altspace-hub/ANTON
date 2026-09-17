@@ -1,4 +1,4 @@
-import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent, RunArtifact, InjectedAtomRow, PersistedAssistantMessageRow, SkillSummary } from './types';
+import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent, RunArtifact, InjectedAtomRow, PersistedAssistantMessageRow, SkillSummary, AtomInjectionStatus, AtomInjectionMode } from './types';
 import { safeStorage } from './safe-storage';
 
 export const API_BASE = '/api';
@@ -1341,12 +1341,97 @@ export async function fetchRunArtifact(sessionId: string, messageId: string): Pr
   };
 }
 
-/** The atoms injected into a session with their retrieval scores (same route InjectedAtomsPanel reads). */
-export async function fetchInjectedAtoms(sessionId: string): Promise<InjectedAtomRow[]> {
-  const res = await fetchWithAuth(`${API_BASE}/embeddings/feedback/${encodeURIComponent(sessionId)}`);
+/**
+ * The atoms injected into a session with their retrieval scores (same route
+ * InjectedAtomsPanel reads). With a messageId only the atoms that went into
+ * that answer come back (Wave 4).
+ */
+export async function fetchInjectedAtoms(sessionId: string, messageId?: string | null): Promise<InjectedAtomRow[]> {
+  const qs = messageId ? `?messageId=${encodeURIComponent(messageId)}` : '';
+  const res = await fetchWithAuth(`${API_BASE}/embeddings/feedback/${encodeURIComponent(sessionId)}${qs}`);
   if (!res.ok) return [];
   const data = (await res.json()) as { injectedAtoms?: InjectedAtomRow[] };
   return Array.isArray(data.injectedAtoms) ? data.injectedAtoms : [];
+}
+
+/** Rate one injected atom (retrieval_feedback.was_relevant) — the thumbs in InjectedAtomsPanel. */
+export async function rateInjectedAtom(sessionId: string, atomId: string, wasRelevant: boolean): Promise<boolean> {
+  const res = await fetchWithAuth(`${API_BASE}/embeddings/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ atomId, sessionId, wasRelevant }),
+  });
+  return res.ok;
+}
+
+/** Wave 4: the memory-injection gate (mode, counts vs thresholds, whether it applies, reason). */
+export async function fetchAtomInjectionStatus(): Promise<AtomInjectionStatus> {
+  const res = await fetchWithAuth(`${API_BASE}/intelligence/atom-injection`);
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `Memory gate request failed (HTTP ${res.status})`);
+  }
+  return (await res.json()) as AtomInjectionStatus;
+}
+
+/** Wave 4: set the memory-injection mode; returns the fresh gate status. */
+export async function setAtomInjectionMode(mode: AtomInjectionMode): Promise<AtomInjectionStatus> {
+  const res = await fetchWithAuth(`${API_BASE}/intelligence/atom-injection/mode`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `Memory gate update failed (HTTP ${res.status})`);
+  }
+  return (await res.json()) as AtomInjectionStatus;
+}
+
+/**
+ * Wave 4b: the three memory & governance settings behind one Settings entry
+ * (GET/POST /api/settings/memory-governance). Mirror of
+ * server/routes/settings.ts MemoryGovernanceState.
+ */
+export interface MemoryGovernance {
+  /** The memory-injection gate, read fresh. */
+  atomInjection: AtomInjectionStatus;
+  /** Unsigned exports of the three EU AI Act gated modules are refused. Default off. */
+  oversightBlocksExport: boolean;
+  /** Structured extraction after every run (effective value). */
+  structuredExtractionAuto: boolean;
+  /** What applies when nothing is persisted: off on a subscription (sdk:) default model, on otherwise. */
+  structuredExtractionAutoDefault: boolean;
+}
+
+/** Any subset of the three settings; only the keys present are written. */
+export interface MemoryGovernancePatch {
+  atomInjectionMode?: AtomInjectionMode;
+  oversightBlocksExport?: boolean;
+  structuredExtractionAuto?: boolean;
+}
+
+async function memoryGovernanceJson(res: Response, action: string): Promise<MemoryGovernance> {
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `${action} failed (HTTP ${res.status})`);
+  }
+  return (await res.json()) as MemoryGovernance;
+}
+
+export async function fetchMemoryGovernance(): Promise<MemoryGovernance> {
+  const res = await fetchWithAuth(`${API_BASE}/settings/memory-governance`);
+  return memoryGovernanceJson(res, 'Memory & governance request');
+}
+
+/** Writes the keys present in `patch`; returns the state afterwards. */
+export async function updateMemoryGovernance(patch: MemoryGovernancePatch): Promise<MemoryGovernance> {
+  const res = await fetchWithAuth(`${API_BASE}/settings/memory-governance`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return memoryGovernanceJson(res, 'Memory & governance update');
 }
 
 /**
