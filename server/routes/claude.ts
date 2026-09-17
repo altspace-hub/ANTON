@@ -11,6 +11,7 @@ import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } f
 import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-versions.js';
 import { getModule } from '../services/module-loader.js';
 import { estimateTokens } from '../services/token-estimator.js';
+import { buildOutputInstruction } from '../../src/lib/output-format-definitions.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayer, buildProjectContextSummary } from '../services/prompt-builder.js';
 import { retrieveGroundingText, type GroundingResult } from '../services/framework-text-retrieval.js';
 import { frameworksForArea } from '../services/area-frameworks.js';
@@ -613,6 +614,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         }
       }
 
+      // Wave 3: server-built output-format instruction (Layer 6b). The browser
+      // still sends its own copy; when it also sends the format ids the server
+      // rebuilds the instruction from the same library and prefers that.
+      const serverOutputInstruction: string | undefined =
+        Array.isArray(outputFormats) && outputFormats.length > 0
+          ? (buildOutputInstruction(outputFormats as string[]) || (outputInstruction as string | undefined))
+          : (outputInstruction as string | undefined);
       // Auto-attach output-format-specific skills (e.g., pptx-generation for PowerPoint output)
       const autoAttachIds = getAutoAttachSkillIds(Array.isArray(outputFormats) ? outputFormats : []);
       const mergedSkills = Array.isArray(selectedSkills)
@@ -843,7 +851,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         systemPromptOverride: systemPrompt,
         creativity: creativity || 'balanced',
         thinking: thinking || 'think_hard',
-        outputInstruction,
+        // Wave 3: the output-format instruction is built on the server from the
+        // selected format ids (same library the browser used), so sync/MCP
+        // callers get it too and the run artifact hashes text the server owns.
+        outputInstruction: serverOutputInstruction,
         plainTextMode: !!plainTextMode,
         selectedPersonas: Array.isArray(selectedPersonas) ? selectedPersonas : undefined,
         selectedSkills: mergedSkills,

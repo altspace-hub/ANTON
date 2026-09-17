@@ -548,3 +548,29 @@ describe('flattenMessages', () => {
     expect(flat.split('</conversation_so_far>')[1]).toContain('q2');
   });
 });
+
+// ── Wave 3: a schema-constrained turn ───────────────────────
+
+describe('completeText — outputFormat (schema-constrained turn)', () => {
+  const SCHEMA = { type: 'object', properties: { answer: { type: 'number' } }, required: ['answer'] };
+
+  it('forwards outputFormat untouched, keeps containment, and returns structuredOutput even with no text', async () => {
+    const calls = fakeSdk([successResult({ result: '', structured_output: { answer: 42 } })]);
+    const data = await completeText({ ...BASE_CONFIG, outputFormat: { type: 'json_schema', schema: SCHEMA } });
+    expect(calls[0].options.outputFormat).toEqual({ type: 'json_schema', schema: SCHEMA });
+    expect(calls[0].options.tools).toEqual([]);
+    expect(calls[0].options.maxTurns).toBe(1);
+    expect(calls[0].options.permissionMode).toBe('dontAsk');
+    expect(data.structuredOutput).toEqual({ answer: 42 });
+    expect(data.text).toBe('');
+    expect(data.inputTokens).toBe(100);
+  });
+
+  it('a text run carries no outputFormat and structuredOutput stays absent', async () => {
+    const calls = fakeSdk([textDelta('hi'), successResult()]);
+    const data = await completeText(BASE_CONFIG);
+    expect('outputFormat' in calls[0].options).toBe(false);
+    expect(data.structuredOutput).toBeUndefined();
+    expect(data.text).toBe('hi');
+  });
+});

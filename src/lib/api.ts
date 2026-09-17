@@ -1374,3 +1374,96 @@ export async function fetchLatestAssistantMessageRow(sessionId: string): Promise
   }
   return null;
 }
+
+// ── Evidence Pack API (Wave 3 — the pack walks the real surface) ─────────
+
+/** A pack scope with one root row. Mirrors the server's scope union (routes/evidence-pack.ts). */
+export type EvidencePackScope =
+  | { type: 'session'; sessionId: string; includePrompts?: boolean }
+  | { type: 'project'; projectId: string; includePrompts?: boolean }
+  | { type: 'mission'; missionId: string }
+  | { type: 'gap_assessment'; assessmentId: string; includePrompts?: boolean }
+  | { type: 'engagement'; engagementId: string; includePrompts?: boolean }
+  | { type: 'task'; taskId: string };
+
+export interface EvidencePackSummary {
+  id: string;
+  title: string;
+  purpose: string | null;
+  scope_type: string;
+  scope_label: string | null;
+  status: string;
+  hash_manifest: string | null;
+  item_count: number;
+  created_by: string;
+  created_at: string;
+  finalised_at: string | null;
+  retention_until: string | null;
+  legal_hold: boolean;
+  compliance_frameworks: string[] | string;
+}
+
+export interface EvidencePackCollectResult {
+  packId: string;
+  manifestHash: string;
+  itemCount: number;
+  itemsByType: Record<string, number>;
+}
+
+async function evidencePackJson<T>(res: Response, what: string): Promise<T> {
+  const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+  if (!res.ok) {
+    throw new Error(typeof data.error === 'string' ? data.error : `${what} failed (HTTP ${res.status})`);
+  }
+  return data as T;
+}
+
+/** The current user's packs (admins see everyone's), newest first, optionally by status. */
+export async function listEvidencePacks(status?: 'draft' | 'finalised' | 'shared' | 'archived'): Promise<EvidencePackSummary[]> {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  const res = await fetchWithAuth(`${API_BASE}/evidence-pack?${params}`);
+  const data = await evidencePackJson<{ packs?: EvidencePackSummary[] }>(res, 'Loading evidence packs');
+  return Array.isArray(data.packs) ? data.packs : [];
+}
+
+/** Create a draft pack. Nothing is collected until collectEvidencePack runs. */
+export async function createEvidencePack(input: {
+  title: string;
+  scope: EvidencePackScope;
+  purpose?: string;
+  complianceFrameworks?: string[];
+  retentionDays?: number;
+  notes?: string;
+}): Promise<{ id: string }> {
+  const res = await fetchWithAuth(`${API_BASE}/evidence-pack`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await evidencePackJson<{ pack: { id: string } }>(res, 'Creating the evidence pack');
+  return { id: data.pack.id };
+}
+
+/** Add a session / assessment / engagement / task to a draft pack's scope (the pack becomes a custom list). */
+export async function addScopeToEvidencePack(packId: string, scope: EvidencePackScope): Promise<{ added: boolean }> {
+  const res = await fetchWithAuth(`${API_BASE}/evidence-pack/${encodeURIComponent(packId)}/scope/add`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scope }),
+  });
+  const data = await evidencePackJson<{ added: boolean }>(res, 'Adding to the evidence pack');
+  return { added: !!data.added };
+}
+
+/** Run (or re-run) the collector on a draft pack and assemble its manifest. */
+export async function collectEvidencePack(packId: string): Promise<EvidencePackCollectResult> {
+  const res = await fetchWithAuth(`${API_BASE}/evidence-pack/${encodeURIComponent(packId)}/collect`, { method: 'POST' });
+  const data = await evidencePackJson<{ manifestHash: string; itemCount: number; itemsByType: Record<string, number> }>(res, 'Collecting evidence');
+  return {
+    packId,
+    manifestHash: data.manifestHash,
+    itemCount: data.itemCount,
+    itemsByType: data.itemsByType ?? {},
+  };
+}

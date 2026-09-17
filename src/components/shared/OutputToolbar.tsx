@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, Puzzle, ThumbsUp, ThumbsDown, Check, Loader2, ShieldCheck, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom } from 'lucide-react';
+import { Search, Sparkles, Brain, Puzzle, ThumbsUp, ThumbsDown, Check, Loader2, ShieldCheck, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom, FileArchive } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
+import AddToEvidencePackPanel from '@/pages/evidence-pack/AddToEvidencePackPanel';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
 import FeedbackWidget from '@/components/shared/FeedbackWidget';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -13,7 +14,7 @@ import type { ModelId, ContextUsed } from '@/lib/types';
 
 // ── Types ────────────────────────────────────────────────────
 
-type PanelId = 'citations' | 'review' | 'thinking' | 'feedback' | 'save' | 'trust' | 'provenance' | 'history' | 'rerun' | 'exportRun' | null;
+type PanelId = 'citations' | 'review' | 'thinking' | 'feedback' | 'save' | 'trust' | 'provenance' | 'history' | 'rerun' | 'exportRun' | 'evidence' | null;
 
 interface OutputToolbarProps {
   /** The last assistant output text (for citations & review) */
@@ -88,6 +89,7 @@ const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentT
   { id: 'history', label: 'History', icon: History },
   { id: 'rerun', label: 'Rerun with…', icon: GitCompare },
   { id: 'exportRun', label: 'Export run', icon: FileDown },
+  { id: 'evidence', label: 'Evidence', icon: FileArchive },
   { id: 'feedback', label: 'Feedback', icon: ThumbsUp },
   { id: 'save', label: 'Save', icon: Puzzle },
 ];
@@ -409,7 +411,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           const isFeedbackChip = chip.id === 'feedback';
           const isFeedbackDone = isFeedbackChip && feedbackDone;
           const isProvenanceChip = chip.id === 'provenance';
-          const disabled = (isStreaming && !isThinkingChip && !isProvenanceChip) || ((chip.id === 'rerun' || chip.id === 'exportRun') && !sessionId);
+          const disabled = (isStreaming && !isThinkingChip && !isProvenanceChip) || ((chip.id === 'rerun' || chip.id === 'exportRun' || chip.id === 'evidence') && !sessionId);
 
           return (
             <button
@@ -598,6 +600,15 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               </div>
               {exportError && <p className="mt-2 text-xs text-adv-red">{exportError}</p>}
             </div>
+          )}
+
+          {/* ── Evidence Panel (Wave 3 — the pack walks the real surface) ── */}
+          {activePanel === 'evidence' && sessionId && (
+            <AddToEvidencePackPanel
+              scope={{ type: 'session', sessionId }}
+              defaultTitle={`Evidence — ${moduleLabel || 'session'} ${new Date().toISOString().slice(0, 10)}`}
+              subjectLabel="session"
+            />
           )}
 
           {/* ── Feedback Panel ────────────────────────────── */}

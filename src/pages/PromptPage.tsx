@@ -703,7 +703,11 @@ export default function PromptPage() {
           <ExportBar
             content={outputContent}
             availableFormats={['md', 'docx', 'xlsx', 'pdf']}
-            onExport={(fmt) => doExport(fmt, outputContent, 'open-chat-output')}
+            onExport={(fmt) => doExport(fmt, outputContent, {
+              filename: 'open-chat-output',
+              sessionId: sessionId ?? undefined,
+              messageId: lastAssistantMsg?.id,
+            })}
             isExporting={isExporting}
             sessionId={sessionId ?? undefined}
             moduleContext="Open Chat"

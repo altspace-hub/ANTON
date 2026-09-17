@@ -33,7 +33,7 @@ import StatusIndicator from '@/components/shared/StatusIndicator';
 import RevelationTrailPanel, { IREPhaseProgress } from '@/components/shared/RevelationTrailPanel';
 import ExportBar from '@/components/shared/ExportBar';
 import TransformPanel from '@/components/shared/TransformPanel';
-import HumanOversightGate from '@/components/shared/HumanOversightGate';
+import HumanOversightGate, { OVERSIGHT_GATED_MODULES } from '@/components/shared/HumanOversightGate';
 import ContextBudgetBar from '@/components/shared/ContextBudgetBar';
 import OutputToolbar from '@/components/shared/OutputToolbar';
 import { PromptPreviewChip } from '@/components/shared/ProvenancePanel';
@@ -1234,7 +1234,7 @@ export default function ModulePage() {
           {outputContent && !isStreaming && (
             <>
               {/* EUAI-02: Human oversight sign-off for high-risk FCP modules */}
-              {sessionId && ['gap-analysis', 'sanctions-advisory', 'investigation-support'].includes(moduleId ?? '') && (
+              {sessionId && (OVERSIGHT_GATED_MODULES as readonly string[]).includes(moduleId ?? '') && (
                 <HumanOversightGate
                   sessionId={sessionId}
                   moduleId={moduleId ?? ''}
@@ -1250,6 +1250,7 @@ export default function ModulePage() {
                 thinking,
                 creativity,
                 sessionId: sessionId ?? undefined,
+                messageId: lastAssistantMessage?.id,
                 documentsLoaded: files.filter(f => f.status === 'done').map(f => f.name),
               })}
               isExporting={isExporting}

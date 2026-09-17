@@ -38,20 +38,33 @@ export type ParseStats = Record<string, Record<string, ParseStatEntry>>;
 /** undefined = never loaded. */
 let stats: ParseStats | undefined;
 
+/** Writes are serialised in-process so two concurrent records cannot both
+ *  read the row, each add their own outcome, and have the second write
+ *  discard the first (merge-on-write, Wave 3 — the counters are the only
+ *  evidence that a small model is failing its JSON contract). */
+let writeChain: Promise<void> = Promise.resolve();
+
+function parseBlob(value: string | undefined | null): ParseStats {
+  if (!value) return {};
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed as ParseStats : {};
+  } catch {
+    return {};
+  }
+}
+
+async function readRow(db: DatabaseAdapter): Promise<ParseStats> {
+  const row = await db.get<{ value: string }>(
+    'SELECT value FROM app_settings WHERE key = ?',
+    SETTING_KEY,
+  );
+  return parseBlob(row?.value);
+}
+
 async function load(db: DatabaseAdapter): Promise<void> {
   try {
-    const row = await db.get<{ value: string }>(
-      'SELECT value FROM app_settings WHERE key = ?',
-      SETTING_KEY,
-    );
-    if (row?.value) {
-      const parsed: unknown = JSON.parse(row.value);
-      stats = (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
-        ? parsed as ParseStats
-        : {};
-    } else {
-      stats = {};
-    }
+    stats = await readRow(db);
   } catch {
     // Unreadable blob / DB down — start fresh in memory; persistence
     // will be retried on the next record.
@@ -63,6 +76,14 @@ async function load(db: DatabaseAdapter): Promise<void> {
  * Record one JSON-parse outcome for a utility LLM call. Never throws.
  * Failures additionally log a console warning so persistent breakage on
  * a given model is visible in server logs without querying the DB.
+ *
+ * Merge-on-write: the (service, model) entry is applied on top of the row
+ * as it is in the database at write time, not on top of the copy this
+ * process loaded at boot. Before this, every record rewrote the whole blob
+ * from the in-memory copy, so a second server process (or the migration
+ * runner, or a test worker) sharing the database silently erased the other
+ * writer's counters — and a process that had loaded an empty table wrote
+ * `{}` plus its own single entry over everything.
  */
 export async function recordParseOutcome(
   db: DatabaseAdapter,
@@ -71,9 +92,16 @@ export async function recordParseOutcome(
   ok: boolean,
   error?: string,
 ): Promise<void> {
-  try {
-    if (stats === undefined) await load(db);
-    const byModel = (stats as ParseStats)[service] ?? ((stats as ParseStats)[service] = {});
+  const apply = async (): Promise<void> => {
+    let current: ParseStats;
+    try {
+      current = await readRow(db);
+    } catch {
+      // Row unreadable — fall back to what this process knows rather than
+      // dropping the outcome. The next successful read re-synchronises.
+      current = stats ?? {};
+    }
+    const byModel = current[service] ?? (current[service] = {});
     const entry = byModel[model] ?? (byModel[model] = { ok: 0, fail: 0, last_error: null, updated_at: '' });
     if (ok) {
       entry.ok += 1;
@@ -86,8 +114,14 @@ export async function recordParseOutcome(
     await db.run(
       'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
       SETTING_KEY,
-      JSON.stringify(stats),
+      JSON.stringify(current),
     );
+    stats = current;
+  };
+  const turn = writeChain.then(apply, apply);
+  writeChain = turn.catch(() => undefined);
+  try {
+    await turn;
   } catch (err) {
     // Telemetry must never break the calling run.
     console.warn('[parse-telemetry] could not record parse outcome:', err instanceof Error ? err.message : err);

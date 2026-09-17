@@ -14,9 +14,10 @@ import {
   RefreshCw, AlertTriangle, CheckCircle2, Circle,
   ChevronDown, Loader2, Trash2, ExternalLink,
   Paperclip, Upload, X, FolderOpen, MessageSquare,
-  RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock,
+  RotateCcw, GitCompare, TrendingUp, TrendingDown, Clock, FileArchive,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
+import AddToEvidencePackPanel from '@/pages/evidence-pack/AddToEvidencePackPanel';
 import { getStoredDefaultModel } from '@/stores/useSettingsStore';
 import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -539,6 +540,8 @@ function GapAssessmentWizardInner() {
   const [iterations, setIterations] = useState<IterationSummary[]>([]);
   const [comparison, setComparison] = useState<IterationComparison | null>(null);
   const [showIterationPanel, setShowIterationPanel] = useState(false);
+  // Wave 3: "Add to evidence pack" on the results panel
+  const [showEvidencePanel, setShowEvidencePanel] = useState(false);
   const [iterationNotes, setIterationNotes] = useState('');
   const [iterationDocs, setIterationDocs] = useState<EvidenceDocument[]>([]);
   const [iterDragging, setIterDragging] = useState(false);
@@ -2962,7 +2965,24 @@ function GapAssessmentWizardInner() {
               >
                 <RotateCcw className="h-4 w-4" /> {showIterationPanel ? 'Hide Iteration Panel' : `New Iteration${iterations.length > 0 ? ` (${iterations.length} previous)` : ''}`}
               </button>
+              <button
+                onClick={() => setShowEvidencePanel(!showEvidencePanel)}
+                className="flex items-center gap-2 rounded-lg border border-adv-teal/30 bg-adv-teal-soft px-4 py-2.5 text-sm text-adv-teal hover:bg-adv-teal/10 transition-colors"
+              >
+                <FileArchive className="h-4 w-4" /> {showEvidencePanel ? 'Hide Evidence Pack' : 'Add to evidence pack'}
+              </button>
             </div>
+
+            {/* Wave 3: this assessment, its findings, second opinions and iterations into a signed pack */}
+            {showEvidencePanel && id && (
+              <div className="rounded-xl border border-border bg-adv-card p-4">
+                <AddToEvidencePackPanel
+                  scope={{ type: 'gap_assessment', assessmentId: id }}
+                  defaultTitle={`Evidence — ${assessment?.title || 'gap assessment'}`}
+                  subjectLabel="gap assessment"
+                />
+              </div>
+            )}
 
             {/* Iteration history */}
             {iterations.length > 0 && (

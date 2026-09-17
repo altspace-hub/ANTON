@@ -73,6 +73,9 @@ export const ExportSchema = z.object({
     thinking: z.string().max(50).optional(),
     moduleId: z.string().max(100).optional(),
     sessionId: z.string().max(100).optional(),
+    // Wave 3: the assistant message being exported, so the provenance
+    // appendix binds to the exact run (falls back to the session's latest).
+    messageId: z.string().max(100).optional(),
     creativity: z.string().max(50).optional(),
     // ATTR-02: sources & scope
     documentsLoaded: z.array(z.string().max(300)).max(100).optional(),

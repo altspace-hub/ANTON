@@ -43,6 +43,7 @@ import {
   RENDERER_ARTIFACT_SQL,
 } from '../../server/services/trails-aggregator-service.js';
 import { OVERSIGHT_SQL } from '../../server/routes/human-oversight.js';
+import { OVERSIGHT_STATUS_SQL } from '../../server/services/oversight-status.js';
 import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 function resolveDatabaseUrl(): string | undefined {
@@ -121,6 +122,37 @@ const PROBES: Array<{ name: string; sql: string; params: unknown[] }> = [
     name: 'human-oversight: review list (session + module filters)',
     ...OVERSIGHT_SQL.listReviews(PROBE, { sessionId: PROBE, moduleId: PROBE }, 0),
   },
+  // Wave 3 — the sign-off is bound to the run (migration 273 columns).
+  {
+    name: 'human-oversight: the answer being signed (messages ⋈ sessions, owner-scoped)',
+    sql: `${OVERSIGHT_SQL.assistantMessage} AND s.user_id = ?`,
+    params: [PROBE, PROBE, PROBE],
+  },
+  {
+    name: 'human-oversight: prompt hash from run_artifacts',
+    sql: OVERSIGHT_SQL.runArtifactHash,
+    params: [PROBE],
+  },
+  {
+    name: 'human-oversight: evidence pack existence',
+    sql: OVERSIGHT_SQL.evidencePack,
+    params: [PROBE],
+  },
+  {
+    name: 'human-oversight: audit_log row of the signed run (message-bound heuristic)',
+    sql: OVERSIGHT_SQL.auditRowForMessage,
+    params: [PROBE],
+  },
+  {
+    name: 'oversight-status: review bound to one answer (message_id column)',
+    sql: OVERSIGHT_STATUS_SQL.sessionMessageReview,
+    params: [PROBE, PROBE],
+  },
+  {
+    name: 'oversight-status: latest review for a session',
+    sql: OVERSIGHT_STATUS_SQL.sessionLatestReview,
+    params: [PROBE],
+  },
 ];
 
 /** The statements as they were before the fix — the negative control. */
@@ -175,6 +207,16 @@ describe('the exported statements are the real ones', () => {
     expect(sql).toMatch(/FROM\s+human_oversight_reviews\b/);
     expect((sql.match(/\?/g) ?? []).length).toBe(params.length);
     expect(params).toEqual(['u', 's', 'm', 7]);
+  });
+
+  it('the run-binding SQL names the tables and the 273 columns it depends on', () => {
+    expect(OVERSIGHT_SQL.assistantMessage).toMatch(/FROM\s+messages\s+m\s+JOIN\s+sessions\s+s\b/);
+    expect(OVERSIGHT_SQL.assistantMessage).toMatch(/m\.role = 'assistant'/);
+    expect(OVERSIGHT_SQL.runArtifactHash).toMatch(/SELECT\s+prompt_sha256\s+FROM\s+run_artifacts\b/);
+    expect(OVERSIGHT_SQL.evidencePack).toMatch(/FROM\s+evidence_packs\b/);
+    expect(OVERSIGHT_SQL.auditRowForMessage).toMatch(/FROM\s+audit_log\s+a\b/);
+    expect(OVERSIGHT_STATUS_SQL.sessionMessageReview).toMatch(/FROM\s+human_oversight_reviews\b.*\bmessage_id = \?/);
+    expect(OVERSIGHT_STATUS_SQL.sessionLatestReview).toMatch(/FROM\s+human_oversight_reviews\b/);
   });
 });
 

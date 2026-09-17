@@ -34,6 +34,18 @@ interface Renderer {
   category: Category;
   output: { file_type: string; mime_type: string; filename_template: string };
   status: 'stable' | 'beta' | 'experimental' | 'disabled';
+  /** The session has no structured payload yet — pressing this extracts it first. */
+  needs_extraction?: boolean;
+}
+
+/** What the applicable endpoint says about the structured analysis of this output. */
+interface ExtractionState {
+  status: string | null;
+  contentType: string | null;
+  error: string | null;
+  attempts: number;
+  /** null until loaded; false = extraction runs on demand only. */
+  auto: boolean | null;
 }
 
 interface RunResult {
@@ -70,10 +82,10 @@ const EXPORTBAR_DUPLICATES = new Set([
   'export-md', 'export-docx', 'export-xlsx', 'export-pdf', 'export-pptx',
 ]);
 const CATEGORY_META: Record<Category, { label: string; icon: typeof BarChart3; blurb: string }> = {
-  visualize:       { label: 'Visualize',          icon: BarChart3, blurb: 'Turn this output into a diagram you can preview and download. Instant — no AI call.' },
-  adapt_audience:  { label: 'Adapt for audience', icon: Users,     blurb: 'Re-write the output for a different reader. Each one runs a fresh AI pass.' },
+  visualize:       { label: 'Visualize',          icon: BarChart3, blurb: 'Turn this output into a diagram you can preview and download. Instant once the structured analysis exists — the first press extracts it.' },
+  adapt_audience:  { label: 'Adapt for audience', icon: Users,     blurb: 'Re-write the output for a different reader. Each one runs a fresh AI pass on the configured engine.' },
   package:         { label: 'Package',            icon: Package,   blurb: 'Download the output as a file.' },
-  review:          { label: 'Review',             icon: Shield,    blurb: 'Run a fresh, critical second pass over the output. Each one runs a new AI review.' },
+  review:          { label: 'Review',             icon: Shield,    blurb: 'Run a fresh, critical second pass over the output. Each one runs a new AI review on the configured engine.' },
   regulatory:      { label: 'Regulatory',         icon: Gavel,     blurb: 'Regulatory-specific checks over the output.' },
 };
 
@@ -87,10 +99,15 @@ function outcomeText(r: Renderer): string {
   };
   const out = fileLabel[r.output.file_type] ?? `a .${r.output.file_type} file`;
   if (r.category === 'review' || r.category === 'adapt_audience') {
-    return `Press to run a fresh AI pass — produces ${out} to preview & download. Uses API credit.`;
+    return `Press to run a fresh AI pass — produces ${out} to preview & download. Runs on the configured engine.`;
   }
   if (r.category === 'visualize') {
-    return `Press to build ${out} from this output. Instant, no AI call.`;
+    return r.needs_extraction
+      ? `Press to extract the structured analysis first (one call on the configured engine), then build ${out}.`
+      : `Press to build ${out} from this output. Instant, no AI call.`;
+  }
+  if (r.needs_extraction) {
+    return `Press to extract the structured analysis first (one call on the configured engine), then produce ${out}.`;
   }
   return `Press to download ${out}.`;
 }
@@ -120,7 +137,7 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
   const [running, setRunning] = useState<string | null>(null);
   const [results, setResults] = useState<Map<string, RunResult>>(new Map());
   const [error, setError] = useState<string | null>(null);
-  const [extraction, setExtraction] = useState<{ status: string | null; contentType: string | null }>({ status: null, contentType: null });
+  const [extraction, setExtraction] = useState<ExtractionState>({ status: null, contentType: null, error: null, attempts: 0, auto: null });
 
   const load = useCallback(async () => {
     if (!sessionId) { setLoading(false); return; }
@@ -131,9 +148,18 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
         fetchWithAuth(`/api/sessions/${encodeURIComponent(sessionId)}/artifacts`, { headers: getAuthHeader() }),
       ]);
       if (appRes.ok) {
-        const d = await appRes.json() as { renderers?: Renderer[]; structured_status?: string | null; content_type?: string | null };
+        const d = await appRes.json() as {
+          renderers?: Renderer[]; structured_status?: string | null; content_type?: string | null;
+          structured_error?: string | null; structured_attempts?: number | null; auto_extraction?: boolean | null;
+        };
         setRenderers(d.renderers ?? []);
-        setExtraction({ status: d.structured_status ?? null, contentType: d.content_type ?? null });
+        setExtraction({
+          status: d.structured_status ?? null,
+          contentType: d.content_type ?? null,
+          error: d.structured_error ?? null,
+          attempts: Number(d.structured_attempts ?? 0),
+          auto: typeof d.auto_extraction === 'boolean' ? d.auto_extraction : null,
+        });
       }
       if (artRes.ok) {
         const d = await artRes.json() as { artifacts?: ArtifactRow[] };
@@ -170,12 +196,15 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({ session_id: sessionId, renderer_id: r.id }),
       });
-      const data = await res.json() as RunResult & { error?: string };
+      const data = await res.json() as RunResult & { error?: string; stage?: string };
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       setResults(m => { const nm = new Map(m); nm.set(r.id, data); return nm; });
       await load();
     } catch (e) {
       setError(`${r.label}: ${friendlyError(e instanceof Error ? e.message : String(e))}`);
+      // The failure may have been the on-demand extraction — its error and
+      // attempt count are on the session now; show them.
+      await load();
     } finally {
       setRunning(null);
     }
@@ -205,14 +234,19 @@ export default function TransformPanel({ sessionId }: { sessionId: string | null
         </div>
       )}
 
-      {!extraction.contentType && (
+      {extraction.status === 'failed' ? (
+        <div className="rounded border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-[10px] text-adv-gray">
+          <span className="font-medium text-adv-red">Structured analysis failed</span>
+          {extraction.attempts > 1 ? ` (${extraction.attempts} attempts)` : ''}
+          {extraction.error ? `: ${friendlyError(extraction.error)}` : '.'}
+          {' '}Press a transform that needs it to retry.
+        </div>
+      ) : extraction.status !== 'extracted' && (
         <div className="rounded border border-adv-blue/20 bg-adv-blue/5 px-3 py-2 text-[10px] text-adv-gray">
-          Diagram and board-deck transforms appear once the structured analysis of this
-          output is ready
-          {extraction.status ? ` — status: ${extraction.status}` : ' — not started yet'}.
-          {extraction.status === 'failed' || extraction.status === 'error'
-            ? ' It failed; re-running the module will retry it.'
-            : ' It runs automatically just after a module finishes.'}
+          Diagram and board-deck transforms work from a structured analysis of this output.
+          {extraction.auto === false
+            ? ' It runs the first time you press one of them — one call on the configured engine.'
+            : ' It runs automatically just after a module finishes; pressing a transform before then runs it on the spot.'}
         </div>
       )}
 

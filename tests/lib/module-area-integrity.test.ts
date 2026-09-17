@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { MODULES, AREAS } from '../../src/lib/constants';
+import { OUTPUT_FORMATS } from '../../src/lib/output-format-definitions';
 
 /**
  * Integrity guard over the static module/area registry (src/lib/constants.ts).
@@ -179,4 +180,64 @@ describe('legacy server/prompts directory', () => {
     }
     expect(unresolved).toEqual([]);
   }, 30_000);
+});
+
+describe('module.json defaults.outputFormats', () => {
+  // 2026-09-16 (Wave 3): nine module.json files pointed their default output
+  // format at ids that did not exist — 'risk-register' (business-wide-risk-
+  // assessment, hw-maintain-cve-applicability, six atlas-* modules) and
+  // 'entity-register' (atlas-exposure-mapper). buildOutputInstruction()
+  // silently drops an unknown id, so those modules ran with NO format
+  // instruction while advertising a default. Both formats exist now; this
+  // pins that every declared default resolves to a real OUTPUT_FORMATS entry.
+  const repoRoot = path.resolve(__dirname, '..', '..');
+  const areasDir = path.join(repoRoot, 'server', 'areas');
+
+  function declaredDefaults(): Array<{ area: string; dir: string; id: string; formats: string[] }> {
+    const out: Array<{ area: string; dir: string; id: string; formats: string[] }> = [];
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        if (!fs.existsSync(configPath)) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string; defaults?: { outputFormats?: unknown } };
+        const formats = config.defaults?.outputFormats;
+        if (!Array.isArray(formats)) continue;
+        out.push({ area: areaEntry.name, dir: modEntry.name, id: config.id ?? modEntry.name, formats: formats.map(String) });
+      }
+    }
+    return out;
+  }
+
+  it('every defaults.outputFormats id resolves to an OUTPUT_FORMATS entry', () => {
+    const known = new Set(OUTPUT_FORMATS.map((f) => f.id));
+    const declared = declaredDefaults();
+    expect(declared.length, 'module.json defaults went missing — did the loader change?').toBeGreaterThan(500);
+    const dangling: string[] = [];
+    for (const m of declared) {
+      for (const id of m.formats) {
+        if (!known.has(id)) dangling.push(`${m.area}/${m.dir} -> ${id}`);
+      }
+    }
+    expect(dangling).toEqual([]);
+  });
+
+  it('the nine modules that pointed at the missing register formats now resolve', () => {
+    const known = new Set(OUTPUT_FORMATS.map((f) => f.id));
+    expect(known.has('risk-register')).toBe(true);
+    expect(known.has('entity-register')).toBe(true);
+    const byId = new Map(declaredDefaults().map((m) => [m.id, m.formats]));
+    const expectRiskRegister = [
+      'business-wide-risk-assessment', 'hw-maintain-cve-applicability', 'atlas-appetite-manager',
+      'atlas-control-mapper', 'atlas-inherent-scorer', 'atlas-residual-calculator',
+      'atlas-threat-cataloguer', 'atlas-vulnerability-assessor',
+    ];
+    for (const id of expectRiskRegister) {
+      expect(byId.get(id), id).toContain('risk-register');
+    }
+    expect(byId.get('atlas-exposure-mapper')).toContain('entity-register');
+  });
 });

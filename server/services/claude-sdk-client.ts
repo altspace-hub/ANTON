@@ -111,6 +111,13 @@ export interface SdkStreamConfig {
   /** Claude-format tools the caller holds for the API path. Only ANTON's
    *  web_search entry means anything here: its presence grants SDK_WEB_TOOLS. */
   tools?: ReadonlyArray<{ type: string; name?: string }>;
+  /** Wave 3: a schema-constrained turn. Passed straight to the SDK's
+   *  `outputFormat` option — the engine validates the answer against the
+   *  schema and retries on its side, and the parsed object comes back as
+   *  `SdkCompletionData.structuredOutput`. The containment set (no tools,
+   *  one turn) is unchanged: this is the text engine answering in JSON, not
+   *  an agent. Used by the structured extractor instead of prompt + regex. */
+  outputFormat?: { type: 'json_schema'; schema: Record<string, unknown> };
 }
 
 export interface SdkCompletionData {
@@ -133,6 +140,9 @@ export interface SdkCompletionData {
    *  the tool returned (query + hits; URL + sha256 of the fetched text). Present
    *  on this engine — possibly empty — and absent on engines without web tools. */
   webSources?: WebSourceRecord[];
+  /** Wave 3: the object the engine produced for a `outputFormat` run —
+   *  already parsed and schema-checked by the SDK. Absent on text runs. */
+  structuredOutput?: unknown;
 }
 export type { WebSourceRecord };
 
@@ -287,6 +297,8 @@ interface SdkResultMessage {
   };
   /** Per-model usage keyed by the raw model id the engine ran (SDK `ModelUsage`). */
   modelUsage?: Record<string, { outputTokens?: number; canonicalModel?: string }>;
+  /** Present on a successful `outputFormat: { type: 'json_schema' }` run. */
+  structured_output?: unknown;
 }
 
 /** The model that did the work: the usage-map entry with the most output tokens
@@ -617,6 +629,7 @@ export async function streamToResponse(
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
   let modelServed: string | undefined;
   let engineCostUsd: number | undefined;
+  let structuredOutput: unknown;
   const webSources = createWebSourceTracker();
 
   try {
@@ -644,6 +657,9 @@ export async function streamToResponse(
         cwd: os.tmpdir(),        // neutral cwd; nothing reads it (no tools) but never the repo
         abortController,
         ...sdkThinkingOptions(config.thinking, underlying),
+        // Schema-constrained turn (Wave 3): the SDK enforces the schema and
+        // retries on its side; nothing else in the containment set changes.
+        ...(config.outputFormat ? { outputFormat: config.outputFormat } : {}),
       },
     });
 
@@ -679,6 +695,9 @@ export async function streamToResponse(
           };
           modelServed = servedModelFromUsage(result.modelUsage);
           engineCostUsd = typeof result.total_cost_usd === 'number' ? result.total_cost_usd : undefined;
+          if (config.outputFormat && result.structured_output !== undefined) {
+            structuredOutput = result.structured_output;
+          }
           sendEvent({ type: 'usage', ...usageData, thinkingTokens: 0, ...(modelServed ? { modelServed } : {}) });
         } else {
           const detail = result.errors?.length ? ` — ${result.errors.join('; ')}` : '';
@@ -714,7 +733,9 @@ export async function streamToResponse(
     res.write('data: [DONE]\n\n');
     res.end();
 
-    if (onComplete && currentText) {
+    // A schema-constrained turn ends on the structured_output attachment with
+    // no trailing assistant text — the object IS the completion.
+    if (onComplete && (currentText || structuredOutput !== undefined)) {
       await onComplete({
         text: currentText,
         thinking: currentThinking,
@@ -723,6 +744,7 @@ export async function streamToResponse(
         engineCostUsd,
         systemPromptSent: systemPrompt,
         webSources: webSources.records,
+        ...(structuredOutput !== undefined ? { structuredOutput } : {}),
       });
     }
   } catch (err) {
