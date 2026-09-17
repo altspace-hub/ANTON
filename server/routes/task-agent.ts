@@ -30,6 +30,7 @@ import { findCandidateModules, type CandidateModule } from '../services/module-r
 import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { scoreWithGate, buildRetryGuidance, type GateResult } from '../services/task-quality-gate.js';
 import { runAgentic, type AgentToolDefinition, type AgenticToolCall } from '../services/sdk-agentic-runner.js';
+import { writeRunArtifactV2, buildAgenticRunArtifactInput } from '../services/run-artifact-writer.js';
 import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
 import { isSdkModel } from '../services/engine-model-id.js';
 import { z } from 'zod';
@@ -953,6 +954,10 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     const stepModel = mapModelToProvider('claude-opus-4-8');
     const useAgentic = isSdkModel(stepModel);
     let lastToolCalls: AgenticToolCall[] = [];
+    /** Wave 5: attempt counter for the step's run records (a retry is a second record under the same parent). */
+    let executionAttempt = 0;
+    /** Wave 5: the step's run-record parent id, `<taskId>:<stepIndex>` (captured here — the hoisted runExecution loses the narrowing of `task`). */
+    const runRecordParentId = `${task.id}:${currentStepIdx}`;
 
     const agentTools: AgentToolDefinition[] = [
       {
@@ -1019,16 +1024,34 @@ Attached documents: ${taskFiles.length > 0 ? taskFiles.map((f) => `"${f.name}"`)
     async function runExecution(thinkingLevel?: string, retryGuidance?: string): Promise<{ output: string; thinking: string }> {
       const userMessage = `Execute Step ${step.step}: ${step.name}. Produce the complete deliverable.${retryGuidance ?? ''}`;
       if (useAgentic) {
-        const run = await runAgentic({
+        executionAttempt += 1;
+        const agenticConfig: Parameters<typeof runAgentic>[0] = {
           model: stepModel,
           thinking: (thinkingLevel ?? 'think') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
           system: fullSystemPrompt + AGENT_TOOLS_BRIEF,
           prompt: userMessage,
           tools: agentTools,
           maxTurns: 12,
-        }, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        };
+        const run = await runAgentic(agenticConfig, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
         lastThinkingContent = run.thinking;
         lastToolCalls = run.toolCalls;
+        // Wave 5: the run record for this attempt — prompt as sent, hashes,
+        // engine, usage, transcript and every tool call in full (the step
+        // keeps 300-character previews). One record per attempt under
+        // `<taskId>:<stepIndex>`; fire-and-forget, never blocks the step.
+        void writeRunArtifactV2(db, buildAgenticRunArtifactInput({
+          parentKind: 'task_step',
+          parentId: runRecordParentId,
+          config: agenticConfig,
+          result: run,
+          requestParams: {
+            attempt: executionAttempt,
+            thinkingLevel: thinkingLevel ?? 'think',
+            stepName: step.name,
+            retry: Boolean(retryGuidance),
+          },
+        }));
         if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the step');
         if (run.warning) res.write(`data: ${JSON.stringify({ type: 'warning', message: run.warning })}\n\n`);
         return { output: run.text, thinking: run.thinking };

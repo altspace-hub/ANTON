@@ -36,6 +36,7 @@ import { createMarketConsulRoutes } from './routes/market-consul.js';
 import { createCivicExtendedRoutes } from './routes/civic-extended.js';
 import { createExchangeRoutes } from './routes/exchange.js';
 import { createSettingsRoutes } from './routes/settings.js';
+import { createRunArtifactRoutes } from './routes/run-artifacts.js';
 import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoints.js';
 import { seedApeApiEndpoint } from './services/apeapi-seed.js';
 import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
@@ -74,6 +75,8 @@ import { createIntelligenceDashboardRoutes } from './routes/intelligence-dashboa
 import { createPatternDetectionRoutes } from './routes/pattern-detection.js';
 import { createPatternDetection } from './services/pattern-detection.js';
 import { startMemorySweep } from './services/memory-sweep.js';
+import { markInterruptedRuns } from './services/run-recovery.js';
+import { createEngineGuardRoutes } from './routes/engine-guards.js';
 import { createCommandRoutes } from './routes/commands.js';
 import { createComplianceRoutes } from './routes/compliance.js';
 import { createDataRoutes } from './routes/data.js';
@@ -424,6 +427,15 @@ try {
   console.warn('[memory-sweep] failed to start:', error instanceof Error ? error.message : error);
 }
 
+// Wave 5: a restart ends in-process step jobs. Assessments still marked
+// 'assessing' with no live job are marked interrupted so the page can say so.
+try {
+  const recovered = await markInterruptedRuns(db);
+  if (recovered.gapAssessments > 0) console.log(`[run-recovery] ${recovered.gapAssessments} interrupted gap assessment(s) marked`);
+} catch (error) {
+  console.warn('[run-recovery] failed:', error instanceof Error ? error.message : error);
+}
+
 // MCP authentication guard (any deployment mode — was team-only, which left the full
 // unauthenticated tool surface reachable from the LAN on solo installs).
 // - MCP_SECRET set → require Authorization: Bearer <MCP_SECRET>.
@@ -635,6 +647,8 @@ app.use('/api/markets/consul', createMarketConsulRoutes(db));
 app.use('/api/civic', createCivicExtendedRoutes(db));
 app.use('/api', await createExchangeRoutes(db));
 app.use('/api', await createSettingsRoutes(db));
+app.use('/api', createRunArtifactRoutes(db));           // Wave 5: run records by parent + tool calls
+app.use('/api', createEngineGuardRoutes(db));           // Wave 5: daily cap on subscription runs
 app.use('/api', createCustomModelEndpointsRoutes(db));
 // Auto-register ApeAPI (compat: bundle) from APEAPI_API_KEY if set — one-step onboarding.
 await seedApeApiEndpoint(db);

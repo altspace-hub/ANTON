@@ -298,6 +298,50 @@ export interface ContentBlock {
   metadata?: Record<string, unknown>;
 }
 
+// ── Rerun (Wave 2.3 recompose + Wave 5 verbatim replay) ──────────────────────
+
+export type RerunMode = 'replay' | 'recompose';
+
+/** One side of a rerun comparison (mirrors POST /api/rerun `original` / `rerun`). */
+export interface RerunSide {
+  messageId: string;
+  content: string;
+  thinking?: string | null;
+  modelId: string | null;
+  cost: number | null;
+  outputTokens: number | null;
+  createdAt?: string;
+  rerunOf?: string | null;
+}
+
+export interface RerunSourceDriftEntry {
+  name: string;
+  type: string;
+  changed: boolean;
+  status: 'unchanged' | 'changed' | 'added' | 'removed' | 'unhashed';
+}
+
+/** POST /api/rerun response — both modes share the shape; replay never has drift. */
+export interface RerunResponse {
+  mode: RerunMode;
+  originalMessageId: string;
+  rerunMessageId: string;
+  original: RerunSide;
+  rerun: RerunSide;
+  /** The model asked for, the model that answered, and whether that matches the original run. */
+  model: { requested: string; served: string; equalsOriginal: boolean };
+  /** Replay sends the stored prompt byte-for-byte (equalsOriginal is always true there). */
+  prompt: { sha256: string | null; originalSha256?: string | null; equalsOriginal: boolean };
+  output: { sha256: string; originalSha256: string; equalsOriginal: boolean; chars: number; originalChars: number };
+  usage?: { inputTokens: number; outputTokens: number };
+  /** Replay only: why identical inputs can still produce a different output. */
+  note?: string;
+  sourceDriftAvailable: boolean;
+  sourceDrift: RerunSourceDriftEntry[];
+  sourceDriftDetected: boolean;
+  warning?: string;
+}
+
 export interface RevelationStep {
   id: string;
   chainId: string;

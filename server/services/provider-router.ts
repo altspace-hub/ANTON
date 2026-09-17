@@ -111,8 +111,19 @@ export interface StreamChatConfig {
 export interface ChatResult {
   text: string;
   thinking: string;
+  /** Uncached input tokens (the API's input_tokens — cache reads/writes are separate). */
   inputTokens: number;
   outputTokens: number;
+  /** Prompt-cache reads, where the provider reports them (Anthropic API, SDK engine). */
+  cacheReadTokens?: number;
+  /** Prompt-cache writes, where the provider reports them (Anthropic API, SDK engine). */
+  cacheCreationTokens?: number;
+  /**
+   * The model id the provider says it actually served — the API's dated
+   * `response.model`, the SDK engine's per-model usage key. Undefined for
+   * providers that do not report one; never a copy of the id that was sent.
+   */
+  modelServed?: string;
 }
 
 // ── Model Tier Resolution ──────────────────────────────────────
@@ -501,6 +512,9 @@ async function streamChatEngine(
     thinking: out.completion.thinking,
     inputTokens: out.completion.inputTokens,
     outputTokens: out.completion.outputTokens,
+    cacheReadTokens: out.completion.cacheReadTokens ?? 0,
+    cacheCreationTokens: out.completion.cacheCreationTokens ?? 0,
+    modelServed: out.completion.modelServed,
   };
 }
 
@@ -550,6 +564,9 @@ async function streamChatAnthropic(
   let fullThinking = '';
   let inputTokens = 0;
   let outputTokens = 0;
+  let cacheReadTokens = 0;
+  let cacheCreationTokens = 0;
+  let modelServed: string | undefined;
 
   for await (const event of stream) {
     const ev = event as unknown as Record<string, unknown>;
@@ -571,14 +588,17 @@ async function streamChatAnthropic(
       }
     } else if (ev.type === 'message_start') {
       const msg = ev.message as Record<string, unknown> | undefined;
+      if (typeof msg?.model === 'string' && msg.model.length > 0) modelServed = msg.model;
       const usage = msg?.usage as Record<string, number> | undefined;
       if (usage) {
         inputTokens = usage.input_tokens || 0;
+        cacheReadTokens = usage.cache_read_input_tokens || 0;
+        cacheCreationTokens = usage.cache_creation_input_tokens || 0;
       }
     }
   }
 
-  return { text: fullText, thinking: fullThinking, inputTokens, outputTokens };
+  return { text: fullText, thinking: fullThinking, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens, modelServed };
 }
 
 // ── Mistral streaming helper ──
@@ -789,6 +809,9 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       thinking,
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
+      cacheReadTokens: response.usage.cache_read_input_tokens ?? 0,
+      cacheCreationTokens: response.usage.cache_creation_input_tokens ?? 0,
+      modelServed: typeof response.model === 'string' && response.model.length > 0 ? response.model : undefined,
     };
   }
 
@@ -1007,7 +1030,15 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       })),
       tools: config.tools,
     }, { background: config.background === true });
-    return { text: data.text, thinking: data.thinking, inputTokens: data.inputTokens, outputTokens: data.outputTokens };
+    return {
+      text: data.text,
+      thinking: data.thinking,
+      inputTokens: data.inputTokens,
+      outputTokens: data.outputTokens,
+      cacheReadTokens: data.cacheReadTokens ?? 0,
+      cacheCreationTokens: data.cacheCreationTokens ?? 0,
+      modelServed: data.modelServed,
+    };
   }
 
   throw new Error(`Non-streaming not implemented for provider: ${provider}`);

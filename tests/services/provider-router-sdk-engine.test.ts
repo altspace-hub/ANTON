@@ -102,7 +102,8 @@ describe('streamChat → SDK engine', () => {
 
     const result = await streamChat({ ...config, model: 'sdk:claude-opus-5' }, res);
 
-    expect(result).toEqual({ text: 'ab', thinking: 't', inputTokens: 40, outputTokens: 7 });
+    // cacheRead/cacheCreation: track E (ChatResult carries the prompt cache; none reported here).
+    expect(result).toEqual({ text: 'ab', thinking: 't', inputTokens: 40, outputTokens: 7, cacheReadTokens: 0, cacheCreationTokens: 0 });
     const types = events().map((e) => e.type);
     expect(types).toEqual(['thinking_delta', 'text_delta', 'text_delta']);
     // the caller writes its own `done` and ends the response — the engine must not

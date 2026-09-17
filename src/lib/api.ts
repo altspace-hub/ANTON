@@ -969,6 +969,31 @@ export async function* streamDeliberation(
 }
 
 /** Download a Trust Certificate PDF for the given session */
+// ── Rerun (Wave 2.3 recompose + Wave 5 verbatim replay) ──────────────────────
+
+export interface RerunRequest {
+  sessionId: string;
+  /** Defaults to the latest non-rerun assistant message in the session. */
+  messageId?: string;
+  /** 'recompose' (default): another model through the live pipeline. 'replay': the stored prompt, verbatim. */
+  mode?: import('./types').RerunMode;
+  /** Required for recompose; optional for replay (defaults to the model that served the original). */
+  newModelId?: string;
+  areaId?: string;
+}
+
+/** POST /api/rerun — throws with the server's message on a non-2xx. */
+export async function rerunMessage(body: RerunRequest): Promise<import('./types').RerunResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/rerun`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => ({}))) as import('./types').RerunResponse & { error?: string };
+  if (!res.ok) throw new Error(String(data.error ?? 'Rerun failed'));
+  return data;
+}
+
 export async function exportTrustCertificate(sessionId: string): Promise<Blob> {
   const res = await fetchWithAuth(`${API_BASE}/export/trust-certificate`, {
     method: 'POST',
@@ -1435,6 +1460,41 @@ export async function updateMemoryGovernance(patch: MemoryGovernancePatch): Prom
 }
 
 /**
+ * Wave 5: the subscription engine's per-day run cap (GET/POST
+ * /api/settings/engine-guards). Mirror of server/routes/engine-guards.ts
+ * EngineGuardsState.
+ */
+export interface EngineGuards {
+  /** null = unlimited. */
+  sdkDailyRunCap: number | null;
+  /** Subscription runs started today (audit-log seed + runs since). */
+  sdkRunsToday: number;
+}
+
+async function engineGuardsJson(res: Response, action: string): Promise<EngineGuards> {
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `${action} failed (HTTP ${res.status})`);
+  }
+  return (await res.json()) as EngineGuards;
+}
+
+export async function fetchEngineGuards(): Promise<EngineGuards> {
+  const res = await fetchWithAuth(`${API_BASE}/settings/engine-guards`);
+  return engineGuardsJson(res, 'Engine guards request');
+}
+
+/** Sets the cap (an integer of at least 1) or removes it (null); returns the state afterwards. */
+export async function updateEngineGuards(patch: { sdkDailyRunCap: number | null }): Promise<EngineGuards> {
+  const res = await fetchWithAuth(`${API_BASE}/settings/engine-guards`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return engineGuardsJson(res, 'Engine guards update');
+}
+
+/**
  * The last assistant message row as the server persisted it. Needed because
  * a live run's message id is minted client-side at stream_end (the server's
  * `assistantMessageId` never reaches the browser), so run_artifacts can only
@@ -1551,4 +1611,120 @@ export async function collectEvidencePack(packId: string): Promise<EvidencePackC
     itemCount: data.itemCount,
     itemsByType: data.itemsByType ?? {},
   };
+}
+
+// ── Run record v2 (Wave 5) — the records of agentic runs, by parent, and their tool calls ──
+
+export type RunRecordParentKind = 'message' | 'gap_batch' | 'task_step' | 'engagement_step';
+
+export interface RunRecordUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+}
+
+/** One run_artifacts row as GET /api/run-artifacts returns it (prompt and transcript on request). */
+export interface RunRecordSummary {
+  id: string;
+  message_id: string | null;
+  session_id: string | null;
+  parent_kind: RunRecordParentKind;
+  parent_id: string | null;
+  engine: string | null;
+  engine_version: string | null;
+  model_requested: string | null;
+  model_served: string | null;
+  request_params: Record<string, unknown> | null;
+  prompt_sha256: string;
+  prompt_chars: number;
+  truncated: boolean;
+  user_message_sha256: string | null;
+  history_sha256: string | null;
+  output_sha256: string | null;
+  thinking_sha256: string | null;
+  usage: RunRecordUsage | null;
+  cost_usd: number | null;
+  cost_basis: 'usd' | 'plan_usage' | 'unknown' | 'free' | null;
+  status: 'completed' | 'interrupted' | 'failed';
+  rerun_of: string | null;
+  rerun_mode: string | null;
+  layer_summary: unknown[];
+  source_manifest: unknown[];
+  created_at: string;
+  finished_at: string | null;
+  transcript_turns: number;
+  tool_call_count: number;
+  /** Present with includePrompt. */
+  composed_prompt?: string;
+  /** Present with includeTranscript (always from fetchRunRecord). */
+  transcript?: string[];
+}
+
+/** One run_tool_calls row; output_text only with `full`. */
+export interface RunToolCallRow {
+  id: string;
+  seq: number;
+  tool_name: string;
+  input: Record<string, unknown> | null;
+  output_sha256: string | null;
+  /** Length of the FULL output (the stored text is capped at 40,000 characters). */
+  output_chars: number;
+  stored_chars: number;
+  is_error: boolean;
+  duration_ms: number | null;
+  created_at: string;
+  output_preview: string;
+  output_preview_truncated: boolean;
+  output_text?: string;
+}
+
+async function runRecordJson<T>(res: Response, what: string): Promise<T> {
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+    throw new Error(typeof data.error === 'string' ? data.error : `${what} failed (HTTP ${res.status})`);
+  }
+  return res.json() as Promise<T>;
+}
+
+/**
+ * The run records of a parent. For gap_batch / task_step the id may be the
+ * assessment / task id alone — every batch / step under it comes back, in
+ * creation order.
+ */
+export async function fetchRunRecordsByParent(
+  kind: RunRecordParentKind,
+  parentId: string,
+  opts?: { includePrompt?: boolean; includeTranscript?: boolean },
+): Promise<RunRecordSummary[]> {
+  const q = new URLSearchParams();
+  if (opts?.includePrompt) q.set('includePrompt', '1');
+  if (opts?.includeTranscript) q.set('includeTranscript', '1');
+  const qs = q.toString();
+  const res = await fetchWithAuth(
+    `${API_BASE}/run-artifacts/by-parent/${encodeURIComponent(kind)}/${encodeURIComponent(parentId)}${qs ? `?${qs}` : ''}`,
+  );
+  const rows = await runRecordJson<RunRecordSummary[]>(res, 'Loading run records');
+  return Array.isArray(rows) ? rows : [];
+}
+
+/** One run record with its transcript (null when it does not exist). */
+export async function fetchRunRecord(
+  runId: string,
+  opts?: { includePrompt?: boolean },
+): Promise<RunRecordSummary | null> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/run-artifacts/${encodeURIComponent(runId)}${opts?.includePrompt ? '?includePrompt=1' : ''}`,
+  );
+  if (res.status === 404) return null;
+  return runRecordJson<RunRecordSummary>(res, 'Loading the run record');
+}
+
+/** The tool calls of a run, in call order; `full` returns the stored output text. */
+export async function fetchRunToolCalls(runId: string, opts?: { full?: boolean }): Promise<RunToolCallRow[]> {
+  const res = await fetchWithAuth(
+    `${API_BASE}/run-artifacts/${encodeURIComponent(runId)}/tool-calls${opts?.full ? '?full=1' : ''}`,
+  );
+  const rows = await runRecordJson<RunToolCallRow[]>(res, 'Loading tool calls');
+  return Array.isArray(rows) ? rows : [];
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Search, Sparkles, Brain, Puzzle, ThumbsUp, ThumbsDown, Check, Loader2, ShieldCheck, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom, FileArchive } from 'lucide-react';
+import { Search, Sparkles, Brain, Puzzle, ThumbsUp, ThumbsDown, Check, Loader2, ShieldCheck, Layers, ChevronRight, CheckCircle2, XCircle, Info, TrendingUp, ArrowRight, Award, History, GitCompare, FileDown, Atom, FileArchive, Repeat } from 'lucide-react';
 import CitationVerifier from '@/components/shared/CitationVerifier';
 import AddToEvidencePackPanel from '@/pages/evidence-pack/AddToEvidencePackPanel';
 import ReviewLauncher from '@/components/platform/ReviewLauncher';
@@ -9,7 +9,7 @@ import FeedbackWidget from '@/components/shared/FeedbackWidget';
 import ModelSelector from '@/components/shared/ModelSelector';
 import RerunComparison, { type RerunComparisonData } from '@/components/shared/RerunComparison';
 import ProvenancePanel from '@/components/shared/ProvenancePanel';
-import { createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate } from '@/lib/api';
+import { createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate, rerunMessage } from '@/lib/api';
 import type { ModelId, ContextUsed } from '@/lib/types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -248,33 +248,33 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const isStreamingThinking = isStreaming && !!streamingThinking;
   const displayThinking = isStreaming ? streamingThinking : thinkingContent;
 
-  // ── Rerun with… (Wave 2.3) ─────────────────────────────────
+  // ── Rerun with… (Wave 2.3 recompose, Wave 5 verbatim replay) ──
 
-  const handleRerun = async () => {
+  const [rerunMode, setRerunMode] = useState<'recompose' | 'replay' | null>(null);
+
+  const handleRerun = async (mode: 'recompose' | 'replay') => {
     if (!sessionId || rerunLoading) return;
-    if (rerunModel === lastRunModel) {
+    if (mode === 'recompose' && rerunModel === lastRunModel) {
       setRerunError('Pick a different model — this output was already produced by that model.');
       return;
     }
     setRerunLoading(true);
+    setRerunMode(mode);
     setRerunError(null);
     try {
-      const res = await fetchWithAuth('/api/rerun', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, newModelId: rerunModel, areaId }),
-      });
-      const data = (await res.json()) as RerunComparisonData & { error?: string };
-      if (!res.ok) {
-        setRerunError(String(data.error ?? 'Rerun failed'));
-        return;
-      }
+      const data = mode === 'replay'
+        // Replay: the stored prompt, the stored history, the model that served the
+        // original — no model pick, no pipeline. The server fails closed (409) when
+        // the record is truncated or the model is no longer served.
+        ? await rerunMessage({ sessionId, mode: 'replay' })
+        : await rerunMessage({ sessionId, mode: 'recompose', newModelId: rerunModel, areaId });
       setRerunData(data);
       setShowComparison(true);
     } catch (err) {
       setRerunError(err instanceof Error ? err.message : 'Rerun failed');
     } finally {
       setRerunLoading(false);
+      setRerunMode(null);
     }
   };
 
@@ -530,20 +530,43 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <ModelSelector value={rerunModel} onChange={setRerunModel} variant="dropdown" />
                 <button
-                  onClick={handleRerun}
+                  onClick={() => handleRerun('recompose')}
                   disabled={rerunLoading || !sessionId || rerunModel === lastRunModel}
+                  aria-label="Rerun with another model and compare"
                   className="flex h-[42px] items-center justify-center gap-2 rounded-lg bg-adv-teal px-4 text-xs font-medium text-adv-dark transition-colors hover:bg-adv-teal-dark disabled:opacity-50"
                 >
-                  {rerunLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitCompare className="h-3.5 w-3.5" />}
-                  {rerunLoading ? 'Running…' : 'Run comparison'}
+                  {rerunLoading && rerunMode === 'recompose' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitCompare className="h-3.5 w-3.5" />}
+                  {rerunLoading && rerunMode === 'recompose' ? 'Running…' : 'Run comparison'}
                 </button>
               </div>
               {rerunModel === lastRunModel && !rerunLoading && (
                 <p className="mt-2 text-[11px] text-adv-gray">Pick a different model than the one that produced this output.</p>
               )}
-              {rerunLoading && (
+              {/* Wave 5: verbatim replay — same model, the stored prompt byte-for-byte */}
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
+                <button
+                  onClick={() => handleRerun('replay')}
+                  disabled={rerunLoading || !sessionId}
+                  aria-label="Replay verbatim with the same model and the stored prompt"
+                  title="Sends the stored system prompt and conversation byte-for-byte to the model that served the original, then reports whether the output hash matches."
+                  className="flex h-[38px] items-center justify-center gap-2 rounded-lg border border-adv-teal/40 bg-adv-teal/10 px-3 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20 disabled:opacity-50"
+                >
+                  {rerunLoading && rerunMode === 'replay' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Repeat className="h-3.5 w-3.5" />}
+                  {rerunLoading && rerunMode === 'replay' ? 'Replaying…' : 'Same model, verbatim'}
+                </button>
+                <p className="min-w-[12rem] flex-1 text-[11px] leading-relaxed text-adv-gray">
+                  Replays the pinned prompt and history against the model that served this output — no fresh composition, no knowledge lookup —
+                  and reports model, prompt and output hash equality. Fails closed if the prompt was truncated or the model is no longer served.
+                </p>
+              </div>
+              {rerunLoading && rerunMode === 'recompose' && (
                 <p className="mt-2 text-[11px] text-adv-gray">
                   The rerun goes through the full pipeline (knowledge resolution, prompt assembly, model call) — this can take a few minutes for deep-thinking runs.
+                </p>
+              )}
+              {rerunLoading && rerunMode === 'replay' && (
+                <p className="mt-2 text-[11px] text-adv-gray">
+                  Replaying the stored prompt — one model call, no composition. Deep-thinking runs can still take a few minutes.
                 </p>
               )}
               {rerunError && (
@@ -555,7 +578,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   className="mt-3 flex items-center gap-1.5 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
                 >
                   <GitCompare className="h-3.5 w-3.5" />
-                  Reopen last comparison ({rerunData.rerun.modelId})
+                  Reopen last {rerunData.mode === 'replay' ? 'replay' : 'comparison'} ({rerunData.rerun.modelId})
                 </button>
               )}
             </div>

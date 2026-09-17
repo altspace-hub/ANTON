@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth, uploadFile } from '@/lib/api';
 import AddToEvidencePackPanel from '@/pages/evidence-pack/AddToEvidencePackPanel';
+import RunRecordPanel from '@/components/shared/RunRecordPanel';
 import { getStoredDefaultModel } from '@/stores/useSettingsStore';
 import type { KnowledgeSourceConfig, ModelId } from '@/lib/types';
 import ModelSelector from '@/components/shared/ModelSelector';
@@ -120,8 +121,12 @@ interface Assessment {
   scope_config: string;
   context_config: string;
   status: string;
-  /** Wave 3: a run in progress on the server that the wizard can re-attach to. */
-  run_job?: { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; error?: string } | null;
+  /** Wave 3: a run in progress on the server that the wizard can re-attach to.
+   *  Wave 5: 'lost' — the row was mid-run but the server restarted underneath it. */
+  run_job?:
+    | { status: 'running' | 'done' | 'failed'; startedAt: string; endedAt?: string; frames: number; error?: string }
+    | { status: 'lost'; startedAt?: undefined; interruptedAt: string | null }
+    | null;
   current_step: number;
   article_scores: string;
   capability_view: string | null;
@@ -1895,6 +1900,22 @@ function GapAssessmentWizardInner() {
               <p className="text-sm text-adv-gray">Claude will assess articles in batches of 12. This may take several minutes for large frameworks.</p>
             </div>
 
+            {/* Wave 5: the server restarted underneath this run — say so, with the way forward. */}
+            {!isRunning && progressEvents.length === 0 && assessment?.run_job?.status === 'lost' && (
+              <div role="alert" className="flex flex-col gap-3 rounded-xl border border-adv-gold/40 bg-adv-gold/10 p-4 sm:flex-row sm:items-center">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-adv-gold" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-adv-off-white">This run was interrupted by a server restart — start the assessment again.</p>
+                  {assessment.run_job.interruptedAt && (
+                    <p className="mt-0.5 text-xs text-adv-gray">Marked interrupted {new Date(assessment.run_job.interruptedAt).toLocaleString()}.</p>
+                  )}
+                </div>
+                <button onClick={() => runAssessment()} className="flex shrink-0 items-center gap-2 rounded-lg bg-adv-teal px-5 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors">
+                  <RefreshCw className="h-4 w-4" /> Start again
+                </button>
+              </div>
+            )}
+
             {!isRunning && progressEvents.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-border bg-adv-card text-center">
                 <Play className="mb-3 h-10 w-10 text-adv-teal" />
@@ -2022,6 +2043,19 @@ function GapAssessmentWizardInner() {
                   {batchReasoning}
                 </div>
               </details>
+            )}
+
+            {/* Wave 5: the run record of every batch — the engine's reads, searches and turns */}
+            {id && !isRunning && (
+              <div className="rounded-xl border border-adv-teal/20 bg-adv-teal-soft overflow-hidden">
+                <RunRecordPanel
+                  parentKind="gap_batch"
+                  parentId={id}
+                  title="Run records — tool calls & transcript per batch"
+                  refreshKey={findings.length}
+                  className=""
+                />
+              </div>
             )}
 
             {/* Average compliance score */}

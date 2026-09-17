@@ -22,6 +22,7 @@ import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { resolveEngagementModelChoice } from '../services/engagement-exec-model.js';
 import { bridgeIterationToSession } from '../services/engagement-session-bridge.js';
 import { runAgentic, type AgentToolDefinition } from '../services/sdk-agentic-runner.js';
+import { writeRunArtifactV2, buildAgenticRunArtifactInput } from '../services/run-artifact-writer.js';
 import { isSdkModel } from '../services/engine-model-id.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { getModuleSystemPrompt } from '../services/module-loader.js';
@@ -1233,6 +1234,11 @@ Format your output as professional consulting deliverables. Use clear headings, 
       // specialist. On the agentic engine it gets tools for all of that and
       // several turns; the final turn is the deliverable.
       let streamResult: { text: string; thinking: string; inputTokens: number; outputTokens: number };
+      // Wave 5: the iteration id is fixed before the run so its run record
+      // (parent 'engagement_step') has a parent even when the run fails and
+      // no iteration row is written.
+      const iterationId = randomUUID();
+      let agenticRun: { config: Parameters<typeof runAgentic>[0]; result: Awaited<ReturnType<typeof runAgentic>> } | null = null;
       if (isSdkModel(execModel)) {
         const engagementId = String(req.params.id);
         const agentTools: AgentToolDefinition[] = [
@@ -1316,7 +1322,7 @@ Format your output as professional consulting deliverables. Use clear headings, 
           : 'Note: No resources have been collected. Base the analysis on the scope, the client profile and your expertise, and say what a fuller analysis would need.';
         const agenticBrief = `\n\n## HOW TO WORK
 You have tools: list_resources / read_resource (the collected material in full), read_document (the engagement letter, plan, good example), client_profile, scope_and_deliverables, search_knowledge (regulatory text with citations)${knowledgeConfig.webSearchEnabled ? ', WebSearch/WebFetch' : ''}, and consult_expert_module (a specialist's view). Read before you write: the resources that bear on each scope item, the client profile, and any citation you rely on. Then write the complete deliverable as your FINAL message — the deliverable itself, with no preamble about the tools you used.`;
-        const run = await runAgentic({
+        const agenticConfig: Parameters<typeof runAgentic>[0] = {
           model: execModel,
           thinking: (isQuick ? 'quick' : thinkingLevel) as Parameters<typeof runAgentic>[0]['thinking'],
           system: systemPrompt + planFirstInstr + agenticBrief,
@@ -1325,8 +1331,20 @@ You have tools: list_resources / read_resource (the collected material in full),
           webSearch: Boolean(knowledgeConfig.webSearchEnabled),
           maxTurns: 18,
           timeoutMs: 40 * 60 * 1000,
-        }, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
-        if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the execution');
+        };
+        const run = await runAgentic(agenticConfig, (event) => { res.write(`data: ${JSON.stringify(event)}\n\n`); });
+        agenticRun = { config: agenticConfig, result: run };
+        if (!run.ok) {
+          // Wave 5: a failed run is still a run — its record goes out before the error does.
+          void writeRunArtifactV2(db, buildAgenticRunArtifactInput({
+            parentKind: 'engagement_step',
+            parentId: iterationId,
+            config: agenticConfig,
+            result: run,
+            requestParams: { engagementId, workstreamId: workstream_id || null, thinkingLevel },
+          }));
+          throw new Error(run.error ?? 'The engine did not complete the execution');
+        }
         if (run.warning) res.write(`data: ${JSON.stringify({ type: 'warning', message: run.warning })}\n\n`);
         streamResult = { text: run.text, thinking: run.thinking, inputTokens: run.usage.inputTokens, outputTokens: run.usage.outputTokens };
       } else {
@@ -1345,7 +1363,6 @@ You have tools: list_resources / read_resource (the collected material in full),
 
       // Save iteration
       const iterationNumber = ((await db.get('SELECT MAX(iteration_number) as max FROM engagement_iterations WHERE engagement_id = ?', String(req.params.id))) as { max: number | null } | undefined)?.max ?? 0;
-      const iterationId = randomUUID();
       await db.run(`INSERT INTO engagement_iterations (id, engagement_id, workstream_id, iteration_number, output_content, thinking_content, status, resources_used)
         VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`, 
         iterationId, String(req.params.id), workstream_id || null, iterationNumber + 1,
@@ -1382,6 +1399,25 @@ You have tools: list_resources / read_resource (the collected material in full),
         bridgedSessionId = bridged.sessionId;
       } catch (bridgeErr) {
         console.warn('[engagements] session bridge failed (non-fatal):', bridgeErr instanceof Error ? bridgeErr.message : bridgeErr);
+      }
+
+      // Wave 5: the iteration's run record — prompt as sent, hashes, engine,
+      // usage, transcript and every tool call — under the iteration id, with
+      // the bridged session when the bridge produced one. Fire-and-forget.
+      if (agenticRun) {
+        void writeRunArtifactV2(db, buildAgenticRunArtifactInput({
+          parentKind: 'engagement_step',
+          parentId: iterationId,
+          sessionId: bridgedSessionId,
+          config: agenticRun.config,
+          result: agenticRun.result,
+          requestParams: {
+            engagementId: String(req.params.id),
+            workstreamId: workstream_id || null,
+            iterationNumber: iterationNumber + 1,
+            thinkingLevel,
+          },
+        }));
       }
 
       res.write(`data: ${JSON.stringify({ type: 'done', iterationId, sessionId: bridgedSessionId })}\n\n`);

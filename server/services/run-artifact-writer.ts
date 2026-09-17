@@ -1,26 +1,41 @@
 /**
- * run-artifact-writer.ts — persist the assembled system prompt + pinned source
- * manifest per assistant message (Core Experience Review 2026-06, item 1.6).
+ * run-artifact-writer.ts — persist the run record: the assembled system prompt
+ * + pinned source manifest per assistant message (Core Experience Review
+ * 2026-06, item 1.6), and since Wave 5 (2026-09-17) the run record v2 that
+ * every engine path can write — a gap batch, a task step, an engagement
+ * iteration — with the engine, the served model, the request parameters, the
+ * hashes of what went in and what came out, the usage, the transcript, and
+ * the tool calls the run made (run_tool_calls).
  *
- * Today the 7-layer system prompt is composed inline in routes/claude.ts and
- * evaporated after the call; resolved knowledge sources were only console.logged.
- * This module writes one `run_artifacts` row per persisted assistant message
- * (migration 223) so any run can later be inspected, exported as a `module-run`
- * bundle (Wave-2 item 2.2), or reproduced.
+ * Before v2 the 7-layer system prompt was composed inline in routes/claude.ts
+ * and evaporated after the call; the agentic runner returned its transcript
+ * and tool calls and the three call sites kept text, a 300-character preview,
+ * or text + tokens. No table held a transcript or a tool call.
  *
  * Contract:
- *  - Fire-and-forget tolerable: writeRunArtifact NEVER throws — failures are
- *    logged and reported via the boolean return so streaming is never broken.
- *  - Size guard: composed prompts can reach ~900k tokens; stored text is capped
- *    at MAX_STORED_PROMPT_BYTES (2 MB). When capped, `truncated = TRUE` and
- *    `prompt_sha256` still covers the FULL prompt (the hash is the pin).
+ *  - Fire-and-forget tolerable: nothing here throws — failures are logged and
+ *    reported through the return value so streaming is never broken.
+ *  - Size guards: composed prompts can reach ~900k tokens; stored text is
+ *    capped at MAX_STORED_PROMPT_BYTES (2 MB). Tool outputs are capped at
+ *    MAX_STORED_TOOL_OUTPUT_CHARS (40,000). When capped, the sha256 still
+ *    covers the FULL text (the hash is the pin) and the full length is kept.
+ *  - One row per assistant message: a message-parented write keeps the
+ *    ON CONFLICT (message_id) DO NOTHING idempotency. A non-message parent has
+ *    no message id and inserts plainly (a step that retried has one record per
+ *    attempt, all under the same parent).
  */
 
 import crypto from 'crypto';
+import { createRequire } from 'module';
+import fs from 'fs';
+import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
+import { isSdkModel } from './engine-model-id.js';
 
 /** Stored-prompt cap (bytes of UTF-8). The sha256 always covers the full prompt. */
 export const MAX_STORED_PROMPT_BYTES = 2 * 1024 * 1024;
+/** Stored tool-output cap (characters). output_sha256 / output_chars cover the full output. */
+export const MAX_STORED_TOOL_OUTPUT_CHARS = 40_000;
 
 export function sha256Hex(text: string): string {
   return crypto.createHash('sha256').update(text, 'utf8').digest('hex');
@@ -64,38 +79,185 @@ export function truncateToBytes(text: string, maxBytes: number): string {
   return s;
 }
 
+// ── Run record v2 types (migration 277) ─────────────────────────────────────
+
+/** What a run record belongs to. 'message' is the chat route's assistant message. */
+export type RunParentKind = 'message' | 'gap_batch' | 'task_step' | 'engagement_step';
+export type RunArtifactStatus = 'completed' | 'interrupted' | 'failed';
+/** How cost_usd is to be read: metered dollars, subscription plan usage, free (local), or not known. */
+export type RunCostBasis = 'usd' | 'plan_usage' | 'unknown' | 'free';
+
+export interface RunUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+}
+
+/** One tool call of an agentic run, in call order. */
+export interface RunToolCallInput {
+  seq: number;
+  name: string;
+  input: Record<string, unknown> | null;
+  output: string;
+  isError: boolean;
+  ms: number | null;
+}
+
 export interface RunArtifactInput {
-  /** id of the persisted assistant message row (FK) */
-  messageId: string;
+  /** id of the persisted assistant message row (FK). Null/absent for a non-message parent. */
+  messageId?: string | null;
   sessionId?: string | null;
   /** Final composed system prompt as passed to the LLM (static + dynamic when split) */
   composedPrompt: string;
   layerSummary?: LayerSummaryEntry[];
   /** Resolved source manifest entries (ResolvedSourceDetail[] or name-only fallbacks) */
   sourceManifest?: unknown[];
+
+  // ── v2 (migration 277) — all optional; a legacy caller writes a message-parented row ──
+  parentKind?: RunParentKind;
+  /** e.g. `<assessmentId>:<frameworkId>:<batchIndex>`, `<taskId>:<stepIndex>`, an iteration id. */
+  parentId?: string | null;
+  /** 'anthropic_sdk' | 'anthropic_api' | 'openai' | 'google' | 'mistral' | 'ollama' | 'azure' | … */
+  engine?: string | null;
+  engineVersion?: string | null;
+  modelRequested?: string | null;
+  modelServed?: string | null;
+  requestParams?: Record<string, unknown> | null;
+  userMessageSha256?: string | null;
+  historySha256?: string | null;
+  outputSha256?: string | null;
+  thinkingSha256?: string | null;
+  usage?: RunUsage | null;
+  costUsd?: number | null;
+  costBasis?: RunCostBasis | null;
+  status?: RunArtifactStatus;
+  rerunOf?: string | null;
+  rerunMode?: string | null;
+  /** Assistant turns in order (the agentic runner's transcript). */
+  transcript?: string[] | null;
+  finishedAt?: string | Date | null;
+  /** Written to run_tool_calls after the record, in seq order. */
+  toolCalls?: RunToolCallInput[];
 }
 
+export interface RunArtifactFinalizePatch {
+  status?: RunArtifactStatus;
+  outputSha256?: string | null;
+  thinkingSha256?: string | null;
+  usage?: RunUsage | null;
+  costUsd?: number | null;
+  costBasis?: RunCostBasis | null;
+  finishedAt?: string | Date | null;
+  transcript?: string[] | null;
+}
+
+function isoOrNull(v: string | Date | null | undefined): string | null {
+  if (v instanceof Date) return v.toISOString();
+  return typeof v === 'string' && v.length > 0 ? v : null;
+}
+
+function jsonOrNull(v: unknown): string | null {
+  return v === null || v === undefined ? null : JSON.stringify(v);
+}
+
+// ── Engine versions ─────────────────────────────────────────────────────────
+
+const versionCache = new Map<string, string>();
+
 /**
- * Write one run_artifacts row. Never throws; returns false (and logs) on failure.
- * ON CONFLICT (message_id) DO NOTHING — one row per assistant message.
+ * The installed version of a package, read from its package.json. Packages
+ * whose `exports` map hides package.json (the Agent SDK does) are found by
+ * resolving their entry file and walking up to the package root.
  */
-export async function writeRunArtifact(
+export function installedPackageVersion(pkgName: string): string {
+  const cached = versionCache.get(pkgName);
+  if (cached) return cached;
+  let version = 'unknown';
+  try {
+    const require = createRequire(import.meta.url);
+    let dir: string;
+    try {
+      dir = path.dirname(require.resolve(`${pkgName}/package.json`));
+    } catch {
+      dir = path.dirname(require.resolve(pkgName));
+    }
+    for (let i = 0; i < 8 && dir; i++) {
+      const candidate = path.join(dir, 'package.json');
+      if (fs.existsSync(candidate)) {
+        const parsed = JSON.parse(fs.readFileSync(candidate, 'utf8')) as { name?: unknown; version?: unknown };
+        if (parsed.name === pkgName && typeof parsed.version === 'string') { version = parsed.version; break; }
+      }
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {
+    version = 'unknown';
+  }
+  versionCache.set(pkgName, version);
+  return version;
+}
+
+/** Installed @anthropic-ai/claude-agent-sdk version ('unknown' when it cannot be read). */
+export function sdkEngineVersion(): string {
+  return installedPackageVersion('@anthropic-ai/claude-agent-sdk');
+}
+
+/** Installed @anthropic-ai/sdk version ('unknown' when it cannot be read). */
+export function apiEngineVersion(): string {
+  return installedPackageVersion('@anthropic-ai/sdk');
+}
+
+/** Which engine a model id is dispatched to, for the record's `engine` column. */
+export function engineForModel(modelId: string): string {
+  const id = String(modelId ?? '').trim();
+  if (!id) return 'unknown';
+  if (isSdkModel(id)) return 'anthropic_sdk';
+  const colon = id.indexOf(':');
+  if (colon > 0) return id.slice(0, colon).toLowerCase();
+  if (/^claude-/i.test(id)) return 'anthropic_api';
+  if (/^(gpt-|o\d|chatgpt-)/i.test(id)) return 'openai';
+  if (/^gemini/i.test(id)) return 'google';
+  if (/^(mistral|codestral|pixtral|ministral|magistral)/i.test(id)) return 'mistral';
+  return 'unknown';
+}
+
+// ── Writers ─────────────────────────────────────────────────────────────────
+
+const INSERT_COLUMNS = [
+  'id', 'message_id', 'session_id', 'composed_prompt', 'prompt_sha256', 'prompt_chars', 'truncated',
+  'layer_summary', 'source_manifest', 'created_at',
+  'parent_kind', 'parent_id', 'engine', 'engine_version', 'model_requested', 'model_served',
+  'request_params', 'user_message_sha256', 'history_sha256', 'output_sha256', 'thinking_sha256',
+  'usage', 'cost_usd', 'cost_basis', 'status', 'rerun_of', 'rerun_mode', 'transcript', 'finished_at',
+] as const;
+
+/**
+ * Write one run_artifacts row (v2) and its tool calls. Never throws; returns
+ * the record id, or null (and logs) when nothing could be written.
+ *
+ * A message-parented write keeps ON CONFLICT (message_id) DO NOTHING — one
+ * row per assistant message; when the row already existed its id is returned
+ * and no tool calls are added. A write with no message id inserts plainly.
+ */
+export async function writeRunArtifactV2(
   db: DatabaseAdapter,
   input: RunArtifactInput,
-): Promise<boolean> {
+): Promise<{ id: string } | null> {
+  let id: string;
   try {
+    id = crypto.randomUUID();
     const full = input.composedPrompt ?? '';
     const promptSha = sha256Hex(full);
     const truncated = Buffer.byteLength(full, 'utf8') > MAX_STORED_PROMPT_BYTES;
     const stored = truncated ? truncateToBytes(full, MAX_STORED_PROMPT_BYTES) : full;
+    const messageId = input.messageId ?? null;
+    const parentKind: RunParentKind = input.parentKind ?? 'message';
 
-    await db.run(
-      `INSERT INTO run_artifacts
-         (id, message_id, session_id, composed_prompt, prompt_sha256, prompt_chars, truncated, layer_summary, source_manifest, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (message_id) DO NOTHING`,
-      crypto.randomUUID(),
-      input.messageId,
+    const params: unknown[] = [
+      id,
+      messageId,
       input.sessionId ?? null,
       stored,
       promptSha,
@@ -104,14 +266,227 @@ export async function writeRunArtifact(
       JSON.stringify(input.layerSummary ?? []),
       JSON.stringify(input.sourceManifest ?? []),
       new Date().toISOString(),
-    );
-    return true;
+      parentKind,
+      input.parentId ?? null,
+      input.engine ?? null,
+      input.engineVersion ?? null,
+      input.modelRequested ?? null,
+      input.modelServed ?? null,
+      jsonOrNull(input.requestParams ?? null),
+      input.userMessageSha256 ?? null,
+      input.historySha256 ?? null,
+      input.outputSha256 ?? null,
+      input.thinkingSha256 ?? null,
+      jsonOrNull(input.usage ?? null),
+      typeof input.costUsd === 'number' && Number.isFinite(input.costUsd) ? input.costUsd : null,
+      input.costBasis ?? null,
+      input.status ?? 'completed',
+      input.rerunOf ?? null,
+      input.rerunMode ?? null,
+      jsonOrNull(input.transcript ?? null),
+      isoOrNull(input.finishedAt),
+    ];
+
+    const sql =
+      `INSERT INTO run_artifacts\n         (${INSERT_COLUMNS.join(', ')})\n       VALUES (${INSERT_COLUMNS.map(() => '?').join(', ')})` +
+      (messageId ? '\n       ON CONFLICT (message_id) DO NOTHING' : '');
+
+    const result = await db.run(sql, ...params);
+    if (messageId && result && typeof result.changes === 'number' && result.changes === 0) {
+      // The message already had its record: hand that one back, add nothing.
+      const existing = await db.get<{ id: string }>('SELECT id FROM run_artifacts WHERE message_id = ?', messageId);
+      return existing?.id ? { id: existing.id } : null;
+    }
   } catch (err) {
-    // Non-fatal by contract — the assistant message was already streamed/persisted.
+    // Non-fatal by contract — the run's output was already streamed/persisted.
     console.warn(
       '[run-artifacts] failed to persist run artifact (non-fatal):',
       err instanceof Error ? err.message : err,
     );
+    return null;
+  }
+
+  const toolCalls = Array.isArray(input.toolCalls) ? input.toolCalls : [];
+  for (const call of toolCalls) {
+    try {
+      const output = typeof call.output === 'string' ? call.output : String(call.output ?? '');
+      await db.run(
+        `INSERT INTO run_tool_calls
+           (id, run_artifact_id, seq, tool_name, input, output_text, output_sha256, output_chars, is_error, duration_ms, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        crypto.randomUUID(),
+        id,
+        call.seq,
+        String(call.name ?? 'tool'),
+        jsonOrNull(call.input ?? null),
+        output.length > MAX_STORED_TOOL_OUTPUT_CHARS ? output.slice(0, MAX_STORED_TOOL_OUTPUT_CHARS) : output,
+        sha256Hex(output),
+        output.length,
+        call.isError === true,
+        typeof call.ms === 'number' && Number.isFinite(call.ms) ? Math.round(call.ms) : null,
+        new Date().toISOString(),
+      );
+    } catch (err) {
+      console.warn(
+        `[run-artifacts] failed to persist tool call #${call.seq} of ${id} (non-fatal):`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+  return { id };
+}
+
+/**
+ * Write one run_artifacts row for an assistant message. Never throws; returns
+ * false (and logs) on failure. ON CONFLICT (message_id) DO NOTHING — one row
+ * per assistant message. Delegates to writeRunArtifactV2.
+ */
+export async function writeRunArtifact(
+  db: DatabaseAdapter,
+  input: RunArtifactInput,
+): Promise<boolean> {
+  const written = await writeRunArtifactV2(db, input);
+  return written !== null;
+}
+
+/**
+ * Patch a run record after the fact (a run that finished, was interrupted,
+ * or whose usage arrived late). Only the given fields change. Never throws;
+ * returns false (and logs) on failure, true when there was nothing to patch.
+ */
+export async function finalizeRunArtifact(
+  db: DatabaseAdapter,
+  id: string,
+  patch: RunArtifactFinalizePatch,
+): Promise<boolean> {
+  try {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    if (patch.status !== undefined) { sets.push('status = ?'); params.push(patch.status); }
+    if (patch.outputSha256 !== undefined) { sets.push('output_sha256 = ?'); params.push(patch.outputSha256); }
+    if (patch.thinkingSha256 !== undefined) { sets.push('thinking_sha256 = ?'); params.push(patch.thinkingSha256); }
+    if (patch.usage !== undefined) { sets.push('usage = ?'); params.push(jsonOrNull(patch.usage)); }
+    if (patch.costUsd !== undefined) {
+      sets.push('cost_usd = ?');
+      params.push(typeof patch.costUsd === 'number' && Number.isFinite(patch.costUsd) ? patch.costUsd : null);
+    }
+    if (patch.costBasis !== undefined) { sets.push('cost_basis = ?'); params.push(patch.costBasis); }
+    if (patch.finishedAt !== undefined) { sets.push('finished_at = ?'); params.push(isoOrNull(patch.finishedAt)); }
+    if (patch.transcript !== undefined) { sets.push('transcript = ?'); params.push(jsonOrNull(patch.transcript)); }
+    if (sets.length === 0) return true;
+    params.push(id);
+    await db.run(`UPDATE run_artifacts SET ${sets.join(', ')} WHERE id = ?`, ...params);
+    return true;
+  } catch (err) {
+    console.warn(
+      '[run-artifacts] failed to finalize run artifact (non-fatal):',
+      err instanceof Error ? err.message : err,
+    );
     return false;
   }
+}
+
+// ── Agentic runs → record input (pure) ──────────────────────────────────────
+
+/** The parts of an AgenticRunConfig the record needs (structural, so the runner is not imported). */
+export interface AgenticConfigLike {
+  model: string;
+  thinking: string;
+  system: string;
+  prompt: string;
+  tools: ReadonlyArray<{ name: string }>;
+  webSearch?: boolean;
+  maxTurns?: number;
+  timeoutMs?: number;
+}
+
+/** The parts of an AgenticRunResult the record needs. */
+export interface AgenticResultLike {
+  ok: boolean;
+  text: string;
+  thinking: string;
+  transcript: ReadonlyArray<string>;
+  toolCalls: ReadonlyArray<{ name: string; input: Record<string, unknown>; output: string; isError: boolean; ms: number }>;
+  turns?: number;
+  usage: RunUsage;
+  warning?: string;
+  error?: string;
+  /** The runner does not report it today; a future runner may. */
+  modelServed?: string | null;
+}
+
+export interface AgenticRunRecordArgs {
+  parentKind: RunParentKind;
+  parentId: string;
+  sessionId?: string | null;
+  config: AgenticConfigLike;
+  result: AgenticResultLike;
+  /** Extra request parameters worth keeping (attempt number, lane, …). */
+  requestParams?: Record<string, unknown>;
+  layerSummary?: LayerSummaryEntry[];
+  sourceManifest?: unknown[];
+  rerunOf?: string | null;
+  rerunMode?: string | null;
+  /** Defaults to now. */
+  finishedAt?: string | Date;
+}
+
+/**
+ * Build the v2 record input for one agentic run: the system prompt as
+ * composed prompt, the user prompt / output / thinking hashed, the engine and
+ * its version, the request parameters, usage, transcript and tool calls.
+ * Pure — the call site writes it with writeRunArtifactV2 (fire-and-forget).
+ */
+export function buildAgenticRunArtifactInput(args: AgenticRunRecordArgs): RunArtifactInput {
+  const { config, result } = args;
+  const engine = engineForModel(config.model);
+  const engineVersion = engine === 'anthropic_sdk' ? sdkEngineVersion() : engine === 'anthropic_api' ? apiEngineVersion() : null;
+  const requestParams: Record<string, unknown> = {
+    thinking: config.thinking,
+    maxTurns: config.maxTurns ?? null,
+    timeoutMs: config.timeoutMs ?? null,
+    webSearch: config.webSearch === true,
+    tools: config.tools.map((t) => t.name),
+    permissionMode: 'dontAsk',
+    turns: typeof result.turns === 'number' ? result.turns : null,
+    ...(result.warning ? { warning: result.warning } : {}),
+    ...(result.error ? { error: result.error } : {}),
+    ...(args.requestParams ?? {}),
+  };
+  const text = typeof result.text === 'string' ? result.text : '';
+  const thinking = typeof result.thinking === 'string' ? result.thinking : '';
+  return {
+    messageId: null,
+    sessionId: args.sessionId ?? null,
+    parentKind: args.parentKind,
+    parentId: args.parentId,
+    composedPrompt: config.system ?? '',
+    layerSummary: args.layerSummary,
+    sourceManifest: args.sourceManifest,
+    engine,
+    engineVersion,
+    modelRequested: config.model,
+    modelServed: result.modelServed ?? null,
+    requestParams,
+    userMessageSha256: sha256Hex(config.prompt ?? ''),
+    historySha256: null,
+    outputSha256: text.length > 0 ? sha256Hex(text) : null,
+    thinkingSha256: thinking.length > 0 ? sha256Hex(thinking) : null,
+    usage: result.usage,
+    costUsd: null,
+    costBasis: engine === 'anthropic_sdk' ? 'plan_usage' : engine === 'ollama' ? 'free' : 'unknown',
+    status: result.ok ? 'completed' : 'failed',
+    rerunOf: args.rerunOf ?? null,
+    rerunMode: args.rerunMode ?? null,
+    transcript: [...result.transcript],
+    finishedAt: args.finishedAt ?? new Date(),
+    toolCalls: result.toolCalls.map((c, i) => ({
+      seq: i + 1,
+      name: c.name,
+      input: c.input ?? null,
+      output: c.output,
+      isError: c.isError === true,
+      ms: c.ms,
+    })),
+  };
 }

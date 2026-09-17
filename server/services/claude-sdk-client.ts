@@ -19,12 +19,17 @@
  *     and CLAUDE.md never leak into an ANTON run.
  *   - `persistSession: false` — runs don't pile up in ~/.claude/projects.
  *
- * AUTH RULE (the load-bearing line): the subprocess env is
- * `{ ...process.env }` with ANTHROPIC_API_KEY DELETED. ANTON's server holds
- * the (possibly unfunded) key in its own environment; if the subprocess saw
- * it, the SDK would bill the key instead of the subscription. The spread is
- * mandatory — Options.env REPLACES the subprocess environment wholesale, and
- * a bare object strips PATH/HOME and the subprocess never starts on Windows.
+ * AUTH RULE (the load-bearing line): the subprocess env NEVER carries
+ * ANTHROPIC_API_KEY (or ANTHROPIC_AUTH_TOKEN). ANTON's server holds the
+ * (possibly unfunded) key in its own environment; if the subprocess saw it,
+ * the SDK would bill the key instead of the subscription. Since Wave 5 the
+ * env is built from an ALLOW-LIST (buildSubprocessEnv) rather than
+ * process.env minus the key: the server's environment also holds
+ * DATABASE_URL, every other provider's key and the credential-vault key, and
+ * a subprocess that can be steered by fetched text must not inherit them.
+ * Options.env REPLACES the subprocess environment wholesale, so the list
+ * keeps what the runtime needs to start and to find the Claude Code login
+ * (PATH, HOME/USERPROFILE, APPDATA, TEMP, proxies, CLAUDE_* config).
  *
  * Capability differences vs the API path, stated rather than hidden:
  *   - Web search runs through the SDK's own WebSearch/WebFetch tools, not the
@@ -37,6 +42,7 @@
 
 import os from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
+import type { DatabaseAdapter } from '../db/database.js';
 import type { StreamSink } from './stream-sink.js';
 import type { WebSourceRecord } from '../../src/lib/types.js';
 import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens, type AnthropicEffort } from './thinking-map.js';
@@ -61,15 +67,66 @@ export const SDK_ENGINE_MODELS: ReadonlyArray<{ id: string; label: string }> = [
 // ── Subprocess environment ──────────────────────────────────
 
 /**
- * The env handed to the SDK subprocess: everything the server has (PATH,
- * HOME, proxies) EXCEPT the Anthropic API key, whose absence is what makes
- * the SDK authenticate with the machine's Claude Code login. Exported so a
- * test can prove the key never leaks through.
+ * Exact variable names the subprocess may inherit, compared case-insensitively
+ * (Windows spells PATH as `Path` and the shell's casing is not ours to fix).
+ * Each is there because the Claude Code runtime needs it to start, to find
+ * its login, or to reach the network — never because it is convenient:
+ *   - process/OS plumbing: PATH, PATHEXT, SystemRoot, SystemDrive, ComSpec,
+ *     windir (Node on Windows fails DNS and crypto without SystemRoot);
+ *   - temp + home, where the login and config live: TEMP/TMP/TMPDIR, HOME,
+ *     USERPROFILE, HOMEDRIVE/HOMEPATH, APPDATA, LOCALAPPDATA, ProgramData,
+ *     USERNAME;
+ *   - locale/terminal: LANG, LC_ALL, TERM, SHELL;
+ *   - network egress: HTTP(S)_PROXY, NO_PROXY and the CA-bundle paths a
+ *     corporate proxy needs alongside them (NODE_EXTRA_CA_CERTS, SSL_CERT_*
+ *     are file paths, not secrets). NODE_OPTIONS is deliberately absent —
+ *     it can preload code into the runtime.
  */
-export function buildSdkEnv(base: NodeJS.ProcessEnv = process.env): Record<string, string | undefined> {
-  const env: Record<string, string | undefined> = { ...base };
-  delete env.ANTHROPIC_API_KEY;
+const SUBPROCESS_ENV_ALLOWED: ReadonlySet<string> = new Set([
+  'PATH', 'PATHEXT', 'SYSTEMROOT', 'SYSTEMDRIVE', 'COMSPEC', 'WINDIR',
+  'TEMP', 'TMP', 'TMPDIR', 'HOME', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH',
+  'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'USERNAME',
+  'LANG', 'LC_ALL', 'TERM', 'SHELL',
+  'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
+  'NODE_EXTRA_CA_CERTS', 'SSL_CERT_FILE', 'SSL_CERT_DIR',
+]);
+/** Prefixes that pass when the name is not secret-shaped: CLAUDE_CONFIG_DIR,
+ *  CLAUDE_CODE_* switches, ANTHROPIC_BASE_URL / ANTHROPIC_MODEL style knobs. */
+const SUBPROCESS_ENV_PREFIXES: ReadonlyArray<string> = ['CLAUDE_', 'ANTHROPIC_'];
+/** A prefixed name carrying a credential never passes, whatever it is called. */
+const SECRET_SHAPED_NAME = /API_KEY|AUTH_TOKEN|TOKEN|SECRET|PASSWORD/;
+/**
+ * The plumbing of a Claude Code session ANTON itself was started from (its
+ * session id, messaging socket, parent pid, child-session flag). The engine
+ * needs none of it, and handing a subprocess the address of another
+ * session's messaging socket is a channel nobody asked for.
+ */
+const HOST_SESSION_PLUMBING = /^(CLAUDE_CODE_SESSION_ID|CLAUDE_CODE_MESSAGING_SOCKET|CLAUDE_CODE_CHILD_SESSION|CLAUDE_CODE_ENTRYPOINT|CLAUDE_CODE_SSE_PORT|CLAUDE_PID|CLAUDECODE)$/;
+
+/**
+ * The env handed to the SDK subprocess, built from `source` by allow-list.
+ * ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN never pass — their absence is what
+ * makes the SDK authenticate with the machine's Claude Code login — and
+ * neither does anything the list does not name (DATABASE_URL, other
+ * providers' keys, the vault key). Exported so a test can prove both halves.
+ */
+export function buildSubprocessEnv(source: NodeJS.ProcessEnv): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = {};
+  for (const [name, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    const upper = name.toUpperCase();
+    if (upper === 'ANTHROPIC_API_KEY' || upper === 'ANTHROPIC_AUTH_TOKEN') continue;
+    if (HOST_SESSION_PLUMBING.test(upper)) continue;
+    const byName = SUBPROCESS_ENV_ALLOWED.has(upper);
+    const byPrefix = SUBPROCESS_ENV_PREFIXES.some((p) => upper.startsWith(p)) && !SECRET_SHAPED_NAME.test(upper);
+    if (byName || byPrefix) env[name] = value;
+  }
   return env;
+}
+
+/** The subprocess env for a run: the allow-listed view of the server's environment. */
+export function buildSdkEnv(base: NodeJS.ProcessEnv = process.env): Record<string, string | undefined> {
+  return buildSubprocessEnv(base);
 }
 
 // ── Thinking mapping ────────────────────────────────────────
@@ -143,6 +200,12 @@ export interface SdkCompletionData {
   /** Wave 3: the object the engine produced for a `outputFormat` run —
    *  already parsed and schema-checked by the SDK. Absent on text runs. */
   structuredOutput?: unknown;
+  /** Wave 5: the assistant content blocks the engine returned (thinking,
+   *  text, tool_use), in order across every assistant envelope — the same
+   *  field claude-client.ts fills from the API's final message, so the chat
+   *  route stores them in messages.content_blocks. Absent when the runtime
+   *  returned no assistant envelope. */
+  rawContentBlocks?: unknown[];
 }
 export type { WebSourceRecord };
 
@@ -205,6 +268,137 @@ const MAX_CONCURRENT_SDK_RUNS = 2;
  */
 const MAX_BACKGROUND_SDK_RUNS = MAX_CONCURRENT_SDK_RUNS - 1;
 let activeRuns = 0;
+
+// ── Daily cap (Wave 5, 2026-09-17) ──────────────────────────
+// A subscription has a plan allowance, not a bill: none of the API path's
+// spend guards apply to it, and a scheduled loop can use the day's allowance
+// before anyone sits down to work. The cap is a Settings value (app_settings
+// 'sdk_daily_run_cap'; absent = unlimited) checked against an in-process
+// count of runs STARTED today. The count is seeded once per day from the
+// audit log — provider 'anthropic_sdk', created_at today — so a restart does
+// not hand out a fresh allowance; runs counted after the seed add to it.
+
+export const SDK_DAILY_RUN_CAP_SETTING_KEY = 'sdk_daily_run_cap';
+/** Runs the audit log already holds for today. audit_log carries both
+ *  `timestamp` and `created_at`; created_at is the indexed one. */
+export const SDK_DAILY_CAP_SEED_SQL =
+  "SELECT COUNT(*) AS n FROM audit_log WHERE provider = 'anthropic_sdk' AND created_at >= date_trunc('day', NOW())";
+
+let guardDb: DatabaseAdapter | null = null;
+/** undefined = not loaded; null = loaded, unlimited. */
+let dailyCap: number | null | undefined;
+let capLoading: Promise<void> | null = null;
+let runsToday = 0;
+/** The local calendar day the counter belongs to; a new day starts at zero. */
+let counterDay = '';
+let seededDay = '';
+let seeding: Promise<void> | null = null;
+
+function localDay(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function rollDay(): void {
+  const today = localDay();
+  if (counterDay !== today) { counterDay = today; runsToday = 0; }
+}
+function parseDailyCap(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 ? n : null;
+}
+async function loadDailyCap(db: DatabaseAdapter): Promise<void> {
+  try {
+    const row = await db.get<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', SDK_DAILY_RUN_CAP_SETTING_KEY);
+    dailyCap = parseDailyCap(row?.value);
+  } catch (err) {
+    console.warn(`[sdk-engine] could not load the daily run cap: ${err instanceof Error ? err.message : 'db error'}`);
+    dailyCap = null;
+  }
+}
+
+/** Prime the cap and remember the database for the seed. Safe to call repeatedly. */
+export function initSdkDailyGuard(db: DatabaseAdapter): void {
+  guardDb = db;
+  if (dailyCap === undefined && !capLoading) {
+    capLoading = loadDailyCap(db).finally(() => { capLoading = null; });
+  }
+}
+
+/**
+ * Seed today's count from the audit log, once per day, before the first run
+ * of the day is admitted. Without a database (tests, or a caller that ran
+ * before boot wiring) the count starts at zero. A seed that fails logs once
+ * and counts from zero rather than refusing runs.
+ */
+export async function ensureSdkDailyCounterSeeded(): Promise<void> {
+  if (capLoading) await capLoading;
+  rollDay();
+  if (seededDay === counterDay || !guardDb) return;
+  if (!seeding) {
+    const db = guardDb;
+    const day = counterDay;
+    seeding = (async () => {
+      try {
+        const row = await db.get<{ n: number | string }>(SDK_DAILY_CAP_SEED_SQL);
+        const n = Number(row?.n ?? 0);
+        // Runs admitted while the seed was in flight are already in runsToday.
+        if (counterDay === day) runsToday += Number.isFinite(n) ? n : 0;
+      } catch (err) {
+        console.warn(`[sdk-engine] could not seed today's subscription run count from the audit log: ${err instanceof Error ? err.message : 'db error'}`);
+      } finally {
+        if (counterDay === day) seededDay = day;
+        seeding = null;
+      }
+    })();
+  }
+  await seeding;
+}
+
+/** Runs started today (seed + runs admitted since). */
+export function sdkRunsToday(): number {
+  rollDay();
+  return runsToday;
+}
+/** The persisted cap; null = unlimited. */
+export function getSdkDailyRunCap(): number | null {
+  return dailyCap ?? null;
+}
+/** Persist the cap (null removes it). The cache updates synchronously. */
+export async function setSdkDailyRunCap(db: DatabaseAdapter, cap: number | null): Promise<void> {
+  guardDb = db;
+  if (cap === null) {
+    await db.run('DELETE FROM app_settings WHERE key = ?', SDK_DAILY_RUN_CAP_SETTING_KEY);
+  } else {
+    await db.run(
+      'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      SDK_DAILY_RUN_CAP_SETTING_KEY,
+      String(cap),
+    );
+  }
+  dailyCap = cap;
+}
+/** The refusal for a run that would exceed the cap, or null when it may start. */
+export function sdkDailyCapRefusal(): string | null {
+  rollDay();
+  const cap = dailyCap ?? null;
+  if (cap === null || runsToday < cap) return null;
+  return `Daily cap of ${cap} subscription runs reached — raise it in Settings → Execution engines.`;
+}
+function noteSdkRunStarted(): void {
+  rollDay();
+  runsToday += 1;
+}
+/** Tests: forget the cap, the count and the database. */
+export function resetSdkDailyCounterForTests(): void {
+  guardDb = null;
+  dailyCap = undefined;
+  capLoading = null;
+  runsToday = 0;
+  counterDay = '';
+  seededDay = '';
+  seeding = null;
+}
 
 /**
  * Set once the process is going down, so an abort can be explained rather than
@@ -346,6 +540,21 @@ interface SdkUserEnvelope { type: 'user'; message?: { content?: unknown }; tool_
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
 
+/**
+ * The reasoning an assistant message carries in its content blocks: every
+ * `thinking` block's text, and a marker for a `redacted_thinking` block (the
+ * API returns those encrypted — the run did think, the text is not ours to
+ * read). Empty when the message has no thinking blocks.
+ */
+export function thinkingFromContentBlocks(blocks: ReadonlyArray<unknown>): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    if (!isRecord(block)) continue;
+    if (block.type === 'thinking' && typeof block.thinking === 'string' && block.thinking) parts.push(block.thinking);
+    else if (block.type === 'redacted_thinking') parts.push('[redacted thinking block]');
+  }
+  return parts.join('\n\n');
+}
 const isToolUseBlock = (v: unknown): v is SdkToolUseBlock =>
   isRecord(v) && v.type === 'tool_use' && typeof v.id === 'string' && typeof v.name === 'string';
 const isToolResultBlock = (v: unknown): v is SdkToolResultBlock =>
@@ -528,6 +737,11 @@ export async function resolveAgentSdk(): Promise<AgentSdkModule> {
  */
 export function tryAcquireSdkSlot(background: boolean): string | null {
   if (!isSdkEngineEnabled()) return 'The SDK execution engine is disabled. Enable it in Settings → Execution engines.';
+  // Wave 5: the day's allowance is checked before the slot — a caller should
+  // have awaited ensureSdkDailyCounterSeeded() so the count includes runs
+  // from before a restart.
+  const capRefusal = sdkDailyCapRefusal();
+  if (capRefusal) return capRefusal;
   const slotCap = background ? MAX_BACKGROUND_SDK_RUNS : MAX_CONCURRENT_SDK_RUNS;
   if (activeRuns >= slotCap) {
     return background
@@ -535,6 +749,7 @@ export function tryAcquireSdkSlot(background: boolean): string | null {
       : `SDK engine busy — at most ${MAX_CONCURRENT_SDK_RUNS} concurrent subscription runs. Try again shortly or pick an API model.`;
   }
   activeRuns++;
+  noteSdkRunStarted();
   return null;
 }
 export function releaseSdkSlot(): void {
@@ -595,6 +810,15 @@ export async function streamToResponse(
     res.end();
     return;
   }
+  // Wave 5: the per-day cap, on the same error path as the slot refusal.
+  await ensureSdkDailyCounterSeeded();
+  const capRefusal = sdkDailyCapRefusal();
+  if (capRefusal) {
+    sendEvent({ type: 'error', message: capRefusal });
+    res.write('data: [DONE]\n\n');
+    res.end();
+    return;
+  }
   const slotCap = opts?.background ? MAX_BACKGROUND_SDK_RUNS : MAX_CONCURRENT_SDK_RUNS;
   if (activeRuns >= slotCap) {
     sendEvent({
@@ -624,6 +848,7 @@ export async function streamToResponse(
   }
 
   activeRuns++;
+  noteSdkRunStarted();
   // The slot is the SUBPROCESS's, not the request's. It is released the moment
   // the stream has ended — BEFORE onComplete runs — and exactly once. Live
   // finding 2026-09-16: onComplete used to run inside the slot, and the
@@ -638,8 +863,10 @@ export async function streamToResponse(
     activeRuns--;
   };
   const contentBlocks: ContentBlock[] = [];
+  const rawContentBlocks: unknown[] = [];
   let currentText = '';
   let currentThinking = '';
+  let thinkingStreamed = false;
   let usageData = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0 };
   let modelServed: string | undefined;
   let engineCostUsd: number | undefined;
@@ -685,6 +912,7 @@ export async function streamToResponse(
           sendEvent({ type: 'text_delta', content: delta.text });
         } else if (delta?.type === 'thinking_delta' && typeof delta.thinking === 'string') {
           currentThinking += delta.thinking;
+          thinkingStreamed = true;
           sendEvent({ type: 'thinking_delta', content: delta.thinking });
         }
       } else if (message.type === 'result') {
@@ -722,6 +950,24 @@ export async function streamToResponse(
           });
         }
       } else if (message.type === 'assistant' || message.type === 'user') {
+        if (message.type === 'assistant') {
+          // Wave 5: the assistant envelope is the complete API message. Its
+          // blocks go to the ledger as-is (thinking, text, tool_use — what the
+          // API path stores), and when the partial stream carried no
+          // thinking_delta (live: 3 of 3 stored SDK runs had empty thinking)
+          // the thinking blocks are the only copy of the reasoning.
+          const blocks = (message as SdkAssistantEnvelope).message?.content;
+          if (Array.isArray(blocks)) {
+            rawContentBlocks.push(...blocks);
+            if (!thinkingStreamed) {
+              const captured = thinkingFromContentBlocks(blocks);
+              if (captured) {
+                currentThinking += (currentThinking ? '\n\n' : '') + captured;
+                sendEvent({ type: 'thinking_delta', content: captured });
+              }
+            }
+          }
+        }
         // Wave 2: the envelopes carry the WebSearch / WebFetch calls and their
         // results — the only record of what a web-grounded run actually read.
         for (const source of webSources.observe(message)) {
@@ -764,6 +1010,7 @@ export async function streamToResponse(
         systemPromptSent: systemPrompt,
         webSources: webSources.records,
         ...(structuredOutput !== undefined ? { structuredOutput } : {}),
+        ...(rawContentBlocks.length > 0 ? { rawContentBlocks } : {}),
       });
     }
   } catch (err) {

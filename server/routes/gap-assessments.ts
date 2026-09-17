@@ -33,6 +33,7 @@ import {
 import { buildOrgContextLayer, buildKnowledgePackLayer } from '../services/prompt-builder.js';
 import { domainForFrameworks, domainProfile } from '../services/gap-domains.js';
 import { startStepJob, attachToStepJob, getStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import { lostRunJob, gapRunJobKey } from '../services/run-recovery.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
 import {
   computeOpinionAgreement,
@@ -480,7 +481,10 @@ Generate the complete framework JSON now.`;
       // evidence refs, override + carry-forward metadata — Wave 1.1/1.2/1.5/1.7)
       const mappedFindings = findings.map(mapFindingRow);
       // Wave 3: a run in progress (or just finished) that the wizard can re-attach to.
-      res.json({ assessment: { ...(assessment as Record<string, unknown>), run_job: getStepJobSummary(`gap-run:${req.params.id as string}`) }, findings: mappedFindings });
+      // Wave 5: with no job to attach to, a row still marked mid-run means the
+      // server restarted underneath it — answer { status: 'lost' }, never null.
+      const run_job = getStepJobSummary(gapRunJobKey(req.params.id as string)) ?? lostRunJob(assessment as Record<string, unknown>);
+      res.json({ assessment: { ...(assessment as Record<string, unknown>), run_job }, findings: mappedFindings });
     } catch (err) {
       console.error('[gap-assessments] get error:', err);
       res.status(500).json({ error: 'Failed to get assessment' });
@@ -728,7 +732,8 @@ HOW TO RUN THE INTERVIEW
       const scopeConfig = JSON.parse(assessment.scope_config || '{}') as { selectedThemes?: string[]; selectedArticles?: string[] };
       const contextConfig = JSON.parse((assessment as unknown as { context_config: string }).context_config || '{}') as Record<string, unknown>;
 
-      await db.run("UPDATE gap_assessments SET status = 'assessing', current_step = 4, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
+      // Wave 5: a fresh run clears the mark a restart left (run-recovery.ts).
+      await db.run("UPDATE gap_assessments SET status = 'assessing', current_step = 4, interrupted_at = NULL, updated_at = ? WHERE id = ?", new Date().toISOString(), req.params.id as string);
 
       // ── Evidence manifest (Wave 1.5): id + sha256 per evidence item ───────
       const evidenceItems = extractEvidenceItems(contextConfig);
@@ -876,6 +881,11 @@ HOW TO RUN THE INTERVIEW
               {
                 baseline: batchBaseline,
                 tools: knowledgeTools,
+                // Wave 5: the batch's run record belongs to this assessment.
+                runRecord: {
+                  assessmentId,
+                  sessionId: (assessment as { session_id?: string | null }).session_id ?? null,
+                },
                 // Wave 3: on the subscription engine the batch reads evidence
                 // through tools; its tool activity lands in the progress feed.
                 agentic: {
@@ -1077,6 +1087,8 @@ HOW TO RUN THE INTERVIEW
               anthropic, frameworkId, batch, contextConfig, batchIdx, batches.length,
               extraSystemContext || undefined, requestedTier, db,
               {
+                // Wave 5: run record under this assessment, second-opinion lane.
+                runRecord: { assessmentId: req.params.id as string, lane: 'second_opinion' },
                 // Wave 3: the second opinion reads evidence the way the primary
                 // run does — on demand through tools, nothing cut at 120k.
                 agentic: {

@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
 import { runAgentic, type AgentToolDefinition } from './sdk-agentic-runner.js';
+import { writeRunArtifactV2, buildAgenticRunArtifactInput } from './run-artifact-writer.js';
 import { isSdkModel } from './engine-model-id.js';
 import { retrieveGroundingText } from './framework-text-retrieval.js';
 import { z } from 'zod';
@@ -813,6 +814,17 @@ export async function runAssessmentBatch(
       /** Tool activity, for the run's progress feed. */
       onEvent?: (event: { type: string; message: string }) => void;
     };
+    /** Wave 5: what the batch's run record belongs to (run_artifacts parent
+     *  'gap_batch', parent_id `<assessmentId>:<frameworkId>:<batchIndex>`).
+     *  Without it the record is written under 'unlinked' and cannot be
+     *  found by assessment. */
+    runRecord?: {
+      assessmentId: string;
+      /** The assessment's session, when it has one. */
+      sessionId?: string | null;
+      /** 'primary' (default) or 'second_opinion'. */
+      lane?: string;
+    };
   }
 ): Promise<AssessmentBatchResult> {
   const framework = loadFramework(frameworkId);
@@ -922,7 +934,7 @@ export async function runAssessmentBatch(
     ];
     const webSearch = Boolean(opts.tools?.some((t) => t.type === 'web_search_20250305'));
     const onEvent = opts.agentic.onEvent;
-    const run = await runAgentic({
+    const agenticConfig: Parameters<typeof runAgentic>[0] = {
       model: routedModel,
       thinking: mc.thinkingLevel as Parameters<typeof runAgentic>[0]['thinking'],
       system: systemPrompt,
@@ -930,7 +942,8 @@ export async function runAssessmentBatch(
       tools,
       webSearch,
       maxTurns: 14,
-    }, (event) => {
+    };
+    const run = await runAgentic(agenticConfig, (event) => {
       if (!onEvent) return;
       if (event.type === 'tool_call') {
         const input = Object.values(event.input).map((v) => String(v)).join(' · ').slice(0, 80);
@@ -939,6 +952,28 @@ export async function runAssessmentBatch(
         onEvent({ type: 'batch_tool', message: `${event.name.replace(/_/g, ' ')} failed: ${event.output.slice(0, 120)}` });
       }
     });
+    // Wave 5: the batch's run record — the prompt as sent, the hashes of what
+    // went in and came out, the engine, the transcript and every tool call —
+    // written whether the run completed or failed. Fire-and-forget: the
+    // batch never waits on the ledger, and a ledger failure is only logged.
+    if (db) {
+      void writeRunArtifactV2(db, buildAgenticRunArtifactInput({
+        parentKind: 'gap_batch',
+        parentId: `${opts.runRecord?.assessmentId ?? 'unlinked'}:${frameworkId}:${batchIndex}`,
+        sessionId: opts.runRecord?.sessionId ?? null,
+        config: agenticConfig,
+        result: run,
+        requestParams: {
+          framework: frameworkId,
+          batchIndex,
+          totalBatches,
+          articles: articleBatch.map((a) => a.id),
+          lane: opts.runRecord?.lane ?? 'primary',
+          modelTier,
+          reassessment: Boolean(baseline),
+        },
+      }));
+    }
     if (!run.ok) throw new Error(run.error ?? 'The engine did not complete the batch');
     resultText = run.text;
     resultThinking = run.thinking;

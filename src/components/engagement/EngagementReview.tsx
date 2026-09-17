@@ -16,6 +16,7 @@ import {
   Trash2, RefreshCw, Sliders, Brain, Users2, Play, Square, ExternalLink
 } from 'lucide-react';
 import { fetchWithAuth, streamMessage } from '@/lib/api';
+import RunRecordPanel from '@/components/shared/RunRecordPanel';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { ModelId, StreamEvent } from '@/lib/types';
 import type { EngagementData, Iteration, Resource } from '@/pages/EngagementWorkspacePage';
@@ -695,6 +696,13 @@ function IterationCard({ iteration, expanded, onToggle, approving, onApprove }: 
               )}
             </div>
           )}
+
+          {/* Wave 5: the iteration's run record — what the engine read, searched and consulted, and its turns */}
+          <RunRecordPanel
+            parentKind="engagement_step"
+            parentId={iteration.id}
+            title="Run record — tool calls & transcript"
+          />
 
           {iteration.status === 'draft' && (
             <div className="border-t border-border px-5 py-3 flex justify-end gap-3">

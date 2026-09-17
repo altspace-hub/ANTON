@@ -21,6 +21,7 @@ import {
 import { validateAntonFile } from '../services/anton-validator.js';
 import { importAntonFile } from '../services/anton-importer.js';
 import { importModuleRunBundle } from '../services/anton-run-importer.js';
+import { describeReplayability, replayRun } from './rerun.js';
 import { signAntonBundle, getSigningIdentityStatus } from '../services/anton-bundle-signing.js';
 import {
   importMarketIndex,
@@ -342,6 +343,11 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   // endpoint then reproduces the run (it rehydrates from config_snapshot).
   // Response carries `reproducible: { locally, missingModule?, notes }` — the
   // honest fidelity report (sources travel as hashes, not content).
+  // Wave 5: when the bundle carries the composed prompt + hashes and the
+  // served model is dispatchable here, `replay` says mode 'replay'; with the
+  // multipart field reproduce=true the run is replayed verbatim right away
+  // (through the rerun route's own replayRun). Otherwise `replay` says
+  // 'recompose' and why — the caller picks a model and calls /api/rerun.
   router.post('/exchange/import-run', upload.single('file'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ error: 'No file uploaded' });
@@ -350,6 +356,26 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
     try {
       const userId = (req as import('express').Request & { user?: { id?: string } }).user?.id;
       const result = await importModuleRunBundle(req.file.buffer, db, userId ?? null);
+      const reproduceNow = req.body?.reproduce === 'true' || req.body?.reproduce === true;
+      let replay: Record<string, unknown> | null = null;
+      if (result.success && result.sessionId && result.assistantMessageId) {
+        const plan = await describeReplayability(db, result.sessionId, result.assistantMessageId);
+        replay = { attempted: false, ...plan };
+        if (reproduceNow && plan.mode === 'replay') {
+          const outcome = await replayRun(db, { sessionId: result.sessionId, messageId: result.assistantMessageId });
+          replay = outcome.ok
+            ? { attempted: true, ...outcome.body }
+            : {
+                attempted: true,
+                mode: 'recompose',
+                model: plan.model,
+                error: outcome.error,
+                reason: `Replay failed closed (${outcome.error}) — reproduce with POST /api/rerun mode "recompose" and a model of your choice.`,
+              };
+        } else if (reproduceNow) {
+          replay = { attempted: false, ...plan, reason: `${plan.reason} Reproduce with POST /api/rerun mode "recompose" and a model of your choice.` };
+        }
+      }
       res.json({
         success: result.success,
         sessionId: result.sessionId,
@@ -358,6 +384,7 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
         moduleExists: result.moduleExists,
         localModuleId: result.localModuleId,
         reproducible: result.reproducible,
+        replay,
         sourcesNotIncluded: result.sourcesNotIncluded,
         bundle_type: result.validation.bundle_type,
         validated_depth: result.validation.validated_depth,

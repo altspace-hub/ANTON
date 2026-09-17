@@ -1,39 +1,75 @@
 /**
  * iterative-reasoning.ts
- * Iterative Reasoning Engine (IRE) — multi-phase Claude reasoning loop.
+ * Iterative Reasoning Engine (IRE) — multi-phase reasoning loop
+ * (whitepaper §24, "revelation chains").
  *
  * Phase map:
- *   think_hard        → [analyse, reflect]
+ *   think_hard        → [analyse, synthesise]
  *   investigate       → [analyse, reflect, deepen, synthesise]
- *   plan_first        → [analyse, reflect, deepen, synthesise]
- *   deep_investigate  → [analyse, reflect, deepen, tool_pass_1, tool_pass_2, synthesise]
+ *   plan_first        → [analyse, plan, deepen, synthesise]
+ *   deep_investigate  → [analyse, reflect, deepen, explore, validate, synthesise]
  *
- * Phases 0 through N-2 run as internal non-streaming calls (prompt caching reduces cost ~60%).
- * Phase N-1 (synthesise) streams live text to the SSE response.
+ * Phases 0 through N-2 run as internal non-streaming calls; phase N-1
+ * (synthesise) streams live text to the SSE response.
+ *
+ * Every call goes through the provider router (`callChat` / `streamChat`) on
+ * the model the run was given — the prefixed id as the route resolved it, so
+ * `sdk:claude-opus-5` runs on the subscription engine and `claude-opus-4-8`
+ * on the API key. Until 2026-09-17 this file built a raw Anthropic client and
+ * pinned every phase to `claude-opus-4-8`, so on an instance whose default is
+ * the subscription engine the chain never ran: revelation_chains stayed empty
+ * and deep_investigate was one call at max effort.
+ *
+ * Reasoning depth is expressed per phase as an ANTON thinking level and left
+ * to the router: thinking-map.ts owns the effort ladder (and the `xhigh` →
+ * `max` clamp for models that predate the rung), so this file never puts an
+ * effort or a budget into a request.
  *
  * DB writes: revelation_chains + revelation_steps rows persisted per request.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import type { ThinkingLevel } from '../../src/lib/types.js';
 
-import { getClient } from './claude-client.js';
+import { callChat, streamChat, type ChatResult } from './provider-router.js';
+import { getProviderFromModelId } from './model-adapter.js';
+import { capabilityModelId } from './engine-model-id.js';
+import { MODEL_REGISTRY } from '../types/modelAdapter.js';
+
+// ── Engine gate ───────────────────────────────────────────────────
+
+/**
+ * Providers the chain runs on. Both Anthropic engines express the full
+ * thinking ladder the phases are written against; routes/claude.ts gates the
+ * IRE branch on this so the subscription engine is no longer excluded.
+ */
+export function ireSupportedProvider(provider: string): boolean {
+  return provider === 'anthropic' || provider === 'anthropic_sdk';
+}
 
 // ── Phase definitions ─────────────────────────────────────────────
 
-type ThinkingLevel = 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
+type IREThinkingLevel = 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
+
+/**
+ * How hard a phase thinks, as an ANTON level the router resolves per engine.
+ *   'run'        — the run's own level (investigate → xhigh, deep_investigate → max, …)
+ *   'think_hard' — scaffolding depth (effort 'high' on every adaptive model)
+ * Before the router this was a literal effort per phase ('high' | 'max'); the
+ * same phases keep the same rung, the ladder just lives in thinking-map.ts.
+ */
+type PhaseThinking = 'run' | 'think_hard';
 
 interface PhaseConfig {
   name: string;
   systemSuffix: string;   // Extra instruction appended to system prompt for this phase
   streaming: boolean;      // true only for the final synthesis phase
-  budgetTokens: number;    // kept for max_tokens safety margin calculation
-  effort: 'high' | 'max'; // Opus adaptive thinking effort level
-  maxTokens: number;       // max output tokens for this phase
+  thinking: PhaseThinking;
+  maxTokens: number;       // max output tokens for this phase (API engines; the SDK engine has no ceiling surface)
 }
 
-const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
+const PHASE_MAP: Record<IREThinkingLevel, PhaseConfig[]> = {
   // ── think_hard: 2-phase (analyse → synthesise) ──
   // Users chose deep reasoning — give the final output generous room.
   think_hard: [
@@ -41,53 +77,47 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       name: 'analyse',
       systemSuffix: 'PHASE: ANALYSE\nYou are in the analysis phase. Produce a structured, thorough analysis. Be explicit about your reasoning. Do NOT synthesise yet — focus on understanding the problem deeply and identifying key dimensions, evidence, and uncertainty.',
       streaming: false,
-      budgetTokens: 8000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 32000,
     },
     {
       name: 'synthesise',
       systemSuffix: 'PHASE: SYNTHESISE\nBased on the analysis, produce the final response for the user. Be clear, precise, and comprehensive. Cite your analysis. This is the final user-facing output.',
       streaming: true,
-      budgetTokens: 10000,
-      effort: 'max',
+      thinking: 'run',
       maxTokens: 64000,
     },
   ],
   // ── investigate: 4-phase (analyse → reflect → deepen → synthesise) ──
-  // Intermediate phases get meaningful room; synthesise gets Opus ceiling.
+  // Intermediate phases get meaningful room; synthesise gets the model's ceiling.
   investigate: [
     {
       name: 'analyse',
       systemSuffix: 'PHASE: ANALYSE\nYou are in the analysis phase. Produce a deep, multi-angle analysis. Do NOT synthesise. Identify the core problem, sub-problems, evidence, gaps, and risk factors.',
       streaming: false,
-      budgetTokens: 10000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 32000,
     },
     {
       name: 'reflect',
       systemSuffix: 'PHASE: REFLECT\nYou are in the reflection phase. Review the analysis from the previous phase. Challenge assumptions, identify logical gaps, and surface counter-arguments or alternative interpretations. Conclude with a confidence score (0.0–1.0) and whether a revision of the analysis is needed.',
       streaming: false,
-      budgetTokens: 8000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 24000,
     },
     {
       name: 'deepen',
       systemSuffix: 'PHASE: DEEPEN\nYou are in the deepening phase. Take the most uncertain or contested areas from the reflection phase and explore them more rigorously. Resolve the key uncertainties and strengthen the analysis.',
       streaming: false,
-      budgetTokens: 10000,
-      effort: 'max',
+      thinking: 'run',
       maxTokens: 32000,
     },
     {
       name: 'synthesise',
       systemSuffix: 'PHASE: SYNTHESISE\nYou have completed the multi-phase investigation. Now produce the final, definitive response for the user. Integrate all phase outputs. Be comprehensive, precise, and well-structured. This is the final user-facing output.',
       streaming: true,
-      budgetTokens: 16000,
-      effort: 'max',
-      maxTokens: 128_000, // Opus 4.8 ceiling — final user-facing output gets full capacity
+      thinking: 'run',
+      maxTokens: 128_000, // final user-facing output gets the full output ceiling
     },
   ],
   // ── plan_first: 4-phase (analyse → plan → deepen → synthesise) ──
@@ -96,113 +126,142 @@ const PHASE_MAP: Record<ThinkingLevel, PhaseConfig[]> = {
       name: 'analyse',
       systemSuffix: 'PHASE: ANALYSE\nBegin by analysing the task in full. Map the scope, constraints, dependencies, and risks. Identify what a complete, high-quality response requires.',
       streaming: false,
-      budgetTokens: 10000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 32000,
     },
     {
       name: 'plan',
       systemSuffix: 'PHASE: PLAN\nCreate an explicit execution plan: sections, order, depth, key assumptions, and any gaps that need addressing. Present the plan as a structured outline.',
       streaming: false,
-      budgetTokens: 8000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 24000,
     },
     {
       name: 'deepen',
       systemSuffix: 'PHASE: DEEPEN\nReview your plan critically. Identify any missing elements, weak sections, or areas that require deeper treatment. Refine the plan and expand key reasoning.',
       streaming: false,
-      budgetTokens: 10000,
-      effort: 'max',
+      thinking: 'run',
       maxTokens: 32000,
     },
     {
       name: 'synthesise',
       systemSuffix: 'PHASE: SYNTHESISE\nExecute the plan. Produce the complete, final response based on the plan and analysis phases. This is the final user-facing output.',
       streaming: true,
-      budgetTokens: 16000,
-      effort: 'max',
-      maxTokens: 128_000, // Opus 4.8 ceiling — final user-facing output gets full capacity
+      thinking: 'run',
+      maxTokens: 128_000, // final user-facing output gets the full output ceiling
     },
   ],
   // ── deep_investigate: 6-phase (analyse → reflect → deepen → explore → validate → synthesise) ──
-  // Most expensive mode. Intermediate phases get generous room; synthesise gets Opus ceiling.
+  // Most expensive mode. Intermediate phases get generous room; synthesise gets the ceiling.
   deep_investigate: [
     {
       name: 'analyse',
       systemSuffix: 'PHASE: ANALYSE\nYou are in the deep investigation analysis phase. Produce an exhaustive, multi-angle analysis. Identify the core problem, all sub-problems, evidence quality, gaps, and risk factors. Do NOT synthesise.',
       streaming: false,
-      budgetTokens: 16000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 48000,
     },
     {
       name: 'reflect',
       systemSuffix: 'PHASE: REFLECT\nChallenge the analysis. Identify assumptions, logical gaps, alternative interpretations, and counter-arguments. Assign a confidence score (0.0–1.0) and flag specific areas needing deeper investigation.',
       streaming: false,
-      budgetTokens: 12000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 32000,
     },
     {
       name: 'deepen',
       systemSuffix: 'PHASE: DEEPEN\nAddress all flagged uncertainties from the reflection phase. Explore edge cases. Produce a refined, consolidated understanding of the problem.',
       streaming: false,
-      budgetTokens: 16000,
-      effort: 'max',
+      thinking: 'run',
       maxTokens: 48000,
     },
     {
       name: 'explore',
       systemSuffix: 'PHASE: EXPLORE\nUsing your deepened understanding, explore the most important implications, dependencies, and second-order effects. What is most likely to be missed? What are the key risks?',
       streaming: false,
-      budgetTokens: 12000,
-      effort: 'max',
+      thinking: 'run',
       maxTokens: 32000,
     },
     {
       name: 'validate',
       systemSuffix: 'PHASE: VALIDATE\nValidate your conclusions from all prior phases. Cross-check the logic, ensure completeness, and identify any remaining gaps or caveats that must be disclosed in the final output.',
       streaming: false,
-      budgetTokens: 10000,
-      effort: 'high',
+      thinking: 'think_hard',
       maxTokens: 24000,
     },
     {
       name: 'synthesise',
       systemSuffix: 'PHASE: SYNTHESISE\nProduce the final, definitive response. Integrate all phase outputs. Be comprehensive, authoritative, and precisely structured. Disclose remaining uncertainties. This is the final user-facing output.',
       streaming: true,
-      budgetTokens: 24000,
-      effort: 'max',
-      maxTokens: 128_000, // Opus 4.8 ceiling — final user-facing output gets full capacity
+      thinking: 'run',
+      maxTokens: 128_000, // final user-facing output gets the full output ceiling
     },
   ],
 };
 
-// ── Think tool definition ──────────────────────────────────────────
+/** The ANTON level a phase runs at, resolved to an effort by the router. */
+export function phaseThinkingLevel(phase: PhaseThinking, runLevel: IREThinkingLevel): ThinkingLevel {
+  return phase === 'run' ? runLevel : 'think_hard';
+}
 
-const THINK_TOOL = {
-  name: 'think',
-  description: 'Use this tool to record an explicit reasoning checkpoint. Return a structured assessment of the current analysis state.',
-  input_schema: {
-    type: 'object' as const,
-    properties: {
-      thought: { type: 'string', description: 'Your current thinking about the problem' },
-      conclusion: { type: 'string', description: 'The conclusion reached so far' },
-      confidence: { type: 'number', description: 'Confidence score from 0.0 to 1.0' },
-      revision_needed: { type: 'boolean', description: 'Whether the previous phase output needs significant revision' },
-      next_action: { type: 'string', description: 'What the next phase should focus on' },
+// ── Reasoning checkpoint ──────────────────────────────────────────
+//
+// The reflect / deepen / explore / validate phases end with a structured
+// self-assessment (confidence, revision_needed, next_action). This used to be
+// a custom `think` tool the raw client could read back as a tool_use block;
+// the router returns text and thinking only, and the subscription engine is a
+// text engine with no custom-tool surface, so the checkpoint is now asked for
+// in the phase directive and parsed from the phase text on both engines.
+
+const CHECKPOINT_PHASES: ReadonlySet<string> = new Set(['reflect', 'deepen', 'explore', 'validate']);
+
+const CHECKPOINT_INSTRUCTION =
+  'Finish with exactly one reasoning checkpoint, on its own lines, in this form and nothing else after it:\n' +
+  '<checkpoint>{"confidence": <0.0-1.0>, "revision_needed": <true|false>, "next_action": "<what the next phase should focus on>"}</checkpoint>';
+
+const CHECKPOINT_RE = /<checkpoint>\s*(?:```(?:json)?\s*)?(\{[\s\S]*?\})\s*(?:```\s*)?<\/checkpoint>/i;
+
+export interface ReasoningCheckpoint {
+  confidenceScore: number | null;
+  revisionNeeded: boolean | null;
+  nextAction: string | null;
+}
+
+/**
+ * Pull the checkpoint out of a phase's text. Returns the text with the block
+ * removed (it is bookkeeping, not analysis, so it never rides into the next
+ * phase's context) plus the parsed fields; a missing or malformed block is
+ * non-fatal and yields nulls, exactly as an unused think tool did.
+ */
+export function extractCheckpoint(text: string): { text: string; checkpoint: ReasoningCheckpoint } {
+  const empty: ReasoningCheckpoint = { confidenceScore: null, revisionNeeded: null, nextAction: null };
+  const m = CHECKPOINT_RE.exec(text);
+  if (!m) return { text, checkpoint: empty };
+  let parsed: unknown;
+  try { parsed = JSON.parse(m[1]); } catch { return { text: text.replace(m[0], '').trimEnd(), checkpoint: empty }; }
+  const obj = (parsed && typeof parsed === 'object') ? parsed as Record<string, unknown> : {};
+  const conf = typeof obj.confidence === 'number' && Number.isFinite(obj.confidence)
+    ? Math.min(1, Math.max(0, obj.confidence))
+    : null;
+  return {
+    text: text.replace(m[0], '').trimEnd(),
+    checkpoint: {
+      confidenceScore: conf,
+      revisionNeeded: typeof obj.revision_needed === 'boolean' ? obj.revision_needed : null,
+      nextAction: typeof obj.next_action === 'string' && obj.next_action.trim() ? obj.next_action.trim() : null,
     },
-    required: ['thought', 'conclusion', 'confidence', 'revision_needed'],
-  },
-};
+  };
+}
 
 // ── IRE config ─────────────────────────────────────────────────────
 
 export interface IREConfig {
-  thinkingLevel: ThinkingLevel;
+  thinkingLevel: IREThinkingLevel;
+  /** The run's model id exactly as the route resolved it — `sdk:` prefix and
+   *  all. It is dispatched, never used as a capability key, so it keeps its
+   *  engine prefix (see engine-model-id.ts). */
   model: string;
-  staticSystemPrompt: string;   // Foundation + module prompt (will be prompt-cached)
+  staticSystemPrompt: string;   // Foundation + module prompt
   dynamicSystemPrompt: string;  // Output format + knowledge additions (changes per request)
   messages: Array<{ role: 'user' | 'assistant'; content: string | object[] }>;
   tools?: Array<{ type: string; name: string }>;
@@ -218,110 +277,146 @@ export interface IRESummary {
   totalDurationMs: number;
   synthesisQualityScore: number | null;
   synthesisText: string;
+  /** Provider the chain ran on ('anthropic' | 'anthropic_sdk'). */
+  engine: string;
+  /** The id every phase was dispatched with (prefixed, as given). */
+  model: string;
+  /** Human label for the model + engine, from the registry — never a guess. */
+  modelLabel: string;
 }
 
-// ── Internal non-streaming call ────────────────────────────────────
+// ── Model description ─────────────────────────────────────────────
 
-interface InternalCallResult {
-  text: string;
-  thinking: string;
+/**
+ * What the chain ran on, for the summary, the SSE envelope and any user-facing
+ * text: the provider, the dispatched id, and the registry display name of the
+ * underlying model with the engine named when it is the subscription one.
+ * Falls back to the bare id for a model the registry does not know.
+ */
+export function describeIreModel(modelId: string): { engine: string; model: string; label: string } {
+  let engine: string;
+  try { engine = getProviderFromModelId(modelId); } catch { engine = 'unknown'; }
+  const bare = capabilityModelId(modelId);
+  const display = MODEL_REGISTRY[bare]?.displayName ?? bare;
+  const label = engine === 'anthropic_sdk' ? `${display} (subscription engine)` : display;
+  return { engine, model: modelId, label };
+}
+
+// ── Message flattening ────────────────────────────────────────────
+
+/**
+ * The router carries message content as a string. Text blocks (either the
+ * API's `{type:'text', text}` or the stored-content `{type:'text', content}`
+ * shape) are joined; an earlier turn's thinking is internal and not replayed
+ * as prose; anything else (an image block, a tool block) is named so the
+ * model knows something was there rather than silently losing it.
+ */
+export function flattenMessageContent(content: string | object[]): string {
+  if (typeof content === 'string') return content;
+  const parts: string[] = [];
+  for (const block of content) {
+    const b = block as { type?: unknown; text?: unknown; content?: unknown };
+    if (b.type === 'text') {
+      const t = typeof b.text === 'string' ? b.text : typeof b.content === 'string' ? b.content : '';
+      if (t) parts.push(t);
+    } else if (b.type === 'thinking' || b.type === 'redacted_thinking') {
+      continue;
+    } else if (typeof b.type === 'string') {
+      parts.push(`[${b.type} block not carried into this reasoning phase]`);
+    }
+  }
+  return parts.join('\n\n');
+}
+
+function routerMessages(messages: IREConfig['messages']): Array<{ role: string; content: string }> {
+  return messages.map((m) => ({ role: m.role, content: flattenMessageContent(m.content) }));
+}
+
+// ── Usage ─────────────────────────────────────────────────────────
+
+interface PhaseUsage {
   inputTokens: number;
   outputTokens: number;
-  durationMs: number;
-  confidenceScore: number | null;
-  revisionNeeded: boolean | null;
-  nextAction: string | null;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
 }
 
-async function runInternalPhase(
-  anthropic: Anthropic,
+/**
+ * ChatResult carries input/output tokens on every engine. Cache tokens are
+ * not on the router's result type today; both engines have them at the
+ * source (response.usage on the API, SdkCompletionData on the engine), so
+ * read them when a future router surfaces them and report 0 — not a guess —
+ * until then.
+ */
+function readUsage(r: ChatResult): PhaseUsage {
+  const extra = r as ChatResult & { cacheReadTokens?: unknown; cacheCreationTokens?: unknown };
+  const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  return {
+    inputTokens: num(r.inputTokens),
+    outputTokens: num(r.outputTokens),
+    cacheReadTokens: num(extra.cacheReadTokens),
+    cacheCreationTokens: num(extra.cacheCreationTokens),
+  };
+}
+
+// ── Phase prompt ──────────────────────────────────────────────────
+
+/**
+ * One system string per phase: static (foundation + module) first, then the
+ * dynamic block, prior-phase outputs, and the phase directive. The router
+ * takes `system` as a string, so the old cache_control split collapses here
+ * with its order preserved; the subscription engine caches on its own.
+ */
+function phaseSystemPrompt(
   phase: PhaseConfig,
   staticSystemPrompt: string,
   dynamicSystemPrompt: string,
-  messages: Array<{ role: 'user' | 'assistant'; content: string | object[] }>,
   priorPhaseContext: string,
-): Promise<InternalCallResult> {
-  const start = Date.now();
-
-  // Build the phase-specific system prompt
-  // Static (cached) block = foundation + module prompt
-  // Dynamic block = output format + knowledge + prior phases + current phase directive
+): string {
   const dynamicWithPhase = [
     dynamicSystemPrompt,
     priorPhaseContext ? `\n\n## PRIOR PHASE CONTEXT\n${priorPhaseContext}` : '',
     `\n\n---\n${phase.systemSuffix}`,
+    CHECKPOINT_PHASES.has(phase.name) ? `\n\n${CHECKPOINT_INSTRUCTION}` : '',
   ].filter(Boolean).join('');
+  return [staticSystemPrompt, dynamicWithPhase].filter((s) => s.trim().length > 0).join('\n\n');
+}
 
-  const systemBlocks = [
-    { type: 'text' as const, text: staticSystemPrompt, cache_control: { type: 'ephemeral' as const } },
-    { type: 'text' as const, text: dynamicWithPhase },
-  ];
+// ── Internal non-streaming call ────────────────────────────────────
 
-  const thinkingConfig = phase.effort
-    ? { thinking: { type: 'adaptive' as const }, output_config: { effort: phase.effort } }
-    : {};
+interface InternalCallResult extends PhaseUsage, ReasoningCheckpoint {
+  text: string;
+  thinking: string;
+  durationMs: number;
+}
 
-  // Include think tool for reflection and deepen phases
-  const useThinkTool = ['reflect', 'deepen', 'explore', 'validate'].includes(phase.name);
-  const tools = useThinkTool ? [THINK_TOOL] : undefined;
+async function runInternalPhase(
+  phase: PhaseConfig,
+  config: IREConfig,
+  priorPhaseContext: string,
+  db: DatabaseAdapter,
+): Promise<InternalCallResult> {
+  const start = Date.now();
 
-  // With adaptive thinking, max_tokens only governs output tokens
-  const safeMaxTokens = phase.maxTokens;
+  const result = await callChat({
+    model: config.model,
+    system: phaseSystemPrompt(phase, config.staticSystemPrompt, config.dynamicSystemPrompt, priorPhaseContext),
+    messages: routerMessages(config.messages),
+    maxTokens: phase.maxTokens,
+    thinkingLevel: phaseThinkingLevel(phase.thinking, config.thinkingLevel),
+    db,
+  });
 
-  const requestParams: Record<string, unknown> = {
-    model: 'claude-opus-4-8', // IRE always uses Opus for quality
-    max_tokens: safeMaxTokens,
-    system: systemBlocks,
-    messages,
-    ...thinkingConfig,
-    ...(tools ? { tools } : {}),
-  };
-
-  let text = '';
-  let thinking = '';
-  let inputTokens = 0;
-  let outputTokens = 0;
-  let confidenceScore: number | null = null;
-  let revisionNeeded: boolean | null = null;
-  let nextAction: string | null = null;
-  let toolInputAcc = '';
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stream = await (anthropic.messages as any).stream(requestParams);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for await (const event of stream as AsyncIterable<any>) {
-    if (event.type === 'content_block_delta') {
-      if (event.delta?.type === 'text_delta') text += event.delta.text as string;
-      else if (event.delta?.type === 'thinking_delta') thinking += event.delta.thinking as string;
-      else if (event.delta?.type === 'input_json_delta') toolInputAcc += event.delta.partial_json as string;
-    } else if (event.type === 'content_block_stop' && toolInputAcc) {
-      try {
-        const parsed = JSON.parse(toolInputAcc) as {
-          confidence?: number;
-          revision_needed?: boolean;
-          next_action?: string;
-        };
-        if (typeof parsed.confidence === 'number') confidenceScore = parsed.confidence;
-        if (typeof parsed.revision_needed === 'boolean') revisionNeeded = parsed.revision_needed;
-        if (typeof parsed.next_action === 'string') nextAction = parsed.next_action;
-      } catch { /* non-fatal */ }
-      toolInputAcc = '';
-    } else if (event.type === 'message_delta' && event.usage) {
-      outputTokens = (event.usage.output_tokens as number) || 0;
-    } else if (event.type === 'message_start' && event.message?.usage) {
-      inputTokens = (event.message.usage.input_tokens as number) || 0;
-    }
-  }
+  const { text, checkpoint } = CHECKPOINT_PHASES.has(phase.name)
+    ? extractCheckpoint(result.text)
+    : { text: result.text, checkpoint: { confidenceScore: null, revisionNeeded: null, nextAction: null } };
 
   return {
     text,
-    thinking,
-    inputTokens,
-    outputTokens,
+    thinking: result.thinking ?? '',
+    ...readUsage(result),
     durationMs: Date.now() - start,
-    confidenceScore,
-    revisionNeeded,
-    nextAction,
+    ...checkpoint,
   };
 }
 
@@ -332,10 +427,10 @@ export async function runIterativeReasoning(
   res: Response,
   db: DatabaseAdapter,
 ): Promise<IRESummary> {
-  const anthropic = getClient();
   const phases = PHASE_MAP[config.thinkingLevel];
   const chainId = crypto.randomUUID();
   const totalStart = Date.now();
+  const ran = describeIreModel(config.model);
 
   // Persist revelation chain stub
   try {
@@ -362,15 +457,37 @@ export async function runIterativeReasoning(
   }
 
   sendEvent({ type: 'stream_start', messageId: crypto.randomUUID() });
-  sendEvent({ type: 'revelation_chain_id', chainId });
+  sendEvent({
+    type: 'revelation_chain_id',
+    chainId,
+    engine: ran.engine,
+    model: ran.model,
+    modelLabel: ran.label,
+    totalPhases: phases.length,
+  });
 
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
+  let totalCacheReadTokens = 0;
+  let totalCacheCreationTokens = 0;
   let synthesisQualityScore: number | null = null;
   let finalSynthesisText = '';
 
   // Build rolling context from completed phases
   const priorOutputs: Array<{ phase: string; content: string }> = [];
+
+  const summary = (phaseCount: number, quality: number | null, synthesisText: string): IRESummary => ({
+    chainId,
+    phaseCount,
+    totalInputTokens,
+    totalOutputTokens,
+    totalDurationMs: Date.now() - totalStart,
+    synthesisQualityScore: quality,
+    synthesisText,
+    engine: ran.engine,
+    model: ran.model,
+    modelLabel: ran.label,
+  });
 
   for (let i = 0; i < phases.length; i++) {
     const phase = phases[i];
@@ -381,6 +498,7 @@ export async function runIterativeReasoning(
       phaseIndex: i,
       phaseName: phase.name,
       totalPhases: phases.length,
+      thinkingLevel: phaseThinkingLevel(phase.thinking, config.thinkingLevel),
     });
 
     const priorContext = priorOutputs
@@ -392,17 +510,12 @@ export async function runIterativeReasoning(
     if (!isLastPhase) {
       // Internal non-streaming phase
       try {
-        const result = await runInternalPhase(
-          anthropic,
-          phase,
-          config.staticSystemPrompt,
-          config.dynamicSystemPrompt,
-          config.messages,
-          priorContext,
-        );
+        const result = await runInternalPhase(phase, config, priorContext, db);
 
         totalInputTokens += result.inputTokens;
         totalOutputTokens += result.outputTokens;
+        totalCacheReadTokens += result.cacheReadTokens;
+        totalCacheCreationTokens += result.cacheCreationTokens;
 
         // 2026-07-17: carry the chain's synthesis_quality_score from the model's
         // own reflect-phase confidence (the last phase to report one — typically
@@ -448,6 +561,8 @@ export async function runIterativeReasoning(
           phaseName: phase.name,
           durationMs: result.durationMs,
           confidenceScore: result.confidenceScore,
+          inputTokens: result.inputTokens,
+          outputTokens: result.outputTokens,
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Internal phase error';
@@ -455,127 +570,45 @@ export async function runIterativeReasoning(
         sendEvent({ type: 'error', message: `IRE phase '${phase.name}' failed: ${msg}` });
         res.write('data: [DONE]\n\n');
         res.end();
-        return {
-          chainId,
-          phaseCount: i,
-          totalInputTokens,
-          totalOutputTokens,
-          totalDurationMs: Date.now() - totalStart,
-          synthesisQualityScore: null,
-          synthesisText: '',
-        };
+        return summary(i, null, '');
       }
     } else {
-      // Final synthesis phase — stream to SSE response
-      const dynamicWithPhase = [
-        config.dynamicSystemPrompt,
-        priorContext ? `\n\n## PRIOR PHASE CONTEXT\n${priorContext}` : '',
-        `\n\n---\n${phase.systemSuffix}`,
-      ].filter(Boolean).join('');
-
-      const systemBlocks = [
-        { type: 'text' as const, text: config.staticSystemPrompt, cache_control: { type: 'ephemeral' as const } },
-        { type: 'text' as const, text: dynamicWithPhase },
-      ];
-
-      const thinkingConfig = phase.effort
-        ? { thinking: { type: 'adaptive' as const }, output_config: { effort: phase.effort } }
-        : {};
-
-      // With adaptive thinking, max_tokens only governs output tokens
-      const safeMaxTokens = phase.maxTokens;
-
-      const requestParams: Record<string, unknown> = {
-        model: 'claude-opus-4-8',
-        max_tokens: safeMaxTokens,
-        system: systemBlocks,
-        messages: config.messages,
-        stream: true,
-        ...thinkingConfig,
-        ...(config.tools && config.tools.length > 0 ? { tools: config.tools } : {}),
-      };
-
-      const contentBlocks: Array<{ type: string; content: string }> = [];
-      let synthText = '';
-      let synthThinking = '';
-      let synthInputTokens = 0;
-      let synthOutputTokens = 0;
-      let synthCacheRead = 0;
-      let synthCacheCreation = 0;
-      let currentText = '';
-      let currentThinking = '';
-
+      // Final synthesis phase — the router streams text_delta / thinking_delta
+      // frames to the response itself (on every engine, the SDK one through
+      // its forwarding sink) and hands back the accumulated result; the
+      // envelope around them (usage, stream_end, phase_end, [DONE]) is ours.
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stream = await (anthropic.messages as any).stream(requestParams);
+        const result = await streamChat({
+          model: config.model,
+          system: phaseSystemPrompt(phase, config.staticSystemPrompt, config.dynamicSystemPrompt, priorContext),
+          messages: routerMessages(config.messages),
+          maxTokens: phase.maxTokens,
+          thinkingLevel: phaseThinkingLevel(phase.thinking, config.thinkingLevel),
+          ...(config.tools && config.tools.length > 0 ? { tools: config.tools } : {}),
+          db,
+        }, res);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        for await (const event of stream as AsyncIterable<any>) {
-          const evt = event as Record<string, unknown>;
-          switch (evt.type) {
-            case 'content_block_start': {
-              const block = evt.content_block as Record<string, unknown> | undefined;
-              if (block?.type === 'thinking') currentThinking = '';
-              else if (block?.type === 'text') currentText = '';
-              break;
-            }
-            case 'content_block_delta': {
-              const delta = evt.delta as Record<string, unknown> | undefined;
-              if (delta?.type === 'thinking_delta') {
-                const t = delta.thinking as string;
-                currentThinking += t;
-                sendEvent({ type: 'thinking_delta', content: t });
-              } else if (delta?.type === 'text_delta') {
-                const t = delta.text as string;
-                currentText += t;
-                synthText += t;
-                sendEvent({ type: 'text_delta', content: t });
-              }
-              break;
-            }
-            case 'content_block_stop': {
-              if (currentThinking) {
-                contentBlocks.push({ type: 'thinking', content: currentThinking });
-                synthThinking += currentThinking;
-                currentThinking = '';
-              }
-              if (currentText) {
-                contentBlocks.push({ type: 'text', content: currentText });
-                currentText = '';
-              }
-              break;
-            }
-            case 'message_delta': {
-              const usage = evt.usage as Record<string, number> | undefined;
-              if (usage) {
-                synthOutputTokens = usage.output_tokens || 0;
-                synthCacheRead = usage.cache_read_input_tokens || 0;
-                synthCacheCreation = usage.cache_creation_input_tokens || 0;
-              }
-              break;
-            }
-            case 'message_start': {
-              const msg = evt.message as Record<string, unknown> | undefined;
-              const usage = msg?.usage as Record<string, number> | undefined;
-              if (usage) {
-                synthInputTokens = usage.input_tokens || 0;
-              }
-              break;
-            }
-          }
-        }
+        const usage = readUsage(result);
+        const synthText = result.text ?? '';
+        const synthThinking = result.thinking ?? '';
 
-        totalInputTokens += synthInputTokens;
-        totalOutputTokens += synthOutputTokens;
+        totalInputTokens += usage.inputTokens;
+        totalOutputTokens += usage.outputTokens;
+        totalCacheReadTokens += usage.cacheReadTokens;
+        totalCacheCreationTokens += usage.cacheCreationTokens;
 
         sendEvent({
           type: 'usage',
           inputTokens: totalInputTokens,
           outputTokens: totalOutputTokens,
           thinkingTokens: 0,
-          cacheCreationTokens: synthCacheCreation,
-          cacheReadTokens: synthCacheRead,
+          cacheCreationTokens: totalCacheCreationTokens,
+          cacheReadTokens: totalCacheReadTokens,
         });
+
+        const contentBlocks: Array<{ type: string; content: string }> = [];
+        if (synthThinking) contentBlocks.push({ type: 'thinking', content: synthThinking });
+        if (synthText) contentBlocks.push({ type: 'text', content: synthText });
 
         sendEvent({
           type: 'stream_end',
@@ -591,6 +624,8 @@ export async function runIterativeReasoning(
           phaseName: phase.name,
           durationMs: synthDuration,
           confidenceScore: null,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
         });
 
         // Persist synthesis step
@@ -602,7 +637,7 @@ export async function runIterativeReasoning(
               revision_needed, next_action, input_tokens, output_tokens,
               duration_ms, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          , 
+          ,
             crypto.randomUUID(),
             chainId,
             config.sessionId ?? null,
@@ -613,8 +648,8 @@ export async function runIterativeReasoning(
             null,
             null,
             null,
-            synthInputTokens,
-            synthOutputTokens,
+            usage.inputTokens,
+            usage.outputTokens,
             synthDuration,
             new Date().toISOString(),
           );
@@ -652,13 +687,8 @@ export async function runIterativeReasoning(
   }
 
   return {
-    chainId,
-    phaseCount: phases.length,
-    totalInputTokens,
-    totalOutputTokens,
+    ...summary(phases.length, synthesisQualityScore, finalSynthesisText),
     totalDurationMs: totalDuration,
-    synthesisQualityScore,
-    synthesisText: finalSynthesisText,
   };
 }
 

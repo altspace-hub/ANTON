@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
 import { useExport } from '@/hooks/useExport';
+import RunRecordPanel from '@/components/shared/RunRecordPanel';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -309,11 +310,14 @@ function ProposalCard({
 
 function StepResultCard({
   result,
+  taskId,
   onExport,
   isExporting,
   defaultExpanded = false,
 }: {
   result: ExecutionResult;
+  /** Wave 5: the step's run record lives under `<taskId>:<stepIndex>`. */
+  taskId?: string;
   onExport: (format: string, content: string, filename: string) => void;
   isExporting: boolean;
   defaultExpanded?: boolean;
@@ -450,6 +454,15 @@ function StepResultCard({
               </pre>
             )}
           </div>
+          {/* Wave 5: the run record — every tool call in full and the engine's turns */}
+          {taskId && (
+            <RunRecordPanel
+              parentKind="task_step"
+              parentId={`${taskId}:${result.step}`}
+              title="Run record — tool calls & transcript"
+              refreshKey={result.at}
+            />
+          )}
         </div>
       )}
     </div>
@@ -458,6 +471,7 @@ function StepResultCard({
 
 function ExecutionResultPanel({
   results,
+  taskId,
   streamingStepName,
   streamingText,
   streamingThinking,
@@ -467,6 +481,8 @@ function ExecutionResultPanel({
   isExporting,
 }: {
   results: ExecutionResult[];
+  /** Wave 5: for the per-step run record panel. */
+  taskId?: string;
   streamingStepName?: string;
   streamingText: string;
   streamingThinking?: string;
@@ -483,6 +499,7 @@ function ExecutionResultPanel({
         <StepResultCard
           key={result.step}
           result={result}
+          taskId={taskId}
           onExport={onExport}
           isExporting={isExporting}
           defaultExpanded={idx === results.length - 1 && !isStreaming}
@@ -1470,6 +1487,7 @@ function TaskChatPanel({ taskId, onStatusChange }: { taskId: string; onStatusCha
             ...r,
             description: task.execution_steps?.[r.step]?.description,
           }))}
+          taskId={task.id}
           streamingStepName={executingStepName}
           streamingText={executingStepText}
           streamingThinking={executingStepThinking}

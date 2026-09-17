@@ -4,7 +4,7 @@ import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
-import { runIterativeReasoning, getRevelationChain } from '../services/iterative-reasoning.js';
+import { runIterativeReasoning, getRevelationChain, ireSupportedProvider } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } from '../services/prompt-composer.js';
@@ -1656,8 +1656,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // IRE branch: route to iterative reasoning engine when explicitly enabled
       // or when thinking level is 'deep_investigate'
       const ireThinkingLevel = thinking as string;
+      // Wave 5: the phases run through the router, so the subscription engine
+      // (anthropic_sdk) is a supported provider — before this the two deepest
+      // levels were one call at max effort on the default engine (0 chains).
       const useIRE = (iterativeReasoningEnabled === true || ireThinkingLevel === 'deep_investigate')
-        && provider === 'anthropic'
+        && ireSupportedProvider(provider)
         && ['think_hard', 'investigate', 'plan_first', 'deep_investigate'].includes(ireThinkingLevel);
 
       if (useIRE) {

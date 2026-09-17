@@ -131,14 +131,23 @@ describe('buildSdkEnv — subscription auth by key absence', () => {
       const env = calls[0].options.env as Record<string, string | undefined>;
       expect(env).toBeDefined();
       expect('ANTHROPIC_API_KEY' in env).toBe(false);
-      // The spread must have happened — a bare object would strip PATH and
-      // the subprocess would never start on Windows.
+      // The allow-list must keep PATH — without it the subprocess never
+      // starts on Windows.
       expect(env.PATH ?? env.Path).toBeDefined();
     } finally {
       delete process.env.ANTHROPIC_API_KEY;
     }
   });
 
+  // Wave 5: an allow-list, not process.env minus one key. The server's env
+  // also holds DATABASE_URL, every other provider's key and the vault key.
+  it('is an allow-list: the database URL and other providers’ keys never reach the subprocess', () => {
+    const env = buildSdkEnv({
+      PATH: '/usr/bin', HOME: '/home/u', CLAUDE_CONFIG_DIR: '/home/u/.claude',
+      DATABASE_URL: 'postgresql://anton:anton@localhost:5432/anton', OPENAI_API_KEY: 'sk-openai', ANTHROPIC_API_KEY: 'sk-ant',
+    });
+    expect(env).toEqual({ PATH: '/usr/bin', HOME: '/home/u', CLAUDE_CONFIG_DIR: '/home/u/.claude' });
+  });
 });
 
 // ── 2. Containment: text engine, nothing granted ────────────
@@ -660,5 +669,73 @@ describe('completeText — outputFormat (schema-constrained turn)', () => {
     expect('outputFormat' in calls[0].options).toBe(false);
     expect(data.structuredOutput).toBeUndefined();
     expect(data.text).toBe('hi');
+  });
+});
+
+// ── Wave 5: thinking from the complete message ──────────────
+// Live finding 2026-09-16: 3 of 3 stored SDK runs had empty thinking. The
+// engine captured thinking only from thinking_delta stream events and never
+// looked at the assistant envelope, whose content blocks are the complete API
+// message — thinking, text, tool_use — the same blocks claude-client.ts hands
+// the chat route as rawContentBlocks for messages.content_blocks.
+
+const assistantMessage = (content: object[]) => ({ type: 'assistant', message: { role: 'assistant', content } });
+const THINKING_BLOCK = { type: 'thinking', thinking: 'Article 16 first, then the scope.', signature: 'sig-1' };
+const TEXT_BLOCK = { type: 'text', text: 'Hello world' };
+
+describe('Wave 5 — thinking and content blocks from the assistant envelope', () => {
+  it('captures thinking from the blocks when the stream carried no thinking_delta, and hands the blocks on as rawContentBlocks', async () => {
+    fakeSdk([textDelta('Hello'), textDelta(' world'), assistantMessage([THINKING_BLOCK, TEXT_BLOCK]), successResult()]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+
+    expect(completion).not.toBeNull();
+    expect(completion!.thinking).toBe('Article 16 first, then the scope.');
+    expect(completion!.text).toBe('Hello world');
+    expect(completion!.rawContentBlocks).toEqual([THINKING_BLOCK, TEXT_BLOCK]);
+    // The page sees it live, and stream_end carries it like a streamed thinking block.
+    expect(events().some((e) => e.type === 'thinking_delta' && e.content === 'Article 16 first, then the scope.')).toBe(true);
+    const end = events().find((e) => e.type === 'stream_end') as { contentBlocks: Array<{ type: string; content: string }> };
+    expect(end.contentBlocks).toEqual([
+      { type: 'thinking', content: 'Article 16 first, then the scope.' },
+      { type: 'text', content: 'Hello world' },
+    ]);
+  });
+
+  it('does not double-count when the stream did carry thinking deltas; rawContentBlocks still passes', async () => {
+    fakeSdk([thinkingDelta('Article 16 first, '), thinkingDelta('then the scope.'), textDelta('Hello'), assistantMessage([THINKING_BLOCK, TEXT_BLOCK]), successResult()]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(completion!.thinking).toBe('Article 16 first, then the scope.');
+    expect(events().filter((e) => e.type === 'thinking_delta')).toHaveLength(2);
+    expect(completion!.rawContentBlocks).toEqual([THINKING_BLOCK, TEXT_BLOCK]);
+  });
+
+  it('a redacted_thinking block leaves a marker, and blocks accumulate across envelopes in order', async () => {
+    const toolUse = { type: 'tool_use', id: 'toolu_1', name: 'WebSearch', input: { query: 'x' } };
+    fakeSdk([
+      assistantMessage([{ type: 'redacted_thinking', data: 'opaque' }, toolUse]),
+      { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: 'r' }] } },
+      assistantMessage([{ type: 'thinking', thinking: 'Now answer.' }, { type: 'text', text: 'Answer.' }]),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse({ ...BASE_CONFIG, tools: [{ type: 'web_search_20250305', name: 'web_search' }] }, collectingSink().sink, (d) => { completion = d; });
+    expect(completion!.thinking).toBe('[redacted thinking block]\n\nNow answer.');
+    expect(completion!.rawContentBlocks).toEqual([
+      { type: 'redacted_thinking', data: 'opaque' }, toolUse,
+      { type: 'thinking', thinking: 'Now answer.' }, { type: 'text', text: 'Answer.' },
+    ]);
+  });
+
+  it('a run with no assistant envelope carries no rawContentBlocks', async () => {
+    fakeSdk([textDelta('x'), successResult()]);
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, collectingSink().sink, (d) => { completion = d; });
+    expect(completion!.thinking).toBe('');
+    expect('rawContentBlocks' in completion!).toBe(false);
   });
 });
