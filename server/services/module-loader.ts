@@ -180,10 +180,10 @@ function knownOutputFormatIds(): ReadonlySet<string> {
  * registries are checked — the union, not either one alone, because a module
  * may legitimately name an id only one of them carries.
  *
- * NOTE: server/personas/<id>/persona.json (personas-manager.ts) is a THIRD
- * registry, but nothing in the run path reads it — buildPersonaInjection() has
- * no callers, and the composer goes through getExpertRoleInstruction(). An id
- * that exists only there still injects nothing, so it is reported.
+ * There used to be a THIRD registry, server/personas/<id>/persona.json read by
+ * personas-manager.ts, that nothing in the run path consulted. Wave 8 folded its
+ * text into persona-prompts.ts and removed it, so listServerPersonaIds() now
+ * covers every id the server can resolve and this check sees all of them.
  */
 function knownPersonaIds(): ReadonlySet<string> {
   if (!_knownPersonaIds) {

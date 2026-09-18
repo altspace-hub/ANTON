@@ -44,6 +44,21 @@ const FORMERLY_DEAD_IDS = [
  * a server-only id is fine — add it here too, so the drift is a decision.
  */
 const SERVER_ONLY_IDS = [
+  // Wave 8 (2026-09-18): folded in from server/personas/<id>/, which the composer
+  // never read. These ten have a long-form perspective and no picker entry, and no
+  // module recommends them today — they are engineering and field roles written for
+  // the hardware and humanitarian areas. Resolvable, unlisted, deliberate: a module
+  // that names one gets real text instead of silence.
+  'clinical-safety-officer',
+  'electronics-engineer',
+  'embedded-systems-engineer',
+  'field-technician',
+  'gig-economy-rights-advisor',
+  'humanitarian-tech-operator',
+  'industrial-designer',
+  'quality-engineer',
+  'reliability-engineer',
+  'safety-engineer',
   'ct-business-expert',
   'ct-devsecops-expert',
   'ct-engineering-expert',

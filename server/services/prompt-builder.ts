@@ -6,6 +6,7 @@ import { packAppliesToArea } from './area-frameworks.js';
 import { getAtomInjectionStatus, type AtomInjectionStatus } from './atom-injection-gate.js';
 import { EXPERT_ROLES } from '../../src/lib/expert-roles.js';
 import { RIGHTS_ADVICE_AREAS } from '../../src/lib/advice-boundary-areas.js';
+import { DETAILED_PERSONA_PROMPTS } from './persona-prompts.js';
 
 /**
  * SEVEN-LAYER PROMPT STRUCTURE
@@ -443,7 +444,9 @@ const CLIENT_PERSONA_INSTRUCTIONS: ReadonlyMap<string, string> = new Map(
 
 /** The ids this file carries text for — the server side of the parity test. */
 export function listServerPersonaIds(): string[] {
-  return Object.keys(EXPERT_ROLE_INSTRUCTIONS);
+  // Both server maps: an id with only a long form is still one the server can
+  // resolve, and leaving it out would report the registry as smaller than it is.
+  return [...new Set([...Object.keys(EXPERT_ROLE_INSTRUCTIONS), ...Object.keys(DETAILED_PERSONA_PROMPTS)])];
 }
 
 // ── Imported personas (Wave 6) ──────────────────────────────────────────────
@@ -492,6 +495,14 @@ export function resetInstalledPersonasForTests(): void {
  * not Object.prototype members.
  */
 export function resolvePersonaInstruction(id: string): string {
+  // The long form wins. Until Wave 8 these texts sat under server/personas/<id>/,
+  // read by a registry the composer never consulted, so a module that recommended
+  // `dpo` injected 416 characters while 2,548 better ones sat on disk. Folding
+  // them in is the whole point of preferring this map; EXPERT_ROLE_INSTRUCTIONS
+  // stays as the short-form fallback for every id that has no long form.
+  if (Object.prototype.hasOwnProperty.call(DETAILED_PERSONA_PROMPTS, id)) {
+    return DETAILED_PERSONA_PROMPTS[id];
+  }
   if (Object.prototype.hasOwnProperty.call(EXPERT_ROLE_INSTRUCTIONS, id)) {
     return EXPERT_ROLE_INSTRUCTIONS[id];
   }
