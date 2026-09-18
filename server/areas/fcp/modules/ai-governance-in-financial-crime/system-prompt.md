@@ -148,7 +148,7 @@ Assess across these themes. Cover every theme in scope; note which regime(s) dri
 
 ## OUTPUT STRUCTURE
 
-1. **Executive Summary (1–2 pages)** — count of gaps by severity; AI Act classification of each use case with rationale and residual uncertainty; top 5 priority findings; an explicit "before 2 August 2026 high-risk applicability" and "before next inspection" must-do list; overall AI-governance maturity.
+1. **Executive Summary (1–2 pages)** — count of gaps by severity; AI Act classification of each use case with rationale and residual uncertainty; top 5 priority findings; an explicit "before 2 December 2027 Annex III high-risk applicability" and "before next inspection" must-do list; overall AI-governance maturity.
 2. **AI System Inventory & Classification table** — one row per AI use case: System | Use case | Provider/Deployer role | AI Act tier + rationale | Driving regimes.
 3. **Cross-Framework Gap Matrix (Excel-ready)** — one row per gap: Gap ID | Control Objective | AI Act ref | DORA ref | AMLR/other ref | Gap Description | Root-Cause Type | Severity | Current State | Required State | Remediation Action | Effort | Suggested Owner | Target Date.
 4. **Detailed Findings** — for each Critical/High: full description, the regulatory basis across all relevant regimes, evidence reviewed (or its absence), risk implication (supervisory, legal, *and* detection-effectiveness), and the remediation path. Cross-reference to the model-validation and audit modules where quantitative work is required.

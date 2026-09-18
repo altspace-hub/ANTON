@@ -241,3 +241,76 @@ describe('module.json defaults.outputFormats', () => {
     expect(byId.get('atlas-exposure-mapper')).toContain('entity-register');
   });
 });
+
+describe('module.json recommendedSkills', () => {
+  // 2026-09-17 (Wave 1, track E): `recommendedSkills` drives ModulePage's
+  // suggestion banner, and "Apply" attaches EVERY id in the array at once.
+  // Two failure modes are worth pinning:
+  //   (a) an id no skill has — module-loader.validateRecommendedSkills() only
+  //       warns on the server console, and the banner silently drops it, so a
+  //       typo is invisible in the product (the class of bug the retired
+  //       client-side MODULE_DEFAULT_SKILLS map carried with eight dead ids);
+  //   (b) a long list — the banner is one line of skill names and one Apply
+  //       button, so six plausible suggestions are worse than two right ones.
+  //       Four is the agreed ceiling.
+  const MAX_RECOMMENDED_SKILLS = 4;
+  const repoRoot = path.resolve(__dirname, '..', '..');
+  const areasDir = path.join(repoRoot, 'server', 'areas');
+
+  function declaredRecommendations(): Array<{ area: string; dir: string; id: string; skills: string[] }> {
+    const out: Array<{ area: string; dir: string; id: string; skills: string[] }> = [];
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        if (!fs.existsSync(configPath)) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string; recommendedSkills?: unknown };
+        const skills = config.recommendedSkills;
+        if (!Array.isArray(skills)) continue;
+        out.push({ area: areaEntry.name, dir: modEntry.name, id: config.id ?? modEntry.name, skills: skills.map(String) });
+      }
+    }
+    return out;
+  }
+
+  /** The ids the server's own resolver can see: built-ins + the server/skills/ disk packs. */
+  async function resolvableSkillIds(): Promise<Set<string>> {
+    const { getAllSkillsAsync } = await import('../../server/services/skills-manager');
+    return new Set((await getAllSkillsAsync()).map((s) => s.id));
+  }
+
+  it('every recommendedSkills id resolves to a real skill', async () => {
+    const known = await resolvableSkillIds();
+    const declared = declaredRecommendations();
+    expect(declared.length, 'no module declares recommendedSkills — did the walker break?').toBeGreaterThan(50);
+    const dangling: string[] = [];
+    for (const m of declared) {
+      for (const id of m.skills) {
+        if (!known.has(id)) dangling.push(`${m.area}/${m.dir} -> ${id}`);
+      }
+    }
+    expect(dangling).toEqual([]);
+  });
+
+  it(`no module recommends more than ${MAX_RECOMMENDED_SKILLS} skills`, () => {
+    const over = declaredRecommendations()
+      .filter((m) => m.skills.length > MAX_RECOMMENDED_SKILLS)
+      .map((m) => `${m.area}/${m.dir} (${m.skills.length})`);
+    expect(over).toEqual([]);
+  });
+
+  it('no module lists the same skill twice', () => {
+    const dupes: string[] = [];
+    for (const m of declaredRecommendations()) {
+      const seen = new Set<string>();
+      for (const id of m.skills) {
+        if (seen.has(id)) dupes.push(`${m.area}/${m.dir} -> ${id}`);
+        seen.add(id);
+      }
+    }
+    expect(dupes).toEqual([]);
+  });
+});

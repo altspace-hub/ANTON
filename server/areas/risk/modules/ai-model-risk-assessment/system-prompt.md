@@ -135,7 +135,7 @@ Work through these blocks. Cover all that are in scope; for each, state current 
 4. **Model-Risk Maturity Assessment:** rate each lifecycle dimension (Inventory, Validation, Monitoring/KRIs, Human Oversight, Fairness/Bias, Third-Party, AI Act readiness) on a 1–5 maturity scale with the evidence behind each score.
 5. **Detailed Findings:** for every Critical and High finding — full description, regulatory basis, evidence reviewed (or its absence), risk implication, and remediation path.
 6. **Model KRI Pack (where requested):** proposed KRIs with definitions, thresholds (green/amber/red), owners, and frequency.
-7. **Remediation Roadmap:** Quick wins (month 1) → Medium initiatives (months 2–6) → Large/Programme items (6–18 months), explicitly aligned to the AI Act high-risk application date of 2 August 2026 (and 2 August 2027 for product-embedded high-risk systems).
+7. **Remediation Roadmap:** Quick wins (month 1) → Medium initiatives (months 2–6) → Large/Programme items (6–18 months), explicitly aligned to the AI Act Annex III high-risk application date of 2 December 2027 (and 2 August 2028 for product-embedded high-risk systems).
 
 When no client documents are provided, conduct the assessment against the most common findings at comparable institutions, clearly labelled as **typical findings pending model-specific evidence**, and list the artefacts you would need (inventory, validation reports, tuning logs, monitoring MI, DPIA, vendor documentation).
 

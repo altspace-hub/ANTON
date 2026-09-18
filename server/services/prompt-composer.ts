@@ -8,6 +8,7 @@ import {
   getMultiPerspectiveInstruction,
   getStructureReferenceInstruction,
   guardrailForArea,
+  childSafeguardingLayer,
 } from './prompt-builder.js';
 import { resolveSkills } from './skills-manager.js';
 import { getModuleSystemPrompt, getAreaContext } from './module-loader.js';
@@ -214,11 +215,13 @@ export interface ComposedPart {
  * Assembly order (Wave 1, 2026-09-16 — one order for every engine):
  *
  *   Static / cacheable (same across turns in a session):
+ *   0s  Child safeguarding           — child-facing modules only; FIRST and not overridable
  *   2   ANTON Ground Work Prompt     — identity, principles, quality standards
  *   2a  Organisational context       2b Knowledge packs   2c Roaring   2d Dow Jones   2e Atoms
  *   3   Area context                 — domain landscape, terminology, regulatory framework
  *   4   Module system prompt         — analytical framework for this module (user override wins)
- *   4c  Compliance guardrail         — regulated areas only (see GUARDRAIL_AREAS)
+ *   4c  Advice boundary              — compliance text for GUARDRAIL_AREAS, rights text
+ *                                      for RIGHTS_GUARDRAIL_AREAS
  *   4a  Resume context   4b Project context   4.5 Goals & values
  *
  *   Dynamic (changes per request — never cached):
@@ -414,6 +417,22 @@ export async function composeSystemPromptParts(config: PromptComposerConfig): Pr
 
   // ── Static layers ────────────────────────────────────────
 
+  // Layer 0s: child safeguarding — child-facing modules only (Wave 1 track B).
+  //
+  // FIRST, above the ground prompt, for the same reason Layer 0 leads
+  // buildSchoolPrompt: everything after this point is written for the task in
+  // progress. The homework module ends with a mandatory "Well done for trying!
+  // ... Ask me if you want to try another example", the tone and emoji layers ask
+  // for warmth and a closing emoji, and the output-format layer demands a report
+  // shape. Those are right for long division and exactly wrong in reply to a child
+  // saying someone at home frightens them. Arriving after them, a safeguarding
+  // protocol competes with them; arriving first, behind an explicit precedence
+  // banner, it governs them.
+  //
+  // Unlike layer4c below, this call is given no prompt text, so nothing a module
+  // file or a user's systemPromptOverride can contain will suppress it.
+  pushStatic('layer0_child_safeguarding', childSafeguardingLayer(config.moduleId));
+
   // Layer 2: ANTON Ground Work Prompt
   pushStatic('layer2_foundation', getFoundationPrompt());
 
@@ -449,8 +468,11 @@ export async function composeSystemPromptParts(config: PromptComposerConfig): Pr
   }
   pushStatic('layer4_module_prompt', modulePrompt);
 
-  // Layer 4c: Compliance guardrail — regulated areas, server-side (Wave 1)
-  pushStatic('layer4c_guardrail', guardrailForArea(config.areaId, modulePrompt));
+  // Layer 4c: advice boundary — regulated areas get the compliance text,
+  // rights/consumer areas get the plain-language variant (Wave 1 track B).
+  // moduleId is passed so a professional module sitting inside a rights area
+  // (see PROFESSIONAL_MODULES_IN_RIGHTS_AREAS) takes the compliance text instead.
+  pushStatic('layer4c_guardrail', guardrailForArea(config.areaId, modulePrompt, config.moduleId));
 
   // Layer 4a: Session Resume Context — restores paused-session state after module prompt
   pushStatic('layer4a_resume_context', config.resumeContextPrompt);

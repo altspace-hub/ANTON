@@ -111,7 +111,7 @@ Organise the gap analysis across AMLR's thematic structure. Cover all applicable
 - CBDD framework for new and existing correspondents
 - Nested account prohibition and monitoring (Art. 46.4)
 
-### 9. AMLA-Specific Readiness (from July 2027)
+### 9. AMLA-Specific Readiness (AMLA operational since 1 July 2025; direct supervision of selected entities from 1 January 2028)
 - Supervisory category determination: directly supervised by AMLA or national supervisor under AMLA authority
 - GoAML reporting system connectivity
 - Data readiness for AMLA direct data requests

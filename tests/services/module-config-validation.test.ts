@@ -342,9 +342,7 @@ describe('the shipped catalogue', () => {
    * tests/services/persona-registry-parity.test.ts pins the fix from the
    * registry side.
    */
-  const KNOWN_DEAD_PERSONA_IDS = new Set<string>([
-    'crypto-blockchain-expert', 'senior-risk-officer', 'risk-coach', 'senior-mlro',
-  ]);
+  const KNOWN_DEAD_PERSONA_IDS = new Set<string>([]);
 
   function everyModuleConfig(): Array<{ where: string; config: ModuleConfig }> {
     const repoRoot = path.resolve(__dirname, '..', '..');

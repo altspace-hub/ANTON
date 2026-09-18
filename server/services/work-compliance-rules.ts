@@ -25,7 +25,7 @@ import { capabilityModelId } from './engine-model-id.js';
 export const WORK_RULE_CATEGORY = 'work';
 
 /** Areas where an answer without a single citable reference is a finding. */
-export const REGULATED_AREAS: readonly string[] = ['fcp', 'legal', 'tax', 'data-privacy', 'payments-dora'];
+export const REGULATED_AREAS: readonly string[] = ['fcp', 'legal', 'tax-transfer-pricing', 'data-privacy', 'payments-dora'];
 
 /** Output length floor for a deliverable (chars). */
 export const WORK_MIN_DELIVERABLE_CHARS = 400;

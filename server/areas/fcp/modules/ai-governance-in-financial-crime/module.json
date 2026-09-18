@@ -118,7 +118,7 @@
       "placeholder": "e.g. ML alert-scoring model retrained quarterly but no documented bias test; investigators trust the score and rarely override (automation-bias risk); vendor will not disclose features; no AI inventory mapping use cases to AI Act risk tiers; SAR rationale cannot reference which model signals drove the alert."
     }
   ],
-  "exampleInput": "We are a Swedish bank (~2,400 staff, full AMLR scope, directly DORA-regulated) that replaced our legacy rules-only transaction-monitoring engine with a supervised-ML alert-scoring model from a RegTech vendor. The model ranks alerts 0-100 and our level-1 team auto-closes everything below 30; roughly 65% of alerts are now suppressed before a human sees them. The model is retrained quarterly on our investigators' disposition labels. Compliance is worried we cannot explain to Finansinspektionen why a given customer's alert was suppressed, the vendor will not share the feature list ('proprietary'), and we have never run a bias or disparate-impact test across customer segments. We also use a GenAI assistant (foundation model via API) to draft SAR narratives. Assess our AI governance against EU AI Act Title III high-risk requirements, AMLR risk-based-approach and record-keeping obligations, and DORA ICT third-party governance — and tell us what we must fix before the AI Act high-risk obligations bite in August 2026 and before our next FI inspection. We have no AI system inventory and no documented human-oversight model for the auto-closure threshold.",
+  "exampleInput": "We are a Swedish bank (~2,400 staff, full AMLR scope, directly DORA-regulated) that replaced our legacy rules-only transaction-monitoring engine with a supervised-ML alert-scoring model from a RegTech vendor. The model ranks alerts 0-100 and our level-1 team auto-closes everything below 30; roughly 65% of alerts are now suppressed before a human sees them. The model is retrained quarterly on our investigators' disposition labels. Compliance is worried we cannot explain to Finansinspektionen why a given customer's alert was suppressed, the vendor will not share the feature list ('proprietary'), and we have never run a bias or disparate-impact test across customer segments. We also use a GenAI assistant (foundation model via API) to draft SAR narratives. Assess our AI governance against EU AI Act Title III high-risk requirements, AMLR risk-based-approach and record-keeping obligations, and DORA ICT third-party governance — and tell us what we must fix before the AI Act Annex III high-risk obligations bite in December 2027 and before our next FI inspection. We have no AI system inventory and no documented human-oversight model for the auto-closure threshold.",
   "exampleValues": {
     "entity_type": "bank",
     "ai_use_case": ["tm_alerting", "alert_triage", "genai_assist"],
@@ -138,6 +138,9 @@
     "fcp-expert",
     "tech-expert",
     "legal-expert"
+  ],
+  "recommendedSkills": [
+    "amlr-article-reference"
   ],
   "tags": [
     "ai-governance",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { MODULES, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
+import { RIGHTS_ADVICE_AREAS as RIGHTS_DISCLAIMER_AREAS } from '@/lib/advice-boundary-areas';
 import type { KnowledgeSourceConfig, KnowledgeLibraryEntry } from '@/lib/types';
 import { useSessionStore } from '@/stores/useSessionStore';
 import { useStreamStore } from '@/stores/useStreamStore';
@@ -846,6 +847,18 @@ export default function ModulePage() {
           {(areaId === 'healthcare' || areaId === 'community-health') && (
             <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/10 px-3 py-2 text-xs text-adv-gold">
               <strong>Medical information only — not clinical advice.</strong> AI output may contain errors. Always consult a qualified healthcare professional for diagnosis, treatment, or medication decisions.
+            </div>
+          )}
+
+          {/* Rights / consumer disclaimer — the same gate as the medical banner above,
+              for the areas where the user is acting on a deadline or on their own money.
+              This is the SAME set the server prompt layer reads
+              (RIGHTS_GUARDRAIL_AREAS in prompt-builder.ts re-exports it), so an area
+              cannot get the banner without the prompt boundary or the reverse. Note
+              'consumer-rights' is the area.json id of the consumer-protection directory. */}
+          {RIGHTS_DISCLAIMER_AREAS.has(areaId ?? '') && (
+            <div className="rounded-lg border border-adv-gold/30 bg-adv-gold/10 px-3 py-2 text-xs text-adv-gold">
+              <strong>General information — not legal or financial advice.</strong> AI output may contain errors. Rules and deadlines differ by country and region, and some rights are lost once a time limit passes — check anything time-critical with a local adviser, legal aid service, union, or the relevant authority.
             </div>
           )}
 

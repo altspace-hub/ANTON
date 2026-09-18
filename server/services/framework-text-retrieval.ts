@@ -30,6 +30,30 @@ export interface FrameworkArticle {
   section?: string | null;
   theme?: string;
   requirement: string;
+  /**
+   * Wave 1H — optional, retrieval-only. The words a practitioner would TYPE when
+   * they want this article, which the one-sentence summary in `requirement` does
+   * not happen to contain.
+   *
+   * This is a corpus fix for a corpus defect. AI Act Art.50 is the transparency
+   * obligation that binds a marketer, and its stored sentence reads "…intended
+   * to interact with persons, generate synthetic content (deepfakes), or perform
+   * emotion recognition…" — no "marketing", no "chatbot", no "label", no
+   * "disclosure". No amount of re-weighting can select an article with zero term
+   * overlap, and the alternative (stemming `generated`→`generate`) also maps
+   * `marketing`→`market` and would resurrect the "placing on the market" false
+   * positives that Wave 1F removed.
+   *
+   * The discipline that keeps this safe: an alias is a term the article SHOULD BE
+   * FOUND BY, not a term it mentions. Alias terms are rare by construction and so
+   * carry near-maximum IDF weight — a generous list reintroduces the noise
+   * through the front door and the weighted-mass gate will not catch it.
+   *
+   * Aliases never appear in the injected text; they only decide selection, and
+   * they score exactly like a body hit (no title bonus) and are counted in the
+   * framework's document frequencies like any other term.
+   */
+  aliases?: string[];
 }
 
 export interface FrameworkDoc {
@@ -106,9 +130,19 @@ export function loadFrameworkIndex(dir: string = DEFAULT_FRAMEWORKS_DIR): Framew
         reference: typeof raw.reference === 'string' ? raw.reference : undefined,
         eurLex: typeof raw.eurLex === 'string' ? raw.eurLex : undefined,
         articleCount: typeof raw.articleCount === 'number' ? raw.articleCount : undefined,
-        articles: (raw.articles as FrameworkArticle[]).filter(
-          (a) => a && typeof a.id === 'string' && typeof a.requirement === 'string'
-        ),
+        articles: (raw.articles as FrameworkArticle[])
+          .filter((a) => a && typeof a.id === 'string' && typeof a.requirement === 'string')
+          // Wave 1H: `aliases` is hand-authored data in 60 files that also ship
+          // to the Gap Assessor, so it is normalised here rather than trusted —
+          // a string instead of an array, or a number inside one, must not reach
+          // the tokenizer. Absent stays absent (the field is optional).
+          .map((a) => {
+            if (a.aliases === undefined) return a;
+            const aliases = Array.isArray(a.aliases)
+              ? a.aliases.filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
+              : [];
+            return { ...a, aliases };
+          }),
       });
     } catch { /* skip malformed framework file */ }
   }
@@ -133,12 +167,47 @@ const STOPWORDS = new Set([
   'new', 'into', 'than', 'then', 'also', 'such', 'per', 'between', 'within',
 ]);
 
+/**
+ * Wave 1F: fold the regular English plural so a query term and the article text
+ * meet on one key ("logs"/"log", "providers"/"provider", "policies"/"policy").
+ *
+ * Deliberately conservative — only the -s / -es / -ies endings, and never on a
+ * word that ends in `ss`, `us` or `is` ("business", "status", "analysis").
+ * This replaces the recall that the old substring match provided in one
+ * direction only (a short query term found a longer word in the text, never the
+ * reverse) without its false positives ("log" ⊂ "catalogue", "art" ⊂ "part").
+ */
+export function foldPlural(word: string): string {
+  if (word.length < 4 || !word.endsWith('s')) return word;
+  // Singulars that already end in -s: "business", "status", "analysis", "bias".
+  if (/(?:ss|us|is|ias)$/.test(word)) return word;
+  if (word.length >= 5 && word.endsWith('ies')) return `${word.slice(0, -3)}y`;
+  // -es is only the plural marker after a sibilant; elsewhere it is -e plus -s
+  // ("breaches" → "breach", but "cases" → "case", not "cas").
+  if (word.length >= 5 && /(?:ch|sh|x|z|ss|ias)es$/.test(word)) return word.slice(0, -2);
+  return word.slice(0, -1);
+}
+
+/**
+ * Words of a text, normalised for matching: lowercased, ≥3 characters, plural
+ * folded. A hyphenated compound contributes both the compound and its parts, so
+ * "high-risk" is still the distinctive term it is while a query saying "risk"
+ * reaches it.
+ */
+function words(text: string): string[] {
+  const out: string[] = [];
+  for (const raw of text.toLowerCase().split(/[^a-z0-9-]+/)) {
+    if (raw.length < 3) continue;
+    out.push(foldPlural(raw));
+    if (raw.includes('-')) {
+      for (const part of raw.split('-')) if (part.length >= 3) out.push(foldPlural(part));
+    }
+  }
+  return out;
+}
+
 function tokenize(text: string): string[] {
-  return [...new Set(
-    text.toLowerCase()
-      .split(/[^a-z0-9-]+/)
-      .filter((t) => t.length >= 3 && !STOPWORDS.has(t))
-  )];
+  return [...new Set(words(text).filter((t) => !STOPWORDS.has(t)))];
 }
 
 /** Extract explicit article numbers from the query: "Art.12", "Article 12(3)". */
@@ -223,12 +292,143 @@ function matchFrameworks(
   return out;
 }
 
+// ── Per-framework term statistics (IDF) ───────────────────────────────────────
+
+/**
+ * Wave 1F. Before this, every query term counted 1. Generic regulatory
+ * vocabulary — "system", "provider", "market", "risk", "compliance" — sits in a
+ * large share of the articles of any framework and so carries no discriminative
+ * power, yet it scored exactly like a distinctive term. On a short query the
+ * generic terms are most of the signal, which is how a copywriting brief in
+ * `branding` pulled AI Act Art.47 (EU declaration of conformity) and Art.22
+ * (authorised representatives) purely on "market" and "system".
+ *
+ * A term's weight is now its inverse document frequency inside the framework it
+ * is being matched against, normalised by log(N) so the weight of a term that
+ * appears in exactly one article is 1.0 in a 4-article framework and in a
+ * 106-article one alike. Without that normalisation a large framework would
+ * out-score a small one on every query, because its raw log(N/df) ceiling is
+ * higher — and the ranking here is across frameworks.
+ */
+interface ArticleTerms {
+  title: ReadonlySet<string>;
+  body: ReadonlySet<string>;
+  /**
+   * Wave 1H. Kept apart from `body` so the alias contribution stays visible and
+   * removable — a term here scores exactly like a body hit (no title bonus) and
+   * is counted in the document frequencies like any other term, so an alias
+   * repeated across many articles loses weight the same way "processing" does.
+   */
+  alias: ReadonlySet<string>;
+}
+
+interface DocTermStats {
+  articleCount: number;
+  /** term → number of articles (title or body) containing it. */
+  documentFrequency: ReadonlyMap<string, number>;
+  /** Parallel to doc.articles. */
+  articles: ArticleTerms[];
+  /** log(articleCount); 0 when the framework is too small for IDF to mean anything. */
+  logN: number;
+}
+
+/**
+ * Keyed on the FrameworkDoc object itself, which loadFrameworkIndex() caches and
+ * reuses for the life of the process — so the statistics are built once per
+ * framework file, not once per request. resetFrameworkIndexForTests() drops the
+ * docs and the entries here become garbage with them.
+ */
+const statsCache = new WeakMap<FrameworkDoc, DocTermStats>();
+
+/** Below this many articles, document frequency is noise — every term weighs 1. */
+const MIN_ARTICLES_FOR_IDF = 5;
+
+function documentStats(doc: FrameworkDoc): DocTermStats {
+  const cached = statsCache.get(doc);
+  if (cached) return cached;
+  const df = new Map<string, number>();
+  const articles: ArticleTerms[] = [];
+  for (const article of doc.articles) {
+    const title = new Set(words(article.title));
+    const body = new Set(words(`${article.requirement} ${article.theme ?? ''} ${article.section ?? ''}`));
+    const alias = new Set(article.aliases?.length ? words(article.aliases.join(' ')) : []);
+    articles.push({ title, body, alias });
+    for (const t of new Set([...title, ...body, ...alias])) df.set(t, (df.get(t) ?? 0) + 1);
+  }
+  const stats: DocTermStats = {
+    articleCount: doc.articles.length,
+    documentFrequency: df,
+    articles,
+    logN: doc.articles.length >= MIN_ARTICLES_FOR_IDF ? Math.log(doc.articles.length) : 0,
+  };
+  statsCache.set(doc, stats);
+  return stats;
+}
+
+/**
+ * Acronyms that identify the framework itself ("GDPR", "AMLR", "DORA").
+ *
+ * A query that names the regulation already made the whole document a strong
+ * candidate; letting the same word *also* pick articles is double counting, and
+ * under weighting it is actively harmful — the acronym appears in one or two
+ * article bodies by coincidence, so it earns near-maximum weight there. That is
+ * how "…against AMLR" surfaced AMLR Art.4 (gambling-service exemptions) and how
+ * "Healthcare GDPR compliance" surfaced GDPR Art.27 (representatives of
+ * controllers) and Art.82 (right to compensation).
+ *
+ * Only the upper-case runs of the shortName count, so "UK Online Safety Act"
+ * keeps "online" and "safety" as ordinary searchable terms.
+ */
+function identityTerms(shortName: string): Set<string> {
+  const out = new Set<string>();
+  for (const run of shortName.match(/\b[A-Z][A-Z0-9]{2,}\b/g) ?? []) out.add(run.toLowerCase());
+  return out;
+}
+
+/**
+ * Discriminative weight of `term` inside `doc`, in [0, 1]:
+ * a term in one article → 1.0, a term in every article → 0.
+ */
+function termWeight(term: string, stats: DocTermStats): number {
+  const df = stats.documentFrequency.get(term) ?? 0;
+  if (df === 0) return 0;
+  if (stats.logN <= 0) return 1; // too few articles to distinguish — fall back to flat
+  return Math.max(0, Math.log(stats.articleCount / df) / stats.logN);
+}
+
 // ── Article scoring ───────────────────────────────────────────────────────────
+
+/**
+ * Minimum weighted mass an article must carry before it is allowed to ground
+ * anything. 0.8 is roughly "one term that appears in at most two articles of
+ * this framework", or "two terms that each appear in a quarter of them".
+ *
+ * What changed and why:
+ *   - The old gate was a raw count — `overlap >= 2`, or `>= 1` with a title hit
+ *     for a named framework. A short query satisfies a count gate with two
+ *     ubiquitous words ("system", "market"), which is how a copywriting brief
+ *     reached the AI Act's conformity-assessment chapter.
+ *   - The count is still the right shape for a WEAK candidate: nothing in the
+ *     query said the user wanted that framework, so one coincidental word —
+ *     however rare — is not enough. `overlap >= 2` is therefore kept as a floor
+ *     on weak candidates and the mass threshold added on top of it. (Dropping
+ *     the count and gating weak candidates on mass alone let AI Act Art.19
+ *     "Automatically generated logs" ground a social-media brief on the single
+ *     word "generated"; keeping it blocks that and still admits UN 1267 "asset
+ *     freeze" for a sanctions-screening question.)
+ *   - For a STRONG candidate the count floor is dropped: the user named the
+ *     regulation, so one genuinely distinctive term is evidence enough, and the
+ *     mass threshold is what stops a ubiquitous one.
+ */
+const MIN_MASS = 0.8;
+const MIN_OVERLAP_WEAK = 2;
 
 interface ScoredArticle {
   doc: FrameworkDoc;
   article: FrameworkArticle;
   score: number;
+  /** 1 = the query named this framework, 0 = only the area/pack scope offered it. */
+  tier: 0 | 1;
 }
 
 function scoreArticles(
@@ -240,31 +440,55 @@ function scoreArticles(
   const scored: ScoredArticle[] = [];
 
   for (const { doc, strength } of candidates) {
-    for (const article of doc.articles) {
+    const stats = documentStats(doc);
+    // Term weights are per framework — "risk" is generic inside the AI Act and
+    // distinctive inside a data-protection act — so they are resolved once per
+    // (framework, query) pair rather than once per article.
+    const identity = identityTerms(doc.shortName);
+    const weights = new Map<string, number>();
+    for (const term of terms) weights.set(term, identity.has(term) ? 0 : termWeight(term, stats));
+
+    for (let i = 0; i < doc.articles.length; i++) {
+      const article = doc.articles[i];
+      const articleTerms = stats.articles[i];
       let score = 0;
       // Exact article reference for a strongly matched framework wins outright
       const artNum = article.id.replace(/^[^0-9]*/, '').toLowerCase();
       if (strength === 'strong' && artNum && explicitArts.has(artNum)) {
         score += 1000;
       }
-      const haystackTitle = article.title.toLowerCase();
-      const haystackBody = `${article.requirement} ${article.theme ?? ''} ${article.section ?? ''}`.toLowerCase();
+      let mass = 0;
       let overlap = 0;
       let titleHit = false;
       for (const term of terms) {
-        if (haystackTitle.includes(term)) { overlap++; titleHit = true; }
-        else if (haystackBody.includes(term)) overlap++;
+        const w = weights.get(term) ?? 0;
+        if (articleTerms.title.has(term)) { overlap++; titleHit = true; mass += w; }
+        // Wave 1H: an alias hit is a body hit. It adds weight and corroboration
+        // (so it can satisfy MIN_OVERLAP_WEAK) but never the title bonus, and it
+        // never bypasses MIN_MASS.
+        else if (articleTerms.body.has(term) || articleTerms.alias.has(term)) { overlap++; mass += w; }
       }
       if (strength === 'strong') {
-        if (overlap >= 2 || (overlap >= 1 && titleHit)) score += 10 * overlap + (titleHit ? 5 : 0);
+        if (mass >= MIN_MASS) score += 10 * mass + (titleHit ? 5 : 0);
       } else {
-        // Pack-scope only: demand stronger evidence of relevance
-        if (overlap >= 2) score += 5 * overlap + (titleHit ? 3 : 0);
+        // Pack/area scope only: demand corroboration as well as weight
+        if (overlap >= MIN_OVERLAP_WEAK && mass >= MIN_MASS) score += 5 * mass + (titleHit ? 3 : 0);
       }
-      if (score > 0) scored.push({ doc, article, score });
+      if (score > 0) scored.push({ doc, article, score, tier: strength === 'strong' ? 1 : 0 });
     }
   }
-  scored.sort((a, b) => b.score - a.score);
+  /**
+   * Wave 1F: a framework the user NAMED outranks one the area map merely
+   * offered, whatever the arithmetic says. Weighting made scores comparable
+   * across frameworks for the first time, and that exposed a latent unfairness:
+   * a 14-article questionnaire in which every query term is rare accumulates
+   * more weighted mass than the 90-article regulation the user actually asked
+   * about, where the same concepts are spread over thirty articles. Sorting on
+   * the tier first keeps "AMLR gap analysis" grounded in AMLR. The +1000 exact
+   * article-number override can only occur on a strong candidate, so it still
+   * sorts to the very top.
+   */
+  scored.sort((a, b) => (b.tier - a.tier) || (b.score - a.score));
   return scored;
 }
 

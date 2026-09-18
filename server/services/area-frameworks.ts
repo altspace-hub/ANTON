@@ -21,7 +21,33 @@
  */
 import { FRAMEWORK_DOMAINS, type GapDomain } from './gap-domains.js';
 
-/** The Gap Assessor domains a Work area is allowed to be grounded in. */
+/**
+ * The Gap Assessor domains a Work area is allowed to be grounded in.
+ *
+ * Rules for editing this table (enforced by tests/services/area-frameworks.test.ts):
+ *
+ *   - The key must be a real area id — the `id` field of a
+ *     `server/areas/<dir>/area.json` (note `consumer-protection/` declares
+ *     `consumer-rights`, deliberately) or an id in src/lib/constants.ts AREAS
+ *     (`payments-dora` is a front-end-only area whose modules have no
+ *     server/areas directory, but the front end still sends that areaId).
+ *   - Every domain listed must resolve to at least one framework file. The
+ *     `compliance` domain does NOT: it is gap-domains.ts's fallback *persona*
+ *     for a framework that has no domain entry, and no shipped framework is
+ *     mapped to it. Listing it here was a silent no-op (it added zero
+ *     frameworks to legal / audit / risk) and is now rejected by the tests.
+ *     If a genuinely generic framework is ever mapped to `compliance`, add the
+ *     domain back here — the reverse test will demand it.
+ *   - Only map a domain an area's modules actually work in. These ids enter the
+ *     retriever as *weak* scope (framework-text-retrieval.ts `matchFrameworks`),
+ *     which needs two query-term hits per article before it scores — but a
+ *     wrong domain still leaks articles on generic words like "risk",
+ *     "assessment" and "control". An unmapped area is better than a wrong one.
+ *
+ * Areas deliberately left unmapped have no shipped framework for their subject
+ * (property/EPBD, the consumer acquis, employment, tax, product safety,
+ * competition, procurement, media) — see the Wave 1 notes in not_to_github/.
+ */
 export const AREA_DOMAINS: Readonly<Record<string, readonly GapDomain[]>> = {
   fcp: ['aml', 'sanctions', 'anti-bribery', 'digital-assets', 'financial-conduct'],
   blockchain: ['digital-assets', 'aml', 'sanctions'],
@@ -32,18 +58,55 @@ export const AREA_DOMAINS: Readonly<Record<string, readonly GapDomain[]>> = {
   'payments-dora': ['ict-resilience', 'financial-conduct'],
   cyber: ['infosec', 'ict-resilience', 'privacy'],
   'data-privacy': ['privacy', 'ai-governance'],
-  legal: ['corporate-governance', 'compliance', 'privacy', 'anti-bribery'],
-  audit: ['compliance', 'corporate-governance', 'aml'],
-  risk: ['aml', 'ict-resilience', 'compliance'],
+  legal: ['corporate-governance', 'privacy', 'anti-bribery'],
+  audit: ['corporate-governance', 'aml'],
+  risk: ['aml', 'ict-resilience'],
   esg: ['esg'],
   'software-eng': ['ai-governance', 'privacy', 'infosec'],
   coding: ['ai-governance', 'infosec'],
-  hr: ['privacy'],
+  // Recruitment, selection, promotion, termination, task allocation and
+  // performance evaluation are AI Act Annex III(4) high-risk uses, and this
+  // area ships cv-screener, interview-question-gen, performance-review and
+  // org-restructuring-advisor. The AI Act could not reach any of them.
+  hr: ['privacy', 'ai-governance'],
   'mobile-money': ['aml', 'financial-conduct'],
   microfinance: ['aml', 'financial-conduct'],
   'islamic-finance': ['financial-conduct', 'aml'],
-  'comms-pr': ['online-safety'],
-  marketing: ['online-safety', 'privacy'],
+  // crisis-comms-response's own prompt names the GDPR 72-hour breach
+  // notification and DORA operational incident reporting; investor-update-letter
+  // and press-release are synthetic-content surfaces under AI Act Art 50.
+  'comms-pr': ['online-safety', 'privacy', 'ict-resilience', 'ai-governance'],
+  // AI Act Art 50 transparency for AI-generated campaign copy and imagery,
+  // on top of the targeting/profiling privacy rules already mapped.
+  marketing: ['online-safety', 'privacy', 'ai-governance'],
+  // copywriting / campaign-design / content-strategy publish AI-generated
+  // material (Art 50) and campaign-design's prompt already tells the model to
+  // "ensure GDPR compliance in all data collection and email marketing".
+  branding: ['ai-governance', 'privacy'],
+  // healthcare-gdpr and research-ethics are pure GDPR; medical-device-compliance
+  // and clinical-protocol sit on AI-as-safety-component (AI Act Art 6(1)).
+  healthcare: ['privacy', 'ai-governance'],
+  // prd-requirements and user-research-personas carry data-protection-by-design
+  // (GDPR Art 25); AI features in a product make the firm an AI Act provider.
+  'product-management': ['privacy', 'ai-governance'],
+  // data-governance / data-quality / data-strategy are GDPR Art 5 accuracy and
+  // storage limitation, and AI Act Art 10 / ISO 42001 data governance.
+  'data-analytics': ['privacy', 'ai-governance'],
+  // ux-research-plan's prompt already mandates "consent, data handling,
+  // anonymisation plan"; design-system work is GDPR Art 25 by-design territory.
+  design: ['privacy'],
+  // digital-service-design and regulatory-impact-assessment for public bodies:
+  // GDPR applies to authorities, and AI Act Annex III(5) + the Art 27
+  // fundamental-rights impact assessment bind public-sector deployers.
+  government: ['privacy', 'ai-governance'],
+  'public-sector': ['privacy', 'ai-governance'],
+  // esg-adjusted-financial-reporting cites CSRD/ESRS by reference; the
+  // financial-statement and internal-controls modules sit on directors'
+  // accounting-records and financial-statement duties.
+  accounting: ['esg', 'corporate-governance'],
+  // Retail advice for "financial planners, wealth advisors": suitability and
+  // consumer-outcome rules (MiFID II Art 24-25, FCA Consumer Duty, CBI CPC).
+  'personal-finance': ['financial-conduct'],
 };
 
 let domainToFrameworks: Map<GapDomain, string[]> | null = null;
@@ -91,23 +154,40 @@ const PACK_RULES: ReadonlyArray<{ match: RegExp; areas: readonly string[] }> = [
     areas: ['fcp', 'blockchain', 'banking', 'risk', 'audit', 'legal', 'investment', 'payments-dora'] },
   { match: /\b(bribery|corruption|fcpa|uncac)\b/i, areas: ['fcp', 'legal', 'audit', 'risk', 'consulting'] },
   { match: /\b(gdpr|data protection|privacy|ai act|ai governance)\b/i,
-    areas: ['data-privacy', 'legal', 'cyber', 'software-eng', 'coding', 'hr', 'healthcare', 'marketing', 'product-management'] },
+    areas: ['data-privacy', 'legal', 'cyber', 'software-eng', 'coding', 'hr', 'healthcare', 'marketing', 'product-management',
+      // Wave 1: kept in step with AREA_DOMAINS — these areas can now be
+      // grounded in privacy / ai-governance frameworks, so a privacy or AI
+      // pack must reach them too.
+      'branding', 'comms-pr', 'data-analytics', 'design', 'government', 'public-sector'] },
   { match: /\b(dora|nis2|cyber|digital resilience|ict|cybersecurity)\b/i,
-    areas: ['payments-dora', 'cyber', 'banking', 'insurance', 'software-eng', 'risk', 'fcp'] },
+    areas: ['payments-dora', 'cyber', 'banking', 'insurance', 'software-eng', 'risk', 'fcp',
+      // crisis-comms-response works the DORA/NIS2 incident-notification clock.
+      'comms-pr'] },
   { match: /\b(mifid|mifir|mar\b|csmad|emir|sftr|aifmd|ucits|priips|capital markets|investment services|investment funds|asset management|market integrity)\b/i,
     areas: ['investment', 'banking', 'pe-vc', 'legal', 'fcp'] },
   { match: /\b(crr|crd|prudential|basel|mica|crypto|virtual asset|stablecoin)\b/i,
     areas: ['banking', 'blockchain', 'fcp', 'risk', 'investment'] },
-  { match: /\b(esg|csrd|sfdr|taxonomy|sustainable)\b/i, areas: ['esg', 'banking', 'investment', 'legal', 'consulting'] },
-  { match: /\b(employment|labou?r|working time|equal treatment)\b/i, areas: ['hr', 'legal'] },
+  // 'accounting' ships esg-adjusted-financial-reporting (CSRD/ESRS into the
+  // financial statements), so a CSRD pack belongs there as well.
+  { match: /\b(esg|csrd|sfdr|taxonomy|sustainable)\b/i, areas: ['esg', 'banking', 'investment', 'legal', 'consulting', 'accounting'] },
+  // 'workers-rights' and 'consumer-legal' are the two areas whose modules are
+  // *about* employment rights; they were routed nowhere.
+  { match: /\b(employment|labou?r|working time|equal treatment|pay transparency|platform work)\b/i,
+    areas: ['hr', 'legal', 'workers-rights', 'consumer-legal'] },
   { match: /\b(competition|merger|procurement|company law|corporate|civil|litigation|dispute|intellectual property|licensing|trade mark|tfeu)\b/i,
-    areas: ['legal', 'consulting', 'startups', 'pe-vc', 'public-sector', 'government'] },
+    areas: ['legal', 'consulting', 'startups', 'pe-vc', 'public-sector', 'government', 'procure'] },
   { match: /\b(psd2|psd3|psr|payment services|payment infrastructure|swift|iso 20022|tfr)\b/i,
     areas: ['payments-dora', 'banking', 'fcp', 'mobile-money', 'blockchain'] },
   { match: /\b(insurance|reinsurance|solvency)\b/i, areas: ['insurance', 'fcp', 'risk'] },
-  { match: /\b(microfinance|financial inclusion|consumer protection|bop\b)/i,
-    areas: ['microfinance', 'mobile-money', 'personal-finance-bop', 'consumer-rights', 'micro-business', 'fcp'] },
-  { match: /\b(online safety|eccta|multi-domain)\b/i, areas: ['fcp', 'legal', 'cyber', 'data-privacy', 'comms-pr'] },
+  // 'consumer-legal' and 'credit-navigator' are consumer-facing rights areas
+  // that a consumer-protection or consumer-credit pack must reach.
+  { match: /\b(microfinance|financial inclusion|consumer protection|consumer credit|bop\b)/i,
+    areas: ['microfinance', 'mobile-money', 'personal-finance-bop', 'consumer-rights', 'consumer-legal', 'credit-navigator',
+      'micro-business', 'personal-finance', 'fcp'] },
+  // marketing and branding publish the content the online-safety and
+  // advertising rules bite on.
+  { match: /\b(online safety|eccta|multi-domain)\b/i,
+    areas: ['fcp', 'legal', 'cyber', 'data-privacy', 'comms-pr', 'marketing', 'branding'] },
 ];
 
 function packText(p: PackAreaInput): string {

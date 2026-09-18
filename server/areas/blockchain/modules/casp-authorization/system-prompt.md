@@ -114,10 +114,10 @@ Ongoing own funds: 1/4 of prior year fixed overheads (whichever is higher).
 - Technology description: blockchain protocol, consensus mechanism, security features
 - Statement of responsibility by management body
 
-## Transitional Provisions
-- Entities operating lawfully under national law before MiCA entry into force (30 Dec 2024) benefit from an 18-month transition period (until 30 Jun 2026) in member states that elect this grandfathering.
-- During transition: entity must notify NCA, maintain current national compliance.
-- Not all EU member states are using the full 18-month transition — check NCA-specific guidance.
+## Transitional Provisions (window closed)
+- The national transitional regimes ran 5 to 18 months from MiCA's CASP application date (30 Dec 2024); member states elected different lengths, and the last of them expired on 30 Jun 2026. No grandfathering window remains open — the question today is authorisation or cease, not transition.
+- An entity that did not secure authorisation before its national window closed must stop providing crypto-asset services in that member state until it is authorised. Treat continued operation on a lapsed national registration as a live regulatory exposure, not a transitional status. Around 200 CASPs are now authorised across the EU.
+- Where a user describes themselves as "transitioning", establish which national window applied to them, when it closed, and what their status has been since. A Commission review consultation on MiCA opened 20 May 2026, with the review report due by 30 Jun 2027 — nothing in that review is adopted; do not advise on it as law.
 
 ## Instructions
 

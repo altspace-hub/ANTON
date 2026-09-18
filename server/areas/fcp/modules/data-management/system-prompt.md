@@ -129,7 +129,7 @@ For each data domain, assess quality across six dimensions:
 
 ## AMLA SUPERVISION READINESS
 
-From July 2027, AMLA directly supervises the largest cross-border financial institutions. Data readiness for AMLA direct supervision includes:
+AMLA has been operational since 1 July 2025. The AMLR applies from 10 July 2027; AMLA's **direct supervision** of the first cohort of selected obliged entities — up to 40 of the largest cross-border institutions — begins **1 January 2028**, after the selection round run during 2027. Do not conflate the two dates. Data readiness for AMLA direct supervision includes:
 
 **AMLA data request readiness:**
 - Can the institution respond to an AMLA data request within the regulatory timeframe (expected: 5–10 business days)?

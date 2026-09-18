@@ -20,8 +20,20 @@ import {
   buildWorkRuleContext,
   buildWorkRecordContext,
   ensureWorkComplianceRules,
+  REGULATED_AREAS,
   type WorkRunInput,
 } from '../../server/services/work-compliance-rules.js';
+import fs from 'fs-extra';
+import path from 'path';
+
+/**
+ * Areas listed in REGULATED_AREAS that legitimately have no `server/areas/<id>/`
+ * directory because they are defined client-side only (`src/lib/area-patches/`).
+ * Anything else in the list must be a real area on disk, or the rule silently
+ * never fires — which is exactly how `'tax'` (for `tax-transfer-pricing`) went
+ * unnoticed: the test asserted the same wrong string the code used.
+ */
+const FRONT_END_ONLY_REGULATED_AREAS = new Set(['payments-dora']);
 
 // ── Fake adapter for the seeder ─────────────────────────────────────────────
 
@@ -203,8 +215,17 @@ describe('WORK-003 citation in a regulated area', () => {
     '', '**Sources, assumptions and what was not checked**', '- internal review only',
   ].join('\n');
 
-  it('fires for fcp / legal / tax / data-privacy / payments-dora with no reference', () => {
-    for (const areaId of ['fcp', 'legal', 'tax', 'data-privacy', 'payments-dora']) {
+  it('every id in REGULATED_AREAS is a real area, so the rule can actually fire', () => {
+    const areasDir = path.resolve(__dirname, '../../server/areas');
+    for (const areaId of REGULATED_AREAS) {
+      if (FRONT_END_ONLY_REGULATED_AREAS.has(areaId)) continue;
+      const areaJson = path.join(areasDir, areaId, 'area.json');
+      expect(fs.pathExistsSync(areaJson), `REGULATED_AREAS names '${areaId}', which has no server/areas/${areaId}/area.json — the rule would never fire for it`).toBe(true);
+    }
+  });
+
+  it('fires for fcp / legal / tax-transfer-pricing / data-privacy / payments-dora with no reference', () => {
+    for (const areaId of ['fcp', 'legal', 'tax-transfer-pricing', 'data-privacy', 'payments-dora']) {
       const r = run('WORK-003', input({ text: uncited, areaId }));
       expect(r.result, areaId).toBe('fail');
       expect(r.findings[0].description).toMatch(/No article, section or regulation reference/);

@@ -60,7 +60,7 @@ For the specified entity type, jurisdictions, and regulatory areas, identify all
 
 **One-Time Implementation Deadlines**
 - AMLR application: July 2027 for most provisions
-- AMLA supervision start: 2027 for directly supervised entities
+- AMLA direct supervision start: 1 January 2028 for selected obliged entities (AMLA itself operational since 1 July 2025; the first selection round runs during 2027)
 - Any national transposition measures with specific deadlines
 
 ### 2. Calendar Compilation

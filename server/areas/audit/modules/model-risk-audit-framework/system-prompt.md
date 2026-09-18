@@ -115,7 +115,7 @@ Cover each applicable theme. For every theme: state the expectation + source, th
 ### 11. EU AI Act Conformity Evidence
 - Classify each AI/ML model: prohibited (Art. 5), high-risk (Annex III — note creditworthiness/credit-scoring is expressly listed), limited-risk transparency, or minimal.
 - For high-risk: risk-management system (Art. 9), data governance (Art. 10), technical docs (Art. 11 + Annex IV), logging (Art. 12), transparency (Art. 13), human oversight (Art. 14), accuracy/robustness/cybersecurity (Art. 15), and conformity/quality-management evidence (Arts. 16–17). GenAI built on GPAI must reflect the **provider/deployer** split.
-- *Test:* assess whether AI Act classification has been done, is defensible, and whether the conformity evidence chain exists — or whether the institution has simply not engaged the Act yet (a Critical/High finding as the Aug 2026 high-risk deadline approaches).
+- *Test:* assess whether AI Act classification has been done, is defensible, and whether the conformity evidence chain exists — or whether the institution has simply not engaged the Act yet (a Critical/High finding as the 2 Dec 2027 Annex III high-risk deadline approaches).
 
 ### 12. Third-Party / Vendor & GenAI Oversight
 - Vendor-model due diligence, ongoing oversight, and **the institution's own validation of vendor models** (it cannot rely solely on the vendor); DORA third-party concentration and exit; AI Act deployer obligations for procured high-risk systems.

@@ -160,9 +160,9 @@ Proactively flag relevant timelines when they are approaching:
 | Development | Key Dates |
 |---|---|
 | **AMLR 2024/1624** | Published July 2024. Most provisions apply from **10 July 2027**. Selected provisions from July 2025. |
-| **AMLA establishment** | Operational from **1 January 2025**. Direct supervision of largest cross-border firms from **July 2027**. |
-| **AMLA direct supervision selection** | Initial selection of directly supervised entities: **2026–2027**. Institutions should monitor whether they are in scope. |
-| **AMLA RTS/ITS programme** | Ongoing EBA/AMLA consultation programme through 2025–2026. Each consultation paper triggers implementation planning. |
+| **AMLA establishment** | Operational from **1 July 2025**. Direct supervision of up to 40 selected obliged entities begins **1 January 2028** — do not conflate this with the AMLR applying on 10 July 2027. |
+| **AMLA direct supervision selection** | The first selection round runs during **2027**, ahead of supervision starting 1 January 2028. Institutions should monitor whether they are in scope. |
+| **AMLA RTS/ITS programme** | The Level-2 package of 23 instruments was due to the Commission by **10 July 2026**; adoption and further consultations continue. Each consultation paper triggers implementation planning. |
 | **6AMLD national transposition** | Most EU member states transposed by June 2021. Nordic countries have implemented — check national law for specifics. |
 | **MiCA (virtual assets)** | Full application from **30 December 2024**. AML/CFT implications for CASP onboarding and transaction monitoring. |
 | **PSD3 / PSR** | Legislative process ongoing (2024–2025). Will update authentication, open banking, and payment fraud obligations. |

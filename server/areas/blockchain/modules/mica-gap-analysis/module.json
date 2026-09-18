@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "MiCA article citations must be accurate. Opus 4.7 strongly recommended."
+    "notes": "MiCA article citations must be accurate. The Opus tier is strongly recommended."
   },
   "defaults": {
     "thinking": "investigate",
@@ -81,7 +81,7 @@
         },
         {
           "value": "transitional",
-          "label": "Transitioning — operating under national grandfathering"
+          "label": "National transitional window closed (by 30 Jun 2026) — not yet authorised"
         },
         {
           "value": "authorised",
@@ -247,13 +247,17 @@
       "type": "textarea",
       "label": "Known Issues or Specific Concerns",
       "description": "Describe any known gaps, prior regulatory feedback, specific areas of concern, or upcoming deadlines.",
-      "placeholder": "e.g. NCA pre-application meeting flagged weak governance documentation; whitepaper not yet drafted; transitional period expires June 2026..."
+      "placeholder": "e.g. NCA pre-application meeting flagged weak governance documentation; whitepaper not yet drafted; national transitional period expired 30 June 2026 and authorisation is still pending..."
     }
   ],
   "recommendedPersonas": [
     "crypto-blockchain-expert",
     "fcp-expert",
     "legal-expert"
+  ],
+  "recommendedSkills": [
+    "crypto-compliance-specialist",
+    "market-abuse-investigator"
   ],
   "tags": [
     "mica",

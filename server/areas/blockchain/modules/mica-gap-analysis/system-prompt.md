@@ -93,10 +93,10 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 - Incident reporting obligations
 - Operational risk management
 
-### Theme 10: Transitional Provisions
-- Grandfathering for entities operating before MiCA entry into force
-- Transitional period timelines (18 months from Dec 2024 for CASPs)
-- National transitional regimes and NCA notification requirements
+### Theme 10: Transitional Provisions (window closed)
+- The national transitional regimes ran 5 to 18 months from 30 Dec 2024; the last of them expired 30 Jun 2026 — no grandfathering window remains open, so the question is authorisation or cease
+- Whether the entity secured authorisation before its national window closed, and, if not, what its status has been since (continued operation on a lapsed national registration is a live exposure, not a transitional status)
+- Evidence of the NCA notification made during the window, and of any NCA correspondence on its expiry
 
 ## Output Structure
 
