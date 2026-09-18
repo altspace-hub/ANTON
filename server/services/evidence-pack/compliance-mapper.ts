@@ -157,7 +157,7 @@ const ANNEX_IV: FrameworkDef = {
 
 const AMLR: FrameworkDef = {
   id: 'amlr',
-  label: 'AMLR — Auditability + Article 21 Record-keeping',
+  label: 'AMLR — Auditability + Article 77 Record retention',
   citation: 'Regulation (EU) 2024/1624 — AML data quality + record-keeping',
   points: [
     {

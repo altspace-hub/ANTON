@@ -146,7 +146,7 @@ For AMLA RTS, AI Act harmonised standards and similar, design to the most likely
 - AMLD6 (EU) 2024/1640 — transposition deadline 10 July 2027 (with earlier dates for some provisions)
 - DORA (EU) 2022/2554 — applicable since 17 January 2025
 - MiCA (EU) 2023/1114 and the Travel Rule / Transfer of Funds Regulation (EU) 2023/1113 — crypto-asset programmes
-- EU AI Act (EU) 2024/1689 — staged application 2025–2027 (prohibitions, GPAI, high-risk)
+- EU AI Act (EU) 2024/1689 — staged application 2025–2028 (prohibitions, GPAI, Art. 50 transparency live since 2 Aug 2026, Annex III high-risk from 2 Dec 2027, Annex I product-embedded from 2 Aug 2028)
 - CSRD (EU) 2022/2464 with the ESRS — staged sustainability-reporting waves
 - The Scrum Guide (2020); SAFe and Disciplined Agile for scaled regulatory programmes
 - EBA / ESMA / national competent authority (Finansinspektionen, BaFin, FIN-FSA, FCA, etc.) guidance on change management, governance and evidence

@@ -115,7 +115,7 @@ const AMLR_READINESS_TEMPLATE: MissionTemplate = {
   id: 'tmpl_amlr_readiness_v1',
   name: 'AMLR Readiness Programme',
   description:
-    'End-to-end programme for an AMLR-obliged entity (bank, CASP, payment institution, real-estate agent, notary, accountant, TCSP, dealer, gambling operator, crowdfunder, …) to stand up the Article 16 programme: FCP scope assessment → Risk Atlas → Business-Wide Risk Assessment → AMLR gap analysis → policies / procedures → training plan → independent audit. 6-12 weeks elapsed, with checkpoints between each stage.',
+    'End-to-end programme for an AMLR-obliged entity (bank, CASP, payment institution, real-estate agent, notary, accountant, TCSP, dealer, gambling operator, crowdfunder, …) to stand up the Arts. 9–12 internal-controls and risk-assessment programme: FCP scope assessment → Risk Atlas → Business-Wide Risk Assessment → AMLR gap analysis → policies / procedures → training plan → independent audit. 6-12 weeks elapsed, with checkpoints between each stage.',
   pillar: 'work',
   category: 'compliance',
   version: '1.0.0',
@@ -193,13 +193,13 @@ const AMLR_READINESS_TEMPLATE: MissionTemplate = {
       },
       {
         local_id: 't5',
-        title: 'AMLR Article 16 gap analysis',
-        description: 'Cross-reference the BWRA against AMLR Article 16 / EBA Risk Factor Guidelines via the amlr-gap-analysis module. Produces a prioritised gap list.',
+        title: 'AMLR gap analysis',
+        description: 'Cross-reference the BWRA against AMLR Article 10 / EBA Risk Factor Guidelines via the amlr-gap-analysis module. Produces a prioritised gap list.',
         task_type: 'llm',
         estimated_tokens: 18000,
         sort_order: 5,
         depends_on: ['t4'],
-        prompt: 'Run the amlr-gap-analysis module against the BWRA from t4. Output a prioritised gap list with article references (AMLR Art. 16, 20-23, 26; EBA RFG 2023 §3.4; MiCA Art. 67-86 if CASP).',
+        prompt: 'Run the amlr-gap-analysis module against the BWRA from t4. Output a prioritised gap list with article references (AMLR Art. 10, 20-23, 26, 34; EBA RFG 2023 §3.4; MiCA Art. 67-85 if CASP).',
       },
       {
         local_id: 't6',
@@ -261,7 +261,7 @@ const AMLR_READINESS_TEMPLATE: MissionTemplate = {
   },
   default_autonomy_level: 'check_in',
   success_criteria_template:
-    'Deliver an AMLR-obliged-entity-ready programme: an active Risk Atlas; a regulator-ready BWRA; a prioritised AMLR Article 16 gap list with regulatory references; policy + procedure pack; training plan; independent-audit brief. Each artefact must cross-reference the Atlas as the source of truth.',
+    'Deliver an AMLR-obliged-entity-ready programme: an active Risk Atlas; a regulator-ready BWRA; a prioritised AMLR gap list with regulatory references; policy + procedure pack; training plan; independent-audit brief. Each artefact must cross-reference the Atlas as the source of truth.',
   required_modules: [
     'fcp-scope-assessor',
     'business-wide-risk-assessment',

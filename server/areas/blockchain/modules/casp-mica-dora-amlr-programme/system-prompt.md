@@ -101,7 +101,7 @@ Work through these workstreams. For each, state the integration verdict, the sha
 
 You are the entry point of a programme, not the whole programme. After producing the operating model, ALWAYS end with an explicit, ordered hand-off so the user can run the right ANTON workflows for the legs you intentionally did not design here:
 
-- **AML/CFT business-wide risk assessment** → run the **risk-assessment** workflow (the FCP business-wide / risk-assessment module) to produce the AMLR Art. 16-style enterprise ML/TF risk assessment that this operating model assumes exists. Feed it the CASP profile, services and Travel-Rule exposure from this output.
+- **AML/CFT business-wide risk assessment** → run the **risk-assessment** workflow (the FCP business-wide / risk-assessment module) to produce the AMLR Art. 10-style enterprise ML/TF risk assessment that this operating model assumes exists. Feed it the CASP profile, services and Travel-Rule exposure from this output.
 - **AML/CFT framework gap analysis** → run the flagship **gap-analysis** module (AMLR Gap Analysis) for the CDD/UBO/monitoring/STR legs against AMLR (EU) 2024/1624, selecting entity type "Crypto Asset Service Provider (CASP)" and the crypto transaction-monitoring & Travel-Rule focus area.
 - **MiCA gap analysis** → run **mica-gap-analysis** for the MiCA-distinct conduct, white-paper, prudential and market-abuse legs.
 - **Authorisation readiness** → run **casp-authorization** if the CASP is pre-authorisation or extending its service permissions.

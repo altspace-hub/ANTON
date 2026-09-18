@@ -98,7 +98,7 @@ export default function RiskAtlasAboutPage() {
             <h2 className="text-lg font-semibold">Built for FCP, generalised for every business</h2>
           </div>
           <p className="text-sm text-adv-gray leading-relaxed mb-3">
-            The FCP addendum (Article 16 BWRA, AMLR-aligned) ships as a layered overlay:
+            The FCP addendum (Article 10 BWRA, AMLR-aligned) ships as a layered overlay:
             seven FCP domains (AML/CFT, sanctions, fraud, ABC, market abuse, tax-evasion
             facilitation, export controls) compose into a Stage 7b
             <strong className="text-adv-off-white"> company-wide appetite rollup</strong> — deterministic,

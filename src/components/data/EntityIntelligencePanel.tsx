@@ -131,16 +131,16 @@ export function EntityIntelligencePanel({ initialQuery = '', sessionId, onContex
       const amlrTriggers: string[] = [];
 
       if (roaring) {
-        if (roaring.highRiskFlags.includes('UBO_IS_PEP')) { flags.push('UBO is PEP'); amlrTriggers.push('Art. 22 (PEP EDD)'); }
-        if (roaring.sanctionHits > 0) { flags.push('Roaring sanctions hit'); amlrTriggers.push('Art. 16 (screening)'); }
+        if (roaring.highRiskFlags.includes('UBO_IS_PEP')) { flags.push('UBO is PEP'); amlrTriggers.push('Art. 42 (PEP EDD)'); }
+        if (roaring.sanctionHits > 0) { flags.push('Roaring sanctions hit'); amlrTriggers.push('Art. 20(1)(d) (sanctions screening)'); }
         if (roaring.complexityScore > 3) flags.push('Complex ownership structure');
         if (roaring.financialRisk === 'HIGH') flags.push('High financial risk');
       }
       if (dj) {
-        if (dj.sanctionHits > 0) { flags.push(`${dj.sanctionHits} DJ sanctions hit(s)`); amlrTriggers.push('Art. 16 (freeze)'); }
-        if (dj.pepHits > 0) { flags.push(`${dj.pepHits} PEP match(es)`); if (!amlrTriggers.includes('Art. 22 (PEP EDD)')) amlrTriggers.push('Art. 22 (PEP EDD)'); }
-        if (dj.adverseMediaCount > 0) { flags.push(`${dj.adverseMediaCount} adverse media article(s)`); amlrTriggers.push('Art. 40 (ongoing monitoring)'); }
-        if (dj.soeFlag) { flags.push('SOE link identified'); amlrTriggers.push('Art. 19 (high-risk)'); }
+        if (dj.sanctionHits > 0) { flags.push(`${dj.sanctionHits} DJ sanctions hit(s)`); amlrTriggers.push('Art. 27 (UN sanctions measures)'); }
+        if (dj.pepHits > 0) { flags.push(`${dj.pepHits} PEP match(es)`); if (!amlrTriggers.includes('Art. 42 (PEP EDD)')) amlrTriggers.push('Art. 42 (PEP EDD)'); }
+        if (dj.adverseMediaCount > 0) { flags.push(`${dj.adverseMediaCount} adverse media article(s)`); amlrTriggers.push('Art. 26 (ongoing monitoring)'); }
+        if (dj.soeFlag) { flags.push('SOE link identified'); amlrTriggers.push('Art. 34 (EDD — higher risk)'); }
       }
 
       const overallRisk: CombinedRisk['overall'] =

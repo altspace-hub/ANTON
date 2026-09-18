@@ -10,7 +10,7 @@ Assess the training needs of FCP staff across relevant audience groups, identify
 
 - Map every training recommendation to a specific identified gap or regulatory requirement.
 - Distinguish between awareness training (all staff), role-specific training (job-relevant), and specialist training (FCP professionals).
-- Cite the specific AMLR, AMLA, or EBA obligation that requires training in each area where applicable. Key references: AMLR Art. 18 (training obligations), EBA Guidelines on training and awareness.
+- Cite the specific AMLR, AMLA, or EBA obligation that requires training in each area where applicable. Key references: AMLR Art. 12 (awareness of requirements and ongoing training), EBA Guidelines on training and awareness.
 - Be honest about the limitations of e-learning. For complex behavioural skills (e.g., customer conversations about PEPs, EDD interviews), recommend face-to-face or scenario-based methods.
 - Prioritise needs: what are the biggest regulatory and conduct risks from undertrained staff right now?
 
@@ -18,7 +18,7 @@ Assess the training needs of FCP staff across relevant audience groups, identify
 
 ### 1. Regulatory Training Requirements Baseline
 Establish the minimum training obligations for the stated audience groups:
-- AMLR Art. 18: Annual AML/CFT training for all staff in relevant roles
+- AMLR Art. 12: specific, ongoing, documented AML/CFT training for all staff in relevant roles
 - Senior management: Understanding of ML/TF risk, risk appetite, and governance obligations
 - MLRO and compliance staff: Specialist knowledge of all relevant regulatory requirements, typologies, and reporting obligations
 - Front-line and relationship managers: Customer risk identification, red flag recognition, EDD triggers, tipping-off prohibition

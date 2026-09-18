@@ -218,14 +218,15 @@ Apply precise citation of AMLR Regulation (EU) 2024/1624 (the Anti-Money Launder
 **Citation Format:** Always reference: Regulation (EU) 2024/1624 + Chapter + Article + Paragraph + Subparagraph + Point. Example: "Article 20(1)(b) AMLR" or "Article 42, paragraph 3 AMLR".
 
 **Key AMLR Structure:**
-- Chapter I (Articles 1-3): Subject matter, scope, definitions
-- Chapter II (Articles 4-9): Internal policies, procedures, and controls
-- Chapter III (Articles 10-30): Customer due diligence (CDD) — simplified, standard, enhanced
-- Chapter IV (Articles 31-43): Beneficial ownership, registers
-- Chapter V (Articles 44-51): Reporting obligations, suspicious transaction reporting
-- Chapter VI (Articles 52-65): Targeted financial sanctions, politically exposed persons
-- Chapter VII (Articles 66-75): Data protection and record retention
-- Chapter VIII (Articles 76-86): Supervision and enforcement
+- Chapter I (Articles 1-8): General provisions — subject matter, definitions, obliged entities, exemptions
+- Chapter II (Articles 9-18): Internal policies, procedures and controls — business-wide risk assessment (Art. 10), compliance functions (Art. 11), training (Art. 12), group-wide requirements (Arts. 16-17), outsourcing (Art. 18)
+- Chapter III (Articles 19-50): Customer due diligence — general CDD (Arts. 19-28), third-country policy (Arts. 29-32), simplified (Art. 33), enhanced (Arts. 34-46), reliance (Arts. 48-50)
+- Chapter IV (Articles 51-68): Beneficial ownership transparency — identification (Arts. 51-55), BO information and entity obligations (Arts. 62-67)
+- Chapter V (Articles 69-74): Reporting obligations — reporting of suspicions (Art. 69), disclosure to FIU (Art. 72), prohibition of disclosure / tipping-off (Art. 73)
+- Chapter VI (Article 75): Information sharing in partnerships
+- Chapter VII (Articles 76-78): Data protection and record retention (Art. 77 retention, Art. 78 provision of records)
+- Chapter VIII (Articles 79-80): Measures mitigating risks from anonymous instruments and large cash payments
+- Chapter IX (Articles 81-90): Final provisions
 
 **AMLR vs AMLD6:** Distinguish between obligations in the directly applicable AMLR and those still requiring national transposition via AMLD6 (Directive (EU) 2024/1640). The AMLR creates uniform EU-wide rules; AMLD6 addresses institutional and supervisory architecture.
 
@@ -244,7 +245,7 @@ The 2024 AML Package has three components that interact:
 When citing requirements, always identify which pillar they come from. A supervisory finding obligation may be in AMLR while the supervisor's enforcement power is in AMLD6 national transposition.
 
 **AMLA RTS/ITS Mandate — Reference by Status:**
-AMLA is mandated to develop 28+ RTS/ITS under AMLR. When referencing areas where AMLA standards will apply, flag: (1) which AMLR article mandates the standard, (2) whether a consultation paper has been published, (3) expected publication date if known. Key RTS areas: risk factors (Art.30), CDD measures (Arts.20–29), beneficial ownership (Art.62), suspicious transaction reporting (Art.69), remote onboarding (Art.23), high-risk third countries (Art.29).`,
+AMLA is mandated to develop 28+ RTS/ITS under AMLR. When referencing areas where AMLA standards will apply, flag: (1) which AMLR article mandates the standard, (2) whether a consultation paper has been published, (3) expected publication date if known. Key RTS areas: CDD information (Art.28), risk factors and guidelines (Art.32), beneficial ownership (Art.62), suspicious transaction reporting (Art.69), timing of verification / remote onboarding (Art.23), high-risk third countries (Arts.29–31).`,
   },
 
   {
@@ -327,8 +328,8 @@ The correct examiner perspective depends on which supervisor has jurisdiction:
 **AMLA Examination Priorities (2025–2028):**
 For entities in scope of AMLA direct supervision, expect focus on:
 1. BWRA quality and AMLR Art.10 compliance — methodology, documentation, ML/TF/CPF completeness
-2. Beneficial ownership verification — AMLR Art.62 compliance, database quality, refresh cycles
-3. PEP identification scope — AMLR Art.52 definition, family/close associates, update frequency
+2. Beneficial ownership verification — AMLR Arts.51–55 identification and Art.62 information quality, database quality, refresh cycles
+3. PEP identification scope — AMLR Art.2(1)(34) definition, Arts.42–46 obligations (Art.46 family and close associates), update frequency
 4. Enhanced CDD implementation — AMLR Art.29 high-risk third country procedures
 5. Transaction monitoring effectiveness — threshold tuning, alert resolution SLAs, analyst quality
 6. Suspicious transaction reporting quality — AMLR Art.69 compliance, narrative standards, timeliness`,
@@ -648,7 +649,7 @@ For each red flag, cite the specific observation: (1) What was observed (transac
 Apply expert beneficial ownership (BO) analysis methodology to all UBO-related content:
 
 **Legal Framework — AMLR Chapter IV:**
-Beneficial owner is defined in AMLR Art.62 as the natural person(s) who ultimately own or control a legal entity. Key thresholds:
+Beneficial owner is defined in AMLR Art.2(1)(28) and identified under Arts.51–55 as the natural person(s) who ultimately own or control a legal entity. Key thresholds:
 - **25%+ shareholding or voting rights** → presumed BO (direct or indirect)
 - **Indirect control** via chain of entities — trace through each layer; the threshold applies at the ultimate natural person level
 - **Dominant influence** via other means (shareholders' agreement, board appointment rights, contractual control) → BO even below 25%
@@ -661,7 +662,7 @@ Beneficial owner is defined in AMLR Art.62 as the natural person(s) who ultimate
 - **Partnerships / LLPs:** Partners with 25%+ economic interest or management control are BOs.
 - **State-owned entities:** Identify the relevant government department or sovereign as controlling entity — apply enhanced due diligence for state-controlled entities.
 
-**BO Verification Standards (AMLR Art.62):**
+**BO Verification Standards (AMLR Arts.22 and 62):**
 Verification must be adequate, accurate, and current:
 - **Tier 1 (low-risk):** Self-declaration + company registry cross-check
 - **Tier 2 (medium-risk):** Company registry + commercial database (Orbis, Refinitiv, LexisNexis) cross-check
@@ -672,7 +673,7 @@ Verification must be adequate, accurate, and current:
 - Jurisdictions selected for secrecy rather than business purpose
 - Nominee directors/shareholders without disclosed principal
 - Recent corporate restructuring coinciding with investigations or sanctions listing
-- BO who is a PEP (triggers EDD under AMLR Art.52)
+- BO who is a PEP (triggers EDD under AMLR Arts.34 and 42)
 - Discrepancy between self-declared BO and registry data`,
   },
 
@@ -726,7 +727,7 @@ ISO 37001 certification provides structured framework: ABMS policy → risk asse
   {
     id: 'market-abuse-investigator',
     name: 'Market Abuse Investigator',
-    description: 'Expert in MAR Art.7-17 (insider dealing, market manipulation, disclosure), MAR STR vs AML SAR dual reporting, and MiCA market abuse (Art.76).',
+    description: 'Expert in MAR Art.7-17 (insider dealing, market manipulation, disclosure), MAR STR vs AML SAR dual reporting, and MiCA market abuse (Arts.86-92).',
     version: '1.0.0',
     author: 'openEXPERT',
     category: 'domain',
@@ -757,7 +758,7 @@ Investment firms and market operators must report suspicious transactions to ESM
 - **Ramping:** Concentrated buying at end of day/period to inflate closing price (benchmark/valuation manipulation)
 - **Front running:** Trading ahead of a known customer order (violates both MAR and MiFID II duty of best execution)
 
-**MiCA Market Abuse (Title VI, Art.76):**
+**MiCA Market Abuse (Title VI, Arts.86–92):**
 MiCA applies equivalent market abuse prohibitions to crypto-assets admitted to trading on CATPs. Identical structure: insider dealing, unlawful disclosure, market manipulation. ESMA coordinates with national CAs on enforcement. Surveillance obligation on CATPs mirrors investment firm obligation under MAR Art.16.`,
   },
 
@@ -774,18 +775,19 @@ MiCA applies equivalent market abuse prohibitions to crypto-assets admitted to t
 Apply expert crypto-asset regulatory analysis grounded in MiCA (Regulation (EU) 2023/1114), the Transfer of Funds Regulation (TFR 2023/1113), AMLR crypto provisions, and FATF Recommendation 15:
 
 **MiCA Regulatory Architecture:**
-- **Title II (Art.16–46):** Asset-referenced tokens (ARTs) — backed by basket of assets, currencies, or commodities. Issuer authorisation required. EMT issuers subject to prudential requirements.
-- **Title III (Art.47–59):** E-money tokens (EMTs) — backed 1:1 by single fiat currency. Issuers must be licensed credit institution or e-money institution.
-- **Title IV / V (Art.59–134):** All other crypto-assets and Crypto-Asset Service Providers (CASPs). CASPs must be authorised by national CA. Passporting across EU member states.
-- **Title VI (Art.76–92):** Market integrity provisions — market abuse (insider dealing, manipulation) mirroring MAR.
+- **Title II (Art.4–15):** Crypto-assets other than ARTs or EMTs — white paper, notification, marketing communications; the lighter regime.
+- **Title III (Art.16–47):** Asset-referenced tokens (ARTs) — backed by a basket of assets, currencies or commodities. Issuer authorisation required; reserve of assets (Arts. 36-40); significant ARTs (Arts. 43-45).
+- **Title IV (Art.48–58):** E-money tokens (EMTs) — backed 1:1 by a single official currency. Issuers must be a licensed credit institution or e-money institution; significant EMTs (Arts. 56-58).
+- **Title V (Art.59–85):** Authorisation and operating conditions for Crypto-Asset Service Providers (CASPs). CASPs must be authorised by a national CA. Passporting across EU member states.
+- **Title VI (Art.86–92):** Market integrity provisions — market abuse (insider dealing, manipulation) mirroring MAR.
 
-**CASP Authorisation (Art.59–75):**
+**CASP Authorisation (Art.59–65):**
 CASPs must: (1) be authorised in home member state, (2) meet minimum capital requirements (€50k–€150k depending on service), (3) have governance, conflict of interest, and complaint-handling frameworks, (4) hold client assets segregated, (5) have business continuity plan. Key CASP services: custody, exchange, trading, portfolio management, advice, transfer services.
 
 **AML/CFT Obligations for Crypto-Assets (AMLR):**
 AMLR (2024/1624) includes CASPs as obliged entities. Key obligations:
 - Full CDD for all transactions above €1,000 (no simplified threshold exception)
-- EDD for transactions linked to self-hosted wallets (Art.29 high-risk)
+- Risk-mitigating measures for transactions with a self-hosted address (Art.40)
 - Beneficial ownership for legal entity customers of CASPs
 - Transaction monitoring — chain analysis to identify suspicious flows
 - SAR/STR filing to national FIU for suspicious transactions
@@ -860,16 +862,16 @@ Prohibits EU operators from complying with secondary sanctions (OFAC Iran, Cuba 
   {
     id: 'correspondent-banking-advisor',
     name: 'Correspondent Banking Advisor',
-    description: 'Expert in CBR due diligence (Wolfsberg, FATF R.13, AMLR Art.26), de-risking analysis, nostro/vostro, SWIFT, nested correspondents, and financial inclusion.',
+    description: 'Expert in CBR due diligence (Wolfsberg, FATF R.13, AMLR Arts.36-39), de-risking analysis, nostro/vostro, SWIFT, nested correspondents, and financial inclusion.',
     version: '1.0.0',
     author: 'openEXPERT',
     category: 'domain',
     tags: ['correspondent banking', 'CBR', 'de-risking', 'Wolfsberg', 'FATF R.13', 'CBDDQ', 'nostro', 'vostro'],
     prompt: `## SKILL: Correspondent Banking Advisor
 
-Apply expert correspondent banking relationship (CBR) analysis grounded in Wolfsberg CBR Principles, FATF Recommendation 13, AMLR Art.26, and Basel BCBS 264:
+Apply expert correspondent banking relationship (CBR) analysis grounded in Wolfsberg CBR Principles, FATF Recommendation 13, AMLR Arts.36–39, and Basel BCBS 264:
 
-**CBR Regulatory Requirements (AMLR Art.26):**
+**CBR Regulatory Requirements (AMLR Art.36):**
 For correspondent relationships with non-EU respondent banks, the EU correspondent must:
 - Gather information about the respondent: business, ownership, management, AML/CFT framework, purpose of relationship
 - Assess the respondent's AML/CFT controls — adequacy of CDD, transaction monitoring, SAR filing

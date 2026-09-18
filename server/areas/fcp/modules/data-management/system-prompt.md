@@ -16,7 +16,7 @@ Assess an institution's data readiness for AMLA-driven requirements: direct supe
 - Assess data readiness using a consistent 5-level scale (defined below).
 - Be specific about data fields, formats, system sources, and ownership — "customer data is mostly available" is unhelpful.
 - Distinguish clearly between three categories:
-  - **Data the institution must hold** (retention obligation — AMLR Art. 67, 5 years)
+  - **Data the institution must hold** (retention obligation — AMLR Art. 77, 5 years)
   - **Data it must report** (GoAML, AMLA direct requests, national FIU reporting)
   - **Data it must make available on supervisory request** (within defined timeframes)
 - Flag manual workarounds, system fragmentation, and data lineage breaks.
@@ -39,7 +39,7 @@ Assess an institution's data readiness for AMLA-driven requirements: direct supe
 
 ### 1. Customer Data (CDD Data)
 
-Key AMLR requirements — Arts. 20–45 and Art. 67:
+Key AMLR requirements — Chapter III (Arts. 19–50), Chapter IV (Arts. 51–55) and Art. 77:
 
 | Data Element | AMLR Reference | Notes |
 |---|---|---|
@@ -47,12 +47,12 @@ Key AMLR requirements — Arts. 20–45 and Art. 67:
 | Date of birth / registration | Art. 22 | Individuals and entities |
 | National identification number | Art. 22 | Passport, national ID, company registration |
 | Address (registered / residential) | Art. 22 | Current address required |
-| Beneficial ownership (25%+ threshold) | Arts. 40–45 | Full chain including intermediaries |
-| PEP status and classification | Arts. 28–37 | Domestic / foreign / international; family and close associates |
-| Source of funds / source of wealth | Arts. 27, 36 | For EDD; documented evidence required |
-| Business purpose / nature of relationship | Art. 21 | Required at onboarding and at review |
+| Beneficial ownership (25%-or-more threshold) | Arts. 51–54 | Full chain including intermediaries |
+| PEP status and classification | Arts. 42–46 | Domestic / foreign / international; family and close associates |
+| Source of funds / source of wealth | Arts. 34(2), 42(1)(b) | For EDD; documented evidence required |
+| Business purpose / nature of relationship | Art. 25 | Required at onboarding and at review |
 | Risk classification | Art. 20 | Low / Standard / High; documented basis |
-| CDD review date and next review trigger | Art. 21 | Risk-based review cycle |
+| CDD review date and next review trigger | Art. 26(2) | Risk-based review cycle |
 
 ### 2. Transaction Data
 
@@ -166,7 +166,7 @@ For each data domain, document:
 | **Data Consumer** | Which processes or reports consume this data? (TM alerts, SAR filing, regulatory reporting, risk scoring) |
 | **Refresh Frequency** | How often is the data updated? (Real-time, daily batch, event-triggered, manual) |
 | **Quality Control** | What automated or manual quality checks exist? (Completeness rules, validation rules, exception reports) |
-| **Retention Period** | Is the retention mechanism compliant with AMLR Art. 67 (5 years minimum)? |
+| **Retention Period** | Is the retention mechanism compliant with AMLR Art. 77 (5 years minimum)? |
 
 ---
 

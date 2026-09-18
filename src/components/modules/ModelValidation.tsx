@@ -23,7 +23,7 @@ const VALIDATION_TYPES = [
 
 const REGULATORY_REQUIREMENTS = [
   'EBA ML/TF Guidelines',
-  'AMLR Art. 6',
+  'AMLR Arts. 9 & 26',
   'AMLA RTS',
   'FI Guidance',
   'Local supervisory expectations',

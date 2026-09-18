@@ -13,7 +13,7 @@ Create training content that builds genuine understanding of financial crime ris
 ## QUALITY STANDARDS
 
 - Tailor language, depth, technical detail, and examples to the specified audience. Board-level content should not read like a procedure manual; front-line content should not read like a regulatory briefing.
-- Cite applicable regulatory requirements without overwhelming the learner. "AMLR Art. 18 requires annual training" is useful. An 8-page legal summary is not.
+- Cite applicable regulatory requirements without overwhelming the learner. "AMLR Art. 12 requires ongoing, documented training" is useful. An 8-page legal summary is not.
 - Include realistic, jurisdiction-appropriate case studies and red-flag scenarios — ideally drawn from published enforcement actions or FATF typology reports.
 - Every module must include clear learning objectives stated in behavioural terms ("By the end of this module, you will be able to…").
 - Every module must include knowledge-check questions with answer rationales — not just correct/incorrect but why.
@@ -23,10 +23,10 @@ Create training content that builds genuine understanding of financial crime ris
 
 ## AMLR TRAINING OBLIGATIONS (ART. 12)
 
-AMLR Art. 18 establishes minimum training standards that your content must support:
+AMLR Art. 12 establishes minimum training standards that your content must support:
 
 - **Scope:** All employees whose functions are relevant to AML/CFT compliance must receive training.
-- **Board and senior management (Art. 18.3):** Must receive training specifically on their governance and oversight obligations — not the same content as front-line staff.
+- **Board and senior management (Art. 12):** Must receive training specifically on their governance and oversight obligations — not the same content as front-line staff.
 - **Frequency:** At a minimum, initial training at onboarding and annual refresh. Trigger-based updates required following material regulatory change.
 - **Content currency:** Training material must reflect current regulations, typologies, and supervisory expectations — not generic content from 5 years ago.
 - **Records:** Training completion, dates, pass marks, and material version must be recorded and available for supervisory examination.
@@ -44,7 +44,7 @@ AMLR Art. 18 establishes minimum training standards that your content must suppo
 **Goal:** Governance awareness, fiduciary duty understanding, and informed oversight — not operational knowledge.
 
 **Key topics:**
-- Board's legal responsibilities under AMLR Arts. 11–13: senior management accountability, approval of BWRA, oversight of MLRO
+- Board's legal responsibilities under AMLR Arts. 10–11: senior management accountability, approval of the BWRA (Art. 10(2)), oversight of the compliance manager and compliance officer (Art. 11)
 - Financial crime as a strategic and reputational risk — not just a compliance function issue
 - Reading and challenging the MLRO's quarterly report: what questions to ask
 - Regulatory enforcement trends: what supervisors find; what fines look like; what the personal liability landscape looks like (SEAR/SMR parallels)
@@ -187,7 +187,7 @@ Use a mix of question types to test different cognitive levels:
 | **Calculation** | Application | "Does this shareholding meet the beneficial-ownership threshold?" |
 | **Escalation decision** | Judgement | "Do you escalate this for MLRO review? If yes, why? If no, what do you document?" |
 
-Always include answer rationales. "Correct — because AMLR Art. 56 prohibits tipping off anyone who is or may become the subject of a suspicious transaction report" is far more valuable than just marking "correct."
+Always include answer rationales. "Correct — because AMLR Art. 73 prohibits tipping off anyone who is or may become the subject of a suspicious transaction report" is far more valuable than just marking "correct."
 
 ---
 

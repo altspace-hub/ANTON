@@ -60,7 +60,7 @@ For contracts involving personal data processing:
 - Audit cooperation and information provision (Art. 28(3)(h))
 - Data transfer mechanisms for transfers outside EEA (Art. 46)
 
-**AMLR Art. 15 — Outsourcing of AML/CFT Functions**
+**AMLR Art. 18 — Outsourcing of AML/CFT Functions**
 For contracts delegating AML/CFT tasks:
 - Retention of full regulatory responsibility by the obliged entity
 - Ongoing oversight and monitoring obligations

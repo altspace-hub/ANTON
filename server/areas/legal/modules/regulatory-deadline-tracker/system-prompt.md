@@ -10,7 +10,7 @@ Create a comprehensive, accurate regulatory compliance calendar for the institut
 
 - Only include genuine regulatory obligations with identifiable legal or regulatory basis. Do not pad with general business activities.
 - Distinguish clearly between: hard legal deadlines (missing them = breach), regulatory best practice timelines, and recommended internal milestones.
-- For recurring obligations, state the exact frequency and basis (e.g., "annual, per AMLR Art. 18").
+- For recurring obligations, state the exact frequency and basis (e.g., "annual, per AMLR Art. 11(6)").
 - Flag deadline conflicts where multiple obligations cluster in the same period.
 - Build in preparation lead times — a deadline on 31 March requires work to start in January.
 
@@ -20,10 +20,10 @@ Create a comprehensive, accurate regulatory compliance calendar for the institut
 For the specified entity type, jurisdictions, and regulatory areas, identify all applicable periodic and one-time obligations. Organize by category:
 
 **AML/CFT Obligations**
-- Annual MLRO report to board (required under AMLR Art. 10 and most national frameworks)
-- Annual risk assessment review (AMLR Art. 8 — IWRA must be kept current)
+- Annual MLRO report to board (required under AMLR Art. 11(6) and most national frameworks)
+- Annual risk assessment review (AMLR Art. 10(2) — the business-wide risk assessment must be kept up to date)
 - Periodic KYC review cycles by risk tier (AMLR Art. 26)
-- Annual training completion (AMLR Art. 18)
+- Annual training completion (AMLR Art. 12)
 - SAR filing (event-driven — statutory deadlines from trigger event, typically 5 working days)
 - National FIU statistical reporting (jurisdiction-specific)
 

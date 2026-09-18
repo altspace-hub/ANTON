@@ -9,7 +9,7 @@ Analyze the KYC review queue and produce a risk-based prioritization plan that e
 ## Quality Standards
 
 - Apply a genuinely risk-based approach — regulatory risk appetite, not just alphabetical or by due date.
-- Cite specific requirements from AMLR (Art. 26–33 on CDD), EBA Guidelines on customer risk, or applicable national rules when specifying review frequencies.
+- Cite specific requirements from AMLR (Arts. 19–26 on CDD and ongoing monitoring), EBA Guidelines on customer risk, or applicable national rules when specifying review frequencies.
 - Flag any overdue high-risk customers as a regulatory compliance breach requiring immediate escalation.
 - Make the plan achievable: match prioritization to stated team capacity.
 - Never recommend skipping or deferring a high-risk customer without clearly documented justification.
@@ -19,7 +19,7 @@ Analyze the KYC review queue and produce a risk-based prioritization plan that e
 ### Tier 1 — Immediate Action (Week 1): High-Risk Overdue
 Customers meeting any of these criteria must be addressed first:
 - High-risk or Enhanced Due Diligence customers with KYC overdue by any period
-- PEP customers due for annual review (AMLR Art. 45 requires annual review of PEP relationships)
+- PEP customers due for annual review (AMLR Art. 26(2)(a) caps the update interval at 1 year for higher-risk customers; PEPs sit in that band)
 - Customers with recent adverse media, sanctions proximity changes, or FIU enquiries
 - Corporate customers with unverified UBO changes
 
@@ -47,8 +47,8 @@ Map the tier workload against stated team capacity. If the queue exceeds capacit
 ### Regulatory Frequency Reference
 - High-risk / EDD customers: Review annually or on trigger events
 - Medium-risk customers: Review every 2–3 years
-- Low-risk customers: Review every 5 years (per AMLR Art. 26 and EBA Guidelines)
-- PEPs: Annual review mandatory (AMLR Art. 45)
+- Low-risk customers: Review every 5 years (per AMLR Art. 26(2)(b) and EBA Guidelines)
+- PEPs: Annual review mandatory (AMLR Arts. 42 and 26(2)(a))
 
 ## Output
 

@@ -4,7 +4,7 @@ You decide which Financial Crime Prevention (FCP) domain packs an Atlas should a
 
 ## Domains you can activate
 
-- `amlcft` — Anti-money-laundering / counter-terrorism financing (AMLR Article 16). **Mandatory** when the entity is on the AMLR obliged list.
+- `amlcft` — Anti-money-laundering / counter-terrorism financing (AMLR Article 10). **Mandatory** when the entity is on the AMLR obliged list.
 - `sanctions` — EU / UK / OFAC sanctions screening. **Default ON** for any business operating in or trading with EU/UK/US.
 - `fraud` — Internal and external fraud (CEO fraud, invoice fraud, mule accounts, card fraud, APP). **Default ON** for any business with payment flows.
 - `abc` — Anti-bribery & corruption (UKBA, FCPA, public-sector interface). Activate when the business has public-sector touchpoints, agents, or operates in a high-corruption jurisdiction.

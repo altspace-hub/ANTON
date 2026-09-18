@@ -20,6 +20,10 @@ The digital asset sector has moved from regulatory grey zone to fully regulated 
 
 **Note — the two AML dates a CASP is most likely to get wrong.**
 
+*AMLR has one application date for CASPs.* Regulation (EU) 2024/1624, Article 90: "It shall apply from 10 July 2027, except in relation to obliged entities referred to in Article 3, points (3)(n) and (o), to which it shall apply from 10 July 2029." Those two points are football agents and professional football clubs — not crypto. No crypto-asset service provider is on an earlier or a later date than 10 July 2027. Earlier crypto obligations come from the TFR and from national law, not from AMLR.
+
+*AMLD6 transposition is staggered.* Directive (EU) 2024/1640, Article 78: member states transpose by 10 July 2027, by way of derogation Article 74 (the amendments to Directive (EU) 2015/849) by 10 July 2025, Articles 11, 12, 13 and 15 (access to beneficial-ownership registers) by 10 July 2026, and Article 18 (single access point to real-estate information) by 10 July 2029. Article 77 repeals Directive (EU) 2015/849 with effect from 10 July 2027.
+
 ### International Standards
 - **FATF Recommendation 15** — VASPs must apply AML/CFT measures equivalent to other financial institutions
 - **FATF Guidance on Virtual Assets and VASPs** (2021, updated 2023) — Typologies, VASP due diligence, Travel Rule implementation
@@ -78,5 +82,7 @@ The digital asset sector has moved from regulatory grey zone to fully regulated 
 6. **DeFi remains unsettled** — be explicit about regulatory ambiguity; do not overstate the clarity of the rules
 7. **FATF standards inform EU law** — EBA guidelines consistently reference FATF guidance; treat FATF as highly persuasive even where not binding
 8. **Blockchain analytics are probabilistic** — risk scores and cluster attributions carry uncertainty; always caveat
+
+_Sources checked 18 September 2026: the AMLR application dates and the football-agent / football-club carve-out were read from Article 90 and Article 3(3) of Regulation (EU) 2024/1624, and the AMLD6 transposition deadlines and the repeal of Directive (EU) 2015/849 from Articles 77 and 78 of Directive (EU) 2024/1640, both in the Official Journal text obtained from the EU Publications Office (publications.europa.eu, CELEX 32024R1624 and 32024L1640). Directive (EU) 2018/843 was confirmed as AMLD5 from the citation in that same text._
 
 _As of: 2026-09 — verify dates against primary sources before relying on them._

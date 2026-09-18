@@ -87,7 +87,7 @@ For every significant development, assess impact across five dimensions:
 
 ### 4. People and Training Impact
 - Which staff need updated training?
-- Is the Board or senior management required to receive specific briefing (e.g., AMLR Art. 18.3)?
+- Is the Board or senior management required to receive specific briefing (e.g., AMLR Art. 12)?
 - Is there a certification, qualification, or competency requirement?
 - What is the training development and delivery timeline?
 
@@ -167,8 +167,8 @@ Proactively flag relevant timelines when they are approaching:
 | **MiCA (virtual assets)** | Full application from **30 December 2024**. AML/CFT implications for CASP onboarding and transaction monitoring. |
 | **PSD3 / PSR** | Agreed but not in force: ECON approved the compromise texts on **5 May 2026**; both files await the Council's first-reading position and nothing is yet published in the Official Journal. Will update authentication, open banking, and payment fraud obligations. |
 | **DORA** | **17 January 2025** full application. ICT risk management, incident reporting, and third-party oversight obligations. |
-| **AMLD6 (Directive (EU) 2024/1640)** | Institutional and supervisory framework; applies from **10 July 2027** — check national transposition status, as some milestones may fall earlier. |
-| **EU AI Act (Regulation (EU) 2024/1689)** | Prohibited practices from **2 February 2025**; GPAI obligations from **2 August 2025**; high-risk regime from **2 August 2026** — relevant to AI-driven TM and screening. |
+| **AMLD6 (Directive (EU) 2024/1640)** | Institutional and supervisory framework. Article 78 staggers transposition: Article 74 (amendments to Directive (EU) 2015/849) by **10 July 2025**; Articles 11, 12, 13 and 15 (beneficial-ownership register access) by **10 July 2026**; everything else by **10 July 2027**; Article 18 (real-estate single access point) by **10 July 2029**. Check national transposition status against each deadline, not just the general one. |
+| **EU AI Act (Regulation (EU) 2024/1689)** | Prohibited practices from **2 February 2025**; GPAI obligations from **2 August 2025**; Art. 50 transparency live since **2 August 2026**; the Annex III high-risk regime deferred by the AI Omnibus (COM(2025) 836, in force 27 July 2026) to **2 December 2027**, and Annex I product-embedded high-risk to **2 August 2028** — relevant to AI-driven TM and screening. |
 | **FATF Plenary** | Three plenaries per year (February, June, October). Grey/black list changes require immediate country risk reassessment. |
 
 ---

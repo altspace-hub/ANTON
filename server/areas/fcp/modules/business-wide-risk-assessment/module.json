@@ -3,7 +3,7 @@
   "id": "business-wide-risk-assessment",
   "label": "Business-Wide Risk Assessment (BWRA) — FCP",
   "shortLabel": "BWRA",
-  "description": "AMLR Article 16 / FATF R.1 business-wide risk assessment for obliged entities. Built on the Risk Atlas seven-stage methodology with the FCP Bank or CASP industry pack pre-selected. Outputs a regulator-ready BWRA document and seeds an Atlas the institution maintains as a living workspace.",
+  "description": "AMLR Article 10 / FATF R.1 business-wide risk assessment for obliged entities. Built on the Risk Atlas seven-stage methodology with the FCP Bank or CASP industry pack pre-selected. Outputs a regulator-ready BWRA document and seeds an Atlas the institution maintains as a living workspace.",
   "icon": "FileShield",
   "color": "adv-red",
   "areaId": "fcp",
@@ -47,7 +47,7 @@
     { "id": "atlas_id", "type": "text", "label": "Existing Atlas id (optional — leave blank to create one)", "required": false }
   ],
   "recommendedPersonas": ["senior-mlro", "senior-risk-officer", "risk-coach"],
-  "recommendedSkills": ["threat-path-methodology", "control-evidence-scoring", "residual-calculation"],
-  "tags": ["fcp", "bwra", "amlr", "amlr-article-16", "fatf", "atlas", "obliged-entity"],
+  "recommendedSkills": ["threat-path-methodology", "control-evidence-scoring", "residual-calculation", "amlr-article-reference"],
+  "tags": ["fcp", "bwra", "amlr", "amlr-article-10", "fatf", "atlas", "obliged-entity"],
   "contentType": "risk_register"
 }

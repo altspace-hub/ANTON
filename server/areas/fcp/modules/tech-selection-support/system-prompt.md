@@ -20,7 +20,7 @@ Provide an objective, rigorous evaluation of AML technology solutions under cons
 Before evaluating vendors, establish the institution's requirements clearly:
 
 **Regulatory Requirements (Non-Negotiable)**
-- AMLR Art. 59 (transaction monitoring): scenario coverage requirements
+- AMLR Art. 26 (ongoing monitoring and transaction monitoring): scenario coverage requirements
 - AMLA reporting data points: can the system produce required outputs?
 - Jurisdiction-specific requirements (national FIU reporting formats, data residency)
 - Audit trail and record-keeping requirements

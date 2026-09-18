@@ -401,7 +401,7 @@ The Risk Atlas generalises the CASP BWRA threat-path methodology into a universa
 | `src/pages/risk-atlas/SmallBusinessDashboardPage.tsx` | Simplified solo-operator landing. |
 | `server/areas/risk/modules/atlas-*` | 7 atlas-* modules — Stage 1-7 LLM specialisations. |
 | `server/areas/risk/modules/atlas-company-appetite-consolidator/` | Stage 7b — board-readable rollup. |
-| `server/areas/fcp/modules/business-wide-risk-assessment/` | AMLR Article 16 BWRA — orchestrates atlas-* modules. |
+| `server/areas/fcp/modules/business-wide-risk-assessment/` | AMLR Article 10 business-wide risk assessment (BWRA) — orchestrates atlas-* modules. Article 10 is the BWRA; Article 16 is group-wide requirements. |
 | `server/areas/fcp/modules/fcp-scope-assessor/` | AI-guided FCP-domain activation. |
 
 **Mission template.** `tmpl_amlr_readiness_v1` (`server/services/missions/seed-templates.ts`) is the 10-task end-to-end programme for an AMLR-obliged entity: scope → Atlas → BWRA → gap analysis → policies → training → audit, with four explicit checkpoints.

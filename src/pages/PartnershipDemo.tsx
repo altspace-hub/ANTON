@@ -59,7 +59,7 @@ const SCENES: DemoScene[] = [
       },
       {
         label: 'EDD session auto-opened in Counsel\'s Desk',
-        description: 'Risk score ≥ 70 triggers automatic EDD workflow. Counsel\'s Desk opens with pre-loaded context: Roaring entity profile, UBO chain, PEP flag rationale, AMLR Art. 22 reference.',
+        description: 'Risk score ≥ 70 triggers automatic EDD workflow. Counsel\'s Desk opens with pre-loaded context: Roaring entity profile, UBO chain, PEP flag rationale, AMLR Art. 42 reference.',
         apiCalls: [
           { timestamp: new Date().toISOString(), method: 'POST', endpoint: '/api/legal-research/sessions', status: 201, responseMs: 89, source: 'anton' },
         ],
@@ -100,7 +100,7 @@ const SCENES: DemoScene[] = [
       },
       {
         label: 'Sanctions research session opened',
-        description: 'Counsel\'s Desk opens in "Sanctions Deep-Dive" mode with DJ screening evidence pre-loaded. AI drafts legal opinion with AMLR Art. 16 (screening obligations) and Art. 40 (freezing) citations.',
+        description: 'Counsel\'s Desk opens in "Sanctions Deep-Dive" mode with DJ screening evidence pre-loaded. AI drafts legal opinion with AMLR Art. 20(1)(d) (sanctions screening) and Art. 27 (UN sanctions measures) citations.',
         apiCalls: [
           { timestamp: new Date().toISOString(), method: 'POST', endpoint: '/api/legal-research/sessions', status: 201, responseMs: 92, source: 'anton' },
           { timestamp: new Date().toISOString(), method: 'POST', endpoint: '/api/legal-research/sessions/lr-abc123/message', status: 200, responseMs: 3240, source: 'anton' },
@@ -127,12 +127,12 @@ const SCENES: DemoScene[] = [
       },
       {
         label: 'Combined risk assessment computed',
-        description: 'ANTON combines Roaring (UBO PEP flag, complexity 3/5) and DJ (PEP STRONG match, 2 adverse media articles) into an overall HIGH risk score. AMLR triggers: Art. 22 + Art. 40.',
+        description: 'ANTON combines Roaring (UBO PEP flag, complexity 3/5) and DJ (PEP STRONG match, 2 adverse media articles) into an overall HIGH risk score. AMLR triggers: Art. 42 + Art. 26.',
         delay: 600,
       },
       {
         label: 'AMLR gap assessment scoped to PEP articles',
-        description: 'Gap Assessment Wizard auto-scopes to AMLR Articles 20–25 (PEP provisions). Engine assesses institution\'s PEP identification, approval, and monitoring controls.',
+        description: 'Gap Assessment Wizard auto-scopes to AMLR Articles 42–46 (PEP provisions). Engine assesses institution\'s PEP identification, approval, and monitoring controls.',
         apiCalls: [
           { timestamp: new Date().toISOString(), method: 'POST', endpoint: '/api/gap-assessments', status: 201, responseMs: 65, source: 'anton' },
           { timestamp: new Date().toISOString(), method: 'GET', endpoint: '/api/gap-assessments/ga-xyz789/stream', status: 200, responseMs: 8450, source: 'anton' },

@@ -99,7 +99,7 @@
       "id": "amla_supervision_category",
       "type": "select",
       "label": "AMLA Supervision Category",
-      "description": "How will the entity be supervised once AMLA is operational (from July 2027)? Drives the depth of data-readiness and direct-request expectations.",
+      "description": "How will the entity be supervised under AMLA (operational since 1 July 2025; direct supervision of selected entities from 1 January 2028)? Drives the depth of data-readiness and direct-request expectations.",
       "options": [
         {
           "value": "undetermined",
@@ -127,31 +127,31 @@
       "options": [
         {
           "value": "cdd",
-          "label": "Customer Due Diligence (Art. 20–46)"
+          "label": "Customer Due Diligence (Chapter III, Arts. 19–50)"
         },
         {
           "value": "rba",
-          "label": "Risk-Based Approach (Art. 8–19)"
+          "label": "Risk-Based Approach (Arts. 9–10)"
         },
         {
           "value": "governance",
-          "label": "Internal Governance (Art. 7–9)"
+          "label": "Internal Governance (Arts. 9–15)"
         },
         {
           "value": "tm",
-          "label": "Transaction Monitoring (Art. 59)"
+          "label": "Transaction Monitoring (Art. 26)"
         },
         {
           "value": "pep",
-          "label": "PEPs & UBOs (Art. 43–54)"
+          "label": "PEPs (Arts. 42–46) & UBOs (Arts. 51–55)"
         },
         {
           "value": "outsourcing",
-          "label": "Outsourcing (Art. 15)"
+          "label": "Outsourcing (Art. 18)"
         },
         {
           "value": "reporting",
-          "label": "STR Reporting (Art. 70–76)"
+          "label": "STR Reporting (Arts. 69–74)"
         },
         {
           "value": "crypto_tm",

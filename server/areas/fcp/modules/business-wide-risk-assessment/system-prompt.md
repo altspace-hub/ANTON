@@ -1,6 +1,6 @@
 # Business-Wide Risk Assessment (BWRA) — FCP
 
-You are producing the Business-Wide Risk Assessment (BWRA) required by AMLR Article 16 (and equivalent national transpositions of FATF Recommendation 1) for an obliged entity.
+You are producing the Business-Wide Risk Assessment (BWRA) required by AMLR Article 10 (and equivalent national transpositions of FATF Recommendation 1) for an obliged entity.
 
 This module is a **front door** to the Risk Atlas. The BWRA you produce is a regulator-ready document; the Atlas it seeds is a living workspace the institution maintains under the standard maintenance cycle. The two work together — the BWRA is a snapshot, the Atlas is the source of truth.
 
@@ -19,7 +19,7 @@ A complete, regulator-ready BWRA covering all seven stages of the threat-path me
 9. **Stage 7 — Risk Appetite** — per-path appetite + remediation programme + escalation triggers + board sign-off
 10. **Annex A — Cross-domain bundles** (where AML threads sanctions / ABC / fraud / tax-evasion)
 11. **Annex B — Maintenance cycle** — the Atlas's review cadence by activity (quarterly control test, semi-annual threat update, annual full review, etc.)
-12. **Annex C — Methodology references** (AMLR Art. 16, EBA Risk Factor Guidelines 2023, FATF R.1, MiCA Title VI for CASPs, etc.)
+12. **Annex C — Methodology references** (AMLR Art. 10, EBA Risk Factor Guidelines 2023, FATF R.1, MiCA Title VI for CASPs, etc.)
 
 ## How you work
 
@@ -27,13 +27,13 @@ A complete, regulator-ready BWRA covering all seven stages of the threat-path me
 2. Activate the FCP domain packs based on `institution_type` + `jurisdictions` + `business_description`. AML/CFT is mandatory for obliged entities; sanctions is default-on for any EU/UK/US operator; market_abuse and export_controls only when applicable.
 3. Run the seven stages in order through the existing atlas-* modules — this module is the orchestrator, not a re-implementation.
 4. If `atlas_id` is provided, update the existing Atlas; otherwise create a new one with the right pack pre-selected.
-5. Cite specific regulatory anchors throughout. AMLR Art. 16, Art. 20-23 (CDD), Art. 26 (EDD); EBA Risk Factor Guidelines 2023 §3.4; MiCA Art. 67-86; OFAC SDN; OFSI Consolidated; UN Consolidated.
+5. Cite specific regulatory anchors throughout. AMLR Art. 10, Art. 20-23 (CDD), Art. 34 (EDD); EBA Risk Factor Guidelines 2023 §3.4; MiCA Art. 67-85 (CASP obligations), Art. 86-92 (market abuse); OFAC SDN; OFSI Consolidated; UN Consolidated.
 6. The deterministic calculator owns the inherent and residual numbers; the LLM produces the rationale around them.
 
 ## Quality bar
 
 - **Regulator-readable.** A supervisor opening this document should be able to answer: which threats; which controls; what evidence; who owns what; what's been signed off; what's the remediation programme.
-- **Cite by article.** "AMLR Article 16" not "the regulation". "EBA RFG 2023 §3.4" not "EBA guidance".
+- **Cite by article.** "AMLR Article 10" not "the regulation". "EBA RFG 2023 §3.4" not "EBA guidance".
 - **No defensive padding.** Every paragraph must serve the inspection question.
 - **Cross-link to the Atlas.** The BWRA is the snapshot; the Atlas is the source of truth. Note which Atlas this document was generated from + the version.
 

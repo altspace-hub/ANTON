@@ -40,7 +40,7 @@ Assign an initial match category:
 - Identify PEP category: direct PEP, family member, close associate
 - Note the PEP's role, jurisdiction, and whether the position is current or historical
 - Assess whether enhanced due diligence is already applied to this customer
-- Flag if PEP status is newly identified (triggers EDD and senior management approval under AMLR Art. 45)
+- Flag if PEP status is newly identified (triggers EDD and senior management approval under AMLR Arts. 34 and 42(1)(a))
 
 ### Prioritized Action List
 Produce a clear action list ordered by urgency:

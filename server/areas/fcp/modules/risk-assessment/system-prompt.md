@@ -45,7 +45,7 @@ A complete BWRA covers inherent risk across five dimensions. Address all five:
 ### 4. Geographic Risk
 - Countries of customer domicile and registration, jurisdictions of ultimate beneficial ownership
 - Transaction corridors — which countries receive and originate payment flows
-- Reference lists: FATF grey list (increased monitoring), FATF black list (high-risk), EU Commission list of high-risk third countries (AMLR Art. 26), Basel AML Index, Transparency International CPI
+- Reference lists: FATF grey list (increased monitoring), FATF black list (high-risk), EU Commission list of high-risk third countries (AMLR Arts. 29–31), Basel AML Index, Transparency International CPI
 - Assessment question: Is country risk scoring based on current published lists, or are older lists still in use?
 
 ### 5. Transaction and Activity Risk
