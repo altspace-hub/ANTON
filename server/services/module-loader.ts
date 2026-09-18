@@ -18,6 +18,7 @@ import fs from 'fs-extra';
 import { watch as fsWatch } from 'node:fs';
 import { fileURLToPath } from 'url';
 import type { AreaConfig, ModuleConfig, LoadedArea, FieldType } from '../types/area-config.js';
+import { stripMaintainerFooter, extractAsOfMonth } from '../lib/as-of-footer.js';
 import { getSkillById, isDiskSkillsPreloaded } from './skills-manager.js';
 import { CONTENT_TYPES, type ContentType } from '../schemas/content-types/index.js';
 import {
@@ -390,7 +391,9 @@ async function loadModule(modulePath: string, areaId: string): Promise<ModuleCon
     validateModuleConfig(config);
 
     if (await fs.pathExists(promptPath)) {
-      config.systemPrompt = (await fs.readFile(promptPath, 'utf-8')).trim();
+      // The maintainer footer is stripped on load, so it never enters the cache and
+      // therefore never reaches a model by any path. See stripMaintainerFooter().
+      config.systemPrompt = stripMaintainerFooter((await fs.readFile(promptPath, 'utf-8')).trim());
     }
 
     return config;
@@ -410,9 +413,13 @@ async function loadArea(areaPath: string): Promise<LoadedArea | null> {
   try {
     const config: AreaConfig = await fs.readJson(configPath);
 
-    const areaContext = await fs.pathExists(contextPath)
+    const rawAreaContext = await fs.pathExists(contextPath)
       ? (await fs.readFile(contextPath, 'utf-8')).trim()
       : '';
+    const areaContext = stripMaintainerFooter(rawAreaContext);
+    // The footer is stripped, but its date is kept: the provenance layer needs to be able
+    // to say how old the domain context behind an answer was.
+    const areaContextAsOf = extractAsOfMonth(rawAreaContext);
 
     const modules: ModuleConfig[] = [];
 
@@ -428,7 +435,7 @@ async function loadArea(areaPath: string): Promise<LoadedArea | null> {
     // Sort modules alphabetically by label for consistent ordering
     modules.sort((a, b) => a.label.localeCompare(b.label));
 
-    return { ...config, modules, areaContext };
+    return { ...config, modules, areaContext, areaContextAsOf };
   } catch (err) {
     console.error(`[module-loader] Failed to load area at ${areaPath}:`, err);
     return null;
@@ -519,6 +526,15 @@ export async function getAreaContext(areaId: string): Promise<string> {
 }
 
 /**
+ * The month this area's context was last reviewed (`YYYY-MM`), or null when the file
+ * carries no canonical footer. 18 of 59 areas are dated; the rest return null and the
+ * composer then says nothing rather than guessing.
+ */
+export async function getAreaContextAsOf(areaId: string): Promise<string | null> {
+  const area = await getArea(areaId);
+  return area?.areaContextAsOf ?? null;
+}
+
 /**
  * Invalidate the cache so the next call reloads from disk.
  * Useful for development hot-reload.

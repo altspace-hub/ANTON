@@ -8,9 +8,10 @@
   "color": "adv-gold",
   "defaults": {
     "thinking": "investigate",
-    "creativity": "balanced",
+    "creativity": "strict",
     "outputFormats": [
-      "detailed-findings"
+      "detailed-findings",
+      "gap-scoring-matrix"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {

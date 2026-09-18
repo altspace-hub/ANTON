@@ -12,7 +12,7 @@
     "creativity": "balanced",
     "outputFormats": [
       "policy-document",
-      "raci-matrix"
+      "action-plan"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

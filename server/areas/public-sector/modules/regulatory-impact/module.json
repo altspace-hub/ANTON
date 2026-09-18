@@ -12,7 +12,7 @@
     "creativity": "balanced",
     "outputFormats": [
       "impact-assessment",
-      "decision-memo"
+      "detailed-findings"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

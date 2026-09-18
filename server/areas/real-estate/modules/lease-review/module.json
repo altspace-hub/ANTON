@@ -10,7 +10,8 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
-      "detailed-findings"
+      "detailed-findings",
+      "action-plan"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {

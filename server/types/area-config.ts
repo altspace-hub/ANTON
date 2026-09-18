@@ -153,5 +153,13 @@ export interface AreaConfig {
 
 export interface LoadedArea extends AreaConfig {
   modules: ModuleConfig[];
+  /** Area context with the maintainer footer stripped — see stripMaintainerFooter(). */
   areaContext: string;
+  /**
+   * The month from the stripped `_As of: YYYY-MM_` footer, or null when the file is
+   * undated. The footer itself never reaches a model (it is an imperative the model
+   * cannot obey), but the DATE is a fact the provenance-and-limits layer needs: it is
+   * what lets an answer say how old the domain context behind it was.
+   */
+  areaContextAsOf: string | null;
 }

@@ -8,15 +8,16 @@
   "color": "adv-teal",
   "defaults": {
     "thinking": "think_hard",
-    "creativity": "balanced",
+    "creativity": "strict",
     "outputFormats": [
-      "policy-document"
+      "policy-document",
+      "gap-scoring-matrix"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": true,
+        "webSearchEnabled": false,
         "description": "ISO 9001:2015, IATF 16949, ISO 13485, quality management principles, process approach, risk-based thinking, continuous improvement"
       }
     }

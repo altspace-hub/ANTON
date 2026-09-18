@@ -242,6 +242,142 @@ describe('module.json defaults.outputFormats', () => {
   });
 });
 
+describe('module.json defaults vs the client catalogue', () => {
+  // 2026-09-18 (Wave 4, track C): for any module the client catalogue knows,
+  // HALF of its module.json is inert. ModulePage.tsx's fresh-module-init branch
+  // ("Hardcoded module — use constants defaults directly") applies thinking,
+  // creativity, outputFormats and knowledgeSources FROM src/lib/constants.ts,
+  // and then asks the server only for areaId, guidedInputs, recommendedSkills,
+  // transparencyLevel, exampleInput and recommendedPersonas. Only a module the
+  // API discovers that is NOT in MODULES takes its defaults from disk.
+  //
+  // So a `defaults` block on disk that disagrees with the catalogue reads like
+  // intent and does nothing. Measured on 2026-09-18: 50 of the 550 matched
+  // modules disagreed — outputFormats 36, webSearch 13, creativity 11,
+  // thinking 9. Twelve modules declared webSearchEnabled: true and ran with it
+  // off (healthcare-gdpr, which carries a live EHDS phase-in timetable, and
+  // tax-rot-rut-guide, whose whole answer is a Skatteverket figure, among
+  // them); one (double-materiality) went the other way. Each was reconciled on
+  // merit — some by correcting the catalogue, some by correcting the disk file
+  // — and this pins the result at zero. There is deliberately no allowlist.
+  const repoRoot = path.resolve(__dirname, '..', '..');
+  const areasDir = path.join(repoRoot, 'server', 'areas');
+
+  type DiskDefaults = {
+    thinking?: unknown;
+    creativity?: unknown;
+    outputFormats?: unknown;
+    knowledgeSources?: Record<string, { enabled?: unknown; webSearchEnabled?: unknown } | undefined>;
+  };
+
+  function diskModules(): Array<{ area: string; dir: string; id: string; defaults: DiskDefaults }> {
+    const out: Array<{ area: string; dir: string; id: string; defaults: DiskDefaults }> = [];
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        if (!fs.existsSync(configPath)) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string; defaults?: DiskDefaults };
+        out.push({
+          area: areaEntry.name,
+          dir: modEntry.name,
+          id: config.id ?? modEntry.name,
+          defaults: config.defaults ?? {},
+        });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * What the four knowledge-source modes are actually set to for a catalogue
+   * module — the hard defaults in ModulePage's `defaultKS`, with each mode the
+   * catalogue declares Object.assign'ed over the top. A mode the catalogue
+   * omits keeps the hard default, which is why a module.json can say
+   * `localFolder: { enabled: true }` and still run with local folders off.
+   */
+  function effectiveModes(m: (typeof MODULES)[number]): Record<string, { enabled: boolean; webSearchEnabled?: boolean }> {
+    const modes: Record<string, { enabled: boolean; webSearchEnabled?: boolean }> = {
+      claudeKnowledge: { enabled: true, webSearchEnabled: false },
+      onlineReference: { enabled: false },
+      localFolder: { enabled: false },
+      combinedMode: { enabled: false },
+    };
+    const declared = (m.defaults.knowledgeSources ?? {}) as Record<string, { enabled?: boolean; webSearchEnabled?: boolean } | undefined>;
+    for (const name of ['claudeKnowledge', 'onlineReference', 'localFolder'] as const) {
+      const d = declared[name];
+      if (d) Object.assign(modes[name], d);
+    }
+    return modes;
+  }
+
+  it('no catalogue module\'s module.json defaults contradict the catalogue', () => {
+    const catalogue = new Map(MODULES.map((m) => [m.id, m]));
+    const conflicts: string[] = [];
+    let compared = 0;
+
+    for (const disk of diskModules()) {
+      const m = catalogue.get(disk.id);
+      if (!m) continue; // API-discovered only — its module.json IS authoritative
+      compared++;
+      const where = `${disk.area}/${disk.dir}`;
+      const d = disk.defaults;
+
+      if (typeof d.thinking === 'string' && d.thinking !== m.defaults.thinking) {
+        conflicts.push(`${where} thinking: disk=${d.thinking} catalogue=${m.defaults.thinking}`);
+      }
+      if (typeof d.creativity === 'string' && d.creativity !== m.defaults.creativity) {
+        conflicts.push(`${where} creativity: disk=${d.creativity} catalogue=${m.defaults.creativity}`);
+      }
+      if (Array.isArray(d.outputFormats)) {
+        const onDisk = d.outputFormats.map(String).join(',');
+        const inCatalogue = (m.defaults.outputFormats ?? []).join(',');
+        if (onDisk !== inCatalogue) {
+          conflicts.push(`${where} outputFormats: disk=[${onDisk}] catalogue=[${inCatalogue}]`);
+        }
+      }
+
+      const effective = effectiveModes(m);
+      for (const [name, mode] of Object.entries(d.knowledgeSources ?? {})) {
+        const want = effective[name];
+        if (!mode || !want) continue;
+        if (typeof mode.enabled === 'boolean' && mode.enabled !== want.enabled) {
+          conflicts.push(`${where} ${name}.enabled: disk=${mode.enabled} effective=${want.enabled}`);
+        }
+        if (name === 'claudeKnowledge'
+          && typeof mode.webSearchEnabled === 'boolean'
+          && mode.webSearchEnabled !== want.webSearchEnabled) {
+          conflicts.push(`${where} webSearchEnabled: disk=${mode.webSearchEnabled} effective=${want.webSearchEnabled}`);
+        }
+      }
+    }
+
+    expect(compared, 'no module.json matched a catalogue id — did the walker break?').toBeGreaterThan(500);
+    expect(conflicts).toEqual([]);
+  });
+
+  it('ModulePage still takes a catalogue module\'s defaults from the catalogue', () => {
+    // The premise the guard rests on. If this branch is ever changed so that a
+    // catalogue module reads its defaults from the server instead, the guard
+    // above is pointing the wrong way and must be revisited rather than
+    // silently kept green.
+    const page = fs.readFileSync(path.join(repoRoot, 'src', 'pages', 'ModulePage.tsx'), 'utf-8');
+    const branch = page.slice(page.indexOf('Hardcoded module'), page.indexOf('} else if (dynamicCfg)'));
+    expect(branch.length, 'the fresh-module-init branch moved or was renamed').toBeGreaterThan(0);
+    for (const line of [
+      'setThinking(module.defaults.thinking)',
+      'setCreativity(module.defaults.creativity)',
+      'setSelectedOutputFormats(module.defaults.outputFormats)',
+      'module.defaults.knowledgeSources.claudeKnowledge',
+    ]) {
+      expect(branch, `ModulePage no longer applies ${line} from the catalogue`).toContain(line);
+    }
+  });
+});
+
 describe('module.json recommendedSkills', () => {
   // 2026-09-17 (Wave 1, track E): `recommendedSkills` drives ModulePage's
   // suggestion banner, and "Apply" attaches EVERY id in the array at once.

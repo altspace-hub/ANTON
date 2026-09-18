@@ -8,7 +8,7 @@
   "color": "adv-teal",
   "areaId": "data-analytics",
   "defaults": {
-    "thinking": "think_hard",
+    "thinking": "investigate",
     "creativity": "strict",
     "outputFormats": [
       "data-readiness-scorecard",

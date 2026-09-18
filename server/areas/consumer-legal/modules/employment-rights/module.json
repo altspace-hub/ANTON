@@ -11,6 +11,7 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
+      "detailed-findings",
       "decision-memo"
     ],
     "knowledgeSources": {

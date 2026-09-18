@@ -1747,7 +1747,7 @@ export const TRADES_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "strict",
-      outputFormats: ["quick-briefing"],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Small-trade invoicing essentials: required fields (business name, customer, invoice number/date, due date), itemised labour + materials, VAT/sales-tax handling and registration thresholds by country, payment terms and late-payment wording, bank/mobile-money payment details, and record-keeping for tax. Plain reusable templates for a sole trader." },
       },
@@ -1763,7 +1763,7 @@ export const TRADES_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Pricing a trade job: estimating labour hours, marking up materials, allowing for waste/contingency, overhead and target margin, fixed-price vs time-and-materials, deposit and milestone staging, quote validity period, and clear scope/exclusions wording to avoid disputes. Helps avoid the common mistake of underpricing." },
       },
@@ -1779,7 +1779,7 @@ export const TRADES_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Customer-facing message templates for tradespeople: appointment confirmation and reminders, arrival-window and running-late notes, job-complete and feedback requests, polite payment reminders and overdue follow-ups, and handling complaints professionally. Short, courteous, SMS/WhatsApp-ready tone." },
       },
@@ -1794,10 +1794,19 @@ export const TRADES_MODULES: ModuleDefinition[] = [
     color: "adv-gold",
     defaults: {
       thinking: "think",
-      creativity: "strict",
+      // 'balanced', not 'strict': the prompt's own tone rule is "plain,
+      // practical Swedish, short answers" in "plain Swedish trade language".
+      // The strict style instruction mandates formal regulatory language.
+      creativity: "balanced",
       outputFormats: ["quick-briefing"],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Swedish ROT (renovation/repair/extension) and RUT (household services) tax deductions: which services qualify, the labour-cost-only rule, current deduction rates and annual caps, the customer's remaining allowance, how the tradesperson applies the deduction on the invoice and requests the remainder from Skatteverket (begäran om utbetalning), required customer details (personnummer, property), and common rejection reasons. Rates change — verify current figures at skatteverket.se." },
+        // The only module in an offline-capable area (trades sets
+        // modelTier.minimum = ollama-local) where web search is on. It earns it:
+        // the answer IS a Skatteverket figure — the 30% / 50,000 SEK ROT cap
+        // sits inside a combined 75,000 SEK ROT+RUT ceiling, corrected by hand
+        // this year — and both this description and the prompt already tell the
+        // user the rates change and to check skatteverket.se.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "Swedish ROT (renovation/repair/extension) and RUT (household services) tax deductions: which services qualify, the labour-cost-only rule, current deduction rates and annual caps, the customer's remaining allowance, how the tradesperson applies the deduction on the invoice and requests the remainder from Skatteverket (begäran om utbetalning), required customer details (personnummer, property), and common rejection reasons. Rates change — verify current figures at skatteverket.se." },
       },
     },
   },
@@ -1811,7 +1820,7 @@ export const TRADES_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Building a job material list: breaking a task into materials + consumables + tools, estimating quantities with a sensible waste allowance, grouping by supplier/aisle, flagging long-lead or special-order items, and a quick budget total. Trade-aware (electrical, plumbing, carpentry, painting, tiling) so nothing critical is forgotten." },
       },

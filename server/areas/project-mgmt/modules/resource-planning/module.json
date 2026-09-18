@@ -8,11 +8,11 @@
   "color": "adv-green",
   "areaId": "project-mgmt",
   "defaults": {
-    "thinking": "think",
+    "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
       "budget-resource-estimate",
-      "project-plan"
+      "action-plan"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

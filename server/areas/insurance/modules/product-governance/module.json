@@ -10,7 +10,8 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
-      "policy-document"
+      "policy-document",
+      "gap-scoring-matrix"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {

@@ -11,7 +11,7 @@ import {
   childSafeguardingLayer,
 } from './prompt-builder.js';
 import { resolveSkills } from './skills-manager.js';
-import { getModuleSystemPrompt, getAreaContext } from './module-loader.js';
+import { getModuleSystemPrompt, getAreaContext, getAreaContextAsOf } from './module-loader.js';
 import { TONE_PROMPTS, EMOJI_PROMPTS, STRUCTURED_REASONING_PROMPT } from './togglePrompts.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -454,9 +454,25 @@ export async function composeSystemPromptParts(config: PromptComposerConfig): Pr
   // Layer 2e: Knowledge Atoms — recent insights from completed work
   pushStatic('layer2e_atoms', config.atomLayerPrompt);
 
-  // Layer 3: Area Context — domain landscape, regulatory framework, terminology
+  // Layer 3: Area Context — domain landscape, regulatory framework, terminology.
+  //
+  // The maintainer footer is stripped at load (see stripMaintainerFooter): its verb
+  // phrase is an instruction the model cannot carry out, because it cannot reach a
+  // primary source unless web search happens to be on. The DATE is kept and restated
+  // here as a plain fact, because the provenance-and-limits contract already asks every
+  // deliverable to say what was not checked — and without this the model has no way to
+  // know how old the domain context behind its answer is. Undated areas say nothing.
   if (config.areaId) {
-    pushStatic('layer3_area_context', await getAreaContext(config.areaId));
+    const areaContext = await getAreaContext(config.areaId);
+    if (areaContext) {
+      const asOf = await getAreaContextAsOf(config.areaId);
+      pushStatic(
+        'layer3_area_context',
+        asOf
+          ? `${areaContext}\n\nThis domain context was last reviewed in ${asOf}. Anything in it that depends on a date, a rate, a threshold or a programme still being current may have moved since.`
+          : areaContext,
+      );
+    }
   }
 
   // Layer 4: Module System Prompt — user override takes priority over the file.

@@ -11,8 +11,8 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
-      "decision-memo",
-      "project-plan"
+      "action-plan",
+      "detailed-findings"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

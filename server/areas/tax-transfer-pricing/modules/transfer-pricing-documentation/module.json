@@ -12,8 +12,7 @@
     "creativity": "strict",
     "outputFormats": [
       "detailed-findings",
-      "policy-document",
-      "executive-summary"
+      "policy-document"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

@@ -10,6 +10,7 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
+      "detailed-findings",
       "executive-summary"
     ],
     "transparencyLevel": 1,

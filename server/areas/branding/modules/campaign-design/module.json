@@ -16,7 +16,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": true,
+        "webSearchEnabled": false,
         "description": "Marketing campaign best practices, channel trends"
       }
     }

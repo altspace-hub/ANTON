@@ -11,8 +11,8 @@
     "thinking": "think",
     "creativity": "balanced",
     "outputFormats": [
-      "executive-summary",
-      "quick-briefing"
+      "quick-briefing",
+      "action-plan"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

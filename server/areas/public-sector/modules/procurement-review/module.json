@@ -11,6 +11,7 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
+      "detailed-findings",
       "gap-scoring-matrix"
     ],
     "knowledgeSources": {

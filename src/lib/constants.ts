@@ -363,6 +363,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['action-plan', 'detailed-findings'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -879,6 +880,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['quick-briefing', 'action-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -945,7 +947,11 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'investigate',
       creativity: 'balanced',
-      outputFormats: ['maturity-assessment', 'detailed-findings'],
+      // NOT 'maturity-assessment': that format's prompt instruction hard-codes
+      // AML/CFT dimensions (CDD/KYC, transaction monitoring, sanctions
+      // screening, SAR/STR), so a CSRD double materiality run was being told to
+      // produce an AML maturity table. module.json's pair is the right one.
+      outputFormats: ['detailed-findings', 'decision-memo'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'ESRS 1, EFRAG implementation guidance' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1811,7 +1817,11 @@ export const MODULES: ModuleDefinition[] = [
       creativity: 'strict',
       outputFormats: ['detailed-findings', 'gap-scoring-matrix'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        // Web search on: the scope includes transfer taxes and VAT treatment
+        // and "reference applicable local regulations, building codes" — all
+        // jurisdiction-specific rates that move. The other three real-estate
+        // modules already search.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -1911,7 +1921,10 @@ export const MODULES: ModuleDefinition[] = [
     color: 'adv-green',
     defaults: {
       thinking: 'think_hard',
-      creativity: 'strict',
+      // 'balanced' — this advises an individual on their own tax position with
+      // worked before/after calculations; the other four personal-finance
+      // modules are balanced and this was the outlier.
+      creativity: 'balanced',
       outputFormats: ['decision-memo'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
@@ -2030,7 +2043,12 @@ export const MODULES: ModuleDefinition[] = [
       creativity: 'strict',
       outputFormats: ['gap-scoring-matrix', 'policy-document'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        // Web search on: the prompt carries a live EHDS phase-in timetable
+        // (Reg (EU) 2025/327 in force, Impl. Reg (EU) 2026/771, access bodies
+        // by 26 Mar 2027, secondary use from Mar 2029) and tells the user to
+        // verify national implementations. module.json has said true since the
+        // initial commit; the catalogue is the side that was wrong.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -2331,7 +2349,11 @@ export const MODULES: ModuleDefinition[] = [
       creativity: 'strict',
       outputFormats: ['detailed-findings', 'gap-scoring-matrix'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        // Web search on: step 1 of the module's own method is "identify
+        // applicable thresholds", and the EU procurement thresholds are re-set
+        // by Commission delegated regulation every two years. The prompt also
+        // says to verify applicable national rules.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -2452,10 +2474,15 @@ export const MODULES: ModuleDefinition[] = [
     color: 'adv-red',
     defaults: {
       thinking: 'think_hard',
-      creativity: 'strict',
+      // 'balanced', not 'strict': the consumer-legal audience is the individual,
+      // not a regulator. The strict style instruction says "use formal
+      // regulatory language", which is the wrong register for a tenant. The
+      // module prompt commands citation on its own; balanced keeps it readable.
+      creativity: 'balanced',
       outputFormats: ['detailed-findings', 'action-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2468,10 +2495,13 @@ export const MODULES: ModuleDefinition[] = [
     color: 'adv-red',
     defaults: {
       thinking: 'think_hard',
-      creativity: 'strict',
+      // 'balanced' — see tenancy-disputes: consumer-legal writes for the
+      // individual, and 'strict' mandates formal regulatory language.
+      creativity: 'balanced',
       outputFormats: ['detailed-findings', 'decision-memo'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2484,10 +2514,13 @@ export const MODULES: ModuleDefinition[] = [
     color: 'adv-red',
     defaults: {
       thinking: 'think_hard',
-      creativity: 'strict',
+      // 'balanced' — the prompt says "use clear, accessible language: the
+      // audience is often a non-lawyer consumer".
+      creativity: 'balanced',
       outputFormats: ['detailed-findings'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2500,7 +2533,9 @@ export const MODULES: ModuleDefinition[] = [
     color: 'adv-red',
     defaults: {
       thinking: 'think_hard',
-      creativity: 'strict',
+      // 'balanced' — the prompt promises a "plain language summary",
+      // "jargon-free", "made accessible to non-lawyers".
+      creativity: 'balanced',
       outputFormats: ['detailed-findings', 'action-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
@@ -2517,10 +2552,13 @@ export const MODULES: ModuleDefinition[] = [
     color: 'adv-red',
     defaults: {
       thinking: 'think_hard',
-      creativity: 'strict',
+      // 'balanced' — the prompt says "use plain language throughout: this
+      // guidance is for unrepresented individuals".
+      creativity: 'balanced',
       outputFormats: ['action-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2539,6 +2577,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['action-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2555,6 +2594,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['project-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2571,6 +2611,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['training-material'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2587,6 +2628,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['quick-briefing'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },
@@ -2603,6 +2645,7 @@ export const MODULES: ModuleDefinition[] = [
       outputFormats: ['training-material', 'project-plan'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
   },

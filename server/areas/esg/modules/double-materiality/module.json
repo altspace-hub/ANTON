@@ -8,7 +8,7 @@
   "color": "adv-green",
   "areaId": "esg",
   "defaults": {
-    "thinking": "think_hard",
+    "thinking": "investigate",
     "creativity": "balanced",
     "outputFormats": [
       "detailed-findings",
@@ -17,7 +17,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": false,
+        "webSearchEnabled": true,
         "description": "EFRAG double materiality guidance, ESRS 1, GRI Standards"
       },
       "localFolder": {

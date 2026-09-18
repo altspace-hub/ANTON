@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
+import {
+  AS_OF_LINE,
+  MIN_BARE_YEAR,
+  asOfFooterIsLastLine,
+  classifyYears,
+} from '../../server/lib/as-of-footer.js';
 
 /**
  * Guard over the regulated area contexts (server/areas/<area>/area-context.md).
@@ -12,82 +18,35 @@ import { describe, it, expect } from 'vitest';
  * how old the dates are, and no bare year older than 2024 may describe the
  * current state of the world.
  *
- * Year rule (documented here because it is the whole test):
- *   A four-digit year 19xx/20xx is ALLOWED when any of these hold —
- *     1. it is >= 2024 (recent enough that the As-of line covers it);
- *     2. it is adjacent to '/' or ':' — an act, guideline or standard NUMBER
- *        ("2024/1624", "EBA/GL/2021/05", "ISO 31000:2018", "lag (2017:630)");
- *     3. it sits inside a parenthetical tag "( … )" that is not a currency
- *        claim — the edition / adoption year of a named instrument
- *        ("COSO ERM Framework (2017)", "(2021, updated 2023)", "Law 25 (2022)");
- *        a parenthetical containing "as of", "since" or "until" is a currency
- *        claim and gets no exemption;
- *     4. it completes a full calendar date ("25 May 2018", "January 17, 2025")
- *        — a specific effective date is a fact, not a claim about today;
- *     5. it is the version year of a named instrument, i.e. directly followed
- *        by an instrument noun ("2020 amendments"), directly preceded by one
- *        ("Sanctions and Anti-Money Laundering Act 2018"), or directly
- *        preceded by an ALL-CAPS product token ("COBIT 2019").
- *   Anything else — a bare year in prose ("since 2018", "in 2021", "as of
- *   2023") — must be >= 2024, because that is exactly the kind of sentence
- *   that silently goes stale.
+ * 2026-09-18: the footer form and the year rule moved to
+ * `server/lib/as-of-footer.ts` so that this guard and the module-prompt guard
+ * (tests/lib/module-prompt-as-of.test.ts) share ONE definition. The rule itself
+ * is documented there; the self-check at the bottom of this file is the
+ * executable copy of it. Production imports `stripMaintainerFooter` from the
+ * same module, which is why it lives under `server/` rather than `tests/`.
  */
 
 const REGULATED_AREAS = [
   'fcp', 'legal', 'audit', 'risk', 'cyber', 'data-privacy', 'esg',
   'insurance', 'banking', 'blockchain', 'tax-transfer-pricing', 'healthcare',
+  // Added 2026-09-17, once each of these was dated and its footer made canonical.
+  'trades', 'academic', 'personal-finance', 'real-estate',
 ] as const;
 
-const MIN_BARE_YEAR = 2024;
-const AS_OF_LINE = /^_As of: \d{4}-\d{2} — verify dates against primary sources before relying on them\._$/m;
-
-const MONTH = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)';
-const FULL_DATE_BEFORE = new RegExp(`(?:\\d{1,2}\\s+${MONTH}\\s+|${MONTH}\\s+\\d{1,2},\\s+)$`);
-const INSTRUMENT_NOUN_AFTER = /^\s+(?:amendments?|Act|Directive|Regulation|Guidelines?|Standards?|Reform|edition|update|Global)\b/;
-const INSTRUMENT_NOUN_BEFORE = /\b(?:Act|Law|Bill|Ordinance|Directive|Regulation|Standard|Guidelines|No\.?|nr)\s$/;
-const ALLCAPS_TOKEN_BEFORE = /\b[A-Z][A-Z0-9-]{2,}\s$/;
-const CURRENCY_WORDS = /\b(?:as of|since|until|through)\b/i;
-
-interface YearHit { year: number; line: number; context: string; allowed: boolean; }
-
-export function classifyYears(text: string): YearHit[] {
-  const hits: YearHit[] = [];
-  const re = /\b(19\d{2}|20\d{2})\b/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const year = Number(m[1]);
-    const start = m.index;
-    const end = start + m[1].length;
-    const before = text.slice(Math.max(0, start - 40), start);
-    const after = text.slice(end, end + 40);
-    const line = text.slice(0, start).split('\n').length;
-    const context = text.slice(Math.max(0, start - 30), end + 30).replace(/\n/g, ' ');
-
-    let allowed = year >= MIN_BARE_YEAR;
-    if (!allowed) {
-      const prev = text[start - 1] ?? '';
-      const next = text[end] ?? '';
-      // 2. numbering
-      if (prev === '/' || next === '/' || prev === ':' || next === ':') allowed = true;
-    }
-    if (!allowed) {
-      // 3. parenthetical tag — nearest '(' before with no ')' in between, and a ')' after with no '(' in between
-      const openIdx = text.lastIndexOf('(', start);
-      const closeIdx = text.indexOf(')', end);
-      if (openIdx !== -1 && closeIdx !== -1) {
-        const inner = text.slice(openIdx + 1, closeIdx);
-        if (!inner.includes(')') && !inner.includes('(') && !inner.includes('\n') && !CURRENCY_WORDS.test(inner)) allowed = true;
-      }
-    }
-    if (!allowed && FULL_DATE_BEFORE.test(before)) allowed = true;          // 4. full date
-    if (!allowed && INSTRUMENT_NOUN_AFTER.test(after)) allowed = true;       // 5a. "2020 amendments"
-    if (!allowed && INSTRUMENT_NOUN_BEFORE.test(before)) allowed = true;     // 5b. "Act 2018"
-    if (!allowed && ALLCAPS_TOKEN_BEFORE.test(before)) allowed = true;       // 5c. "COBIT 2019"
-
-    hits.push({ year, line, context, allowed });
-  }
-  return hits;
-}
+/**
+ * Dated, but deliberately NOT yet under the guard: `mobile-money` and `microfinance`.
+ *
+ * Both carry a canonical footer and would pass the As-of check. They fail the bare-year
+ * check only on legitimate HISTORY — "M-Pesa's launch in Kenya in 2007", "the 1983 work of
+ * Muhammad Yunus", "the Nobel Peace Prize in 2006", "in 2010, the Andhra Pradesh crisis" —
+ * and on one instrument title whose year follows a word this classifier cannot recognise as
+ * an instrument noun ("Framework for Mobile Money Services 2021").
+ *
+ * A bare historical year is not staleness, so failing them would be a false positive. The
+ * classifier would need a way to tell a historical statement from a currency claim before
+ * these two can join. That is a design decision, not an oversight — recorded here so the
+ * omission is visible rather than silent.
+ */
 
 describe('regulated area contexts carry an As-of line and no stale bare years', () => {
   const repoRoot = path.resolve(__dirname, '..', '..');
@@ -102,8 +61,7 @@ describe('regulated area contexts carry an As-of line and no stale bare years', 
     it(`${area}: ends with an "As of:" line`, () => {
       const text = fs.readFileSync(file, 'utf-8');
       expect(text).toMatch(AS_OF_LINE);
-      const lastLine = text.trimEnd().split('\n').at(-1) ?? '';
-      expect(lastLine, 'the As-of line must be the final line').toMatch(AS_OF_LINE);
+      expect(asOfFooterIsLastLine(text), 'the As-of line must be the final line').toBe(true);
     });
 
     it(`${area}: every year is >= ${MIN_BARE_YEAR} or part of an instrument name/number`, () => {
@@ -122,12 +80,40 @@ describe('year rule self-check (so the guard cannot pass vacuously)', () => {
       'COSO ERM Framework (2017)', 'FATF Guidance (2021, updated 2023)', "Quebec's Law 25 (2022)",
       'came into full effect on 25 May 2018', 'Applies from January 17, 2025', 'COBIT 2019',
       'strengthened by its 2020 amendments', 'Sanctions and Anti-Money Laundering Act 2018',
+      // Added 2026-09-18 with the widening for the module prompts. Each is a real
+      // false positive found in the corpus, not an invented case:
+      'both issued June 2023 and effective for reporting periods',   // month + year
+      'Most EU member states transposed by June 2021.',              // month + year
+      'US SR 11-7 / OCC Bulletin 2011-12',                           // numbered bulletin
+      'replacing the 2013 guidelines',                               // lower-case noun
+      'the 2021 Model Rules and the 2022 Directive',                 // "Model Rules"
+      'the post-2023 Administrative Guidance restrictions',          // era label
+      'null on 31% of pre-2021 records',                             // era label
+      'Consumer Protection Act, 2019 (in force)',                    // comma citation
+      'CBK (Digital Credit Providers) Regulations, 2022',            // comma citation
+      'Data Protection Act, No. 24 of 2019',                         // "No. N of YYYY"
+      'RBI Integrated Ombudsman Scheme 2021',                        // scheme
+      'CBN Consumer Protection Framework 2016',                      // framework
     ];
     for (const s of ok) expect(classifyYears(s).filter((h) => !h.allowed), s).toEqual([]);
   });
 
   it('flags bare years in prose that describe the current state', () => {
-    const bad = ['fines exceed EUR 4 billion since 2018', 'strengthened in 2021', '(as of 2023)', 'transposed by June 2021.'];
+    const bad = [
+      'fines exceed EUR 4 billion since 2018',
+      'strengthened in 2021',
+      '(as of 2023)',
+      // 'transposed by June 2021.' moved to the ok list on 2026-09-18: a month AND a
+      // year is a specific event date, as much a completed fact as "1 June 2021", and
+      // it was the single largest false-positive class across the 560 module prompts.
+      // These replace it, so the bad list does not lose cases:
+      'the framework was overhauled in 2022',
+      'HMRC tightened eligibility requirements significantly from 2023',
+      // A date is a fact, but "as of <date>" is a snapshot claim and stays flagged —
+      // otherwise the month+year widening would have opened a hole.
+      'as of March 2023 the cash limit is EUR 10,000',
+      'as of 17 January 2023 the threshold is EUR 10,000',
+    ];
     for (const s of bad) expect(classifyYears(s).filter((h) => !h.allowed).length, s).toBeGreaterThan(0);
   });
 });

@@ -12,7 +12,7 @@
     "creativity": "balanced",
     "outputFormats": [
       "decision-memo",
-      "project-plan"
+      "detailed-findings"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {
