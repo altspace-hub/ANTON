@@ -497,7 +497,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think_hard',
       creativity: 'balanced',
-      outputFormats: ['stakeholder-presentation', 'executive-summary'],
+      outputFormats: ['management-presentation'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1304,7 +1304,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think',
       creativity: 'balanced',
-      outputFormats: ['policy-document'],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1408,7 +1408,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think_hard',
       creativity: 'balanced',
-      outputFormats: ['policy-document'],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1425,7 +1425,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think_hard',
       creativity: 'balanced',
-      outputFormats: ['policy-document'],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1459,7 +1459,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think_hard',
       creativity: 'balanced',
-      outputFormats: ['client-proposal'],
+      outputFormats: [],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1478,7 +1478,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think',
       creativity: 'balanced',
-      outputFormats: ['quick-briefing'],
+      outputFormats: ['press-release'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
@@ -1711,7 +1711,7 @@ export const MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'investigate',
       creativity: 'strict',
-      outputFormats: ['detailed-findings'],
+      outputFormats: ['transfer-pricing-memo'],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'OECD Transfer Pricing Guidelines, BEPS Actions 8-10, Nordic transfer pricing rules' },
       },
@@ -2655,8 +2655,8 @@ export const MODULES: ModuleDefinition[] = [
   { id: 'brand-strategy', label: 'Brand Strategy Workshop', shortLabel: 'Brand Strategy', icon: 'Target', description: 'Define brand positioning, values, personality, and messaging architecture through structured strategic analysis.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'creative', outputFormats: ['decision-memo', 'stakeholder-presentation'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
   { id: 'content-strategy', label: 'Content Strategy Builder', shortLabel: 'Content Strategy', icon: 'Layers', description: 'Develop comprehensive content strategies with channel mix, editorial calendars, and audience journey mapping.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['project-plan'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
   { id: 'copywriting', label: 'Copywriting Assistant', shortLabel: 'Copywriting', icon: 'FileText', description: 'Create compelling copy for websites, ads, emails, and marketing materials that converts and resonates with target audiences.', color: 'adv-red', defaults: { thinking: 'think', creativity: 'creative', outputFormats: ['quick-briefing'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
-  { id: 'visual-identity', label: 'Visual Identity Guidelines', shortLabel: 'Visual Identity', icon: 'Layout', description: 'Develop brand visual identity guidelines covering logo usage, colour palette, typography, and brand application rules.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['policy-document'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
-  { id: 'campaign-design', label: 'Campaign Design Planner', shortLabel: 'Campaign Design', icon: 'Send', description: 'Plan integrated marketing campaigns with objectives, target segments, channel strategy, and measurement framework.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'creative', outputFormats: ['project-plan'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
+  { id: 'visual-identity', label: 'Visual Identity Guidelines', shortLabel: 'Visual Identity', icon: 'Layout', description: 'Develop brand visual identity guidelines covering logo usage, colour palette, typography, and brand application rules.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: [], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
+  { id: 'campaign-design', label: 'Campaign Design Planner', shortLabel: 'Campaign Design', icon: 'Send', description: 'Plan integrated marketing campaigns with objectives, target segments, channel strategy, and measurement framework.', color: 'adv-red', defaults: { thinking: 'think_hard', creativity: 'creative', outputFormats: ['campaign-brief'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' } } } },
 
   // ── Creative & Entertainment Production ─────────────────────
   { id: 'script-development', label: 'Script & Screenplay Development', shortLabel: 'Script Dev', icon: 'Film', description: 'Develop screenplays, stage plays, teleplays, and game narratives with proper craft structure — beat sheets, character arcs, genre conventions, and professional formatting.', color: 'adv-teal', defaults: { thinking: 'think_hard', creativity: 'balanced', outputFormats: ['screenplay'], transparencyLevel: 1, knowledgeSources: { claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Screenwriting craft, dramatic structure, genre conventions' } } } },
@@ -2726,12 +2726,25 @@ export const AREAS = [
       'regulatory-change-impact', 'gdpr-privacy', 'legal-brief',
       'contract-negotiation', 'regulatory-sandbox',
       // Batch 1:
-      'regulatory-horizon-scanning', 'contract-clause-checker', 'gdpr-dsar-handler',
+      'regulatory-horizon-scanning', 'contract-clause-checker',
       'regulatory-deadline-tracker', 'board-legal-summary', 'multi-jurisdiction-comparison',
       // FDI screening (Tier B):
       'fdi-screening-compliance',
       // Tier-C backlog (2026-06-14 audit plan):
       'amla-supervisory-cooperation',
+      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
+      // bundle; taken out of the sidebar and search only:
+      //   'gdpr-dsar-handler' — superseded by data-privacy's 'dsr-handler', which
+      //   covers all seven rights at article level. Its financial-services edge —
+      //   the AML/tipping-off restriction (absolute; cannot confirm or deny an
+      //   STR), the sanctions and ongoing-investigation restrictions, the AML
+      //   retention block on erasure, the FS data-source inventory and the
+      //   redaction log — has been folded into 'dsr-handler' first.
+      // 'gdpr-privacy' was reviewed for the same treatment and KEPT: it is the
+      // only GDPR entry point in this area, it carries FS-specific privacy ground
+      // the data-privacy modules do not (AML/KYC lawful basis, Art. 22 credit
+      // decisions, PSD2 consent, Art. 88 employee monitoring), and it is bound
+      // into starter-packs.ts and GuideMePage's 'lawyer' role.
     ],
   },
   {
@@ -2759,12 +2772,17 @@ export const AREAS = [
     color: 'adv-green',
     moduleIds: [
       'proposal-generator', 'stakeholder-mapping', 'engagement-delivery',
-      'client-presentation', 'change-management',
+      'client-presentation',
       // Surfaced server modules (June 2026, plan 1.5):
       'benchmarking-best-practice', 'change-management-strategy', 'client-workshop-facilitator',
       'expert-testimony-prep', 'value-assessment-benefits',
       // Tier-C backlog (2026-06-14 audit plan):
       'outcome-based-pricing-designer', 'esg-integration-in-delivery',
+      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
+      // bundle; taken out of the sidebar and search only:
+      //   'change-management' — superseded by 'change-management-strategy', which
+      //   now carries its six-dimension readiness assessment, its pitfalls list,
+      //   its follow-up guidance and a deliverable selector.
     ],
   },
   {
@@ -2890,10 +2908,19 @@ export const AREAS = [
     moduleIds: [
       'business-case', 'strategic-analysis', 'market-entry', 'competitive-analysis',
       // Batch 1 (E):
-      'competitive-intelligence', 'board-meeting-prep', 'okr-progress-tracker',
-      'partnership-evaluation', 'market-entry-briefing',
+      'board-meeting-prep', 'okr-progress-tracker',
+      'partnership-evaluation',
       // Tier-C backlog (2026-06-14 audit plan):
       'digital-transformation-business-case', 'innovation-pipeline-assessment',
+      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
+      // bundle; taken out of the sidebar and search only:
+      //   'competitive-intelligence' — superseded by 'competitive-analysis', which
+      //   now carries its evidence-grading discipline, intelligence-gap
+      //   declaration, pricing/commercial dimension and per-competitor template.
+      //   'market-entry-briefing' — superseded by 'market-entry', which now
+      //   carries its risk register, critical-success-factor test, next-steps /
+      //   90-day section, market-structure and white-space analysis and
+      //   information-quality standard.
     ],
   },
   // ── Wave 3 Areas ─────────────────────────────────────────
@@ -2937,10 +2964,15 @@ export const AREAS = [
     icon: 'Megaphone',
     color: 'adv-green',
     moduleIds: [
-      'press-release', 'crisis-comms', 'internal-comms', 'stakeholder-messaging', 'media-briefing',
+      'press-release', 'internal-comms', 'stakeholder-messaging', 'media-briefing',
       // Batch 1 (D):
       'meeting-minutes-generator', 'town-hall-prep', 'change-comm-planner',
       'investor-update-letter', 'crisis-comms-response',
+      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
+      // bundle; taken out of the sidebar and search only:
+      //   'crisis-comms' — superseded by 'crisis-comms-response', whose prompt now
+      //   carries the crisis-stage ladder (preparation/playbook → acute → response
+      //   → recovery) and the trust-rebuilding step folded in from it.
     ],
   },
   {
@@ -3019,11 +3051,22 @@ export const AREAS = [
     icon: 'Target',
     color: 'adv-green',
     moduleIds: [
-      'deal-review', 'pipeline-analysis', 'pricing-strategy', 'proposal-writing', 'win-loss-analysis',
+      'deal-review', 'pipeline-analysis', 'pricing-strategy', 'win-loss-analysis',
       // Batch 1 (C):
-      'lead-qualification-scorer', 'proposal-generator-sales', 'win-loss-report',
+      'lead-qualification-scorer', 'proposal-generator-sales',
       'customer-health-score', 'renewal-risk-assessor', 'sales-call-prep',
       'competitive-win-loss-analyzer',
+      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
+      // bundle; taken out of the sidebar and search only:
+      //   'proposal-writing' — superseded by 'proposal-generator-sales', which now
+      //   carries its win-theme section, proposal-type shaping (RFP/tender,
+      //   framework, extension), risk-and-scope section and safeguards.
+      //   'win-loss-report' — superseded by 'win-loss-analysis', which now carries
+      //   its win-rate dimensions, source benchmarks, sample-size floor,
+      //   late-stage-churn diagnostic and buyer-interview question set.
+      // 'competitive-win-loss-analyzer' was reviewed for the same treatment and
+      // kept: it is the per-competitor battle-card job (web search on, Big-4 vs
+      // boutique response frameworks), not the deal-outcome job.
     ],
   },
   {
@@ -3089,7 +3132,26 @@ export const AREAS = [
     icon: 'Building2',
     color: 'adv-blue',
     moduleIds: [
-      'policy-analysis', 'public-consultation', 'procurement-review', 'regulatory-impact', 'grant-writing',
+      'procurement-review',
+      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
+      // bundle; taken out of the sidebar and search only. Each had a twin in the
+      // 'government' area, and the twin is the richer prompt; what these four
+      // carried that the twins did not has been folded into the survivors:
+      //   'policy-analysis'    → 'policy-analysis-brief' (legal-coherence and
+      //                          legislative-hierarchy section, jurisdiction chips,
+      //                          instrument type, safeguards)
+      //   'public-consultation'→ 'public-consultation-response' (proportionality
+      //                          argument, safeguards, wider responder types)
+      //   'regulatory-impact'  → 'regulatory-impact-assessment' (environmental /
+      //                          distributional / fundamental-rights dimensions,
+      //                          regulatory-stage ladder, objectivity standard)
+      //   'grant-writing'      → 'grant-application-writer'; note that
+      //                          'grant-writing' is ALSO listed under
+      //                          'humanitarian', so it remains in the sidebar there
+      //                          — this entry was the duplicate listing.
+      // Leaves this area with a single module. Folding 'procurement-review' into
+      // 'government' and retiring this area entry is the natural follow-up, but it
+      // changes area structure rather than module listing, so it is left to the owner.
     ],
   },
   {
@@ -3952,12 +4014,24 @@ export function getModelPricing(modelId: string): { input: number; output: numbe
   return m ? { input: m.inputCostPer1M, output: m.outputCostPer1M } : { input: 5, output: 25 };
 }
 
+/**
+ * The six thinking levels, for any picker that needs the plain list.
+ *
+ * This must stay in step with the `ThinkingLevel` union in `src/lib/types.ts`
+ * and with `anthropicEffort()` in `server/services/thinking-map.ts`, which is
+ * the one place the effort ladder lives. `deep_investigate` was missing here
+ * for a while, so two secondary pickers that copied this list could never
+ * offer the deepest rung even though the server mapped it to `effort: 'max'`.
+ * The richer picker in `src/components/shared/ThinkingControls.tsx` carries its
+ * own array because it also needs icons and the iterative-engine marker.
+ */
 export const THINKING_LEVELS = [
   { id: 'quick' as const, label: 'Quick', description: 'Fast response, minimal analysis', icon: 'Zap' },
   { id: 'think' as const, label: 'Think', description: 'Standard analysis depth', icon: 'Brain' },
   { id: 'think_hard' as const, label: 'Think Hard', description: 'Deep analysis with careful reasoning', icon: 'Microscope' },
   { id: 'investigate' as const, label: 'Investigate', description: 'Thorough investigation, maximum depth', icon: 'SearchCode' },
   { id: 'plan_first' as const, label: 'Plan First', description: 'Create explicit plan before executing', icon: 'ListChecks' },
+  { id: 'deep_investigate' as const, label: 'Deep', description: 'Iterative multi-phase reasoning. Highest quality, highest cost.', icon: 'FlaskConical' },
 ];
 
 export const CREATIVITY_LEVELS = [

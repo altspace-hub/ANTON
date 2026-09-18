@@ -19,7 +19,7 @@
       "claudeKnowledge": {
         "enabled": true,
         "webSearchEnabled": true,
-        "description": "Scrum Guide (2020) and SAFe; Disciplined Agile; EU regulatory instruments and their compliance dates — AMLR (EU) 2024/1624 (apply 10 Jul 2027), AMLA Reg (EU) 2024/1620 (AMLA operational mid-2025, direct supervision from 2028), AMLD6 (EU) 2024/1640, DORA (EU) 2022/2554 (apply 17 Jan 2025), MiCA (EU) 2023/1114, TFR (EU) 2023/1113, EU AI Act (EU) 2024/1689 (staged 2025–2027), CSRD (EU) 2022/2464 + ESRS; supervisory expectations on change management, evidence and audit trail (EBA, ESMA, national competent authorities)"
+        "description": "Scrum Guide (2020) and SAFe; Disciplined Agile; EU regulatory instruments and their compliance dates — AMLR (EU) 2024/1624 (apply 10 Jul 2027), AMLA Reg (EU) 2024/1620 (AMLA operational mid-2025, direct supervision from 2028), AMLD6 (EU) 2024/1640, DORA (EU) 2022/2554 (apply 17 Jan 2025), MiCA (EU) 2023/1114, TFR (EU) 2023/1113, EU AI Act (EU) 2024/1689 (staged 2025–2028; Annex III high-risk from 2 Dec 2027), CSRD (EU) 2022/2464 + ESRS; supervisory expectations on change management, evidence and audit trail (EBA, ESMA, national competent authorities)"
       },
       "localFolder": {
         "enabled": true,

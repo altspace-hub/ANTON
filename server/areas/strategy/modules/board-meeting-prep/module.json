@@ -12,8 +12,7 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
-      "executive-summary",
-      "stakeholder-presentation"
+      "board-pack"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

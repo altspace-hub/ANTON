@@ -149,6 +149,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "investor-lens"
+  ],
   "tags": [
     "technology",
     "vendor-selection",

@@ -127,6 +127,11 @@
     "finance-expert",
     "risk-specialist"
   ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards",
+    "skill-ifsb-standards",
+    "jurisdiction-sa-sama"
+  ],
   "tags": [
     "takaful",
     "islamic-finance",

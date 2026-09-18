@@ -66,6 +66,30 @@
       ]
     },
     {
+      "id": "crisis_stage",
+      "type": "select",
+      "label": "Crisis stage",
+      "description": "Where are you in the crisis lifecycle? This decides what the deliverable is.",
+      "options": [
+        {
+          "value": "preparation",
+          "label": "Preparation — building a playbook before anything happens"
+        },
+        {
+          "value": "acute",
+          "label": "Acute — it is happening now"
+        },
+        {
+          "value": "response",
+          "label": "Response — managing the aftermath"
+        },
+        {
+          "value": "recovery",
+          "label": "Recovery — rebuilding trust after the incident is closed"
+        }
+      ]
+    },
+    {
       "id": "incident_description",
       "type": "textarea",
       "label": "Incident description",

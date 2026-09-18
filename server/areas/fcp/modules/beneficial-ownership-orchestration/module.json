@@ -172,6 +172,10 @@
     "legal-expert",
     "pe-vc-expert"
   ],
+  "recommendedSkills": [
+    "beneficial-ownership-analyst",
+    "amlr-article-reference"
+  ],
   "tags": [
     "beneficial-ownership",
     "ubo",

@@ -124,6 +124,9 @@
   "recommendedPersonas": [
     "microfinance-field-officer"
   ],
+  "recommendedSkills": [
+    "skill-financial-literacy"
+  ],
   "tags": [
     "bop",
     "financial-inclusion",

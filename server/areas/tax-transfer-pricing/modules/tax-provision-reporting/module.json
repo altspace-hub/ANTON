@@ -17,7 +17,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": false,
+        "webSearchEnabled": true,
         "description": "IAS 12 Income Taxes, ASC 740, IFRS 17, Pillar Two GloBE top-up tax accounting"
       },
       "localFolder": {

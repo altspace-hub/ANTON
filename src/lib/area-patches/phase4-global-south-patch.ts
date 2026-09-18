@@ -34,7 +34,7 @@ export const ISLAMIC_FINANCE_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think_hard",
       creativity: "strict",
-      outputFormats: ["detailed-findings","decision-memo"],
+      outputFormats: ["sharia-compliance-opinion"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "AAOIFI Sharia Standards by product type, national Sharia board resolutions, product documentation requirements" },
         localFolder: { enabled: true, folderPaths: [], recursive: true },

@@ -250,7 +250,12 @@ export const TAX_TP_MODULES: ModuleDefinition[] = [
       creativity: "strict",
       outputFormats: ["detailed-findings","executive-summary"],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "IAS 12 Income Taxes, ASC 740, IFRS 17, Pillar Two GloBE top-up tax accounting" },
+        // Web search on (2026-09-18): the method turns on which statutory rate
+        // is ENACTED — "do not apply current year rates if a rate change has
+        // been substantively enacted, apply the future rate" — and on the
+        // Pillar Two transitional SBIE percentages, which step down on a
+        // published schedule. The answer is a current figure.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "IAS 12 Income Taxes, ASC 740, IFRS 17, Pillar Two GloBE top-up tax accounting" },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -431,7 +436,7 @@ export const JOURNALISM_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["policy-document","detailed-findings"],
+      outputFormats: [],
       knowledgeSources: {
 
       },

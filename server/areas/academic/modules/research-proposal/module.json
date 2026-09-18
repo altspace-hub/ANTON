@@ -9,9 +9,7 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": [
-      "client-proposal"
-    ],
+    "outputFormats": [],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -81,6 +79,9 @@
   ],
   "recommendedPersonas": [
     "general-assistant"
+  ],
+  "recommendedSkills": [
+    "academic-rigour"
   ],
   "tags": [
     "academic",

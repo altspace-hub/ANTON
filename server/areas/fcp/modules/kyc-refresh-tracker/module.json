@@ -98,6 +98,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "amlr-article-reference"
+  ],
   "tags": [
     "kyc",
     "periodic-review",

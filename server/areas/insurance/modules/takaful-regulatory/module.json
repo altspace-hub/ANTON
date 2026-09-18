@@ -17,7 +17,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": false,
+        "webSearchEnabled": true,
         "description": "IFSB-8 Takaful governance standards, IFSB-28 (revising IFSB-11) Takaful/Retakaful solvency requirements, AAOIFI FAS 12 and governance standards, SAMA Cooperative Insurance Law, BNM Takaful Operational Framework"
       },
       "localFolder": {

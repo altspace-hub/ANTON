@@ -9,9 +9,7 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": [
-      "policy-document"
-    ],
+    "outputFormats": [],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {

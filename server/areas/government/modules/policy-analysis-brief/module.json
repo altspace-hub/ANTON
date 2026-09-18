@@ -36,6 +36,75 @@
       "placeholder": "Describe the policy issue, the context, and the specific questions you need answered."
     },
     {
+      "id": "instrument_type",
+      "label": "What kind of instrument is in question?",
+      "type": "select",
+      "required": false,
+      "description": "Decides the legal base, the procedure and the level of scrutiny.",
+      "options": [
+        {
+          "value": "primary",
+          "label": "Primary legislation / bill"
+        },
+        {
+          "value": "secondary",
+          "label": "Secondary regulation / statutory instrument"
+        },
+        {
+          "value": "transposition",
+          "label": "Transposition of an EU directive"
+        },
+        {
+          "value": "guidance",
+          "label": "Statutory guidance or code of practice"
+        },
+        {
+          "value": "administrative",
+          "label": "Administrative direction / non-statutory policy"
+        },
+        {
+          "value": "not-yet-decided",
+          "label": "Not yet decided — part of what I need advice on"
+        }
+      ]
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction(s)",
+      "type": "chips",
+      "required": false,
+      "options": [
+        {
+          "value": "eu",
+          "label": "EU"
+        },
+        {
+          "value": "sweden",
+          "label": "Sweden"
+        },
+        {
+          "value": "finland",
+          "label": "Finland"
+        },
+        {
+          "value": "denmark",
+          "label": "Denmark"
+        },
+        {
+          "value": "norway",
+          "label": "Norway"
+        },
+        {
+          "value": "uk",
+          "label": "UK"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ]
+    },
+    {
       "id": "stakeholders",
       "label": "Which stakeholders are affected?",
       "type": "chips",

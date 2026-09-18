@@ -205,6 +205,9 @@
     "legal-expert",
     "strategy-expert"
   ],
+  "recommendedSkills": [
+    "market-abuse-investigator"
+  ],
   "tags": [
     "dlt-pilot-regime",
     "regulatory-sandbox",

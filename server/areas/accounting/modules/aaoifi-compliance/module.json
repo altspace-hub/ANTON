@@ -126,6 +126,9 @@
     "finance-expert",
     "auditor"
   ],
+  "recommendedSkills": [
+    "skill-aaoifi-standards"
+  ],
   "tags": [
     "aaoifi",
     "islamic-finance",

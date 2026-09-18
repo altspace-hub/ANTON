@@ -23,7 +23,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": false,
+        "webSearchEnabled": true,
         "description": "FATF VA guidance, EBA crypto ML/TF risk factors, ACAMS crypto risk frameworks, VASP due diligence standards"
       },
       "localFolder": {
@@ -222,6 +222,9 @@
   "recommendedPersonas": [
     "crypto-blockchain-expert",
     "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "crypto-compliance-specialist"
   ],
   "tags": [
     "crypto-risk",

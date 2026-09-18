@@ -187,6 +187,10 @@
     "fcp-expert",
     "finance-expert"
   ],
+  "recommendedSkills": [
+    "correspondent-banking-advisor",
+    "amlr-article-reference"
+  ],
   "tags": [
     "correspondent-banking",
     "concentration-risk",

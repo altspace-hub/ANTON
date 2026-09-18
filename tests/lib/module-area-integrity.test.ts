@@ -450,3 +450,109 @@ describe('module.json recommendedSkills', () => {
     expect(dupes).toEqual([]);
   });
 });
+
+describe('area-context "How the Modules Help"', () => {
+  // 2026-09-18 (Wave 6, track C): area-context.md is injected VERBATIM as layer 3
+  // of every run in that area, and eighteen of them close with a "How the Modules
+  // Help" paragraph that names sibling modules in **Bold-kebab-case**. Nothing
+  // checked those names, and four had rotted:
+  //   hr           -> Ld-program-designer, performance-review-summariser  (no such
+  //                   module; the real ids are ld-planning and
+  //                   performance-review-summarizer)
+  //   real-estate  -> Investment-analysis   (renamed to re-investment-analysis;
+  //                   the name now resolves to the INVESTMENT area's module)
+  //   sales        -> Proposal-generator    (renamed to proposal-generator-sales;
+  //                   the name now resolves to CONSULTING's module)
+  //   accounting   -> transfer-pricing-documentation (renamed to
+  //                   transfer-pricing-documentation-accounting; resolves to
+  //                   tax-transfer-pricing's module)
+  // Three of the four are fallout from the July-2026 pass that renamed
+  // cross-area duplicate ids. The failure is silent and it is worse than a dead
+  // link: the model is told, in its own context, that a capability exists under a
+  // name that belongs to a different area's prompt.
+  //
+  // The guard asserts three things about every name in that paragraph: it is a
+  // real module, it belongs to THIS area, and it is still listed in
+  // AREAS[].moduleIds for this area — so de-listing a module (Wave 6 track C
+  // de-lists eleven) forces the paragraph that advertises it to be rewritten too.
+  const repoRoot = path.resolve(__dirname, '..', '..');
+  const areasDir = path.join(repoRoot, 'server', 'areas');
+
+  /** module id -> the area directory it lives in. */
+  function moduleOwners(): Map<string, string> {
+    const owners = new Map<string, string>();
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const modulesDir = path.join(areasDir, areaEntry.name, 'modules');
+      if (!fs.existsSync(modulesDir)) continue;
+      for (const modEntry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
+        if (!modEntry.isDirectory()) continue;
+        const configPath = path.join(modulesDir, modEntry.name, 'module.json');
+        if (!fs.existsSync(configPath)) continue;
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as { id?: string };
+        if (config.id) owners.set(config.id, areaEntry.name);
+      }
+    }
+    return owners;
+  }
+
+  /**
+   * The "How the Modules Help" section of each area context, keyed by area dir.
+   * Areas without the section are simply absent — the convention is not universal
+   * and this guard only pins it where it is used.
+   */
+  function moduleHelpSections(): Array<{ area: string; section: string }> {
+    const out: Array<{ area: string; section: string }> = [];
+    for (const areaEntry of fs.readdirSync(areasDir, { withFileTypes: true })) {
+      if (!areaEntry.isDirectory()) continue;
+      const contextPath = path.join(areasDir, areaEntry.name, 'area-context.md');
+      if (!fs.existsSync(contextPath)) continue;
+      const text = fs.readFileSync(contextPath, 'utf-8');
+      const start = text.search(/^#+\s*How the Modules Help\s*$/mi);
+      if (start < 0) continue;
+      const rest = text.slice(start + 1);
+      const end = rest.search(/^##\s/m);
+      out.push({ area: areaEntry.name, section: end < 0 ? rest : rest.slice(0, end) });
+    }
+    return out;
+  }
+
+  /** **Bold-kebab-case** tokens — the convention these paragraphs use for module ids. */
+  function namedModules(section: string): string[] {
+    return [...section.matchAll(/\*\*([A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+)\*\*/g)].map((m) => m[1]);
+  }
+
+  it('every module named in an area context resolves, in that area, and is still listed', () => {
+    const owners = moduleOwners();
+    const listed = new Map<string, Set<string>>(
+      (AREAS as Array<{ id: string; moduleIds?: readonly string[] }>)
+        .map((a) => [a.id, new Set(a.moduleIds ?? [])]),
+    );
+    const sections = moduleHelpSections();
+    expect(sections.length, 'no area context has a "How the Modules Help" section — did the convention move?')
+      .toBeGreaterThan(10);
+
+    const problems: string[] = [];
+    let checked = 0;
+    for (const { area, section } of sections) {
+      for (const token of namedModules(section)) {
+        checked++;
+        const id = token.toLowerCase();
+        const owner = owners.get(id);
+        if (!owner) {
+          problems.push(`${area}: **${token}** names no module`);
+          continue;
+        }
+        if (owner !== area) {
+          problems.push(`${area}: **${token}** lives in the '${owner}' area — this context injects a foreign module's name`);
+          continue;
+        }
+        if (!listed.get(area)?.has(id)) {
+          problems.push(`${area}: **${token}** is de-listed from AREAS['${area}'].moduleIds — the context still advertises it`);
+        }
+      }
+    }
+    expect(checked, 'no module names were found in any section — did the **Bold-kebab** convention change?').toBeGreaterThan(50);
+    expect(problems).toEqual([]);
+  });
+});

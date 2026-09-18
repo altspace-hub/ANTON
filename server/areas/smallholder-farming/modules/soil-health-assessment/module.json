@@ -16,7 +16,7 @@
     "thinking": "think",
     "creativity": "balanced",
     "outputFormats": [
-      "quick-briefing"
+      "step-by-step-guide"
     ],
     "transparencyLevel": 0,
     "knowledgeSources": {
@@ -172,6 +172,9 @@
   "recommendedPersonas": [
     "agricultural-extension-worker",
     "veteran-farmer"
+  ],
+  "recommendedSkills": [
+    "skill-crop-database"
   ],
   "tags": [
     "soil-health",

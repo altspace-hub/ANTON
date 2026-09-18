@@ -359,7 +359,7 @@ ANTON is organised into **top-level pillars**, each representing a different mod
 |---|---|---|
 | **Work** | Default — 550+ expert modules for professional domains | `src/lib/constants.ts` (modules), `src/pages/ModulePage.tsx` |
 | **School** | Educational interface with teacher oversight | `src/pages/school/`, `school-pages` chunk |
-| **Life** | Personal-life modules (microfinance, BoP finance, consumer protection) | `src/pages/LifePage.tsx` + `src/pages/{news,finance,travel}/` |
+| **Life** | The personal side — News (bias-tracked aggregation + truth check), Finance (calculators, goals, watchlist), Travel (trips, itineraries, country guides), Community, plus a card into the personal-life modules (money, consumer rights, career). Ten further categories share `CategoryPage`. | `src/pages/LifePage.tsx` + `src/pages/{news,finance,travel}/`, `docs/life/README.md` |
 | **Pathfinder** | Mode-aware research assistant ("smart action bar") | `src/pages/pathfinder/`, `server/services/pathfinder-engine.ts` |
 | **Markets** | Financial intelligence, instrumented for learning — 14 migrations, 21 services, 39 Python computation templates, ANTON 100 indexes, predictions, calibration | `server/services/market-*.ts`, `server/db/migrations-pg/049–062`, `src/pages/markets/` |
 | **Community** | E2E-encrypted ANTON-to-ANTON messaging, contact hashes, trust scoring | `server/services/community-*.ts`, `src/pages/community/` |

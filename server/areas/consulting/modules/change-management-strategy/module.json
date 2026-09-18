@@ -26,6 +26,34 @@
   },
   "guidedInputs": [
     {
+      "id": "deliverable",
+      "type": "select",
+      "label": "What do you need?",
+      "description": "Which change-management deliverable should this run produce?",
+      "options": [
+        {
+          "value": "readiness_assessment",
+          "label": "Change readiness assessment"
+        },
+        {
+          "value": "strategy",
+          "label": "Change management strategy"
+        },
+        {
+          "value": "communication_plan",
+          "label": "Communication plan"
+        },
+        {
+          "value": "training_plan",
+          "label": "Training plan"
+        },
+        {
+          "value": "resistance_management",
+          "label": "Resistance management approach"
+        }
+      ]
+    },
+    {
       "id": "change_type",
       "type": "select",
       "label": "Type of change",

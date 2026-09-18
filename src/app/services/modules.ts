@@ -25,6 +25,10 @@ export interface BrowseModule {
 export interface ModuleList {
   pinned: PinnedModule[];
   browse: BrowseModule[];
+  /** Intent chips for the "find the right module" hero, resolved per org on
+   *  the server (see server/services/app-module-pins.ts). Absent when talking
+   *  to an instance older than 2026-09-18 — the screen keeps its own set. */
+  chips?: string[];
 }
 
 export interface ModuleDetail {

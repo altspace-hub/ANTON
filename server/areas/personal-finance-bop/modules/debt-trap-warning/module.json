@@ -16,7 +16,7 @@
     "thinking": "think",
     "creativity": "strict",
     "outputFormats": [
-      "quick-briefing"
+      "plain-language-guide"
     ],
     "transparencyLevel": 0,
     "knowledgeSources": {
@@ -126,6 +126,9 @@
   ],
   "recommendedPersonas": [
     "microfinance-field-officer"
+  ],
+  "recommendedSkills": [
+    "skill-financial-literacy"
   ],
   "tags": [
     "bop",

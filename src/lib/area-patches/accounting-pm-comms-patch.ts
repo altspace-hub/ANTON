@@ -168,7 +168,7 @@ export const ACCOUNTING_NEW_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'investigate',
       creativity: 'strict',
-      outputFormats: ['detailed-findings', 'policy-document'],
+      outputFormats: ['transfer-pricing-memo', 'policy-document'],
       knowledgeSources: {
         claudeKnowledge: {
           enabled: true,

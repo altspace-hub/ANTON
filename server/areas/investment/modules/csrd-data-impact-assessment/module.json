@@ -20,7 +20,7 @@
       "claudeKnowledge": {
         "enabled": true,
         "webSearchEnabled": true,
-        "description": "CSRD (EU) 2022/2464; ESRS Delegated Regulation (EU) 2023/2772 (ESRS 1, ESRS 2, E1–E5, S1–S4, G1); SFDR (EU) 2019/2088 + RTS Delegated Regulation (EU) 2022/1288 (Art. 8/9, PAI Table 1); EU Taxonomy Regulation (EU) 2020/852 + Disclosures Delegated Act; ISSB IFRS S1/S2; CSRD Omnibus simplification proposals (label as proposals); EFRAG ESRS implementation guidance; ESMA guidelines on funds' names using ESG terms; CSDDD (EU) 2024/1760"
+        "description": "CSRD (EU) 2022/2464; ESRS Delegated Regulation (EU) 2023/2772 (ESRS 1, ESRS 2, E1–E5, S1–S4, G1); SFDR (EU) 2019/2088 + RTS Delegated Regulation (EU) 2022/1288 (Art. 8/9, PAI Table 1); EU Taxonomy Regulation (EU) 2020/852 + Disclosures Delegated Act; ISSB IFRS S1/S2; Omnibus I Directive (EU) 2026/470 (adopted law — scope >1,000 employees AND >€450M, from FY2027) and the revised ESRS adopted 3 July 2026; EFRAG ESRS implementation guidance; ESMA guidelines on funds' names using ESG terms; CSDDD (EU) 2024/1760"
       },
       "localFolder": {
         "enabled": true,

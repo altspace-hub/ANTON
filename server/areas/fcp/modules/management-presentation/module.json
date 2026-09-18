@@ -78,6 +78,10 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "data-storytelling",
+    "board-communication"
+  ],
   "tags": [
     "presentation",
     "management",

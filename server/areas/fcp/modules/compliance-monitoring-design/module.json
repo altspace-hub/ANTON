@@ -105,6 +105,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "regulatory-examiner"
+  ],
   "tags": [
     "monitoring",
     "compliance",

@@ -66,7 +66,7 @@ const INDUSTRIES: Industry[] = [
     relevantModuleIds: [
       'job-description', 'interview-framework', 'performance-review',
       'hr-policy', 'ld-planning', 'training-content',
-      'change-management', 'resource-planning',
+      'change-management-strategy', 'resource-planning',
     ],
   },
   {
@@ -171,7 +171,7 @@ const OUTPUT_MODULE_ALIGNMENT: Record<string, string[]> = {
   'quick-answer': ['regulatory-monitor', 'regulatory-interpretation', 'sanctions-advisory', 'payment-services'],
   'spreadsheet-matrix': ['gap-analysis', 'risk-assessment', 'enterprise-risk', 'data-quality', 'control-testing', 'sox-isae'],
   'presentation': ['management-presentation', 'client-presentation', 'status-reporting', 'stakeholder-mapping'],
-  'training-material': ['training-content', 'change-management'],
+  'training-material': ['training-content', 'change-management-strategy'],
 };
 
 // Role alignment scoring
@@ -185,7 +185,7 @@ const ROLE_MODULE_ALIGNMENT: Record<string, string[]> = {
   executive: ['risk-appetite', 'enterprise-risk', 'scenario-analysis', 'business-case', 'esg-strategy'],
   researcher: ['regulatory-interpretation', 'regulatory-change-impact', 'double-materiality', 'climate-risk'],
   'software-engineer': ['data-quality', 'data-governance', 'analytics-design', 'data-strategy', 'ict-risk-management'],
-  'hr-professional': ['training-content', 'change-management', 'resource-planning'],
+  'hr-professional': ['training-content', 'change-management-strategy', 'resource-planning'],
 };
 
 interface ScoredModule {

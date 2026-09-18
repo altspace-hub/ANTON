@@ -152,7 +152,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Seasonal crop calendars, rotation principles, intercropping, soil-crop matching for smallholder farming" },
       },
@@ -168,7 +168,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Agricultural market pricing, seasonal price patterns, cooperative selling, negotiation strategies for smallholder farmers in developing regions" },
       },
@@ -184,7 +184,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["field-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Crop pest and disease identification, symptoms, affordable treatments, prevention strategies for smallholder farming in developing regions" },
       },
@@ -200,7 +200,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Post-harvest storage solutions, grain storage, PICS bags, hermetic storage, solar drying, food safety for smallholder farmers" },
       },
@@ -216,7 +216,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["step-by-step-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Soil health assessment, simple field tests, composting, organic soil improvement, soil types and structure for smallholder farming" },
       },
@@ -232,7 +232,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Government agricultural subsidies, input vouchers, farm loans, extension services by country including Kenya, Nigeria, Ghana, Tanzania, Uganda, Ethiopia, India, Bangladesh, Pakistan, Philippines" },
       },
@@ -248,7 +248,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Water conservation, low-cost irrigation, rainwater harvesting, drought management for smallholder farms in developing regions" },
       },
@@ -264,7 +264,7 @@ export const SMALLHOLDER_FARMING_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["field-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Weather interpretation for farmers, seasonal forecasts, El Nino La Nina effects, critical crop growth stages, emergency weather responses for smallholder farming" },
       },
@@ -285,7 +285,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Business growth and scaling strategies for micro-businesses and informal entrepreneurs in developing economies" },
       },
@@ -301,7 +301,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Business registration requirements for micro-businesses in Kenya, Nigeria, Ghana, Tanzania, Uganda, India, Bangladesh, Pakistan, Philippines" },
       },
@@ -317,7 +317,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Customer retention and loyalty strategies for micro-businesses and informal traders in developing economies" },
       },
@@ -333,7 +333,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Simple inventory and stock control methods for informal micro-businesses and market traders" },
       },
@@ -349,7 +349,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["step-by-step-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Pricing strategies and cost calculation for informal micro-businesses" },
       },
@@ -365,7 +365,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Simple bookkeeping methods for informal micro-businesses in developing economies" },
       },
@@ -381,7 +381,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Supplier negotiation tactics for informal market traders and micro-businesses in developing economies" },
       },
@@ -397,7 +397,7 @@ export const MICRO_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Simplified tax regimes for micro-businesses and informal sector in Kenya, Nigeria, Ghana, India, Bangladesh, Pakistan, Philippines" },
       },
@@ -551,7 +551,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Practical budgeting methods for low-income households with irregular income in developing economies" },
       },
@@ -567,7 +567,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "strict",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Predatory lending, debt spirals, mobile loan app risks, moneylender practices, cost of credit in developing economies" },
       },
@@ -583,7 +583,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Micro-insurance products in developing economies — NHIF Kenya, NHIS Ghana, PMJAY India, burial societies, crop insurance" },
       },
@@ -599,7 +599,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "strict",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["field-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Mobile money fraud, SIM swap attacks, scam patterns on M-Pesa, MTN MoMo, bKash, GCash, Easypaisa" },
       },
@@ -615,7 +615,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Government pension schemes in developing economies — NSSF Kenya, SSNIT Ghana, EPFO India, SSS Philippines, EOBI Pakistan — voluntary contributions, informal worker retirement planning" },
       },
@@ -631,7 +631,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Remittance corridors, transfer fee comparisons, exchange rate markups, mobile money transfers internationally" },
       },
@@ -647,7 +647,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "quick",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Savings strategies for low-income households including ROSCAs, SACCOs, and mobile money savings in developing economies" },
       },
@@ -663,7 +663,7 @@ export const PERSONAL_FINANCE_BOP_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Zakat calculation rules, nisab thresholds, hawl year, zakat al-fitr, Christian tithing, Islamic finance obligations" },
       },
@@ -1349,7 +1349,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Bulk buying strategies, wholesale sourcing, and supply chain management for micro-food-businesses in developing countries" },
       },
@@ -1365,7 +1365,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Catering business development, event catering pricing and contracts, institutional catering for micro-food-businesses in developing countries" },
       },
@@ -1381,7 +1381,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Food business licensing, health permits, and registration requirements by country for micro-food-businesses in Kenya, Nigeria, Ghana, Tanzania, India, Bangladesh, Pakistan, Philippines" },
       },
@@ -1397,7 +1397,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Food preservation methods, safe storage for tropical climates, traditional preservation techniques for micro-food-businesses in developing countries" },
       },
@@ -1413,7 +1413,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Food safety basics, hygiene rules, and health inspection requirements for micro-food-businesses in Kenya, Nigeria, Ghana, Tanzania, India, Bangladesh, Pakistan, Philippines" },
       },
@@ -1429,7 +1429,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Food waste reduction, portion control, and batch cooking strategies for micro-food-businesses in developing countries" },
       },
@@ -1445,7 +1445,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Halal certification, kosher requirements, vegetarian and vegan food standards, allergen management for micro-food-businesses globally" },
       },
@@ -1461,7 +1461,7 @@ export const FOOD_BUSINESS_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["step-by-step-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Food business cost calculation, menu pricing strategies, and profit margins for micro-food-businesses in developing countries" },
       },
@@ -1482,7 +1482,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Artisan branding, provenance storytelling, marketing for handmade crafts, artisan identity and cultural heritage as competitive advantage" },
       },
@@ -1498,7 +1498,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["step-by-step-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Artisan cooperative formation, cooperative governance, registration processes by country, collective marketing and purchasing for artisan groups" },
       },
@@ -1514,7 +1514,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Fair trade certification for artisans — WFTO, Fairtrade International, Fair Trade USA, certification process, costs, and benefits for craft cooperatives in developing countries" },
       },
@@ -1530,7 +1530,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Intellectual property protection for artisans — copyright, trade marks, geographical indications, traditional knowledge protection, WIPO resources for developing country artisans" },
       },
@@ -1546,7 +1546,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Digital market access for artisans — WhatsApp Business, Instagram, Etsy, regional e-commerce platforms for handmade crafts in developing countries" },
       },
@@ -1562,7 +1562,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Craft packaging and shipping for artisans — protective packaging methods, international shipping costs, customs documentation, fragile item protection" },
       },
@@ -1578,7 +1578,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["step-by-step-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Artisan product costing, craft pricing strategies, tourist and export pricing for handmade goods in developing countries" },
       },
@@ -1594,7 +1594,7 @@ export const ARTISAN_CRAFT_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Export quality standards for handmade crafts, EU/UK/US import requirements, CITES regulations, quality control processes for artisan businesses" },
       },
@@ -1615,7 +1615,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "strict",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["field-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Animal disease symptoms, triage guidance, common livestock diseases by region and species, biosecurity, zoonotic disease warnings, vaccination schedules" },
       },
@@ -1631,7 +1631,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Livestock breeding selection, culling principles, record keeping, artificial insemination, crossbreeding local and exotic breeds, breeding age and seasonality by species" },
       },
@@ -1647,7 +1647,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Dairy cow nutrition, milking management, mastitis prevention and detection, heat stress management, calf management, milk hygiene, marketing options for small-scale dairy in Africa and South Asia" },
       },
@@ -1663,7 +1663,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Livestock nutrition by species, local feed sources in Africa and South Asia, deficiency signs, feed cost reduction strategies, dry season feed planning" },
       },
@@ -1679,7 +1679,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Rotational grazing, stocking rates, improved pasture grasses (Napier, Brachiaria), hay making, silage basics, water point management, zero-grazing cut-and-carry, communal grazing challenges in Africa and South Asia" },
       },
@@ -1695,7 +1695,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Livestock seasonal price patterns, religious festival timing (Eid al-Adha, Christmas, Easter), dry season cattle price cycles, market comparison, pre-sale conditioning, negotiation basics, mobile phone price information for Africa and South Asia" },
       },
@@ -1711,7 +1711,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Poultry business setup: housing, chick sourcing, vaccination schedules, financial viability calculation, mortality budgeting, market options for small-scale poultry in Africa and South Asia" },
       },
@@ -1727,7 +1727,7 @@ export const LIVESTOCK_POULTRY_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: "think",
       creativity: "strict",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["field-guide"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "Veterinary first response: bloat, dystocia, wounds, newborn resuscitation, heat stroke, fractures, first aid while waiting for vet — cattle, goats, sheep, pigs, poultry" },
       },
@@ -1798,7 +1798,7 @@ export const TRADES_MODULES: ModuleDefinition[] = [
       // practical Swedish, short answers" in "plain Swedish trade language".
       // The strict style instruction mandates formal regulatory language.
       creativity: "balanced",
-      outputFormats: ["quick-briefing"],
+      outputFormats: ["plain-language-guide"],
       knowledgeSources: {
         // The only module in an offline-capable area (trades sets
         // modelTier.minimum = ollama-local) where web search is on. It earns it:
