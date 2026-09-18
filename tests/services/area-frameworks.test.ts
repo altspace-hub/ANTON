@@ -185,6 +185,30 @@ describe('areasForPack / packAppliesToArea', () => {
     expect(packAppliesToArea(dora, 'esg')).toBe(false);
   });
 
+  /**
+   * Every shipped pack should route somewhere. Falling through to 'all' is the
+   * safe fallback — a pack is never hidden by a missing rule — but as a DEFAULT it
+   * means the pack competes for grounding budget in every unrelated run.
+   *
+   * eu-consumer-rights-acquis fell through on a separator: packText() feeds
+   * `regulatory_area` in, that field is written with hyphens, and the rule only
+   * accepted "consumer protection" with a space.
+   */
+  it('every shipped knowledge pack routes to at least one area', () => {
+    const dir = path.join(repoRoot, 'data', 'knowledge-packs');
+    const unmapped: string[] = [];
+    let checked = 0;
+    for (const p of fs.readdirSync(dir)) {
+      const mf = path.join(dir, p, 'manifest.json');
+      if (!fs.existsSync(mf)) continue;
+      checked++;
+      const m = JSON.parse(fs.readFileSync(mf, 'utf8')) as Parameters<typeof areasForPack>[0];
+      if (areasForPack(m) === 'all') unmapped.push(p);
+    }
+    expect(checked, 'no pack manifests found — did the layout move?').toBeGreaterThan(20);
+    expect(unmapped).toEqual([]);
+  });
+
   it('an unmapped pack is never hidden, and no area means no gate', () => {
     expect(areasForPack(unmapped)).toBe('all');
     expect(packAppliesToArea(unmapped, 'marketing')).toBe(true);

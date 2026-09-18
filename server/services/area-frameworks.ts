@@ -186,9 +186,15 @@ const PACK_RULES: ReadonlyArray<{ match: RegExp; areas: readonly string[] }> = [
   { match: /\b(insurance|reinsurance|solvency)\b/i, areas: ['insurance', 'fcp', 'risk'] },
   // 'consumer-legal' and 'credit-navigator' are consumer-facing rights areas
   // that a consumer-protection or consumer-credit pack must reach.
-  { match: /\b(microfinance|financial inclusion|consumer protection|consumer credit|bop\b)/i,
+  //
+  // The separator matters: packText() feeds `regulatory_area` in, and that field is
+  // written with hyphens by convention, so a rule accepting only "consumer
+  // protection" with a space can never match `consumer-protection` — which is how
+  // eu-consumer-rights-acquis fell through to 'all'. 'marketing' is here because a
+  // green claim is judged under the UCPD and marketing is where claims are written.
+  { match: /\b(microfinance|financial inclusion|consumer[- ]protection|consumer[- ]credit|consumer[- ]rights|unfair commercial practices|bop\b)/i,
     areas: ['microfinance', 'mobile-money', 'personal-finance-bop', 'consumer-rights', 'consumer-legal', 'credit-navigator',
-      'micro-business', 'personal-finance', 'fcp'] },
+      'micro-business', 'personal-finance', 'marketing', 'fcp'] },
   // marketing and branding publish the content the online-safety and
   // advertising rules bite on.
   { match: /\b(online safety|eccta|multi-domain)\b/i,
