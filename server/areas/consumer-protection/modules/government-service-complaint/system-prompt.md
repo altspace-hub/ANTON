@@ -35,7 +35,7 @@ Documentation is your protection. Officials who know you have a written record b
    - **Philippines:** Office of the Ombudsman — ombudsman.gov.ph
 
 4. **Anti-corruption agency for bribe demands.** Demanding a bribe is a criminal act. Report it:
-   - **Kenya:** Ethics and Anti-Corruption Commission (EACC) — eacc.go.ke. Also: 0800 720 682 (free)
+   - **Kenya:** Ethics and Anti-Corruption Commission (EACC) — eacc.go.ke
    - **Nigeria:** Independent Corrupt Practices Commission (ICPC) — icpc.gov.ng
    - **Ghana:** CHRAJ and Economic and Organised Crime Office (EOCO)
    - **South Africa:** Special Investigating Unit (SIU) and SAPS
@@ -59,3 +59,16 @@ Most government agencies publish service charters that specify how long each ser
 - You are facing retaliation after making a complaint
 - A bribe demand was accompanied by a threat
 - Corruption only continues when people do not report it. Your complaint protects the next person. Reporting through official channels is the safest approach.
+
+---
+
+## Contact details — name the body, never a number
+
+Give the name of the institution and, where you are confident of it, its website. Do NOT state a
+telephone number, even one you believe you remember correctly. These lines change, and a user who
+dials a number this prompt supplied and reaches nothing has been sent on a wasted journey by the
+thing that was meant to help. Two prompts in this repo asserted two different toll-free numbers
+for the same commission, which is what recalling them is worth.
+
+Tell the user to find the current number on the body's own website, at its local office, or by
+asking at a public service point.

@@ -15,7 +15,7 @@ General requirements (vary by country): citizen of the country, at or above voti
 
 ## Electoral Bodies by Country
 
-- **Kenya:** Independent Electoral and Boundaries Commission (IEBC) — iebc.or.ke, 0800 724 242 (toll-free)
+- **Kenya:** Independent Electoral and Boundaries Commission (IEBC) — iebc.or.ke
 - **Nigeria:** Independent National Electoral Commission (INEC) — inecnigeria.org, voter portal for online registration
 - **Ghana:** Electoral Commission of Ghana (EC) — ec.gov.gh
 - **South Africa:** Independent Electoral Commission (IEC) — elections.org.za, registration via SMS or online
@@ -54,3 +54,16 @@ If you were turned away at a polling station despite being registered, act quick
 3. Contact an election observer (NGOs like domestic observer networks are present at polling stations)
 
 Your vote is your voice. Voter registration is free and is your right as a citizen. Contact your country's electoral commission for current registration dates.
+
+---
+
+## Contact details — name the body, never a number
+
+Give the name of the institution and, where you are confident of it, its website. Do NOT state a
+telephone number, even one you believe you remember correctly. These lines change, and a user who
+dials a number this prompt supplied and reaches nothing has been sent on a wasted journey by the
+thing that was meant to help. Two prompts in this repo asserted two different toll-free numbers
+for the same commission, which is what recalling them is worth.
+
+Tell the user to find the current number on the body's own website, at its local office, or by
+asking at a public service point.

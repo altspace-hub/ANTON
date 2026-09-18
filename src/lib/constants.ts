@@ -3125,35 +3125,15 @@ export const AREAS = [
       'process-improvement', 'supply-chain-risk', 'quality-management', 'lean-six-sigma', 'operational-audit',
     ],
   },
-  {
-    id: 'public-sector',
-    label: 'Public Sector & Government',
-    shortLabel: 'Public Sector',
-    icon: 'Building2',
-    color: 'adv-blue',
-    moduleIds: [
-      'procurement-review',
-      // De-listed 2026-09-18 (Wave 6, track C) — still reachable by id, link and
-      // bundle; taken out of the sidebar and search only. Each had a twin in the
-      // 'government' area, and the twin is the richer prompt; what these four
-      // carried that the twins did not has been folded into the survivors:
-      //   'policy-analysis'    → 'policy-analysis-brief' (legal-coherence and
-      //                          legislative-hierarchy section, jurisdiction chips,
-      //                          instrument type, safeguards)
-      //   'public-consultation'→ 'public-consultation-response' (proportionality
-      //                          argument, safeguards, wider responder types)
-      //   'regulatory-impact'  → 'regulatory-impact-assessment' (environmental /
-      //                          distributional / fundamental-rights dimensions,
-      //                          regulatory-stage ladder, objectivity standard)
-      //   'grant-writing'      → 'grant-application-writer'; note that
-      //                          'grant-writing' is ALSO listed under
-      //                          'humanitarian', so it remains in the sidebar there
-      //                          — this entry was the duplicate listing.
-      // Leaves this area with a single module. Folding 'procurement-review' into
-      // 'government' and retiring this area entry is the natural follow-up, but it
-      // changes area structure rather than module listing, so it is left to the owner.
-    ],
-  },
+  // 'public-sector' was retired from the sidebar on 2026-09-18 (Wave 8). Wave 6
+  // de-listed four of its five modules to their richer twins in 'government',
+  // which left a one-module area that read as a bug to anyone browsing. Its last
+  // module, 'procurement-review', is listed under 'government' below.
+  //
+  // The SERVER area server/areas/public-sector/ stays exactly where it is: it is
+  // still the home of the module's prompt and of the area context that grounds it,
+  // every de-listed id still resolves by id, link and bundle, and sessions that
+  // carry one keep working. Only the sidebar entry is gone.
   {
     id: 'humanitarian',
     label: 'Humanitarian & NGO Programme Design',
@@ -3330,6 +3310,9 @@ export const AREAS = [
     moduleIds: [
       'policy-analysis-brief', 'regulatory-impact-assessment', 'public-consultation-response',
       'stakeholder-engagement-plan', 'digital-service-design', 'grant-application-writer',
+      // Folded in from the retired 'public-sector' area (Wave 8, 2026-09-18). Its
+      // prompt and area context still live under server/areas/public-sector/.
+      'procurement-review',
     ],
   },
   // ── Phase 4: Bottom-of-Pyramid (BoP) ─────────────────────────────

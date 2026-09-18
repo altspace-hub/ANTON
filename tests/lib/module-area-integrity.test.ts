@@ -547,6 +547,17 @@ describe('area-context "How the Modules Help"', () => {
           problems.push(`${area}: **${token}** lives in the '${owner}' area — this context injects a foreign module's name`);
           continue;
         }
+        if (!listed.has(area)) {
+          // The area has no sidebar entry at all — 'public-sector' was retired in
+          // Wave 8 after Wave 6 de-listed four of its five modules to their richer
+          // twins. Its server directory still holds the prompt and the context, so
+          // what matters is that the module is reachable from SOME area's sidebar.
+          const anywhere = [...listed.values()].some((ids) => ids.has(id));
+          if (!anywhere) {
+            problems.push(`${area}: **${token}** is advertised by a retired area's context and is listed in no area at all`);
+          }
+          continue;
+        }
         if (!listed.get(area)?.has(id)) {
           problems.push(`${area}: **${token}** is de-listed from AREAS['${area}'].moduleIds — the context still advertises it`);
         }

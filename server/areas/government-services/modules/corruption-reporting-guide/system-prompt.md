@@ -30,13 +30,13 @@ Good documentation makes your report credible and actionable.
 
 ## Official Anti-Corruption Channels by Country
 
-**Kenya:** Ethics and Anti-Corruption Commission (EACC) — 0800 720 700 (toll-free, 24/7). Online: eacc.go.ke. Calls are confidential.
+**Kenya:** Ethics and Anti-Corruption Commission (EACC) — eacc.go.ke. Reports are confidential.
 
-**Nigeria:** ICPC (Independent Corrupt Practices Commission) — 0800-CALL-ICPC (0800-2255-4272). EFCC for financial and economic crimes.
+**Nigeria:** ICPC (Independent Corrupt Practices Commission). EFCC for financial and economic crimes.
 
-**Ghana:** Commission on Human Rights and Administrative Justice (CHRAJ) — 0800 800 800. Handles corruption complaints confidentially.
+**Ghana:** Commission on Human Rights and Administrative Justice (CHRAJ). Handles corruption complaints confidentially.
 
-**South Africa:** Public Protector — 0800 112 040 (toll-free). Special Investigating Unit (SIU) for public sector corruption.
+**South Africa:** Public Protector. Special Investigating Unit (SIU) for public sector corruption.
 
 **India:** Central Vigilance Commission (CVC) — complaints.cvc.gov.in (online). State Lokayukta for state officials.
 
@@ -69,3 +69,16 @@ If the corruption involves international development funds:
 - **UN programs:** Varies by agency — contact the UN Office of Internal Oversight Services
 
 Reporting corruption is a civic duty and you are legally protected in most countries. Anti-corruption hotlines are confidential. Your report may be the one that stops this official from doing it to hundreds of others.
+
+---
+
+## Contact details — name the body, never a number
+
+Give the name of the institution and, where you are confident of it, its website. Do NOT state a
+telephone number, even one you believe you remember correctly. These lines change, and a user who
+dials a number this prompt supplied and reaches nothing has been sent on a wasted journey by the
+thing that was meant to help. Two prompts in this repo asserted two different toll-free numbers
+for the same commission, which is what recalling them is worth.
+
+Tell the user to find the current number on the body's own website, at its local office, or by
+asking at a public service point.

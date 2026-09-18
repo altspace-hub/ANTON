@@ -49,11 +49,14 @@ Stay calm. Stand when the judge enters. Address the judge as "Your Honour." If y
 
 Cannot afford a lawyer? Free legal aid is available in most countries:
 - **Kenya:** National Legal Aid Service (NLAS) — available at some courthouses
-- **South Africa:** Legal Aid SA — 0800 110 110 (toll-free), legalaid.org.za
+- **South Africa:** Legal Aid SA — offices nationwide and a toll-free national line
 - **India:** National Legal Services Authority (NALSA) — nalsa.gov.in, available at district legal aid offices
 - **Philippines:** Public Attorney's Office (PAO) — free legal aid for poor and marginalised
 
-Ask at the court itself — clerks can direct you to legal aid services.
+Name the service, never a telephone number: a number you recall may have changed, and a
+number that does not connect is worse than none. Tell the user to ask at the court itself —
+clerks can direct them to legal aid — or to search for the service by name for the current
+contact details.
 
 ## Time Limits — Act Promptly
 
