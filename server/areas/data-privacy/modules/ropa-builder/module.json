@@ -1,0 +1,264 @@
+{
+  "formatVersion": "1.0",
+  "id": "ropa-builder",
+  "label": "Record of Processing Activities (Article 30) Builder",
+  "shortLabel": "RoPA Builder",
+  "icon": "Database",
+  "description": "Build the Article 30 record of processing activities from a systems inventory, a set of business processes or an existing half-finished register. Produces a controller record in the Article 30(1) shape and a processor record in the Article 30(2) shape — they are different lists — with a per-activity capacity determination, an Article 30(5) derogation test, gap flags graded against the Regulation, and a maintenance plan. Enrichment columns such as lawful basis are carried and labelled as what they are: not Article 30 requirements.",
+  "color": "adv-teal",
+  "areaId": "data-privacy",
+  "defaults": {
+    "thinking": "think_hard",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "action-plan"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Regulation (EU) 2016/679 Article 30 (records of processing activities) and the definitions, accountability, processor, security and transfer provisions it depends on (Arts. 4, 5(2), 24, 26, 28, 32(1), 35, 44-49, 83(4)); the consolidated text of the Regulation for the current wording of the Article 30(5) derogation; EDPB guidelines and national supervisory authority record templates and format expectations; national accounting, employment and tax retention periods that decide the Article 30(1)(f) column"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "record_role",
+      "type": "select",
+      "label": "Which record are you building?",
+      "description": "Article 30(1) and Article 30(2) are different lists — the processor record has no retention item and records categories of processing rather than purposes. Getting this wrong makes everything downstream wrong, so it is the one thing the module will not guess.",
+      "required": true,
+      "options": [
+        {
+          "value": "controller",
+          "label": "Controller record — Article 30(1)"
+        },
+        {
+          "value": "processor",
+          "label": "Processor record — Article 30(2)"
+        },
+        {
+          "value": "both",
+          "label": "Both — the organisation acts in each capacity for different activities"
+        },
+        {
+          "value": "joint_controller",
+          "label": "Joint controller — Article 26 arrangement in place or being built"
+        },
+        {
+          "value": "unsure",
+          "label": "Not sure — determine the capacity per activity first"
+        }
+      ]
+    },
+    {
+      "id": "processing_activities",
+      "type": "textarea",
+      "label": "Processing activities, systems and business processes to record",
+      "description": "Whatever you have — a systems list, a set of departments and what they do, an export from a CMDB, or a paragraph of description. The module regroups it by activity and purpose; it will not invent activities you did not mention.",
+      "placeholder": "e.g. HR: Workday for employee records and absence, Personio for recruitment, an outsourced payroll bureau. Sales: Salesforce CRM, HubSpot marketing automation, a webshop on Shopify. Support: Zendesk with call recording. Site security: badge access and CCTV in reception. IT: Datadog logging and an EDR agent on every laptop. We also process claims data for three insurer clients under contract.",
+      "required": true
+    },
+    {
+      "id": "organisation_profile",
+      "type": "text",
+      "label": "Organisation, sector and headcount",
+      "description": "Headcount and sector drive the Article 30(5) derogation test and the DPO question; establishment drives which supervisory authority's format expectations apply.",
+      "placeholder": "e.g. Nordic claims-handling company, 180 employees, established in Sweden with a branch in Finland"
+    },
+    {
+      "id": "data_subject_categories",
+      "type": "chips",
+      "label": "Categories of data subjects",
+      "description": "Article 30(1)(c) requires the categories of data subjects AND the categories of personal data — two separate things that most templates merge.",
+      "options": [
+        {
+          "value": "employees",
+          "label": "Employees and workers"
+        },
+        {
+          "value": "job_applicants",
+          "label": "Job applicants"
+        },
+        {
+          "value": "former_staff",
+          "label": "Former staff and pensioners"
+        },
+        {
+          "value": "customers",
+          "label": "Customers / clients"
+        },
+        {
+          "value": "prospects",
+          "label": "Prospects and marketing contacts"
+        },
+        {
+          "value": "website_visitors",
+          "label": "Website and app users"
+        },
+        {
+          "value": "supplier_staff",
+          "label": "Supplier and partner staff"
+        },
+        {
+          "value": "patients",
+          "label": "Patients / service users"
+        },
+        {
+          "value": "children",
+          "label": "Children"
+        },
+        {
+          "value": "visitors",
+          "label": "Site visitors (CCTV, access control)"
+        },
+        {
+          "value": "whistleblowers",
+          "label": "Whistleblowers and persons reported"
+        }
+      ]
+    },
+    {
+      "id": "data_categories",
+      "type": "chips",
+      "label": "Categories of personal data",
+      "description": "Special-category data (Article 9(1)) and criminal-convictions data (Article 10) also defeat the Article 30(5) derogation, so flag them here even where the volume is small.",
+      "options": [
+        {
+          "value": "identifiers",
+          "label": "Identifiers and contact details"
+        },
+        {
+          "value": "employment",
+          "label": "Employment and payroll data"
+        },
+        {
+          "value": "financial",
+          "label": "Financial and payment data"
+        },
+        {
+          "value": "identity_documents",
+          "label": "Identity documents / national identifiers"
+        },
+        {
+          "value": "location",
+          "label": "Location and telemetry"
+        },
+        {
+          "value": "online_identifiers",
+          "label": "Online identifiers, cookies, device data"
+        },
+        {
+          "value": "communications",
+          "label": "Communications content and call recordings"
+        },
+        {
+          "value": "health",
+          "label": "Health data (Art. 9)"
+        },
+        {
+          "value": "biometric",
+          "label": "Biometric data for unique identification (Art. 9)"
+        },
+        {
+          "value": "trade_union",
+          "label": "Trade union membership (Art. 9)"
+        },
+        {
+          "value": "other_special",
+          "label": "Other special categories (Art. 9)"
+        },
+        {
+          "value": "criminal",
+          "label": "Criminal convictions and offences (Art. 10)"
+        }
+      ]
+    },
+    {
+      "id": "recipients_and_processors",
+      "type": "textarea",
+      "label": "Categories of recipients, processors and sub-processors",
+      "description": "Article 30(1)(d) asks for categories of recipients, including recipients in third countries. A processor is a recipient; a public authority receiving data in a particular inquiry is not.",
+      "placeholder": "e.g. Payroll bureau, occupational health provider, external auditors, group parent for consolidated reporting, cloud hosting in the EU, an analytics vendor in the US, debt collection agency, and the tax authority on statutory request."
+    },
+    {
+      "id": "transfers",
+      "type": "textarea",
+      "label": "Transfers to third countries or international organisations",
+      "description": "Article 30(1)(e) needs the destination identified. Note the mechanism too if you know it — it is carried as an enrichment column and the substantive analysis belongs in the cross-border transfer assessment.",
+      "placeholder": "e.g. Support tooling hosted in the US on standard contractual clauses; a group service centre in India; an analytics vendor we believe processes in the US but we have not checked the contract."
+    },
+    {
+      "id": "retention",
+      "type": "textarea",
+      "label": "Retention periods and erasure triggers",
+      "description": "Article 30(1)(f) asks for the envisaged time limits for erasure, where possible. Where a period is set by national accounting, employment or tax law, say which — the module will not assert a national period it cannot verify.",
+      "placeholder": "e.g. Accounting records seven years under national bookkeeping law. Employment files three years after exit (not yet confirmed with legal). Recruitment data six months unless the candidate consents to a talent pool. CCTV 30 days. Nobody has defined a period for the CRM."
+    },
+    {
+      "id": "security_measures",
+      "type": "textarea",
+      "label": "Technical and organisational security measures",
+      "description": "Article 30(1)(g) and Article 30(2)(d) want a GENERAL description of the Article 32(1) measures — not a control inventory. A paragraph is the right length.",
+      "placeholder": "e.g. Single sign-on with MFA, role-based access reviewed quarterly, encryption at rest and in transit, EDR on endpoints, ISO 27001 certified hosting, annual penetration test, documented access-revocation on leaver."
+    },
+    {
+      "id": "existing_record",
+      "type": "textarea",
+      "label": "Existing record to extend or repair",
+      "description": "Paste an existing register or template. The module diffs it against the Article 30(1) and 30(2) item lists, reports what is missing and what is over-collected, and keeps your column names where the meaning is right.",
+      "placeholder": "e.g. Paste the current RoPA spreadsheet rows, or the supervisory authority template you have been asked to fill in."
+    }
+  ],
+  "exampleInput": "We are a 180-person Nordic claims-handling company established in Sweden with a branch in Finland. We handle claims for three insurer clients under contract, and we obviously also run ourselves — HR, payroll, recruitment, marketing, IT. Our last DPO left and what she handed over is a spreadsheet of applications from IT, organised by system owner, with a 'purpose' column that mostly says the name of the system again. The Finnish authority has asked to see our record of processing activities. Please build it properly: work out for each activity whether we are controller or processor (we are clearly processor for the claims work and controller for our own staff, but the claims data we reuse for our own fraud analytics worries me), produce the controller record and the processor record separately in the shape the Regulation actually requires, tell me which columns are statutory and which we are carrying because everyone does, test whether the under-250 exemption is arguable for us, and give me a gap list I can send round to the business owners with names against it. Retention is our weakest area — nobody has defined a period for the CRM and I do not know the Finnish rules.",
+  "exampleValues": {
+    "record_role": "both",
+    "processing_activities": "Claims handling for three insurer clients under contract (their systems and ours). HR: Workday for employee records and absence, Personio for recruitment, an outsourced payroll bureau. Marketing: HubSpot. Support: Zendesk with call recording. Site security: badge access and CCTV in reception. IT: Datadog logging and an EDR agent on every laptop. Internal fraud analytics that reuses claims data.",
+    "organisation_profile": "Nordic claims-handling company, 180 employees, established in Sweden with a branch in Finland",
+    "data_subject_categories": [
+      "employees",
+      "job_applicants",
+      "customers",
+      "supplier_staff",
+      "visitors"
+    ],
+    "data_categories": [
+      "identifiers",
+      "employment",
+      "financial",
+      "identity_documents",
+      "communications",
+      "health"
+    ],
+    "recipients_and_processors": "Insurer clients, payroll bureau, occupational health provider, external auditors, EU cloud hosting, a US analytics vendor, debt collection agency, tax authority on statutory request.",
+    "transfers": "Support tooling hosted in the US on standard contractual clauses. An analytics vendor we believe processes in the US but we have not checked the contract.",
+    "retention": "Accounting records seven years under national bookkeeping law. Employment files three years after exit, not confirmed with legal. Recruitment six months. CCTV 30 days. No period defined for the CRM. Finnish rules unknown.",
+    "security_measures": "Single sign-on with MFA, role-based access reviewed quarterly, encryption at rest and in transit, EDR on endpoints, ISO 27001 certified hosting, annual penetration test, documented leaver access revocation.",
+    "existing_record": "Spreadsheet of applications exported from IT, organised by system owner, with a 'purpose' column that mostly repeats the system name."
+  },
+  "recommendedPersonas": [
+    "dpo",
+    "legal-expert"
+  ],
+  "recommendedSkills": [
+    "eu-regulatory-navigator"
+  ],
+  "tags": [
+    "ropa",
+    "record-of-processing",
+    "article-30",
+    "gdpr",
+    "accountability",
+    "data-mapping",
+    "data-protection",
+    "register"
+  ],
+  "contentType": "entity_register"
+}

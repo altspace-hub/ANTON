@@ -59,6 +59,28 @@ export const MARKETING_MODULES: ModuleDefinition[] = [
     },
   },
   {
+    // Wave 5 track A. Directive (EU) 2024/825 amends the UCPD (2005/29/EC) and the
+    // CRD (2011/83/EU); Member States apply the transposing measures from
+    // 27 September 2026. 'investigate' + 'strict' because the output is a
+    // claim-by-claim legal verdict, and web search is on because transposition
+    // status and the Art. 22a implementing acts are facts that move.
+    id: "green-claims-review",
+    label: "Green Claims Review",
+    shortLabel: "Green Claims",
+    icon: "Leaf",
+    description: "Review draft advertising copy, packaging or website text against the EU green-claims regime: Directive (EU) 2024/825 amendments to the Unfair Commercial Practices Directive 2005/29/EC and the Consumer Rights Directive 2011/83/EU, applying from 27 September 2026. Returns a claim-by-claim verdict, the substantiation gap behind each claim, and compliant rewrites.",
+    color: "adv-blue",
+    defaults: {
+      thinking: "investigate",
+      creativity: "strict",
+      outputFormats: ["detailed-findings","gap-scoring-matrix","executive-summary"],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "EU green-claims regime: Directive (EU) 2024/825, UCPD 2005/29/EC Annex I and Articles 6-7 as amended, CRD 2011/83/EU information duties, national transposing measures" },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
+      },
+    },
+  },
+  {
     id: "market-research-competitive",
     label: "Market Research & Competitive Analysis",
     shortLabel: "Market Research",
@@ -280,6 +302,31 @@ export const TAX_TP_MODULES: ModuleDefinition[] = [
       outputFormats: ["gap-scoring-matrix","action-plan","regulatory-comparison"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "EU VAT Directive, OECD VAT/GST guidelines, e-invoicing mandates, digital supply place-of-supply rules" },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
+      },
+    },
+  },
+  {
+    id: "pillar-two-globe-compliance",
+    label: "Pillar Two / GloBE Compliance Workflow",
+    shortLabel: "Pillar Two Workflow",
+    icon: "Globe",
+    description: "Run a group's global minimum tax compliance cycle through four gates: the scoping determination under Directive (EU) 2022/2523, the election and safe-harbour ledger (de minimis, initial-phase, the internationally agreed safe harbours and the side-by-side treatment), the top-up computation approach, and the top-up tax information-return filing plan with its 15/18-month deadlines. Complements the Pillar Two exposure assessment — this one decides what the group elects and files, and by when.",
+    color: "adv-gold",
+    defaults: {
+      thinking: "investigate",
+      creativity: "strict",
+      outputFormats: ["decision-memo","action-plan","compliance-calendar"],
+      knowledgeSources: {
+        // Web search ON (2026-09-18) deliberately: the computational rules are
+        // in the Directive and are stable, but the CHARGING position is not —
+        // the side-by-side / ultimate-parent relief and the end of the
+        // transitional CbCR safe-harbour period live in Inclusive Framework
+        // instruments that have already moved once. The prompt refuses to
+        // assert either date and tells the model to confirm the current
+        // position and name the document it relied on; it can only obey that
+        // with search on.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "Council Directive (EU) 2022/2523; OECD/G20 GloBE Model Rules and Commentary; Inclusive Framework Administrative Guidance and the agreed safe-harbour package; GloBE Information Return; national implementing acts and local notification deadlines" },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },
@@ -557,6 +604,30 @@ export const DATA_PRIVACY_MODULES: ModuleDefinition[] = [
       outputFormats: ["policy-document"],
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: false, description: "GDPR Articles 13 and 14, EDPB transparency guidelines, ePrivacy Directive, ICO guidance on privacy notices" },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
+      },
+    },
+  },
+  {
+    id: "ropa-builder",
+    label: "Record of Processing Activities (Article 30) Builder",
+    shortLabel: "RoPA Builder",
+    icon: "Database",
+    description: "Build the Article 30 record of processing activities from a systems inventory, a set of business processes or an existing half-finished register. Produces a controller record in the Article 30(1) shape and a processor record in the Article 30(2) shape — they are different lists — with a per-activity capacity determination, an Article 30(5) derogation test, gap flags graded against the Regulation, and a maintenance plan. Enrichment columns such as lawful basis are carried and labelled as what they are: not Article 30 requirements.",
+    color: "adv-teal",
+    defaults: {
+      thinking: "think_hard",
+      creativity: "strict",
+      outputFormats: ["gap-scoring-matrix","action-plan"],
+      knowledgeSources: {
+        // Web search ON (2026-09-18): Article 30's own content is fixed and the
+        // module shapes the user's OWN facts into it, so search is not used for
+        // the record. It is used for three things the prompt refuses to assert
+        // — the current wording of the Article 30(5) derogation (a change to it
+        // has been under discussion), the national supervisory authority's
+        // format expectation, and the national accounting/employment/tax
+        // retention periods that decide the Article 30(1)(f) column.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: "Regulation (EU) 2016/679 Article 30 and the provisions it depends on; the consolidated text for the current Article 30(5) derogation; EDPB guidelines and national supervisory authority record templates; national retention periods behind Article 30(1)(f)" },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },

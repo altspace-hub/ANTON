@@ -115,7 +115,11 @@ const STAMPED: readonly string[] = [
   'blockchain/casp-mica-dora-amlr-programme',
   'blockchain/crypto-aml-cft',
   'blockchain/mica-gap-analysis',
+  'consumer-legal/right-to-repair-claim',
+  'cyber/cra-conformity-assessment',
+  'cyber/cra-vulnerability-reporting-runbook',
   'data-privacy/ai-act-profiling-bias-assessment',
+  'data-privacy/ropa-builder',
   'esg/csrd-data-collector',
   'esg/csrd-reporting',
   'esg/supply-chain-esg-screener',
@@ -137,6 +141,7 @@ const STAMPED: readonly string[] = [
   'investment/fund-compliance',
   'legal/regulatory-deadline-tracker',
   'marketing/email-marketing-automation',
+  'marketing/green-claims-review',
   'marketing/seo-content-strategy',
   'marketing/social-media-strategy',
   'mobile-money/agent-banking-oversight',
@@ -146,6 +151,7 @@ const STAMPED: readonly string[] = [
   'risk/ai-model-risk-assessment',
   'startups/regulatory-risk-startup-assessment',
   'strategy/digital-transformation-business-case',
+  'tax-transfer-pricing/pillar-two-globe-compliance',
   'tax-transfer-pricing/tax-provision-reporting',
 ];
 

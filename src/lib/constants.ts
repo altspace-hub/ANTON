@@ -22,6 +22,7 @@ import {
   SURFACED_INSURANCE_MODULES,
   SURFACED_ACCOUNTING_MODULES,
 } from './area-patches/surfaced-modules-patch';
+import { CONSUMER_LEGAL_MODULES } from './area-patches/consumer-legal-patch';
 import { TIER_A_MODULES } from './area-patches/tier-a-patch';
 import { TIER_B_MODULES } from './area-patches/tier-b-patch';
 import { TIER_C_MODULES } from './area-patches/tier-c-patch';
@@ -2815,6 +2816,9 @@ export const AREAS = [
       'pen-test-scope', 'security-awareness-training', 'third-party-security',
       // Cross-framework orchestrator (2026-06-14 audit plan, Tier A):
       'dora-amla-nis2-integration',
+      // Cyber Resilience Act (EU) 2024/2847 — product conformity, not operator security
+      // (Wave 5 track B, 2026-09-18):
+      'cra-vulnerability-reporting-runbook', 'cra-conformity-assessment',
     ],
   },
   {
@@ -3109,6 +3113,8 @@ export const AREAS = [
       'tenancy-disputes', 'employment-rights', 'consumer-protection', 'personal-contracts', 'small-claims',
       // Global-South consumer protection (Tier B coherence pair):
       'global-south-consumer-protection',
+      // EU repair regime (Wave 5 track A — Directive (EU) 2024/1799):
+      'right-to-repair-claim',
     ],
   },
   {
@@ -3144,6 +3150,8 @@ export const AREAS = [
       'marketing-strategy', 'digital-campaign-planner', 'seo-content-strategy',
       'social-media-strategy', 'market-research-competitive', 'email-marketing-automation',
       'marketing-analytics-roi', 'customer-journey-mapping',
+      // EU green-claims regime (Wave 5 track A — Directive (EU) 2024/825):
+      'green-claims-review',
     ],
   },
   {
@@ -3156,6 +3164,8 @@ export const AREAS = [
       'tax-compliance-health-check', 'transfer-pricing-documentation', 'vat-gst-compliance',
       'tax-risk-assessment', 'cross-border-transaction-advisor', 'tax-incentive-navigator',
       'tax-provision-reporting', 'tax-authority-audit-response',
+      // Wave 5 (2026-09-18): global minimum tax workflow — complements accounting/pillar-two-minimum-tax-assessment.
+      'pillar-two-globe-compliance',
     ],
   },
   {
@@ -3193,6 +3203,8 @@ export const AREAS = [
       'ai-act-profiling-bias-assessment',
       // Tier-C backlog (2026-06-14 audit plan):
       'nis2-dpia-integration', 'child-data-protection-by-design',
+      // Wave 5 (2026-09-18): the Article 30 record itself, not an assessment of whether one exists.
+      'ropa-builder',
     ],
   },
   {
@@ -4012,6 +4024,7 @@ export const MODULE_KNOWLEDGE_CATEGORIES: Record<string, string[]> = {
     ...SURFACED_CONSULTING_MODULES,
     ...SURFACED_INSURANCE_MODULES,
     ...SURFACED_ACCOUNTING_MODULES,
+    ...CONSUMER_LEGAL_MODULES,
     ...TIER_A_MODULES,
     ...TIER_B_MODULES,
     ...TIER_C_MODULES,

@@ -1,0 +1,233 @@
+{
+  "formatVersion": "1.0",
+  "id": "cra-conformity-assessment",
+  "label": "CRA Product Conformity Assessment",
+  "shortLabel": "CRA Conformity",
+  "icon": "ShieldCheck",
+  "description": "Works out what a connected product must do to carry CE marking under the Cyber Resilience Act (EU) 2024/2847 by 11 December 2027: the product class (default, important class I or II, critical), the Annex I essential-requirements gap, the Annex VII technical-documentation outline, the Article 13(8) support-period determination, the Annex V declaration of conformity, and the Article 32 conformity route — including why an unlisted harmonised standard removes the self-assessment option for class I.",
+  "color": "adv-blue",
+  "areaId": "cyber",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "gap-scoring-matrix",
+      "detailed-findings",
+      "action-plan",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Cyber Resilience Act (EU) 2024/2847 Arts. 2, 3, 6-8, 13, 27-32, 64, 69, 71 + Annexes I-VIII; Cybersecurity Act (EU) 2019/881 and the EUCC scheme (EU) 2024/482; Regulation (EU) 2019/1020 market surveillance; harmonised standards cited in the Official Journal; the Art. 7(4) implementing act on Annex III/IV technical descriptions; AI Act (EU) 2024/1689 Art. 12 interaction"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "product_description",
+      "type": "textarea",
+      "label": "The product with digital elements",
+      "description": "What it is, what it does, what it connects to, what it protects, and who uses it. Include any remote data processing solution without which the product could not perform one of its functions — the Act treats that as part of the product (Art. 3(1) and 3(2)).",
+      "required": true,
+      "placeholder": "e.g. A rack-mounted network appliance running our own Linux-based firmware that performs stateful packet filtering and intrusion detection for small-business networks, managed through a cloud console we operate. Sold through EU distributors. Firmware is signed and updated over the air; the cloud console is required for configuration."
+    },
+    {
+      "id": "core_functionality",
+      "type": "multi-select",
+      "label": "Core functionality matching a listed category",
+      "description": "Classification turns on whether the product has the CORE FUNCTIONALITY of a category in Annex III (important, class I or II) or Annex IV (critical). Merely integrating such a product does not, by itself, make the integrating product important (Art. 7(1)). Select every category the product's own core functionality matches.",
+      "options": [
+        { "value": "c1_identity_access", "label": "I — Identity management / privileged access management, incl. authentication and access control readers" },
+        { "value": "c1_browser", "label": "I — Standalone or embedded browsers" },
+        { "value": "c1_password_manager", "label": "I — Password managers" },
+        { "value": "c1_antimalware", "label": "I — Software that searches for, removes or quarantines malicious software" },
+        { "value": "c1_vpn", "label": "I — Virtual private network (VPN) function" },
+        { "value": "c1_network_mgmt", "label": "I — Network management systems" },
+        { "value": "c1_siem", "label": "I — Security information and event management (SIEM) systems" },
+        { "value": "c1_boot_manager", "label": "I — Boot managers" },
+        { "value": "c1_pki", "label": "I — Public key infrastructure and digital certificate issuance software" },
+        { "value": "c1_network_interface", "label": "I — Physical and virtual network interfaces" },
+        { "value": "c1_os", "label": "I — Operating systems" },
+        { "value": "c1_router_switch", "label": "I — Routers, internet-connection modems and switches" },
+        { "value": "c1_microprocessor", "label": "I — Microprocessors with security-related functionalities" },
+        { "value": "c1_microcontroller", "label": "I — Microcontrollers with security-related functionalities" },
+        { "value": "c1_asic_fpga", "label": "I — ASICs and FPGAs with security-related functionalities" },
+        { "value": "c1_voice_assistant", "label": "I — Smart home general purpose virtual assistants" },
+        { "value": "c1_smart_home_security", "label": "I — Smart home products with security functionalities (locks, cameras, baby monitors, alarms)" },
+        { "value": "c1_connected_toys", "label": "I — Internet-connected toys with social interactive or location-tracking features" },
+        { "value": "c1_wearables", "label": "I — Personal wearables with a health monitoring purpose outside the medical device regulations, or intended for children" },
+        { "value": "c2_hypervisor", "label": "II — Hypervisors and container runtime systems" },
+        { "value": "c2_firewall_ids", "label": "II — Firewalls, intrusion detection and prevention systems" },
+        { "value": "c2_tamper_microprocessor", "label": "II — Tamper-resistant microprocessors" },
+        { "value": "c2_tamper_microcontroller", "label": "II — Tamper-resistant microcontrollers" },
+        { "value": "c4_security_box", "label": "Critical — Hardware devices with security boxes" },
+        { "value": "c4_smart_meter_gateway", "label": "Critical — Smart meter gateways and other advanced-security devices, incl. secure cryptoprocessing" },
+        { "value": "c4_smartcard", "label": "Critical — Smartcards or similar devices, incl. secure elements" },
+        { "value": "none_listed", "label": "None of these — default category" },
+        { "value": "unsure", "label": "Unsure — classify it for me from the description" }
+      ]
+    },
+    {
+      "id": "product_form",
+      "type": "select",
+      "label": "Form of the product",
+      "description": "Drives how the CE marking is affixed (Art. 30(1)), whether Annex VII needs photographs and internal layout, and whether the free and open-source route in Art. 32(5) is available.",
+      "options": [
+        { "value": "hardware", "label": "Hardware product with embedded software" },
+        { "value": "firmware_component", "label": "A hardware or software component placed on the market separately" },
+        { "value": "software_standalone", "label": "Standalone software" },
+        { "value": "software_plus_service", "label": "Software or hardware plus a remote data processing solution we operate" },
+        { "value": "foss_commercial", "label": "Free and open-source software supplied in the course of a commercial activity" }
+      ]
+    },
+    {
+      "id": "connectivity",
+      "type": "select",
+      "label": "Data connection",
+      "description": "Article 2(1) brings in products whose intended purpose or reasonably foreseeable use includes a direct or indirect logical or physical data connection to a device or network. This is the scope gate.",
+      "options": [
+        { "value": "direct_network", "label": "Direct network connection (internet, LAN, cellular)" },
+        { "value": "direct_device", "label": "Direct connection to another device (USB, Bluetooth, serial, proprietary radio)" },
+        { "value": "indirect", "label": "Indirect only — reaches a network through another product" },
+        { "value": "remote_processing", "label": "Connects to a remote data processing solution we provide" },
+        { "value": "none", "label": "No data connection at all, in any foreseeable use" }
+      ]
+    },
+    {
+      "id": "market_status",
+      "type": "select",
+      "label": "Market status",
+      "description": "Article 69(2): products placed on the market before 11 December 2027 are caught only if substantially modified from that date. Article 69(3) derogates for Article 14 reporting, which reaches the whole installed base regardless.",
+      "options": [
+        { "value": "in_development", "label": "In development — not yet placed on the market" },
+        { "value": "placed_before", "label": "Already on the market, no substantial modification planned" },
+        { "value": "substantial_mod", "label": "Already on the market, substantial modification planned or likely" },
+        { "value": "new_version", "label": "A new version or successor product is planned" },
+        { "value": "unsure_mod", "label": "Unsure whether a planned change is a substantial modification" }
+      ]
+    },
+    {
+      "id": "standards_position",
+      "type": "multi-select",
+      "label": "Standards and certification position",
+      "description": "This decides the conformity route for class I products. Under Art. 32(2), a class I product only avoids third-party assessment where harmonised standards, common specifications or a certification scheme at assurance level at least 'substantial' have been applied IN FULL.",
+      "options": [
+        { "value": "harmonised_full", "label": "A harmonised standard cited in the OJ is applied in full" },
+        { "value": "harmonised_partial", "label": "A harmonised standard is applied only in part" },
+        { "value": "common_spec", "label": "A Commission common specification under Art. 27(2) is applied" },
+        { "value": "eucc", "label": "We hold a European cybersecurity certificate (e.g. EUCC) at assurance level 'substantial' or higher" },
+        { "value": "other_standards", "label": "Other standards applied (IEC 62443, ETSI EN 303 645, ISO/IEC 27001) but not cited under this Regulation" },
+        { "value": "none_applied", "label": "No standard applied, or none exists for these requirements" },
+        { "value": "unknown", "label": "Do not know what has been cited in the Official Journal" }
+      ]
+    },
+    {
+      "id": "expected_use_years",
+      "type": "number",
+      "label": "Years the product is expected to be in use",
+      "description": "Article 13(8): the support period must reflect how long the product is expected to be in use, and shall be AT LEAST five years unless the product is expected to be in use for less, in which case it matches the expected use time.",
+      "placeholder": "8"
+    },
+    {
+      "id": "other_union_law",
+      "type": "multi-select",
+      "label": "Other Union legislation that applies",
+      "description": "Article 2 excludes some products entirely — Art. 2(2) for the three named regulations, Art. 2(3) for products certified under the civil aviation regulation, Art. 2(4) for marine equipment. Acts that do not exclude instead combine with the CRA under Articles 12 and 31(3), producing a single set of technical documentation and a single declaration of conformity.",
+      "options": [
+        { "value": "mdr", "label": "Medical devices (EU) 2017/745 — excluded by Art. 2(2)" },
+        { "value": "ivdr", "label": "In vitro diagnostics (EU) 2017/746 — excluded by Art. 2(2)" },
+        { "value": "vehicles", "label": "Motor vehicle type-approval (EU) 2019/2144 — excluded by Art. 2(2)" },
+        { "value": "aviation", "label": "Civil aviation (EU) 2018/1139 — excluded by Art. 2(3), but only if certified under it" },
+        { "value": "marine", "label": "Marine equipment Directive 2014/90/EU — excluded by Art. 2(4)" },
+        { "value": "ai_act_high_risk", "label": "AI Act (EU) 2024/1689 — the product is or contains a high-risk AI system" },
+        { "value": "red", "label": "Radio Equipment Directive 2014/53/EU and its delegated cybersecurity requirements" },
+        { "value": "machinery", "label": "Machinery Regulation (EU) 2023/1230" },
+        { "value": "toys", "label": "Toy Safety Directive 2009/48/EC" },
+        { "value": "none", "label": "None that we know of" }
+      ]
+    },
+    {
+      "id": "existing_artefacts",
+      "type": "multi-select",
+      "label": "What already exists",
+      "description": "Most of Annex VII is documentation of things a competent engineering organisation already does. The gap is usually evidential, not technical.",
+      "options": [
+        { "value": "risk_assessment", "label": "A documented cybersecurity risk assessment for the product" },
+        { "value": "sbom", "label": "A software bill of materials in a machine-readable format" },
+        { "value": "cvd_policy", "label": "A coordinated vulnerability disclosure policy" },
+        { "value": "secure_update", "label": "A secure update mechanism, with signing" },
+        { "value": "test_reports", "label": "Security test and review reports for the shipped product" },
+        { "value": "architecture_docs", "label": "Design and architecture documentation" },
+        { "value": "user_instructions", "label": "User information and instructions covering security" },
+        { "value": "support_policy", "label": "A published support or end-of-life policy with dates" },
+        { "value": "ce_other", "label": "CE marking already held under other Union legislation" },
+        { "value": "none", "label": "None of these" }
+      ]
+    },
+    {
+      "id": "company_size",
+      "type": "select",
+      "label": "Size of the undertaking",
+      "description": "Article 33(5) lets microenterprises and small enterprises supply all Annex VII elements in a simplified format, using the form the Commission specifies by implementing act; notified bodies must accept it. Article 32(6) requires conformity-assessment fees to be reduced proportionately.",
+      "options": [
+        { "value": "micro", "label": "Microenterprise (<10 staff)" },
+        { "value": "small", "label": "Small enterprise (<50 staff)" },
+        { "value": "medium", "label": "Medium enterprise (<250 staff)" },
+        { "value": "large", "label": "Large enterprise" }
+      ]
+    },
+    {
+      "id": "known_concerns",
+      "type": "textarea",
+      "label": "Known concerns, contested classifications or commercial constraints",
+      "description": "Classification disputes, notified-body capacity worries, support-period commitments already made to customers, or requirements you believe do not apply.",
+      "placeholder": "e.g. Sales have promised a three-year support window in contracts and we think the Act requires five. We cannot ship without a working default password because installers rely on it. We are not sure whether our appliance is a class II firewall or a class I router. We have no idea whether a harmonised standard exists for any of this and our distributor is asking for a declaration of conformity now."
+    }
+  ],
+  "exampleInput": "We build a rack-mounted network security appliance for small businesses: our own Linux-based firmware doing stateful packet filtering and intrusion detection, managed through a cloud console we operate and which is required for configuration. Roughly 200 staff, sold through distributors in eight Member States, firmware signed and updated over the air. We currently ship with a documented default administrator password that installers rely on, we have architecture documentation but no formal cybersecurity risk assessment, no SBOM, no disclosure policy, and our standard contract promises three years of updates. A distributor has started asking for an EU declaration of conformity. Tell us: is this a class I or a class II important product, and what turns on that; what the Article 32 route actually is given we have applied IEC 62443 but nothing cited in the Official Journal; which Annex I requirements we currently fail and how badly; what Annex VII technical documentation we would have to produce and what we already have; what support period we must determine and whether our three-year contractual promise is a problem; and what the declaration of conformity has to say. We would also like to know what changes if we do nothing until 2027.",
+  "exampleValues": {
+    "product_description": "Rack-mounted network security appliance running our own Linux-based firmware performing stateful packet filtering and intrusion detection for small-business networks, managed through a cloud console we operate and which is required for configuration. Sold through EU distributors; firmware signed and updated over the air.",
+    "core_functionality": ["c2_firewall_ids", "c1_network_mgmt"],
+    "product_form": "software_plus_service",
+    "connectivity": "direct_network",
+    "market_status": "placed_before",
+    "standards_position": ["other_standards", "unknown"],
+    "expected_use_years": 8,
+    "other_union_law": ["none"],
+    "existing_artefacts": ["secure_update", "architecture_docs"],
+    "company_size": "medium",
+    "known_concerns": "Ship with a documented default administrator password that installers rely on. No formal cybersecurity risk assessment, no SBOM, no disclosure policy. Standard contract promises three years of updates. A distributor is asking for an EU declaration of conformity now. Unsure whether the appliance is a class II firewall or a class I network management system."
+  },
+  "recommendedPersonas": [
+    "cyber-expert",
+    "tech-expert",
+    "auditor"
+  ],
+  "recommendedSkills": [
+    "eu-regulatory-navigator",
+    "regulatory-examiner",
+    "control-evidence-scoring",
+    "risk-based-thinking"
+  ],
+  "tags": [
+    "cyber-resilience-act",
+    "cra",
+    "product-conformity",
+    "ce-marking",
+    "declaration-of-conformity",
+    "technical-documentation",
+    "essential-requirements",
+    "support-period",
+    "notified-body",
+    "product-security"
+  ],
+  "contentType": "gap_analysis"
+}

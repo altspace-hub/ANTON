@@ -1,0 +1,134 @@
+{
+  "formatVersion": "1.0",
+  "id": "pillar-two-globe-compliance",
+  "label": "Pillar Two / GloBE Compliance Workflow",
+  "shortLabel": "Pillar Two Workflow",
+  "icon": "Globe",
+  "description": "Run a group's global minimum tax compliance cycle through four gates: the scoping determination under Directive (EU) 2022/2523, the election and safe-harbour ledger (de minimis, initial-phase, the internationally agreed safe harbours and the side-by-side treatment), the top-up computation approach, and the top-up tax information-return filing plan with its 15/18-month deadlines. Complements the Pillar Two exposure assessment — this one decides what the group elects and files, and by when.",
+  "color": "adv-gold",
+  "areaId": "tax-transfer-pricing",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "decision-memo",
+      "action-plan",
+      "compliance-calendar"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "Council Directive (EU) 2022/2523 (Union Pillar Two instrument: scope Art. 2, IIR Arts. 5-10, QDMTT Art. 11, UTPR Arts. 12-14, ETR Art. 26, top-up tax Art. 27, SBIE Art. 28, de minimis Art. 30, safe harbours Art. 32, filing Art. 44, elections Art. 45, transitional SBIE rates Art. 48, initial-phase exclusion Art. 49, 18-month transition-year filing Art. 51, transposition Art. 56); OECD/G20 GloBE Model Rules and Commentary; Inclusive Framework Administrative Guidance and the agreed safe-harbour package (transitional CbCR safe harbour, QDMTT safe harbour, transitional UTPR safe harbour, side-by-side and ultimate-parent relief); GloBE Information Return; national implementing acts and local registration/notification deadlines"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "upe_jurisdiction",
+      "type": "text",
+      "label": "Ultimate parent entity jurisdiction",
+      "description": "Where is the UPE located? This decides which charging rule reaches the group, which implementing act governs, and whether the side-by-side question arises at all — the workflow cannot start without it.",
+      "placeholder": "e.g. Sweden; Germany; United States; Japan",
+      "required": true
+    },
+    {
+      "id": "fiscal_year",
+      "type": "text",
+      "label": "Fiscal year being worked (and the first in-scope year, if different)",
+      "description": "Almost every downstream rule is keyed to the fiscal year: the transition-year treatment, the year-specific substance carve-out rate, the safe-harbour transition period and the filing deadline.",
+      "placeholder": "e.g. FY ending 31 December 2026; first in-scope year was the FY beginning 1 January 2024",
+      "required": true
+    },
+    {
+      "id": "workflow_gates",
+      "type": "multi-select",
+      "label": "Which gates should this run cover?",
+      "description": "The four gates run in order and each depends on the one before. Leave all selected for a full cycle; narrow it when you are re-running a single gate.",
+      "options": [
+        { "value": "scoping", "label": "Gate 1 — Scoping determination (threshold, entity map, charging provisions)" },
+        { "value": "elections", "label": "Gate 2 — Elections, exclusions and safe harbours" },
+        { "value": "computation", "label": "Gate 3 — Top-up computation approach and data sequence" },
+        { "value": "filing", "label": "Gate 4 — Information-return and notification filing plan" },
+        { "value": "data_readiness", "label": "Data-readiness flags across all gates" }
+      ]
+    },
+    {
+      "id": "group_footprint",
+      "type": "textarea",
+      "label": "Group footprint and figures",
+      "description": "Consolidated revenue for the relevant preceding fiscal years, number and location of constituent entities, joint ventures, and any jurisdiction you expect to sit below a 15% effective tax rate.",
+      "placeholder": "e.g. Consolidated revenue EUR 1.9bn and EUR 2.1bn in the two preceding fiscal years. About 35 constituent entities across Sweden, Germany, Ireland, Switzerland, Luxembourg, the UK and the US, plus a 50/50 manufacturing JV in Poland. Ireland and Luxembourg look borderline on ETR; the Swiss cantonal rate is below the headline."
+    },
+    {
+      "id": "domestic_topup_jurisdictions",
+      "type": "textarea",
+      "label": "Host jurisdictions operating a domestic top-up tax",
+      "description": "List every jurisdiction where the group has entities and a domestic minimum top-up tax is in force or expected. This is tested separately from any group-level relief and is never switched off by it.",
+      "placeholder": "e.g. Ireland, Switzerland and the Netherlands all operate a domestic top-up tax; we are unsure about the UAE free-zone entity and have not checked Singapore."
+    },
+    {
+      "id": "data_available",
+      "type": "multi-select",
+      "label": "Which data can the group actually produce today?",
+      "description": "Anything left unselected becomes a data-readiness flag rather than an assumption — that is how the gaps get into the plan.",
+      "options": [
+        { "value": "qualified_cbcr", "label": "Qualified country-by-country report" },
+        { "value": "qualified_fs", "label": "Qualified financial statements per constituent entity" },
+        { "value": "covered_taxes_by_jurisdiction", "label": "Covered taxes split by jurisdiction" },
+        { "value": "deferred_tax_recast", "label": "Deferred tax recast at the lower of the domestic rate and 15%" },
+        { "value": "eligible_payroll", "label": "Eligible payroll costs by jurisdiction" },
+        { "value": "eligible_tangible_assets", "label": "Eligible tangible-asset carrying values by jurisdiction" },
+        { "value": "ownership_map", "label": "Controlling-interest / ownership map for every constituent entity" },
+        { "value": "prior_year_return", "label": "Prior-year top-up tax information return or equivalent" }
+      ]
+    },
+    {
+      "id": "elections_and_positions",
+      "type": "textarea",
+      "label": "Elections already made, prior positions and open questions",
+      "description": "A five-year election made in an earlier year still binds this one. Note anything already elected, any relief already relied on, and the questions you actually want answered.",
+      "placeholder": "e.g. We took the de minimis exclusion for two small jurisdictions last year and relied on the transitional CbCR safe harbour everywhere else. No SBIE election has been made. Open questions: does the initial-phase exclusion still apply after we opened a seventh jurisdiction, and who has to notify in Germany if the Swedish UPE files centrally?"
+    }
+  ],
+  "exampleInput": "We are the group tax function of a Swedish-headquartered industrial group (consolidated revenue about EUR 2.1bn, roughly 35 constituent entities across Sweden, Germany, Ireland, Switzerland, Luxembourg, the UK and the US, plus a 50/50 JV in Poland). Our first in-scope year was the fiscal year beginning 1 January 2024 and we are now planning the cycle for the fiscal year ending 31 December 2026. We do not want another exposure model — we have one. What we need is the compliance workflow: (1) confirm the scoping determination and which charging provision reaches each part of the group, including what the side-by-side position means for our US sub-group and whether it touches the Irish and Swiss domestic top-up taxes at all; (2) build the election ledger — which reliefs we should test, which elections bind for five years versus one, who makes them and by when; (3) set out the computation approach for the jurisdictions that are not switched off after the reliefs, with the year-specific substance carve-out rates; and (4) give us a dated filing plan covering the return, the local notifications and the internal close, working back from the deadline. Known weakness: our consolidation cannot split covered taxes or deferred tax by jurisdiction, and nobody owns the eligible payroll and tangible-asset extract.",
+  "exampleValues": {
+    "upe_jurisdiction": "Sweden",
+    "fiscal_year": "FY ending 31 December 2026; first in-scope year was the FY beginning 1 January 2024",
+    "workflow_gates": ["scoping", "elections", "computation", "filing", "data_readiness"],
+    "group_footprint": "Consolidated revenue about EUR 1.9bn and EUR 2.1bn in the two preceding fiscal years. Roughly 35 constituent entities across Sweden, Germany, Ireland, Switzerland, Luxembourg, the UK and the US, plus a 50/50 manufacturing JV in Poland. Ireland and Luxembourg look borderline on ETR; the Swiss cantonal rate is below the headline.",
+    "domestic_topup_jurisdictions": "Ireland, Switzerland and the Netherlands operate a domestic top-up tax. Unsure about the UAE free-zone entity; Singapore not yet checked.",
+    "data_available": ["qualified_cbcr", "qualified_fs", "ownership_map", "prior_year_return"],
+    "elections_and_positions": "De minimis exclusion taken for two small jurisdictions last year; transitional CbCR safe harbour relied on elsewhere. No SBIE election made. Open questions: does the initial-phase exclusion still apply now that we have opened a seventh jurisdiction, and who has to notify in Germany if the Swedish UPE files centrally?"
+  },
+  "recommendedPersonas": [
+    "tax-director",
+    "finance-expert"
+  ],
+  "recommendedSkills": [
+    "eu-regulatory-navigator"
+  ],
+  "modelTier": {
+    "recommended": "opus",
+    "minimum": "sonnet",
+    "notes": "The election ledger and the charging-provision ordering interact across jurisdictions and terms; a smaller model reliably produces the list but collapses the group-level relief and the host-jurisdiction domestic top-up tax into one answer."
+  },
+  "tags": [
+    "pillar-two",
+    "globe",
+    "minimum-tax",
+    "top-up-tax",
+    "qdmtt",
+    "safe-harbour",
+    "globe-information-return",
+    "eu-directive-2022-2523",
+    "tax"
+  ],
+  "contentType": "plan_document"
+}

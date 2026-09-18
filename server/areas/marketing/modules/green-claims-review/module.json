@@ -1,0 +1,164 @@
+{
+  "formatVersion": "1.0",
+  "id": "green-claims-review",
+  "label": "Green Claims Review",
+  "shortLabel": "Green Claims",
+  "description": "Review draft advertising copy, packaging or website text against the EU green-claims regime: Directive (EU) 2024/825 amendments to the Unfair Commercial Practices Directive 2005/29/EC and the Consumer Rights Directive 2011/83/EU, applying from 27 September 2026. Returns a claim-by-claim verdict, the substantiation gap behind each claim, and compliant rewrites.",
+  "icon": "Leaf",
+  "color": "adv-blue",
+  "areaId": "marketing",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "strict",
+    "outputFormats": [
+      "detailed-findings",
+      "gap-scoring-matrix",
+      "executive-summary"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU green-claims regime: Directive (EU) 2024/825, UCPD 2005/29/EC Annex I and Articles 6-7 as amended, CRD 2011/83/EU information duties, national transposing measures"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "claim_text",
+      "type": "textarea",
+      "label": "Draft copy, packaging or website text",
+      "description": "Paste the text exactly as it will appear, including headlines, straplines, body copy, on-pack wording, hashtags and any label or logo wording. Every claim is judged on its own words.",
+      "required": true,
+      "placeholder": "e.g. \"The eco-friendly choice. Our climate-neutral packaging is made from 100% recycled materials, and we will be net zero by 2035.\""
+    },
+    {
+      "id": "asset_type",
+      "type": "select",
+      "label": "Where the claim appears",
+      "description": "Determines whether the Consumer Rights Directive pre-contractual information duties are in scope alongside the claim rules.",
+      "options": [
+        { "value": "advertising", "label": "Advertising copy (print, display, OOH, broadcast)" },
+        { "value": "packaging", "label": "Packaging / on-pack text" },
+        { "value": "website", "label": "Website or brand page" },
+        { "value": "product_listing", "label": "E-commerce product listing (incl. checkout flow)" },
+        { "value": "social", "label": "Social post or influencer brief" },
+        { "value": "email", "label": "Email or CRM campaign" },
+        { "value": "press", "label": "Press release or corporate communication" },
+        { "value": "comparison_tool", "label": "Comparison tool, eco-score or ranking feature" }
+      ]
+    },
+    {
+      "id": "claim_features",
+      "type": "multi-select",
+      "label": "Claim types present",
+      "description": "Tick what you believe is in the copy. The review checks for all of these regardless, but this focuses the substantiation questions.",
+      "options": [
+        { "value": "generic", "label": "Generic environmental wording (eco, green, sustainable, environmentally friendly)" },
+        { "value": "label", "label": "Sustainability label, trust mark or eco-logo" },
+        { "value": "offsetting", "label": "Carbon-neutral / climate-neutral / offset-based claim" },
+        { "value": "future", "label": "Future environmental performance pledge (net zero by X)" },
+        { "value": "whole_business", "label": "Whole-product or whole-business environmental claim" },
+        { "value": "recycled", "label": "Recycled content, recyclability or circularity claim" },
+        { "value": "durability", "label": "Durability or lifespan claim" },
+        { "value": "repair", "label": "Reparability, spare-parts or repair claim" },
+        { "value": "software_update", "label": "Software-update or support-period claim" },
+        { "value": "guarantee", "label": "Guarantee or warranty statement" },
+        { "value": "comparison", "label": "Comparison against other products, brands or suppliers" },
+        { "value": "legal_minimum", "label": "Compliance with a legal requirement presented as a feature" }
+      ]
+    },
+    {
+      "id": "substantiation",
+      "type": "textarea",
+      "label": "Substantiation you hold",
+      "description": "What evidence sits behind each claim — life-cycle assessments and their scope, certification-scheme documents, third-party verification and whether its findings are published, transition-plan targets and resourcing, spare-parts and update-support schedules. Leave blank to get the gap list.",
+      "placeholder": "e.g. \"LCA covering packaging only, 2026, not third-party verified. Net-zero target board-approved, plan not published, no external verifier.\""
+    },
+    {
+      "id": "label_basis",
+      "type": "select",
+      "label": "Basis of any sustainability label used",
+      "description": "Annex I point 2a prohibits displaying a sustainability label that is neither based on a certification scheme nor established by public authorities.",
+      "options": [
+        { "value": "none", "label": "No label or trust mark used" },
+        { "value": "certification_scheme", "label": "Third-party certification scheme" },
+        { "value": "public_authority", "label": "Established by public authorities (e.g. EU Ecolabel)" },
+        { "value": "self_declared", "label": "Own / self-declared label or in-house mark" },
+        { "value": "unknown", "label": "Not sure what sits behind it" }
+      ]
+    },
+    {
+      "id": "markets",
+      "type": "chips",
+      "label": "Markets in scope",
+      "description": "The Directive is transposed market by market. Naming the markets lets the review flag where a national measure has to be checked.",
+      "options": [
+        { "value": "eu_wide", "label": "EU-wide campaign" },
+        { "value": "se", "label": "Sweden" },
+        { "value": "dk", "label": "Denmark" },
+        { "value": "fi", "label": "Finland" },
+        { "value": "de", "label": "Germany" },
+        { "value": "fr", "label": "France" },
+        { "value": "nl", "label": "Netherlands" },
+        { "value": "be", "label": "Belgium" },
+        { "value": "es", "label": "Spain" },
+        { "value": "it", "label": "Italy" },
+        { "value": "pl", "label": "Poland" },
+        { "value": "ie", "label": "Ireland" },
+        { "value": "other_eu", "label": "Other EU / EEA market" },
+        { "value": "non_eu", "label": "Non-EU market (outside this Directive)" }
+      ]
+    },
+    {
+      "id": "product_category",
+      "type": "text",
+      "label": "Product or service",
+      "description": "Used to test whether a claimed feature is in fact a legal requirement for the whole category, which Annex I point 10a prohibits presenting as distinctive.",
+      "placeholder": "e.g. household detergent, running shoes, laptop, energy tariff"
+    },
+    {
+      "id": "launch_date",
+      "type": "text",
+      "label": "Planned launch or live date",
+      "description": "The same wording is judged differently before and from 27 September 2026, the date from which Member States apply the transposing measures.",
+      "placeholder": "e.g. 15 October 2026"
+    }
+  ],
+  "recommendedSkills": [
+    "eu-regulatory-navigator",
+    "regulatory-examiner"
+  ],
+  "recommendedPersonas": [
+    "digital-marketing-manager",
+    "eu-regulatory-lawyer",
+    "consumer-rights-advocate"
+  ],
+  "tags": [
+    "green-claims",
+    "greenwashing",
+    "advertising",
+    "consumer-protection",
+    "eu",
+    "ucpd",
+    "sustainability"
+  ],
+  "contentType": "gap_analysis",
+  "exampleInput": "Review the launch copy for our new laundry detergent range before it goes live across Sweden, Germany and the Netherlands.\n\nHeadline: \"The eco-friendly way to wash.\"\nStrapline: \"Climate-neutral cleaning, guaranteed.\"\nBody: \"Our new EcoPure range is kinder to the planet. The bottle is made from 100% recycled plastic and is fully recyclable. All emissions from production are offset through certified forestry projects, making every wash climate neutral. Phosphate-free, as always. We will be a net-zero business by 2035.\"\nOn-pack: a green leaf roundel reading \"EcoPure Certified\" — this is our own mark, designed in-house.\n\nWhat we hold: a life-cycle assessment from this year covering the bottle only, not third-party verified; offset purchase certificates from the forestry provider; a board-approved net-zero target with no published implementation plan and no external verifier.",
+  "exampleValues": {
+    "claim_text": "Headline: \"The eco-friendly way to wash.\"\nStrapline: \"Climate-neutral cleaning, guaranteed.\"\nBody: \"Our new EcoPure range is kinder to the planet. The bottle is made from 100% recycled plastic and is fully recyclable. All emissions from production are offset through certified forestry projects, making every wash climate neutral. Phosphate-free, as always. We will be a net-zero business by 2035.\"\nOn-pack: green leaf roundel reading \"EcoPure Certified\" (our own in-house mark).",
+    "asset_type": "packaging",
+    "claim_features": ["generic", "label", "offsetting", "future", "whole_business", "recycled", "legal_minimum"],
+    "substantiation": "Life-cycle assessment from this year covering the bottle only, not third-party verified. Offset purchase certificates from the forestry provider. Board-approved net-zero target; implementation plan not published; no external verifier appointed.",
+    "label_basis": "self_declared",
+    "markets": ["se", "de", "nl"],
+    "product_category": "household laundry detergent",
+    "launch_date": "15 October 2026"
+  }
+}
