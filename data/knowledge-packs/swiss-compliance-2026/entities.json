@@ -390,7 +390,8 @@
     "canonical_name": "FinSA client classification (Art. 4)",
     "description": "Three categories: retail clients, professional clients, institutional clients. Opting-up / opting-down possible. Determines the level of conduct protection (information disclosure, suitability, appropriateness, prospectus) applicable.",
     "metadata": {
-      "article": "4"
+      "article": "4",
+      "instrument": "FinSA (Swiss Financial Services Act)"
     }
   },
   {
@@ -410,7 +411,8 @@
     "canonical_name": "FinSA information duties (Art. 8)",
     "description": "Pre-contractual + ongoing disclosure: name and contact, services + financial instruments, costs and fees, conflicts of interest, market offering considered, key information document (KID/PRIIPS-equivalent).",
     "metadata": {
-      "article": "8"
+      "article": "8",
+      "instrument": "FinSA (Swiss Financial Services Act)"
     }
   },
   {
@@ -440,7 +442,8 @@
     "canonical_name": "nFADP breach notification (Art. 24)",
     "description": "Data controllers must notify the FDPIC of personal-data breaches likely to result in high risk to data subjects 'as soon as possible'. Includes information on the breach, consequences, and remediation. Data subjects to be notified when necessary for their protection.",
     "metadata": {
-      "article": "24"
+      "article": "24",
+      "instrument": "nFADP (Swiss Federal Act on Data Protection)"
     }
   },
   {
@@ -450,7 +453,8 @@
     "canonical_name": "nFADP data protection impact assessment (Art. 22)",
     "description": "Mandatory DPIA for processing that is likely to result in high risk to the personality or fundamental rights of data subjects (e.g. large-scale processing of sensitive data, systematic monitoring, automated decisions with legal effect).",
     "metadata": {
-      "article": "22"
+      "article": "22",
+      "instrument": "nFADP (Swiss Federal Act on Data Protection)"
     }
   },
   {
@@ -470,7 +474,8 @@
     "canonical_name": "nFADP records of processing (Art. 12)",
     "description": "Controllers and processors must maintain a record of processing activities. SMEs (< 250 employees + no high-risk processing) benefit from a simplified version. Production to FDPIC on request.",
     "metadata": {
-      "article": "12"
+      "article": "12",
+      "instrument": "nFADP (Swiss Federal Act on Data Protection)"
     }
   },
   {
@@ -480,7 +485,8 @@
     "canonical_name": "nFADP privacy by design + default (Art. 7)",
     "description": "Technical and organisational measures embedded in the processing from the design stage. Default settings restrict processing to what is strictly necessary for the purpose.",
     "metadata": {
-      "article": "7"
+      "article": "7",
+      "instrument": "nFADP (Swiss Federal Act on Data Protection)"
     }
   },
   {
