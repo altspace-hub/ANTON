@@ -3,17 +3,47 @@
   "name": "Federal Act on Data Protection (revised — nFADP)",
   "shortName": "nFADP",
   "reference": "SR 235.1",
+  "referenceAliases": [
+    "nFADP (Swiss Federal Act on Data Protection)",
+    "nFADP",
+    "revFADP",
+    "Swiss Federal Act on Data Protection"
+  ],
   "url": "https://www.fedlex.admin.ch/eli/cc/2022/491/en",
   "inForce": "2023-09-01",
   "supervisor": "FDPIC",
   "articleCount": 12,
   "chapters": [
-    {"number": "1", "title": "General provisions (Art. 1-6)", "articles": "1-6"},
-    {"number": "2", "title": "Principles + lawful basis (Art. 6-9)", "articles": "6-9"},
-    {"number": "3", "title": "Information + access rights (Art. 19-21, 25-27)", "articles": "19-21, 25-27"},
-    {"number": "4", "title": "Special obligations (Art. 7, 12, 22, 24)", "articles": "7, 12, 22, 24"},
-    {"number": "5", "title": "International transfers (Art. 16-17)", "articles": "16-17"},
-    {"number": "6", "title": "Supervision + sanctions (Art. 49-66)", "articles": "49-66"}
+    {
+      "number": "1",
+      "title": "General provisions (Art. 1-6)",
+      "articles": "1-6"
+    },
+    {
+      "number": "2",
+      "title": "Principles + lawful basis (Art. 6-9)",
+      "articles": "6-9"
+    },
+    {
+      "number": "3",
+      "title": "Information + access rights (Art. 19-21, 25-27)",
+      "articles": "19-21, 25-27"
+    },
+    {
+      "number": "4",
+      "title": "Special obligations (Art. 7, 12, 22, 24)",
+      "articles": "7, 12, 22, 24"
+    },
+    {
+      "number": "5",
+      "title": "International transfers (Art. 16-17)",
+      "articles": "16-17"
+    },
+    {
+      "number": "6",
+      "title": "Supervision + sanctions (Art. 49-66)",
+      "articles": "49-66"
+    }
   ],
   "themes": [
     "Lawful basis + principles",

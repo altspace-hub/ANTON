@@ -4,7 +4,7 @@
   "shortName": "MiFID II",
   "reference": "Directive 2014/65/EU",
   "applicationDate": "2018-01-03",
-  "articleCount": 31,
+  "articleCount": 97,
   "themes": [
     "Authorization",
     "Governance",
@@ -18,188 +18,726 @@
     {
       "id": "Art.1",
       "title": "Scope",
+      "chapter": "I",
       "theme": "Authorization",
       "requirement": "Applies to investment firms, market operators, data reporting services providers, and third-country firms providing investment services within the Union."
     },
     {
+      "id": "Art.2",
+      "title": "Exemptions",
+      "chapter": "I",
+      "theme": "Scope and definitions",
+      "requirement": "This Directive shall not apply to: (a) insurance undertakings or undertakings carrying out the reinsurance and retrocession activities referred to in Directive 2009/138/EC when carrying out the activities referred to in that Directive; (b) persons providing investment services exclusively for their parent…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Optional exemptions",
+      "chapter": "I",
+      "theme": "Scope and definitions",
+      "requirement": "Member States may choose not to apply this Directive to any persons for which they are the home Member State, provided that the activities of those persons are authorised and regulated at national level and those persons: (a) are not allowed to hold client funds or client securities and which for that reason are not…"
+    },
+    {
+      "id": "Art.4",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Scope and definitions",
+      "requirement": "For the purposes of this Directive, the following definitions apply: (1) ‘investment firm' means any legal person whose regular occupation or business is the provision of one or more investment services to third parties and/or the performance of one or more investment activities on a professional basis."
+    },
+    {
       "id": "Art.5",
       "title": "Requirement for authorisation",
+      "chapter": "II",
       "theme": "Authorization",
       "requirement": "Investment firms must be authorised by the competent authority of their home Member State before providing investment services or performing investment activities."
     },
     {
+      "id": "Art.6",
+      "title": "Scope of authorisation",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "The home Member State shall ensure that the authorisation specifies the investment services or activities which the investment firm is authorised to provide."
+    },
+    {
       "id": "Art.7",
-      "title": "Conditions for authorisation",
+      "title": "Procedures for granting and refusing requests for authorisation",
+      "chapter": "II",
       "theme": "Authorization",
       "requirement": "Competent authorities shall grant authorisation only if satisfied that the applicant meets requirements relating to initial capital, management, organisation, shareholders, and programme of operations."
     },
     {
+      "id": "Art.8",
+      "title": "Withdrawal of authorisations",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "The competent authority may withdraw the authorisation issued to an investment firm where such an investment firm: (a) does not make use of the authorisation within 12 months, expressly renounces the authorisation or has provided no investment services or performed no investment activity for the preceding six months,…"
+    },
+    {
       "id": "Art.9",
       "title": "Management body",
+      "chapter": "II",
       "theme": "Governance",
       "requirement": "Members of the management body must be of sufficiently good repute and possess sufficient knowledge, skills, and experience. The management body must define and oversee the firm's strategy and risk framework."
     },
     {
       "id": "Art.10",
       "title": "Shareholders and members with qualifying holdings",
+      "chapter": "II",
       "theme": "Authorization",
       "requirement": "Competent authorities must be informed of any natural or legal person proposing to acquire a qualifying holding, and must assess the suitability of the proposed acquirer."
     },
     {
+      "id": "Art.11",
+      "title": "Notification of proposed acquisitions",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall require any natural or legal person or such persons acting in concert (the ‘proposed acquirer'), who have taken a decision either to acquire, directly or indirectly, a qualifying holding in an investment firm or to further increase, directly or indirectly, such a qualifying holding in an investment…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Assessment period",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "The competent authorities shall, promptly and in any event within two working days following receipt of the notification required under the first subparagraph of Article 11(1), as well as following the possible subsequent receipt of the information referred to in paragraph 2 of this Article, acknowledge receipt…"
+    },
+    {
+      "id": "Art.13",
+      "title": "Assessment",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "In assessing the notification provided for in Article 11(1) and the information referred to in Article 12(2), the competent authorities shall, in order to ensure the sound and prudent management of the investment firm in which an acquisition is proposed, and having regard to the likely influence of the proposed…"
+    },
+    {
+      "id": "Art.14",
+      "title": "Membership of an authorised investor compensation scheme",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "The competent authority shall verify that any entity seeking authorisation as an investment firm meets its obligations under Directive 97/9/EC at the time of authorisation."
+    },
+    {
+      "id": "Art.15",
+      "title": "Initial capital endowment",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall ensure that the competent authorities do not grant authorisation unless the investment firm has sufficient initial capital in accordance with the requirements of Regulation (EU) No 575/2013 having regard to the nature of the investment service or activity in question."
+    },
+    {
       "id": "Art.16",
       "title": "Organisational requirements",
+      "chapter": "II",
       "theme": "Governance",
       "requirement": "Investment firms must have sound governance arrangements including clear organisational structure, effective risk management, adequate internal control mechanisms, and appropriate remuneration policies."
     },
     {
       "id": "Art.17",
       "title": "Algorithmic trading",
+      "chapter": "II",
       "theme": "Governance",
       "requirement": "Investment firms engaged in algorithmic trading must have effective systems and risk controls, notify competent authorities, and ensure algorithms do not contribute to disorderly markets."
     },
     {
       "id": "Art.18",
-      "title": "Trading process and finalisation of transactions in MTFs and OTFs",
+      "title": "Trading process and finalisation of transactions in an MTF and an OTF",
+      "chapter": "II",
       "theme": "Transparency",
       "requirement": "Operators of MTFs and OTFs must establish transparent and non-discretionary rules for fair and orderly trading, objective criteria for efficient execution of orders, and access requirements."
     },
     {
+      "id": "Art.19",
+      "title": "Specific requirements for MTFs",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall require that investment firms and market operators operating an MTF, in addition to meeting the requirements laid down in Articles 16 and 18, shall establish and implement non-discretionary rules for the execution of orders in the system."
+    },
+    {
+      "id": "Art.20",
+      "title": "Specific requirements for OTFs",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall require that an investment firm and a market operator operating an OTF establishes arrangements preventing the execution of client orders in an OTF against the proprietary capital of the investment firm or market operator operating the OTF or from any entity that is part of the same group or legal…"
+    },
+    {
       "id": "Art.21",
-      "title": "Review of Authorisation Conditions",
+      "title": "Regular review of conditions for initial authorisation",
+      "chapter": "II",
       "theme": "Transparency",
       "requirement": "Investment firms must comply at all times with the conditions for initial authorisation; competent authorities must establish methods to monitor compliance and require firms to notify material changes."
     },
     {
+      "id": "Art.22",
+      "title": "General obligation in respect of on-going supervision",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall ensure that the competent authorities monitor the activities of investment firms so as to assess compliance with the operating conditions provided for in this Directive."
+    },
+    {
+      "id": "Art.23",
+      "title": "Conflicts of interest",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall require investment firms to take all appropriate steps to identify and to prevent or manage conflicts of interest between themselves, including their managers, employees and tied agents, or any person directly or indirectly linked to them by control and their clients or between one client and…"
+    },
+    {
       "id": "Art.24",
       "title": "General principles and information to clients",
+      "chapter": "II",
       "theme": "Conduct of Business",
       "requirement": "Investment firms must act honestly, fairly, and professionally in the best interest of clients. All information to clients must be fair, clear, and not misleading."
     },
     {
       "id": "Art.25",
-      "title": "Assessment of suitability and appropriateness",
+      "title": "Assessment of suitability and appropriateness and reporting to clients",
+      "chapter": "II",
       "theme": "Investor Protection",
       "requirement": "When providing investment advice or portfolio management, firms must obtain information about the client's knowledge, experience, financial situation, and investment objectives to assess suitability."
     },
     {
       "id": "Art.26",
-      "title": "Provision of services through another investment firm",
+      "title": "Provision of services through the medium of another investment firm",
+      "chapter": "II",
       "theme": "Conduct of Business",
       "requirement": "Where an investment firm receives instructions through another firm, the receiving firm may rely on client information transmitted, but responsibility for suitability remains allocated per agreement."
     },
     {
       "id": "Art.27",
       "title": "Obligation to execute orders on terms most favourable to the client",
+      "chapter": "II",
       "theme": "Best Execution",
       "requirement": "Investment firms must take all sufficient steps to obtain the best possible result for clients (best execution) taking into account price, costs, speed, likelihood of execution, settlement size, and nature of the order."
     },
     {
       "id": "Art.28",
       "title": "Client order handling rules",
+      "chapter": "II",
       "theme": "Best Execution",
       "requirement": "Investment firms must implement procedures for prompt, fair, and expeditious execution of client orders relative to other client orders and the firm's own-account trading interests."
     },
     {
       "id": "Art.29",
-      "title": "Obligations of firms employing tied agents",
+      "title": "Obligations of investment firms when appointing tied agents",
+      "chapter": "II",
       "theme": "Conduct of Business",
       "requirement": "Investment firms using tied agents remain fully and unconditionally responsible for the agents' acts and must ensure they disclose the capacity in which they act."
     },
     {
       "id": "Art.30",
-      "title": "Transactions with eligible counterparties",
+      "title": "Transactions executed with eligible counterparties",
+      "chapter": "II",
       "theme": "Investor Protection",
       "requirement": "Investment firms may enter into transactions with eligible counterparties without being bound by certain conduct of business or best execution obligations, provided the counterparty agrees."
     },
     {
       "id": "Art.31",
-      "title": "Monitoring of compliance with MTF and OTF rules",
+      "title": "Monitoring of compliance with the rules of the MTF or the OTF and with other legal obligations",
+      "chapter": "II",
       "theme": "Governance",
       "requirement": "Investment firms and market operators operating MTFs or OTFs must monitor compliance with their rules, report breaches, and notify competent authorities of significant rule violations."
     },
     {
+      "id": "Art.32",
+      "title": "Suspension and removal of financial instruments from trading on an MTF or an OTF",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Without prejudice to the right of the competent authority under Article 69(2) to demand suspension or removal of a financial instrument from trading, an investment firm or a market operator operating an MTF or an OTF may suspend or remove from trading a financial instrument which no longer complies with the rules of…"
+    },
+    {
       "id": "Art.33",
-      "title": "SME Growth Markets",
+      "title": "SME growth markets",
+      "chapter": "II",
       "theme": "Governance",
       "requirement": "Operators of an MTF may apply to have it registered as an SME growth market, subject to requirements on the proportion of SME issuers, admission criteria, disclosure and periodic financial reporting."
     },
     {
       "id": "Art.34",
-      "title": "Freedom to Provide Investment Services",
+      "title": "Freedom to provide investment services and activities",
+      "chapter": "II",
       "theme": "Governance",
       "requirement": "Investment firms authorised in one Member State may provide investment services and activities in any other Member State without further authorisation, subject to passport notification."
     },
     {
+      "id": "Art.35",
+      "title": "Establishment of a branch",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall ensure that investment services and/or activities as well as ancillary services may be provided within their territories in accordance with this Directive and with Directive 2013/36/EU through the right of establishment, whether by the establishment of a branch or by the use of a tied agent…"
+    },
+    {
+      "id": "Art.36",
+      "title": "Access to regulated markets",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall require that investment firms from other Member States which are authorised to execute client orders or to deal on own account have the right of membership or have access to regulated markets established in their territory by means of any of the following arrangements: (a) directly, by setting up…"
+    },
+    {
+      "id": "Art.37",
+      "title": "Access to CCP, clearing and settlement facilities and right to designate settlement system",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Without prejudice to Titles III, IV or V of Regulation (EU) No 648/2012, Member States shall require that investment firms from other Member States have the right of direct and indirect access to CCP, clearing and settlement systems in their territory for the purposes of finalising or arranging the finalisation of…"
+    },
+    {
+      "id": "Art.38",
+      "title": "Provisions regarding CCPs, clearing and settlement arrangements in respect of MTFs",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall not prevent investment firms and market operators operating an MTF from entering into appropriate arrangements with a CCP or clearing house and a settlement system of another Member State with a view to providing for the clearing and/or settlement of some or all trades concluded by the members or…"
+    },
+    {
       "id": "Art.39",
-      "title": "Establishment of a Branch by Third-Country Firms",
+      "title": "Establishment of a branch",
+      "chapter": "II",
       "theme": "Transparency",
       "requirement": "A Member State may require a third-country firm intending to provide investment services to retail or elective professional clients in its territory to establish a branch, subject to authorisation conditions."
     },
     {
+      "id": "Art.40",
+      "title": "Obligation to provide information",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "A third-country firm intending to obtain authorisation for the provision of any investment services or the performance of investment activities with or without any ancillary services in the territory of a Member State through a branch shall provide the competent authority of that Member State with the following: (a)…"
+    },
+    {
+      "id": "Art.41",
+      "title": "Granting of the authorisation",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "The competent authority of the Member State where the third-country firm has established or intends to establish its branch shall only grant authorisation when the competent authority is satisfied that: (a) the conditions under Article 39 are fulfilled; and (b) the branch of the third-country firm will be able to…"
+    },
+    {
+      "id": "Art.42",
+      "title": "Provision of services at the exclusive initiative of the client",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "Member States shall ensure that where a retail client or professional client within the meaning of Section II of Annex II established or situated in the Union initiates at its own exclusive initiative the provision of an investment service or activity by a third-country firm, the requirement for authorisation under…"
+    },
+    {
+      "id": "Art.43",
+      "title": "Withdrawal of authorisations",
+      "chapter": "II",
+      "theme": "Authorisation and operating conditions for investment firms",
+      "requirement": "The competent authority which granted an authorisation under Articles 41 may withdraw the authorisation issued to a third country firm where such a firm: (a) does not make use of the authorisation within 12 months, expressly renounces the authorisation or has provided no investment services or performed no investment…"
+    },
+    {
+      "id": "Art.44",
+      "title": "Authorisation and applicable law",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall reserve authorisation as a regulated market to those systems which comply with this Title."
+    },
+    {
+      "id": "Art.45",
+      "title": "Requirements for the management body of a market operator",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require that all members of the management body of any market operator shall at all times be of sufficiently good repute, possess sufficient knowledge, skills and experience to perform their duties."
+    },
+    {
+      "id": "Art.46",
+      "title": "Requirements relating to persons exercising significant influence over the management of the regulated market",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require the persons who are in a position to exercise, directly or indirectly, significant influence over the management of the regulated market to be suitable."
+    },
+    {
+      "id": "Art.47",
+      "title": "Organisational requirements",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require the regulated market: (a) to have arrangements to identify clearly and manage the potential adverse consequences, for the operation of the regulated market or for its members or participants, of any conflict of interest between the interest of the regulated market, its owners or its market…"
+    },
+    {
       "id": "Art.48",
-      "title": "Resilience, circuit breakers, and electronic trading",
+      "title": "Systems resilience, circuit breakers and electronic trading",
+      "chapter": "III",
       "theme": "Governance",
       "requirement": "Regulated markets must have effective systems, procedures, and arrangements to ensure orderly trading, including resilience of trading systems and circuit breaker mechanisms."
     },
     {
+      "id": "Art.49",
+      "title": "Tick sizes",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require regulated markets to adopt tick size regimes in shares, depositary receipts, exchange-traded funds, certificates and other similar financial instruments and in any other financial instrument for which regulatory technical standards are developed in accordance with paragraph 4."
+    },
+    {
+      "id": "Art.50",
+      "title": "Synchronisation of business clocks",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require that all trading venues and their members or participants synchronise the business clocks they use to record the date and time of any reportable event."
+    },
+    {
       "id": "Art.51",
-      "title": "Admission of Instruments to Trading",
+      "title": "Admission of financial instruments to trading",
+      "chapter": "III",
       "theme": "Authorization",
       "requirement": "Regulated markets must have clear, transparent, and non-discriminatory rules for the admission of financial instruments to trading."
     },
     {
       "id": "Art.52",
-      "title": "Suspension and Removal from Trading",
+      "title": "Suspension and removal of financial instruments from trading on a regulated market",
+      "chapter": "III",
       "theme": "Transparency",
       "requirement": "Competent authorities may require suspension or removal of a financial instrument from trading where the instrument no longer complies with rules or there is a threat to investor protection or market integrity."
     },
     {
+      "id": "Art.53",
+      "title": "Access to a regulated market",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require a regulated market to establish, implement and maintain transparent and non-discriminatory rules, based on objective criteria, governing access to or membership of the regulated market."
+    },
+    {
+      "id": "Art.54",
+      "title": "Monitoring of compliance with the rules of the regulated market and with other legal obligations",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Member States shall require that regulated markets establish and maintain effective arrangements and procedures including the necessary resource for the regular monitoring of the compliance by their members or participants with their rules."
+    },
+    {
+      "id": "Art.55",
+      "title": "Provisions regarding CCP and clearing and settlement arrangements",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Without prejudice to Titles III, IV or V of Regulation (EU) No 648/2012, Member States shall not prevent regulated markets from entering into appropriate arrangements with a CCP or clearing house and a settlement system of another Member State with a view to providing for the clearing and/or settlement of some or all…"
+    },
+    {
+      "id": "Art.56",
+      "title": "List of regulated markets",
+      "chapter": "III",
+      "theme": "Regulated markets",
+      "requirement": "Each Member State shall draw up a list of the regulated markets for which it is the home Member State and shall forward that list to the other Member States and ESMA. A similar communication shall be effected in respect of each change to that list."
+    },
+    {
+      "id": "Art.57",
+      "title": "Position limits and position management controls in commodity derivatives",
+      "chapter": "IV",
+      "theme": "Position limits and position management controls in commodity derivatives and reporting",
+      "requirement": "Member States shall ensure that competent authorities, in line with the methodology for calculation determined by ESMA, establish and apply position limits on the size of a net position which a person can hold at all times in commodity derivatives traded on trading venues and economically equivalent OTC contracts."
+    },
+    {
       "id": "Art.58",
       "title": "Position reporting by categories of position holders",
+      "chapter": "IV",
       "theme": "Reporting",
       "requirement": "Member States shall ensure that investment firms and market operators operating a trading venue which trade commodity derivatives report to the competent authority a breakdown of positions held by all persons."
     },
     {
       "id": "Art.59",
-      "title": "Authorisation of Data Reporting Services Providers",
+      "title": "Requirement for authorisation",
+      "chapter": "V",
       "theme": "Reporting",
       "requirement": "Provision of data reporting services (APA, CTP, ARM) as a regular occupation or business requires prior authorisation; Member States must maintain a register of all authorised providers."
     },
     {
+      "id": "Art.60",
+      "title": "Scope of authorisation",
+      "chapter": "V",
+      "theme": "Data reporting services",
+      "requirement": "The home Member State shall ensure that the authorisation specifies the data reporting service which the data reporting services provider is authorised to provide."
+    },
+    {
+      "id": "Art.61",
+      "title": "Procedures for granting and refusing requests for authorisation",
+      "chapter": "V",
+      "theme": "Data reporting services",
+      "requirement": "The competent authority shall not grant authorisation unless and until such time as it is fully satisfied that the applicant complies with all requirements under the provisions adopted pursuant to this Directive."
+    },
+    {
+      "id": "Art.62",
+      "title": "Withdrawal of authorisations",
+      "chapter": "V",
+      "theme": "Data reporting services",
+      "requirement": "The competent authority may withdraw the authorisation issued to a data reporting services provider where the provider: (a) does not make use of the authorisation within 12 months, expressly renounces the authorisation or has provided no data reporting services for the preceding six months, unless the Member State…"
+    },
+    {
+      "id": "Art.63",
+      "title": "Requirements for the management body of a data reporting services provider",
+      "chapter": "V",
+      "theme": "Data reporting services",
+      "requirement": "Member States shall require that all members of the management body of a data reporting services provider shall at all times be of sufficiently good repute, possess sufficient knowledge, skills and experience and commit sufficient time to perform their duties."
+    },
+    {
+      "id": "Art.64",
+      "title": "Organisational requirements",
+      "chapter": "V",
+      "theme": "Data reporting services",
+      "requirement": "The home Member State shall require an APA to have adequate policies and arrangements in place to make public the information required under Articles 20 and 21 of Regulation (EU) No 600/2014 as close to real time as is technically possible, on a reasonable commercial basis."
+    },
+    {
+      "id": "Art.65",
+      "title": "Organisational requirements",
+      "chapter": "V",
+      "theme": "Data reporting services",
+      "requirement": "The home Member State shall require a CTP to have adequate policies and arrangements in place to collect the information made public in accordance with Articles 6 and 20 of Regulation (EU) No 600/2014, consolidate it into a continuous electronic data stream and make the information available to the public as close to…"
+    },
+    {
       "id": "Art.66",
-      "title": "Organisational Requirements for ARMs",
+      "title": "Organisational requirements",
+      "chapter": "V",
       "theme": "Reporting",
       "requirement": "Approved reporting mechanisms must have adequate policies to report the information required under MiFIR Article 26 as quickly as possible, sound security mechanisms, and systems to check transaction reports for completeness and for errors caused by the ARM itself."
     },
     {
+      "id": "Art.67",
+      "title": "Designation of competent authorities",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Each Member State shall designate the competent authorities which are to carry out each of the duties provided for under the different provisions of Regulation (EU) No 600/2014 and of this Directive."
+    },
+    {
+      "id": "Art.68",
+      "title": "Cooperation between authorities in the same Member State",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "If a Member State designates more than one competent authority to enforce a provision of this Directive or of Regulation (EU) No 600/2014, their respective roles shall be clearly defined and they shall cooperate closely."
+    },
+    {
       "id": "Art.69",
       "title": "Supervisory powers",
+      "chapter": "VI",
       "theme": "Authorization",
       "requirement": "Competent authorities must have all supervisory and investigatory powers necessary, including the power to access documents, require information, carry out inspections, and suspend marketing or trading."
     },
     {
       "id": "Art.70",
-      "title": "Sanctions",
+      "title": "Sanctions for infringements",
+      "chapter": "VI",
       "theme": "Authorization",
       "requirement": "Member States must provide for effective, proportionate, and dissuasive administrative sanctions and measures for breaches, including fines up to EUR 5M for natural persons and EUR 5M or 10% of turnover for legal persons."
     },
     {
+      "id": "Art.71",
+      "title": "Publication of decisions",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Member States shall provide that competent authorities publish any decision imposing an administrative sanction or measure for infringements of Regulation (EU) No 600/2014 or of the national provisions adopted in the implementation of this Directive on their official websites without undue delay after the person on…"
+    },
+    {
+      "id": "Art.72",
+      "title": "Exercise of supervisory powers and powers to impose sanctions",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Competent authorities shall exercise the supervisory powers including, investigatory powers and powers to impose remedies, referred to in Article 69 and the powers to impose sanctions referred to in Article 70 in accordance with their national legal frameworks: (a) directly; (b) in collaboration with other…"
+    },
+    {
+      "id": "Art.73",
+      "title": "Reporting of infringements",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Member States shall ensure that competent authorities establish effective mechanisms to enable reporting of potential or actual infringements of the provisions of Regulation (EU) No 600/2014 and of the national provisions adopted in the implementation of this Directive to competent authorities."
+    },
+    {
+      "id": "Art.74",
+      "title": "Right of appeal",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Member States shall ensure that any decision taken under the provisions of Regulation (EU) No 600/2014 or under laws, regulations or administrative provisions adopted in accordance with this Directive is properly reasoned and is subject to the right of appeal before a tribunal."
+    },
+    {
+      "id": "Art.75",
+      "title": "Extra-judicial mechanism for consumers complaints",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Member States shall ensure the setting-up of efficient and effective complaints and redress procedures for the out-of-court settlement of consumer disputes concerning the provision of investment and ancillary services provided by investment firms, using existing bodies where appropriate."
+    },
+    {
       "id": "Art.76",
-      "title": "Professional Secrecy",
+      "title": "Professional secrecy",
+      "chapter": "VI",
       "theme": "Authorization",
       "requirement": "All persons working for competent authorities are bound by professional secrecy, with information received used only for the purposes of supervisory duties."
     },
     {
+      "id": "Art.77",
+      "title": "Relations with auditors",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Member States shall provide, at least, that any person authorised within the meaning of Directive 2006/43/EC of the European Parliament and of the Council ( 49 ) , performing in an investment firm, a regulated market or a data reporting services provider the task described in Article 34 of Directive 2013/34/EU or…"
+    },
+    {
+      "id": "Art.78",
+      "title": "Data protection",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "The processing of personal data collected in or for the exercise of the supervisory powers including investigatory powers in accordance with this Directive shall be carried out in accordance with national law implementing Directive 95/46/EC and with Regulation (EC) No 45/2001 where applicable."
+    },
+    {
       "id": "Art.79",
-      "title": "Cooperation Between Competent Authorities",
+      "title": "Obligation to cooperate",
+      "chapter": "VI",
       "theme": "Authorization",
       "requirement": "Competent authorities of different Member States must cooperate and exchange information for supervisory purposes, including information about breaches and suspicious activities."
     },
     {
+      "id": "Art.80",
+      "title": "Cooperation between competent authorities in supervisory activities, for on-site verifications or investigations",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "A competent authority of one Member State may request the cooperation of the competent authority of another Member State in a supervisory activity or for an on-the-spot verification or in an investigation."
+    },
+    {
+      "id": "Art.81",
+      "title": "Exchange of information",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Competent authorities of Member States having been designated as contact points for the purposes of this Directive and of Regulation (EU) No 600/2014 in accordance with Article 79(1) of this Directive shall immediately supply one another with the information required for the purposes of carrying out the duties of the…"
+    },
+    {
+      "id": "Art.82",
+      "title": "Binding mediation",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "The competent authorities may refer to ESMA situations where a request relating to one of the following has been rejected or has not been acted upon within a reasonable time: (a) to carry out a supervisory activity, an on-the-spot verification, or an investigation, as provided for in Article 80; or (b) to exchange…"
+    },
+    {
+      "id": "Art.83",
+      "title": "Refusal to cooperate",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "A competent authority may refuse to act on a request for cooperation in carrying out an investigation, on-the-spot verification or supervisory activity as provided for in Article 84 or to exchange information as provided for in Article 81 only where: (a) judicial proceedings have already been initiated in respect of…"
+    },
+    {
+      "id": "Art.84",
+      "title": "Consultation prior to authorisation",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "The competent authorities of the other Member State involved shall be consulted prior to granting authorisation to an investment firm which is any of the following: (a) a subsidiary of an investment firm or market operator or credit institution authorised in another Member State; (b) a subsidiary of the parent…"
+    },
+    {
+      "id": "Art.85",
+      "title": "Powers for host Member States",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Host Member States shall provide that the competent authority may, for statistical purposes, require all investment firms with branches within their territories to report to them periodically on the activities of those branches."
+    },
+    {
+      "id": "Art.86",
+      "title": "Precautionary measures to be taken by host Member States",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Where the competent authority of the host Member State has clear and demonstrable grounds for believing that an investment firm acting within its territory under the freedom to provide services infringes the obligations arising from the provisions adopted pursuant to this Directive or that an investment firm that has…"
+    },
+    {
       "id": "Art.87",
-      "title": "Cooperation and Exchange of Information with ESMA",
+      "title": "Cooperation and exchange of information with ESMA",
+      "chapter": "VI",
       "theme": "Reporting",
       "requirement": "Competent authorities must provide ESMA with information necessary for the performance of its duties, including information on authorisations, supervisory activities, and enforcement."
+    },
+    {
+      "id": "Art.88",
+      "title": "Exchange of information with third countries",
+      "chapter": "VI",
+      "theme": "Competent authorities",
+      "requirement": "Member States and in accordance with Article 33 of Regulation (EU) No 1095/2010, ESMA, may conclude cooperation agreements providing for the exchange of information with the competent authorities of third countries only if the information disclosed is subject to guarantees of professional secrecy at least equivalent…"
+    },
+    {
+      "id": "Art.89",
+      "title": "Exercise of the delegation",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article."
+    },
+    {
+      "id": "Art.90",
+      "title": "Reports and review",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "Before 3 March 2019 the Commission shall, after consulting ESMA, present a report to the European Parliament and the Council on: (a) the functioning of OTFs, including their specific use of matched principal trading, taking into account supervisory experience acquired by competent authorities, the number of OTFs…"
+    },
+    {
+      "id": "Art.91",
+      "title": "Amendments to Directive 2002/92/EC",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "Directive 2002/92/EC is hereby amended as follows: (1) Article 2 is amended as follows: (a) in point 3, the second paragraph is replaced by the following: ‘With the exception of Chapter III A of this Directive, those activities, when undertaken by an insurance undertaking or an employee of an insurance undertaking who…"
+    },
+    {
+      "id": "Art.92",
+      "title": "Amendments to Directive 2011/61/EU",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "Directive 2011/61/EU is amended as follows: (1) in point (r) of Article 4(1), the following point is added: ‘(vii) a Member State, other than the home Member State, in which an EU AIFM provides the services referred to in Article 6(4);'; (2) Article 33 is amended as follows: (a) the title is replaced by the following:…"
+    },
+    {
+      "id": "Art.93",
+      "title": "Transposition",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "Member States shall adopt and publish, by 3 July 2016, the laws, regulations and administrative provisions necessary to comply with this Directive."
+    },
+    {
+      "id": "Art.94",
+      "title": "Repeal",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "Directive 2004/39/EC, as amended by the acts listed in Annex III, Part A of this Directive, is repealed with effect from 3 January 2017, without prejudice to the obligations of the Member States relating to the time-limits for transposition into national law of the Directives set out in Annex III, Part B of this…"
+    },
+    {
+      "id": "Art.95",
+      "title": "Transitional provisions",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "Until 3 July 2020: (a) the clearing obligation set out in Article 4 of Regulation (EU) No 648/2012 and the risk mitigation techniques set out in Article 11(3) thereof shall not apply to C6 energy derivative contracts entered into by non-financial counterparties that meet the conditions in Article 10(1) of Regulation…"
+    },
+    {
+      "id": "Art.96",
+      "title": "Entry into force",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "This Directive shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union ."
+    },
+    {
+      "id": "Art.97",
+      "title": "Addressees",
+      "chapter": "VII",
+      "theme": "Delegated acts",
+      "requirement": "This Directive is addressed to the Member States. Done at Brussels, 15 May 2014."
     }
-  ]
+  ],
+  "eurLex": "CELEX:32014L0065",
+  "divisionKind": "Title",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Scope and definitions",
+      "articles": "1-4"
+    },
+    {
+      "number": "II",
+      "title": "Authorisation and operating conditions for investment firms",
+      "articles": "5-43"
+    },
+    {
+      "number": "III",
+      "title": "Regulated markets",
+      "articles": "44-56"
+    },
+    {
+      "number": "IV",
+      "title": "Position limits and position management controls in commodity derivatives and reporting",
+      "articles": "57-58"
+    },
+    {
+      "number": "V",
+      "title": "Data reporting services",
+      "articles": "59-66"
+    },
+    {
+      "number": "VI",
+      "title": "Competent authorities",
+      "articles": "67-88"
+    },
+    {
+      "number": "VII",
+      "title": "Delegated acts",
+      "articles": "89-97"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32014L0065",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  }
 }

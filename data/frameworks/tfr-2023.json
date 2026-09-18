@@ -1,0 +1,367 @@
+{
+  "id": "tfr-2023",
+  "name": "TFR — Transfer of Funds Regulation (information accompanying transfers of funds and crypto-assets)",
+  "shortName": "TFR",
+  "reference": "Regulation (EU) 2023/1113",
+  "referenceAliases": [
+    "Regulation (EU) 2023/1113 (TFR)",
+    "TFR"
+  ],
+  "applicationDate": "2024-12-30",
+  "supervisor": "EBA and national competent authorities",
+  "themes": [
+    "Subject matter, scope and definitions",
+    "Obligations on payment service providers",
+    "Obligations on crypto-asset service providers",
+    "Common measures applicable by payment service providers and crypto-asset service providers",
+    "Information, data protection and record-retention",
+    "Sanctions and monitoring",
+    "Implementing powers",
+    "Derogations",
+    "Other provisions",
+    "Final provisions"
+  ],
+  "eurLex": "CELEX:32023R1113",
+  "articleCount": 40,
+  "divisionKind": "Chapter",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Subject matter, scope and definitions",
+      "articles": "1-3"
+    },
+    {
+      "number": "II",
+      "title": "Obligations on payment service providers",
+      "articles": "4-13"
+    },
+    {
+      "number": "III",
+      "title": "Obligations on crypto-asset service providers",
+      "articles": "14-22"
+    },
+    {
+      "number": "IV",
+      "title": "Common measures applicable by payment service providers and crypto-asset service providers",
+      "articles": "23"
+    },
+    {
+      "number": "V",
+      "title": "Information, data protection and record-retention",
+      "articles": "24-27"
+    },
+    {
+      "number": "VI",
+      "title": "Sanctions and monitoring",
+      "articles": "28-33"
+    },
+    {
+      "number": "VII",
+      "title": "Implementing powers",
+      "articles": "34"
+    },
+    {
+      "number": "VIII",
+      "title": "Derogations",
+      "articles": "35"
+    },
+    {
+      "number": "IX",
+      "title": "Other provisions",
+      "articles": "36-37"
+    },
+    {
+      "number": "X",
+      "title": "Final provisions",
+      "articles": "38-40"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32023R1113",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "This Regulation lays down rules on the information on payers and payees accompanying transfers of funds, in any currency, and on the information on originators and beneficiaries accompanying transfers of crypto-assets, for the purposes of preventing, detecting and investigating money laundering and terrorist…"
+    },
+    {
+      "id": "Art.2",
+      "title": "Scope",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "This Regulation shall apply to transfers of funds, in any currency, which are sent or received by a payment service provider or an intermediary payment service provider established in the Union."
+    },
+    {
+      "id": "Art.3",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "For the purposes of this Regulation, the following definitions apply: (1) ‘terrorist financing' means terrorist financing as defined in Article 1(5) of Directive (EU) 2015/849; (2) ‘money laundering' means the money laundering activities referred to in Article 1(3) and (4) of Directive (EU) 2015/849; (3) ‘payer' means…"
+    },
+    {
+      "id": "Art.4",
+      "title": "Information accompanying transfers of funds",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The payment service provider of the payer shall ensure that transfers of funds are accompanied by the following information on the payer: (a) the name of the payer; (b) the payer's payment account number; (c) the payer's address including the name of the country, official personal document number and customer…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Transfers of funds within the Union",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "By way of derogation from Article 4(1) and (2), where all payment service providers involved in the payment chain are established in the Union, transfers of funds shall be accompanied by at least the payment account number of both the payer and the payee or, where Article 4(3) applies, the unique transaction…"
+    },
+    {
+      "id": "Art.6",
+      "title": "Transfers of funds to outside the Union",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "In the case of a batch file transfer from a single payer where the payment service providers of the payees are established outside the Union, Article 4(1) shall not apply to the individual transfers bundled together therein, provided that the batch file contains the information referred to in Article 4(1), (2) and…"
+    },
+    {
+      "id": "Art.7",
+      "title": "Detection of missing information on the payer or the payee",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The payment service provider of the payee shall implement effective procedures to detect whether the fields relating to the information on the payer and the payee in the messaging or payment and settlement system used to effect the transfer of funds have been filled in using characters or inputs admissible in…"
+    },
+    {
+      "id": "Art.8",
+      "title": "Transfers of funds with missing or incomplete information on the payer or the payee",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The payment service provider of the payee shall implement effective risk-based procedures, including procedures based on the risk-sensitive basis referred to in Article 13 of Directive (EU) 2015/849 for determining whether to execute, reject or suspend a transfer of funds lacking the required complete payer and payee…"
+    },
+    {
+      "id": "Art.9",
+      "title": "Assessment and reporting",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The payment service provider of the payee shall take into account missing or incomplete information on the payer or the payee as a factor when assessing whether a transfer of funds, or any related transaction, is suspicious and whether it is to be reported to the Financial Intelligence Unit (FIU) in accordance with…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Retention of information on the payer and the payee accompanying the transfer",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "Intermediary payment service providers shall ensure that all the information received on the payer and the payee that accompanies a transfer of funds is retained with the transfer."
+    },
+    {
+      "id": "Art.11",
+      "title": "Detection of missing information on the payer or the payee",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The intermediary payment service provider shall implement effective procedures to detect whether the fields relating to the information on the payer and the payee in the messaging or payment and settlement system used to effect the transfer of funds have been filled in using characters or inputs admissible in…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Transfers of funds with missing information on the payer or the payee",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The intermediary payment service provider shall establish effective risk-based procedures for determining whether to execute, reject or suspend a transfer of funds lacking the required payer and payee information and for taking the appropriate follow-up action."
+    },
+    {
+      "id": "Art.13",
+      "title": "Assessment and reporting",
+      "chapter": "II",
+      "theme": "Obligations on payment service providers",
+      "requirement": "The intermediary payment service provider shall take into account missing information on the payer or the payee as a factor when assessing whether a transfer of funds, or any related transaction, is suspicious, and whether it is to be reported to the FIU in accordance with Directive (EU) 2015/849."
+    },
+    {
+      "id": "Art.14",
+      "title": "Information accompanying transfers of crypto-assets",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The crypto-asset service provider of the originator shall ensure that transfers of crypto-assets are accompanied by the following information on the originator: (a) the name of the originator; (b) the originator's distributed ledger address, in cases where a transfer of crypto-assets is registered on a network using…"
+    },
+    {
+      "id": "Art.15",
+      "title": "Batch file transfers of crypto-assets",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "In the case of a batch file transfer of crypto-assets from a single originator, Article 14(1) shall not apply to the individual transfers bundled together therein, provided that the batch file contains the information referred to in Article 14(1), (2) and (3), that that information has been verified in accordance with…"
+    },
+    {
+      "id": "Art.16",
+      "title": "Detection of missing information on the originator or the beneficiary",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The crypto-asset service provider of the beneficiary shall implement effective procedures, including, where appropriate, monitoring after or during the transfers, in order to detect whether the information referred to in Article 14(1) and (2) on the originator and the beneficiary is included in, or follows, the…"
+    },
+    {
+      "id": "Art.17",
+      "title": "Transfers of crypto-assets with missing or incomplete information on the originator or the beneficiary",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The crypto-asset service provider of the beneficiary shall implement effective risk-based procedures, including procedures based on the risk-sensitive basis referred to in Article 13 of Directive (EU) 2015/849, for determining whether to execute, reject, return or suspend a transfer of crypto-assets lacking the…"
+    },
+    {
+      "id": "Art.18",
+      "title": "Assessment and reporting",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The crypto-asset service provider of the beneficiary shall take into account missing or incomplete information on the originator or the beneficiary as a factor when assessing whether a transfer of crypto-assets, or any related transaction, is suspicious and whether it is to be reported to the FIU in accordance with…"
+    },
+    {
+      "id": "Art.19",
+      "title": "Retention of information on the originator and the beneficiary accompanying the transfer",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "Intermediary crypto-asset service providers shall ensure that all the information received on the originator and the beneficiary that accompanies a transfer of crypto-assets is transmitted with the transfer and that records of such information are retained and made available on request to the competent authorities."
+    },
+    {
+      "id": "Art.20",
+      "title": "Detection of missing information on the originator or the beneficiary",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The intermediary crypto-asset service provider shall implement effective procedures, including, where appropriate, monitoring after or during the transfers, in order to detect whether the information on the originator or the beneficiary referred to in Article 14(1), points (a), (b) and (c), and Article 14(2), points…"
+    },
+    {
+      "id": "Art.21",
+      "title": "Transfers of crypto-assets with missing information on the originator or the beneficiary",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The intermediary crypto-asset service provider shall establish effective risk-based procedures, including procedures based on the risk-sensitive basis referred to in Article 13 of Directive (EU) 2015/849, for determining whether to execute, reject, return or suspend a transfer of crypto-assets lacking the required…"
+    },
+    {
+      "id": "Art.22",
+      "title": "Assessment and reporting",
+      "chapter": "III",
+      "theme": "Obligations on crypto-asset service providers",
+      "requirement": "The intermediary crypto-asset service provider shall take into account missing information on the originator or the beneficiary as a factor when assessing whether a transfer of crypto-assets, or any related transaction, is suspicious, and whether it is to be reported to the FIU in accordance with Directive (EU)…"
+    },
+    {
+      "id": "Art.23",
+      "title": "Internal policies, procedures and controls to ensure implementation of restrictive measures",
+      "chapter": "IV",
+      "theme": "Common measures applicable by payment service providers and crypto-asset service providers",
+      "requirement": "Payment service providers and crypto-asset service providers shall have in place internal policies, procedures and controls to ensure the implementation of Union and national restrictive measures when performing transfers of funds and crypto-assets under this Regulation."
+    },
+    {
+      "id": "Art.24",
+      "title": "Provision of information",
+      "chapter": "V",
+      "theme": "Information, data protection and record-retention",
+      "requirement": "Payment service providers and crypto-asset service providers shall respond fully and without delay, including by means of a central contact point in accordance with Article 45(9) of Directive (EU) 2015/849, where such a contact point has been appointed, and in accordance with the procedural requirements laid down in…"
+    },
+    {
+      "id": "Art.25",
+      "title": "Data protection",
+      "chapter": "V",
+      "theme": "Information, data protection and record-retention",
+      "requirement": "The processing of personal data under this Regulation is subject to Regulation (EU) 2016/679. Personal data that is processed pursuant to this Regulation by the Commission or EBA is subject to Regulation (EU) 2018/1725."
+    },
+    {
+      "id": "Art.26",
+      "title": "Record retention",
+      "chapter": "V",
+      "theme": "Information, data protection and record-retention",
+      "requirement": "Information on the payer and the payee or on the originator and beneficiary shall not be retained for longer than strictly necessary."
+    },
+    {
+      "id": "Art.27",
+      "title": "Cooperation among competent authorities",
+      "chapter": "V",
+      "theme": "Information, data protection and record-retention",
+      "requirement": "The exchange of information among competent authorities and with relevant third-country authorities under this Regulation shall be subject to Directive (EU) 2015/849."
+    },
+    {
+      "id": "Art.28",
+      "title": "Administrative sanctions and measures",
+      "chapter": "VI",
+      "theme": "Sanctions and monitoring",
+      "requirement": "Without prejudice to the right to provide for and impose criminal sanctions, Member States shall lay down the rules on administrative sanctions and measures applicable to breaches of the provisions of this Regulation and shall take all measures necessary to ensure that they are implemented."
+    },
+    {
+      "id": "Art.29",
+      "title": "Specific provisions",
+      "chapter": "VI",
+      "theme": "Sanctions and monitoring",
+      "requirement": "Member States shall ensure that their administrative sanctions and measures include at least those laid down in Article 59(2) and (3) of Directive (EU) 2015/849 in the event of the following breaches of this Regulation: (a) repeated or systematic failure by a payment service provider to accompany the transfer of funds…"
+    },
+    {
+      "id": "Art.30",
+      "title": "Publication of sanctions and measures",
+      "chapter": "VI",
+      "theme": "Sanctions and monitoring",
+      "requirement": "In accordance with Article 60(1), (2) and (3) of Directive (EU) 2015/849, the competent authorities shall publish administrative sanctions and measures imposed in the cases referred to in Articles 28 and 29 of this Regulation without undue delay, including information on the type and nature of the breach and the…"
+    },
+    {
+      "id": "Art.31",
+      "title": "Application of sanctions and measures by competent authorities",
+      "chapter": "VI",
+      "theme": "Sanctions and monitoring",
+      "requirement": "When determining the type of administrative sanctions or measures and the level of administrative pecuniary sanctions, the competent authorities shall take into account all relevant circumstances, including those listed in Article 60(4) of Directive (EU) 2015/849."
+    },
+    {
+      "id": "Art.32",
+      "title": "Reporting of breaches",
+      "chapter": "VI",
+      "theme": "Sanctions and monitoring",
+      "requirement": "Member States shall establish effective mechanisms to encourage the reporting to competent authorities of breaches of this Regulation. Those mechanisms shall include at least those referred to in Article 61(2) of Directive (EU) 2015/849."
+    },
+    {
+      "id": "Art.33",
+      "title": "Monitoring",
+      "chapter": "VI",
+      "theme": "Sanctions and monitoring",
+      "requirement": "Member States shall require competent authorities to monitor effectively and to take the measures necessary to ensure compliance with this Regulation and encourage, through effective mechanisms, the reporting of breaches of the provisions of this Regulation to competent authorities."
+    },
+    {
+      "id": "Art.34",
+      "title": "Committee procedure",
+      "chapter": "VII",
+      "theme": "Implementing powers",
+      "requirement": "The Commission shall be assisted by the Committee on the Prevention of Money Laundering and Terrorist Financing. That Committee shall be a committee within the meaning of Regulation (EU) No 182/2011."
+    },
+    {
+      "id": "Art.35",
+      "title": "Agreements with countries and territories which do not form part of the territory of the Union",
+      "chapter": "VIII",
+      "theme": "Derogations",
+      "requirement": "The Commission may authorise any Member State to conclude an agreement with a third country or with a territory outside the territorial scope of the Treaty on European Union and the Treaty on the Functioning of the European Union (TFEU) as referred to in Article 355 TFEU (the ‘country or territory concerned'), which…"
+    },
+    {
+      "id": "Art.36",
+      "title": "Guidelines",
+      "chapter": "IX",
+      "theme": "Other provisions",
+      "requirement": "EBA shall issue guidelines addressed to the competent authorities and the payment service providers in accordance with Article 16 of Regulation (EU) No 1093/2010 on measures to be taken in accordance with this Regulation, in particular as regards the implementation of Articles 7, 8, 11 and 12 of this Regulation."
+    },
+    {
+      "id": "Art.37",
+      "title": "Review",
+      "chapter": "IX",
+      "theme": "Other provisions",
+      "requirement": "By 12 months after the entry into force of a Regulation on the prevention of the use of the financial system for the purposes of money laundering or terrorist financing, the Commission shall review this Regulation and shall, if appropriate, propose amendments in order to ensure a consistent approach and alignment with…"
+    },
+    {
+      "id": "Art.38",
+      "title": "Amendments to Directive (EU) 2015/849",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "Directive (EU) 2015/849 is amended as follows: (1) in Article 2(1), point (3), points (g) and (h) are deleted; (2) Article 3 is amended as follows: (a) in point (2), the following point is added: ‘(g) crypto-asset service providers;'; (b) point (8) is replaced by the following: ‘(8) ‘correspondent relationship' means:…"
+    },
+    {
+      "id": "Art.39",
+      "title": "Repeal",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "Regulation (EU) 2015/847 is repealed with effect from the date of application of this Regulation. References to the repealed Regulation shall be construed as references to this Regulation and shall be read in accordance with the correlation table in Annex II."
+    },
+    {
+      "id": "Art.40",
+      "title": "Entry into force",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union . It shall apply from 30 December 2024."
+    }
+  ]
+}

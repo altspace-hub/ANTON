@@ -115,7 +115,8 @@
       "article": 27,
       "minimum_time_limit": "35 days (reducible to 15)",
       "shortlisting": false,
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-open",
@@ -130,7 +131,8 @@
       "minimum_candidates": 5,
       "minimum_time_request": "30 days",
       "minimum_time_tender": "30 days",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-restricted",
@@ -144,7 +146,8 @@
       "article": 29,
       "minimum_candidates": 3,
       "conditions": "Art.26(4)(a)-(d)",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-comp-negotiation",
@@ -158,7 +161,8 @@
       "article": 30,
       "minimum_candidates": 3,
       "conditions": "Art.26(4)(a)-(d)",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-competitive-dialogue",
@@ -172,7 +176,8 @@
       "article": 31,
       "minimum_candidates": 3,
       "purpose": "development and purchase of innovative solutions",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-innovation-partnership",
@@ -186,7 +191,8 @@
       "article": 32,
       "exceptional": true,
       "conditions": "strictly limited",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-negotiated-without-publication",
@@ -228,7 +234,8 @@
       "article": "2",
       "includes": "State, regional/local authorities, bodies governed by public law",
       "instrument": "Directive 2014/24/EU",
-      "article_ref": "2(1)"
+      "article_ref": "2(1)",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-contracting-authority",
@@ -242,7 +249,8 @@
       "article": "2",
       "includes": "contractors, suppliers, service providers, consortia",
       "instrument": "Directive 2014/24/EU",
-      "article_ref": "2(1)(10)"
+      "article_ref": "2(1)(10)",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-economic-operator",
@@ -256,7 +264,8 @@
       "article": 58,
       "turnover_cap": "maximum 2x contract value",
       "categories": "suitability, economic standing, technical ability",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-selection-criteria",
@@ -271,7 +280,8 @@
       "grounds": "criminal organisation, corruption, fraud, terrorism, money laundering, child labour/trafficking",
       "self_cleaning": "Art.57(6)",
       "instrument": "Directive 2014/24/EU",
-      "article_ref": "57(1)"
+      "article_ref": "57(1)",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-exclusion-mandatory",
@@ -286,7 +296,8 @@
       "self_cleaning": "Art.57(6)",
       "national_discretion": "Member States may make some grounds mandatory",
       "instrument": "Directive 2014/24/EU",
-      "article_ref": "57(4)"
+      "article_ref": "57(4)",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-exclusion-discretionary",
@@ -300,7 +311,8 @@
       "article": 59,
       "implementing_regulation": "2016/7",
       "format": "electronic (eESPD) or paper",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-espd",
@@ -313,7 +325,8 @@
       "directive": "2014/24/EU",
       "article": 67,
       "approaches": "lowest price, lowest cost, best price-quality ratio",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-award-criteria-meat",
@@ -326,7 +339,8 @@
       "directive": "2014/24/EU",
       "article": 68,
       "includes_externalities": true,
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-life-cycle-costing",
@@ -340,7 +354,8 @@
       "article": 33,
       "maximum_duration": "4 years (except duly justified)",
       "minimum_operators_multi": 3,
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-framework-agreement",
@@ -354,7 +369,8 @@
       "article": 34,
       "format": "fully electronic",
       "evaluation_deadline": "10 working days for admission",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-dps",
@@ -367,7 +383,8 @@
       "directive": "2014/24/EU",
       "article": 35,
       "exclusions": "works/services with intellectual performance",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-e-auction",
@@ -406,7 +423,8 @@
       "article": "18",
       "treaty_basis": "Art.18 TFEU (non-discrimination)",
       "instrument": "Directive 2014/24/EU",
-      "article_ref": "18(1)"
+      "article_ref": "18(1)",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-equal-treatment",
@@ -421,7 +439,8 @@
       "de_minimis_services": "10%",
       "de_minimis_works": "15%",
       "additional_cap": "50%",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-contract-modification",
@@ -434,7 +453,8 @@
       "directive": "2014/24/EU",
       "article": 69,
       "mandatory_rejection": "if due to breach of Art.18(2) obligations",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-abnormally-low",
@@ -447,7 +467,8 @@
       "directive": "2014/24/EU",
       "article": 71,
       "direct_payment": "optional, at Member State discretion",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-subcontracting",
@@ -462,7 +483,8 @@
       "cjeu_origin": "C-107/98 Teckal",
       "activity_threshold": "80%",
       "private_capital": "excluded",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-in-house",
@@ -476,7 +498,8 @@
       "article": 46,
       "sme_objective": true,
       "principle": "divide or explain",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-lots-division",
@@ -527,7 +550,8 @@
       "directive": "2014/24/EU",
       "article": 24,
       "scope": "staff, procurement service providers, family, associates",
-      "instrument": "Directive 2014/24/EU"
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "I"
     },
     "entity_type": "obligation",
     "entity_id": "concept-conflict-of-interest",
@@ -637,7 +661,8 @@
       "cjeu_case": "C-124/17 Vossloh Laeis",
       "measures": "compensation, cooperation, organisational reform",
       "instrument": "Directive 2014/24/EU",
-      "article_ref": "57(6)"
+      "article_ref": "57(6)",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-self-cleaning",

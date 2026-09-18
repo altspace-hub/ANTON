@@ -42,7 +42,8 @@
       "article": "7",
       "conditions": 4,
       "instrument": "Regulation (EU) No 596/2014",
-      "article_ref": "Art. 7 MAR"
+      "article_ref": "Art. 7 MAR",
+      "chapter": "2"
     }
   },
   {
@@ -62,7 +63,8 @@
     "metadata": {
       "article": "8",
       "instrument": "Regulation (EU) No 596/2014",
-      "article_ref": "Art. 8 MAR"
+      "article_ref": "Art. 8 MAR",
+      "chapter": "2"
     }
   },
   {
@@ -74,7 +76,8 @@
     "metadata": {
       "article": "12",
       "instrument": "Regulation (EU) No 596/2014",
-      "article_ref": "Art. 12 MAR"
+      "article_ref": "Art. 12 MAR",
+      "chapter": "2"
     }
   },
   {
@@ -125,7 +128,8 @@
     "description": "Defines inside information: (1) precise nature; (2) not publicly available; (3) relates directly/indirectly to issuers or financial instruments; (4) price-sensitive (would likely have significant effect on prices if made public). Phased-in information also covered.",
     "metadata": {
       "article": "7",
-      "instrument": "Regulation (EU) No 596/2014"
+      "instrument": "Regulation (EU) No 596/2014",
+      "chapter": "2"
     }
   },
   {
@@ -136,7 +140,8 @@
     "description": "Market operators and investment firms must report suspicious transactions or orders to competent authorities when they reasonably suspect market abuse. Parallel to AML SAR obligation. STR filed with NCA (FI in Sweden, FIN-FSA in Finland). No tipping-off equivalent in MAR.",
     "metadata": {
       "article": "16",
-      "instrument": "Regulation (EU) No 596/2014"
+      "instrument": "Regulation (EU) No 596/2014",
+      "chapter": "2"
     }
   },
   {
@@ -147,7 +152,8 @@
     "description": "Issuers must disclose inside information as soon as possible via a regulated information disclosure system. May legitimately delay disclosure if: (1) immediate disclosure would harm legitimate interests; (2) delay not likely to mislead public; (3) confidentiality can be maintained.",
     "metadata": {
       "article": "17",
-      "instrument": "Regulation (EU) No 596/2014"
+      "instrument": "Regulation (EU) No 596/2014",
+      "chapter": "3"
     }
   },
   {
@@ -199,7 +205,8 @@
     "metadata": {
       "article": "18",
       "instrument": "Regulation (EU) No 596/2014",
-      "article_ref": "Art. 18 MAR"
+      "article_ref": "Art. 18 MAR",
+      "chapter": "3"
     }
   },
   {
@@ -212,7 +219,8 @@
       "article": "19",
       "notification_window": "3 business days",
       "instrument": "Regulation (EU) No 596/2014",
-      "article_ref": "Art. 19 MAR"
+      "article_ref": "Art. 19 MAR",
+      "chapter": "3"
     }
   }
 ]

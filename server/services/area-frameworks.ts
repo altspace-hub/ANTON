@@ -98,8 +98,8 @@ export const AREA_DOMAINS: Readonly<Record<string, readonly GapDomain[]>> = {
   // digital-service-design and regulatory-impact-assessment for public bodies:
   // GDPR applies to authorities, and AI Act Annex III(5) + the Art 27
   // fundamental-rights impact assessment bind public-sector deployers.
-  government: ['privacy', 'ai-governance'],
-  'public-sector': ['privacy', 'ai-governance'],
+  government: ['procurement', 'privacy', 'ai-governance'],
+  'public-sector': ['procurement', 'privacy', 'ai-governance'],
   // esg-adjusted-financial-reporting cites CSRD/ESRS by reference; the
   // financial-statement and internal-controls modules sit on directors'
   // accounting-records and financial-statement duties.

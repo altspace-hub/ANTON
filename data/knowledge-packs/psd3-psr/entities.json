@@ -87,7 +87,8 @@
     "metadata": {
       "article": "97",
       "instrument": "Directive (EU) 2015/2366",
-      "article_ref": "Art. 97 PSD2"
+      "article_ref": "Art. 97 PSD2",
+      "chapter": "IV"
     }
   },
   {
@@ -154,7 +155,8 @@
     "description": "Payment service providers of payers must ensure transfers are accompanied by: payer name, account number (IBAN/BIC), and payer address or official document number or DOB or customer ID. For crypto transfers: same information at any amount.",
     "metadata": {
       "article": "4",
-      "instrument": "Regulation (EU) 2023/1113"
+      "instrument": "Regulation (EU) 2023/1113",
+      "chapter": "II"
     }
   },
   {

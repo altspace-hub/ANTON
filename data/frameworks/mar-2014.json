@@ -1,0 +1,338 @@
+{
+  "id": "mar-2014",
+  "name": "MAR — Market Abuse Regulation",
+  "shortName": "MAR",
+  "reference": "Regulation (EU) No 596/2014",
+  "applicationDate": "2016-07-03",
+  "supervisor": "ESMA and national competent authorities",
+  "themes": [
+    "General provisions",
+    "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+    "Disclosure requirements",
+    "Esma and competent authorities",
+    "Administrative measures and sanctions",
+    "Delegated acts and implementing acts",
+    "Final provisions"
+  ],
+  "eurLex": "CELEX:32014R0596",
+  "articleCount": 39,
+  "divisionKind": "Chapter",
+  "chapters": [
+    {
+      "number": "1",
+      "title": "General provisions",
+      "articles": "1-6"
+    },
+    {
+      "number": "2",
+      "title": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "articles": "7-16"
+    },
+    {
+      "number": "3",
+      "title": "Disclosure requirements",
+      "articles": "17-21"
+    },
+    {
+      "number": "4",
+      "title": "Esma and competent authorities",
+      "articles": "22-29"
+    },
+    {
+      "number": "5",
+      "title": "Administrative measures and sanctions",
+      "articles": "30-34"
+    },
+    {
+      "number": "6",
+      "title": "Delegated acts and implementing acts",
+      "articles": "35-36"
+    },
+    {
+      "number": "7",
+      "title": "Final provisions",
+      "articles": "37-39"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32014R0596",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "This Regulation establishes a common regulatory framework on insider dealing, the unlawful disclosure of inside information and market manipulation (market abuse) as well as measures to prevent market abuse to ensure the integrity of financial markets in the Union and to enhance investor protection and confidence in…"
+    },
+    {
+      "id": "Art.2",
+      "title": "Scope",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "This Regulation applies to the following: (a) financial instruments admitted to trading on a regulated market or for which a request for admission to trading on a regulated market has been made; (b) financial instruments traded on an MTF, admitted to trading on an MTF or for which a request for admission to trading on…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Definitions",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "For the purposes of this Regulation, the following definitions apply: (1) ‘financial instrument' means a financial instrument as defined in point (15) of Article 4(1) of Directive 2014/65/EU; (2) ‘investment firm' means an investment firm as defined in point (1) of Article 4(1) of Directive 2014/65/EU; (3) ‘credit…"
+    },
+    {
+      "id": "Art.4",
+      "title": "Notifications and list of financial instruments",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "Market operators of regulated markets and investment firms and market operators operating an MTF or an OTF shall, without delay, notify the competent authority of the trading venue of any financial instrument for which a request for admission to trading on their trading venue is made, which is admitted to trading, or…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Exemption for buy-back programmes and stabilisation",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "The prohibitions in Articles 14 and 15 of this Regulation do not apply to trading in own shares in buy-back programmes where: (a) the full details of the programme are disclosed prior to the start of trading; (b) trades are reported as being part of the buy-back programme to the competent authority of the trading…"
+    },
+    {
+      "id": "Art.6",
+      "title": "Exemption for monetary and public debt management activities and climate policy activities",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "This Regulation does not apply to transactions, orders or behaviour, in pursuit of monetary, exchange rate or public debt management policy by: (a) a Member State; (b) the members of the ESCB; (c) a ministry, agency or special purpose vehicle of one or several Member States, or by a person acting on its behalf; (d) in…"
+    },
+    {
+      "id": "Art.7",
+      "title": "Inside information",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "For the purposes of this Regulation, inside information shall comprise the following types of information: (a) information of a precise nature, which has not been made public, relating, directly or indirectly, to one or more issuers or to one or more financial instruments, and which, if it were made public, would be…"
+    },
+    {
+      "id": "Art.8",
+      "title": "Insider dealing",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "For the purposes of this Regulation, insider dealing arises where a person possesses inside information and uses that information by acquiring or disposing of, for its own account or for the account of a third party, directly or indirectly, financial instruments to which that information relates."
+    },
+    {
+      "id": "Art.9",
+      "title": "Legitimate behaviour",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "For the purposes of Articles 8 and 14, it shall not be deemed from the mere fact that a legal person is or has been in possession of inside information that that person has used that information and has thus engaged in insider dealing on the basis of an acquisition or disposal, where that legal person: (a) has…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Unlawful disclosure of inside information",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "For the purposes of this Regulation, unlawful disclosure of inside information arises where a person possesses inside information and discloses that information to any other person, except where the disclosure is made in the normal exercise of an employment, a profession or duties."
+    },
+    {
+      "id": "Art.11",
+      "title": "Market soundings",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "A market sounding comprises the communication of information, prior to the announcement of a transaction, in order to gauge the interest of potential investors in a possible transaction and the conditions relating to it such as its potential size or pricing, to one or more potential investors by: (a) an issuer; (b) a…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Market manipulation",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "For the purposes of this Regulation, market manipulation shall comprise the following activities: (a) entering into a transaction, placing an order to trade or any other behaviour which: (i) gives, or is likely to give, false or misleading signals as to the supply of, demand for, or price of, a financial instrument, a…"
+    },
+    {
+      "id": "Art.13",
+      "title": "Accepted market practices",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "The prohibition in Article 15 shall not apply to the activities referred to in Article 12(1)(a), provided that the person entering into a transaction, placing an order to trade or engaging in any other behaviour establishes that such transaction, order or behaviour have been carried out for legitimate reasons, and…"
+    },
+    {
+      "id": "Art.14",
+      "title": "Prohibition of insider dealing and of unlawful disclosure of inside information",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "A person shall not: (a) engage or attempt to engage in insider dealing; (b) recommend that another person engage in insider dealing or induce another person to engage in insider dealing; or (c) unlawfully disclose inside information."
+    },
+    {
+      "id": "Art.15",
+      "title": "Prohibition of market manipulation",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "A person shall not engage in or attempt to engage in market manipulation."
+    },
+    {
+      "id": "Art.16",
+      "title": "Prevention and detection of market abuse",
+      "chapter": "2",
+      "theme": "Inside information, insider dealing, unlawful disclosure of inside information and market manipulation",
+      "requirement": "Market operators and investment firms that operate a trading venue shall establish and maintain effective arrangements, systems and procedures aimed at preventing and detecting insider dealing, market manipulation and attempted insider dealing and market manipulation, in accordance with Articles 31 and 54 of Directive…"
+    },
+    {
+      "id": "Art.17",
+      "title": "Public disclosure of inside information",
+      "chapter": "3",
+      "theme": "Disclosure requirements",
+      "requirement": "An issuer shall inform the public as soon as possible of inside information which directly concerns that issuer."
+    },
+    {
+      "id": "Art.18",
+      "title": "Insider lists",
+      "chapter": "3",
+      "theme": "Disclosure requirements",
+      "requirement": "Issuers or any person acting on their behalf or on their account, shall: (a) draw up a list of all persons who have access to inside information and who are working for them under a contract of employment, or otherwise performing tasks through which they have access to inside information, such as advisers, accountants…"
+    },
+    {
+      "id": "Art.19",
+      "title": "Managers' transactions",
+      "chapter": "3",
+      "theme": "Disclosure requirements",
+      "requirement": "Persons discharging managerial responsibilities, as well as persons closely associated with them, shall notify the issuer or the emission allowance market participant and the competent authority referred to in the second subparagraph of paragraph 2: (a) in respect of issuers, of every transaction conducted on their…"
+    },
+    {
+      "id": "Art.20",
+      "title": "Investment recommendations and statistics",
+      "chapter": "3",
+      "theme": "Disclosure requirements",
+      "requirement": "Persons who produce or disseminate investment recommendations or other information recommending or suggesting an investment strategy shall take reasonable care to ensure that such information is objectively presented, and to disclose their interests or indicate conflicts of interest concerning the financial…"
+    },
+    {
+      "id": "Art.21",
+      "title": "Disclosure or dissemination of information in the media",
+      "chapter": "3",
+      "theme": "Disclosure requirements",
+      "requirement": "For the purposes of Article 10, Article 12(1)(c) and Article 20, where information is disclosed or disseminated and where recommendations are produced or disseminated for the purpose of journalism or other form of expression in the media, such disclosure or dissemination of information shall be assessed taking into…"
+    },
+    {
+      "id": "Art.22",
+      "title": "Competent authorities",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "Without prejudice to the competences of the judicial authorities, each Member State shall designate a single administrative competent authority for the purpose of this Regulation."
+    },
+    {
+      "id": "Art.23",
+      "title": "Powers of competent authorities",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "Competent authorities shall exercise their functions and powers in any of the following ways: (a) directly; (b) in collaboration with other authorities or with the market undertakings; (c) under their responsibility by delegation to such authorities or to market undertakings; (d) by application to the competent…"
+    },
+    {
+      "id": "Art.24",
+      "title": "Cooperation with ESMA",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "The competent authorities shall cooperate with ESMA for the purposes of this Regulation, in accordance with Regulation (EU) No 1095/2010. The competent authorities shall, without delay, provide ESMA with all information necessary to carry out its duties, in accordance with Article 35 of Regulation (EU) No 1095/2010."
+    },
+    {
+      "id": "Art.25",
+      "title": "Obligation to cooperate",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "Competent authorities shall cooperate with each other and with ESMA where necessary for the purposes of this Regulation, unless one of the exceptions in paragraph 2 applies."
+    },
+    {
+      "id": "Art.26",
+      "title": "Cooperation with third countries",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "The competent authorities of Member States shall, where necessary, conclude cooperation arrangements with supervisory authorities of third countries concerning the exchange of information with supervisory authorities in third countries and the enforcement of obligations arising under this Regulation in third countries."
+    },
+    {
+      "id": "Art.27",
+      "title": "Professional secrecy",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "Any confidential information received, exchanged or transmitted pursuant to this Regulation shall be subject to the conditions of professional secrecy laid down in paragraphs 2 and 3."
+    },
+    {
+      "id": "Art.28",
+      "title": "Data protection",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "With regard to the processing of personal data within the framework of this Regulation, competent authorities shall carry out their tasks for the purposes of this Regulation in accordance with the national laws, regulations or administrative provisions transposing Directive 95/46/EC. With regard to the processing of…"
+    },
+    {
+      "id": "Art.29",
+      "title": "Disclosure of personal data to third countries",
+      "chapter": "4",
+      "theme": "Esma and competent authorities",
+      "requirement": "The competent authority of a Member State may transfer personal data to a third country provided the requirements of Directive 95/46/EC are fulfilled and only on a case-by-case basis."
+    },
+    {
+      "id": "Art.30",
+      "title": "Administrative sanctions and other administrative measures",
+      "chapter": "5",
+      "theme": "Administrative measures and sanctions",
+      "requirement": "Without prejudice to any criminal sanctions and without prejudice to the supervisory powers of competent authorities under Article 23, Member States shall, in accordance with national law, provide for competent authorities to have the power to take appropriate administrative sanctions and other administrative measures…"
+    },
+    {
+      "id": "Art.31",
+      "title": "Exercise of supervisory powers and imposition of sanctions",
+      "chapter": "5",
+      "theme": "Administrative measures and sanctions",
+      "requirement": "Member States shall ensure that when determining the type and level of administrative sanctions, competent authorities take into account all relevant circumstances, including, where appropriate: (a) the gravity and duration of the infringement; (b) the degree of responsibility of the person responsible for the…"
+    },
+    {
+      "id": "Art.32",
+      "title": "Reporting of infringements",
+      "chapter": "5",
+      "theme": "Administrative measures and sanctions",
+      "requirement": "Member States shall ensure that competent authorities establish effective mechanisms to enable reporting of actual or potential infringements of this Regulation to competent authorities."
+    },
+    {
+      "id": "Art.33",
+      "title": "Exchange of information with ESMA",
+      "chapter": "5",
+      "theme": "Administrative measures and sanctions",
+      "requirement": "Competent authorities shall provide ESMA annually with aggregated information regarding all administrative sanctions and other administrative measures imposed by the competent authority in accordance with Articles 30, 31 and 32."
+    },
+    {
+      "id": "Art.34",
+      "title": "Publication of decisions",
+      "chapter": "5",
+      "theme": "Administrative measures and sanctions",
+      "requirement": "Subject to the third subparagraph, competent authorities shall publish any decision imposing an administrative sanction or other administrative measure in relation to an infringement of this Regulation on their website immediately after the person subject to that decision has been informed of that decision."
+    },
+    {
+      "id": "Art.35",
+      "title": "Exercise of the delegation",
+      "chapter": "6",
+      "theme": "Delegated acts and implementing acts",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article."
+    },
+    {
+      "id": "Art.36",
+      "title": "Committee procedure",
+      "chapter": "6",
+      "theme": "Delegated acts and implementing acts",
+      "requirement": "The Commission shall be assisted by the European Securities Committee established by Commission Decision 2001/528/EC ( 31 ) . That committee shall be a committee within the meaning of Regulation (EU) No 182/2011."
+    },
+    {
+      "id": "Art.37",
+      "title": "Repeal of Directive 2003/6/EC and its implementing measures",
+      "chapter": "7",
+      "theme": "Final provisions",
+      "requirement": "Directive 2003/6/EC and Commission Directives 2004/72/EC ( 32 ) , 2003/125/EC ( 33 ) and 2003/124/EC ( 34 ) and Commission Regulation (EC) No 2273/2003 ( 35 ) shall be repealed with effect from 3 July 2016."
+    },
+    {
+      "id": "Art.38",
+      "title": "Report",
+      "chapter": "7",
+      "theme": "Final provisions",
+      "requirement": "By 3 July 2019, the Commission shall submit a report to the European Parliament and to the Council on the application of this Regulation, together with a legislative proposal to amend it if appropriate."
+    },
+    {
+      "id": "Art.39",
+      "title": "Entry into force and application",
+      "chapter": "7",
+      "theme": "Final provisions",
+      "requirement": "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union ."
+    }
+  ]
+}

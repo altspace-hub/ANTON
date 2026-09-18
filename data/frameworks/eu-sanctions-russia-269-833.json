@@ -3,15 +3,37 @@
   "name": "EU Russia Sanctions — Council Regulation (EU) 269/2014 + 833/2014",
   "shortName": "EU Russia Sanctions",
   "reference": "Council Reg (EU) 269/2014 + Council Reg (EU) 833/2014 + CFSP Decision 2014/145 + 2014/512",
+  "referenceAliases": [
+    "Council Regulation (EU) No 833/2014",
+    "Council Regulation (EU) No 269/2014",
+    "Regulation (EU) No 833/2014",
+    "Regulation (EU) No 269/2014"
+  ],
   "inForce269": "2014-03-17",
   "inForce833": "2014-07-31",
   "supervisor": "EU Member State competent authorities + Commission",
   "articleCount": 10,
   "chapters": [
-    {"number": "Designations", "title": "Reg 269/2014 — asset freeze + designations (Annex I)", "articles": "Reg 269/2014"},
-    {"number": "Sectoral", "title": "Reg 833/2014 — sectoral restrictions", "articles": "Reg 833/2014"},
-    {"number": "OwnershipControl", "title": "EU ownership + control attribution", "articles": "Commission Guidance"},
-    {"number": "Enforcement", "title": "Penalties + enforcement (national)", "articles": "Art. 215 TFEU + national implementing legislation"}
+    {
+      "number": "Designations",
+      "title": "Reg 269/2014 — asset freeze + designations (Annex I)",
+      "articles": "Reg 269/2014"
+    },
+    {
+      "number": "Sectoral",
+      "title": "Reg 833/2014 — sectoral restrictions",
+      "articles": "Reg 833/2014"
+    },
+    {
+      "number": "OwnershipControl",
+      "title": "EU ownership + control attribution",
+      "articles": "Commission Guidance"
+    },
+    {
+      "number": "Enforcement",
+      "title": "Penalties + enforcement (national)",
+      "articles": "Art. 215 TFEU + national implementing legislation"
+    }
   ],
   "themes": [
     "Asset freeze + designations",

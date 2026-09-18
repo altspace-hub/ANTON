@@ -27,6 +27,7 @@ export type GapDomain =
   | 'esg'
   | 'corporate-governance'
   | 'online-safety'
+  | 'procurement'
   | 'compliance';
 
 export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
@@ -45,6 +46,7 @@ export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
   'us-ffiec-bsa-aml-exam-manual': 'aml',
   'us-fincen-cta-bo-narrowed-2025': 'aml',
   'us-nydfs-part-504': 'aml',
+  'tfr-2023': 'aml',
   'wolfsberg-cbddq': 'aml',
   // Sanctions
   'eba-restrictive-measures-2024': 'sanctions',
@@ -75,14 +77,17 @@ export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
   'iso37001-2016': 'anti-bribery',
   'uk-eccta-2023': 'anti-bribery',
   // Financial services conduct and prudential
+  'emir-2012': 'financial-conduct',
   'hk-sfo-licensing-conduct': 'financial-conduct',
   'ireland-cpc-2026': 'financial-conduct',
   'ireland-iaf-sear-2023': 'financial-conduct',
   'luxembourg-aifmd-ii-2026': 'financial-conduct',
   'luxembourg-cssf-circ-25-901': 'financial-conduct',
   'luxembourg-ucits-2010': 'financial-conduct',
+  'mar-2014': 'financial-conduct',
   'mifid2-2014': 'financial-conduct',
   'mifir-2014': 'financial-conduct',
+  'psd2-2015': 'financial-conduct',
   'solvency2-2009': 'financial-conduct',
   'swiss-finsa-finia': 'financial-conduct',
   'uk-fca-consumer-duty-prin2a': 'financial-conduct',
@@ -99,7 +104,10 @@ export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
   // ESG, governance, online safety
   'csrd-esrs': 'esg',
   'ireland-companies-act-2014-director-duties': 'corporate-governance',
+  'dma-2022': 'online-safety',
   'uk-online-safety-act-2023': 'online-safety',
+  // Public procurement
+  'eu-procurement-2014-24': 'procurement',
 };
 
 export interface DomainProfile {
@@ -136,6 +144,7 @@ export const DOMAIN_PROFILES: Record<GapDomain, DomainProfile> = {
   'esg': P('sustainability reporting', 'sustainability reporting and ESG assurance', 'reporting undertakings and their auditors'),
   'corporate-governance': P('corporate governance', 'corporate governance and directors\' duties', 'company boards and company secretaries'),
   'online-safety': P('online safety', 'online safety and platform regulation', 'online platforms and user-to-user services'),
+  'procurement': P('public procurement', 'public procurement and contract award', 'contracting authorities and the economic operators that bid to them'),
   'compliance': P('regulatory compliance', 'regulatory compliance', 'regulated organisations'),
 };
 

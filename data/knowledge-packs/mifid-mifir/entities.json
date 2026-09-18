@@ -41,7 +41,8 @@
     "metadata": {
       "article": "4",
       "instrument": "Directive 2014/65/EU",
-      "article_ref": "Art. 4(1)(1) MiFID II"
+      "article_ref": "Art. 4(1)(1) MiFID II",
+      "chapter": "I"
     }
   },
   {
@@ -85,7 +86,8 @@
     "metadata": {
       "article": "27",
       "instrument": "Directive 2014/65/EU",
-      "article_ref": "Art. 27 MiFID II"
+      "article_ref": "Art. 27 MiFID II",
+      "chapter": "II"
     }
   },
   {
@@ -97,7 +99,8 @@
     "metadata": {
       "article": "25",
       "instrument": "Directive 2014/65/EU",
-      "article_ref": "Art. 25 MiFID II"
+      "article_ref": "Art. 25 MiFID II",
+      "chapter": "II"
     }
   },
   {
@@ -108,7 +111,8 @@
     "description": "MiFID II Art. 16 requires investment firms to establish adequate policies and procedures to detect risks of non-compliance with obligations including AML/CFT obligations. Firms must ensure compliance with all applicable law including AMLR. Senior management accountability for compliance framework.",
     "metadata": {
       "article": "16",
-      "instrument": "Directive 2014/65/EU"
+      "instrument": "Directive 2014/65/EU",
+      "chapter": "II"
     }
   },
   {
@@ -121,7 +125,8 @@
       "article": "26",
       "format": "ARM/NCA",
       "instrument": "Regulation (EU) No 600/2014",
-      "article_ref": "Art. 26 MiFIR"
+      "article_ref": "Art. 26 MiFIR",
+      "chapter": "IV"
     }
   },
   {
@@ -133,7 +138,8 @@
     "metadata": {
       "article": "16",
       "instrument": "Regulation (EU) No 596/2014",
-      "article_ref": "Art. 16 MAR"
+      "article_ref": "Art. 16 MAR",
+      "chapter": "2"
     }
   },
   {
@@ -144,7 +150,8 @@
     "description": "Requirements for the management body of investment firms: sufficient time commitment, adequate collective knowledge, avoid conflicts of interest. Interacts with EBA Fit & Proper guidelines and AML governance requirements.",
     "metadata": {
       "article": "9",
-      "instrument": "Directive 2014/65/EU"
+      "instrument": "Directive 2014/65/EU",
+      "chapter": "II"
     }
   },
   {
@@ -155,7 +162,8 @@
     "description": "Firms engaging in algorithmic trading must have effective systems and risk controls, kill switches, and market-making obligations. Algorithmic trading creates new ML/TF typologies including layering, spoofing, and wash trading — cross-reference to MAR.",
     "metadata": {
       "article": "17",
-      "instrument": "Directive 2014/65/EU"
+      "instrument": "Directive 2014/65/EU",
+      "chapter": "II"
     }
   },
   {
@@ -186,7 +194,8 @@
     "metadata": {
       "article": "30",
       "instrument": "Directive 2014/65/EU",
-      "article_ref": "Art. 30 MiFID II Annex II"
+      "article_ref": "Art. 30 MiFID II Annex II",
+      "chapter": "II"
     }
   },
   {

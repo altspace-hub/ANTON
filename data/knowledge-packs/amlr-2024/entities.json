@@ -291,7 +291,7 @@
     "description": "Payment service providers must accompany transfers with complete payer/payee information. Aligned with FATF Recommendation 16 and TFR Regulation.",
     "metadata": {
       "article": "4",
-      "chapter": "VI",
+      "chapter": "II",
       "obligation_type": "shall",
       "obligation_type_note": "Art. 4: mandatory — payment service providers shall ensure information accompanies transfers",
       "cross_references": [
@@ -454,7 +454,8 @@
         "on": "2026-09-18",
         "from": "7",
         "why": "the supranational risk assessment is AMLD6 Art. 7, not AMLR Art. 7 (prior notification of exemptions)"
-      }
+      },
+      "chapter": "I"
     }
   },
   {
@@ -473,7 +474,8 @@
         "on": "2026-09-18",
         "from": "8",
         "why": "the national risk assessment is AMLD6 Art. 8, not AMLR Art. 8"
-      }
+      },
+      "chapter": "I"
     }
   },
   {
@@ -505,7 +507,8 @@
         "on": "2026-09-18",
         "from": "83",
         "why": "as OBL-WIRE: the information travelling with a transfer is the TFR"
-      }
+      },
+      "chapter": "II"
     }
   },
   {
@@ -868,7 +871,8 @@
         "on": "2026-09-18",
         "from": "7",
         "why": "the entity already says AMLD6 in its name; the citation was being read as AMLR"
-      }
+      },
+      "chapter": "I"
     }
   },
   {
@@ -887,7 +891,8 @@
         "on": "2026-09-18",
         "from": "8",
         "why": "as AMLR-A7"
-      }
+      },
+      "chapter": "I"
     }
   },
   {

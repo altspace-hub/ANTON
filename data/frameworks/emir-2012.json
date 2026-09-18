@@ -1,0 +1,714 @@
+{
+  "id": "emir-2012",
+  "name": "EMIR — European Market Infrastructure Regulation",
+  "shortName": "EMIR",
+  "reference": "Regulation (EU) No 648/2012",
+  "applicationDate": "2012-08-16",
+  "supervisor": "ESMA and national competent authorities",
+  "themes": [
+    "Subject matter, scope and definitions",
+    "Clearing, reporting and risk mitigation of otc derivatives",
+    "AUTHORISATION AND SUPERVISION OF CCPs",
+    "REQUIREMENTS FOR CCPs",
+    "Interoperability arrangements",
+    "Registration and supervision of trade repositories",
+    "Requirements for trade repositories",
+    "Common provisions",
+    "Transitional and final provisions"
+  ],
+  "eurLex": "CELEX:32012R0648",
+  "articleCount": 91,
+  "divisionKind": "Title",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Subject matter, scope and definitions",
+      "articles": "1-3"
+    },
+    {
+      "number": "II",
+      "title": "Clearing, reporting and risk mitigation of otc derivatives",
+      "articles": "4-13"
+    },
+    {
+      "number": "III",
+      "title": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "articles": "14-25"
+    },
+    {
+      "number": "IV",
+      "title": "REQUIREMENTS FOR CCPs",
+      "articles": "26-50"
+    },
+    {
+      "number": "V",
+      "title": "Interoperability arrangements",
+      "articles": "51-54"
+    },
+    {
+      "number": "VI",
+      "title": "Registration and supervision of trade repositories",
+      "articles": "55-77"
+    },
+    {
+      "number": "VII",
+      "title": "Requirements for trade repositories",
+      "articles": "78-82"
+    },
+    {
+      "number": "VIII",
+      "title": "Common provisions",
+      "articles": "83-84"
+    },
+    {
+      "number": "IX",
+      "title": "Transitional and final provisions",
+      "articles": "85-91"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32012R0648",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Subject matter and scope",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "This Regulation lays down clearing and bilateral risk-management requirements for over-the-counter (‘OTC') derivative contracts, reporting requirements for derivative contracts and uniform requirements for the performance of activities of central counterparties (‘CCPs') and trade repositories."
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "For the purposes of this Regulation, the following definitions shall apply: (1) ‘CCP' means a legal person that interposes itself between the counterparties to the contracts traded on one or more financial markets, becoming the buyer to every seller and the seller to every buyer; (2) ‘trade repository' means a legal…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Intragroup transactions",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "In relation to a non-financial counterparty, an intragroup transaction is an OTC derivative contract entered into with another counterparty which is part of the same group provided that both counterparties are included in the same consolidation on a full basis and they are subject to an appropriate centralised risk…"
+    },
+    {
+      "id": "Art.4",
+      "title": "Clearing obligation",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "Counterparties shall clear all OTC derivative contracts pertaining to a class of OTC derivatives that has been declared subject to the clearing obligation in accordance with Article 5(2), if those contracts fulfil both of the following conditions: (a) they have been concluded in one of the following ways: (i) between…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Clearing obligation procedure",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "Where a competent authority authorises a CCP to clear a class of OTC derivatives under Article 14 or 15, it shall immediately notify ESMA of that authorisation."
+    },
+    {
+      "id": "Art.6",
+      "title": "Public register",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "ESMA shall establish, maintain and keep up to date a public register in order to identify the classes of OTC derivatives subject to the clearing obligation correctly and unequivocally."
+    },
+    {
+      "id": "Art.7",
+      "title": "Access to a CCP",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "A CCP that has been authorised to clear OTC derivative contracts shall accept clearing such contracts on a non-discriminatory and transparent basis, regardless of the trading venue."
+    },
+    {
+      "id": "Art.8",
+      "title": "Access to a trading venue",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "A trading venue shall provide trade feeds on a non-discriminatory and transparent basis to any CCP that has been authorised to clear OTC derivative contracts traded on that trading venue upon request by the CCP."
+    },
+    {
+      "id": "Art.9",
+      "title": "Reporting obligation",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "Counterparties and CCPs shall ensure that the details of any derivative contract they have concluded and of any modification or termination of the contract are reported to a trade repository registered in accordance with Article 55 or recognised in accordance with Article 77."
+    },
+    {
+      "id": "Art.10",
+      "title": "Non-financial counterparties",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "Where a non-financial counterparty takes positions in OTC derivative contracts and those positions exceed the clearing threshold as specified under paragraph 3, that non-financial counterparty shall: (a) immediately notify ESMA and the competent authority referred to in paragraph 5 thereof; (b) become subject to the…"
+    },
+    {
+      "id": "Art.11",
+      "title": "Risk-mitigation techniques for OTC derivative contracts not cleared by a CCP",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "Financial counterparties and non-financial counterparties that enter into an OTC derivative contract not cleared by a CCP, shall ensure, exercising due diligence, that appropriate procedures and arrangements are in place to measure, monitor and mitigate operational risk and counterparty credit risk, including at…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Penalties",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "Member States shall lay down the rules on penalties applicable to infringements of the rules under this Title and shall take all measures necessary to ensure that they are implemented."
+    },
+    {
+      "id": "Art.13",
+      "title": "Mechanism to avoid duplicative or conflicting rules",
+      "chapter": "II",
+      "theme": "Clearing, reporting and risk mitigation of otc derivatives",
+      "requirement": "The Commission shall be assisted by ESMA in monitoring and preparing reports to the European Parliament and to the Council on the international application of principles laid down in Articles 4, 9, 10 and 11, in particular with regard to potential duplicative or conflicting requirements on market participants, and…"
+    },
+    {
+      "id": "Art.14",
+      "title": "Authorisation of a CCP",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Where a legal person established in the Union intends to provide clearing services as a CCP, it shall apply for authorisation to the competent authority of the Member State where it is established (the CCP's competent authority), in accordance with the procedure set out in Article 17."
+    },
+    {
+      "id": "Art.15",
+      "title": "Extension of activities and services",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "A CCP wishing to extend its business to additional services or activities not covered by the initial authorisation shall submit a request for extension to the CCP's competent authority."
+    },
+    {
+      "id": "Art.16",
+      "title": "Capital requirements",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "A CCP shall have a permanent and available initial capital of at least EUR 7,5 million to be authorised pursuant to Article 14."
+    },
+    {
+      "id": "Art.17",
+      "title": "Procedure for granting and refusing authorisation",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "The applicant CCP shall submit an application for authorisation to the competent authority of the Member State where it is established."
+    },
+    {
+      "id": "Art.18",
+      "title": "College",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Within 30 calendar days of the submission of a complete application in accordance with Article 17, the CCP's competent authority shall establish, manage and chair a college to facilitate the exercise of the tasks referred to in Articles 15, 17, 49, 51 and 54."
+    },
+    {
+      "id": "Art.19",
+      "title": "Opinion of the college",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Within four months of the submission of a complete application by the CCP in accordance with Article 17, the CCP's competent authority shall conduct a risk assessment of the CCP and submit a report to the college."
+    },
+    {
+      "id": "Art.20",
+      "title": "Withdrawal of authorisation",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Without prejudice to Article 22(3), the CCP's competent authority shall withdraw authorisation where the CCP: (a) has not made use of the authorisation within 12 months, expressly renounces the authorisation or has provided no services or performed no activity for the preceding six months; (b) has obtained…"
+    },
+    {
+      "id": "Art.21",
+      "title": "Review and evaluation",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Without prejudice to the role of the college, the competent authorities referred to in Article 22 shall review the arrangements, strategies, processes and mechanisms implemented by CCPs to comply with this Regulation and evaluate the risks to which CCPs are, or might be, exposed."
+    },
+    {
+      "id": "Art.22",
+      "title": "Competent authority",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Each Member State shall designate the competent authority responsible for carrying out the duties resulting from this Regulation for the authorisation and supervision of CCPs established in its territory and shall inform the Commission and ESMA thereof."
+    },
+    {
+      "id": "Art.23",
+      "title": "Cooperation between authorities",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "Competent authorities shall cooperate closely with each other, with ESMA and, if necessary, with the ESCB."
+    },
+    {
+      "id": "Art.24",
+      "title": "Emergency situations",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "The CCP's competent authority or any other authority shall inform ESMA, the college, the relevant members of the ESCB and other relevant authorities without undue delay of any emergency situation relating to a CCP, including developments in financial markets, which may have an adverse effect on market liquidity and…"
+    },
+    {
+      "id": "Art.25",
+      "title": "Recognition of a third-country CCP",
+      "chapter": "III",
+      "theme": "AUTHORISATION AND SUPERVISION OF CCPs",
+      "requirement": "A CCP established in a third country may provide clearing services to clearing members or trading venues established in the Union only where that CCP is recognised by ESMA."
+    },
+    {
+      "id": "Art.26",
+      "title": "General provisions",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall have robust governance arrangements, which include a clear organisational structure with well-defined, transparent and consistent lines of responsibility, effective processes to identify, manage, monitor and report the risks to which it is or might be exposed, and adequate internal control mechanisms,…"
+    },
+    {
+      "id": "Art.27",
+      "title": "Senior management and the board",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "The senior management of a CCP shall be of sufficiently good repute and shall have sufficient experience so as to ensure the sound and prudent management of the CCP."
+    },
+    {
+      "id": "Art.28",
+      "title": "Risk committee",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall establish a risk committee, which shall be composed of representatives of its clearing members, independent members of the board and representatives of its clients."
+    },
+    {
+      "id": "Art.29",
+      "title": "Record keeping",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall maintain, for a period of at least 10 years, all the records on the services and activity provided so as to enable the competent authority to monitor the CCP's compliance with this Regulation."
+    },
+    {
+      "id": "Art.30",
+      "title": "Shareholders and members with qualifying holdings",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "The competent authority shall not authorise a CCP unless it has been informed of the identities of the shareholders or members, whether direct or indirect, natural or legal persons, that have qualifying holdings and of the amounts of those holdings."
+    },
+    {
+      "id": "Art.31",
+      "title": "Information to competent authorities",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall notify its competent authority of any changes to its management, and shall provide the competent authority with all the information necessary to assess compliance with Article 27(1) and the second subparagraph of Article 27(2)."
+    },
+    {
+      "id": "Art.32",
+      "title": "Assessment",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "Where assessing the notification provided for in Article 31(2) and the information referred to in Article 31(3), the competent authority shall, in order to ensure the sound and prudent management of the CCP in which an acquisition is proposed, and having regard to the likely influence of the proposed acquirer on the…"
+    },
+    {
+      "id": "Art.33",
+      "title": "Conflicts of interest",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall maintain and operate effective written organisational and administrative arrangements to identify and manage any potential conflicts of interest between itself, including its managers, employees, or any person with direct or indirect control or close links, and its clearing members or their clients known…"
+    },
+    {
+      "id": "Art.34",
+      "title": "Business continuity",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall establish, implement and maintain an adequate business continuity policy and disaster recovery plan aiming at ensuring the preservation of its functions, the timely recovery of operations and the fulfilment of the CCP's obligations."
+    },
+    {
+      "id": "Art.35",
+      "title": "Outsourcing",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "Where a CCP outsources operational functions, services or activities, it shall remain fully responsible for discharging all of its obligations under this Regulation and shall ensure at all times that: (a) outsourcing does not result in the delegation of its responsibility; (b) the relationship and obligations of the…"
+    },
+    {
+      "id": "Art.36",
+      "title": "General provisions",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "When providing services to its clearing members, and where relevant, to their clients, a CCP shall act fairly and professionally in accordance with the best interests of such clearing members and clients and sound risk management."
+    },
+    {
+      "id": "Art.37",
+      "title": "Participation requirements",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall establish, where relevant per type of product cleared, the categories of admissible clearing members and the admission criteria, upon the advice of the risk committee pursuant to Article 28(3)."
+    },
+    {
+      "id": "Art.38",
+      "title": "Transparency",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP and its clearing members shall publicly disclose the prices and fees associated with the services provided. They shall disclose the prices and fees of each service provided separately, including discounts and rebates and the conditions to benefit from those reductions."
+    },
+    {
+      "id": "Art.39",
+      "title": "Segregation and portability",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall keep separate records and accounts that shall enable it, at any time and without delay, to distinguish in accounts with the CCP the assets and positions held for the account of one clearing member from the assets and positions held for the account of any other clearing member and from its own assets."
+    },
+    {
+      "id": "Art.40",
+      "title": "Exposure management",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall measure and assess its liquidity and credit exposures to each clearing member and, where relevant, to another CCP with which it has concluded an interoperability arrangement, on a near to real-time basis."
+    },
+    {
+      "id": "Art.41",
+      "title": "Margin requirements",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall impose, call and collect margins to limit its credit exposures from its clearing members and, where relevant, from CCPs with which it has interoperability arrangements."
+    },
+    {
+      "id": "Art.42",
+      "title": "Default fund",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "To limit its credit exposures to its clearing members further, a CCP shall maintain a pre-funded default fund to cover losses that exceed the losses to be covered by margin requirements laid down in Article 41, arising from the default, including the opening of an insolvency procedure, of one or more clearing members."
+    },
+    {
+      "id": "Art.43",
+      "title": "Other financial resources",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall maintain sufficient pre-funded available financial resources to cover potential losses that exceed the losses to be covered by margin requirements laid down in Article 41 and the default fund as referred to in Article 42."
+    },
+    {
+      "id": "Art.44",
+      "title": "Liquidity risk controls",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall at all times have access to adequate liquidity to perform its services and activities. To that end, it shall obtain the necessary credit lines or similar arrangements to cover its liquidity needs in case the financial resources at its disposal are not immediately available."
+    },
+    {
+      "id": "Art.45",
+      "title": "Default waterfall",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall use the margins posted by a defaulting clearing member prior to other financial resources in covering losses."
+    },
+    {
+      "id": "Art.46",
+      "title": "Collateral requirements",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall accept highly liquid collateral with minimal credit and market risk to cover its initial and ongoing exposure to its clearing members."
+    },
+    {
+      "id": "Art.47",
+      "title": "Investment policy",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall invest its financial resources only in cash or in highly liquid financial instruments with minimal market and credit risk. A CCP's investments shall be capable of being liquidated rapidly with minimal adverse price effect."
+    },
+    {
+      "id": "Art.48",
+      "title": "Default procedures",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall have detailed procedures in place to be followed where a clearing member does not comply with the participation requirements of the CCP laid down in Article 37 within the time limit and in accordance with the procedures established by the CCP. The CCP shall set out in detail the procedures to be followed…"
+    },
+    {
+      "id": "Art.49",
+      "title": "Review of models, stress testing and back testing",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall regularly review the models and parameters adopted to calculate its margin requirements, default fund contributions, collateral requirements and other risk control mechanisms."
+    },
+    {
+      "id": "Art.50",
+      "title": "Settlement",
+      "chapter": "IV",
+      "theme": "REQUIREMENTS FOR CCPs",
+      "requirement": "A CCP shall, where practical and available, use central bank money to settle its transactions. Where central bank money is not used, steps shall be taken to strictly limit cash settlement risks."
+    },
+    {
+      "id": "Art.51",
+      "title": "Interoperability arrangements",
+      "chapter": "V",
+      "theme": "Interoperability arrangements",
+      "requirement": "A CCP may enter into an interoperability arrangement with another CCP where the requirements laid down in Articles 52, 53 and 54 are fulfilled."
+    },
+    {
+      "id": "Art.52",
+      "title": "Risk management",
+      "chapter": "V",
+      "theme": "Interoperability arrangements",
+      "requirement": "CCPs that enter into an interoperability arrangement shall: (a) put in place adequate policies, procedures and systems to effectively identify, monitor and manage the risks arising from the arrangement so that they can meet their obligations in a timely manner; (b) agree on their respective rights and obligations,…"
+    },
+    {
+      "id": "Art.53",
+      "title": "Provision of margins among CCPs",
+      "chapter": "V",
+      "theme": "Interoperability arrangements",
+      "requirement": "A CCP shall distinguish in accounts the assets and positions held for the account of CCPs with whom it has entered into an interoperability arrangement."
+    },
+    {
+      "id": "Art.54",
+      "title": "Approval of interoperability arrangements",
+      "chapter": "V",
+      "theme": "Interoperability arrangements",
+      "requirement": "An interoperability arrangement shall be subject to the prior approval of the competent authorities of the CCPs involved. The procedure under Article 17 shall apply."
+    },
+    {
+      "id": "Art.55",
+      "title": "Registration of a trade repository",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "A trade repository shall register with ESMA for the purposes of Article 9. To be eligible to be registered under this Article, a trade repository shall be a legal person established in the Union and meet the requirements laid down in Title VII."
+    },
+    {
+      "id": "Art.56",
+      "title": "Application for registration",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "A trade repository shall submit an application for registration to ESMA. 2. ESMA shall assess whether the application is complete within 20 working days of receipt of the application."
+    },
+    {
+      "id": "Art.57",
+      "title": "Notification of and consultation with competent authorities prior to registration",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "If a trade repository which is applying for registration is an entity which is authorised or registered by a competent authority in the Member State where it is established, ESMA shall, without undue delay, notify and consult that competent authority prior to the registration of the trade repository."
+    },
+    {
+      "id": "Art.58",
+      "title": "Examination of the application",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "ESMA shall, within 40 working days from the notification referred to in the third subparagraph of Article 56(2), examine the application for registration based on the compliance of the trade repository with Articles 78 to 81 and shall adopt a fully reasoned registration decision or decision refusing registration."
+    },
+    {
+      "id": "Art.59",
+      "title": "Notification of ESMA decisions relating to registration",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Where ESMA adopts a registration decision or a decision refusing or withdrawing registration, it shall notify the trade repository within five working days with a fully reasoned explanation of its decision."
+    },
+    {
+      "id": "Art.60",
+      "title": "Exercise of the powers referred to in Articles 61 to 63",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "The powers conferred on ESMA or any official of or other person authorised by ESMA by Articles 61 to 63 shall not be used to require the disclosure of information or documents which are subject to legal privilege."
+    },
+    {
+      "id": "Art.61",
+      "title": "Request for information",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "ESMA may by simple request or by decision require trade repositories and related third parties to whom the trade repositories have outsourced operational functions or activities to provide all information that is necessary in order to carry out its duties under this Regulation."
+    },
+    {
+      "id": "Art.62",
+      "title": "General investigations",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "In order to carry out its duties under this Regulation, ESMA may conduct necessary investigations of persons referred to in Article 61(1)."
+    },
+    {
+      "id": "Art.63",
+      "title": "On-site inspections",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "In order to carry out its duties under this Regulation, ESMA may conduct all necessary on-site inspections at any business premises or land of the legal persons referred to in Article 61(1)."
+    },
+    {
+      "id": "Art.64",
+      "title": "Procedural rules for taking supervisory measures and imposing fines",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Where, in carrying out its duties under this Regulation, ESMA finds that there are serious indications of the possible existence of facts liable to constitute one or more of the infringements listed in Annex I, ESMA shall appoint an independent investigation officer within ESMA to investigate the matter."
+    },
+    {
+      "id": "Art.65",
+      "title": "Fines",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Where, in accordance with Article 64(5), ESMA finds that a trade repository has, intentionally or negligently, committed one of the infringements listed in Annex I, it shall adopt a decision imposing a fine in accordance with paragraph 2 of this Article."
+    },
+    {
+      "id": "Art.66",
+      "title": "Periodic penalty payments",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "ESMA shall, by decision, impose periodic penalty payments in order to compel: (a) a trade repository to put an end to an infringement in accordance with a decision taken pursuant to Article 73(1)(a); or (b) a person referred to in Article 61(1): (i) to supply complete information which has been requested by a decision…"
+    },
+    {
+      "id": "Art.67",
+      "title": "Hearing of the persons concerned",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Before taking any decision on a fine or periodic penalty payment under Articles 65 and 66, ESMA shall give the persons subject to the proceedings the opportunity to be heard on its findings."
+    },
+    {
+      "id": "Art.68",
+      "title": "Disclosure, nature, enforcement and allocation of fines and periodic penalty payments",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "ESMA shall disclose to the public every fine and periodic penalty payment that has been imposed pursuant to Articles 65 and 66 unless such disclosure to the public would seriously jeopardise the financial markets or cause disproportionate damage to the parties involved."
+    },
+    {
+      "id": "Art.69",
+      "title": "Review by the Court of Justice",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "The Court of Justice shall have unlimited jurisdiction to review decisions whereby ESMA has imposed a fine or a periodic penalty payment. It may annul, reduce or increase the fine or periodic penalty payment imposed."
+    },
+    {
+      "id": "Art.70",
+      "title": "Amendments to Annex II",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "In order to take account of developments on financial markets the Commission shall be empowered to adopt delegated acts in accordance with Article 82 concerning measures to amend Annex II."
+    },
+    {
+      "id": "Art.71",
+      "title": "Withdrawal of registration",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Without prejudice to Article 73, ESMA shall withdraw the registration of a trade repository where the trade repository: (a) expressly renounces the registration or has provided no services for the preceding six months; (b) obtained the registration by making false statements or by any other irregular means; (c) no…"
+    },
+    {
+      "id": "Art.72",
+      "title": "Supervisory fees",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "ESMA shall charge fees to the trade repositories in accordance with this Regulation and in accordance with the delegated acts adopted pursuant to paragraph 3."
+    },
+    {
+      "id": "Art.73",
+      "title": "Supervisory measures by ESMA",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Where, in accordance with Article 64(5), ESMA finds that a trade repository has committed one of the infringements listed in Annex I, it shall take one or more of the following decisions: (a) requiring the trade repository to bring the infringement to an end; (b) imposing fines under Article 65; (c) issuing public…"
+    },
+    {
+      "id": "Art.74",
+      "title": "Delegation of tasks by ESMA to competent authorities",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Where necessary for the proper performance of a supervisory task, ESMA may delegate specific supervisory tasks to the competent authority of a Member State in accordance with the guidelines issued by ESMA pursuant to Article 16 of Regulation (EU) No 1095/2010."
+    },
+    {
+      "id": "Art.75",
+      "title": "Equivalence and international agreements",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "The Commission may adopt an implementing act determining that the legal and supervisory arrangements of a third country ensure that: (a) trade repositories authorised in that third country comply with legally binding requirements which are equivalent to those laid down in this Regulation; (b) effective supervision and…"
+    },
+    {
+      "id": "Art.76",
+      "title": "Cooperation arrangements",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "Relevant authorities of third countries that do not have any trade repository established in their jurisdiction may contact ESMA with a view to establishing cooperation arrangements to access information on derivatives contracts held in Union trade repositories."
+    },
+    {
+      "id": "Art.77",
+      "title": "Recognition of trade repositories",
+      "chapter": "VI",
+      "theme": "Registration and supervision of trade repositories",
+      "requirement": "A trade repository established in a third country may provide its services and activities to entities established in the Union for the purposes of Article 9 only after its recognition by ESMA in accordance with paragraph 2."
+    },
+    {
+      "id": "Art.78",
+      "title": "General requirements",
+      "chapter": "VII",
+      "theme": "Requirements for trade repositories",
+      "requirement": "A trade repository shall have robust governance arrangements, which include a clear organisational structure with well defined, transparent and consistent lines of responsibility and adequate internal control mechanisms, including sound administrative and accounting procedures, which prevent any disclosure of…"
+    },
+    {
+      "id": "Art.79",
+      "title": "Operational reliability",
+      "chapter": "VII",
+      "theme": "Requirements for trade repositories",
+      "requirement": "A trade repository shall identify sources of operational risk and minimise them through the development of appropriate systems, controls and procedures."
+    },
+    {
+      "id": "Art.80",
+      "title": "Safeguarding and recording",
+      "chapter": "VII",
+      "theme": "Requirements for trade repositories",
+      "requirement": "A trade repository shall ensure the confidentiality, integrity and protection of the information received under Article 9. A trade repository may only use the data it receives under this Regulation for commercial purposes if the relevant counterparties have provided their consent."
+    },
+    {
+      "id": "Art.81",
+      "title": "Transparency and data availability",
+      "chapter": "VII",
+      "theme": "Requirements for trade repositories",
+      "requirement": "A trade repository shall regularly, and in an easily accessible way, publish aggregate positions by class of derivatives on the contracts reported to it."
+    },
+    {
+      "id": "Art.82",
+      "title": "Exercise of the delegation",
+      "chapter": "VII",
+      "theme": "Requirements for trade repositories",
+      "requirement": "The power to adopt delegated acts is conferred to the Commission subject to the conditions laid down in this Article. The delegation of power referred to in Article 1(6), Article 64(7), Article 70, Article 72(3) and Article 85(2) shall be conferred to the Commission for an indeterminate period of time."
+    },
+    {
+      "id": "Art.83",
+      "title": "Professional secrecy",
+      "chapter": "VIII",
+      "theme": "Common provisions",
+      "requirement": "The obligation of professional secrecy shall apply to all persons who work or have worked for the competent authorities designated in accordance with Article 22 and the authorities referred to in Article 81(3), for ESMA, or for auditors and experts instructed by the competent authorities or ESMA. No confidential…"
+    },
+    {
+      "id": "Art.84",
+      "title": "Exchange of information",
+      "chapter": "VIII",
+      "theme": "Common provisions",
+      "requirement": "Competent authorities, ESMA, and other relevant authorities shall, without undue delay, provide one another with the information required for the purposes of carrying out their duties."
+    },
+    {
+      "id": "Art.85",
+      "title": "Reports and review",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "By 17 August 2015, the Commission shall review and prepare a general report on this Regulation. The Commission shall submit the report to the European Parliament and the Council, together with any appropriate proposals."
+    },
+    {
+      "id": "Art.86",
+      "title": "Committee procedure",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "The Commission shall be assisted by the European Securities Committee established by Commission Decision 2001/528/EC ( 33 ) . That committee shall be a committee within the meaning of Regulation (EU) No 182/2011."
+    },
+    {
+      "id": "Art.87",
+      "title": "Amendment to Directive 98/26/EC",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "In Article 9(1) of Directive 98/26/EC, the following subparagraph is added: ‘Where a system operator has provided collateral security to another system operator in connection with an interoperable system, the rights of the providing system operator to that collateral security shall not be affected by insolvency…"
+    },
+    {
+      "id": "Art.88",
+      "title": "Websites",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "ESMA shall maintain a website which provides details of the following: (a) contracts eligible for the clearing obligation under Article 5; (b) penalties imposed for breaches of Articles 4, 5 and 7 to 11; (c) CCPs authorised to offer services or activities in the Union that are established in the Union, and the…"
+    },
+    {
+      "id": "Art.89",
+      "title": "Transitional provisions",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "For three years after the entry into force of this Regulation, the clearing obligation set out in Article 4 shall not apply to OTC derivative contracts that are objectively measurable as reducing investment risks directly relating to the financial solvency of pension scheme arrangements as defined in Article 2(10)."
+    },
+    {
+      "id": "Art.90",
+      "title": "Staff and resources of ESMA",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "By 31 December 2012, ESMA shall assess the staffing and resources needs arising from the assumption of its powers and duties in accordance with this Regulation and submit a report to the European Parliament, the Council and the Commission."
+    },
+    {
+      "id": "Art.91",
+      "title": "Entry into force",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union . This Regulation shall be binding in its entirety and directly applicable in all Member States."
+    }
+  ]
+}

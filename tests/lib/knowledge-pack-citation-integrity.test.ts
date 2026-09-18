@@ -29,7 +29,9 @@ import { SUBJECT_RULES, type FrameworkKey, type SubjectRule } from './citation-s
  *   1. EXISTENCE — only against a framework whose article list is complete
  *      (contiguous 1..N). Against a curated subset, absence proves nothing.
  *   2. DIVISION — the chapter an entity asserts is the one that holds the
- *      article, read from the framework's own division table.
+ *      article, read from the framework's own division table. Transcribed
+ *      regulations only: a curated subset's table spans just the articles it
+ *      happens to carry.
  *   3. SUBJECT — the obligation the entity names must be one the cited article
  *      can carry, judged by the SAME curated map the prompt guard uses
  *      (`citation-subject-rules.ts`). A lexical "do the name and the heading
@@ -50,6 +52,7 @@ interface FrameworkArticle { id?: string; title?: string; requirement?: string; 
 interface Framework {
   file: string;
   reference: string;
+  referenceAliases: string[];
   articles: Map<number, FrameworkArticle>;
   divisions: Map<string, [number, number]>;
   max: number;
@@ -71,6 +74,7 @@ function loadFrameworks(): Framework[] {
     if (!f.endsWith('.json')) continue;
     const raw = JSON.parse(fs.readFileSync(path.join(FRAMEWORKS, f), 'utf-8')) as {
       reference?: string;
+      referenceAliases?: string[];
       articles?: FrameworkArticle[];
       chapters?: Array<{ number?: string; articles?: string }>;
     };
@@ -88,14 +92,28 @@ function loadFrameworks(): Framework[] {
     const max = Math.max(0, ...articles.keys());
     const complete = max > 0 && articles.size === max
       && Array.from({ length: max }, (_, i) => i + 1).every((n) => articles.has(n));
-    out.push({ file: f.replace(/\.json$/, ''), reference: raw.reference, articles, divisions, max, complete });
+    out.push({
+      file: f.replace(/\.json$/, ''),
+      reference: raw.reference,
+      // A file may be known by more than one name: the Swiss acts are filed under
+      // their SR number and cited by their abbreviation, and the Russia sanctions
+      // file covers two regulations. An alias list on the framework keeps that
+      // data-driven instead of a map in the test that would drift.
+      referenceAliases: raw.referenceAliases ?? [],
+      articles, divisions, max, complete,
+    });
   }
   return out;
 }
 
 const FW = loadFrameworks();
 const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, ' ').trim();
-const BY_REFERENCE = new Map(FW.map((f) => [norm(f.reference), f]));
+const BY_REFERENCE = new Map<string, Framework>();
+for (const f of FW) {
+  for (const name of [f.reference, ...f.referenceAliases]) {
+    if (name && !BY_REFERENCE.has(norm(name))) BY_REFERENCE.set(norm(name), f);
+  }
+}
 
 interface Cite { pack: string; ref: string; name: string; article: string; instrument?: string; chapter?: string }
 
@@ -175,7 +193,11 @@ export function checkDivision(cites: Cite[]): string[] {
   for (const c of cites) {
     if (excepted(c) || !c.chapter) continue;
     const fw = frameworkFor(c);
-    if (!fw || fw.divisions.size === 0) continue;
+    // Only a transcribed regulation has a trustworthy division table. A curated
+    // subset carries spans over the articles it happens to hold — swiss-nfadp's
+    // table puts a whole chapter at "Arts. 7-7" — so a mismatch against it says
+    // nothing about the citation.
+    if (!fw || !fw.complete || fw.divisions.size === 0) continue;
     const span = fw.divisions.get(c.chapter.toUpperCase());
     const n = numberOf(c.article);
     if (!Number.isFinite(n)) continue;
@@ -242,18 +264,13 @@ describe('knowledge-pack article citations', () => {
     // an instrument string that was meant to match a file and does not.
     const unmapped = [...new Set(CITES.filter((c) => c.instrument && !frameworkFor(c))
       .map((c) => c.instrument as string))].sort();
-    expect(unmapped).toEqual([
-      'Council Regulation (EC) No 139/2004',
-      'Council Regulation (EU) No 833/2014',
-      'Directive (EU) 2015/2366',
-      'Directive 2014/24/EU',
-      'FinSA (Swiss Financial Services Act)',
-      'Regulation (EU) 2022/1925',
-      'Regulation (EU) 2023/1113',
-      'Regulation (EU) No 596/2014',
-      'Regulation (EU) No 648/2012',
-      'nFADP (Swiss Federal Act on Data Protection)',
-    ]);
+    // Wave 8 filled MAR, EMIR, PSD2 and Directive 2014/24 from the Official
+    // Journal, so those four moved off this list. What is left is an instrument
+    // ANTON genuinely carries no article list for.
+    // Council Regulation (EC) No 139/2004 is the one instrument left: the
+    // Publications Office cellar has no XHTML for it (404 on every CELEX form
+    // tried), so there is nothing to transcribe from.
+    expect(unmapped).toEqual(['Council Regulation (EC) No 139/2004']);
   });
 
   it('no pack cites an article that its regulation does not have', () => {

@@ -42,11 +42,28 @@ const DIR = path.join(REPO_ROOT, 'data', 'frameworks');
  * about the file, so it changes only if the law does.
  */
 const PUBLISHED_ARTICLE_COUNT: Record<string, number> = {
-  'amlr-2024': 90,        // Regulation (EU) 2024/1624
-  'mica-2023': 149,       // Regulation (EU) 2023/1114
-  'gdpr-2016': 99,        // Regulation (EU) 2016/679
-  'eu-ai-act-2024': 113,  // Regulation (EU) 2024/1689
+  'amlr-2024': 90,                 // Regulation (EU) 2024/1624
+  'mica-2023': 149,                // Regulation (EU) 2023/1114
+  'gdpr-2016': 99,                 // Regulation (EU) 2016/679
+  'eu-ai-act-2024': 113,           // Regulation (EU) 2024/1689
+  'amld6-2024': 80,                // Directive (EU) 2024/1640
+  'dora-2022': 64,                 // Regulation (EU) 2022/2554
+  'mifid2-2014': 97,               // Directive 2014/65/EU
+  'mifir-2014': 55,                // Regulation (EU) No 600/2014
+  'mar-2014': 39,                  // Regulation (EU) No 596/2014
+  'emir-2012': 91,                 // Regulation (EU) No 648/2012
+  'psd2-2015': 117,                // Directive (EU) 2015/2366
+  'solvency2-2009': 312,           // Directive 2009/138/EC
+  'eu-procurement-2014-24': 94,    // Directive 2014/24/EU
 };
+
+/**
+ * An article a later amendment INSERTED carries a letter ("Art. 35a", added to
+ * Solvency II by Omnibus II). It is a real article and must be kept, but it is
+ * not in the act as originally published, so it is counted separately — the
+ * published count is a claim about the original text.
+ */
+const isInserted = (id: string): boolean => /^Art\.\d+[a-z]/i.test(id);
 
 interface Article {
   id?: string;
@@ -111,15 +128,17 @@ describe('framework corpus integrity', () => {
     for (const { file, json } of FILES) {
       const published = PUBLISHED_ARTICLE_COUNT[file];
       if (published === undefined) continue;
-      const nums = json.articles!.map(numberOf);
+      const original = json.articles!.filter((a) => !isInserted(a.id ?? ''));
+      const ids = original.map((a) => a.id ?? '');
+      const nums = original.map(numberOf);
       const set = new Set(nums);
-      if (nums.length !== set.size) {
-        const seen = new Set<number>();
-        const dupes = nums.filter((n) => (seen.has(n) ? true : (seen.add(n), false)));
+      if (ids.length !== new Set(ids).size) {
+        const seen = new Set<string>();
+        const dupes = ids.filter((i) => (seen.has(i) ? true : (seen.add(i), false)));
         problems.push(`${file}: duplicate articles ${[...new Set(dupes)].join(', ')}`);
       }
-      if (json.articles!.length !== published) {
-        problems.push(`${file}: ${json.articles!.length} articles, the Official Journal text has ${published}`);
+      if (original.length !== published) {
+        problems.push(`${file}: ${original.length} articles, the Official Journal text has ${published}`);
       }
       const missing = Array.from({ length: published }, (_, i) => i + 1).filter((n) => !set.has(n));
       if (missing.length) {

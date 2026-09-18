@@ -129,7 +129,8 @@
     "description": "EMIR Art. 9 requires all counterparties to OTC derivatives contracts (and since EMIR REFIT, also ETDs) to report to a trade repository no later than T+1. Reports include: counterparty data, contract type, clearing status, margin, collateral.",
     "metadata": {
       "article": "9",
-      "instrument": "Regulation (EU) No 648/2012"
+      "instrument": "Regulation (EU) No 648/2012",
+      "chapter": "II"
     }
   },
   {

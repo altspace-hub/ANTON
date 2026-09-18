@@ -7,13 +7,41 @@
   "applicationDate": "2027-07-10",
   "articleCount": 80,
   "chapters": [
-    {"number": "I", "title": "General Provisions", "articles": "1-9"},
-    {"number": "II", "title": "Registers", "articles": "10-18"},
-    {"number": "III", "title": "FIUs", "articles": "19-36"},
-    {"number": "IV", "title": "Anti-Money Laundering Supervision", "articles": "37-60"},
-    {"number": "V", "title": "Cooperation", "articles": "61-69"},
-    {"number": "VI", "title": "Data Protection", "articles": "70"},
-    {"number": "VII", "title": "Final Provisions", "articles": "71-80"}
+    {
+      "number": "I",
+      "title": "General provisions",
+      "articles": "1-9"
+    },
+    {
+      "number": "II",
+      "title": "Registers",
+      "articles": "10-18"
+    },
+    {
+      "number": "III",
+      "title": "Fius",
+      "articles": "19-36"
+    },
+    {
+      "number": "IV",
+      "title": "Anti-money laundering supervision",
+      "articles": "37-60"
+    },
+    {
+      "number": "V",
+      "title": "Cooperation",
+      "articles": "61-69"
+    },
+    {
+      "number": "VI",
+      "title": "Data protection",
+      "articles": "70"
+    },
+    {
+      "number": "VII",
+      "title": "Final provisions",
+      "articles": "71-80"
+    }
   ],
   "themes": [
     "General Provisions & Risk Assessment",
@@ -25,85 +53,572 @@
     "Data Protection & Final Provisions"
   ],
   "articles": [
-    {"id":"Art.1","title":"Subject matter","chapter":"I","section":"Subject matter, scope and definitions","theme":"General Provisions & Risk Assessment","requirement":"Establishes rules on the institutional framework for AML/CFT including FIUs, supervisors, beneficial ownership registers, risk assessment, and cooperation mechanisms"},
-    {"id":"Art.2","title":"Definitions","chapter":"I","section":"Subject matter, scope and definitions","theme":"General Provisions & Risk Assessment","requirement":"Defines key terms complementing AMLR definitions: supervisory authority, FIU, competent authority, self-regulatory body, and other institutional terms"},
-    {"id":"Art.3","title":"Identification of exposed sectors at national level","chapter":"I","section":"National measures in sectors exposed to ML/TF","theme":"General Provisions & Risk Assessment","requirement":"Member States must identify sectors and activities exposed to ML/TF risks at national level, including non-obliged-entity sectors"},
-    {"id":"Art.4","title":"Requirements relating to certain service providers","chapter":"I","section":"National measures in sectors exposed to ML/TF","theme":"General Provisions & Risk Assessment","requirement":"Member States may impose AML/CFT requirements on certain service providers not covered by the AMLR where ML/TF risks are identified"},
-    {"id":"Art.5","title":"Requirements relating to the granting of residence rights in exchange for investment","chapter":"I","section":"National measures in sectors exposed to ML/TF","theme":"General Provisions & Risk Assessment","requirement":"Member States operating golden visa/residence-by-investment schemes must apply enhanced ML/TF safeguards and due diligence"},
-    {"id":"Art.6","title":"Checks on the senior management and beneficial owners of certain obliged entities","chapter":"I","section":"National measures in sectors exposed to ML/TF","theme":"General Provisions & Risk Assessment","requirement":"Member States must ensure fit and proper checks on senior management and beneficial owners of certain obliged entities to prevent criminal infiltration"},
-    {"id":"Art.7","title":"Risk assessment at Union level","chapter":"I","section":"Risk assessments","theme":"General Provisions & Risk Assessment","requirement":"Commission conducts Union-level ML/TF risk assessment, identifying cross-border risks, vulnerabilities, and threats; consults AMLA and Member States"},
-    {"id":"Art.8","title":"National risk assessment","chapter":"I","section":"Risk assessments","theme":"General Provisions & Risk Assessment","requirement":"Member States must carry out national risk assessment covering all ML/TF risks; keep current; make results available to obliged entities and supervisors"},
-    {"id":"Art.9","title":"Statistics","chapter":"I","section":"Risk assessments","theme":"General Provisions & Risk Assessment","requirement":"Member States must maintain comprehensive AML/CFT statistics: STRs filed, investigations, prosecutions, convictions, assets frozen/confiscated, supervision activities"},
-    {"id":"Art.10","title":"Central beneficial ownership registers","chapter":"II","section":"Central beneficial ownership registers","theme":"Beneficial Ownership Registers","requirement":"Member States must establish central registers of beneficial ownership information for corporate and other legal entities incorporated in their territory"},
-    {"id":"Art.11","title":"General rules regarding access by competent authorities, self-regulatory bodies and obliged entities","chapter":"II","section":"Central beneficial ownership registers","theme":"Beneficial Ownership Registers","requirement":"Competent authorities, FIUs, self-regulatory bodies, and obliged entities performing CDD must have access to BO registers without restriction"},
-    {"id":"Art.12","title":"Specific access rules for persons with legitimate interest","chapter":"II","section":"Central beneficial ownership registers","theme":"Beneficial Ownership Registers","requirement":"Persons with legitimate interest (journalists, civil society, researchers) may access certain BO information subject to conditions"},
-    {"id":"Art.13","title":"Procedure for verification and mutual recognition of legitimate interest","chapter":"II","section":"Central beneficial ownership registers","theme":"Beneficial Ownership Registers","requirement":"Establishes procedure for verifying legitimate interest claims; mutual recognition of legitimate interest status across Member States"},
-    {"id":"Art.14","title":"Templates and procedures","chapter":"II","section":"Central beneficial ownership registers","theme":"Beneficial Ownership Registers","requirement":"Commission adopts implementing acts specifying templates and procedures for BO information submission and access"},
-    {"id":"Art.15","title":"Exceptions to the access rules","chapter":"II","section":"Central beneficial ownership registers","theme":"Beneficial Ownership Registers","requirement":"Limited exceptions to BO register access where disclosure would expose the beneficial owner to disproportionate risk of fraud, kidnapping, or similar threats"},
-    {"id":"Art.16","title":"Bank account registers and electronic data retrieval systems","chapter":"II","section":"Bank account information","theme":"Beneficial Ownership Registers","requirement":"Member States must establish centralised bank account registries or electronic data retrieval systems enabling identification of account holders by FIUs and authorities"},
-    {"id":"Art.17","title":"Implementing acts for the interconnection of registers","chapter":"II","section":"Bank account information","theme":"Beneficial Ownership Registers","requirement":"Commission adopts implementing acts for interconnection of bank account registers across Member States via a single access point"},
-    {"id":"Art.18","title":"Single access point to real estate information","chapter":"II","section":"Single access point to real estate information","theme":"Beneficial Ownership Registers","requirement":"Member States must ensure competent authorities have access to real estate ownership information through a single access point"},
-    {"id":"Art.19","title":"Establishment of the FIU","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Each Member State must establish a single FIU as national centre for receiving, analysing, and disseminating STRs and other ML/TF-relevant information; operationally independent"},
-    {"id":"Art.20","title":"Fundamental Rights Officer","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Each FIU must appoint a Fundamental Rights Officer to ensure FIU activities respect fundamental rights, particularly data protection and privacy"},
-    {"id":"Art.21","title":"Access to information","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs must have direct or indirect access to financial, administrative, and law enforcement information necessary for their functions including BO registers and tax databases"},
-    {"id":"Art.22","title":"Responses to requests for information","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Obliged entities must respond to FIU requests for information promptly and fully; FIU may set deadlines for responses"},
-    {"id":"Art.23","title":"Provision of information to supervisors","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs must provide relevant information to supervisory authorities where ML/TF concerns are identified during analysis"},
-    {"id":"Art.24","title":"Suspension or withholding of consent","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs must have the power to suspend or withhold consent to a transaction for a limited period to analyse and assess ML/TF suspicion"},
-    {"id":"Art.25","title":"Instructions to monitor transactions or activities","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs may instruct obliged entities to monitor specific transactions or activities of a customer for a defined period"},
-    {"id":"Art.26","title":"Alerts to obliged entities","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs may issue alerts to obliged entities regarding ML/TF typologies, trends, and specific risks requiring enhanced vigilance"},
-    {"id":"Art.27","title":"FIU annual report","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs must publish an annual report on activities including statistics on STRs received, analyses conducted, and disseminations made"},
-    {"id":"Art.28","title":"Feedback by FIU","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs must provide timely and adequate feedback to obliged entities on STR quality and usefulness, including typologies and sanitised case studies"},
-    {"id":"Art.29","title":"Cooperation between FIUs","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs must cooperate with each other exchanging information spontaneously or upon request using FIU.net or successor secure communication system"},
-    {"id":"Art.30","title":"Protected channels of communication","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIU-to-FIU communication must use protected channels ensuring confidentiality and integrity of exchanged information"},
-    {"id":"Art.31","title":"Exchange of information between FIUs","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Detailed rules on information exchange between FIUs: scope of data, timelines, conditions, and restrictions on further dissemination"},
-    {"id":"Art.32","title":"Joint analyses","chapter":"III","section":null,"theme":"FIU Framework","requirement":"FIUs may conduct joint analyses of cross-border cases supported by AMLA with common dissemination rules and protections"},
-    {"id":"Art.33","title":"Use by FIUs of information exchanged between them","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Information received from another FIU may only be used for the purpose for which it was requested or spontaneously provided"},
-    {"id":"Art.34","title":"Consent to further dissemination of information exchanged between FIUs","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Further dissemination of information received from another FIU requires prior consent of the originating FIU"},
-    {"id":"Art.35","title":"Effect of criminal law provisions","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Criminal law provisions in Member States must not impede FIU-to-FIU information exchange; ensures primacy of FIU cooperation"},
-    {"id":"Art.36","title":"Confidentiality of reporting","chapter":"III","section":null,"theme":"FIU Framework","requirement":"Identity of persons filing STRs must be protected; tipping-off prohibition applies to FIU staff and recipients of FIU information"},
-    {"id":"Art.37","title":"Powers and resources of national supervisors","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"AML/CFT supervisors must have adequate powers, staff, and resources to carry out effective risk-based supervision of obliged entities"},
-    {"id":"Art.38","title":"Supervision of forms of infrastructure of certain intermediaries operating under the freedom to provide services","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Rules on supervision of intermediaries providing cross-border services; coordination between home and host supervisors"},
-    {"id":"Art.39","title":"Provision of information to obliged entities","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Supervisors must provide obliged entities with information on ML/TF risks, typologies, and supervisory expectations to support compliance"},
-    {"id":"Art.40","title":"Risk-based supervision","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Supervisors must adopt risk-based approach to supervision, allocating resources proportionate to ML/TF risks; documented risk assessments of supervised entities"},
-    {"id":"Art.41","title":"Central contact points","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Member States may require certain cross-border obliged entities to appoint central contact points to facilitate supervision and communication"},
-    {"id":"Art.42","title":"Disclosure to FIUs","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Supervisors must promptly inform the FIU when they discover facts that could be related to ML/TF during their supervisory activities"},
-    {"id":"Art.43","title":"Provision of information to FIUs","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Supervisors must provide FIUs with information useful for FIU analysis including supervisory findings and compliance concerns"},
-    {"id":"Art.44","title":"General principles regarding supervisory cooperation","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"AML/CFT supervisors must cooperate with each other and with AMLA; exchange relevant information regardless of nature or status of supervisory authority"},
-    {"id":"Art.45","title":"Provision of information on cross-border activities","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Supervisors must share information on obliged entities operating cross-border including findings from inspections and identified ML/TF risks"},
-    {"id":"Art.46","title":"Provisions related to cooperation in the context of group supervision","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Specific rules for supervisory cooperation regarding groups; home supervisor leads coordination; information sharing within group supervision"},
-    {"id":"Art.47","title":"Supervisory cooperation regarding obliged entities carrying out cross-border activities","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Detailed cooperation rules for supervision of entities with cross-border operations: joint inspections, mutual assistance, information exchange"},
-    {"id":"Art.48","title":"Exchange of information in relation to implementation of group-wide policies in third countries","chapter":"IV","section":"General provisions","theme":"AML/CFT Supervision","requirement":"Supervisors exchange information on how groups implement AML/CFT policies in third-country branches and subsidiaries where local law may limit compliance"},
-    {"id":"Art.49","title":"AML/CFT supervisory colleges in the financial sector","chapter":"IV","section":"Cooperation within AML/CFT supervisory colleges","theme":"AML/CFT Supervision","requirement":"Mandatory AML/CFT colleges for cross-border financial groups posing higher ML/TF risk; lead supervisor chairs; information exchange and coordinated supervision"},
-    {"id":"Art.50","title":"AML/CFT supervisory colleges in the non-financial sector","chapter":"IV","section":"Cooperation within AML/CFT supervisory colleges","theme":"AML/CFT Supervision","requirement":"AML/CFT colleges for non-financial obliged entities operating cross-border; adapted governance rules for non-financial sector specifics"},
-    {"id":"Art.51","title":"Cooperation with supervisors in third countries","chapter":"IV","section":"Cooperation within AML/CFT supervisory colleges","theme":"AML/CFT Supervision","requirement":"AML/CFT supervisors may cooperate with third-country counterparts subject to safeguards on data protection and confidentiality"},
-    {"id":"Art.52","title":"Oversight of self-regulatory bodies","chapter":"IV","section":"Specific provisions relating to self-regulatory bodies","theme":"AML/CFT Supervision","requirement":"Where self-regulatory bodies supervise certain professionals, Member States must ensure public authority oversight of those bodies and adequate powers and resources"},
-    {"id":"Art.53","title":"General provisions","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Member States must ensure supervisors can impose effective, proportionate, and dissuasive pecuniary sanctions and administrative measures for AML/CFT breaches"},
-    {"id":"Art.54","title":"Supervisory measures towards establishments of obliged entities and certain activities carried out under the freedom to provide services","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Specific measures supervisors may take towards cross-border establishments including restricting activities and requiring remedial action"},
-    {"id":"Art.55","title":"Pecuniary sanctions","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Minimum pecuniary sanction levels for serious breaches; up to EUR 10M or 10% of total annual turnover for legal persons; up to EUR 5M for natural persons"},
-    {"id":"Art.56","title":"Administrative measures","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Non-pecuniary administrative measures: public statements, cease-and-desist orders, withdrawal of authorisation, temporary bans on management functions"},
-    {"id":"Art.57","title":"Periodic penalty payments","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Supervisors may impose periodic penalty payments to compel compliance with remedial orders; calculated per day of non-compliance"},
-    {"id":"Art.58","title":"Publication of pecuniary sanctions, administrative measures and periodic penalty payments","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Supervisors must publish enforcement decisions including identity of entity, nature of breach, and sanction imposed; anonymisation rules for natural persons"},
-    {"id":"Art.59","title":"Exchange of information on pecuniary sanctions and administrative measures","chapter":"IV","section":"Pecuniary sanctions and administrative measures","theme":"Pecuniary Sanctions & Enforcement","requirement":"Supervisors exchange information on sanctions and measures imposed with AMLA and other relevant authorities to support coordinated enforcement"},
-    {"id":"Art.60","title":"Reporting of breaches and protection of reporting persons","chapter":"IV","section":"Reporting of breaches","theme":"Pecuniary Sanctions & Enforcement","requirement":"Member States must establish channels for reporting AML/CFT breaches; whistleblower protection in line with Directive (EU) 2019/1937"},
-    {"id":"Art.61","title":"General provisions","chapter":"V","section":"AML/CFT cooperation","theme":"Cooperation","requirement":"General framework for cooperation between competent authorities across Member States on AML/CFT matters"},
-    {"id":"Art.62","title":"Communication of the list of the competent authorities","chapter":"V","section":"AML/CFT cooperation","theme":"Cooperation","requirement":"Member States communicate lists of competent AML/CFT authorities to Commission and AMLA; keep updated"},
-    {"id":"Art.63","title":"Cooperation with AMLA","chapter":"V","section":"AML/CFT cooperation","theme":"Cooperation","requirement":"National supervisors cooperate with AMLA; respond to AMLA requests; participate in AMLA supervisory activities"},
-    {"id":"Art.64","title":"Cooperation in relation to credit institutions or financial institutions","chapter":"V","section":"Cooperation with other authorities","theme":"Cooperation","requirement":"AML/CFT supervisors cooperate with prudential supervisors of credit and financial institutions; share relevant information on ML/TF risks"},
-    {"id":"Art.65","title":"Cooperation in relation to auditors","chapter":"V","section":"Cooperation with other authorities","theme":"Cooperation","requirement":"Rules on cooperation between AML/CFT supervisors and auditor oversight bodies; information sharing on AML/CFT compliance findings"},
-    {"id":"Art.66","title":"Cooperation with authorities in charge of implementing targeted financial sanctions","chapter":"V","section":"Cooperation with other authorities","theme":"Cooperation","requirement":"AML/CFT supervisors cooperate with sanctions authorities to ensure coordinated approach to sanctions compliance supervision"},
-    {"id":"Art.67","title":"Professional secrecy requirements","chapter":"V","section":"Cooperation with other authorities","theme":"Cooperation","requirement":"All persons involved in AML/CFT supervision bound by professional secrecy; conditions for sharing confidential information"},
-    {"id":"Art.68","title":"Exchange of information among supervisors and with other authorities","chapter":"V","section":"Cooperation with other authorities","theme":"Cooperation","requirement":"Rules and safeguards for exchange of confidential information between AML/CFT supervisors and with other regulatory or law enforcement authorities"},
-    {"id":"Art.69","title":"AML/CFT cooperation guidelines","chapter":"V","section":"Guidelines on cooperation","theme":"Cooperation","requirement":"AMLA issues guidelines on cooperation arrangements between national supervisors and between supervisors and other authorities"},
-    {"id":"Art.70","title":"Processing of certain categories of personal data","chapter":"VI","section":null,"theme":"Data Protection & Final Provisions","requirement":"Rules on processing special categories of personal data for AML/CFT purposes; must comply with GDPR; proportionality and necessity requirements"},
-    {"id":"Art.71","title":"Exercise of the delegation","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Conditions for Commission delegated acts under this Directive; delegation period; Parliament and Council revocation rights"},
-    {"id":"Art.72","title":"Committee procedure","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Commission assisted by Committee on Prevention of Money Laundering and Terrorist Financing for implementing acts"},
-    {"id":"Art.73","title":"Transitional management of FIU.net","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Transitional arrangements for management of FIU.net system pending transfer to AMLA"},
-    {"id":"Art.74","title":"Amendments to Directive (EU) 2015/849","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Technical amendments to AMLD4 to align with the new AML/CFT framework"},
-    {"id":"Art.75","title":"Amendment to Directive (EU) 2019/1937","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Amendment to Whistleblower Directive to cover AML/CFT breach reporting"},
-    {"id":"Art.76","title":"Review","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Commission reviews application of this Directive and reports to Parliament and Council; considers effectiveness and need for amendments"},
-    {"id":"Art.77","title":"Repeal","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"AMLD4 (Directive 2015/849) and its amendments repealed with effect from 10 July 2027"},
-    {"id":"Art.78","title":"Transposition","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Member States must transpose this Directive into national law by 10 July 2027"},
-    {"id":"Art.79","title":"Entry into force","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"Directive enters into force on the twentieth day following publication in the Official Journal"},
-    {"id":"Art.80","title":"Addressees","chapter":"VII","section":null,"theme":"Data Protection & Final Provisions","requirement":"This Directive is addressed to the Member States"}
-  ]
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Establishes rules on the institutional framework for AML/CFT including FIUs, supervisors, beneficial ownership registers, risk assessment, and cooperation mechanisms"
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Defines key terms complementing AMLR definitions: supervisory authority, FIU, competent authority, self-regulatory body, and other institutional terms"
+    },
+    {
+      "id": "Art.3",
+      "title": "Identification of exposed sectors at national level",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Member States must identify sectors and activities exposed to ML/TF risks at national level, including non-obliged-entity sectors"
+    },
+    {
+      "id": "Art.4",
+      "title": "Requirements relating to certain service providers",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Member States may impose AML/CFT requirements on certain service providers not covered by the AMLR where ML/TF risks are identified"
+    },
+    {
+      "id": "Art.5",
+      "title": "Requirements relating to the granting of residence rights in exchange for investment",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Member States operating golden visa/residence-by-investment schemes must apply enhanced ML/TF safeguards and due diligence"
+    },
+    {
+      "id": "Art.6",
+      "title": "Checks on the senior management and beneficial owners of certain obliged entities",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Member States must ensure fit and proper checks on senior management and beneficial owners of certain obliged entities to prevent criminal infiltration"
+    },
+    {
+      "id": "Art.7",
+      "title": "Risk assessment at Union level",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Commission conducts Union-level ML/TF risk assessment, identifying cross-border risks, vulnerabilities, and threats; consults AMLA and Member States"
+    },
+    {
+      "id": "Art.8",
+      "title": "National risk assessment",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Member States must carry out national risk assessment covering all ML/TF risks; keep current; make results available to obliged entities and supervisors"
+    },
+    {
+      "id": "Art.9",
+      "title": "Statistics",
+      "chapter": "I",
+      "theme": "General Provisions & Risk Assessment",
+      "requirement": "Member States must maintain comprehensive AML/CFT statistics: STRs filed, investigations, prosecutions, convictions, assets frozen/confiscated, supervision activities"
+    },
+    {
+      "id": "Art.10",
+      "title": "Central beneficial ownership registers",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Member States must establish central registers of beneficial ownership information for corporate and other legal entities incorporated in their territory"
+    },
+    {
+      "id": "Art.11",
+      "title": "General rules regarding access to beneficial ownership registers by competent authorities, self-regulatory bodies and obliged entities",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Competent authorities, FIUs, self-regulatory bodies, and obliged entities performing CDD must have access to BO registers without restriction"
+    },
+    {
+      "id": "Art.12",
+      "title": "Specific access rules to beneficial ownership registers for persons with legitimate interest",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Persons with legitimate interest (journalists, civil society, researchers) may access certain BO information subject to conditions"
+    },
+    {
+      "id": "Art.13",
+      "title": "Procedure for the verification and mutual recognition of a legitimate interest to access beneficial ownership information",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Establishes procedure for verifying legitimate interest claims; mutual recognition of legitimate interest status across Member States"
+    },
+    {
+      "id": "Art.14",
+      "title": "Templates and procedures",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Commission adopts implementing acts specifying templates and procedures for BO information submission and access"
+    },
+    {
+      "id": "Art.15",
+      "title": "Exceptions to the access rules to beneficial ownership registers",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Limited exceptions to BO register access where disclosure would expose the beneficial owner to disproportionate risk of fraud, kidnapping, or similar threats"
+    },
+    {
+      "id": "Art.16",
+      "title": "Bank account registers and electronic data retrieval systems",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Member States must establish centralised bank account registries or electronic data retrieval systems enabling identification of account holders by FIUs and authorities"
+    },
+    {
+      "id": "Art.17",
+      "title": "Implementing acts for the interconnection of registers",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Commission adopts implementing acts for interconnection of bank account registers across Member States via a single access point"
+    },
+    {
+      "id": "Art.18",
+      "title": "Single access point to real estate information",
+      "chapter": "II",
+      "theme": "Beneficial Ownership Registers",
+      "requirement": "Member States must ensure competent authorities have access to real estate ownership information through a single access point"
+    },
+    {
+      "id": "Art.19",
+      "title": "Establishment of the FIU",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Each Member State must establish a single FIU as national centre for receiving, analysing, and disseminating STRs and other ML/TF-relevant information; operationally independent"
+    },
+    {
+      "id": "Art.20",
+      "title": "Fundamental Rights Officer",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Each FIU must appoint a Fundamental Rights Officer to ensure FIU activities respect fundamental rights, particularly data protection and privacy"
+    },
+    {
+      "id": "Art.21",
+      "title": "Access to information",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs must have direct or indirect access to financial, administrative, and law enforcement information necessary for their functions including BO registers and tax databases"
+    },
+    {
+      "id": "Art.22",
+      "title": "Responses to requests for information",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Obliged entities must respond to FIU requests for information promptly and fully; FIU may set deadlines for responses"
+    },
+    {
+      "id": "Art.23",
+      "title": "Provision of information to supervisors",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs must provide relevant information to supervisory authorities where ML/TF concerns are identified during analysis"
+    },
+    {
+      "id": "Art.24",
+      "title": "Suspension or withholding of consent",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs must have the power to suspend or withhold consent to a transaction for a limited period to analyse and assess ML/TF suspicion"
+    },
+    {
+      "id": "Art.25",
+      "title": "Instructions to monitor transactions or activities",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs may instruct obliged entities to monitor specific transactions or activities of a customer for a defined period"
+    },
+    {
+      "id": "Art.26",
+      "title": "Alerts to obliged entities",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs may issue alerts to obliged entities regarding ML/TF typologies, trends, and specific risks requiring enhanced vigilance"
+    },
+    {
+      "id": "Art.27",
+      "title": "FIU annual report",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs must publish an annual report on activities including statistics on STRs received, analyses conducted, and disseminations made"
+    },
+    {
+      "id": "Art.28",
+      "title": "Feedback by FIU",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs must provide timely and adequate feedback to obliged entities on STR quality and usefulness, including typologies and sanitised case studies"
+    },
+    {
+      "id": "Art.29",
+      "title": "Cooperation between FIUs",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs must cooperate with each other exchanging information spontaneously or upon request using FIU.net or successor secure communication system"
+    },
+    {
+      "id": "Art.30",
+      "title": "Protected channels of communication",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIU-to-FIU communication must use protected channels ensuring confidentiality and integrity of exchanged information"
+    },
+    {
+      "id": "Art.31",
+      "title": "Exchange of information between FIUs",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Detailed rules on information exchange between FIUs: scope of data, timelines, conditions, and restrictions on further dissemination"
+    },
+    {
+      "id": "Art.32",
+      "title": "Joint analyses",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "FIUs may conduct joint analyses of cross-border cases supported by AMLA with common dissemination rules and protections"
+    },
+    {
+      "id": "Art.33",
+      "title": "Use by FIUs of information exchanged between them",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Information received from another FIU may only be used for the purpose for which it was requested or spontaneously provided"
+    },
+    {
+      "id": "Art.34",
+      "title": "Consent to further dissemination of information exchanged between FIUs",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Further dissemination of information received from another FIU requires prior consent of the originating FIU"
+    },
+    {
+      "id": "Art.35",
+      "title": "Effect of criminal law provisions",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Criminal law provisions in Member States must not impede FIU-to-FIU information exchange; ensures primacy of FIU cooperation"
+    },
+    {
+      "id": "Art.36",
+      "title": "Confidentiality of reporting",
+      "chapter": "III",
+      "theme": "FIU Framework",
+      "requirement": "Identity of persons filing STRs must be protected; tipping-off prohibition applies to FIU staff and recipients of FIU information"
+    },
+    {
+      "id": "Art.37",
+      "title": "Powers and resources of national supervisors",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "AML/CFT supervisors must have adequate powers, staff, and resources to carry out effective risk-based supervision of obliged entities"
+    },
+    {
+      "id": "Art.38",
+      "title": "Supervision of forms of infrastructure of certain intermediaries operating under the freedom to provide services",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Rules on supervision of intermediaries providing cross-border services; coordination between home and host supervisors"
+    },
+    {
+      "id": "Art.39",
+      "title": "Provision of information to obliged entities",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Supervisors must provide obliged entities with information on ML/TF risks, typologies, and supervisory expectations to support compliance"
+    },
+    {
+      "id": "Art.40",
+      "title": "Risk-based supervision",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Supervisors must adopt risk-based approach to supervision, allocating resources proportionate to ML/TF risks; documented risk assessments of supervised entities"
+    },
+    {
+      "id": "Art.41",
+      "title": "Central contact points",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Member States may require certain cross-border obliged entities to appoint central contact points to facilitate supervision and communication"
+    },
+    {
+      "id": "Art.42",
+      "title": "Disclosure to FIUs",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Supervisors must promptly inform the FIU when they discover facts that could be related to ML/TF during their supervisory activities"
+    },
+    {
+      "id": "Art.43",
+      "title": "Provision of information to FIUs",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Supervisors must provide FIUs with information useful for FIU analysis including supervisory findings and compliance concerns"
+    },
+    {
+      "id": "Art.44",
+      "title": "General principles regarding supervisory cooperation",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "AML/CFT supervisors must cooperate with each other and with AMLA; exchange relevant information regardless of nature or status of supervisory authority"
+    },
+    {
+      "id": "Art.45",
+      "title": "Provision of information on cross-border activities",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Supervisors must share information on obliged entities operating cross-border including findings from inspections and identified ML/TF risks"
+    },
+    {
+      "id": "Art.46",
+      "title": "Provisions related to cooperation in the context of group supervision",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Specific rules for supervisory cooperation regarding groups; home supervisor leads coordination; information sharing within group supervision"
+    },
+    {
+      "id": "Art.47",
+      "title": "Supervisory cooperation regarding obliged entities carrying out cross-border activities",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Detailed cooperation rules for supervision of entities with cross-border operations: joint inspections, mutual assistance, information exchange"
+    },
+    {
+      "id": "Art.48",
+      "title": "Exchange of information in relation to implementation of group-wide policies in third countries",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Supervisors exchange information on how groups implement AML/CFT policies in third-country branches and subsidiaries where local law may limit compliance"
+    },
+    {
+      "id": "Art.49",
+      "title": "AML/CFT supervisory colleges in the financial sector",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Mandatory AML/CFT colleges for cross-border financial groups posing higher ML/TF risk; lead supervisor chairs; information exchange and coordinated supervision"
+    },
+    {
+      "id": "Art.50",
+      "title": "AML/CFT supervisory colleges in the non-financial sector",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "AML/CFT colleges for non-financial obliged entities operating cross-border; adapted governance rules for non-financial sector specifics"
+    },
+    {
+      "id": "Art.51",
+      "title": "Cooperation with supervisors in third countries",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "AML/CFT supervisors may cooperate with third-country counterparts subject to safeguards on data protection and confidentiality"
+    },
+    {
+      "id": "Art.52",
+      "title": "Oversight of self-regulatory bodies",
+      "chapter": "IV",
+      "theme": "AML/CFT Supervision",
+      "requirement": "Where self-regulatory bodies supervise certain professionals, Member States must ensure public authority oversight of those bodies and adequate powers and resources"
+    },
+    {
+      "id": "Art.53",
+      "title": "General provisions",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Member States must ensure supervisors can impose effective, proportionate, and dissuasive pecuniary sanctions and administrative measures for AML/CFT breaches"
+    },
+    {
+      "id": "Art.54",
+      "title": "Supervisory measures towards establishments of obliged entities and certain activities carried out under the freedom to provide services",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Specific measures supervisors may take towards cross-border establishments including restricting activities and requiring remedial action"
+    },
+    {
+      "id": "Art.55",
+      "title": "Pecuniary sanctions",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Minimum pecuniary sanction levels for serious breaches; up to EUR 10M or 10% of total annual turnover for legal persons; up to EUR 5M for natural persons"
+    },
+    {
+      "id": "Art.56",
+      "title": "Administrative measures",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Non-pecuniary administrative measures: public statements, cease-and-desist orders, withdrawal of authorisation, temporary bans on management functions"
+    },
+    {
+      "id": "Art.57",
+      "title": "Periodic penalty payments",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Supervisors may impose periodic penalty payments to compel compliance with remedial orders; calculated per day of non-compliance"
+    },
+    {
+      "id": "Art.58",
+      "title": "Publication of pecuniary sanctions, administrative measures and periodic penalty payments",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Supervisors must publish enforcement decisions including identity of entity, nature of breach, and sanction imposed; anonymisation rules for natural persons"
+    },
+    {
+      "id": "Art.59",
+      "title": "Exchange of information on pecuniary sanctions and administrative measures",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Supervisors exchange information on sanctions and measures imposed with AMLA and other relevant authorities to support coordinated enforcement"
+    },
+    {
+      "id": "Art.60",
+      "title": "Reporting of breaches and protection of reporting persons",
+      "chapter": "IV",
+      "theme": "Pecuniary Sanctions & Enforcement",
+      "requirement": "Member States must establish channels for reporting AML/CFT breaches; whistleblower protection in line with Directive (EU) 2019/1937"
+    },
+    {
+      "id": "Art.61",
+      "title": "General provisions",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "General framework for cooperation between competent authorities across Member States on AML/CFT matters"
+    },
+    {
+      "id": "Art.62",
+      "title": "Communication of the list of the competent authorities",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "Member States communicate lists of competent AML/CFT authorities to Commission and AMLA; keep updated"
+    },
+    {
+      "id": "Art.63",
+      "title": "Cooperation with AMLA",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "National supervisors cooperate with AMLA; respond to AMLA requests; participate in AMLA supervisory activities"
+    },
+    {
+      "id": "Art.64",
+      "title": "Cooperation in relation to credit institutions or financial institutions",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "AML/CFT supervisors cooperate with prudential supervisors of credit and financial institutions; share relevant information on ML/TF risks"
+    },
+    {
+      "id": "Art.65",
+      "title": "Cooperation in relation to auditors",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "Rules on cooperation between AML/CFT supervisors and auditor oversight bodies; information sharing on AML/CFT compliance findings"
+    },
+    {
+      "id": "Art.66",
+      "title": "Cooperation with authorities in charge of implementing targeted financial sanctions",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "AML/CFT supervisors cooperate with sanctions authorities to ensure coordinated approach to sanctions compliance supervision"
+    },
+    {
+      "id": "Art.67",
+      "title": "Professional secrecy requirements",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "All persons involved in AML/CFT supervision bound by professional secrecy; conditions for sharing confidential information"
+    },
+    {
+      "id": "Art.68",
+      "title": "Exchange of information among supervisors and with other authorities",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "Rules and safeguards for exchange of confidential information between AML/CFT supervisors and with other regulatory or law enforcement authorities"
+    },
+    {
+      "id": "Art.69",
+      "title": "AML/CFT cooperation guidelines",
+      "chapter": "V",
+      "theme": "Cooperation",
+      "requirement": "AMLA issues guidelines on cooperation arrangements between national supervisors and between supervisors and other authorities"
+    },
+    {
+      "id": "Art.70",
+      "title": "Processing of certain categories of personal data",
+      "chapter": "VI",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Rules on processing special categories of personal data for AML/CFT purposes; must comply with GDPR; proportionality and necessity requirements"
+    },
+    {
+      "id": "Art.71",
+      "title": "Exercise of the delegation",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Conditions for Commission delegated acts under this Directive; delegation period; Parliament and Council revocation rights"
+    },
+    {
+      "id": "Art.72",
+      "title": "Committee procedure",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Commission assisted by Committee on Prevention of Money Laundering and Terrorist Financing for implementing acts"
+    },
+    {
+      "id": "Art.73",
+      "title": "Transitional management of FIU.net",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Transitional arrangements for management of FIU.net system pending transfer to AMLA"
+    },
+    {
+      "id": "Art.74",
+      "title": "Amendments to Directive (EU) 2015/849",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Technical amendments to AMLD4 to align with the new AML/CFT framework"
+    },
+    {
+      "id": "Art.75",
+      "title": "Amendment to Directive (EU) 2019/1937",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Amendment to Whistleblower Directive to cover AML/CFT breach reporting"
+    },
+    {
+      "id": "Art.76",
+      "title": "Review",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Commission reviews application of this Directive and reports to Parliament and Council; considers effectiveness and need for amendments"
+    },
+    {
+      "id": "Art.77",
+      "title": "Repeal",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "AMLD4 (Directive 2015/849) and its amendments repealed with effect from 10 July 2027"
+    },
+    {
+      "id": "Art.78",
+      "title": "Transposition",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Member States must transpose this Directive into national law by 10 July 2027"
+    },
+    {
+      "id": "Art.79",
+      "title": "Entry into force",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "Directive enters into force on the twentieth day following publication in the Official Journal"
+    },
+    {
+      "id": "Art.80",
+      "title": "Addressees",
+      "chapter": "VII",
+      "theme": "Data Protection & Final Provisions",
+      "requirement": "This Directive is addressed to the Member States"
+    }
+  ],
+  "divisionKind": "Chapter",
+  "articleSource": {
+    "celex": "CELEX:32024L1640",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  }
 }
