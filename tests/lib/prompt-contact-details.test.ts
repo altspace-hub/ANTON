@@ -46,7 +46,12 @@ const PHONE = new RegExp(
     String.raw`\b0800[\s-]?\d{3}[\s-]?\d{3,4}\b`,
     String.raw`\b\d{4}-\d{3,4}-\d{3,4}\b`,
     String.raw`\b0\d{9,11}\b`,
+    // A short code is still a number to dial. Counted only next to an instruction
+    // to dial it, because three- and four-digit runs are everywhere in prose —
+    // which is exactly how "call 1930" slipped past the first version of this guard.
+    String.raw`\b(?:call|dial|ring|phone)\b[^.\n]{0,12}\b\d{3,5}\b`,
   ].join('|'),
+  'i',
 );
 
 /** Things that look numeric but are not contact details. */
@@ -117,6 +122,7 @@ describe('module prompts do not hand out telephone numbers', () => {
       '**Ghana:** CHRAJ — 0800 800 800 (toll-free).',
       '- India: Vandrevala Foundation — 1860-2662-345',
       '- Nigeria: SURPIN — 08060601000',
+      '- **India:** Cyber Crime Portal — cybercrime.gov.in, call 1930',
     ];
     for (const p of phones) {
       expect(PHONE.test(p), `should be read as a phone number: ${p}`).toBe(true);
@@ -129,6 +135,7 @@ describe('module prompts do not hand out telephone numbers', () => {
       'The transposition deadline was 10 July 2027, four years after 2023.',
       'Regulation (EU) 2024/1624 applies from that date.',
       'Keep the letter to 400-600 words maximum.',
+      'Call the meeting to order once all 12 directors are present.',
       'ISO 27001:2022 Annex A control 8.12 covers data leakage.',
     ];
     for (const p of notPhones) {
