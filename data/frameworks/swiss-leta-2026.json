@@ -9,13 +9,33 @@
   "supervisor": "Federal Office of Justice + FINMA + MROS",
   "approxEntitiesAffected": 600000,
   "fatfAlignment": "R.24 + R.25 (beneficial ownership transparency)",
-  "articleCount": 10,
+  "articleCount": 15,
   "chapters": [
-    {"number": "1", "title": "Object and scope", "articles": "1-3"},
-    {"number": "2", "title": "Reporting obligations", "articles": "4-7"},
-    {"number": "3", "title": "Verification + retention", "articles": "8-10"},
-    {"number": "4", "title": "Register access", "articles": "11-14"},
-    {"number": "5", "title": "Sanctions", "articles": "15-18"}
+    {
+      "number": "1",
+      "title": "Object and scope",
+      "articles": "1-3"
+    },
+    {
+      "number": "2",
+      "title": "Reporting obligations",
+      "articles": "4-7"
+    },
+    {
+      "number": "3",
+      "title": "Verification + retention",
+      "articles": "8-10"
+    },
+    {
+      "number": "4",
+      "title": "Register access",
+      "articles": "11-14"
+    },
+    {
+      "number": "5",
+      "title": "Sanctions",
+      "articles": "15-18"
+    }
   ],
   "themes": [
     "Scope determination",

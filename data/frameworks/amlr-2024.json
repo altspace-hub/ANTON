@@ -10,47 +10,47 @@
   "chapters": [
     {
       "number": "I",
-      "title": "General Provisions",
+      "title": "General provisions",
       "articles": "1-8"
     },
     {
       "number": "II",
-      "title": "Internal Policies, Procedures and Controls",
+      "title": "Internal policies, procedures and controls of obliged entities",
       "articles": "9-18"
     },
     {
       "number": "III",
-      "title": "Customer Due Diligence",
+      "title": "Customer due diligence",
       "articles": "19-50"
     },
     {
       "number": "IV",
-      "title": "Beneficial Ownership Transparency",
+      "title": "Beneficial ownership transparency",
       "articles": "51-68"
     },
     {
       "number": "V",
-      "title": "Reporting Obligations",
+      "title": "Reporting obligations",
       "articles": "69-74"
     },
     {
       "number": "VI",
-      "title": "Information Sharing",
+      "title": "Information sharing",
       "articles": "75"
     },
     {
       "number": "VII",
-      "title": "Data Protection and Record Retention",
+      "title": "Data protection and record retention",
       "articles": "76-78"
     },
     {
       "number": "VIII",
-      "title": "Measures to Mitigate Risks from Anonymous Instruments",
+      "title": "Measures to mitigate risks deriving from anonymous instruments",
       "articles": "79-80"
     },
     {
       "number": "IX",
-      "title": "Final Provisions",
+      "title": "Final provisions",
       "articles": "81-90"
     }
   ],
@@ -228,7 +228,7 @@
     },
     {
       "id": "Art.21",
-      "title": "Inability to comply with customer due diligence requirements",
+      "title": "Inability to comply with the requirement to apply customer due diligence measures",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -236,7 +236,7 @@
     },
     {
       "id": "Art.22",
-      "title": "Identification and verification of customer and beneficial owner identity",
+      "title": "Identification and verification of the identity of customers and beneficial owners",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -244,7 +244,7 @@
     },
     {
       "id": "Art.23",
-      "title": "Timing of verification",
+      "title": "Timing of the verification of the customer and beneficial owner identity",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -252,7 +252,7 @@
     },
     {
       "id": "Art.24",
-      "title": "Reporting discrepancies with beneficial ownership registers",
+      "title": "Reporting of discrepancies with information contained in beneficial ownership registers",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -260,7 +260,7 @@
     },
     {
       "id": "Art.25",
-      "title": "Identification of purpose and intended nature of business relationship",
+      "title": "Identification of the purpose and intended nature of a business relationship or occasional transaction",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -268,7 +268,7 @@
     },
     {
       "id": "Art.26",
-      "title": "Ongoing monitoring of business relationship and transactions",
+      "title": "Ongoing monitoring of the business relationship and monitoring of transactions performed by customers",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -284,7 +284,7 @@
     },
     {
       "id": "Art.28",
-      "title": "Regulatory technical standards on customer due diligence information",
+      "title": "Regulatory technical standards on the information necessary for the performance of customer due diligence",
       "chapter": "III",
       "section": "General Provisions",
       "theme": "Customer Due Diligence",
@@ -292,7 +292,7 @@
     },
     {
       "id": "Art.29",
-      "title": "Identification of third countries with significant strategic deficiencies",
+      "title": "Identification of third countries with significant strategic deficiencies in their national AML/CFT regimes",
       "chapter": "III",
       "section": "Third-Country Policy and ML/TF Threats",
       "theme": "Customer Due Diligence",
@@ -300,7 +300,7 @@
     },
     {
       "id": "Art.30",
-      "title": "Identification of third countries with compliance weaknesses",
+      "title": "Identification of third countries with compliance weaknesses in their national AML/CFT regimes",
       "chapter": "III",
       "section": "Third-Country Policy and ML/TF Threats",
       "theme": "Customer Due Diligence",
@@ -308,7 +308,7 @@
     },
     {
       "id": "Art.31",
-      "title": "Identification of third countries posing specific threats to the Union's financial system",
+      "title": "Identification of third countries posing a specific and serious threat to the Union's financial system",
       "chapter": "III",
       "section": "Third-Country Policy and ML/TF Threats",
       "theme": "Customer Due Diligence",
@@ -316,7 +316,7 @@
     },
     {
       "id": "Art.32",
-      "title": "Guidelines on ML/TF risks, trends and methods",
+      "title": "Guidelines on money laundering and terrorist financing risks, trends and methods",
       "chapter": "III",
       "section": "Third-Country Policy and ML/TF Threats",
       "theme": "Customer Due Diligence",
@@ -340,7 +340,7 @@
     },
     {
       "id": "Art.35",
-      "title": "Countermeasures to mitigate ML/TF threats from outside the Union",
+      "title": "Countermeasures to mitigate money laundering and terrorist financing threats from outside the Union",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -348,7 +348,7 @@
     },
     {
       "id": "Art.36",
-      "title": "Enhanced due diligence for cross-border correspondent relationships",
+      "title": "Specific enhanced due diligence measures for cross-border correspondent relationships",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -356,7 +356,7 @@
     },
     {
       "id": "Art.37",
-      "title": "Enhanced due diligence for crypto-asset service providers",
+      "title": "Specific enhanced due diligence measures for cross-border correspondent relationships for crypto-asset service providers",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -380,7 +380,7 @@
     },
     {
       "id": "Art.40",
-      "title": "Measures to mitigate risks from self-hosted addresses",
+      "title": "Measures to mitigate risks in relation to transactions with a self-hosted address",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -388,7 +388,7 @@
     },
     {
       "id": "Art.41",
-      "title": "Specific provisions for residence by investment scheme applicants",
+      "title": "Specific provisions regarding applicants for residence by investment schemes",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -412,7 +412,7 @@
     },
     {
       "id": "Art.44",
-      "title": "PEPs as beneficiaries of insurance policies",
+      "title": "Politically exposed persons who are beneficiaries of insurance policies",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -420,7 +420,7 @@
     },
     {
       "id": "Art.45",
-      "title": "Measures for persons ceasing to be PEPs",
+      "title": "Measures for persons who cease to be politically exposed persons",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -428,7 +428,7 @@
     },
     {
       "id": "Art.46",
-      "title": "Family members and close associates of PEPs",
+      "title": "Family members and persons known to be close associates of politically exposed persons",
       "chapter": "III",
       "section": "Enhanced Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -436,7 +436,7 @@
     },
     {
       "id": "Art.47",
-      "title": "Specifications for life and investment-related insurance sector",
+      "title": "Specifications for the life and other investment-related insurance sector",
       "chapter": "III",
       "section": "Specific Customer Due Diligence Provisions",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -444,7 +444,7 @@
     },
     {
       "id": "Art.48",
-      "title": "General provisions on reliance",
+      "title": "General provisions relating to reliance on other obliged entities",
       "chapter": "III",
       "section": "Reliance on Customer Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -460,7 +460,7 @@
     },
     {
       "id": "Art.50",
-      "title": "Guidelines on reliance",
+      "title": "Guidelines on reliance on other obliged entities",
       "chapter": "III",
       "section": "Reliance on Customer Due Diligence",
       "theme": "Enhanced Due Diligence & PEPs",
@@ -620,7 +620,7 @@
     },
     {
       "id": "Art.70",
-      "title": "Specific provisions for certain obliged entity categories",
+      "title": "Specific provisions for reporting of suspicions by certain categories of obliged entities",
       "chapter": "V",
       "section": null,
       "theme": "Reporting Obligations & Information Sharing",
@@ -652,7 +652,7 @@
     },
     {
       "id": "Art.74",
-      "title": "Threshold-based reports of transactions in high-value goods",
+      "title": "Threshold-based reports of transactions in certain high-value goods",
       "chapter": "V",
       "section": null,
       "theme": "Reporting Obligations & Information Sharing",
@@ -660,7 +660,7 @@
     },
     {
       "id": "Art.75",
-      "title": "Exchange of information in partnerships",
+      "title": "Exchange of information in the framework of partnerships for information sharing",
       "chapter": "VI",
       "section": null,
       "theme": "Reporting Obligations & Information Sharing",
@@ -692,7 +692,7 @@
     },
     {
       "id": "Art.79",
-      "title": "Anonymous accounts and bearer shares",
+      "title": "Anonymous accounts and bearer shares and bearer share warrants",
       "chapter": "VIII",
       "section": null,
       "theme": "Anonymous Instruments & Cash Limits",
@@ -700,7 +700,7 @@
     },
     {
       "id": "Art.80",
-      "title": "Limits to large cash payments",
+      "title": "Limits to large cash payments in exchange for goods or services",
       "chapter": "VIII",
       "section": null,
       "theme": "Anonymous Instruments & Cash Limits",
@@ -708,7 +708,7 @@
     },
     {
       "id": "Art.81",
-      "title": "Cooperation between FIUs and European Public Prosecutor's Office",
+      "title": "Cooperation between FIUs and the EPPO",
       "chapter": "IX",
       "section": "Cooperation between FIUs and EPPO",
       "theme": "Final Provisions",
@@ -716,7 +716,7 @@
     },
     {
       "id": "Art.82",
-      "title": "Requests for information to EPPO",
+      "title": "Requests for information to the EPPO",
       "chapter": "IX",
       "section": "Cooperation between FIUs and EPPO",
       "theme": "Final Provisions",
@@ -740,7 +740,7 @@
     },
     {
       "id": "Art.85",
-      "title": "Exercise of delegation",
+      "title": "Exercise of the delegation",
       "chapter": "IX",
       "section": "Other Provisions",
       "theme": "Final Provisions",
@@ -786,5 +786,12 @@
       "theme": "Final Provisions",
       "requirement": "Enters into force 20 days after publication in OJ; applies from 10 July 2027; Art.5 (football clubs) applies from 10 July 2029"
     }
-  ]
+  ],
+  "divisionKind": "Chapter",
+  "articleSource": {
+    "celex": "CELEX:32024R1624",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "Headings verbatim. Requirements are the curated Wave 3 text."
+  }
 }
