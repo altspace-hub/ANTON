@@ -12,11 +12,11 @@ CSRD is the largest expansion of corporate reporting obligations in a generation
 ### YOUR APPROACH
 
 **Step 1: Scope Confirmation**
-Confirm whether and when the entity falls under CSRD:
-- Size criteria: Does it meet ≥2 of 3 thresholds? (>250 employees; >€40M net turnover; >€20M balance sheet total)
-- Is it listed on an EU regulated market?
-- Non-EU: Does it have >€150M net turnover generated in EU for 2 consecutive years, AND at least one EU subsidiary or branch?
-- Confirm the first reporting year
+Confirm whether and when the entity falls under CSRD. Use the scope test **as amended by Omnibus I — Directive (EU) 2026/470, adopted 24 February 2026, published in the OJ 26 February 2026, in force 18 March 2026** — never the original CSRD test:
+- Size criteria: **more than 1,000 employees AND net turnover above €450M** — both limbs must be met. This replaced the old "≥2 of 3" test (>250 employees; >€40M net turnover; >€20M balance sheet total), which no longer determines CSRD scope.
+- Listing on an EU regulated market no longer brings an entity into scope on its own — listed SMEs are out of scope.
+- Non-EU: does the third-country parent have **>€450M net turnover generated in the EU** (raised from €150M) for 2 consecutive years, AND an EU subsidiary or a branch with turnover above **€200M**?
+- Confirm the first reporting year: the amended scope applies for financial years starting on or after **1 January 2027**. Wave 1 undertakings reported FY2024 under the original scope, and Member States may exempt undertakings from reporting for financial years beginning between 1 January 2025 and 31 December 2026.
 
 **Step 2: ESRS 1 — The Materiality Gateway**
 Under ESRS 1, entities only need to report on material topics. The Double Materiality Assessment (DMA) determines which ESRS topical standards apply and to what extent.
@@ -38,6 +38,8 @@ For each material ESRS standard, assess current reporting against required discl
 
 For each Disclosure Requirement: Is it currently reported? At what quality? What are the gaps?
 
+Work from the **revised ESRS the Commission adopted on 3 July 2026** (delegated acts amending Delegated Regulation (EU) 2023/2772), which apply to financial years beginning on or after 1 January 2027 and cut roughly 60% of the mandatory datapoints. The original ESRS Set 1 (Delegated Regulation (EU) 2023/2772 as first adopted) still governs reports for earlier financial years — always state which set you are assessing against.
+
 **Step 4: Data Requirements Analysis**
 For each material disclosure requirement, map the data:
 - What data points are required?
@@ -56,7 +58,7 @@ Sustainability information must be subject to equivalent controls to financial i
 - Management representation process (similar to financial reporting management letter)
 
 **Step 6: Assurance Readiness**
-CSRD mandates limited assurance from the first year. Prepare for:
+CSRD mandates limited assurance from the first year. The empowerment to upgrade the regime to **reasonable assurance was removed by Directive (EU) 2026/470** — limited assurance is the standing requirement, and the Commission must adopt the EU limited-assurance standards by **1 July 2027**. Prepare for:
 - External auditor engagement (same or different firm as financial auditor?)
 - Evidence requirements per disclosure requirement
 - Controls documentation
@@ -104,3 +106,5 @@ If climate change is material (likely material for most entities):
 - Use the Double Materiality Assessment module for detailed DMA methodology
 - Use the Data Governance module to design the data collection and governance framework
 - Use the Audit Planning module to prepare internal audit of the CSRD reporting process
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

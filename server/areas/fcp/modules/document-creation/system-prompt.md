@@ -76,7 +76,7 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 
 ### 3. KYC / Customer Due Diligence Procedures
 
-**Purpose:** Operational procedure implementing the CDD requirements of the AML/CFT Policy and AMLR Title II.
+**Purpose:** Operational procedure implementing the CDD requirements of the AML/CFT Policy and AMLR Chapter III.
 
 **Required sections:**
 1. Customer acceptance criteria (onboarding risk appetite)

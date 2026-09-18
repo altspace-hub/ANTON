@@ -12,7 +12,7 @@ Agent banking oversight requirements vary by jurisdiction but share common eleme
 
 - **FATF R.14 Note**: MMOs are responsible for AML/CFT compliance of their agents; reliance on agents does not transfer liability
 - **CBK (Kenya)**: CBK Agent Banking Guidelines; agents must be registered with CBK; principal bank/MMO bears full liability
-- **CBN (Nigeria)**: CBN Guidelines on Agent Banking 2013; super-agent model; tiered agent categories
+- **CBN (Nigeria)**: CBN Guidelines on Agent Banking issued 6 October 2025, effective 1 April 2026, replacing the 2013 guidelines. The super-agent model and tiered agent categories remain, but POS agents may now serve only one principal (single-principal exclusivity), customer cash transactions are capped at ₦100,000 daily and ₦500,000 weekly, and agent cash-out is capped at ₦1.2m per day. These are commercial constraints as much as compliance ones — they reset agent revenue, float sizing, and the viability of multi-principal agents
 - **Bank of Ghana**: BOG Payment Service Provider Guidelines; dedicated agent registration requirements
 - **Bangladesh Bank**: Agent Banking Guidelines 2017; strict agent eligibility criteria including financial soundness
 - **GSMA Code of Conduct**: Sections 3-5 cover agent due diligence, training, and ongoing oversight obligations
@@ -46,6 +46,7 @@ Assess and design controls across five areas:
 
 ### 4. Liquidity Management
 - Float requirement and minimum balance standards
+- Regulatory caps on agent cash-out and on customer transaction limits (Nigeria, from 1 April 2026) bound both float sizing and agent earning capacity — model them explicitly rather than treating limits as a compliance-only concern
 - E-float (electronic value) and physical cash float balance management
 - Rebalancing mechanisms: bank deposits, super-agent float transfers
 - Liquidity failure consequences for customers (inability to cash out) and how to monitor
@@ -62,3 +63,5 @@ Assess and design controls across five areas:
 ## Output Standards
 
 Score the operator's current state against each area on a RAG basis. For gaps, provide specific, actionable remediation steps with realistic effort estimates (days/weeks). The policy document output should be structured as an Agent Management Policy suitable for regulatory submission.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

@@ -34,6 +34,9 @@ In financial services, regulatory requirements often determine whether and how t
 
 Who is in this market and how strong are they?
 
+- **Market structure**: concentrated (a few large players) or fragmented (many small ones)? Each implies a different entry route — a fragmented market can be entered by out-executing; a concentrated one usually cannot be entered without a structural advantage or an acquisition.
+- **Barriers to entry**: scale, regulation, switching costs, network effects, capital requirements, access to talent, distribution control. Rank them by how binding each one is for us specifically.
+- **White space**: is there an underserved segment or unmet need that gives a protected entry point? A defensible niche beats a share of the mainstream for a new entrant.
 - **Incumbent competitors**: who are they? What is their market share? What is their competitive advantage? (Scale, relationships, brand, technology, regulatory standing)
 - **Entrant competitors**: Who has entered recently? Were they successful? What did they learn?
 - **Competitive response**: How will incumbents respond to a new entrant? (Price war, client retention campaigns, regulatory complaints, copying the product)
@@ -61,12 +64,41 @@ The most common market entry failure: running out of capital before reaching pro
 - **Payback period**: When does the cumulative investment break even?
 - **Funding requirements**: Is additional capital needed? When? From where?
 
-**6. Go/No-Go Recommendation**
+**6. Critical Success Factors and Risk Register**
+
+*Critical success factors* — at least three specific, testable statements of what must be true for entry to succeed. "Strong execution" is not a success factor; "we secure a distribution partner with an existing book of at least 5,000 SME customers within nine months" is.
+
+*Risk register* — tabulate the entry risks with probability, impact and a named mitigation. Cover at minimum:
+
+| Risk | Probability | Impact | Mitigation |
+|---|---|---|---|
+| Competitive response from incumbents (price war, retention campaign) | | | |
+| Regulatory delay or refusal of authorisation | | | |
+| Customer acquisition cost materially above plan | | | |
+| Talent and capability gaps in the new market | | | |
+| Economic or market downturn during the ramp | | | |
+| Partner or acquisition-target dependency | | | |
+
+Add market-specific risks; do not leave a row blank because the data is thin — state the estimate and its basis.
+
+**7. Go/No-Go Recommendation**
 
 Synthesise the analysis into a clear recommendation:
 - **Go**: Proceed with entry. Recommend: entry mode, timeline, investment required, key conditions for success, key risks to manage.
 - **No Go**: Do not proceed. Explain: the key barriers or risks that make entry inadvisable at this time. Are there conditions under which entry would be recommended?
 - **Conditional**: Entry could work under specific conditions. Define the conditions clearly (e.g., "if we can find a local partner with an existing client base", "if the regulatory approval timeline is under 12 months").
+
+**8. Next Steps**
+
+Where entry is recommended (or conditionally recommended), close with what happens next rather than leaving the reader with an analysis:
+- **Primary research required before committing** — what must be verified first-hand (regulator pre-application meeting, customer interviews, partner conversations, local cost validation), and what each would cost
+- **Decision milestones and stage gates** — the points at which the organisation re-decides, and the evidence required at each
+- **Resource requirements** — FTE, capital, and calendar time to the first gate
+- **First 90-day actions** — specific, owned, dated
+
+### INFORMATION QUALITY
+
+Say what kind of claim each number is. Distinguish "per [named source]" from "this is an estimate based on [stated assumption]" from "this is unknown and matters". Challenge the picture where the parts disagree — if the TAM looks large but the barriers are severe, say so rather than reporting both and leaving the tension to the reader. Connect the analysis to this organisation's actual capabilities; a generic market overview is not a market entry assessment.
 
 ### FINANCIAL SERVICES SPECIFIC CONSIDERATIONS
 

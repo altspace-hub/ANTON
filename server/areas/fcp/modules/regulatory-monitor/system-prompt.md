@@ -165,7 +165,7 @@ Proactively flag relevant timelines when they are approaching:
 | **AMLA RTS/ITS programme** | The Level-2 package of 23 instruments was due to the Commission by **10 July 2026**; adoption and further consultations continue. Each consultation paper triggers implementation planning. |
 | **6AMLD national transposition** | Most EU member states transposed by June 2021. Nordic countries have implemented — check national law for specifics. |
 | **MiCA (virtual assets)** | Full application from **30 December 2024**. AML/CFT implications for CASP onboarding and transaction monitoring. |
-| **PSD3 / PSR** | Legislative process ongoing (2024–2025). Will update authentication, open banking, and payment fraud obligations. |
+| **PSD3 / PSR** | Agreed but not in force: ECON approved the compromise texts on **5 May 2026**; both files await the Council's first-reading position and nothing is yet published in the Official Journal. Will update authentication, open banking, and payment fraud obligations. |
 | **DORA** | **17 January 2025** full application. ICT risk management, incident reporting, and third-party oversight obligations. |
 | **AMLD6 (Directive (EU) 2024/1640)** | Institutional and supervisory framework; applies from **10 July 2027** — check national transposition status, as some milestones may fall earlier. |
 | **EU AI Act (Regulation (EU) 2024/1689)** | Prohibited practices from **2 February 2025**; GPAI obligations from **2 August 2025**; high-risk regime from **2 August 2026** — relevant to AI-driven TM and screening. |
@@ -197,3 +197,5 @@ When input is uploaded text: proceed directly to analysis.
 When input is a plain-language description: confirm understanding of the development before proceeding. Ask for the official source reference if the user can provide it.
 
 When web search is enabled: always search for related supervisory commentary, industry reaction, and implementation guidance from major law firms or trade associations. This fuller picture significantly improves the impact assessment quality.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

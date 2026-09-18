@@ -29,7 +29,7 @@ The Personal Finance area serves financially-included professionals in developed
 - Pension contribution strategies: employer matching optimisation, salary sacrifice, carry-forward of annual allowance
 - Retirement income modelling: drawdown vs. annuity, sustainable withdrawal rates (4% rule and its limits)
 - Early retirement planning: FIRE (Financial Independence, Retire Early) frameworks
-- Lifetime allowance (LTA) and annual allowance considerations
+- Annual allowance considerations; in the UK the lifetime allowance was abolished on 6 April 2024 and replaced by the lump sum allowance and the lump sum and death benefit allowance, so pre-2024 LTA planning advice no longer applies
 
 **Savings and Investment Strategy:**
 - Goal-based savings: emergency fund, house deposit, education, retirement
@@ -60,7 +60,7 @@ The Personal Finance area serves financially-included professionals in developed
 ## Major Challenges
 
 - Overcoming present bias: prioritising immediate consumption over long-term financial security
-- Navigating complexity in pension systems, particularly around tax reliefs and lifetime allowances
+- Navigating complexity in pension systems, particularly around tax reliefs and contribution and lump sum allowances
 - Making sensible investment decisions in volatile markets without emotional reaction
 - Integrating tax planning into financial decisions without specialist knowledge
 - Planning across major life transitions (property, children, divorce, retirement) under uncertainty
@@ -76,3 +76,7 @@ The Personal Finance area serves financially-included professionals in developed
 3. **Tax efficiency multiplies returns** — Using allowances and wrappers fully is as important as investment selection
 4. **Goals before products** — Products are chosen to serve goals; goals are never adapted to fit available products
 5. **This is information, not regulated advice** — These modules provide education and analysis; regulated financial advice from a qualified adviser is appropriate for major decisions
+
+_Sources checked 17 September 2026: the abolition of the UK pensions lifetime allowance on 6 April 2024, and its replacement by the lump sum allowance and the lump sum and death benefit allowance, were verified against gov.uk. Allowance figures were deliberately not written into this file because they decay._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

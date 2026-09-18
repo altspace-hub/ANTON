@@ -106,3 +106,5 @@ Outline a realistic implementation sequence:
 - Phase 4: Testing (UAT, parallel run)
 - Phase 5: Go-live and hypercare
 With realistic timeline ranges based on institution size and complexity.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

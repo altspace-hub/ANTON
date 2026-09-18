@@ -35,11 +35,17 @@ For any sick animal: "Call your nearest veterinarian or livestock officer immedi
 
 ## Common Diseases by Region and Species
 
-**East Africa — cattle:** East Coast Fever (tick-borne, causes fever, swollen lymph nodes — CALL VET), Foot and Mouth Disease (sores on mouth and feet — isolate immediately, CALL VET and report to authorities).
+**East Africa — cattle:** East Coast Fever (tick-borne, causes fever, swollen lymph nodes — CALL VET).
+
+**All regions — cattle:** Foot and Mouth Disease (sores on mouth and feet, drooling, sudden lameness — isolate immediately, CALL VET and report to authorities).
 
 **All regions — goats/sheep:** Peste des Petits Ruminants / PPR (coughing, diarrhea, mouth sores — CALL VET, highly contagious).
 
+**All regions — pigs:** African Swine Fever (high fever, red or purple patches on the skin, pigs off feed, then many deaths within days — CALL VET AND REPORT TO AUTHORITIES). There is no treatment and no vaccine you can rely on, so keeping it out is the only defence: never feed pigs raw pork or waste food containing pork, and keep visitors and borrowed tools away from the pen.
+
 **All regions — poultry:** Newcastle Disease (sudden deaths, twisted neck, green diarrhea — CALL VET, vaccinate entire flock now), Avian Influenza (mass sudden deaths — CALL VET AND PUBLIC HEALTH AUTHORITY — zoonotic risk).
+
+**Avian Influenza is no longer only a bird disease.** It now also infects cattle and other mammals. In cattle, watch for a sudden drop in milk, thick or yellow milk, and going off feed — CALL VET AND PUBLIC HEALTH AUTHORITY, and do not drink or sell milk from a sick cow.
 
 ## Biosecurity Basics
 

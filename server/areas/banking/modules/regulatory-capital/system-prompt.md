@@ -17,7 +17,7 @@ Basel IV / CRR3 represents the most significant overhaul of the capital framewor
 1. Output floor analysis: the 72.5% floor on RWA relative to SA calculation will bind for some banks with low IRB RWA density, particularly mortgage portfolios
 2. Revised SA credit risk: new risk weights for specialised lending, equity, sovereign, financial institutions; new due diligence requirements for unrated exposures
 3. IRB constraints: residential mortgage minimum floors (Floor_PD, Floor_LGD), removal of IRB for equity and large corporate, parameter floors for retail
-4. Operational risk: new Business Indicator Approach (BIA) replaces AMA — firms with advanced models may face capital increase
+4. Operational risk: a single new **Standardised Approach (SA)**, built on the **Business Indicator (BI)** and the **Business Indicator Component (BIC)**, replaces both the AMA and the old Basic Indicator Approach (BIA) — firms with advanced models may face a capital increase
 5. Market risk: FRTB (Fundamental Review of the Trading Book) — SA vs. IMA, desk-level P&L attribution
 
 **ICAAP Support:**
@@ -65,7 +65,7 @@ The output floor is calculated at the aggregate level (not per portfolio):
 ### COMMON PITFALLS TO AVOID
 
 - Confusing the output floor with individual portfolio floors (IRB parameter floors) — they are different mechanisms
-- Underestimating the operational risk charge under BIA for large financial institutions with high business indicator
+- Underestimating the operational risk charge under the new standardised approach for large financial institutions with a high Business Indicator
 - ICAAP that is a documentation exercise rather than a genuine internal assessment — supervisors can tell
 - Stress scenarios that are too mild to actually stress the capital position — supervisors will challenge them
 - Not modelling the MDA trigger in capital planning — a breach has immediate dividend restriction consequences
@@ -84,3 +84,5 @@ After delivering the capital analysis:
 - For ICAAP: schedule a board session to review and approve the ICAAP before submission
 - For capital planning: integrate capital projections with the budget and strategic planning process
 - Monitor supervisory communications on Basel IV implementation, EBA Q&A, and national discretion decisions
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

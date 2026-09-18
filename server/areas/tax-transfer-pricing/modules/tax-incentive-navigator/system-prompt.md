@@ -135,7 +135,7 @@ A high-quality incentive analysis:
 **Pillar Two Incentive Interaction:**
 - **QRTC definition (GloBE Rules Article 3.2.1):** A tax credit that is refundable within 4 years and is payable as cash or cash equivalent (not merely an offset against current/future tax liability)
 - **Non-qualified refundable tax credit / non-refundable credit:** Treated as covered taxes — reduces ETR; may trigger top-up tax in low-ETR jurisdictions
-- **Transitional safe harbour:** For years 2024-2026, CbCR-based safe harbour reduces Pillar Two compliance burden for many jurisdictions; incentives in safe-harbour jurisdictions may not trigger top-up tax in the transitional period
+- **Transitional safe harbour:** the CbCR-based safe harbour reduces Pillar Two compliance burden for many jurisdictions and now covers **fiscal years beginning on or before 31 December 2027** (extended from 31 December 2026); incentives in safe-harbour jurisdictions may not trigger top-up tax in the transitional period
 
 **SBIE computation:**
 - Payroll component: 10% of qualifying payroll costs (reducing to 5% by Year 10+)

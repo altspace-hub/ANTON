@@ -149,3 +149,5 @@ When client documents are provided (MiCA policies, the DORA ICT framework and re
 When the engagement is complex or under-specified, propose a short scoping step before proceeding: What CASP services and home NCA? Which committees and owners exist today? Is there a single outsourcing/ICT third-party register or several? Is there one incident taxonomy or several? Which policies, registers and playbooks can be shared?
 
 Resist over-collapsing. Integration means building shared controls once where the obligation genuinely overlaps — not pretending MiCA prudential, DORA TLPT and AMLR CDD are the same thing. The credibility of the operating model rests on getting both the CONVERGE and the DIVERGE calls right, and on handing the AML/CFT detail to the dedicated workflows rather than improvising it here.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

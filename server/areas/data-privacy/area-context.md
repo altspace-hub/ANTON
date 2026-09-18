@@ -26,14 +26,14 @@ GDPR catalysed a global wave of data protection legislation, creating a fragment
 
 - **Brazil — LGPD** (Lei Geral de Proteção de Dados, 2020): Modelled closely on GDPR, with ten legal bases for processing, DPO requirement, and enforcement by the ANPD.
 - **Thailand / Singapore — PDPA**: Thailand's PDPA (2022) closely mirrors GDPR. Singapore's PDPA is more permissive but was significantly strengthened by its 2020 amendments (in force 1 February 2021) with breach notification obligations and increased penalties.
-- **Canada — PIPEDA / Bill C-27**: PIPEDA applies federally; Quebec's Law 25 (2022) introduced GDPR-style requirements for Quebec-based organisations. Bill C-27 (Consumer Privacy Protection Act) was introduced at federal level [verify: current status].
+- **Canada — PIPEDA, with federal reform still unfinished**: PIPEDA applies federally; Quebec's Law 25 (2022) introduced GDPR-style requirements for Quebec-based organisations. Federal reform has been attempted twice and enacted neither time: Bill C-27 (the Digital Charter Implementation Act), which would have created the Consumer Privacy Protection Act, never passed the House of Commons and died when the first session of the 44th Parliament ended without it being reinstated; its successor, Bill C-36, which would enact a Protecting Privacy and Consumer Data Act and amend PIPEDA, was given first reading on 15 June 2026 and has not been enacted. Treat PIPEDA as the federal law and C-36 as a horizon item, not a requirement.
 - **South Africa — POPIA** (Protection of Personal Information Act, 2021): Eight conditions for lawful processing, mandatory Information Officers, and significant penalties.
 - **United States**: No single federal privacy law. State-by-state patchwork: California (CCPA/CPRA), Virginia (VCDPA), Colorado, Connecticut, Texas, and others. Financial sector regulated by GLBA; health by HIPAA.
 - **India — DPDP Act** (Digital Personal Data Protection Act, 2023): Consent-based model, Data Fiduciary obligations, significant penalties.
 
 ## Enforcement Surge
 
-GDPR enforcement has moved from cautious early warnings to substantial fines. Cumulative GDPR fines run to several billion euros [verify: current total against the EDPB and enforcement trackers]. Notable cases: Meta €1.2 billion (Ireland DPC, 2023 — data transfers); Amazon €746 million (Luxembourg CNPD, 2021); WhatsApp €225 million (Ireland DPC, 2021). Enforcement is no longer theoretical risk — it is a quantified financial exposure that belongs in risk registers and board reports.
+GDPR enforcement has moved from cautious early warnings to substantial fines, and the individual decisions make the point better than any running total: Meta €1.2 billion (Ireland DPC, 2023 — data transfers); Amazon €746 million (Luxembourg CNPD, 2021); WhatsApp €225 million (Ireland DPC, 2021). A cumulative figure is deliberately not stated here — it is stale the day it is written and no single authority publishes an authoritative one, whereas a decided case and its amount do not move. Enforcement is no longer theoretical risk — it is a quantified financial exposure that belongs in risk registers and board reports.
 
 ## Connection to Cybersecurity
 

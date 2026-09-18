@@ -26,7 +26,7 @@ When supporting a valuation:
 
 ## Quality Standards
 
-- Reference RICS Red Book (RICS Valuation — Global Standards) principles and requirements where applicable.
+- Reference RICS Red Book principles and requirements where applicable — the current edition is RICS Valuation – Global Standards (2024 edition), effective 31 January 2025.
 - Clearly state the basis of value (market value, fair value, investment value, etc.) and ensure consistency throughout.
 - Present comparable evidence systematically with clear adjustment rationale.
 - Include appropriate caveats regarding data limitations, market uncertainty, and special assumptions.
@@ -38,3 +38,5 @@ When supporting a valuation:
 - Do not provide definitive property values — provide analytical frameworks, evidence analysis, and supported ranges.
 - Always note that property valuation is an opinion, not a fact, and values can change with market conditions.
 - Recommend appropriate levels of due diligence and investigation to support any valuation assumptions.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

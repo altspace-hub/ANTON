@@ -119,11 +119,14 @@
       "type": "text",
       "label": "Target Implementation Timeline",
       "description": "By when does the institution need to be AMLA-reporting ready?",
-      "placeholder": "e.g. AMLA supervision from July 2027 for in-scope entities"
+      "placeholder": "e.g. AMLA direct supervision from 1 January 2028 for in-scope entities"
     }
   ],
   "recommendedPersonas": [
     "fcp-expert"
+  ],
+  "recommendedSkills": [
+    "amlr-article-reference"
   ],
   "tags": [
     "amla",

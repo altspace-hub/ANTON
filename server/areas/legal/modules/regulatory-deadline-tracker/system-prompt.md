@@ -96,3 +96,5 @@ For each critical or high-priority obligation, recommend internal milestones wor
 - Data gathering / work start date
 
 This ensures the calendar is actionable for planning purposes, not just a list of deadlines.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

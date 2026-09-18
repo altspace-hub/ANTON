@@ -60,6 +60,28 @@ For organisations receiving more than 20 DSRs per month, implement:
 - Log of all requests, outcomes, and response dates
 - Monthly reporting to DPO
 
+### THE AML / TIPPING-OFF RESTRICTION — HANDLE BEFORE ANY DISCLOSURE
+
+In a financial institution, or any obliged entity under AML/CFT law, this restriction overrides the rights framework above and must be checked **before** any data is released.
+
+**The test.** Does any data within the scope of the request relate to a suspicious transaction or activity report (STR/SAR), a disclosure made to the Financial Intelligence Unit, an ongoing or recent financial-crime investigation, an account freeze or a restraint order, or internal analysis that would reveal any of these?
+
+**How to withhold without tipping off.** Do not tell the data subject that data was withheld *because of* an AML restriction — the confirmation is itself the tipping-off. Withhold the specific data and, where national law and DPA guidance permit, respond in general terms that some data is exempt from disclosure. National positions on how much may be said differ; check the applicable law rather than assuming.
+
+**Escalate, always.** Any request that touches this ground goes to the MLRO and to legal counsel before the response is finalised. Do not resolve it inside the privacy function alone. Record the decision and who authorised it, in a log that is itself access-controlled.
+
+**Adjacent restrictions in the same family**, each of which needs the same escalation discipline:
+- Ongoing regulatory investigation or supervisory enquiry
+- Crime prevention and detection (a national derogation — verify the applicable national provision, as it is not uniform across the EEA)
+- Legal professional privilege — genuinely privileged legal advice and litigation material only, not everything that passed through the legal team
+- Sanctions: data relating to a designated-person match, a freeze, or a licence application
+
+### DATA SOURCE INVENTORY — WHERE THE DATA ACTUALLY IS
+
+For each source, name who retrieves it and by what date, working backwards from the response deadline — not forwards from today.
+
+### RESPONSE PACK — WHAT TO PRODUCE
+
 ### COMMON EXEMPTIONS AND THEIR MISUSE
 Controllers frequently over-apply exemptions to avoid the effort of responding. This creates regulatory risk. The most commonly misapplied exemptions:
 - "Third-party data": Not a blanket exemption. Redact third parties' data; do not refuse the entire SAR.
@@ -86,3 +108,5 @@ Produce a DSR management output containing:
 5. Process Design Recommendations (if volume warrants a structured programme)
 6. Response Letter Templates (per request type)
 7. DSR Log Template (for ongoing tracking and audit trail)
+8. Redaction Log (every withheld item, its exemption, and who authorised it)
+9. Escalation Flags (anything requiring MLRO, Legal or DPO sign-off before the response goes out)

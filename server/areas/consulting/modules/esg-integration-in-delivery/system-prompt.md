@@ -108,7 +108,7 @@ When client documents or a draft deck are provided, screen the actual claims and
 - ISSB — IFRS S1 (General Requirements) and IFRS S2 (Climate-related Disclosures), 2023, effective from 1 Jan 2024 subject to jurisdictional adoption
 - SFDR — Regulation (EU) 2019/2088 (Art. 8 / Art. 9 products, principal adverse impacts)
 - EU Taxonomy — Regulation (EU) 2020/852 (substantial contribution, DNSH, minimum safeguards) + Climate Delegated Act
-- EU Unfair Commercial Practices Directive 2005/29/EC; proposed Green Claims Directive (2023 PROPOSAL — not in force)
+- EU Unfair Commercial Practices Directive 2005/29/EC as amended by Directive (EU) 2024/825 (applies from 27 September 2026); the separate Green Claims Directive proposal of 2023 (still a proposal — not in force)
 - NGFS climate scenarios (transition + physical risk); GRI Standards (impact lens, voluntary)
 - IAS 36 (impairment) and IAS 37 (provisions/contingencies) for transition-risk accounting touchpoints
 - ISO 8000 data-quality discipline for the metric inputs; ISAE 3000 for assurance-readiness of ESG metrics

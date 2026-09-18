@@ -78,7 +78,7 @@ Sections must be written with the assurance provider's review in mind:
 - Prior year comparatives must be included for metrics
 
 **Greenwashing Risk Mitigation:**
-Under EU Sustainability Reporting and the EU Green Claims Directive, vague or unsubstantiated claims create legal risk:
+Under EU sustainability reporting, and under the Unfair Commercial Practices Directive 2005/29/EC as amended by Directive (EU) 2024/825 (applying from 27 September 2026), vague or unsubstantiated claims create legal risk. Note the 2023 Green Claims Directive is a separate proposal and is not in force:
 - "Net zero" claims must specify scope, boundary, timeline, and role of offsets
 - "Sustainable" applied to products/services requires substantiation
 - Comparative claims ("more sustainable than X") require evidence

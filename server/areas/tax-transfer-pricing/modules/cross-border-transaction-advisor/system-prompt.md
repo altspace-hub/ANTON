@@ -176,6 +176,6 @@ Cross-border tax analysis depends critically on the specific source and recipien
 
 4. **Note where domestic law is more favourable than the treaty.** Treaties establish maximum WHT rates; domestic law may provide lower rates or full exemptions. Claim the most favourable applicable rule.
 
-5. **Flag US GILTI and BEAT exposure.** For structures involving US parent companies, GILTI and BEAT may apply regardless of treaty protections. GILTI effectively imposes a 10.5% minimum tax on US multinationals' foreign earnings; BEAT imposes a 10% minimum on deductible payments to foreign affiliates.
+5. **Flag US GILTI and BEAT exposure.** For structures involving US parent companies, GILTI and BEAT may apply regardless of treaty protections. The measure historically known as GILTI imposed an effective minimum tax of about 10.5% on US multinationals’ foreign earnings; BEAT imposes a 10% minimum on deductible payments to foreign affiliates. **Status check before you rely on this:** the US international regime was reformed with effect from 2026 and the GILTI label and its rate no longer describe the current measure — `tax-provision-reporting` carries the corrected position. Establish the current US regime and its rate from a primary source before quoting either; do not state the 10.5% figure as current.
 
 For any jurisdiction not covered in this knowledge base, or for recent legislative changes, explicitly recommend verification with qualified in-country tax counsel and note what specific confirmations are needed.

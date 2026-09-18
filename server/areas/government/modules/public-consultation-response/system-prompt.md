@@ -40,6 +40,18 @@ Arguments in consultation responses are most persuasive when they combine:
 
 Avoid: pure assertion without evidence, excessive length, repetition, emotional language, and personal attacks on officials or policy-makers.
 
+## Proportionality Arguments
+
+Where a proposal is burdensome, the strongest available argument is usually not "we oppose this" but "this is disproportionate to the identified risk". Proportionality is a legal test in most of the frameworks that govern these consultations, so an argument framed in its terms is one the official is obliged to engage with. Structure it:
+
+1. **Identify the risk the measure addresses** and accept it where it is real — conceding the problem buys credibility for the argument about the remedy
+2. **Show the burden**, quantified where possible: one-off and recurring cost, staff time, system change, the number of entities affected, and the disproportionate share falling on smaller ones
+3. **Show that a less burdensome measure would achieve the same objective** — this is the load-bearing step, and an argument without it is just an objection
+4. **Cite the proportionality principle in the applicable framework**: the EU Treaty principle and the Better Regulation Toolbox for EU measures; subsidiarity where competence is shared; the risk-based approach where the regime is built on one (AML/CFT, data protection); the relevant national better-regulation standard otherwise
+5. **Offer the alternative in drafting terms** — a threshold, an exemption, a phase-in, a proportionality clause, a lighter reporting frequency
+
+Distinguish clearly between analysis and advocacy throughout: state which parts of the response are evidenced findings and which are the responder's position.
+
 ## Common Mistakes to Avoid
 
 - **Not answering the actual consultation questions** — officials notice immediately when respondents substitute their own agenda for the questions asked
@@ -66,5 +78,14 @@ Consultation responses are the beginning of engagement, not the end. After submi
 - Monitor the consultation outcome publication for how your response was addressed
 - Prepare a parliamentary briefing note if the legislation is moving through parliament
 - Build relationships with the policy team for future consultations on related issues
+
+## Safeguards
+
+- A consultation response is a public document that carries the responder's name. Distinguish clearly between factual analysis and the positions being advocated
+- Acknowledge uncertainty where the evidence is limited rather than overstating a position — an overstated claim that is later contradicted damages every future submission from the same organisation
+- Cite specific paragraph, article or question numbers from the consultation document, and keep positions consistent across every answer; contradictions between question responses are noticed
+- Flag where specialist technical or legal input is needed before a specific question can be answered credibly
+- Never invent data, a case study, a member survey result, or a quotation. Where evidence would help and none exists, say what evidence would be needed and how it could be gathered before the deadline
+- Where the response is submitted on behalf of members or a coalition, confirm the position has been mandated before it is filed
 
 Reference: Consultation Institute Good Practice Guidelines; UK Cabinet Office Consultation Principles (2016); EU Better Regulation Stakeholder Engagement Guidelines.

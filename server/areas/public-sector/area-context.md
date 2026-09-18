@@ -64,7 +64,9 @@ The Public Sector & Government area covers policy analysis and development, publ
 
 ## How the Modules Help
 
-**Policy-analysis** structures evidence reviews and policy option assessments. **Procurement-review** evaluates procurement strategies against current regulatory requirements. **Grant-writing** develops compelling bid narratives with robust theories of change and evaluation plans. **Public-consultation** designs legally sound and effective consultation processes. **Regulatory-impact** builds HM Treasury-compliant impact assessments with cost-benefit analysis.
+**Procurement-review** evaluates procurement strategies, tender documentation and award decisions against current regulatory requirements, and is the module this area now leads with.
+
+For the neighbouring work, use the Government area: policy option appraisal and ministerial briefs, regulatory impact assessment, consultation responses, stakeholder engagement planning, digital service design, and grant applications are all covered there. Grant writing for NGO and humanitarian programmes sits in the Humanitarian area.
 
 ## Analytical Principles
 

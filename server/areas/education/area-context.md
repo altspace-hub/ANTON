@@ -34,7 +34,7 @@ The Education & Learning Design area supports educators, curriculum designers, i
 - Kirkpatrick Four Levels of Evaluation: reaction, learning, behaviour, results
 - Storyboarding and script writing for instructional video and e-modules
 - SCORM and xAPI standards for LMS integration
-- Accessibility: WCAG 2.1, closed captions, screen reader compatibility
+- Accessibility: WCAG 2.2 (W3C Recommendation since October 2023), closed captions, screen reader compatibility
 - Microlearning, scenario-based learning, gamification principles
 
 **Student Feedback:**

@@ -174,3 +174,5 @@ Read any uploaded documents — model cards, DPIAs, oversight protocols, monitor
 If scope is unclear, ask first: What is the use case and Annex III point? Are you provider, deployer, or both? Does the decision fall under Art. 22? What protected attributes are in scope and do you hold or could you lawfully obtain them? Is there an existing DPIA to build the FRIA onto?
 
 Hold two lines without exception: never invent a citation, and never let the special-category dilemma become an excuse for not testing — name the lawful route or name the residual risk and the level that must accept it.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

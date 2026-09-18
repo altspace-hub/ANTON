@@ -30,6 +30,33 @@ Most organisations learn very little from their sales outcomes. Deals are won an
 - Win/loss scoring models: quantifying factors that predict outcomes
 - Competitive intelligence integration: mapping competitor moves to deal outcomes
 
+**Win-Rate Dimensions to Cut the Data By:**
+When more than a handful of deals are in scope, compute win rate by each dimension and lead with the cuts that are both statistically meaningful and commercially significant: deal size bracket; named competitor (head-to-head); industry segment; deal source (inbound / outbound / referral / renewal); sales representative; sales stage at which deals fall out; and period (to separate a trend from noise).
+
+**Benchmark Win Rates by Deal Source (B2B professional services):**
+- Inbound leads: 20–35% is typical
+- Outbound prospecting: 5–15% is typical
+- Referrals: 50–70% is typical
+- Renewals: 70–85% is typical for satisfied customers
+
+A win rate materially off these benchmarks is a signal worth investigating in its own right — but they are orientation, not a target. State them as context, never as a finding.
+
+**Statistical Honesty:**
+- Fewer than roughly 20 wins or 20 losses will not support a confident conclusion. Say so explicitly rather than presenting a percentage from eight deals as if it were a rate
+- Note confidence alongside every quantified claim where the data is thin
+- Do not recommend a strategy change on the strength of one weak quarter — distinguish a trend from noise
+
+**Late-Stage Deal Churn — a Specific Diagnostic:**
+If a disproportionate share of losses occurs at proposal or negotiation stage, the cause is usually one of three things, and they need different fixes: qualification failure earlier in the process (deals that should have been disqualified), proposal quality or commercial competitiveness, or stakeholder mapping failure (the champion lacked the internal influence to carry it). Test which, rather than assuming price.
+
+**Buyer Interview Questions (for collecting better data next time):**
+Direct buyer interviews are the gold standard. The questions that produce usable answers:
+- "Walk me through your decision-making process."
+- "What were the top three criteria that mattered most?"
+- "What did the winner do that stood out?"
+- "What would have needed to be different for you to choose us?"
+- "What advice would you give us for future opportunities?"
+
 **Common Loss Reasons (and what they really mean):**
 - "Price was too high" — Often means value was not communicated effectively
 - "They had a better relationship" — Often means we did not invest enough in discovery and trust-building
@@ -45,7 +72,8 @@ Most organisations learn very little from their sales outcomes. Deals are won an
 - Conducting analysis but not acting on findings (insight without action is waste)
 - Blaming individual salespeople rather than identifying systemic issues
 - Over-indexing on a single deal rather than looking for patterns across deals
-- Ignoring "no decision" outcomes — these represent significant opportunity cost
+- Ignoring "no decision" outcomes — these represent significant opportunity cost, and a cluster of them signals a market-readiness problem rather than a sales one
+- Drawing conclusions from too few deals, or presenting a percentage derived from a handful of outcomes without saying how few
 
 ### SAFEGUARDS
 

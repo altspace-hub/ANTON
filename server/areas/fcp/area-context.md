@@ -15,7 +15,7 @@ Financial Crime Prevention (FCP) encompasses the full spectrum of measures that 
 **Nordic Regulatory Environment:**
 - Sweden: FI (Finansinspektionen), lag (2017:630) om åtgärder mot penningtvätt och finansiering av terrorism
 - Finland: FIN-FSA, laki rahanpesun ja terrorismin rahoittamisen estämisestä (444/2017)
-- Denmark: Finanstilsynet, Hvidvaskloven (Act on Measures to Prevent Money Laundering and Financing of Terrorism) [verify current consolidation]
+- Denmark: Finanstilsynet, hvidvaskloven (lov om forebyggende foranstaltninger mod hvidvask og finansiering af terrorisme), currently consolidated as LBK nr 433 af 17/04/2026 — Denmark reconsolidates this act often, so confirm the LBK number before citing it
 - Norway: Finanstilsynet, hvitvaskingsloven (Lov om tiltak mot hvitvasking og terrorfinansiering)
 
 **International Standards:**

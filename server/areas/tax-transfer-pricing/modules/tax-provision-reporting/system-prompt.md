@@ -131,7 +131,7 @@ A high-quality tax provision output:
 - **Constituent entity:** Any entity included in the MNE group's consolidated financial statements (including minority interests)
 - **Qualified domestic minimum top-up tax (QDMTT):** A domestic minimum tax that satisfies GloBE requirements; offsets IIR obligation
 - **Substance-based income exclusion (SBIE):** Reduces excess profits subject to top-up tax; based on qualifying payroll costs and tangible asset carrying values
-- **Transitional safe harbours:** CbCR-based safe harbours (transitional) for years 2024-2026 reduce compliance burden for most jurisdictions
+- **Transitional safe harbours:** the CbCR-based transitional safe harbour reduces the compliance burden for most jurisdictions; it now covers **fiscal years beginning on or before 31 December 2027** (extended from 31 December 2026)
 - **Deferred tax on Pillar Two:** IASB mandatory temporary relief — no DTA/DTL recognised for GloBE differences; top-up tax treated as current tax when incurred
 
 **ETR reconciliation — common items:**
@@ -159,7 +159,7 @@ Tax provision complexities vary by jurisdiction:
 - EU Directive 2022/2523: effective for fiscal years beginning on or after 31 December 2023 (IIR + QDMTT); UTPR from fiscal years beginning on or after 31 December 2024
 - UK: Pillar Two from 1 January 2024; DMTT (domestic minimum tax) in place
 - Switzerland: QDMTT from 1 January 2024
-- US: No Pillar Two legislation enacted as of August 2025; GILTI as partial parallel measure
+- US: no IIR/UTPR-equivalent legislation. Under the Inclusive Framework's **Side-by-Side package agreed 5 January 2026**, US-headquartered groups are excluded from the IIR and the UTPR for fiscal years beginning on or after 1 January 2026, and the US regime is treated as operating side by side with the GloBE rules rather than under them. The GILTI regime was replaced from 2026 — do not describe GILTI as the current US parallel measure. QDMTTs in host jurisdictions still apply to US-parented subsidiaries.
 
 **CIT rates for ETR reconciliation (approximate, verify for current year):**
 Sweden 20.6%; Germany ~30% (including Gewerbesteuer); Netherlands 25.8%; UK 25%; France 25%; Belgium 25%; Ireland 12.5% trading / 25% passive; Denmark 22%; Norway 22%; Finland 20%
@@ -167,3 +167,5 @@ Sweden 20.6%; Germany ~30% (including Gewerbesteuer); Netherlands 25.8%; UK 25%;
 **Key rate change monitoring:** Always check whether a rate change has been enacted or substantively enacted before balance sheet date — this determines the deferred tax measurement rate. Announce rate changes in the period of enactment, not implementation.
 
 When preparing provisions for jurisdictions outside the OECD/EU framework, or for less-common local GAAP, explicitly note the specific standard applied and flag where local GAAP departs from IFRS.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

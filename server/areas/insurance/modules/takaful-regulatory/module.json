@@ -4,7 +4,7 @@
   "label": "Takaful Regulatory Compliance",
   "shortLabel": "Takaful Compliance",
   "icon": "Shield",
-  "description": "Assess regulatory compliance for Takaful operators against applicable prudential and Sharia governance standards. Covers IFSB-8 solvency requirements, AAOIFI governance standards, fund segregation, Sharia Supervisory Board requirements, and key jurisdictional frameworks including SAMA, BNM, and CBUAE.",
+  "description": "Assess regulatory compliance for Takaful operators against applicable prudential and Sharia governance standards. Covers IFSB-8 governance principles and IFSB-28 (revising IFSB-11) solvency requirements, AAOIFI governance standards, fund segregation, Sharia Supervisory Board requirements, and key jurisdictional frameworks including SAMA, BNM, and CBUAE.",
   "color": "adv-blue",
   "defaults": {
     "thinking": "think",
@@ -18,7 +18,7 @@
       "claudeKnowledge": {
         "enabled": true,
         "webSearchEnabled": false,
-        "description": "IFSB-8 Takaful governance standards, AAOIFI FAS 12 and governance standards, SAMA Cooperative Insurance Law, BNM Takaful Operational Framework"
+        "description": "IFSB-8 Takaful governance standards, IFSB-28 (revising IFSB-11) Takaful/Retakaful solvency requirements, AAOIFI FAS 12 and governance standards, SAMA Cooperative Insurance Law, BNM Takaful Operational Framework"
       },
       "localFolder": {
         "enabled": true,
@@ -126,6 +126,11 @@
   "recommendedPersonas": [
     "finance-expert",
     "risk-specialist"
+  ],
+  "recommendedSkills": [
+    "skill-ifsb-standards",
+    "skill-aaoifi-standards",
+    "jurisdiction-sa-sama"
   ],
   "tags": [
     "takaful",

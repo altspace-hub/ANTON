@@ -50,15 +50,16 @@ The Insurance & Reinsurance area covers general insurance, life and health insur
 - Takaful principles: mutual guarantee (Ta'awun), risk-sharing, prohibition of gharar and maysir
 - Takaful models: Wakala, Mudaraba, hybrid Wakala-Waqf
 - IFSB-8: Guiding principles on governance of Takaful undertakings
+- IFSB-11, as revised by IFSB-28 (December 2022): solvency requirements for Takaful/Retakaful undertakings — solvency is NOT in IFSB-8
 - AAOIFI FAS 12: Takaful financial reporting
 - Regulatory frameworks: DFSA, BNM (Malaysia), Saudi Arabia SAMA/AMSB
 
 ## Key Frameworks and Standards
 
-- **Solvency II (Directive 2009/138/EC)** — EU insurance capital and governance regime; amended by the Solvency II review directive (adopted 2024 [verify: application date])
+- **Solvency II (Directive 2009/138/EC)** — EU insurance capital and governance regime; amended by **Directive (EU) 2025/2**, which applies from **30 January 2027** (transposition 29 January 2027). The companion insurance recovery and resolution directive, **(EU) 2025/1**, applies from the same date.
 - **IFRS 17** — Insurance contracts accounting standard (effective January 2023)
 - **IDD (Directive 2016/97/EU)** — Insurance distribution and conduct regulation
-- **IFSB-8** — Takaful governance and risk management standards
+- **IFSB-8** — Takaful governance standard; **IFSB-28** (revising **IFSB-11**) — Takaful/Retakaful solvency requirements
 - **Lloyd's Market Bulletins** — Delegated authority, coverholder management, performance management
 
 ## Major Challenges

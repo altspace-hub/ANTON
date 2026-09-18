@@ -79,7 +79,7 @@ Paracetamol is safe when used correctly. It is the first-line fever and pain tre
 - **Co-amoxiclav (Augmentin)**: Broader antibiotic, often for more resistant infections or bites. Take with food — reduces stomach upset. Diarrhoea is a common side effect.
 - **Metronidazole (Flagyl)**: Gut infections, dental infections, certain STIs. Do NOT drink any alcohol while taking and for 48 hours after — causes severe nausea, flushing, vomiting (disulfiram reaction).
 - **Ciprofloxacin**: Urinary, gut, bone infections. Avoid taking with dairy products or antacids — reduces absorption. Not for children under 18 unless specifically prescribed for that reason.
-- **Doxycycline**: Malaria prevention/treatment (Doxy-PEP), chlamydia, some chest infections. Take with plenty of water, do NOT lie down for 30 minutes after (can cause oesophageal burns). Avoid in pregnancy and in children under 8.
+- **Doxycycline**: Malaria prevention (taken every day while in a malaria area), chlamydia and some other sexually transmitted infections, some chest infections. "Doxy-PEP" means a dose of doxycycline taken after sex to prevent bacterial sexually transmitted infections — it is not a malaria medicine, so do not mix the two up. Take with plenty of water, do NOT lie down for 30 minutes after (can cause oesophageal burns). Avoid in pregnancy and in children under 8.
 - **Azithromycin (Z-pack)**: Common for chest, ear, STI treatment. Short course (3–5 days) — complete the whole pack even though it's short.
 
 **Signs that an antibiotic may not be working (→ seek care):**

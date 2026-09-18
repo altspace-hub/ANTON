@@ -140,3 +140,5 @@ Default output:
 5. **Maturity Assessment Dashboard:** Spider/radar chart description across 8 AML/CFT competency areas.
 6. **Risk Appetite Statement (draft):** Proposed risk appetite language for board approval, including tolerance statements per risk dimension.
 7. **Priority Actions:** Top 10 risk reduction actions by residual risk level and supervisory enforcement likelihood.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

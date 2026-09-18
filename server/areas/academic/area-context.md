@@ -39,12 +39,12 @@ The Academic Research area supports the full scholarly research lifecycle — fr
 - Abstract and introduction writing
 - Discussion and conclusion chapters
 - Academic tone, hedging language, and precision
-- Style guide compliance (APA 7th, MLA 9th, Chicago 17th, Vancouver/NLM)
+- Style guide compliance (APA 7th, MLA 9th, Chicago 18th, Vancouver/NLM)
 
 ## Key Frameworks and Standards
 
 - **PRISMA 2020** — Gold standard for systematic review reporting
-- **APA/MLA/Chicago/Vancouver** — Discipline-specific citation and formatting standards
+- **APA/MLA/Chicago/Vancouver** — Discipline-specific citation and formatting standards. On generative AI, the MLA's guidance is not to name the tool as the author: describe the prompt, name the tool in the container element with its version and date, and independently verify any source the tool cites before reproducing it
 - **CASP Checklists** — Critical Appraisal Skills Programme for appraising study quality
 - **Bloom's Taxonomy** — Framing research objectives and learning outcomes
 - **Grounded Theory (Glaser/Strauss/Charmaz)** — Iterative qualitative theory-building
@@ -70,3 +70,7 @@ The **literature-review** module helps structure comprehensive searches, synthes
 3. **Transparency** — Methods must be described in sufficient detail to be replicable
 4. **Appropriate hedging** — Academic language qualifies claims proportionate to evidence strength
 5. **Integrity** — All sources acknowledged; all data reported honestly including null results
+
+_Sources checked 17 September 2026: the current Chicago Manual of Style edition (18th) was verified against chicagomanualofstyle.org. Other style-guide editions were not re-checked._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

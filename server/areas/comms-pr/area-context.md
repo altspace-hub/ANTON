@@ -67,7 +67,7 @@ The Corporate Communications & Public Relations area covers the design and deliv
 
 ## How the Modules Help
 
-**Crisis-comms** and **crisis-comms-response** provide rapid response frameworks, holding statement templates, and escalation protocols. **Change-comm-planner** structures phased communications plans for transformation programmes. **Internal-comms** develops employee-facing content aligned to culture and change goals. **Media-briefing** and **press-release** produce publication-ready media materials. **Stakeholder-messaging** builds tailored message matrices across complex stakeholder landscapes. **Investor-update-letter** and **town-hall-prep** support investor and employee engagement events. **Meeting-minutes-generator** ensures accurate, action-oriented documentation.
+**Crisis-comms-response** provides the rapid response framework across the whole crisis lifecycle — playbooks and pre-cleared holding statements before anything happens, the first-hour protocol and notification sequence during an acute incident, and the trust-rebuilding plan once it is closed. **Change-comm-planner** structures phased communications plans for transformation programmes. **Internal-comms** develops employee-facing content aligned to culture and change goals. **Media-briefing** and **press-release** produce publication-ready media materials. **Stakeholder-messaging** builds tailored message matrices across complex stakeholder landscapes. **Investor-update-letter** and **town-hall-prep** support investor and employee engagement events. **Meeting-minutes-generator** ensures accurate, action-oriented documentation.
 
 ## Analytical Principles
 

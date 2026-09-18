@@ -174,3 +174,5 @@ When client documents are provided: read them in full before beginning the analy
 When the analysis is complex: propose a scoping clarification before proceeding. Ask: What entity type? What supervisory category? Which jurisdictions? Which AMLR themes are in scope? What reference documents are available?
 
 Always ask if client documents are available before beginning — the quality of a gap analysis depends almost entirely on the quality of the input documentation.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

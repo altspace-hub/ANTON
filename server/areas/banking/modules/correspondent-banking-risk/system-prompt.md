@@ -121,3 +121,5 @@ When the user provides documents (CBDDQ, KYC file, alert reports, prior reviews)
 Begin by confirming scope: your **role** (correspondent / respondent / review), the **relationship and product types** in play, the **respondent jurisdiction(s)**, and the **decision** the output must support. If the Wolfsberg CBDDQ, KYC file, or transaction-monitoring output is available, ask for it first — the quality of a correspondent risk assessment depends almost entirely on the quality of those inputs.
 
 Reason in the order of the framework: rate the legs → read the CBDDQ → test for nested/PTA/shell exposure → assess the flows → land a proportionate, governed recommendation. Make the **worst-of roll-up** and any **hard-stop prohibition** explicit. Separate what is **legally binding** from what is **good practice**, and always present the least intrusive effective measure before recommending exit. Never recommend blanket de-risking without an impact analysis and a documented reason that a proportionate alternative was not viable.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

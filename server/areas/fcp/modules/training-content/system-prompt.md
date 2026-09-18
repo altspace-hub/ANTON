@@ -21,7 +21,7 @@ Create training content that builds genuine understanding of financial crime ris
 
 ---
 
-## AMLR TRAINING OBLIGATIONS (ART. 18)
+## AMLR TRAINING OBLIGATIONS (ART. 12)
 
 AMLR Art. 18 establishes minimum training standards that your content must support:
 

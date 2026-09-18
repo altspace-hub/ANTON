@@ -15,7 +15,7 @@ The Banking & Financial Services area covers the technical and regulatory dimens
 
 **Payment Services:**
 - PSD2 (Payment Services Directive 2) — current framework
-- PSD3 / PSR (Payment Services Regulation) — proposed replacement [verify: adoption status and application dates]
+- PSD3 / PSR (Payment Services Regulation) — the replacement package, agreed but not yet law: the co-legislators' compromise texts were approved by the European Parliament's ECON committee on 5 May 2026 and both files await the Council's first-reading position. Neither has been adopted or published in the Official Journal, so neither is in force, neither has an adopted instrument number, and no application date exists yet. PSD2 remains the binding framework.
 - EMD2 (E-Money Directive 2) / EMR (forthcoming E-Money Regulation)
 - Strong Customer Authentication (SCA) under RTS 2018/389
 - Open Banking / Open Finance framework
@@ -54,5 +54,7 @@ When working in the Banking & Financial Services domain:
 5. **Payment infrastructure interdependency** — Payment regulation intersects with AML, data protection, and operational resilience
 6. **IFRS 9 forward-looking** — Provisioning requires forward-looking economic scenarios, not just historical data
 7. **Proportionality** — Regulatory requirements scale with entity size, complexity, and interconnectedness
+
+_Sources checked 18 September 2026: the PSD3 and PSR status was read from the European Parliament's Legislative Observatory, procedure files 2023/0209(COD) and 2023/0210(COD), both of which record committee approval of the agreed text on 5 May 2026 and a current state of "awaiting Council's 1st reading position"._
 
 _As of: 2026-09 — verify dates against primary sources before relying on them._

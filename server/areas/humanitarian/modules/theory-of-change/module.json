@@ -54,7 +54,7 @@
       "options": [
         { "value": "eu", "label": "EU (intervention logic / log frame)" },
         { "value": "fcdo", "label": "FCDO (ToC + log frame)" },
-        { "value": "usaid", "label": "USAID (results framework)" },
+        { "value": "usaid", "label": "US government / legacy USAID (results framework)" },
         { "value": "un", "label": "UN agency (RBM)" },
         { "value": "foundation", "label": "Foundation / private philanthropy" },
         { "value": "internal", "label": "Internal / board use" }

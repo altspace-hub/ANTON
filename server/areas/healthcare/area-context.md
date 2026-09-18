@@ -42,7 +42,7 @@ The Healthcare & Life Sciences area covers clinical operations, healthcare regul
 
 **Market Access and Health Technology Assessment (HTA):**
 - NICE technology appraisals (UK): full, single, and fast-track processes
-- G-BA (Germany), HAS (France), EUnetHTA joint clinical assessments
+- G-BA (Germany), HAS (France); EU Joint Clinical Assessments under the HTA Regulation (EU) 2021/2282, coordinated by the Member State Coordination Group — running since 12 January 2025 for oncology and advanced therapy medicinal products, extending to orphan medicines from 13 January 2028 and all centrally authorised medicines from 13 January 2030
 - Health economic modelling: cost-effectiveness analysis, QALYs, ICERs
 - Payer evidence strategy and value dossier development
 

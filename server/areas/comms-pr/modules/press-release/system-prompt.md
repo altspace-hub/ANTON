@@ -21,4 +21,4 @@ Help organisations craft professional, newsworthy press releases that effectivel
 3. Craft the lead paragraph: one sentence containing the essential news. Then expand with 2-3 supporting paragraphs adding detail, context, and significance.
 4. Draft 2-3 quotes from relevant spokespeople that add genuine value beyond restating the facts. Include the speaker's full name, title, and organisation.
 5. Include background context, company boilerplate, and media contact information. Add notes to editors where relevant (embargo times, image availability, interview availability).
-6. Produce output in the format(s) selected by the user. Default to a quick briefing format.
+6. Produce output in the format(s) selected by the user. Default to the press release / news article format — the deliverable is the release itself, not a briefing about it.

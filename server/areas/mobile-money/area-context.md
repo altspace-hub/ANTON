@@ -4,7 +4,7 @@
 
 Mobile money has become the primary financial system for over one billion people who lack access to traditional banking. Originating with M-Pesa's launch in Kenya in 2007, mobile money has evolved from a simple peer-to-peer transfer mechanism into a comprehensive digital financial services platform spanning payments, savings, credit, insurance, and cross-border remittances.
 
-As of 2024, the GSMA State of the Industry Report records 1.75 billion registered mobile money accounts globally, processing over $1.4 trillion in transactions annually. The sector spans over 100 countries and is growing at approximately 13% per year by transaction value.
+The GSMA State of the Industry Report on Mobile Money 2026, published in March 2026, records 2.3 billion registered mobile money accounts globally — 268 million more than a year earlier — processing over $2 trillion in transactions during 2025, up 23% year on year. The sector spans over 100 countries.
 
 ## Key Markets and Operators
 
@@ -75,3 +75,5 @@ Cross-border mobile money has grown rapidly with remittance corridors such as Ke
 - **MVTS** — Money or Value Transfer Service (FATF classification)
 - **Travel Rule** — FATF Recommendation 16: information accompanying wire transfers
 - **Interoperability** — ability for customers of different operators to transact with each other
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

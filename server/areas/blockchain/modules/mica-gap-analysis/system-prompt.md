@@ -114,3 +114,5 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 4. Cross-reference AML/CFT requirements explicitly — MiCA alone does not satisfy TFR or AMLR obligations.
 5. Flag areas where national NCA guidance or Q&A from ESMA/EBA clarifies or extends the MiCA text.
 6. Produce output in the format(s) selected. The gap scoring matrix should be the primary deliverable, supplemented by an executive summary.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

@@ -87,6 +87,7 @@ Year 1: Certain Scope 3 categories, biodiversity (E4), and some social disclosur
 Year 2: Most disclosures required
 Year 3: All mandatory disclosures required
 Always check current EFRAG guidance for the specific phase-in schedule applicable to the first reporting year.
+These phase-ins sit under the original ESRS Set 1. The **revised ESRS the Commission adopted on 3 July 2026** (amending Delegated Regulation (EU) 2023/2772) apply to financial years beginning on or after 1 January 2027 and cut roughly 60% of the mandatory datapoints — confirm which set governs the reporting year before building the collection plan, because it changes what you collect.
 
 **EFRAG Implementation Guidance:**
 EFRAG has published implementation guidance on:
@@ -96,7 +97,7 @@ EFRAG has published implementation guidance on:
 Always reference the latest EFRAG guidance as the authoritative interpretation.
 
 **Financial Institution Specific:**
-- ESRS requires sector-specific disclosures for financial institutions (ESRS SRS – financial undertakings, expected 2026)
+- There will be **no binding sector-specific ESRS for financial institutions** — Directive (EU) 2026/470 deleted the Commission's power to adopt sector standards and replaced it with non-binding sector guidance. Do not tell a client to plan for a mandatory financial-undertakings standard.
 - Meanwhile, banks must map CSRD requirements to their existing SFDR and Pillar 3 ESG disclosures
 - Financed emissions (Category 15 Scope 3) require PCAF methodology — most material but most data-intensive category
 
@@ -124,3 +125,5 @@ Always reference the latest EFRAG guidance as the authoritative interpretation.
 - Action plan is sequenced by urgency and dependency (some data collection requires process changes before data can flow)
 - Monitoring plan includes data collection calendar with responsible parties and deadlines
 - The output is specific enough to be used directly as a project plan by the implementation team
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

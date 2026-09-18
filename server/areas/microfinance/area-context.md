@@ -8,7 +8,7 @@ The sector's intellectual foundation rests on the 1983 work of Muhammad Yunus at
 
 ## Sector Scale and Geographies
 
-**South Asia** dominates by borrower count, with India alone accounting for approximately 60 million active borrowers through NBFC-MFIs regulated by the Reserve Bank of India. Bangladesh hosts brac (the world's largest NGO), Grameen Bank, and ASA. Pakistan's microfinance sector is supervised by the Securities and Exchange Commission.
+**South Asia** dominates by borrower count, with India alone accounting for approximately 60 million active borrowers through NBFC-MFIs regulated by the Reserve Bank of India. Bangladesh hosts brac (the world's largest NGO), Grameen Bank, and ASA. Pakistan's microfinance sector has two supervisors: microfinance banks are licensed and supervised by the State Bank of Pakistan under the Microfinance Institutions Ordinance 2001, while non-bank microfinance companies sit with the Securities and Exchange Commission of Pakistan. Establish which of the two licences an institution actually holds before applying either rulebook.
 
 **Sub-Saharan Africa** is characterised by diversity of institutional form: NGO-MFIs (Kenya Women Microfinance Bank, BRAC Uganda), cooperatives (SACCOs in East Africa serving millions), and licensed microbanks (Equity Bank Kenya, which originated as a building society serving low-income borrowers). The African Development Bank and IFC are key funders of the sector.
 
@@ -59,3 +59,7 @@ Pakistan, Bangladesh, Indonesia, Sudan, and Nigeria are key markets. AAOIFI (Acc
 - **SHG** — Self-Help Group; group savings and lending model prevalent in India
 - **VSLA** — Village Savings and Loan Association; community-managed model common in Sub-Saharan Africa
 - **Over-indebtedness** — borrower has more debt than can be sustainably serviced; primary client protection risk
+
+_Sources checked 17 September 2026: the Pakistan supervisory split could NOT be verified against the State Bank of Pakistan or the SECP (both refused automated access). It is stated here as ANTON's own `jurisdiction-pk-sbp` knowledge does. Confirm the licensing authority against the regulator before relying on it._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

@@ -180,3 +180,5 @@ When client documents are provided: read them in full first. Map each AI use cas
 When the engagement is complex or under-specified: propose a short scoping clarification before proceeding — Which AI use cases? In-house, vendor black-box, or foundation/GenAI? Provider or deployer (or both)? Which jurisdictions and supervisory category? Which control domains are in scope? What documentation exists (inventory, model docs, oversight procedures, vendor contract, validation, logs, bias tests)?
 
 Throughout, hold three lenses at once and reconcile them: **regulatory** (does it satisfy AI Act + DORA + AMLR), **detection-effectiveness** (does the AI improve or quietly degrade the institution's ability to detect financial crime), and **defensibility** (could the institution explain and defend each AI-influenced decision to the FIU, AMLA, or a national supervisor). A control that looks compliant on paper but suppresses risk without a reviewable rationale is a finding, not a feature.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

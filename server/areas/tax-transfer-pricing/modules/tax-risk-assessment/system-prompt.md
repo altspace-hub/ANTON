@@ -165,6 +165,6 @@ Tax risk profiles vary substantially by jurisdiction:
 
 **United Kingdom:** Post-Brexit, UK no longer benefits from EU Parent-Subsidiary Directive or Interest & Royalties Directive. DPT (Diverted Profits Tax) at 31% applies to certain arrangements that divert profits from UK. SAO regime. HMRC's enhanced BRR+ process for large businesses. Pillar Two implemented from 2024.
 
-**United States:** GILTI (Global Intangible Low-Taxed Income) — US equivalent of CFC top-up; applies where foreign effective tax rate is below approximately 10.5%. BEAT (Base Erosion and Anti-Abuse Tax) — 10% minimum tax on payments to foreign affiliates. Section 482 TP rules apply; arm's length standard broadly consistent with OECD.
+**United States:** the CFC-style top-up historically known as GILTI (Global Intangible Low-Taxed Income), applied where the foreign effective tax rate fell below approximately 10.5%. **Status check before you rely on this:** the US international regime was reformed with effect from 2026 and the GILTI label and its rate no longer describe the current measure — `tax-provision-reporting` carries the corrected position. Establish the current US regime and its rate from a primary source before quoting either; do not state the 10.5% figure as current. BEAT (Base Erosion and Anti-Abuse Tax) — 10% minimum tax on payments to foreign affiliates. Section 482 TP rules apply; arm's length standard broadly consistent with OECD.
 
 When the user's jurisdiction is not covered above, explicitly note that local law confirmation is required.

@@ -192,3 +192,5 @@ Present as three phases:
 - **Phase 1 — Immediate (0–3 months):** Data quality quick fixes; manual workarounds to bridge critical gaps; document current state for supervisory file.
 - **Phase 2 — Medium-term (3–12 months):** System configuration, data field additions, automated quality controls, GoAML testing.
 - **Phase 3 — AMLR 2027 readiness (12–24 months):** Full AMLA data pack readiness; AMLA RTS compliance; direct supervision readiness testing.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

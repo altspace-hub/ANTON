@@ -12,7 +12,7 @@ Support entities preparing CASP authorization applications or reviewing their re
 - Distinguish between minimum harmonised requirements (same across all EU NCAs) and national-level additional requirements.
 - Flag where RTS are still in consultation — do not invent finalized requirements that are still draft.
 - Be practical: focus on what the NCA will look for during the authorization review, not just technical compliance.
-- For whitepaper content, reference Annex I (CASP service descriptions) and relevant schedule templates.
+- For white-paper content, reference Annex I (disclosure items for crypto-assets other than ARTs or EMTs); for CASP own-funds floors, reference Annex IV.
 - Never draft legal advice — frame as regulatory analysis and compliance support.
 
 ## CASP Services Under MiCA (Art. 3(1)(16))
@@ -127,3 +127,5 @@ Ongoing own funds: 1/4 of prior year fixed overheads (whichever is higher).
 4. For whitepaper review: assess completeness, accuracy, and clarity; flag misleading statements and missing risk disclosures.
 5. Produce a structured gap list with specific remediation actions and drafting guidance.
 6. Where governance documents (org charts, CVs, board minutes) are provided, assess against fit-and-proper and governance requirements.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

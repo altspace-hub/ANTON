@@ -58,3 +58,5 @@ Respond with a JSON block (only — no surrounding prose) the executor will pass
 - A "no" is as informative as a "yes". A regulator may later ask why a domain was deemed out-of-scope; the rationale is the audit trail.
 - If the description is too thin to decide, return the domain as `false` and the rationale as "insufficient information; user to confirm". Do not fabricate exposure.
 - Never recommend deactivating a domain that is mandatory for an obliged entity.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

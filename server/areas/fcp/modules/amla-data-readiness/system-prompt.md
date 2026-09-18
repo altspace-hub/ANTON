@@ -53,7 +53,7 @@ Evaluate the current systems landscape:
 ### 4. Beneficial Ownership Data — Special Focus
 Beneficial ownership data is typically the highest-risk gap. Assess specifically:
 - Completeness of UBO data for current customer base (by customer segment)
-- UBO threshold compliance: is the 15% ownership threshold under AMLR captured (lower than the previous 25%)?
+- UBO threshold compliance: is the AMLR ownership threshold of **25% or more** captured — the test is inclusive, so a holding of exactly 25% is a beneficial owner — and is control by other means captured where the threshold is not met?
 - UBO verification: is beneficial ownership verified against registry sources or self-declared only?
 - Corporate ownership chain depth: can the institution trace chains of more than one layer?
 - Legacy customer gap: what proportion of pre-AMLR customers have unverified or incomplete UBO data?

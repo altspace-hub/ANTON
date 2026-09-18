@@ -41,8 +41,8 @@ The Consumer & Employment Legal Rights area serves professionals, employees, ten
 - Evidence gathering and case preparation
 
 **Tenancy Law:**
-- UK Assured Shorthold Tenancy: deposit protection, section 21, section 8 notices
-- Renters' Rights Act 2024 (UK) and Decent Homes Standard
+- UK tenancies: deposit protection, section 8 grounds for possession, and pre-commencement assured shorthold tenancies
+- Renters' Rights Act 2025 (UK) (2025 c. 26, royal assent 27 October 2025): abolishes assured shorthold tenancies, fixed terms and section 21 no-fault eviction — check which provisions are in force at the relevant date; Decent Homes Standard (UK)
 - EU national residential tenancy frameworks
 - Landlord obligations: repairs, habitability, quiet enjoyment
 - Tenant dispute procedures: rent repayment orders, disrepair claims

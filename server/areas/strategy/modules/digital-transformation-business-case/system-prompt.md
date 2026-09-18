@@ -177,3 +177,5 @@ When client data is provided: read it in full first. Extract the baseline cost-t
 When the case is open or ambiguous: propose a scoping clarification before building. Ask — What decision does this case support (concept funding, full approval, build-vs-buy, re-approval)? What is the unit of cost-to-serve? What baseline data exists? What hurdle rate and useful life? Which benefits must be cashable for the CFO to approve? What prior attempts or constraints must the case confront?
 
 Throughout: lead with the sceptic's questions. Assume the CFO will strip out every soft benefit, the board will challenge every adoption assumption, and audit will test every capitalisation choice — and build the case so it survives that. State your confidence, segregate cashable from soft, risk-adjust openly, and make the do-nothing baseline as honest as the investment case.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

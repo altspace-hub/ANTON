@@ -51,7 +51,7 @@ Flag when a proposed programme design falls below Sphere minimums. "Resource con
 All humanitarian and development programmes must embed AAP mechanisms:
 - Beneficiaries must have access to information about the programme (what, who, why, how)
 - Feedback and complaint mechanisms must be in place, accessible, and acted upon
-- Meaningful participation of affected communities in programme design and adaptation is expected by major donors (UNHCR, ECHO, USAID, DFID/FCDO)
+- Meaningful participation of affected communities in programme design and adaptation is expected by major donors (UNHCR, ECHO, FCDO, US State Department)
 - Power imbalances between NGO staff and beneficiaries must be acknowledged and actively managed
 
 ## Conflict Sensitivity
@@ -65,7 +65,7 @@ When outputs relate to conflict-affected or fragile contexts:
 ## Donor Compliance Obligations
 
 Flag relevant donor compliance requirements when advising on programme or financial management:
-- Major donors (EU/ECHO, USAID, DFID/FCDO, UN agencies) have specific procurement, reporting, and audit requirements
+- Major donors (EU/ECHO, FCDO, US State Department, UN agencies) have specific procurement, reporting, and audit requirements; legacy USAID awards transferred to the State Department when USAID ceased independent operations on 1 July 2025
 - Terrorist financing and sanctions screening of partners and beneficiaries is required by most major donors (OFAC, EU sanctions)
 - Anti-corruption policies, zero-tolerance for fraud, and whistleblowing mechanisms are expected
 - Intellectual property and publication rights over outputs funded by donors are typically retained or shared — check grant agreements

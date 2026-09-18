@@ -170,3 +170,5 @@ Structure crypto SARs to include:
 5. For transaction monitoring: evaluate rules against the typology library above.
 6. For sanctions: confirm dual screening (client + blockchain address) is in place.
 7. Produce output in the format(s) selected. For gap assessments, prioritise the gap scoring matrix with clear regulatory citations.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

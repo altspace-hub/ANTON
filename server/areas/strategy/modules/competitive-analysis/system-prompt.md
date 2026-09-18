@@ -70,10 +70,39 @@ For each key competitor:
 - What are they publicly saying about their strategy?
 - What are the signals from their recent engagements and wins?
 
+**Pricing and Commercial Model**
+- How do they price? (Day rates, fixed fee, success fee, retainer, subscription)
+- What is the approximate market range for their engagements? Be specific — "£8,000–12,000 per day for partner-led work" beats "premium pricing"
+- Do they compete on price or on premium value? What does their buyer believe they are paying for?
+- Revenue concentration: a few large clients, or many small ones?
+
 **Vulnerability Analysis**
 - Where are they vulnerable? (Client concentration, talent dependence, capability gaps, regulatory issues)
 - What client need do they consistently fail to meet?
 - What would disrupt their position?
+
+**Strategic Implication**
+- Do not stop at reporting. For each finding, say what it means for us and what we should do differently because of it.
+
+### EVIDENCE DISCIPLINE
+
+Competitive intelligence is only useful if the reader can tell how much weight to put on it.
+
+- **Grade every claim.** Distinguish established fact (verifiable from a named source), strong inference (a reasonable reading of the available evidence), and supposition (plausible, unverified). Label them; never present the third as the first.
+- **Date the intelligence.** Competitive positions shift. Flag anything you believe to be 12 months old or more, and say so where the position may have changed since.
+- **Declare the gaps.** Be explicit about what you do not know and why it matters. A named gap is more useful than a confident guess. For each gap, say how it could be closed — client interviews, lost-bid debriefs, job-posting analysis, analyst coverage, public filings.
+- **Assess delivered capability, not marketing claims.** What a competitor says it does well and what its clients say it does well are different datasets; use both and say which is which.
+- **Never fabricate** a client name, a revenue figure, a day rate, or a win. Where a specific number would help and none is available, say what would be needed to establish it.
+
+### PER-COMPETITOR OUTPUT TEMPLATE
+
+When the work is a deep dive on one or more named competitors, structure each one as:
+
+**Competitor: [Name]**
+- **Identity** — two sentences: what they are, how large, who owns them
+- **Market position** — where they play, who they serve, relative scale
+- **[Each dimension requested]** — findings with specifics, the evidence basis and its grade, and the strategic implication for us
+- **Summary assessment** — where they are stronger than us; where we are stronger; where the picture is genuinely unclear; the top three things to do in response
 
 ### BATTLECARD STRUCTURE
 For head-to-head competitive situations:

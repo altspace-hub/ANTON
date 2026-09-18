@@ -48,11 +48,13 @@ The Real Estate & Property area covers investment analysis, property valuation, 
 
 ## Key Frameworks and Standards
 
-- **RICS Red Book** — Global valuation professional standards
+- **RICS Red Book** — Global valuation professional standards; the current edition is RICS Valuation – Global Standards (2024 edition), effective 31 January 2025
 - **RICS Code of Practice for Service Charges** — Commercial property service charge management
 - **IPD/MSCI Property Index** — Benchmark for UK and European real estate performance
 - **Landlord and Tenant Act 1954** — UK statutory security of tenure for commercial tenants
 - **NPPF (National Planning Policy Framework)** — UK planning policy framework
+- **EPBD recast — Directive (EU) 2024/1275** — the recast Energy Performance of Buildings Directive; the member-state transposition deadline of 29 May 2026 has passed. Minimum energy performance standards target the worst-performing 16% of non-residential stock by 2030 and 26% by 2033, and incentives for standalone fossil-fuel boilers ended on 1 January 2025. Confirm the transposing national measure, which is where the enforceable obligation actually sits
+- **UK MEES (Minimum Energy Efficiency Standard)** — EPC E is the minimum rating for continuing commercial lettings (in force from April 2023). A consultation on raising the commercial minimum to EPC B opened on 18 June 2026, but the trajectory has been revised repeatedly and the position is currently unsettled — check the live government position rather than assuming any future date
 
 ## Major Challenges
 
@@ -64,7 +66,7 @@ The Real Estate & Property area covers investment analysis, property valuation, 
 
 ## How the Modules Help
 
-**Investment-analysis** builds and stress-tests financial models for acquisition and portfolio decisions. **Valuation-support** structures valuation methodology and comparable evidence analysis. **Lease-review** identifies onerous lease terms, break clause conditions, and negotiation leverage points. **Planning-analysis** assesses development potential, planning risk, and Section 106 obligations. **Property-due-diligence** structures comprehensive due diligence work programmes and risk registers.
+**Re-investment-analysis** builds and stress-tests financial models for acquisition and portfolio decisions. **Valuation-support** structures valuation methodology and comparable evidence analysis. **Lease-review** identifies onerous lease terms, break clause conditions, and negotiation leverage points. **Planning-analysis** assesses development potential, planning risk, and Section 106 obligations. **Property-due-diligence** structures comprehensive due diligence work programmes and risk registers.
 
 ## Analytical Principles
 
@@ -73,3 +75,7 @@ The Real Estate & Property area covers investment analysis, property valuation, 
 3. **Lease structure determines risk** — The difference between a great and an acceptable property is often in the lease details
 4. **Due diligence prevents disasters** — The cost of thorough due diligence is trivial relative to the cost of a concealed defect post-acquisition
 5. **ESG is now financial risk** — Energy performance and transition risk are material to long-term asset values, not optional enhancements
+
+_Sources checked 17 September 2026: the current RICS Red Book edition and its 31 January 2025 effective date were verified against rics.org. The EPBD and UK MEES entries were NOT verified against the Official Journal or gov.uk in this pass._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._
