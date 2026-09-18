@@ -61,7 +61,7 @@
     {
       "id": "tax-areas",
       "label": "Tax Areas of Interest",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "employment-income",

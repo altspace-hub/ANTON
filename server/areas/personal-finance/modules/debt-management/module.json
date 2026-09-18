@@ -25,7 +25,7 @@
     {
       "id": "debt-types",
       "label": "Types of Debt",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "mortgage",
@@ -117,7 +117,7 @@
     {
       "id": "goals",
       "label": "Debt Management Goals",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "reduce-total-interest-paid",

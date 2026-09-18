@@ -93,7 +93,7 @@
     },
     {
       "id": "is_dora_reportable",
-      "type": "toggle",
+      "type": "boolean",
       "label": "Is this potentially a DORA major incident? (significant disruption to critical functions)"
     },
     {

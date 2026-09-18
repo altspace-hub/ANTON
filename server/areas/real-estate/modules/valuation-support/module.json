@@ -97,7 +97,7 @@
     {
       "id": "methodology",
       "label": "Valuation Methodology",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "comparable-transactions",

@@ -86,7 +86,7 @@
     },
     {
       "id": "compliance_focus",
-      "type": "multiselect",
+      "type": "multi-select",
       "label": "Compliance Focus Areas",
       "options": [
         {

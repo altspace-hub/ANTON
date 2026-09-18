@@ -69,7 +69,7 @@
     {
       "id": "target-markets",
       "label": "Target Markets",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "eu-centralised",

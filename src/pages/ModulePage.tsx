@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, Navigate } from 'react-router-dom';
 import { MODULES, MODULE_KNOWLEDGE_CATEGORIES } from '@/lib/constants';
@@ -60,6 +60,7 @@ import { useConfigStore } from '@/stores/useConfigStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
+import { findMissingRequiredInputs, type GuidedInputFieldLike } from '@/lib/guided-input-validation';
 
 const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inputs: Record<string, unknown>) => void }>> = {
   'gap-analysis': GapAnalysis,
@@ -184,6 +185,31 @@ export default function ModulePage() {
   const [learnOffered, setLearnOffered] = useState(false);
   const [learnSaving, setLearnSaving] = useState(false);
   const [learnDone, setLearnDone] = useState(false);
+
+  // ── Wave 0 track C: required guided inputs are enforced, not decorated ──
+  // `required: true` used to draw a teal asterisk and nothing else, so a run
+  // could reach the model with no entity type and no jurisdiction and the
+  // model would invent the frame it was never given. The decision of what
+  // counts as "missing" is type-aware and lives in one testable place
+  // (src/lib/guided-input-validation.ts): `false` on a toggle and `0` on a
+  // number are answers, and a field whose type the renderer cannot draw is
+  // never enforced — it cannot be filled, so blocking on it would only make
+  // the module unrunnable.
+  const [runBlockedOnInputs, setRunBlockedOnInputs] = useState(false);
+  const warnedUnanswerableRef = useRef<Set<string>>(new Set());
+  const noteUnanswerableField = useCallback((field: GuidedInputFieldLike) => {
+    if (!(typeof import.meta !== 'undefined' && (import.meta as { env?: { DEV?: boolean } }).env?.DEV)) return;
+    const key = `${moduleId ?? ''}:${field.id}:${field.type}`;
+    if (warnedUnanswerableRef.current.has(key)) return;
+    warnedUnanswerableRef.current.add(key);
+    console.warn(
+      `[ModulePage] guided input "${field.id}" is required but type "${field.type}" has no renderer (or no options) — not enforced.`,
+    );
+  }, [moduleId]);
+  const missingRequiredInputs = useMemo(
+    () => findMissingRequiredInputs(guidedInputFields, moduleInputs, noteUnanswerableField),
+    [guidedInputFields, moduleInputs, noteUnanswerableField],
+  );
 
   // Sync completed upload IDs into session store so Claude receives the files.
   // Also depends on uploadedFileIds.length so this re-runs after clearSession() resets
@@ -393,6 +419,7 @@ export default function ModulePage() {
     setSelectedPersonas(['general-assistant']);
     setModuleExample(null);
     setExampleUsed(false);
+    setRunBlockedOnInputs(false);
 
     // Always fetch module prompt + config (needed for guided inputs, areaId, transparency)
     fetchModulePrompt(moduleId).then((prompt) => {
@@ -422,6 +449,13 @@ export default function ModulePage() {
         if (Array.isArray(cfg.selectedPersonas) && (cfg.selectedPersonas as string[]).length)
           setSelectedPersonas(cfg.selectedPersonas as string[]);
         if (Array.isArray(cfg.selectedSkills)) setSelectedSkills(cfg.selectedSkills as string[]);
+        // The guided answers the session was run with. clearSession() above
+        // emptied them, and every follow-up turn re-sends them, so without
+        // this a resumed session silently dropped its own frame — and would
+        // now also look, to the required-input gate, like nothing was filled.
+        if (cfg.moduleInputs && typeof cfg.moduleInputs === 'object' && !Array.isArray(cfg.moduleInputs)) {
+          setModuleInputs(cfg.moduleInputs as Record<string, unknown>);
+        }
         if (cfg.transparencyLevel !== undefined) setTransparencyLevel(cfg.transparencyLevel as 0 | 1 | 2);
         if (cfg.writingTone) setWritingTone(cfg.writingTone as 'formal' | 'professional' | 'casual' | 'conversational');
         if (cfg.emojiEnabled !== undefined) setEmojiEnabled(cfg.emojiEnabled as boolean);
@@ -631,13 +665,24 @@ export default function ModulePage() {
   const outputContent = isStreaming ? streamingText : (lastAssistantMessage?.content || '');
   const exportFormats = getRecommendedExportFormats(selectedOutputFormats);
 
+  // The required-input gate applies to the opening run only. That is the turn
+  // that sets the frame, and a session restored from history can carry answers
+  // this client never saw (sessions written before guided inputs were part of
+  // the saved config) — those must not be blocked from continuing.
+  const blockingInputs = messages.length === 0 ? missingRequiredInputs : [];
+  const showMissingInputsNotice = runBlockedOnInputs && blockingInputs.length > 0;
+
   const handleRun = () => {
-    if (userInput.trim()) {
-      setLearnOffered(false);
-      setLearnDone(false);
-      runMessage(userInput.trim());
-      setUserInput('');
+    if (!userInput.trim()) return;
+    if (blockingInputs.length > 0) {
+      setRunBlockedOnInputs(true);
+      return;
     }
+    setRunBlockedOnInputs(false);
+    setLearnOffered(false);
+    setLearnDone(false);
+    runMessage(userInput.trim());
+    setUserInput('');
   };
 
   const handleEditMessage = (msg: Message) => {
@@ -1023,11 +1068,25 @@ export default function ModulePage() {
           {/* Module-specific guided inputs (JSON-driven via DynamicModule) */}
           {guidedInputFields.length > 0 ? (
             <div>
-              <div className="mb-2 text-sm font-medium text-adv-off-white">{t('module.moduleSettings')}</div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-adv-off-white">{t('module.moduleSettings')}</div>
+                {/* Quiet before the click, red once a run was actually blocked. */}
+                {blockingInputs.length > 0 && (
+                  <span
+                    className={`shrink-0 text-xs ${runBlockedOnInputs ? 'text-adv-red' : 'text-adv-gray'}`}
+                    aria-live="polite"
+                  >
+                    {blockingInputs.length === 1
+                      ? t('module.requiredInputsRemainingOne', '1 required field to fill')
+                      : t('module.requiredInputsRemaining', '{{count}} required fields to fill', { count: blockingInputs.length })}
+                  </span>
+                )}
+              </div>
               <DynamicModule
                 fields={guidedInputFields}
                 values={moduleInputs}
                 onChange={setModuleInputs}
+                missingFieldIds={showMissingInputsNotice ? blockingInputs.map((f) => f.id) : undefined}
               />
             </div>
           ) : ModuleInputs ? (
@@ -1154,6 +1213,27 @@ export default function ModulePage() {
                   setBannerDismissedAtLength(userInput.length);
                 }}
               />
+            )}
+
+            {/* Wave 0 track C — the run was held back because the module's own
+                required inputs are unanswered. Named by label, never by id. */}
+            {showMissingInputsNotice && (
+              <div
+                role="alert"
+                className="rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-xs text-adv-red"
+              >
+                <p className="font-medium">
+                  {t('module.requiredInputsTitle', 'Fill these module settings before running')}
+                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  {blockingInputs.map((f) => (
+                    <li key={f.id}>{f.label}</li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 opacity-80">
+                  {t('module.requiredInputsWhy', 'Left empty, the model has to assume them — and the output would record the assumption as its basis.')}
+                </p>
+              </div>
             )}
 
             <div className="flex items-center justify-between gap-2">

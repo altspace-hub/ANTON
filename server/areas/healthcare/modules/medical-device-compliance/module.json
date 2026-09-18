@@ -95,7 +95,7 @@
     {
       "id": "target_markets",
       "label": "Target Markets",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "eu-mdr-2017-745",

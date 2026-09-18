@@ -114,7 +114,7 @@
     {
       "id": "improvement-goals",
       "label": "Improvement Goals",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "reduce-cycle-time",

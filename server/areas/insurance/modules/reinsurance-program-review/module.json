@@ -54,7 +54,7 @@
     },
     {
       "id": "lines_of_business",
-      "type": "multiselect",
+      "type": "multi-select",
       "label": "Lines of Business",
       "options": [
         {

@@ -233,6 +233,9 @@ const THINKING_LEVELS = [
   { value: 'think_hard', label: 'Think Hard' },
   { value: 'investigate', label: 'Investigate' },
   { value: 'plan_first', label: 'Plan First' },
+  // Keep in step with `ThinkingLevel` in src/lib/types.ts — this list omitted
+  // `deep_investigate`, the rung the server maps to maximum reasoning effort.
+  { value: 'deep_investigate', label: 'Deep' },
 ];
 
 const MODEL_OPTIONS = [

@@ -121,7 +121,7 @@
     },
     {
       "id": "prior_findings",
-      "type": "toggle",
+      "type": "boolean",
       "label": "Are there prior audit findings to consider?"
     },
     {

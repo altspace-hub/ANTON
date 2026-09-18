@@ -113,7 +113,7 @@
     {
       "id": "focus-areas",
       "label": "Focus Areas",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "rent-and-indexation",

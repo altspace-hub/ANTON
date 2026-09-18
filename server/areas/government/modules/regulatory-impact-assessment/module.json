@@ -53,6 +53,79 @@
       ]
     },
     {
+      "id": "regulation_stage",
+      "label": "Where in the regulatory cycle is this?",
+      "type": "select",
+      "required": false,
+      "description": "The stage decides the purpose of the assessment — a post-implementation evaluation is a different document from an ex-ante RIA.",
+      "options": [
+        {
+          "value": "concept",
+          "label": "Initial proposal / concept"
+        },
+        {
+          "value": "draft",
+          "label": "Draft regulation / bill"
+        },
+        {
+          "value": "post-consultation",
+          "label": "Post-consultation revision"
+        },
+        {
+          "value": "pre-implementation",
+          "label": "Pre-implementation review"
+        },
+        {
+          "value": "post-implementation",
+          "label": "Post-implementation evaluation"
+        }
+      ]
+    },
+    {
+      "id": "impact_dimensions",
+      "label": "Impact dimensions to assess",
+      "type": "multi-select",
+      "required": false,
+      "options": [
+        {
+          "value": "economic",
+          "label": "Economic / financial impact"
+        },
+        {
+          "value": "administrative",
+          "label": "Administrative burden (Standard Cost Model)"
+        },
+        {
+          "value": "sme",
+          "label": "SME impact"
+        },
+        {
+          "value": "competition",
+          "label": "Competition impact"
+        },
+        {
+          "value": "social",
+          "label": "Social impact"
+        },
+        {
+          "value": "distributional",
+          "label": "Distributional impact (who wins, who loses)"
+        },
+        {
+          "value": "environmental",
+          "label": "Environmental impact"
+        },
+        {
+          "value": "fundamental-rights",
+          "label": "Fundamental rights"
+        },
+        {
+          "value": "public-administration",
+          "label": "Public administration and enforcement capacity"
+        }
+      ]
+    },
+    {
       "id": "sector",
       "label": "Which economic sector(s) are affected?",
       "type": "textarea",

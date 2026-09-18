@@ -55,7 +55,7 @@
     {
       "id": "focus",
       "label": "Optimisation Focus Areas",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "patient-flow",

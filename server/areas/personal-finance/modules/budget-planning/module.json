@@ -85,7 +85,7 @@
     {
       "id": "financial-goals",
       "label": "Financial Goals",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "emergency-fund",

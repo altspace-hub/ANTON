@@ -35,7 +35,10 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'bg-adv-red/15 text-adv-red border-adv-red/20',
 };
 
-const THINKING_LEVELS = ['quick', 'think', 'think_hard', 'investigate', 'plan_first'] as const;
+// Keep in step with `ThinkingLevel` in src/lib/types.ts and THINKING_LEVELS in
+// src/lib/constants.ts — this list omitted `deep_investigate` for a while, so an
+// agent could never be configured to the deepest rung the server already maps.
+const THINKING_LEVELS = ['quick', 'think', 'think_hard', 'investigate', 'plan_first', 'deep_investigate'] as const;
 const ESCALATION_POLICIES = ['notify', 'redirect', 'human_only', 'queue'] as const;
 const CONNECTOR_TYPES = ['rest_api', 'webhook', 'database', 'email', 'calendar', 'crm', 'erp'] as const;
 

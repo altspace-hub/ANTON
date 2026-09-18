@@ -2,9 +2,13 @@
  * DynamicModule.tsx
  * Renders guided input fields from a ModuleConfig.guidedInputs JSON definition.
  * Field types: text, textarea, select, multi-select, chips, boolean, file, number
+ *
+ * `missingFieldIds` marks the required fields a blocked run is waiting on —
+ * the asterisk turns red, the control is outlined and announced as invalid.
+ * Which fields those are is decided in src/lib/guided-input-validation.ts;
+ * this component only draws the result.
  */
 
-import { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 // ── Types (mirrors server/types/area-config.ts) ──────────────
@@ -26,41 +30,60 @@ interface DynamicModuleProps {
   fields: GuidedInputField[];
   values: Record<string, unknown>;
   onChange: (values: Record<string, unknown>) => void;
+  /** Ids of required fields still unanswered after a blocked run attempt. */
+  missingFieldIds?: readonly string[];
+}
+
+/** Border for a control that is, or is not, the reason a run was blocked. */
+function borderClass(invalid: boolean): string {
+  return invalid ? 'border-adv-red/70' : 'border-border';
+}
+
+interface FieldRenderProps {
+  field: GuidedInputField;
+  invalid: boolean;
+  describedBy?: string;
 }
 
 // ── Field renderers ──────────────────────────────────────────
 
-function TextField({ field, value, onChange }: { field: GuidedInputField; value: string; onChange: (v: string) => void }) {
+function TextField({ field, value, onChange, invalid, describedBy }: FieldRenderProps & { value: string; onChange: (v: string) => void }) {
   return (
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder}
-      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+      className={`w-full rounded-lg border ${borderClass(invalid)} bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1`}
     />
   );
 }
 
-function TextareaField({ field, value, onChange }: { field: GuidedInputField; value: string; onChange: (v: string) => void }) {
+function TextareaField({ field, value, onChange, invalid, describedBy }: FieldRenderProps & { value: string; onChange: (v: string) => void }) {
   return (
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={field.placeholder}
       rows={3}
-      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none"
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+      className={`w-full rounded-lg border ${borderClass(invalid)} bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 resize-none`}
     />
   );
 }
 
-function SelectField({ field, value, onChange }: { field: GuidedInputField; value: string; onChange: (v: string) => void }) {
+function SelectField({ field, value, onChange, invalid, describedBy }: FieldRenderProps & { value: string; onChange: (v: string) => void }) {
   return (
     <div className="relative">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-lg border border-border bg-adv-dark px-3 py-2 pr-8 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        className={`w-full appearance-none rounded-lg border ${borderClass(invalid)} bg-adv-dark px-3 py-2 pr-8 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1`}
       >
         <option value="">Select…</option>
         {field.options?.map((opt) => (
@@ -72,18 +95,24 @@ function SelectField({ field, value, onChange }: { field: GuidedInputField; valu
   );
 }
 
-function MultiSelectField({ field, value, onChange }: { field: GuidedInputField; value: string[]; onChange: (v: string[]) => void }) {
+function MultiSelectField({ field, value, onChange, invalid, describedBy }: FieldRenderProps & { value: string[]; onChange: (v: string[]) => void }) {
   const toggle = (opt: string) => {
     onChange(value.includes(opt) ? value.filter((v) => v !== opt) : [...value, opt]);
   };
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      role="group"
+      aria-label={field.label}
+      aria-describedby={describedBy}
+      className={`flex flex-wrap gap-2 ${invalid ? 'rounded-lg border border-adv-red/40 p-2' : ''}`}
+    >
       {field.options?.map((opt) => {
         const selected = value.includes(opt.value);
         return (
           <button
             key={opt.value}
             type="button"
+            aria-pressed={selected}
             onClick={() => toggle(opt.value)}
             className={`rounded-full border px-3 py-1 text-xs transition-colors ${
               selected
@@ -100,18 +129,24 @@ function MultiSelectField({ field, value, onChange }: { field: GuidedInputField;
 }
 
 // chips = single-select styled as chips
-function ChipsField({ field, value, onChange }: { field: GuidedInputField; value: string[]; onChange: (v: string[]) => void }) {
+function ChipsField({ field, value, onChange, invalid, describedBy }: FieldRenderProps & { value: string[]; onChange: (v: string[]) => void }) {
   const toggle = (opt: string) => {
     onChange(value.includes(opt) ? value.filter((v) => v !== opt) : [...value, opt]);
   };
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      role="group"
+      aria-label={field.label}
+      aria-describedby={describedBy}
+      className={`flex flex-wrap gap-2 ${invalid ? 'rounded-lg border border-adv-red/40 p-2' : ''}`}
+    >
       {field.options?.map((opt) => {
         const selected = value.includes(opt.value);
         return (
           <button
             key={opt.value}
             type="button"
+            aria-pressed={selected}
             onClick={() => toggle(opt.value)}
             className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors ${
               selected
@@ -141,22 +176,26 @@ function BooleanField({ field, value, onChange }: { field: GuidedInputField; val
   );
 }
 
-function NumberField({ field, value, onChange }: { field: GuidedInputField; value: number | ''; onChange: (v: number | '') => void }) {
+function NumberField({ field, value, onChange, invalid, describedBy }: FieldRenderProps & { value: number | ''; onChange: (v: number | '') => void }) {
   return (
     <input
       type="number"
       value={value}
       onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
       placeholder={field.placeholder}
-      className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+      className={`w-full rounded-lg border ${borderClass(invalid)} bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder-adv-gray-med focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1`}
     />
   );
 }
 
 // ── Main component ────────────────────────────────────────────
 
-export default function DynamicModule({ fields, values, onChange }: DynamicModuleProps) {
+export default function DynamicModule({ fields, values, onChange, missingFieldIds }: DynamicModuleProps) {
   if (!fields || fields.length === 0) return null;
+
+  const missing = new Set(missingFieldIds ?? []);
 
   const update = (id: string, value: unknown) => {
     onChange({ ...values, [id]: value });
@@ -166,37 +205,46 @@ export default function DynamicModule({ fields, values, onChange }: DynamicModul
     <div className="space-y-4">
       {fields.map((field) => {
         const v = values[field.id];
+        const invalid = missing.has(field.id);
+        const noteId = invalid ? `guided-${field.id}-required` : undefined;
+        const renderProps = { field, invalid, describedBy: noteId };
 
         return (
           <div key={field.id}>
             <label className="mb-1 flex items-center gap-1 text-xs font-medium text-adv-off-white">
               {field.label}
-              {field.required && <span className="text-adv-teal">*</span>}
+              {field.required && <span className={invalid ? 'text-adv-red' : 'text-adv-teal'}>*</span>}
             </label>
             {field.description && (
               <p className="mb-1.5 text-xs text-adv-gray">{field.description}</p>
             )}
 
             {field.type === 'text' && (
-              <TextField field={field} value={(v as string) || ''} onChange={(val) => update(field.id, val)} />
+              <TextField {...renderProps} value={(v as string) || ''} onChange={(val) => update(field.id, val)} />
             )}
             {field.type === 'textarea' && (
-              <TextareaField field={field} value={(v as string) || ''} onChange={(val) => update(field.id, val)} />
+              <TextareaField {...renderProps} value={(v as string) || ''} onChange={(val) => update(field.id, val)} />
             )}
             {field.type === 'select' && (
-              <SelectField field={field} value={(v as string) || ''} onChange={(val) => update(field.id, val)} />
+              <SelectField {...renderProps} value={(v as string) || ''} onChange={(val) => update(field.id, val)} />
             )}
             {field.type === 'multi-select' && (
-              <MultiSelectField field={field} value={(v as string[]) || []} onChange={(val) => update(field.id, val)} />
+              <MultiSelectField {...renderProps} value={(v as string[]) || []} onChange={(val) => update(field.id, val)} />
             )}
             {field.type === 'chips' && (
-              <ChipsField field={field} value={(v as string[]) || []} onChange={(val) => update(field.id, val)} />
+              <ChipsField {...renderProps} value={(v as string[]) || []} onChange={(val) => update(field.id, val)} />
             )}
             {field.type === 'boolean' && (
               <BooleanField field={field} value={(v as boolean) ?? false} onChange={(val) => update(field.id, val)} />
             )}
             {field.type === 'number' && (
-              <NumberField field={field} value={(v as number | '') ?? ''} onChange={(val) => update(field.id, val)} />
+              <NumberField {...renderProps} value={(v as number | '') ?? ''} onChange={(val) => update(field.id, val)} />
+            )}
+
+            {invalid && (
+              <p id={noteId} className="mt-1 text-xs text-adv-red">
+                Required to run
+              </p>
             )}
           </div>
         );

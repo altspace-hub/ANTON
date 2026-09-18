@@ -30,5 +30,5 @@
   "recommendedPersonas": ["senior-risk-officer", "senior-mlro"],
   "recommendedSkills": ["residual-calculation", "control-evidence-scoring"],
   "tags": ["atlas", "stage-7", "appetite", "board-pack", "governance"],
-  "contentType": "appetite_statement"
+  "contentType": "scorecard"
 }

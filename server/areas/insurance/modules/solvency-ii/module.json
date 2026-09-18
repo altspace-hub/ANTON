@@ -94,7 +94,7 @@
     {
       "id": "pillar-focus",
       "label": "Pillar Focus",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "pillar-1-quantitative",
