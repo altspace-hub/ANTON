@@ -1,0 +1,272 @@
+[
+  {
+    "ref_id": "REG-CRD",
+    "entity_type": "regulation",
+    "entity_id": "CRD-2011-83",
+    "canonical_name": "Directive 2011/83/EU — Consumer Rights Directive",
+    "description": "The EU Consumer Rights Directive. Harmonises pre-contractual information, the right of withdrawal for distance and off-premises contracts, delivery and passing of risk. Maximum harmonisation for the matters it covers, so a Member State may not give more or less on those points unless the Directive says it may.",
+    "metadata": {
+      "oj_ref": "OJ L 304, 22.11.2011",
+      "applies_from": "2014-06-13",
+      "instrument": "Directive 2011/83/EU"
+    }
+  },
+  {
+    "ref_id": "REG-UCPD",
+    "entity_type": "regulation",
+    "entity_id": "UCPD-2005-29",
+    "canonical_name": "Directive 2005/29/EC — Unfair Commercial Practices Directive",
+    "description": "The general prohibition on unfair business-to-consumer commercial practices, with misleading actions, misleading omissions and aggressive practices as the named categories, and a blacklist in Annex I of practices unfair in all circumstances.",
+    "metadata": {
+      "oj_ref": "OJ L 149, 11.6.2005",
+      "applies_from": "2007-12-12",
+      "instrument": "Directive 2005/29/EC"
+    }
+  },
+  {
+    "ref_id": "REG-EMP",
+    "entity_type": "regulation",
+    "entity_id": "EMP-2024-825",
+    "canonical_name": "Directive (EU) 2024/825 — Empowering Consumers for the Green Transition",
+    "description": "Amends the UCPD and the Consumer Rights Directive rather than standing alone: it adds greenwashing and early-obsolescence practices to the UCPD and adds durability and reparability information duties to the CRD. Cite the amended instrument for a substantive obligation, and this Directive for the amendment itself.",
+    "metadata": {
+      "oj_ref": "OJ L, 2024/825, 6.3.2024",
+      "applies_from": "2026-09-27",
+      "instrument": "Directive (EU) 2024/825"
+    }
+  },
+  {
+    "ref_id": "OBL-PRECONTRACT-DISTANCE",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-6",
+    "canonical_name": "Pre-Contractual Information (Distance and Off-Premises) — Art. 6 CRD",
+    "description": "Before a distance or off-premises contract binds the consumer, the trader must give the listed information in a clear and comprehensible way: main characteristics, identity and address, total price including taxes and delivery, payment and delivery arrangements, the right of withdrawal and how to use it, and the duration and termination of the contract.",
+    "metadata": {
+      "article": "6",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "OBL-PRECONTRACT-ONPREM",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-5",
+    "canonical_name": "Pre-Contractual Information (On-Premises) — Art. 5 CRD",
+    "description": "The shorter information set owed before an ordinary on-premises contract. Read with Art. 6: the distance and off-premises list is longer because the consumer cannot inspect the goods or the trader.",
+    "metadata": {
+      "article": "5",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "RIGHT-WITHDRAWAL",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-9",
+    "canonical_name": "Right of Withdrawal — Art. 9 CRD",
+    "description": "The consumer may withdraw from a distance or off-premises contract within the withdrawal period without giving a reason and without cost beyond what Arts. 13-14 allow. The period runs from delivery for goods and from conclusion for services.",
+    "metadata": {
+      "article": "9",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "may"
+    }
+  },
+  {
+    "ref_id": "OBL-WITHDRAWAL-EXERCISE",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-11",
+    "canonical_name": "Exercising Withdrawal — Art. 11 CRD",
+    "description": "How the consumer withdraws: the model form or any unequivocal statement. The burden of proving withdrawal was exercised lies on the consumer, which is why the trader must supply the form and the consumer should keep proof of sending.",
+    "metadata": {
+      "article": "11",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "may"
+    }
+  },
+  {
+    "ref_id": "OBL-TRADER-REFUND",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-13",
+    "canonical_name": "Trader's Obligations on Withdrawal — Art. 13 CRD",
+    "description": "The trader reimburses all payments received, including standard delivery costs, without undue delay, using the same means of payment the consumer used unless the consumer agrees otherwise. The trader may withhold reimbursement until the goods are back or proof of return is supplied.",
+    "metadata": {
+      "article": "13",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "OBL-CONSUMER-RETURN",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-14",
+    "canonical_name": "Consumer's Obligations on Withdrawal — Art. 14 CRD",
+    "description": "The consumer returns the goods without undue delay and bears the direct cost of return only where the trader told them so in advance; otherwise the trader bears it. The consumer is liable only for diminished value from handling beyond what is needed to establish nature, characteristics and functioning.",
+    "metadata": {
+      "article": "14",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "EXCEPT-WITHDRAWAL",
+    "entity_type": "concept",
+    "entity_id": "CRD-Art-16",
+    "canonical_name": "Exceptions to Withdrawal — Art. 16 CRD",
+    "description": "The closed list of contracts where no right of withdrawal arises — bespoke goods, sealed goods unsealed for health or hygiene reasons, and others. A trader relying on an exception must fit it exactly; the list is not extendable by contract.",
+    "metadata": {
+      "article": "16",
+      "instrument": "Directive 2011/83/EU"
+    }
+  },
+  {
+    "ref_id": "OBL-DELIVERY",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-18",
+    "canonical_name": "Delivery — Art. 18 CRD",
+    "description": "Unless agreed otherwise, the trader delivers without undue delay and within 30 days. If the trader misses an agreed essential deadline or an additional period the consumer sets, the consumer may terminate and be reimbursed.",
+    "metadata": {
+      "article": "18",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "CONCEPT-RISK",
+    "entity_type": "concept",
+    "entity_id": "CRD-Art-20",
+    "canonical_name": "Passing of Risk — Art. 20 CRD",
+    "description": "Risk passes to the consumer on physical possession by the consumer or a third party they indicated — not the carrier the trader chose. A parcel lost in transit is therefore the trader’s problem, which is the answer to most \"the courier lost it\" disputes.",
+    "metadata": {
+      "article": "20",
+      "instrument": "Directive 2011/83/EU"
+    }
+  },
+  {
+    "ref_id": "OBL-PHONE-RATE",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-21",
+    "canonical_name": "Telephone Helpline Rate — Art. 21 CRD",
+    "description": "Where a trader operates a telephone line for contacts about a concluded contract, the consumer must not pay more than the basic rate for calling it.",
+    "metadata": {
+      "article": "21",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "OBL-NO-PRETICKED",
+    "entity_type": "obligation",
+    "entity_id": "CRD-Art-22",
+    "canonical_name": "Additional Payments and Pre-Ticked Boxes — Art. 22 CRD",
+    "description": "Any payment beyond the main contractual obligation needs the consumer’s express consent. Default options the consumer must reject do not count as consent, which is what makes a pre-ticked insurance or priority-delivery box unlawful.",
+    "metadata": {
+      "article": "22",
+      "instrument": "Directive 2011/83/EU",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "PROHIB-UNFAIR",
+    "entity_type": "obligation",
+    "entity_id": "UCPD-Art-5",
+    "canonical_name": "General Prohibition of Unfair Practices — Art. 5 UCPD",
+    "description": "The general clause: a practice is unfair if it is contrary to professional diligence and materially distorts, or is likely to distort, the economic behaviour of the average consumer it reaches. Where a practice targets a vulnerable group, the average member of that group is the yardstick.",
+    "metadata": {
+      "article": "5",
+      "instrument": "Directive 2005/29/EC",
+      "obligation_type": "prohibition"
+    }
+  },
+  {
+    "ref_id": "PROHIB-MISLEADING-ACTION",
+    "entity_type": "obligation",
+    "entity_id": "UCPD-Art-6",
+    "canonical_name": "Misleading Actions — Art. 6 UCPD",
+    "description": "False information, or information that deceives even though factually correct, about the main characteristics, price, the trader, or the consumer’s rights, where it causes or is likely to cause a transactional decision the consumer would not otherwise have taken. Environmental claims are judged under this article as amended by Directive (EU) 2024/825.",
+    "metadata": {
+      "article": "6",
+      "instrument": "Directive 2005/29/EC",
+      "obligation_type": "prohibition"
+    }
+  },
+  {
+    "ref_id": "PROHIB-MISLEADING-OMISSION",
+    "entity_type": "obligation",
+    "entity_id": "UCPD-Art-7",
+    "canonical_name": "Misleading Omissions — Art. 7 UCPD",
+    "description": "Omitting or hiding material information the average consumer needs to take an informed transactional decision, including where it is provided unclearly or too late. In an invitation to purchase the material information is listed, so an omission there is judged against the list rather than at large.",
+    "metadata": {
+      "article": "7",
+      "instrument": "Directive 2005/29/EC",
+      "obligation_type": "prohibition"
+    }
+  },
+  {
+    "ref_id": "PROHIB-AGGRESSIVE",
+    "entity_type": "obligation",
+    "entity_id": "UCPD-Art-8",
+    "canonical_name": "Aggressive Commercial Practices — Art. 8 UCPD",
+    "description": "Practices that impair the average consumer’s freedom of choice through harassment, coercion or undue influence, judged on timing, location, persistence and the exploitation of misfortune.",
+    "metadata": {
+      "article": "8",
+      "instrument": "Directive 2005/29/EC",
+      "obligation_type": "prohibition"
+    }
+  },
+  {
+    "ref_id": "CONCEPT-UNDUE-INFLUENCE",
+    "entity_type": "concept",
+    "entity_id": "UCPD-Art-9",
+    "canonical_name": "Harassment, Coercion and Undue Influence — Art. 9 UCPD",
+    "description": "The factors that decide whether a practice crosses into aggression, including exploiting a specific misfortune the trader knows about and imposing onerous barriers on a consumer exercising a contractual right.",
+    "metadata": {
+      "article": "9",
+      "instrument": "Directive 2005/29/EC"
+    }
+  },
+  {
+    "ref_id": "OBL-PENALTIES",
+    "entity_type": "obligation",
+    "entity_id": "UCPD-Art-13",
+    "canonical_name": "Penalties — Art. 13 UCPD",
+    "description": "Member States lay down penalties that are effective, proportionate and dissuasive, with listed aggravating criteria for widespread infringements.",
+    "metadata": {
+      "article": "13",
+      "instrument": "Directive 2005/29/EC",
+      "obligation_type": "shall"
+    }
+  },
+  {
+    "ref_id": "AMEND-UCPD",
+    "entity_type": "concept",
+    "entity_id": "EMP-Art-1",
+    "canonical_name": "Greenwashing Amendments to the UCPD — Art. 1 of Directive (EU) 2024/825",
+    "description": "Adds environmental and social claims to the misleading-actions test, and adds practices to the Annex I blacklist that are unfair in all circumstances — a generic environmental claim without recognised excellent performance, a claim about the whole product based on one aspect, and a sustainability label not based on a certification scheme or public authority.",
+    "metadata": {
+      "article": "1",
+      "instrument": "Directive (EU) 2024/825"
+    }
+  },
+  {
+    "ref_id": "AMEND-CRD",
+    "entity_type": "concept",
+    "entity_id": "EMP-Art-2",
+    "canonical_name": "Durability and Reparability Amendments to the CRD — Art. 2 of Directive (EU) 2024/825",
+    "description": "Adds pre-contractual information duties on commercial guarantees of durability, on software updates, and on reparability, so the information a trader owes before sale now covers how long the product is expected to last and whether it can be repaired.",
+    "metadata": {
+      "article": "2",
+      "instrument": "Directive (EU) 2024/825"
+    }
+  },
+  {
+    "ref_id": "DATE-EMP-APPLICATION",
+    "entity_type": "concept",
+    "entity_id": "EMP-Art-4",
+    "canonical_name": "Transposition and Application — Art. 4 of Directive (EU) 2024/825",
+    "description": "Sets the transposition deadline and the date from which Member State measures apply. Do not assert a national regime is live on that basis alone: a directive binds the Member State, and what a trader or consumer can rely on is the national transposing law, which may be late or may go further.",
+    "metadata": {
+      "article": "4",
+      "instrument": "Directive (EU) 2024/825"
+    }
+  }
+]

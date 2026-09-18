@@ -28,6 +28,7 @@ export type GapDomain =
   | 'corporate-governance'
   | 'online-safety'
   | 'procurement'
+  | 'consumer-protection'
   | 'compliance';
 
 export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
@@ -108,6 +109,10 @@ export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
   'uk-online-safety-act-2023': 'online-safety',
   // Public procurement
   'eu-procurement-2014-24': 'procurement',
+  // Consumer protection — the CRD, the UCPD, and the directive that amends both
+  'eu-consumer-rights-2011-83': 'consumer-protection',
+  'eu-ucpd-2005-29': 'consumer-protection',
+  'eu-empowering-consumers-2024-825': 'consumer-protection',
 };
 
 export interface DomainProfile {
@@ -145,6 +150,7 @@ export const DOMAIN_PROFILES: Record<GapDomain, DomainProfile> = {
   'corporate-governance': P('corporate governance', 'corporate governance and directors\' duties', 'company boards and company secretaries'),
   'online-safety': P('online safety', 'online safety and platform regulation', 'online platforms and user-to-user services'),
   'procurement': P('public procurement', 'public procurement and contract award', 'contracting authorities and the economic operators that bid to them'),
+  'consumer-protection': P('consumer protection', 'consumer protection and fair trading', 'traders selling to consumers and the authorities that supervise them'),
   'compliance': P('regulatory compliance', 'regulatory compliance', 'regulated organisations'),
 };
 

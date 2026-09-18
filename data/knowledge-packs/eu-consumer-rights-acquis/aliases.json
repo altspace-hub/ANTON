@@ -1,0 +1,125 @@
+[
+  {
+    "ref_id": "RIGHT-WITHDRAWAL",
+    "aliases": [
+      "right of withdrawal",
+      "cooling off",
+      "cooling-off period",
+      "cancel an online order",
+      "return an online purchase",
+      "ångerrätt",
+      "widerrufsrecht"
+    ]
+  },
+  {
+    "ref_id": "OBL-TRADER-REFUND",
+    "aliases": [
+      "refund",
+      "reimbursement",
+      "money back",
+      "trader must refund",
+      "refund delivery costs"
+    ]
+  },
+  {
+    "ref_id": "OBL-CONSUMER-RETURN",
+    "aliases": [
+      "return costs",
+      "who pays return postage",
+      "diminished value",
+      "used the goods"
+    ]
+  },
+  {
+    "ref_id": "EXCEPT-WITHDRAWAL",
+    "aliases": [
+      "no right to cancel",
+      "custom made",
+      "personalised goods",
+      "sealed goods",
+      "hygiene exception"
+    ]
+  },
+  {
+    "ref_id": "CONCEPT-RISK",
+    "aliases": [
+      "parcel lost in transit",
+      "courier lost it",
+      "passing of risk",
+      "who bears the risk"
+    ]
+  },
+  {
+    "ref_id": "OBL-DELIVERY",
+    "aliases": [
+      "late delivery",
+      "30 days",
+      "delivery deadline",
+      "never arrived"
+    ]
+  },
+  {
+    "ref_id": "OBL-NO-PRETICKED",
+    "aliases": [
+      "pre-ticked box",
+      "pre ticked",
+      "added insurance",
+      "unwanted extras",
+      "express consent"
+    ]
+  },
+  {
+    "ref_id": "PROHIB-MISLEADING-ACTION",
+    "aliases": [
+      "misleading advertising",
+      "false claim",
+      "greenwashing",
+      "green claim",
+      "eco friendly claim"
+    ]
+  },
+  {
+    "ref_id": "PROHIB-MISLEADING-OMISSION",
+    "aliases": [
+      "hidden information",
+      "omitted price",
+      "drip pricing",
+      "material information"
+    ]
+  },
+  {
+    "ref_id": "PROHIB-AGGRESSIVE",
+    "aliases": [
+      "pressure selling",
+      "aggressive sales",
+      "doorstep pressure",
+      "harassment"
+    ]
+  },
+  {
+    "ref_id": "AMEND-UCPD",
+    "aliases": [
+      "greenwashing directive",
+      "empowering consumers",
+      "green transition directive",
+      "sustainability label"
+    ]
+  },
+  {
+    "ref_id": "AMEND-CRD",
+    "aliases": [
+      "durability information",
+      "reparability",
+      "repair score",
+      "software updates"
+    ]
+  },
+  {
+    "ref_id": "OBL-PRECONTRACT-DISTANCE",
+    "aliases": [
+      "pre-contractual information",
+      "information before you buy",
+      "distance selling information"
+    ]
+  }
+]

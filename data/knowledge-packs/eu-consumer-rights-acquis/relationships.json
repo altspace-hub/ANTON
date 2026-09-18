@@ -1,0 +1,160 @@
+[
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-PRECONTRACT-DISTANCE",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-PRECONTRACT-ONPREM",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "RIGHT-WITHDRAWAL",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-WITHDRAWAL-EXERCISE",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-TRADER-REFUND",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-CONSUMER-RETURN",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "EXCEPT-WITHDRAWAL",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-DELIVERY",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "CONCEPT-RISK",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-PHONE-RATE",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-CRD",
+    "to_ref": "OBL-NO-PRETICKED",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-UCPD",
+    "to_ref": "PROHIB-UNFAIR",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-UCPD",
+    "to_ref": "PROHIB-MISLEADING-ACTION",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-UCPD",
+    "to_ref": "PROHIB-MISLEADING-OMISSION",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-UCPD",
+    "to_ref": "PROHIB-AGGRESSIVE",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-UCPD",
+    "to_ref": "CONCEPT-UNDUE-INFLUENCE",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-UCPD",
+    "to_ref": "OBL-PENALTIES",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-EMP",
+    "to_ref": "AMEND-UCPD",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-EMP",
+    "to_ref": "AMEND-CRD",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "REG-EMP",
+    "to_ref": "DATE-EMP-APPLICATION",
+    "relationship_type": "requires",
+    "strength": 1
+  },
+  {
+    "from_ref": "AMEND-UCPD",
+    "to_ref": "PROHIB-MISLEADING-ACTION",
+    "relationship_type": "amends",
+    "strength": 1,
+    "description": "A greenwashing claim is judged as a misleading action under the UCPD as amended, not under a free-standing green-claims regime."
+  },
+  {
+    "from_ref": "AMEND-CRD",
+    "to_ref": "OBL-PRECONTRACT-DISTANCE",
+    "relationship_type": "amends",
+    "strength": 1,
+    "description": "Durability, software-update and reparability information joins the pre-contractual list."
+  },
+  {
+    "from_ref": "RIGHT-WITHDRAWAL",
+    "to_ref": "EXCEPT-WITHDRAWAL",
+    "relationship_type": "limited_by",
+    "strength": 1
+  },
+  {
+    "from_ref": "RIGHT-WITHDRAWAL",
+    "to_ref": "OBL-TRADER-REFUND",
+    "relationship_type": "triggers",
+    "strength": 1
+  },
+  {
+    "from_ref": "RIGHT-WITHDRAWAL",
+    "to_ref": "OBL-CONSUMER-RETURN",
+    "relationship_type": "triggers",
+    "strength": 1
+  },
+  {
+    "from_ref": "OBL-DELIVERY",
+    "to_ref": "CONCEPT-RISK",
+    "relationship_type": "related_to",
+    "strength": 1
+  }
+]

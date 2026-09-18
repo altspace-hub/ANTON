@@ -66,7 +66,7 @@ describe('frameworksForArea', () => {
 
   it('every domain named in AREA_DOMAINS is a gap domain, and every area seeds at least one framework or is deliberately empty', () => {
     // The GapDomain union, spelled out so a typo in AREA_DOMAINS fails here.
-    const union = new Set(['aml', 'sanctions', 'ict-resilience', 'infosec', 'privacy', 'ai-governance', 'anti-bribery', 'financial-conduct', 'digital-assets', 'esg', 'corporate-governance', 'online-safety', 'procurement', 'compliance']);
+    const union = new Set(['aml', 'sanctions', 'ict-resilience', 'infosec', 'privacy', 'ai-governance', 'anti-bribery', 'financial-conduct', 'digital-assets', 'esg', 'corporate-governance', 'online-safety', 'procurement', 'consumer-protection', 'compliance']);
     const withFrameworks = new Set(Object.values(FRAMEWORK_DOMAINS));
     for (const [area, domains] of Object.entries(AREA_DOMAINS)) {
       for (const d of domains) expect(union.has(d), `${area} → ${d}`).toBe(true);

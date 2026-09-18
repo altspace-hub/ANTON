@@ -78,7 +78,6 @@ export const AREA_DOMAINS: Readonly<Record<string, readonly GapDomain[]>> = {
   'comms-pr': ['online-safety', 'privacy', 'ict-resilience', 'ai-governance'],
   // AI Act Art 50 transparency for AI-generated campaign copy and imagery,
   // on top of the targeting/profiling privacy rules already mapped.
-  marketing: ['online-safety', 'privacy', 'ai-governance'],
   // copywriting / campaign-design / content-strategy publish AI-generated
   // material (Art 50) and campaign-design's prompt already tells the model to
   // "ensure GDPR compliance in all data collection and email marketing".
@@ -107,6 +106,12 @@ export const AREA_DOMAINS: Readonly<Record<string, readonly GapDomain[]>> = {
   // Retail advice for "financial planners, wealth advisors": suitability and
   // consumer-outcome rules (MiFID II Art 24-25, FCA Consumer Duty, CBI CPC).
   'personal-finance': ['financial-conduct'],
+  // The consumer acquis (Wave 8, 2026-09-18). 'consumer-rights' is the area.json
+  // id of the consumer-protection/ directory. 'marketing' is here because a green
+  // claim is judged under the UCPD as amended, and that is where claims are written.
+  'consumer-rights': ['consumer-protection', 'privacy'],
+  'consumer-legal': ['consumer-protection'],
+  marketing: ['consumer-protection', 'online-safety', 'privacy', 'ai-governance'],
 };
 
 let domainToFrameworks: Map<GapDomain, string[]> | null = null;
