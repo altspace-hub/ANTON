@@ -3,20 +3,54 @@
   "name": "Stablecoins Ordinance (Cap. 643) — Hong Kong",
   "shortName": "HK Stablecoins Ordinance",
   "reference": "Cap. 643 (Stablecoins Ordinance) + HKMA Notices + Guideline on the Supervision of Licensed Stablecoin Issuers",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.hkma.gov.hk/eng/key-functions/financial-stability/stablecoin-issuer-licensing-regime/",
   "inForce": "2025-08-01",
   "firstLicencesExpected": "2026-Q1",
   "supervisor": "HKMA",
   "articleCount": 14,
   "chapters": [
-    {"number": "Scope", "title": "Scope + key definitions", "articles": "SO Part 1"},
-    {"number": "Licensing", "title": "Licensing requirement + criteria", "articles": "SO Part 2"},
-    {"number": "Reserves", "title": "Reserve assets + custody + redemption", "articles": "SO Part 3"},
-    {"number": "AML", "title": "AML/CFT integration", "articles": "SO Part 4 + AMLO"},
-    {"number": "Tech", "title": "Technology risk management", "articles": "SO Part 5 + HKMA SPM"},
-    {"number": "Conduct", "title": "Conduct + customer disclosure + marketing", "articles": "SO Part 6"},
-    {"number": "Wind-down", "title": "Recovery + resolution + wind-down", "articles": "SO Part 7"},
-    {"number": "Supervision", "title": "Supervision + enforcement", "articles": "SO Part 8"}
+    {
+      "number": "Scope",
+      "title": "Scope + key definitions",
+      "articles": "SO Part 1"
+    },
+    {
+      "number": "Licensing",
+      "title": "Licensing requirement + criteria",
+      "articles": "SO Part 2"
+    },
+    {
+      "number": "Reserves",
+      "title": "Reserve assets + custody + redemption",
+      "articles": "SO Part 3"
+    },
+    {
+      "number": "AML",
+      "title": "AML/CFT integration",
+      "articles": "SO Part 4 + AMLO"
+    },
+    {
+      "number": "Tech",
+      "title": "Technology risk management",
+      "articles": "SO Part 5 + HKMA SPM"
+    },
+    {
+      "number": "Conduct",
+      "title": "Conduct + customer disclosure + marketing",
+      "articles": "SO Part 6"
+    },
+    {
+      "number": "Wind-down",
+      "title": "Recovery + resolution + wind-down",
+      "articles": "SO Part 7"
+    },
+    {
+      "number": "Supervision",
+      "title": "Supervision + enforcement",
+      "articles": "SO Part 8"
+    }
   ],
   "themes": [
     "Scope",

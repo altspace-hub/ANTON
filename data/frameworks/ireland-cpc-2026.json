@@ -3,18 +3,48 @@
   "name": "Central Bank of Ireland Consumer Protection Code 2026",
   "shortName": "CPC 2026",
   "reference": "Central Bank (Supervision and Enforcement) Act 2013 (Section 48(1)) (Conduct of Business) Regulations 2025 + Central Bank Consumer Protection (Standards for Business) Regulations 2025",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "inForce": "2026-03-24",
   "supersedes": "Consumer Protection Code 2012",
   "supervisor": "Central Bank of Ireland",
   "articleCount": 12,
   "chapters": [
-    {"number": "1", "title": "General principles + scope", "articles": "Gen Princ"},
-    {"number": "2", "title": "Standards for Business", "articles": "SfB Regs"},
-    {"number": "3", "title": "Securing Customer Interests", "articles": "Conduct Regs Pt II"},
-    {"number": "4", "title": "Effective Governance Arrangements", "articles": "Conduct Regs Pt III"},
-    {"number": "5", "title": "Frauds, Scams + Financial Abuse", "articles": "Conduct Regs Pt IV"},
-    {"number": "6", "title": "Vulnerable Customers + Consumers in Financial Difficulty", "articles": "Conduct Regs Pt V + VI"},
-    {"number": "7", "title": "Sector-specific (Mortgages, Insurance, Cards + Payments)", "articles": "Conduct Regs Pt VII-IX"}
+    {
+      "number": "1",
+      "title": "General principles + scope",
+      "articles": "Gen Princ"
+    },
+    {
+      "number": "2",
+      "title": "Standards for Business",
+      "articles": "SfB Regs"
+    },
+    {
+      "number": "3",
+      "title": "Securing Customer Interests",
+      "articles": "Conduct Regs Pt II"
+    },
+    {
+      "number": "4",
+      "title": "Effective Governance Arrangements",
+      "articles": "Conduct Regs Pt III"
+    },
+    {
+      "number": "5",
+      "title": "Frauds, Scams + Financial Abuse",
+      "articles": "Conduct Regs Pt IV"
+    },
+    {
+      "number": "6",
+      "title": "Vulnerable Customers + Consumers in Financial Difficulty",
+      "articles": "Conduct Regs Pt V + VI"
+    },
+    {
+      "number": "7",
+      "title": "Sector-specific (Mortgages, Insurance, Cards + Payments)",
+      "articles": "Conduct Regs Pt VII-IX"
+    }
   ],
   "themes": [
     "Standards for Business",

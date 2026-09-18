@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { SUBJECT_RULES, type FrameworkKey, type SubjectRule } from './citation-subject-rules.js';
+import { SUBJECT_RULES, divisionCovers, type FrameworkKey, type SubjectRule } from './citation-subject-rules.js';
 
 /**
  * Guard over the article citations carried by `data/knowledge-packs/*`.
@@ -29,9 +29,9 @@ import { SUBJECT_RULES, type FrameworkKey, type SubjectRule } from './citation-s
  *   1. EXISTENCE — only against a framework whose article list is complete
  *      (contiguous 1..N). Against a curated subset, absence proves nothing.
  *   2. DIVISION — the chapter an entity asserts is the one that holds the
- *      article, read from the framework's own division table. Transcribed
- *      regulations only: a curated subset's table spans just the articles it
- *      happens to carry.
+ *      article, read from the framework's own division table — for every file,
+ *      transcribed or curated, since the reader understands both the range and
+ *      the set notation those tables use.
  *   3. SUBJECT — the obligation the entity names must be one the cited article
  *      can carry, judged by the SAME curated map the prompt guard uses
  *      (`citation-subject-rules.ts`). A lexical "do the name and the heading
@@ -54,7 +54,7 @@ interface Framework {
   reference: string;
   referenceAliases: string[];
   articles: Map<number, FrameworkArticle>;
-  divisions: Map<string, [number, number]>;
+  divisions: Map<string, Set<number>>;
   max: number;
   complete: boolean;
 }
@@ -84,10 +84,9 @@ function loadFrameworks(): Framework[] {
       const n = numberOf(a.id ?? '');
       if (Number.isFinite(n)) articles.set(n, a);
     }
-    const divisions = new Map<string, [number, number]>();
+    const divisions = new Map<string, Set<number>>();
     for (const c of raw.chapters ?? []) {
-      const m = /(\d+)(?:\s*-\s*(\d+))?/.exec(c.articles ?? '');
-      if (c.number && m) divisions.set(c.number.toUpperCase(), [Number(m[1]), m[2] ? Number(m[2]) : Number(m[1])]);
+      if (c.number) divisions.set(c.number.toUpperCase(), divisionCovers(c.articles));
     }
     const max = Math.max(0, ...articles.keys());
     const complete = max > 0 && articles.size === max
@@ -193,18 +192,18 @@ export function checkDivision(cites: Cite[]): string[] {
   for (const c of cites) {
     if (excepted(c) || !c.chapter) continue;
     const fw = frameworkFor(c);
-    // Only a transcribed regulation has a trustworthy division table. A curated
-    // subset carries spans over the articles it happens to hold — swiss-nfadp's
-    // table puts a whole chapter at "Arts. 7-7" — so a mismatch against it says
-    // nothing about the citation.
-    if (!fw || !fw.complete || fw.divisions.size === 0) continue;
-    const span = fw.divisions.get(c.chapter.toUpperCase());
+    // Curated files group articles thematically and write the grouping as a SET
+    // ("7, 12, 22, 24"), not a range, so the check reads both notations — until
+    // Wave 8 it read only ranges, reported a correct file as inconsistent, and
+    // the rule was narrowed to transcribed regulations to work around it.
+    if (!fw || fw.divisions.size === 0) continue;
+    const covers = fw.divisions.get(c.chapter.toUpperCase());
     const n = numberOf(c.article);
     if (!Number.isFinite(n)) continue;
-    if (!span) {
+    if (!covers) {
       problems.push(`${c.pack}/${c.ref}: ${fw.reference} has no division ${c.chapter}`);
-    } else if (n < span[0] || n > span[1]) {
-      problems.push(`${c.pack}/${c.ref}: Art. ${c.article} is not in division ${c.chapter} (Arts. ${span[0]}-${span[1]})`);
+    } else if (!covers.has(n)) {
+      problems.push(`${c.pack}/${c.ref}: Art. ${c.article} is not in division ${c.chapter}`);
     }
   }
   return problems;
@@ -258,19 +257,15 @@ describe('knowledge-pack article citations', () => {
     expect(missing).toEqual([]);
   });
 
-  it('every named instrument resolves to a framework file, or is explicitly unmapped', () => {
-    // A pack may cite an instrument ANTON carries no framework file for — that is
-    // a corpus gap, not a wrong citation. What must not happen is a NEAR miss:
-    // an instrument string that was meant to match a file and does not.
+  it('every named instrument resolves to a framework file', () => {
+    // Wave 8 closed this list. The last entry to go was Council Regulation (EC)
+    // No 139/2004: the cellar answers 404 for every XHTML CELEX form of it, and
+    // 200 for the PDF, so it was transcribed from the PDF text layer instead.
+    // An instrument ANTON carries no article list for would reappear here, and
+    // that is a corpus gap rather than a wrong citation — but there are none.
     const unmapped = [...new Set(CITES.filter((c) => c.instrument && !frameworkFor(c))
       .map((c) => c.instrument as string))].sort();
-    // Wave 8 filled MAR, EMIR, PSD2 and Directive 2014/24 from the Official
-    // Journal, so those four moved off this list. What is left is an instrument
-    // ANTON genuinely carries no article list for.
-    // Council Regulation (EC) No 139/2004 is the one instrument left: the
-    // Publications Office cellar has no XHTML for it (404 on every CELEX form
-    // tried), so there is nothing to transcribe from.
-    expect(unmapped).toEqual(['Council Regulation (EC) No 139/2004']);
+    expect(unmapped).toEqual([]);
   });
 
   it('no pack cites an article that its regulation does not have', () => {

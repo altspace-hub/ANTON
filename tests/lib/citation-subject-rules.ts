@@ -63,3 +63,25 @@ export const SUBJECT_RULES: readonly SubjectRule[] = [
   { framework: 'MiCA', subject: /\bICT\b|security polic/i, allowed: [68], why: 'Art. 68(8) carries the ICT duty by applying Regulation (EU) 2022/2554; Art. 75 is the custody service' },
   { framework: 'MiCA', subject: /record[- ]keeping|records? (?:to be )?kept|\d[- ]year retention/i, allowed: [68], why: 'Art. 68(9) is the CASP record-keeping duty; Art. 76 is the operation of a trading platform' },
 ];
+
+/**
+ * Which articles a division covers.
+ *
+ * The `articles` field carries two notations that were never distinguished: a
+ * RANGE ("19-21") and a SET ("7, 12, 22, 24"), the second used where a curated
+ * file groups articles thematically rather than by the act's own structure.
+ * Reading a set as a range turns "7, 12, 22, 24" into 7-7 and reports four
+ * correctly-placed articles as misplaced — which is what made swiss-nfadp-2023
+ * look internally inconsistent when it was not.
+ */
+export function divisionCovers(spec: string | undefined): Set<number> {
+  const out = new Set<number>();
+  for (const part of String(spec ?? '').split(',')) {
+    const m = /(\d+)(?:\s*[-–]\s*(\d+))?/.exec(part);
+    if (!m) continue;
+    const from = Number(m[1]);
+    const to = m[2] ? Number(m[2]) : from;
+    for (let n = from; n <= to && n - from < 1000; n++) out.add(n);
+  }
+  return out;
+}

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
+import { divisionCovers } from './citation-subject-rules.js';
 
 /**
  * Guard over the completeness of `data/frameworks/*.json`.
@@ -55,7 +56,17 @@ const PUBLISHED_ARTICLE_COUNT: Record<string, number> = {
   'psd2-2015': 117,                // Directive (EU) 2015/2366
   'solvency2-2009': 312,           // Directive 2009/138/EC
   'eu-procurement-2014-24': 94,    // Directive 2014/24/EU
+  'eu-consumer-rights-2011-83': 35, // Directive 2011/83/EU
+  'eu-ucpd-2005-29': 21,           // Directive 2005/29/EC
+  'eu-empowering-consumers-2024-825': 6, // Directive (EU) 2024/825
+  'eumr-2004-139': 26,             // Council Regulation (EC) No 139/2004
 };
+
+/**
+ * Acts that are FLAT: articles and no chapters. A missing division table is then
+ * correct, not an omission, and the file says so by declaring `divisionKind: null`.
+ */
+const FLAT = new Set(['eumr-2004-139', 'eu-empowering-consumers-2024-825']);
 
 /**
  * An article a later amendment INSERTED carries a letter ("Art. 35a", added to
@@ -77,6 +88,9 @@ interface FrameworkFile {
   articles?: Article[];
   chapters?: Array<{ number?: string; title?: string; articles?: string }>;
   articleSource?: { celex?: string; retrieved?: string };
+  coverage?: string;
+  coverageNote?: string;
+  divisionKind?: string | null;
 }
 
 function load(): Array<{ file: string; json: FrameworkFile }> {
@@ -161,9 +175,14 @@ describe('framework corpus integrity', () => {
     const problems: string[] = [];
     for (const { file, json } of FILES) {
       if (PUBLISHED_ARTICLE_COUNT[file] === undefined) continue;
+      if (FLAT.has(file)) {
+        // A flat act must not invent one.
+        if ((json.chapters ?? []).length) problems.push(`${file}: declared flat but carries a division table`);
+        continue;
+      }
       const spans = (json.chapters ?? []).map((c) => {
-        const m = /(\d+)(?:\s*-\s*(\d+))?/.exec(c.articles ?? '');
-        return m ? { number: c.number, lo: Number(m[1]), hi: m[2] ? Number(m[2]) : Number(m[1]) } : null;
+        const covered = [...divisionCovers(c.articles)].sort((a, b) => a - b);
+        return covered.length ? { number: c.number, lo: covered[0], hi: covered[covered.length - 1] } : null;
       }).filter((s): s is { number?: string; lo: number; hi: number } => s !== null);
       if (!spans.length) { problems.push(`${file}: no division table`); continue; }
       spans.sort((a, b) => a.lo - b.lo);

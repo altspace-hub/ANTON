@@ -109,6 +109,8 @@ export const FRAMEWORK_DOMAINS: Record<string, GapDomain> = {
   'uk-online-safety-act-2023': 'online-safety',
   // Public procurement
   'eu-procurement-2014-24': 'procurement',
+  // Competition
+  'eumr-2004-139': 'corporate-governance',
   // Consumer protection — the CRD, the UCPD, and the directive that amends both
   'eu-consumer-rights-2011-83': 'consumer-protection',
   'eu-ucpd-2005-29': 'consumer-protection',

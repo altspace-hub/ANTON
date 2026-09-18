@@ -3,15 +3,33 @@
   "name": "Companies Act 2014 — Director Duties + Compliance Statement (ss.223-225)",
   "shortName": "CA 2014 ss.223-225",
   "reference": "Act No. 38 of 2014",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.irishstatutebook.ie/eli/2014/act/38/section/225/enacted/en/html",
   "inForce": "2015-06-01",
   "supervisor": "Corporate Enforcement Authority (CEA) + CRO",
   "articleCount": 8,
   "chapters": [
-    {"number": "1", "title": "Section 223 — director acknowledgement", "articles": "s.223"},
-    {"number": "2", "title": "Section 224 — directors' compliance statement", "articles": "s.224"},
-    {"number": "3", "title": "Section 225 — statement of directors' duties", "articles": "s.225"},
-    {"number": "4", "title": "Interplay with SEAR + CPC 2026", "articles": "cross-reg"}
+    {
+      "number": "1",
+      "title": "Section 223 — director acknowledgement",
+      "articles": "s.223"
+    },
+    {
+      "number": "2",
+      "title": "Section 224 — directors' compliance statement",
+      "articles": "s.224"
+    },
+    {
+      "number": "3",
+      "title": "Section 225 — statement of directors' duties",
+      "articles": "s.225"
+    },
+    {
+      "number": "4",
+      "title": "Interplay with SEAR + CPC 2026",
+      "articles": "cross-reg"
+    }
   ],
   "themes": [
     "Director acknowledgement",

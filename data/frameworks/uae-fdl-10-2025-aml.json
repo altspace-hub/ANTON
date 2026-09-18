@@ -3,20 +3,54 @@
   "name": "UAE Federal Decree-Law 10/2025 + Cabinet Resolution 134/2025 (AML/CTF/PF)",
   "shortName": "UAE FDL 10/2025",
   "reference": "Federal Decree-Law 10/2025 + Cabinet Resolution 134/2025",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.namgr.gov.ae/",
   "supersedes": "Federal Decree-Law 20/2018 + Cabinet Decision 10/2019",
   "inForce": "2025-10-14",
   "supervisor": "CBUAE + EOCN-AML/CTF + SCA + MOE + DFSA + FSRA + VARA (per scope)",
   "articleCount": 15,
   "chapters": [
-    {"number": "Scope", "title": "Designated persons + sectoral scope", "articles": "FDL 10/2025 Arts 2-3"},
-    {"number": "CDD", "title": "Customer Due Diligence + Enhanced Due Diligence + PEPs", "articles": "FDL 10/2025 Arts 5-9"},
-    {"number": "BO", "title": "Beneficial Ownership", "articles": "FDL 10/2025 + CR 134/2025"},
-    {"number": "PF", "title": "Proliferation Financing controls", "articles": "FDL 10/2025 + CR 134/2025"},
-    {"number": "SAR", "title": "Reporting + tipping-off", "articles": "FDL 10/2025 Arts 15-17"},
-    {"number": "Sanctions", "title": "Sanctions + targeted measures", "articles": "FDL 10/2025 Arts 18-19"},
-    {"number": "Governance", "title": "Internal organisation + training + retention", "articles": "FDL 10/2025 Arts 20-23"},
-    {"number": "Enforcement", "title": "Sanctions + supervisory measures", "articles": "FDL 10/2025 Arts 25-30"}
+    {
+      "number": "Scope",
+      "title": "Designated persons + sectoral scope",
+      "articles": "FDL 10/2025 Arts 2-3"
+    },
+    {
+      "number": "CDD",
+      "title": "Customer Due Diligence + Enhanced Due Diligence + PEPs",
+      "articles": "FDL 10/2025 Arts 5-9"
+    },
+    {
+      "number": "BO",
+      "title": "Beneficial Ownership",
+      "articles": "FDL 10/2025 + CR 134/2025"
+    },
+    {
+      "number": "PF",
+      "title": "Proliferation Financing controls",
+      "articles": "FDL 10/2025 + CR 134/2025"
+    },
+    {
+      "number": "SAR",
+      "title": "Reporting + tipping-off",
+      "articles": "FDL 10/2025 Arts 15-17"
+    },
+    {
+      "number": "Sanctions",
+      "title": "Sanctions + targeted measures",
+      "articles": "FDL 10/2025 Arts 18-19"
+    },
+    {
+      "number": "Governance",
+      "title": "Internal organisation + training + retention",
+      "articles": "FDL 10/2025 Arts 20-23"
+    },
+    {
+      "number": "Enforcement",
+      "title": "Sanctions + supervisory measures",
+      "articles": "FDL 10/2025 Arts 25-30"
+    }
   ],
   "themes": [
     "Scope + designated persons",

@@ -3,19 +3,49 @@
   "name": "CSSF Circular 25/901 — Consolidated IFM Reporting",
   "shortName": "CSSF 25/901",
   "reference": "CSSF Circular 25/901",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "issued": "2025-12-19",
   "supersedes": "CSSF Circular 15/612 + related circulars",
   "firstReportingCycle": "FY 2026",
   "supervisor": "CSSF",
   "articleCount": 11,
   "chapters": [
-    {"number": "1", "title": "Scope + applicable IFMs", "articles": "Pt I"},
-    {"number": "2", "title": "Governance + organisational reporting", "articles": "Pt II"},
-    {"number": "3", "title": "Delegation chain reporting", "articles": "Pt III"},
-    {"number": "4", "title": "Funds + AUM reporting", "articles": "Pt IV"},
-    {"number": "5", "title": "Risk + AIFMD II indicators", "articles": "Pt V"},
-    {"number": "6", "title": "ICT + sustainability + AML integration", "articles": "Pt VI"},
-    {"number": "7", "title": "Submission + frequency", "articles": "Pt VII"}
+    {
+      "number": "1",
+      "title": "Scope + applicable IFMs",
+      "articles": "Pt I"
+    },
+    {
+      "number": "2",
+      "title": "Governance + organisational reporting",
+      "articles": "Pt II"
+    },
+    {
+      "number": "3",
+      "title": "Delegation chain reporting",
+      "articles": "Pt III"
+    },
+    {
+      "number": "4",
+      "title": "Funds + AUM reporting",
+      "articles": "Pt IV"
+    },
+    {
+      "number": "5",
+      "title": "Risk + AIFMD II indicators",
+      "articles": "Pt V"
+    },
+    {
+      "number": "6",
+      "title": "ICT + sustainability + AML integration",
+      "articles": "Pt VI"
+    },
+    {
+      "number": "7",
+      "title": "Submission + frequency",
+      "articles": "Pt VII"
+    }
   ],
   "themes": [
     "Scope",

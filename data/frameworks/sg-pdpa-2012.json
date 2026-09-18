@@ -3,20 +3,54 @@
   "name": "Personal Data Protection Act 2012 (PDPA) — Singapore",
   "shortName": "PDPA SG",
   "reference": "Personal Data Protection Act 2012",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.pdpc.gov.sg/Overview-of-PDPA/The-Legislation/Personal-Data-Protection-Act",
   "inForce": "2014-07-02",
   "majorAmendmentsInForce": "2021-02-01",
   "supervisor": "PDPC",
   "articleCount": 11,
   "chapters": [
-    {"number": "1", "title": "Scope + key concepts", "articles": "Parts I-II"},
-    {"number": "2", "title": "Consent + notification + purpose", "articles": "Part IV"},
-    {"number": "3", "title": "Access + correction + transfer", "articles": "Parts V-VI"},
-    {"number": "4", "title": "Care of personal data (protection + retention + transfer limit)", "articles": "Part VI"},
-    {"number": "5", "title": "Mandatory data-breach notification (2020 amendments)", "articles": "Part VIB"},
-    {"number": "6", "title": "Do Not Call registry", "articles": "Part IX"},
-    {"number": "7", "title": "Enforcement + penalties", "articles": "Part X"},
-    {"number": "8", "title": "PDPC guidance + AI Model Governance Framework", "articles": "PDPC publications"}
+    {
+      "number": "1",
+      "title": "Scope + key concepts",
+      "articles": "Parts I-II"
+    },
+    {
+      "number": "2",
+      "title": "Consent + notification + purpose",
+      "articles": "Part IV"
+    },
+    {
+      "number": "3",
+      "title": "Access + correction + transfer",
+      "articles": "Parts V-VI"
+    },
+    {
+      "number": "4",
+      "title": "Care of personal data (protection + retention + transfer limit)",
+      "articles": "Part VI"
+    },
+    {
+      "number": "5",
+      "title": "Mandatory data-breach notification (2020 amendments)",
+      "articles": "Part VIB"
+    },
+    {
+      "number": "6",
+      "title": "Do Not Call registry",
+      "articles": "Part IX"
+    },
+    {
+      "number": "7",
+      "title": "Enforcement + penalties",
+      "articles": "Part X"
+    },
+    {
+      "number": "8",
+      "title": "PDPC guidance + AI Model Governance Framework",
+      "articles": "PDPC publications"
+    }
   ],
   "themes": [
     "Scope",

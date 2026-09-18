@@ -3,6 +3,7 @@
   "name": "EMIR — European Market Infrastructure Regulation",
   "shortName": "EMIR",
   "reference": "Regulation (EU) No 648/2012",
+  "coverage": "transcribed",
   "applicationDate": "2012-08-16",
   "supervisor": "ESMA and national competent authorities",
   "themes": [

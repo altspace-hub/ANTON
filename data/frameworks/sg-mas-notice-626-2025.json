@@ -3,21 +3,59 @@
   "name": "MAS Notice 626 — Prevention of Money Laundering and Countering the Financing of Terrorism (Banks) — revised 30 June 2025",
   "shortName": "MAS Notice 626",
   "reference": "MAS Notice 626 (Banking Act)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.mas.gov.sg/regulation/notices/notice-626",
   "originallyIssued": "2007-04-02",
   "currentRevisionInForce": "2025-06-30",
   "supervisor": "MAS",
   "articleCount": 16,
   "chapters": [
-    {"number": "1", "title": "Scope + risk-based approach", "articles": "Sections 1-5"},
-    {"number": "2", "title": "Customer Due Diligence", "articles": "Section 6"},
-    {"number": "3", "title": "Enhanced + Simplified Due Diligence", "articles": "Sections 8-9"},
-    {"number": "4", "title": "PEPs", "articles": "Section 8"},
-    {"number": "5", "title": "Wire transfers + reliance on third parties", "articles": "Sections 13-14"},
-    {"number": "6", "title": "Suspicious Transaction Reporting + tipping-off", "articles": "Section 7"},
-    {"number": "7", "title": "Sanctions + targeted financial measures", "articles": "Section 12"},
-    {"number": "8", "title": "Internal policies + governance + training + records", "articles": "Sections 10-11, 15"},
-    {"number": "9", "title": "Proliferation financing (NEW 2025)", "articles": "PF Section"}
+    {
+      "number": "1",
+      "title": "Scope + risk-based approach",
+      "articles": "Sections 1-5"
+    },
+    {
+      "number": "2",
+      "title": "Customer Due Diligence",
+      "articles": "Section 6"
+    },
+    {
+      "number": "3",
+      "title": "Enhanced + Simplified Due Diligence",
+      "articles": "Sections 8-9"
+    },
+    {
+      "number": "4",
+      "title": "PEPs",
+      "articles": "Section 8"
+    },
+    {
+      "number": "5",
+      "title": "Wire transfers + reliance on third parties",
+      "articles": "Sections 13-14"
+    },
+    {
+      "number": "6",
+      "title": "Suspicious Transaction Reporting + tipping-off",
+      "articles": "Section 7"
+    },
+    {
+      "number": "7",
+      "title": "Sanctions + targeted financial measures",
+      "articles": "Section 12"
+    },
+    {
+      "number": "8",
+      "title": "Internal policies + governance + training + records",
+      "articles": "Sections 10-11, 15"
+    },
+    {
+      "number": "9",
+      "title": "Proliferation financing (NEW 2025)",
+      "articles": "PF Section"
+    }
   ],
   "themes": [
     "Scope + risk-based approach",

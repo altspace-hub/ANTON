@@ -3,6 +3,8 @@
   "name": "ISO 22301 — Business Continuity Management Systems",
   "shortName": "ISO 22301",
   "reference": "ISO 22301:2019",
+  "coverage": "restricted",
+  "coverageNote": "ISO standard — the normative text is sold by ISO and may not be redistributed.",
   "applicationDate": "2019-10-31",
   "articleCount": 26,
   "themes": [
@@ -16,31 +18,161 @@
     "Improvement"
   ],
   "articles": [
-    {"id":"4.1","title":"Understanding the organisation and its context","theme":"Context & Scope","requirement":"The organisation shall determine external and internal issues relevant to its purpose and that affect its ability to achieve the intended outcomes of the BCMS."},
-    {"id":"4.2","title":"Understanding the needs and expectations of interested parties","theme":"Context & Scope","requirement":"The organisation shall determine the interested parties relevant to the BCMS and their requirements, including applicable legal, regulatory, and contractual obligations."},
-    {"id":"4.3","title":"Determining the scope of the BCMS","theme":"Context & Scope","requirement":"The organisation shall determine the boundaries and applicability of the BCMS, considering internal and external issues, requirements of interested parties, and the products and services it covers."},
-    {"id":"4.4","title":"Business continuity management system","theme":"Context & Scope","requirement":"The organisation shall establish, implement, maintain, and continually improve a BCMS, including the processes needed and their interactions, in accordance with ISO 22301."},
-    {"id":"5.1","title":"Leadership and commitment","theme":"Leadership","requirement":"Top management shall demonstrate leadership and commitment by ensuring the BCMS policy and objectives are established, resources are available, and the BCMS achieves its intended outcomes."},
-    {"id":"5.2","title":"Policy","theme":"Leadership","requirement":"Top management shall establish a business continuity policy appropriate to the purpose of the organisation, providing a framework for setting objectives and including a commitment to continual improvement."},
-    {"id":"5.3","title":"Organisational roles, responsibilities, and authorities","theme":"Leadership","requirement":"Top management shall assign responsibilities and authorities for relevant BCMS roles, ensuring conformity with ISO 22301 and reporting on BCMS performance to top management."},
-    {"id":"6.1","title":"Actions to address risks and opportunities","theme":"Planning","requirement":"The organisation shall determine risks and opportunities arising from internal/external issues and interested party requirements that need to be addressed to ensure the BCMS can achieve its intended outcomes."},
-    {"id":"6.2","title":"Business continuity objectives and plans to achieve them","theme":"Planning","requirement":"The organisation shall establish business continuity objectives at relevant functions and levels, which are measurable, monitored, communicated, and updated as appropriate."},
-    {"id":"6.3","title":"Planning of changes","theme":"Planning","requirement":"When the organisation determines the need for changes to the BCMS, the changes shall be carried out in a planned and systematic manner."},
-    {"id":"7.1","title":"Resources","theme":"Support & Resources","requirement":"The organisation shall determine and provide the resources needed for the establishment, implementation, maintenance, and continual improvement of the BCMS."},
-    {"id":"7.2","title":"Competence","theme":"Support & Resources","requirement":"The organisation shall determine necessary competence of persons doing work that affects BCMS performance, ensure they are competent on the basis of education, training, or experience, and retain evidence."},
-    {"id":"7.3","title":"Awareness","theme":"Support & Resources","requirement":"Persons doing work under the organisation's control shall be aware of the business continuity policy, their contribution to the BCMS, and the implications of not conforming to requirements."},
-    {"id":"7.4","title":"Communication","theme":"Support & Resources","requirement":"The organisation shall determine internal and external communications relevant to the BCMS, including what, when, with whom, and how to communicate, and who communicates."},
-    {"id":"7.5","title":"Documented information","theme":"Support & Resources","requirement":"The BCMS shall include documented information required by ISO 22301 and determined as necessary for BCMS effectiveness, controlled for availability, suitability, and adequate protection."},
-    {"id":"8.1","title":"Operational planning and control","theme":"BIA & Risk","requirement":"The organisation shall plan, implement, and control the processes needed to meet BCMS requirements, including managing planned changes and reviewing unintended changes."},
-    {"id":"8.2","title":"Business impact analysis and risk assessment","theme":"BIA & Risk","requirement":"The organisation shall implement and maintain a BIA process and risk assessment process that identifies prioritised activities, time frames for resumption, required resources, and impacts of disruption."},
-    {"id":"8.3","title":"Business continuity strategies and solutions","theme":"Business Continuity Plans","requirement":"Based on BIA and risk assessment outputs, the organisation shall identify and select business continuity strategies and solutions to protect, continue, and recover prioritised activities."},
-    {"id":"8.4","title":"Business continuity plans and procedures","theme":"Business Continuity Plans","requirement":"The organisation shall establish and implement business continuity plans and procedures to manage a disruptive incident, including roles, actions, communication, and recovery steps."},
-    {"id":"8.5","title":"Exercise and testing programme","theme":"Business Continuity Plans","requirement":"The organisation shall exercise and test its business continuity plans and procedures to ensure they are consistent with objectives, effective, and produce outcomes that are documented and reviewed."},
-    {"id":"8.6","title":"Evaluation of business continuity documentation and capabilities","theme":"Business Continuity Plans","requirement":"The organisation shall evaluate the business continuity documentation and capabilities at planned intervals and when significant changes occur, updating as necessary."},
-    {"id":"9.1","title":"Monitoring, measurement, analysis, and evaluation","theme":"Performance Evaluation","requirement":"The organisation shall determine what needs to be monitored and measured, the methods, when it shall be performed, and when results shall be analysed and evaluated."},
-    {"id":"9.2","title":"Internal audit","theme":"Performance Evaluation","requirement":"The organisation shall conduct internal audits at planned intervals to determine whether the BCMS conforms to its own requirements and ISO 22301, and is effectively implemented and maintained."},
-    {"id":"9.3","title":"Management review","theme":"Performance Evaluation","requirement":"Top management shall review the BCMS at planned intervals to ensure its continuing suitability, adequacy, and effectiveness, considering audit results, performance, risks, and opportunities for improvement."},
-    {"id":"10.1","title":"Nonconformity and corrective action","theme":"Improvement","requirement":"When a nonconformity occurs, the organisation shall react to it, evaluate the need for corrective action to eliminate root causes, implement changes, and review the effectiveness of action taken."},
-    {"id":"10.2","title":"Continual improvement","theme":"Improvement","requirement":"The organisation shall continually improve the suitability, adequacy, and effectiveness of the BCMS through the use of policy, objectives, audit results, analysis, corrective actions, and management review."}
+    {
+      "id": "4.1",
+      "title": "Understanding the organisation and its context",
+      "theme": "Context & Scope",
+      "requirement": "The organisation shall determine external and internal issues relevant to its purpose and that affect its ability to achieve the intended outcomes of the BCMS."
+    },
+    {
+      "id": "4.2",
+      "title": "Understanding the needs and expectations of interested parties",
+      "theme": "Context & Scope",
+      "requirement": "The organisation shall determine the interested parties relevant to the BCMS and their requirements, including applicable legal, regulatory, and contractual obligations."
+    },
+    {
+      "id": "4.3",
+      "title": "Determining the scope of the BCMS",
+      "theme": "Context & Scope",
+      "requirement": "The organisation shall determine the boundaries and applicability of the BCMS, considering internal and external issues, requirements of interested parties, and the products and services it covers."
+    },
+    {
+      "id": "4.4",
+      "title": "Business continuity management system",
+      "theme": "Context & Scope",
+      "requirement": "The organisation shall establish, implement, maintain, and continually improve a BCMS, including the processes needed and their interactions, in accordance with ISO 22301."
+    },
+    {
+      "id": "5.1",
+      "title": "Leadership and commitment",
+      "theme": "Leadership",
+      "requirement": "Top management shall demonstrate leadership and commitment by ensuring the BCMS policy and objectives are established, resources are available, and the BCMS achieves its intended outcomes."
+    },
+    {
+      "id": "5.2",
+      "title": "Policy",
+      "theme": "Leadership",
+      "requirement": "Top management shall establish a business continuity policy appropriate to the purpose of the organisation, providing a framework for setting objectives and including a commitment to continual improvement."
+    },
+    {
+      "id": "5.3",
+      "title": "Organisational roles, responsibilities, and authorities",
+      "theme": "Leadership",
+      "requirement": "Top management shall assign responsibilities and authorities for relevant BCMS roles, ensuring conformity with ISO 22301 and reporting on BCMS performance to top management."
+    },
+    {
+      "id": "6.1",
+      "title": "Actions to address risks and opportunities",
+      "theme": "Planning",
+      "requirement": "The organisation shall determine risks and opportunities arising from internal/external issues and interested party requirements that need to be addressed to ensure the BCMS can achieve its intended outcomes."
+    },
+    {
+      "id": "6.2",
+      "title": "Business continuity objectives and plans to achieve them",
+      "theme": "Planning",
+      "requirement": "The organisation shall establish business continuity objectives at relevant functions and levels, which are measurable, monitored, communicated, and updated as appropriate."
+    },
+    {
+      "id": "6.3",
+      "title": "Planning of changes",
+      "theme": "Planning",
+      "requirement": "When the organisation determines the need for changes to the BCMS, the changes shall be carried out in a planned and systematic manner."
+    },
+    {
+      "id": "7.1",
+      "title": "Resources",
+      "theme": "Support & Resources",
+      "requirement": "The organisation shall determine and provide the resources needed for the establishment, implementation, maintenance, and continual improvement of the BCMS."
+    },
+    {
+      "id": "7.2",
+      "title": "Competence",
+      "theme": "Support & Resources",
+      "requirement": "The organisation shall determine necessary competence of persons doing work that affects BCMS performance, ensure they are competent on the basis of education, training, or experience, and retain evidence."
+    },
+    {
+      "id": "7.3",
+      "title": "Awareness",
+      "theme": "Support & Resources",
+      "requirement": "Persons doing work under the organisation's control shall be aware of the business continuity policy, their contribution to the BCMS, and the implications of not conforming to requirements."
+    },
+    {
+      "id": "7.4",
+      "title": "Communication",
+      "theme": "Support & Resources",
+      "requirement": "The organisation shall determine internal and external communications relevant to the BCMS, including what, when, with whom, and how to communicate, and who communicates."
+    },
+    {
+      "id": "7.5",
+      "title": "Documented information",
+      "theme": "Support & Resources",
+      "requirement": "The BCMS shall include documented information required by ISO 22301 and determined as necessary for BCMS effectiveness, controlled for availability, suitability, and adequate protection."
+    },
+    {
+      "id": "8.1",
+      "title": "Operational planning and control",
+      "theme": "BIA & Risk",
+      "requirement": "The organisation shall plan, implement, and control the processes needed to meet BCMS requirements, including managing planned changes and reviewing unintended changes."
+    },
+    {
+      "id": "8.2",
+      "title": "Business impact analysis and risk assessment",
+      "theme": "BIA & Risk",
+      "requirement": "The organisation shall implement and maintain a BIA process and risk assessment process that identifies prioritised activities, time frames for resumption, required resources, and impacts of disruption."
+    },
+    {
+      "id": "8.3",
+      "title": "Business continuity strategies and solutions",
+      "theme": "Business Continuity Plans",
+      "requirement": "Based on BIA and risk assessment outputs, the organisation shall identify and select business continuity strategies and solutions to protect, continue, and recover prioritised activities."
+    },
+    {
+      "id": "8.4",
+      "title": "Business continuity plans and procedures",
+      "theme": "Business Continuity Plans",
+      "requirement": "The organisation shall establish and implement business continuity plans and procedures to manage a disruptive incident, including roles, actions, communication, and recovery steps."
+    },
+    {
+      "id": "8.5",
+      "title": "Exercise and testing programme",
+      "theme": "Business Continuity Plans",
+      "requirement": "The organisation shall exercise and test its business continuity plans and procedures to ensure they are consistent with objectives, effective, and produce outcomes that are documented and reviewed."
+    },
+    {
+      "id": "8.6",
+      "title": "Evaluation of business continuity documentation and capabilities",
+      "theme": "Business Continuity Plans",
+      "requirement": "The organisation shall evaluate the business continuity documentation and capabilities at planned intervals and when significant changes occur, updating as necessary."
+    },
+    {
+      "id": "9.1",
+      "title": "Monitoring, measurement, analysis, and evaluation",
+      "theme": "Performance Evaluation",
+      "requirement": "The organisation shall determine what needs to be monitored and measured, the methods, when it shall be performed, and when results shall be analysed and evaluated."
+    },
+    {
+      "id": "9.2",
+      "title": "Internal audit",
+      "theme": "Performance Evaluation",
+      "requirement": "The organisation shall conduct internal audits at planned intervals to determine whether the BCMS conforms to its own requirements and ISO 22301, and is effectively implemented and maintained."
+    },
+    {
+      "id": "9.3",
+      "title": "Management review",
+      "theme": "Performance Evaluation",
+      "requirement": "Top management shall review the BCMS at planned intervals to ensure its continuing suitability, adequacy, and effectiveness, considering audit results, performance, risks, and opportunities for improvement."
+    },
+    {
+      "id": "10.1",
+      "title": "Nonconformity and corrective action",
+      "theme": "Improvement",
+      "requirement": "When a nonconformity occurs, the organisation shall react to it, evaluate the need for corrective action to eliminate root causes, implement changes, and review the effectiveness of action taken."
+    },
+    {
+      "id": "10.2",
+      "title": "Continual improvement",
+      "theme": "Improvement",
+      "requirement": "The organisation shall continually improve the suitability, adequacy, and effectiveness of the BCMS through the use of policy, objectives, audit results, analysis, corrective actions, and management review."
+    }
   ]
 }

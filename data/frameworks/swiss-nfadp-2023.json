@@ -3,6 +3,8 @@
   "name": "Federal Act on Data Protection (revised — nFADP)",
   "shortName": "nFADP",
   "reference": "SR 235.1",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "referenceAliases": [
     "nFADP (Swiss Federal Act on Data Protection)",
     "nFADP",

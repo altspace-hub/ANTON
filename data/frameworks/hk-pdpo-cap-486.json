@@ -3,19 +3,49 @@
   "name": "Hong Kong Personal Data (Privacy) Ordinance (Cap. 486)",
   "shortName": "HK PDPO",
   "reference": "Cap. 486 + 2021 Doxxing Amendment Ordinance + PCPD Guidance",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.pcpd.org.hk/english/data_privacy_law/ordinance_at_a_Glance/ordinance.html",
   "originalInForce": "1995-12-20",
   "doxxingAmendmentsInForce": "2021-10-08",
   "supervisor": "PCPD",
   "articleCount": 11,
   "chapters": [
-    {"number": "Principles", "title": "Six Data Protection Principles (DPPs)", "articles": "Schedule 1"},
-    {"number": "Rights", "title": "Data subject rights", "articles": "PDPO Part V"},
-    {"number": "Direct", "title": "Direct marketing", "articles": "PDPO Part VIA"},
-    {"number": "Cross-border", "title": "Cross-border transfer (S.33 dormant)", "articles": "PDPO Section 33"},
-    {"number": "Doxxing", "title": "Doxxing offences (2021 amendment)", "articles": "PDPO Sections 64(3A)-(3D)"},
-    {"number": "Enforcement", "title": "PCPD enforcement", "articles": "PDPO Part VIII"},
-    {"number": "Reform", "title": "Pending reform proposals", "articles": "Government study"}
+    {
+      "number": "Principles",
+      "title": "Six Data Protection Principles (DPPs)",
+      "articles": "Schedule 1"
+    },
+    {
+      "number": "Rights",
+      "title": "Data subject rights",
+      "articles": "PDPO Part V"
+    },
+    {
+      "number": "Direct",
+      "title": "Direct marketing",
+      "articles": "PDPO Part VIA"
+    },
+    {
+      "number": "Cross-border",
+      "title": "Cross-border transfer (S.33 dormant)",
+      "articles": "PDPO Section 33"
+    },
+    {
+      "number": "Doxxing",
+      "title": "Doxxing offences (2021 amendment)",
+      "articles": "PDPO Sections 64(3A)-(3D)"
+    },
+    {
+      "number": "Enforcement",
+      "title": "PCPD enforcement",
+      "articles": "PDPO Part VIII"
+    },
+    {
+      "number": "Reform",
+      "title": "Pending reform proposals",
+      "articles": "Government study"
+    }
   ],
   "themes": [
     "Six DPPs",

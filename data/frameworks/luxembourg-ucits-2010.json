@@ -3,19 +3,49 @@
   "name": "Luxembourg UCITS Law of 17 December 2010 (+ Part II UCIs)",
   "shortName": "UCITS Law (LU)",
   "reference": "Law of 17 December 2010 — relating to undertakings for collective investment",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://legilux.public.lu/eli/etat/leg/loi/2010/12/17/n2/jo",
   "inForce": "2010-12-24",
   "amendedBy": "Bill 8628 (AIFMD II) — 16 April 2026",
   "supervisor": "CSSF",
   "articleCount": 10,
   "chapters": [
-    {"number": "1", "title": "Part I — UCITS (retail-passportable)", "articles": "Pt I, Chap 1-14"},
-    {"number": "2", "title": "Part II — UCIs (non-UCITS)", "articles": "Pt II, Chap 15-16"},
-    {"number": "3", "title": "Chapter 15 — Management Companies", "articles": "Chap 15"},
-    {"number": "4", "title": "Investment policy + limits", "articles": "Chap 5"},
-    {"number": "5", "title": "Depositary obligations", "articles": "Chap 6"},
-    {"number": "6", "title": "Investor information (Prospectus + KID + reports)", "articles": "Chap 7"},
-    {"number": "7", "title": "Cross-border marketing (passport)", "articles": "Chap 9"}
+    {
+      "number": "1",
+      "title": "Part I — UCITS (retail-passportable)",
+      "articles": "Pt I, Chap 1-14"
+    },
+    {
+      "number": "2",
+      "title": "Part II — UCIs (non-UCITS)",
+      "articles": "Pt II, Chap 15-16"
+    },
+    {
+      "number": "3",
+      "title": "Chapter 15 — Management Companies",
+      "articles": "Chap 15"
+    },
+    {
+      "number": "4",
+      "title": "Investment policy + limits",
+      "articles": "Chap 5"
+    },
+    {
+      "number": "5",
+      "title": "Depositary obligations",
+      "articles": "Chap 6"
+    },
+    {
+      "number": "6",
+      "title": "Investor information (Prospectus + KID + reports)",
+      "articles": "Chap 7"
+    },
+    {
+      "number": "7",
+      "title": "Cross-border marketing (passport)",
+      "articles": "Chap 9"
+    }
   ],
   "themes": [
     "UCITS authorisation",

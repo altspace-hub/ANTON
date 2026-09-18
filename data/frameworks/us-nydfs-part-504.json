@@ -3,16 +3,38 @@
   "name": "23 NYCRR Part 504 — Transaction Monitoring and Filtering Programs",
   "shortName": "NYDFS Part 504",
   "reference": "23 NYCRR Part 504",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.dfs.ny.gov/system/files/documents/2020/06/rf_23nycrr504_txt.pdf",
   "inForce": "2017-01-01",
   "supervisor": "NYDFS",
   "articleCount": 6,
   "chapters": [
-    {"number": "1", "title": "§504.1 Background + purpose", "articles": "§504.1"},
-    {"number": "2", "title": "§504.2 Definitions", "articles": "§504.2"},
-    {"number": "3", "title": "§504.3 Programs required", "articles": "§504.3"},
-    {"number": "4", "title": "§504.4 Annual certification", "articles": "§504.4"},
-    {"number": "5", "title": "§504.5 Penalties + enforcement", "articles": "§504.5"}
+    {
+      "number": "1",
+      "title": "§504.1 Background + purpose",
+      "articles": "§504.1"
+    },
+    {
+      "number": "2",
+      "title": "§504.2 Definitions",
+      "articles": "§504.2"
+    },
+    {
+      "number": "3",
+      "title": "§504.3 Programs required",
+      "articles": "§504.3"
+    },
+    {
+      "number": "4",
+      "title": "§504.4 Annual certification",
+      "articles": "§504.4"
+    },
+    {
+      "number": "5",
+      "title": "§504.5 Penalties + enforcement",
+      "articles": "§504.5"
+    }
   ],
   "themes": [
     "Scope — Regulated Institutions",

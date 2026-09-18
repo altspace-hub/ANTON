@@ -3,6 +3,8 @@
   "name": "Swiss Financial Services Act (FinSA) + Financial Institutions Act (FinIA)",
   "shortName": "FinSA / FinIA",
   "reference": "SR 950.1 (FinSA) + SR 954.1 (FinIA)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "referenceAliases": [
     "FinSA (Swiss Financial Services Act)",
     "FinSA",

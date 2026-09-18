@@ -3,6 +3,8 @@
   "name": "AIFMD II — Directive (EU) 2024/927 + Luxembourg Bill 8628",
   "shortName": "AIFMD II (LU)",
   "reference": "Directive (EU) 2024/927 + Lux Bill 8628",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://eur-lex.europa.eu/eli/dir/2024/927/oj",
   "euInForce": "2024-04-15",
   "transpositionDeadline": "2026-04-16",
@@ -10,13 +12,41 @@
   "supervisor": "CSSF (+ ESMA)",
   "articleCount": 14,
   "chapters": [
-    {"number": "1", "title": "Loan-Originating AIFs (LO-AIFs)", "articles": "Art. 15, 16"},
-    {"number": "2", "title": "Liquidity Management Tools (LMTs)", "articles": "Art. 16, Annex V"},
-    {"number": "3", "title": "Delegation + substance", "articles": "Art. 20"},
-    {"number": "4", "title": "Marketing of AIFs (incl. retail)", "articles": "Art. 30a, 43-43b"},
-    {"number": "5", "title": "Reporting + cooperation", "articles": "Art. 24, 50"},
-    {"number": "6", "title": "Depositary cooperation", "articles": "Art. 21"},
-    {"number": "7", "title": "UCITS alignment", "articles": "Dir 2009/65 amendments"}
+    {
+      "number": "1",
+      "title": "Loan-Originating AIFs (LO-AIFs)",
+      "articles": "Art. 15, 16"
+    },
+    {
+      "number": "2",
+      "title": "Liquidity Management Tools (LMTs)",
+      "articles": "Art. 16, Annex V"
+    },
+    {
+      "number": "3",
+      "title": "Delegation + substance",
+      "articles": "Art. 20"
+    },
+    {
+      "number": "4",
+      "title": "Marketing of AIFs (incl. retail)",
+      "articles": "Art. 30a, 43-43b"
+    },
+    {
+      "number": "5",
+      "title": "Reporting + cooperation",
+      "articles": "Art. 24, 50"
+    },
+    {
+      "number": "6",
+      "title": "Depositary cooperation",
+      "articles": "Art. 21"
+    },
+    {
+      "number": "7",
+      "title": "UCITS alignment",
+      "articles": "Dir 2009/65 amendments"
+    }
   ],
   "themes": [
     "Loan-Originating AIFs",

@@ -3,23 +3,81 @@
   "name": "US Federal BSA AML Program — Five Pillars + CIP + SAR/CTR + EDD + 314 + Priorities",
   "shortName": "US BSA AML Program",
   "reference": "BSA + USA PATRIOT Act + AMLA 2020 + 31 CFR Chapter X + CDD Rule + FFIEC Manual",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "supervisor": "FinCEN + functional regulators (OCC / FRB / FDIC / NCUA / SEC / CFTC / IRS-CI)",
   "articleCount": 16,
   "chapters": [
-    {"number": "Prog", "title": "Written AML Program (§352)", "articles": "USA PATRIOT §352 + 31 CFR per category"},
-    {"number": "P1", "title": "Pillar 1 — Internal policies, procedures + controls", "articles": "31 CFR 1020.210 et al"},
-    {"number": "P2", "title": "Pillar 2 — Designated BSA Compliance Officer", "articles": "31 CFR 1020.210 et al"},
-    {"number": "P3", "title": "Pillar 3 — Ongoing employee training", "articles": "31 CFR 1020.210 et al"},
-    {"number": "P4", "title": "Pillar 4 — Independent testing", "articles": "31 CFR 1020.210 et al"},
-    {"number": "P5", "title": "Pillar 5 — CDD + Beneficial Ownership", "articles": "31 CFR 1010.230"},
-    {"number": "CIP", "title": "Customer Identification Program (§326)", "articles": "31 CFR 1020.220"},
-    {"number": "SAR", "title": "Suspicious Activity Reporting", "articles": "31 CFR 1020.320"},
-    {"number": "CTR", "title": "Currency Transaction Reporting", "articles": "31 CFR 1010.310-313"},
-    {"number": "EDD", "title": "Enhanced Due Diligence (§312, §313)", "articles": "31 CFR 1010.605 et al"},
-    {"number": "Sanc", "title": "OFAC sanctions integration", "articles": "31 CFR Chapter V (cross-ref)"},
-    {"number": "Info", "title": "§314(a) + §314(b) info sharing", "articles": "USA PATRIOT §314"},
-    {"number": "Prior", "title": "8 AML/CFT National Priorities", "articles": "AMLA 2020 + FinCEN June 2021"},
-    {"number": "Rec", "title": "Recordkeeping (5-year minimum)", "articles": "31 CFR 1010.430"}
+    {
+      "number": "Prog",
+      "title": "Written AML Program (§352)",
+      "articles": "USA PATRIOT §352 + 31 CFR per category"
+    },
+    {
+      "number": "P1",
+      "title": "Pillar 1 — Internal policies, procedures + controls",
+      "articles": "31 CFR 1020.210 et al"
+    },
+    {
+      "number": "P2",
+      "title": "Pillar 2 — Designated BSA Compliance Officer",
+      "articles": "31 CFR 1020.210 et al"
+    },
+    {
+      "number": "P3",
+      "title": "Pillar 3 — Ongoing employee training",
+      "articles": "31 CFR 1020.210 et al"
+    },
+    {
+      "number": "P4",
+      "title": "Pillar 4 — Independent testing",
+      "articles": "31 CFR 1020.210 et al"
+    },
+    {
+      "number": "P5",
+      "title": "Pillar 5 — CDD + Beneficial Ownership",
+      "articles": "31 CFR 1010.230"
+    },
+    {
+      "number": "CIP",
+      "title": "Customer Identification Program (§326)",
+      "articles": "31 CFR 1020.220"
+    },
+    {
+      "number": "SAR",
+      "title": "Suspicious Activity Reporting",
+      "articles": "31 CFR 1020.320"
+    },
+    {
+      "number": "CTR",
+      "title": "Currency Transaction Reporting",
+      "articles": "31 CFR 1010.310-313"
+    },
+    {
+      "number": "EDD",
+      "title": "Enhanced Due Diligence (§312, §313)",
+      "articles": "31 CFR 1010.605 et al"
+    },
+    {
+      "number": "Sanc",
+      "title": "OFAC sanctions integration",
+      "articles": "31 CFR Chapter V (cross-ref)"
+    },
+    {
+      "number": "Info",
+      "title": "§314(a) + §314(b) info sharing",
+      "articles": "USA PATRIOT §314"
+    },
+    {
+      "number": "Prior",
+      "title": "8 AML/CFT National Priorities",
+      "articles": "AMLA 2020 + FinCEN June 2021"
+    },
+    {
+      "number": "Rec",
+      "title": "Recordkeeping (5-year minimum)",
+      "articles": "31 CFR 1010.430"
+    }
   ],
   "themes": [
     "AML Program (5 pillars)",

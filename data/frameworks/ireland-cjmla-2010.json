@@ -3,17 +3,43 @@
   "name": "Criminal Justice (Money Laundering and Terrorist Financing) Acts 2010-2021",
   "shortName": "CJMLA",
   "reference": "Act No. 6 of 2010 (as amended by 2013, 2018, 2021 Acts)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "inForce": "2010-07-15",
   "supervisor": "Central Bank of Ireland (FIs) + Department of Justice + Revenue + professional bodies",
   "euAmlrApplies": "2027-07-10",
   "articleCount": 11,
   "chapters": [
-    {"number": "1", "title": "Definitions + Designated Persons (Pt 1, ss.1-29)", "articles": "ss.1-29"},
-    {"number": "2", "title": "Customer Due Diligence (Pt 4 ss.33-39)", "articles": "ss.33-39"},
-    {"number": "3", "title": "Enhanced Due Diligence + PEPs (Pt 4 ss.37, 38A)", "articles": "ss.37, 38A"},
-    {"number": "4", "title": "Reporting (Pt 5 ss.42-48)", "articles": "ss.42-48"},
-    {"number": "5", "title": "Internal Policies, Controls + Training (Pt 4 s.54)", "articles": "s.54"},
-    {"number": "6", "title": "Supervision + Sanctions (Pt 9 ss.60-110)", "articles": "ss.60-110"}
+    {
+      "number": "1",
+      "title": "Definitions + Designated Persons (Pt 1, ss.1-29)",
+      "articles": "ss.1-29"
+    },
+    {
+      "number": "2",
+      "title": "Customer Due Diligence (Pt 4 ss.33-39)",
+      "articles": "ss.33-39"
+    },
+    {
+      "number": "3",
+      "title": "Enhanced Due Diligence + PEPs (Pt 4 ss.37, 38A)",
+      "articles": "ss.37, 38A"
+    },
+    {
+      "number": "4",
+      "title": "Reporting (Pt 5 ss.42-48)",
+      "articles": "ss.42-48"
+    },
+    {
+      "number": "5",
+      "title": "Internal Policies, Controls + Training (Pt 4 s.54)",
+      "articles": "s.54"
+    },
+    {
+      "number": "6",
+      "title": "Supervision + Sanctions (Pt 9 ss.60-110)",
+      "articles": "ss.60-110"
+    }
   ],
   "themes": [
     "Designated person scope",

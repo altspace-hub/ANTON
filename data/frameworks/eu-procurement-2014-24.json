@@ -3,6 +3,7 @@
   "name": "EU Public Procurement Directive",
   "shortName": "Directive 2014/24/EU",
   "reference": "Directive 2014/24/EU",
+  "coverage": "transcribed",
   "referenceAliases": [
     "Directive 2014/24/EU on public procurement"
   ],

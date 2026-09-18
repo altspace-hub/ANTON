@@ -3,15 +3,37 @@
   "name": "UN Security Council Sanctions — Baseline Regimes",
   "shortName": "UN Sanctions",
   "reference": "UNSC Sanctions Regimes adopted under Chapter VII",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://main.un.org/securitycouncil/en/sanctions/information",
   "supervisor": "UN Security Council Sanctions Committees + Member States",
   "articleCount": 8,
   "chapters": [
-    {"number": "Framework", "title": "UN Sanctions architecture", "articles": "UN Charter Ch. VII"},
-    {"number": "1267", "title": "1267/1989/2253 — ISIL/Al-Qaida", "articles": "UNSCR 1267 + successor"},
-    {"number": "1718", "title": "1718 — DPRK", "articles": "UNSCR 1718 + successor"},
-    {"number": "2231", "title": "2231 — Iran (JCPOA)", "articles": "UNSCR 2231"},
-    {"number": "Other", "title": "Other UN regimes (1591 Sudan, 1533 DRC, 2140 Yemen, etc.)", "articles": "Various UNSCRs"}
+    {
+      "number": "Framework",
+      "title": "UN Sanctions architecture",
+      "articles": "UN Charter Ch. VII"
+    },
+    {
+      "number": "1267",
+      "title": "1267/1989/2253 — ISIL/Al-Qaida",
+      "articles": "UNSCR 1267 + successor"
+    },
+    {
+      "number": "1718",
+      "title": "1718 — DPRK",
+      "articles": "UNSCR 1718 + successor"
+    },
+    {
+      "number": "2231",
+      "title": "2231 — Iran (JCPOA)",
+      "articles": "UNSCR 2231"
+    },
+    {
+      "number": "Other",
+      "title": "Other UN regimes (1591 Sudan, 1533 DRC, 2140 Yemen, etc.)",
+      "articles": "Various UNSCRs"
+    }
   ],
   "themes": [
     "UN Charter Chapter VII authority",

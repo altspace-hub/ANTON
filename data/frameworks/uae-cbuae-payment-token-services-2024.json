@@ -3,17 +3,39 @@
   "name": "CBUAE Payment Token Services Regulation 2024",
   "shortName": "CBUAE PTSR 2024",
   "reference": "CBUAE Payment Token Services Regulation 2024",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.centralbank.ae/",
   "issued": "2024",
   "inForceProgressivelyFrom": "2024-Q4",
   "supervisor": "CBUAE",
   "articleCount": 9,
   "chapters": [
-    {"number": "Scope", "title": "Scope — payment tokens + payment token services", "articles": "PTSR Part A"},
-    {"number": "Licensing", "title": "Licensing categories + capital", "articles": "PTSR Part B"},
-    {"number": "Reserves", "title": "Reserve assets + redemption", "articles": "PTSR Part C"},
-    {"number": "Operations", "title": "AML + technology + custody + conduct", "articles": "PTSR Part D"},
-    {"number": "Supervision", "title": "Supervision + enforcement", "articles": "PTSR Part E"}
+    {
+      "number": "Scope",
+      "title": "Scope — payment tokens + payment token services",
+      "articles": "PTSR Part A"
+    },
+    {
+      "number": "Licensing",
+      "title": "Licensing categories + capital",
+      "articles": "PTSR Part B"
+    },
+    {
+      "number": "Reserves",
+      "title": "Reserve assets + redemption",
+      "articles": "PTSR Part C"
+    },
+    {
+      "number": "Operations",
+      "title": "AML + technology + custody + conduct",
+      "articles": "PTSR Part D"
+    },
+    {
+      "number": "Supervision",
+      "title": "Supervision + enforcement",
+      "articles": "PTSR Part E"
+    }
   ],
   "themes": [
     "Scope",

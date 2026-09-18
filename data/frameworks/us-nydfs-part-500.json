@@ -3,6 +3,8 @@
   "name": "23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services Companies (as amended by Second Amendment, Nov 2023)",
   "shortName": "NYDFS Part 500",
   "reference": "23 NYCRR Part 500",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.dfs.ny.gov/industry-guidance/cybersecurity-resource-center",
   "originalInForce": "2017-03-01",
   "secondAmendmentInForce": "2023-11-01",

@@ -3,6 +3,8 @@
   "name": "EU Russia Sanctions — Council Regulation (EU) 269/2014 + 833/2014",
   "shortName": "EU Russia Sanctions",
   "reference": "Council Reg (EU) 269/2014 + Council Reg (EU) 833/2014 + CFSP Decision 2014/145 + 2014/512",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "referenceAliases": [
     "Council Regulation (EU) No 833/2014",
     "Council Regulation (EU) No 269/2014",

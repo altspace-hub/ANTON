@@ -3,15 +3,37 @@
   "name": "Securities and Futures Ordinance (Cap. 571) — licensing + conduct",
   "shortName": "HK SFO",
   "reference": "Cap. 571 + SFC Code of Conduct + SFC Guidelines",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "inForce": "2003-04-01",
   "supervisor": "SFC",
   "articleCount": 10,
   "chapters": [
-    {"number": "Licensing", "title": "Type 1-12 + Type VA regulated activities", "articles": "Schedule 5 SFO"},
-    {"number": "Conduct", "title": "SFC Code of Conduct general principles", "articles": "SFC Code"},
-    {"number": "MarketAbuse", "title": "Market misconduct + insider dealing", "articles": "SFO Parts XIII + XIV"},
-    {"number": "Conduct.Guidelines", "title": "SFC topic-specific Guidelines", "articles": "AMLG, FMG, VATP, Custody"},
-    {"number": "Enforcement", "title": "SFC enforcement framework", "articles": "SFO + MMT"}
+    {
+      "number": "Licensing",
+      "title": "Type 1-12 + Type VA regulated activities",
+      "articles": "Schedule 5 SFO"
+    },
+    {
+      "number": "Conduct",
+      "title": "SFC Code of Conduct general principles",
+      "articles": "SFC Code"
+    },
+    {
+      "number": "MarketAbuse",
+      "title": "Market misconduct + insider dealing",
+      "articles": "SFO Parts XIII + XIV"
+    },
+    {
+      "number": "Conduct.Guidelines",
+      "title": "SFC topic-specific Guidelines",
+      "articles": "AMLG, FMG, VATP, Custody"
+    },
+    {
+      "number": "Enforcement",
+      "title": "SFC enforcement framework",
+      "articles": "SFO + MMT"
+    }
   ],
   "themes": [
     "Licensing — Type 1-12 + Type VA",

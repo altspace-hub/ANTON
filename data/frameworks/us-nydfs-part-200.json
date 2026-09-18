@@ -3,18 +3,48 @@
   "name": "23 NYCRR Part 200 — Virtual Currency Business Activity (BitLicense)",
   "shortName": "NYDFS Part 200 (BitLicense)",
   "reference": "23 NYCRR Part 200",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.dfs.ny.gov/virtual_currency_businesses",
   "inForce": "2015-08-08",
   "supervisor": "NYDFS",
   "articleCount": 9,
   "chapters": [
-    {"number": "1", "title": "§200.2 Definitions", "articles": "§200.2"},
-    {"number": "2", "title": "§200.3 License requirement", "articles": "§200.3"},
-    {"number": "3", "title": "§200.4-§200.10 Licensing process + capital", "articles": "§200.4-§200.10"},
-    {"number": "4", "title": "§200.15 Cybersecurity (cross-ref Part 500)", "articles": "§200.15"},
-    {"number": "5", "title": "§200.16 AML program", "articles": "§200.16"},
-    {"number": "6", "title": "§200.18-§200.19 Books + records + reports", "articles": "§200.18-§200.19"},
-    {"number": "7", "title": "Coin-listing + custody guidance", "articles": "DFS guidance"}
+    {
+      "number": "1",
+      "title": "§200.2 Definitions",
+      "articles": "§200.2"
+    },
+    {
+      "number": "2",
+      "title": "§200.3 License requirement",
+      "articles": "§200.3"
+    },
+    {
+      "number": "3",
+      "title": "§200.4-§200.10 Licensing process + capital",
+      "articles": "§200.4-§200.10"
+    },
+    {
+      "number": "4",
+      "title": "§200.15 Cybersecurity (cross-ref Part 500)",
+      "articles": "§200.15"
+    },
+    {
+      "number": "5",
+      "title": "§200.16 AML program",
+      "articles": "§200.16"
+    },
+    {
+      "number": "6",
+      "title": "§200.18-§200.19 Books + records + reports",
+      "articles": "§200.18-§200.19"
+    },
+    {
+      "number": "7",
+      "title": "Coin-listing + custody guidance",
+      "articles": "DFS guidance"
+    }
   ],
   "themes": [
     "License requirement",
