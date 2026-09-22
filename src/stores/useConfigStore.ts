@@ -113,7 +113,12 @@ interface ConfigState {
   resetConfig: () => void;
 }
 
-const configDefaults = {
+// A function, not a constant: the stored defaults (model, thinking, creativity)
+// are read when a config is reset, not once at import. On a fresh browser
+// localStorage is empty at import, so a captured value froze the bare API
+// fallback and every module page's reset undid the boot sync of the instance
+// default — module runs on a new device went to the API key until a reload.
+const configDefaults = () => ({
   model: getStoredDefaultModel(),
   thinking: getStoredDefaultThinking(),
   creativity: getStoredDefaultCreativity(),
@@ -147,10 +152,10 @@ const configDefaults = {
   seed: undefined as number | undefined,
   lens: null as OpenChatLens | null,
   project: null as SessionProject | null,
-};
+});
 
 export const useConfigStore = create<ConfigState>((set) => ({
-  ...configDefaults,
+  ...configDefaults(),
 
   setModel: (model) => set({ model }),
   setThinking: (thinking) => set({ thinking }),
@@ -186,5 +191,5 @@ export const useConfigStore = create<ConfigState>((set) => ({
   setLens: (lens) => set({ lens }),
   setProject: (project) => set({ project }),
   // The project outlives a reset: New Chat inside a matter stays in the matter.
-  resetConfig: () => set((state) => ({ ...configDefaults, project: state.project })),
+  resetConfig: () => set((state) => ({ ...configDefaults(), project: state.project })),
 }));

@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
+  // The web client's '@/…' imports, so a test can load a real store or lib module.
+  resolve: {
+    alias: { '@': path.resolve(__dirname, 'src') },
+  },
   test: {
     globals: true,
     environment: 'node',
