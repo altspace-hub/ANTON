@@ -7,6 +7,7 @@ import { getCodingAtomAbStats } from '../services/coding-atom-stats.js';
 import { getCodingAtomAbReport } from '../services/coding-atom-ab-report.js';
 import { getAtomInjectionStatus, setAtomInjectionMode, isAtomInjectionMode } from '../services/atom-injection-gate.js';
 import { safeError } from '../lib/error-response.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
 function errMsg(err: unknown): string {
@@ -75,7 +76,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
 
   // POST /api/intelligence/atom-ab/toggle — experiment kill switch
   // (app_settings 'atom_ab_experiment'; default ON when atom injection is on).
-  router.post('/intelligence/atom-ab/toggle', async (req, res) => {
+  router.post('/intelligence/atom-ab/toggle', requireAdminOrSolo, async (req, res) => {
     try {
       const { enabled } = req.body as { enabled?: boolean };
       if (typeof enabled !== 'boolean') {
@@ -103,7 +104,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/intelligence/atom-injection/mode — body { mode: 'auto' | 'on' | 'off' }.
-  router.post('/intelligence/atom-injection/mode', async (req, res) => {
+  router.post('/intelligence/atom-injection/mode', requireAdminOrSolo, async (req, res) => {
     try {
       const { mode } = (req.body ?? {}) as { mode?: unknown };
       if (!isAtomInjectionMode(mode)) {

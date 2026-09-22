@@ -108,10 +108,18 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
    * that exists but belongs to someone else is ALSO a 404 — a 403 would turn
    * an id into an oracle for other tenants' atoms (ownership.ts, property 1).
    */
+  /**
+   * True when this request may not see the atom: in team mode a non-admin reaches
+   * only their own atoms and unowned ones. Every atom a mutation touches goes through
+   * this — the one being changed AND any atom it is linked to.
+   */
+  function isForeignAtom(req: Request, atom: AtomOwnerRow): boolean {
+    return scopesToOwner(req) && atom.owner_user_id !== null && atom.owner_user_id !== req.user?.id;
+  }
+
   async function loadMutableAtom(req: Request, res: Response, id: string): Promise<AtomOwnerRow | null> {
     const atom = await db.get<AtomOwnerRow>(ATOM_LIFECYCLE_SQL.ownerRow, id);
-    const foreign = atom !== undefined && scopesToOwner(req)
-      && atom.owner_user_id !== null && atom.owner_user_id !== req.user?.id;
+    const foreign = atom !== undefined && isForeignAtom(req, atom);
     if (!atom || foreign) {
       res.status(404).json({ error: 'Atom not found' });
       return null;
@@ -297,7 +305,10 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
       let action: string;
       if (supersededBy !== undefined) {
         const successor = await db.get<AtomOwnerRow>(ATOM_LIFECYCLE_SQL.ownerRow, supersededBy);
-        if (!successor) {
+        // A successor the caller may not see is answered exactly like one that does
+        // not exist. Checking only existence let a team member link their atom to
+        // someone else's, and the different answers confirmed the foreign id was real.
+        if (!successor || isForeignAtom(req, successor)) {
           res.status(400).json({ error: 'supersededBy does not name an existing atom' });
           return;
         }

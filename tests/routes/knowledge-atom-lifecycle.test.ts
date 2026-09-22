@@ -446,6 +446,23 @@ describe('knowledge atom lifecycle routes', () => {
       expect([...state.atoms.keys()]).toEqual(['a1', 'a4']);
     });
 
+    it('a non-admin cannot supersede their atom WITH another user\'s atom — same answer as an unknown id', async () => {
+      // Review of PR #71: the atom being retired was ownership-checked, the atom it
+      // was retired IN FAVOUR OF was only checked for existence — so u-2 could link
+      // their atom to u-1's, and the differing answers told them u-1's id was real.
+      const foreign = await call('PATCH', '/knowledge/atoms/a2', { supersededBy: 'a1' });
+      const unknown = await call('PATCH', '/knowledge/atoms/a2', { supersededBy: 'no-such-atom' });
+      expect(foreign.status).toBe(400);
+      expect(foreign.json).toEqual(unknown.json);   // no existence oracle
+      expect(state.runs).toEqual([]);
+      expect(state.atoms.get('a2')!.superseded_by).toBeNull();
+    });
+
+    it('a non-admin may supersede their atom with their own or an unowned one', async () => {
+      expect((await call('PATCH', '/knowledge/atoms/a2', { supersededBy: 'a3' })).status).toBe(200);
+      expect(state.atoms.get('a2')!.superseded_by).toBe('a3');
+    });
+
     it('an admin in team mode is unscoped', async () => {
       currentUser = { id: 'admin-1', username: 'admin', role: 'admin' };
       expect((await call('PATCH', '/knowledge/atoms/a1', { isActive: false })).status).toBe(200);

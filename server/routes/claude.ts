@@ -810,7 +810,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // reducing costs ~90% on those tokens. Dynamic layers (output format instructions,
       // knowledge additions, reference documents, etc.) are sent in a second uncached block.
       // Pre-build strategic improvement layers (non-fatal — empty string if DB table missing)
-      const orgContextPrompt = await buildOrgContextLayer(db, (req as any).user?.id || 'default');
+      const orgContextPrompt = await buildOrgContextLayer(db, req.user?.id || 'default');
       // Wave 4: the resume block is injected only when the session is picked up
       // again after a break (RESUME_GAP_MINUTES); the conversation history
       // already carries recent context, so on a continuous run it stays out.
@@ -829,8 +829,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           const pc = await buildProjectContext(db, {
             projectId: projectRow.id,
             currentSessionId: String(sessionId),
-            userId: (req as any).user?.id ?? 'default',
-            userRole: (req as any).user?.role ?? null,
+            userId: req.user?.id ?? 'default',
+            userRole: req.user?.role ?? null,
             teamMode: process.env.DEPLOYMENT_MODE === 'team',
           });
           projectContextPrompt = pc.text;
@@ -893,7 +893,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             userMessage,
             sessionId: sessionId ? String(sessionId) : null,
             messageId: sessionId ? assistantMessageId : null,
-            ownerUserId: (req as any).user?.id ?? null,
+            ownerUserId: req.user?.id ?? null,
             teamMode: process.env.DEPLOYMENT_MODE === 'team',
           })
         : null;
@@ -908,7 +908,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // as HARD rules — a stored run shows a kickoff-agenda request being
       // rewritten into an AMLR project under them.
       const goalsValuesPrompt = await temporalReasoning.buildGoalsValuesLayer(
-        (req as any).user?.id || 'default',
+        req.user?.id || 'default',
         areaId || 'general'
       );
 
@@ -1588,7 +1588,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // STREAM-05: per-user concurrent stream limit (max 3)
-      const streamUserId = (req as any).user?.id || req.ip || 'anonymous';
+      const streamUserId = req.user?.id || req.ip || 'anonymous';
       if (!acquireStream(streamUserId)) {
         res.status(429).json({
           error: 'Too many concurrent streams. You have reached the maximum of 3 active streams. Please wait for an existing stream to complete.',
@@ -2050,7 +2050,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               projectId: previewProject.id,
               currentSessionId: sessionIdForPreview,
               userId: previewUserId,
-              userRole: (req as any).user?.role ?? null,
+              userRole: req.user?.role ?? null,
               teamMode: process.env.DEPLOYMENT_MODE === 'team',
             })).text;
           }
