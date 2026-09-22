@@ -67,7 +67,9 @@ const APPETITE_LABEL: Record<AppetitePosition, string> = {
   within: 'Within', boundary: 'Boundary', outside: 'Outside', unacceptable: 'Unacceptable',
 };
 
-const cell = (s: unknown): string => String(s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim() || '—';
+// Backslashes first, then pipes: escaping only `|` turns a name containing `\|`
+// into `\\|` — an escaped backslash and a bare separator that splits the cell.
+const cell = (s: unknown): string => String(s ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim() || '—';
 const table = (head: string[], rows: string[][]): string =>
   rows.length === 0
     ? '_None recorded in the Atlas yet._'

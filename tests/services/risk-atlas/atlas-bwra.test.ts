@@ -77,6 +77,14 @@ describe('renderStageTables — the numbers come from the Atlas', () => {
   });
 
   it('counts paths outside appetite from the Atlas', () => { expect(outsideCount(snap)).toBe(1); });
+
+  it('a backslash or pipe in a name cannot split a table cell (CodeQL js/incomplete-sanitization)', () => {
+    const odd = { ...snap, paths: [path('TP-9', { controls: [{ ...snap.paths[0].controls[0], id: 'c9', control_code: 'C-9', name: 'Screening \\| override' }] })] };
+    const row = renderStageTables(odd).stage5.split('\n').find((l) => l.includes('C-9')) ?? '';
+    // Unescaped pipes are the cell separators: a 6-column row has exactly 7.
+    expect(row.match(/(?<!\\)(?:\\\\)*\|/g)?.length).toBe(7);
+    expect(row).toContain('Screening \\\\\\| override');
+  });
 });
 
 describe('parseNarrative', () => {
