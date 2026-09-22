@@ -223,6 +223,63 @@ export function engineForModel(modelId: string): string {
   return 'unknown';
 }
 
+/** What the module-run (message) path knows about one run, success or failure. */
+export interface MessageRunFacts {
+  modelRequested: string;
+  modelServed?: string | null;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
+  /** Metered dollars for the run, when the model has list pricing. */
+  costUsd?: number | null;
+  text?: string;
+  thinking?: string;
+  status: RunArtifactStatus;
+}
+
+/**
+ * The v2 record fields for a module run (pure). The message path used to write
+ * only the prompt, layers and sources — no engine, model, usage or cost — so
+ * the most-used path in Work had the thinnest record (2026-09-22 Work QA).
+ * Subscription engines are plan usage, not dollars; Ollama is free.
+ */
+export function messageRunRecordFields(f: MessageRunFacts): Partial<RunArtifactInput> {
+  const engine = engineForModel(f.modelRequested);
+  const plan = engine === 'anthropic_sdk' || engine === 'codex';
+  const hasUsage = typeof f.inputTokens === 'number' || typeof f.outputTokens === 'number';
+  return {
+    engine,
+    engineVersion: engine === 'anthropic_sdk' ? sdkEngineVersion() : engine === 'anthropic_api' ? apiEngineVersion() : null,
+    modelRequested: f.modelRequested,
+    modelServed: f.modelServed ?? (f.status === 'completed' ? f.modelRequested : null),
+    usage: hasUsage
+      ? {
+          inputTokens: f.inputTokens ?? 0,
+          outputTokens: f.outputTokens ?? 0,
+          cacheReadTokens: f.cacheReadTokens ?? 0,
+          cacheCreationTokens: f.cacheCreationTokens ?? 0,
+        }
+      : null,
+    costUsd: plan ? null : (typeof f.costUsd === 'number' && Number.isFinite(f.costUsd) ? f.costUsd : null),
+    costBasis: plan ? 'plan_usage' : engine === 'ollama' ? 'free' : typeof f.costUsd === 'number' ? 'usd' : 'unknown',
+    outputSha256: f.text ? sha256Hex(f.text) : null,
+    thinkingSha256: f.thinking ? sha256Hex(f.thinking) : null,
+    status: f.status,
+    finishedAt: new Date(),
+  };
+}
+
+/**
+ * True for an SSE frame that reports a failed run. Every engine client reports
+ * failure this way — it writes `data: {"type":"error",…}` and returns normally —
+ * so the route learns of a failure only by seeing the frame go out.
+ */
+export function isSseErrorFrame(chunk: unknown): boolean {
+  const text = typeof chunk === 'string' ? chunk : Buffer.isBuffer(chunk) ? chunk.toString('utf8') : '';
+  return /(^|\n)data: \{"type":"error"/.test(text);
+}
+
 // ── Writers ─────────────────────────────────────────────────────────────────
 
 const INSERT_COLUMNS = [

@@ -62,6 +62,7 @@ import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
 import { findMissingRequiredInputs, type GuidedInputFieldLike } from '@/lib/guided-input-validation';
+import { isErrorMessage } from '@/lib/run-error';
 
 const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inputs: Record<string, unknown>) => void }>> = {
   'gap-analysis': GapAnalysis,
@@ -237,7 +238,8 @@ export default function ModulePage() {
     prevIsStreamingRef.current = isStreaming;
     if (wasStreaming && !isStreaming) {
       const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
-      const content = lastMsg?.content;
+      // A failed run is not saved as an output version.
+      const content = isErrorMessage(lastMsg) ? undefined : lastMsg?.content;
       const entityId = sessionId || moduleId;
       if (content && entityId) {
         fetch(`/api/versions/output/${entityId}`, {
@@ -663,7 +665,10 @@ export default function ModulePage() {
 
   const ModuleInputs = module ? moduleComponents[module.id] : null;
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant');
-  const outputContent = isStreaming ? streamingText : (lastAssistantMessage?.content || '');
+  // A failed run's bubble is shown in the thread but is not output: no export,
+  // transform, review, approval or learning loop acts on it.
+  const lastRunFailed = !isStreaming && isErrorMessage(lastAssistantMessage);
+  const outputContent = isStreaming ? streamingText : (lastRunFailed ? '' : (lastAssistantMessage?.content || ''));
   const exportFormats = getRecommendedExportFormats(selectedOutputFormats);
 
   // The required-input gate applies to the opening run only. That is the turn

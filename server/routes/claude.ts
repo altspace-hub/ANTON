@@ -57,7 +57,7 @@ import { isCircuitOpen, recordSuccess, recordFailure } from '../services/circuit
 import { enqueueAudit } from '../services/audit-queue.js';
 import { buildCompactionConfig, buildContextManagementParam } from '../services/compaction-manager.js';
 import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
-import { writeRunArtifact, buildLayerSummary, sha256Hex } from '../services/run-artifact-writer.js';
+import { writeRunArtifact, writeRunArtifactV2, buildLayerSummary, sha256Hex, messageRunRecordFields, isSseErrorFrame } from '../services/run-artifact-writer.js';
 import { assignAtomArm, isAtomAbEnabled, isExperimentSubject, resolveFinalArm } from '../services/atom-ab.js';
 import { getAtomInjectionStatus } from '../services/atom-injection-gate.js';
 import { runComplianceOnCompletion } from '../services/compliance-on-completion.js';
@@ -1080,6 +1080,28 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const costIn = modelConfig?.costPer1MInput ?? 0;
       const costOut = modelConfig?.costPer1MOutput ?? 0;
 
+      // A failed run leaves a record too. Every engine reports failure as an SSE
+      // `error` frame and returns normally, so the route watches its own stream
+      // for that frame and writes a `failed` record once the response is done.
+      // ('close' + "onComplete never ran" would misfire: the SDK engines end the
+      // response before calling onComplete.)
+      if (sessionId) {
+        let runErrorSeen = false;
+        const writeThrough = res.write.bind(res) as (...args: unknown[]) => boolean;
+        res.write = ((...args: unknown[]) => {
+          if (!runErrorSeen && isSseErrorFrame(args[0])) runErrorSeen = true;
+          return writeThrough(...args);
+        }) as typeof res.write;
+        res.once('finish', () => {
+          if (!runErrorSeen) return;
+          void writeRunArtifactV2(db, {
+            sessionId: String(sessionId),
+            composedPrompt: staticSystemPrompt ? `${staticSystemPrompt}\n\n${composedPrompt}` : composedPrompt,
+            ...messageRunRecordFields({ modelRequested: String(selectedModel), status: 'failed' }),
+          });
+        });
+      }
+
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
         ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string; webSources?: Array<{ kind: 'web_search' | 'web_fetch'; query?: string; url?: string; title?: string; resultUrls?: string[]; sha256?: string; charCount?: number; retrievedAt: string; isError?: boolean }> }) => {
@@ -1289,6 +1311,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
                 composedPrompt: sentPrompt,
                 layerSummary,
                 sourceManifest,
+                ...messageRunRecordFields({
+                  modelRequested: String(selectedModel),
+                  modelServed: data.modelServed ?? null,
+                  inputTokens: data.inputTokens,
+                  outputTokens: data.outputTokens,
+                  cacheReadTokens: data.cacheReadTokens,
+                  cacheCreationTokens: data.cacheCreationTokens,
+                  costUsd: estimatedCostUsd,
+                  text: data.text,
+                  thinking: data.thinking,
+                  status: 'completed',
+                }),
               });
               // Wave 3.2: embed this output as 'session_output' so "what did we
               // conclude about X in March?" becomes answerable (Search past work
