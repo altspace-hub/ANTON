@@ -1,0 +1,7 @@
+# Findings reviewed and accepted. One exact fingerprint per line (commit:file:rule:line),
+# so a new secret anywhere — including elsewhere in the same file — is still reported.
+
+# 2026-09-22: `SECRET_MARKER = 'SECRET-MARKER-d4e5f6'` is a sentinel string the
+# folder-whitelist test plants in a forbidden directory to prove it is never read.
+# It is not a credential; the generic-api-key rule matches on the variable name.
+ee99480f68b653f390ee25d9a0a0a2c337a0f8e7:tests/services/folder-whitelist-enforced.test.ts:generic-api-key:36

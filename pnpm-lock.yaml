@@ -10,7 +10,7 @@ overrides:
   hono: '>=4.12.4'
   '@hono/node-server': '>=1.19.10'
   socket.io-parser: '>=4.2.7 <4.3.0'
-  '@xmldom/xmldom': '>=0.8.13'
+  '@xmldom/xmldom': '>=0.8.13 <0.9.0'
   fast-uri: '>=3.1.6 <4.0.0'
   ip-address: '>=10.3.1 <11.0.0'
   tmp: '>=0.2.6'
@@ -181,8 +181,8 @@ importers:
         specifier: ^3.6.4
         version: 3.6.4
       adm-zip:
-        specifier: ^0.6.0
-        version: 0.6.0
+        specifier: ^0.6.1
+        version: 0.6.1
       ajv:
         specifier: ^8.18.0
         version: 8.18.0
@@ -292,8 +292,8 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1
       nodemailer:
-        specifier: ^9.0.1
-        version: 9.0.1
+        specifier: ^9.1.1
+        version: 9.1.1
       openai:
         specifier: ^4.28.0
         version: 4.104.0(encoding@0.1.13)(ws@8.21.0)(zod@4.3.6)
@@ -3723,9 +3723,9 @@ packages:
   '@vitest/utils@4.0.18':
     resolution: {integrity: sha512-msMRKLMVLWygpK3u2Hybgi4MNjcYJvwTb0Ru09+fOyCXIgT5raYP041DRRdiJiI3k/2U6SEbAETB3YtBrUkCFA==}
 
-  '@xmldom/xmldom@0.9.10':
-    resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
-    engines: {node: '>=14.6'}
+  '@xmldom/xmldom@0.8.15':
+    resolution: {integrity: sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==}
+    engines: {node: '>=10.0.0'}
 
   abbrev@1.1.1:
     resolution: {integrity: sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==}
@@ -3760,8 +3760,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  adm-zip@0.6.0:
-    resolution: {integrity: sha512-XleryMhbuksdKtofnWZ9Sk+4CUTbms4Mb/EU32SZwToAyZ5RgVos/ki8n+yr0LWHOGKuakbXTuuYNHLQjhddgg==}
+  adm-zip@0.6.1:
+    resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
     engines: {node: '>=14.0'}
 
   agent-base@6.0.2:
@@ -6835,8 +6835,8 @@ packages:
     resolution: {integrity: sha512-X75ZN8DCLftGM5iKwoYLA3rjnrAEs97MkzvSd4q2746Tgpg8b8XWiBGiBG4ZpgcAqBgtgPHTiAc8ZMCvZuikDw==}
     engines: {node: '>=10'}
 
-  nodemailer@9.0.1:
-    resolution: {integrity: sha512-Gwv8SQewT616ZM/URn0H54b8PWo/Wum7md3EW2aWy1lO27+WZCX+Xyak3J+NlmHUjDh5ME+uesJUDRbR3Ye8Bw==}
+  nodemailer@9.1.1:
+    resolution: {integrity: sha512-izw9mVKFix6YSnC9eLgV6g1opl9DUlRio9ZNcq+Wu9Ujn2UwF+8Nl0B8nz22kEC+CTZCvinkxwJ0DeFbb6NwcQ==}
     engines: {node: '>=6.0.0'}
 
   nopt@4.0.3:
@@ -12326,7 +12326,7 @@ snapshots:
       '@vitest/pretty-format': 4.0.18
       tinyrainbow: 3.0.3
 
-  '@xmldom/xmldom@0.9.10': {}
+  '@xmldom/xmldom@0.8.15': {}
 
   abbrev@1.1.1: {}
 
@@ -12356,7 +12356,7 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  adm-zip@0.6.0: {}
+  adm-zip@0.6.1: {}
 
   agent-base@6.0.2:
     dependencies:
@@ -15468,7 +15468,7 @@ snapshots:
 
   mammoth@1.11.0:
     dependencies:
-      '@xmldom/xmldom': 0.9.10
+      '@xmldom/xmldom': 0.8.15
       argparse: 1.0.10
       base64-js: 1.5.1
       bluebird: 3.4.7
@@ -16153,7 +16153,7 @@ snapshots:
       util: 0.12.5
       vm-browserify: 1.1.2
 
-  nodemailer@9.0.1: {}
+  nodemailer@9.1.1: {}
 
   nopt@4.0.3:
     dependencies:
@@ -16514,7 +16514,7 @@ snapshots:
 
   plist@3.1.0:
     dependencies:
-      '@xmldom/xmldom': 0.9.10
+      '@xmldom/xmldom': 0.8.15
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
