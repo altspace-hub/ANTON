@@ -18,6 +18,7 @@ import { isSdkModel } from './engine-model-id.js';
 import { retrieveGroundingText } from './framework-text-retrieval.js';
 import { z } from 'zod';
 import { frameworkDomain, domainForFrameworks, domainProfile, type GapDomain } from './gap-domains.js';
+import { isSafePathSegment } from '../lib/safe-id.js';
 import {
   computeScoring,
   scoringForManual,
@@ -444,6 +445,9 @@ function repairJson(raw: string, type: 'array' | 'object'): string {
 }
 
 function loadFramework(frameworkId: string): Framework | null {
+  // The id reaches here from a route parameter: one path segment only, or any
+  // .json file on disk was readable through GET /gap-assessments/frameworks/:id.
+  if (!isSafePathSegment(frameworkId)) return null;
   if (frameworkCache.has(frameworkId)) return frameworkCache.get(frameworkId)!;
   try {
     const frameworkDir = path.join(__dirname, '..', '..', 'data', 'frameworks');
