@@ -162,7 +162,7 @@ export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
       }
 
       const integration = await createCodingIntegration(db);
-      const versions = integration.getVersionHistory(entityType, entityId, limit);
+      const versions = await integration.getVersionHistory(entityType, entityId, limit);
 
       res.json(versions);
     } catch (error) {
@@ -182,7 +182,7 @@ export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
       }
 
       const integration = await createCodingIntegration(db);
-      const result = integration.diffVersions(entityType, entityId, Number(v1), Number(v2));
+      const result = await integration.diffVersions(entityType, entityId, Number(v1), Number(v2));
 
       if (!result) {
         return res.status(404).json({ error: 'One or both versions not found' });

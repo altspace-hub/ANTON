@@ -314,7 +314,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
 
     try {
-      const status = getUserBudgetStatus(db, session.id);
+      const status = await getUserBudgetStatus(db, session.id);
       res.json({ budget: status });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

@@ -20,7 +20,7 @@ export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Route
   router.get('/org-context', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const context = orgCtxService.getContext(userId);
+      const context = await orgCtxService.getContext(userId);
       res.json({ context });
     } catch (err) {
       console.error('[org-context] get error:', err);
@@ -32,7 +32,7 @@ export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Route
   router.put('/org-context', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const context = orgCtxService.updateContext(req.body, userId);
+      const context = await orgCtxService.updateContext(req.body, userId);
       res.json({ context });
     } catch (err) {
       console.error('[org-context] update error:', err);
@@ -55,7 +55,7 @@ export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Route
   router.get('/org-context/history', async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit || '20')), 100);
-      const history = orgCtxService.getHistory(limit);
+      const history = await orgCtxService.getHistory(limit);
       res.json({ history });
     } catch (err) {
       res.status(500).json({ error: 'Failed to get history' });

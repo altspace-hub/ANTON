@@ -95,13 +95,15 @@ export async function createPatternScheduler(db: DatabaseAdapter) {
   /**
    * Get current scheduler status
    */
-  function getStatus() {
+  async function getStatus() {
+    // Both reads are async; unawaited they reached the page as `{}`.
+    const [lastRun, recentRuns] = await Promise.all([getLastRunInfo(), getRecentRuns(10)]);
     return {
       enabled: config.enabled,
       cronExpression: config.cronExpression,
       isRunning: scheduledTask !== null,
-      lastRun: getLastRunInfo(),
-      recentRuns: getRecentRuns(10),
+      lastRun,
+      recentRuns,
     };
   }
 

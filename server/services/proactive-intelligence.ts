@@ -158,8 +158,9 @@ export async function createProactiveIntelligenceService(db: DatabaseAdapter) {
       SELECT COUNT(*) as count FROM proactive_insights
       WHERE user_id = ? AND read = 0 AND dismissed = 0
         AND (expires_at IS NULL OR expires_at::timestamptz > NOW())
-    `, userId) as { count: number };
-    return row.count;
+    `, userId) as { count: number | string } | undefined;
+    // Postgres returns COUNT(*) as a string.
+    return Number(row?.count ?? 0);
   }
 
   /**

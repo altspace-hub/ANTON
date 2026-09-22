@@ -24,11 +24,12 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
       const triggers = await listener.listTriggers(userId);
 
       // Augment with 24h metrics
-      const withMetrics = triggers.map((t: typeof triggers[number]) => ({
+      // getTriggerMetrics is async — without Promise.all every `metrics` was `{}`.
+      const withMetrics = await Promise.all(triggers.map(async (t: typeof triggers[number]) => ({
         ...t,
         auth_config: { ...t.auth_config, secret: undefined }, // Never expose secrets
-        metrics: listener.getTriggerMetrics(t.id, 24),
-      }));
+        metrics: await listener.getTriggerMetrics(t.id, 24),
+      })));
 
       res.json({ triggers: withMetrics });
     } catch (err) {
@@ -45,7 +46,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
 
       res.json({
         trigger: { ...trigger, auth_config: { ...trigger.auth_config, secret: undefined } },
-        metrics: listener.getTriggerMetrics(trigger.id, 24),
+        metrics: await listener.getTriggerMetrics(trigger.id, 24),
       });
     } catch (err) {
       console.error('[triggers] get error:', err);
@@ -238,13 +239,13 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
     try {
       const userId = getUserId(req);
       const triggers = await listener.listTriggers(userId);
-      const summary = triggers.map((t: typeof triggers[number]) => ({
+      const summary = await Promise.all(triggers.map(async (t: typeof triggers[number]) => ({
         trigger_id: t.id,
         name: t.name,
         type: t.trigger_type,
         status: t.status,
-        metrics: listener.getTriggerMetrics(t.id, 24),
-      }));
+        metrics: await listener.getTriggerMetrics(t.id, 24),
+      })));
       res.json({ summary });
     } catch (err) {
       console.error('[triggers] summary metrics error:', err);
@@ -258,7 +259,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
       if (!trigger) return res.status(404).json({ error: 'Trigger not found' });
 
       const hours = parseInt(String(req.query.hours || '24'), 10) || 24;
-      const metrics = listener.getTriggerMetrics(String(req.params.id), hours);
+      const metrics = await listener.getTriggerMetrics(String(req.params.id), hours);
       res.json({ metrics });
     } catch (err) {
       console.error('[triggers] metrics error:', err);

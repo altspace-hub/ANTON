@@ -30,7 +30,7 @@ import {
   runHeartbeatCycle,
   createReasoningTrail, addTrailEntry, completeTrail,
   ORCHESTRATOR_HARD_LIMITS,
-  checkStageDemotion, generateManagementReport,
+  checkStageDemotion, checkStageProgression, generateManagementReport,
 } from '../services/orchestrator-engine.js';
 import {
   getDemoState, activateDemoMode, deactivateDemoMode, advanceSimulationDay,
@@ -723,7 +723,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   // ── Stage demotion check ───────────────────────────────────────────────────
   router.post('/orchestrator/demotion-check', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const result = checkStageDemotion(db);
+      const result = await checkStageDemotion(db);
       res.json(result);
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -832,7 +832,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       if (mode && !validModes.includes(mode)) {
         return res.status(400).json({ error: `mode must be one of: ${validModes.join(', ')}` });
       }
-      const result = activateDemoMode(db, mode ?? 'demo');
+      const result = await activateDemoMode(db, mode ?? 'demo');
       res.json({ ok: true, ...result, mode: mode ?? 'demo' });
     } catch (err) {
       console.error('[orchestrator] demo activate error:', err);
@@ -843,7 +843,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   // ── Demo Mode: deactivate ────────────────────────────────────────────────
   router.post('/orchestrator/demo/deactivate', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const result = deactivateDemoMode(db);
+      const result = await deactivateDemoMode(db);
       res.json({ ok: true, ...result });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
@@ -867,12 +867,13 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   // ── Stage: manual progression check ─────────────────────────────────────
   router.post('/orchestrator/check-progression', requireAuth, async (_req: Request, res: Response) => {
     try {
-      const { checkStageDemotion, checkStageProgression } = require('../services/orchestrator-engine.js');
-      const demotion = checkStageDemotion(db);
+      // Both are async: without the awaits `.demoted` / `.advanced` were always
+      // undefined (and `require` does not exist in this ES module).
+      const demotion = await checkStageDemotion(db);
       if (demotion.demoted) {
         return res.json({ action: 'demoted', ...demotion });
       }
-      const progression = checkStageProgression(db);
+      const progression = await checkStageProgression(db);
       if (progression.advanced) {
         return res.json({ action: 'advanced', ...progression });
       }
