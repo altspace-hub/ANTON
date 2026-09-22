@@ -63,6 +63,7 @@ import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
 import { findMissingRequiredInputs, type GuidedInputFieldLike } from '@/lib/guided-input-validation';
 import { isErrorMessage } from '@/lib/run-error';
+import { taskPlaceholder } from '@/lib/task-placeholder';
 
 const moduleComponents: Record<string, React.ComponentType<{ onInputChange: (inputs: Record<string, unknown>) => void }>> = {
   'gap-analysis': GapAnalysis,
@@ -98,7 +99,7 @@ You provide analysis, structured information, and decision support to human expe
 Every output must include appropriate caveats where decisions depend on facts or legal interpretation not visible in this analysis.`;
 
 export default function ModulePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { moduleId } = useParams<{ moduleId: string }>();
   const [searchParams] = useSearchParams();
   const sessionParam = searchParams.get('session');
@@ -881,6 +882,225 @@ export default function ModulePage() {
             onModelSelect={(m) => setModel(m as Parameters<typeof setModel>[0])}
           />
 
+          {/* Module-specific guided inputs (JSON-driven via DynamicModule) */}
+          {guidedInputFields.length > 0 ? (
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-sm font-medium text-adv-off-white">{t('module.moduleSettings')}</div>
+                {/* Quiet before the click, red once a run was actually blocked. */}
+                {blockingInputs.length > 0 && (
+                  <span
+                    className={`shrink-0 text-xs ${runBlockedOnInputs ? 'text-adv-red' : 'text-adv-gray'}`}
+                    aria-live="polite"
+                  >
+                    {blockingInputs.length === 1
+                      ? t('module.requiredInputsRemainingOne', '1 required field to fill')
+                      : t('module.requiredInputsRemaining', '{{count}} required fields to fill', { count: blockingInputs.length })}
+                  </span>
+                )}
+              </div>
+              <DynamicModule
+                fields={guidedInputFields}
+                values={moduleInputs}
+                onChange={setModuleInputs}
+                missingFieldIds={showMissingInputsNotice ? blockingInputs.map((f) => f.id) : undefined}
+              />
+            </div>
+          ) : ModuleInputs ? (
+            <div>
+              <div className="mb-2 text-sm font-medium text-adv-off-white">{t('module.moduleSettings')}</div>
+              <ModuleInputs onInputChange={setModuleInputs} />
+            </div>
+          ) : null}
+
+          {/* File Upload */}
+          <FileUploader files={files} onUpload={upload} onRemove={remove} />
+
+          {/* User Input + Run */}
+          <div className="space-y-3">
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label className="block text-sm font-medium text-adv-off-white">
+                  {messages.length === 0 ? t('module.describeTask') : t('module.followUp')}
+                </label>
+                {/* "Try an example" chip — fills the task box (+ guided inputs) with the module's worked example */}
+                {moduleExample && !exampleUsed && messages.length === 0 && !userInput.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserInput(moduleExample.input);
+                      if (moduleExample.values) setModuleInputs(moduleExample.values);
+                      setExampleUsed(true);
+                    }}
+                    className="flex shrink-0 items-center gap-1 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-[11px] font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
+                    title={t('module.tryExampleHint', 'Fill the inputs with a realistic worked example')}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {t('module.tryExample', 'Try an example')}
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <textarea
+                  value={userInput}
+                  onChange={(e) => {
+                    const newVal = e.target.value;
+                    // Reset banner dismissed state when input changes significantly (>20 chars diff)
+                    if (bannerDismissed && Math.abs(newVal.length - bannerDismissedAtLength) > 20) {
+                      setBannerDismissed(false);
+                    }
+                    setUserInput(newVal);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      handleRun();
+                    }
+                  }}
+                  placeholder={
+                    messages.length === 0
+                      ? taskPlaceholder({
+                          example: moduleExample?.input,
+                          moduleLabel: module?.label ?? customModuleLabel ?? dynamicCfg?.label ?? null,
+                          neutral: (label) => t('module.taskPlaceholderFor', { module: label }),
+                          legacy: t('module.describeTaskPlaceholder'),
+                          neutralTranslated: i18n.getResource(i18n.resolvedLanguage || i18n.language, 'translation', 'module.taskPlaceholderFor') !== undefined,
+                        })
+                      : t('module.followUpPlaceholder')
+                  }
+                  className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
+                  rows={4}
+                />
+                {isSpeechSupported && (
+                  <button
+                    type="button"
+                    onClick={isListening ? stopListening : startListening}
+                    className={`absolute right-3 bottom-3 p-1.5 rounded-lg transition-colors ${
+                      isListening
+                        ? 'text-adv-red animate-pulse'
+                        : 'text-adv-gray hover:text-adv-teal'
+                    }`}
+                    title={isListening ? t('module.stopRecording') : t('module.voiceInput')}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Context budget — live token breakdown */}
+            <ContextBudgetBar
+              systemPrompt={systemPrompt}
+              userInput={userInput}
+              history={messages.map((m) => ({ role: m.role, content: m.content }))}
+              model={model}
+            />
+
+            {/* Smart Model Banner — only shown when user has typed something and there's a cheaper suggestion */}
+            {userInput.trim().length > 10 && !bannerDismissed && (
+              <SmartModelBanner
+                userInput={userInput}
+                currentModel={model}
+                onSwitchModel={(m) => {
+                  setModel(m as Parameters<typeof setModel>[0]);
+                  setBannerDismissed(true);
+                  setBannerDismissedAtLength(userInput.length);
+                }}
+                onDismiss={() => {
+                  setBannerDismissed(true);
+                  setBannerDismissedAtLength(userInput.length);
+                }}
+              />
+            )}
+
+            {/* Wave 0 track C — the run was held back because the module's own
+                required inputs are unanswered. Named by label, never by id. */}
+            {showMissingInputsNotice && (
+              <div
+                role="alert"
+                className="rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-xs text-adv-red"
+              >
+                <p className="font-medium">
+                  {t('module.requiredInputsTitle', 'Fill these module settings before running')}
+                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  {blockingInputs.map((f) => (
+                    <li key={f.id}>{f.label}</li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 opacity-80">
+                  {t('module.requiredInputsWhy', 'Left empty, the model has to assume them — and the output would record the assumption as its basis.')}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+              {isStreaming ? (
+                <button
+                  onClick={stopStreaming}
+                  className="flex items-center gap-2 rounded-lg bg-adv-red px-4 py-2.5 text-sm font-medium text-white hover:bg-adv-red/80 transition-colors"
+                >
+                  <Square className="h-4 w-4" />
+                  {t('module.stop')}
+                </button>
+              ) : (
+                <button
+                  onClick={handleRun}
+                  disabled={!userInput.trim()}
+                  className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {messages.length === 0 ? (
+                    <>
+                      <Play className="h-4 w-4" />
+                      {t('module.runAnalysis')}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      {t('module.send')}
+                    </>
+                  )}
+                </button>
+              )}
+              {/* Wave 1: the prompt a run would carry right now — same fields as Run, composed server-side */}
+              <PromptPreviewChip
+                disabled={isStreaming}
+                config={{
+                  model, thinking, creativity, precision, moduleId, areaId: areaId ?? undefined, systemPrompt,
+                  selectedOutputFormats, plainTextMode, selectedPersonas, selectedSkills, multiPerspective,
+                  metaCognitiveEnabled, structureReference, referenceOutput, transparencyLevel, writingTone,
+                  emojiEnabled, nativeReasoningEnabled, atomInjectionEnabled, audience, channel, outputLanguage,
+                  knowledgeSources: knowledgeSources as unknown as Record<string, unknown>,
+                  uploadedFileIds, sessionId, userMessage: userInput,
+                }}
+              />
+              </div>
+              {/* Cost estimate (TOKEN-04) — shown before run whenever context is non-trivial */}
+              {!isStreaming && estimatedInputTokens > 200 && (
+                <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray'}`}>
+                  <Coins className="h-3 w-3" />
+                  <span>
+                    ~{estimatedInputTokens.toLocaleString()} tokens · {euroCostDisplay}
+                    {estimatedInputTokens > 50000 && (
+                      <span className="ml-1 font-medium">· {t('module.approachingLimit')}</span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          {/* AI disclaimer (LEGAL-02) */}
+          <p className="px-1 text-xs text-adv-gray leading-snug">
+            AI-generated output — not legal or compliance advice. Verify independently.
+          </p>
+
+          {/* Everything that tunes a run but is not needed to start one sits below
+              Run: the task box used to be ~3,300 px down the page, under a dozen
+              panels (2026-09-22 Work QA). Nothing here was removed. */}
+          <div className="border-t border-border pt-4 text-xs font-semibold uppercase tracking-wide text-adv-gray">
+            {t('module.moreSettings', 'More settings')}
+          </div>
+
           {/* Precision (temperature control across providers) */}
           <PrecisionSelector value={precision} onChange={setPrecision} />
 
@@ -1080,40 +1300,6 @@ export default function ModulePage() {
             <ReferenceOutputPanel value={referenceOutput} onChange={setReferenceOutput} />
           )}
 
-          {/* File Upload */}
-          <FileUploader files={files} onUpload={upload} onRemove={remove} />
-
-          {/* Module-specific guided inputs (JSON-driven via DynamicModule) */}
-          {guidedInputFields.length > 0 ? (
-            <div>
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-adv-off-white">{t('module.moduleSettings')}</div>
-                {/* Quiet before the click, red once a run was actually blocked. */}
-                {blockingInputs.length > 0 && (
-                  <span
-                    className={`shrink-0 text-xs ${runBlockedOnInputs ? 'text-adv-red' : 'text-adv-gray'}`}
-                    aria-live="polite"
-                  >
-                    {blockingInputs.length === 1
-                      ? t('module.requiredInputsRemainingOne', '1 required field to fill')
-                      : t('module.requiredInputsRemaining', '{{count}} required fields to fill', { count: blockingInputs.length })}
-                  </span>
-                )}
-              </div>
-              <DynamicModule
-                fields={guidedInputFields}
-                values={moduleInputs}
-                onChange={setModuleInputs}
-                missingFieldIds={showMissingInputsNotice ? blockingInputs.map((f) => f.id) : undefined}
-              />
-            </div>
-          ) : ModuleInputs ? (
-            <div>
-              <div className="mb-2 text-sm font-medium text-adv-off-white">{t('module.moduleSettings')}</div>
-              <ModuleInputs onInputChange={setModuleInputs} />
-            </div>
-          ) : null}
-
           {/* Advanced Settings */}
           <div>
             <button
@@ -1143,177 +1329,6 @@ export default function ModulePage() {
             )}
           </div>
 
-          {/* User Input + Run */}
-          <div className="space-y-3">
-            <div>
-              <div className="mb-1.5 flex items-center justify-between gap-2">
-                <label className="block text-sm font-medium text-adv-off-white">
-                  {messages.length === 0 ? t('module.describeTask') : t('module.followUp')}
-                </label>
-                {/* "Try an example" chip — fills the task box (+ guided inputs) with the module's worked example */}
-                {moduleExample && !exampleUsed && messages.length === 0 && !userInput.trim() && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserInput(moduleExample.input);
-                      if (moduleExample.values) setModuleInputs(moduleExample.values);
-                      setExampleUsed(true);
-                    }}
-                    className="flex shrink-0 items-center gap-1 rounded-full border border-adv-teal/30 bg-adv-teal/10 px-2.5 py-1 text-[11px] font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
-                    title={t('module.tryExampleHint', 'Fill the inputs with a realistic worked example')}
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    {t('module.tryExample', 'Try an example')}
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <textarea
-                  value={userInput}
-                  onChange={(e) => {
-                    const newVal = e.target.value;
-                    // Reset banner dismissed state when input changes significantly (>20 chars diff)
-                    if (bannerDismissed && Math.abs(newVal.length - bannerDismissedAtLength) > 20) {
-                      setBannerDismissed(false);
-                    }
-                    setUserInput(newVal);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                      handleRun();
-                    }
-                  }}
-                  placeholder={
-                    messages.length === 0
-                      ? t('module.describeTaskPlaceholder')
-                      : t('module.followUpPlaceholder')
-                  }
-                  className="w-full rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
-                  rows={4}
-                />
-                {isSpeechSupported && (
-                  <button
-                    type="button"
-                    onClick={isListening ? stopListening : startListening}
-                    className={`absolute right-3 bottom-3 p-1.5 rounded-lg transition-colors ${
-                      isListening
-                        ? 'text-adv-red animate-pulse'
-                        : 'text-adv-gray hover:text-adv-teal'
-                    }`}
-                    title={isListening ? t('module.stopRecording') : t('module.voiceInput')}
-                  >
-                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Context budget — live token breakdown */}
-            <ContextBudgetBar
-              systemPrompt={systemPrompt}
-              userInput={userInput}
-              history={messages.map((m) => ({ role: m.role, content: m.content }))}
-              model={model}
-            />
-
-            {/* Smart Model Banner — only shown when user has typed something and there's a cheaper suggestion */}
-            {userInput.trim().length > 10 && !bannerDismissed && (
-              <SmartModelBanner
-                userInput={userInput}
-                currentModel={model}
-                onSwitchModel={(m) => {
-                  setModel(m as Parameters<typeof setModel>[0]);
-                  setBannerDismissed(true);
-                  setBannerDismissedAtLength(userInput.length);
-                }}
-                onDismiss={() => {
-                  setBannerDismissed(true);
-                  setBannerDismissedAtLength(userInput.length);
-                }}
-              />
-            )}
-
-            {/* Wave 0 track C — the run was held back because the module's own
-                required inputs are unanswered. Named by label, never by id. */}
-            {showMissingInputsNotice && (
-              <div
-                role="alert"
-                className="rounded-lg border border-adv-red/30 bg-adv-red/10 px-3 py-2 text-xs text-adv-red"
-              >
-                <p className="font-medium">
-                  {t('module.requiredInputsTitle', 'Fill these module settings before running')}
-                </p>
-                <ul className="mt-1 list-disc space-y-0.5 pl-4">
-                  {blockingInputs.map((f) => (
-                    <li key={f.id}>{f.label}</li>
-                  ))}
-                </ul>
-                <p className="mt-1.5 opacity-80">
-                  {t('module.requiredInputsWhy', 'Left empty, the model has to assume them — and the output would record the assumption as its basis.')}
-                </p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-              {isStreaming ? (
-                <button
-                  onClick={stopStreaming}
-                  className="flex items-center gap-2 rounded-lg bg-adv-red px-4 py-2.5 text-sm font-medium text-white hover:bg-adv-red/80 transition-colors"
-                >
-                  <Square className="h-4 w-4" />
-                  {t('module.stop')}
-                </button>
-              ) : (
-                <button
-                  onClick={handleRun}
-                  disabled={!userInput.trim()}
-                  className="flex items-center gap-2 rounded-lg bg-adv-teal px-4 py-2.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {messages.length === 0 ? (
-                    <>
-                      <Play className="h-4 w-4" />
-                      {t('module.runAnalysis')}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      {t('module.send')}
-                    </>
-                  )}
-                </button>
-              )}
-              {/* Wave 1: the prompt a run would carry right now — same fields as Run, composed server-side */}
-              <PromptPreviewChip
-                disabled={isStreaming}
-                config={{
-                  model, thinking, creativity, precision, moduleId, areaId: areaId ?? undefined, systemPrompt,
-                  selectedOutputFormats, plainTextMode, selectedPersonas, selectedSkills, multiPerspective,
-                  metaCognitiveEnabled, structureReference, referenceOutput, transparencyLevel, writingTone,
-                  emojiEnabled, nativeReasoningEnabled, atomInjectionEnabled, audience, channel, outputLanguage,
-                  knowledgeSources: knowledgeSources as unknown as Record<string, unknown>,
-                  uploadedFileIds, sessionId, userMessage: userInput,
-                }}
-              />
-              </div>
-              {/* Cost estimate (TOKEN-04) — shown before run whenever context is non-trivial */}
-              {!isStreaming && estimatedInputTokens > 200 && (
-                <div className={`flex items-center gap-1 text-[11px] ${estimatedInputTokens > 50000 ? 'text-adv-gold' : 'text-adv-gray'}`}>
-                  <Coins className="h-3 w-3" />
-                  <span>
-                    ~{estimatedInputTokens.toLocaleString()} tokens · {euroCostDisplay}
-                    {estimatedInputTokens > 50000 && (
-                      <span className="ml-1 font-medium">· {t('module.approachingLimit')}</span>
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-          {/* AI disclaimer (LEGAL-02) */}
-          <p className="px-1 text-xs text-adv-gray leading-snug">
-            AI-generated output — not legal or compliance advice. Verify independently.
-          </p>
         </div>
       </div>
 

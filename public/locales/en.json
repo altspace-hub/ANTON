@@ -152,6 +152,7 @@
     "describeTask": "Describe your analysis task",
     "followUp": "Follow-up message",
     "describeTaskPlaceholder": "e.g., Analyze our AML policy against AMLR requirements for a Nordic bank with retail and corporate banking...",
+    "taskPlaceholderFor": "Describe what you need from {{module}} — the situation, what you want back, and anything the answer must take into account.",
     "followUpPlaceholder": "Ask a follow-up question or request changes...",
     "outputWillAppear": "Output will appear here.",
     "configureAndRun": "Configure settings, describe your task, and click Run.",
@@ -1015,5 +1016,16 @@
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
     "daysAgo": "{{count}}d ago"
+  },
+  "modeToggle": {
+    "work": "Work",
+    "school": "School",
+    "life": "Life",
+    "community": "Collaboration",
+    "markets": "Markets",
+    "payments": "Payments",
+    "pathfinder": "Pathfinder",
+    "portals": "Portals",
+    "missions": "Missions"
   }
 }

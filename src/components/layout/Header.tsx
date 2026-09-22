@@ -81,12 +81,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </button>
 
       {/* Breadcrumb */}
-      <nav className="flex flex-1 items-center gap-2 text-sm">
+      {/* min-w-0 + truncate: a long module name shortens instead of wrapping onto
+          three lines and pushing the right-hand controls off screen. */}
+      <nav className="flex min-w-0 flex-1 items-center gap-2 text-sm">
         {parts.map((part, i) => (
-          <span key={part.path} className="flex items-center gap-2">
+          <span key={part.path} className={`flex items-center gap-2 ${i === parts.length - 1 ? 'min-w-0' : 'shrink-0'}`}>
             {i > 0 && <span className="text-adv-gray">/</span>}
             {i === parts.length - 1 ? (
-              <span className="text-adv-off-white">{part.label}</span>
+              <span className="truncate whitespace-nowrap text-adv-off-white" title={part.label}>{part.label}</span>
             ) : (
               <Link to={part.path} className="text-adv-gray hover:text-adv-teal transition-colors">
                 {part.label}
@@ -97,7 +99,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </nav>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
+      <div className="ml-3 flex shrink-0 items-center gap-3">
         {/* Work ↔ School mode toggle */}
         <ModeToggle className="hidden sm:flex" />
         {/* API Status */}

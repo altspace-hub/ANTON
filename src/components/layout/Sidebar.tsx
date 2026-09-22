@@ -1408,6 +1408,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                 className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
                 isFavorite={true}
                 isHidden={false}
+                inFavoritesList
                 onToggleFavorite={toggleNavFavorite}
                 sidebarCollapsed={sidebarCollapsed}
               >
@@ -1508,6 +1509,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
                   isFavorite={true}
                   isHidden={false}
+                  inFavoritesList
                   onToggleFavorite={toggleNavFavorite}
                   sidebarCollapsed={sidebarCollapsed}
                 >

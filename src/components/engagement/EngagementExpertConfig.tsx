@@ -80,7 +80,7 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     description: 'Iterative reasoning engine. Maximum depth with explicit reasoning trail for audit.',
     icon: Flame,
     model: 'Opus 4.8',
-    badge: 'IRE',
+    badge: '6 steps',
   },
 ];
 

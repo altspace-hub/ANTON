@@ -91,7 +91,8 @@ function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
               <span className="text-[11px] font-medium leading-tight">{level.label}</span>
               {level.iterative && (
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-adv-gold/80">
-                  IRE
+                  {/* Plain words: "IRE" (Iterative Reasoning Engine) meant nothing to a reader. */}
+                  6 steps
                 </span>
               )}
             </button>

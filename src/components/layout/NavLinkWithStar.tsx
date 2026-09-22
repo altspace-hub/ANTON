@@ -16,6 +16,8 @@ interface NavLinkWithStarProps {
   onToggleFavorite: (navId: string) => void;
   children: React.ReactNode;
   sidebarCollapsed?: boolean;
+  /** Rendered inside the Favorites list (the pinned copy). */
+  inFavoritesList?: boolean;
 }
 
 export default function NavLinkWithStar({
@@ -28,8 +30,14 @@ export default function NavLinkWithStar({
   onToggleFavorite,
   children,
   sidebarCollapsed = false,
+  inFavoritesList = false,
 }: NavLinkWithStarProps) {
   if (isHidden) return null;
+  // A favourite shows once, in Favorites — not again in its home section (the
+  // defaults put Home, Discover, My Work, Coding and Engagement Tasks in both).
+  // Unstarring it in Favorites brings it back. The collapsed sidebar has no
+  // Favorites list, so there it stays in place.
+  if (isFavorite && !inFavoritesList && !sidebarCollapsed) return null;
 
   const handleStarClick = (e: React.MouseEvent) => {
     e.preventDefault();
