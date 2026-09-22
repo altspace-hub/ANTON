@@ -156,7 +156,7 @@ pnpm run db:init
 
 # 5. Start development server
 pnpm run dev
-# Client: http://localhost:5173  |  API: http://localhost:3001
+# Client: http://localhost:5183  |  API: http://localhost:3001
 
 # OR start in production mode (builds client first)
 pnpm run build && pnpm start
@@ -179,7 +179,7 @@ Copy `.env.example` to `.env` and configure:
 | `MAX_FILE_SIZE_MB` | No | `50` | Maximum upload size |
 | `MAX_CONTEXT_TOKENS` | No | `180000` | Context window budget |
 | `DEFAULT_MODEL` | No | `claude-opus-4-8` | Default model (the Settings picker overrides this) |
-| `CORS_ORIGINS` | No | `http://localhost:3001,http://localhost:5173` | Allowed CORS origins (comma-separated) |
+| `CORS_ORIGINS` | No | `http://localhost:3001,http://localhost:5183` | Allowed CORS origins (comma-separated) |
 
 **No Anthropic key, or on a budget?** ANTON runs on Mistral (~$0.10–0.50/1M
 tokens), free local Ollama models, or OpenRouter/Groq/DeepSeek endpoints —

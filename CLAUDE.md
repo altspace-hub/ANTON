@@ -547,7 +547,7 @@ See `.env.example` for the complete list. Key variables:
 
 ```bash
 pnpm install            # Install dependencies
-pnpm run dev            # Start dev (Vite :5173 + Express :3001)
+pnpm run dev            # Start dev (Vite :5183 + Express :3001)
 pnpm run build          # Production build
 pnpm run start          # Serve production build
 pnpm run db:init        # Initialize PostgreSQL schema
