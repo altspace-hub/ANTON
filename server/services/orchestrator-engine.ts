@@ -1556,10 +1556,21 @@ export async function runHeartbeatCycle(
       const { detectPatterns, recordPatternDetection, shouldAutoPause } = await import('./orchestrator-pattern-engine.js');
       const patterns = await detectPatterns(db);
       if (patterns.length > 0) {
+        // Two bugs lived in these four lines. recordPatternDetection is async
+        // and was not awaited, so its failures surfaced out of band as loose
+        // warnings; and the count below was Math.min(patterns.length, 3) — a
+        // number computed from the input, not from what actually persisted. It
+        // read "3 recorded" for months while the INSERT was failing on every
+        // row and the table stayed empty. Count what came back instead.
+        let recorded = 0;
         for (const pat of patterns.slice(0, 3)) { // max 3 pattern proposals per cycle
-          recordPatternDetection(db, pat, briefingId ?? null);
+          const res = await recordPatternDetection(db, pat, briefingId ?? null);
+          if (res.ok) recorded++;
         }
-        console.log(`[orchestrator] Pattern engine: ${patterns.length} patterns detected, ${Math.min(patterns.length, 3)} recorded`);
+        const attempted = Math.min(patterns.length, 3);
+        console.log(
+          `[orchestrator] Pattern engine: ${patterns.length} patterns detected, ${recorded}/${attempted} recorded`,
+        );
       }
 
       // NOTE (2026-07-17): the former "Stage 3+ auto-execution" block was REMOVED.

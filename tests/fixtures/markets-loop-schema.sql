@@ -66,7 +66,15 @@ CREATE TABLE IF NOT EXISTS market_predictions (
   features                      JSONB DEFAULT '{}'::jsonb,
   verification_attempts         INTEGER NOT NULL DEFAULT 0,    -- migration 156
   last_verification_attempt_at  TIMESTAMPTZ,
-  last_verification_failure     TEXT
+  last_verification_failure     TEXT,
+  -- Written by the recalibration service; NEVER a copy of confidence. NULL
+  -- means the stated band had too few graded examples to speak for itself.
+  calibrated_confidence  DOUBLE PRECISION,
+  -- migration 261: the second channel. evidence_quality is a claim about the
+  -- INPUTS (how much informative evidence was found), where confidence is a
+  -- claim about the world. NULL means "not reported", never zero.
+  evidence_quality       DOUBLE PRECISION,
+  evidence_basis         TEXT
 );
 
 -- The retry-sweep partial index from migration 156 (kept so the predicate the
@@ -183,4 +191,258 @@ CREATE TABLE IF NOT EXISTS market_confidence_calibration (
   period_start           TEXT,   -- TEXT in prod; runCalibrationCheck inserts a timestamptz expression (assignment cast)
   period_end             TEXT,
   computed_at            TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── NAV engine ──────────────────────────────────────────────────────────────
+-- Column types are load-bearing here, not incidental. published_at is
+-- TIMESTAMPTZ, which node-postgres hands back as a JS Date; nav_date is TEXT.
+-- A guard that compared String(published_at).slice(0,10) against a
+-- 'YYYY-MM-DD' nav_date silently passed for every row ("Mon Aug 17" sorts
+-- above "2026-08-18") and a mocked adapter returning strings could not see it.
+CREATE TABLE IF NOT EXISTS market_indexes (
+  id                 TEXT PRIMARY KEY,
+  name               TEXT NOT NULL,
+  description        TEXT NOT NULL DEFAULT '',
+  index_type         TEXT NOT NULL DEFAULT 'custom',
+  status             TEXT NOT NULL DEFAULT 'draft',
+  max_holdings       INTEGER NOT NULL DEFAULT 20,
+  rebalance_frequency TEXT NOT NULL DEFAULT 'monthly',
+  weighting_method   TEXT NOT NULL DEFAULT 'equal',
+  total_return       NUMERIC(16,6) DEFAULT 0.0,
+  current_nav        NUMERIC(16,6) DEFAULT 1000.0,
+  -- The benchmark the index is measured against. Production has had this
+  -- column all along; the fixture did not, so any code reading it could not be
+  -- exercised here at all — which is the mirror image of the key_insight
+  -- problem and just as blinding. Adding it let the NAV engine's benchmark leg
+  -- be tested instead of merely typechecked.
+  benchmark_symbol   TEXT,
+  currency           TEXT DEFAULT 'USD',
+  drawdown_alert     TEXT,
+  -- Gates the LIVE rebalance path. Shadow runs must never write it, so the
+  -- column has to exist here for that invariant to be testable at all.
+  last_rebalance_at  TIMESTAMPTZ,
+  created_at         TIMESTAMPTZ DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS market_index_holdings (
+  id             SERIAL PRIMARY KEY,
+  index_id       TEXT NOT NULL,
+  symbol         TEXT NOT NULL,
+  name           TEXT,
+  weight         NUMERIC NOT NULL DEFAULT 0,
+  shares         DOUBLE PRECISION NOT NULL DEFAULT 0,
+  entry_price    NUMERIC,
+  current_price  NUMERIC,
+  unrealized_pnl NUMERIC DEFAULT 0,
+  added_at       TIMESTAMPTZ DEFAULT NOW(),
+  removed_at     TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS market_index_nav_history (
+  id                SERIAL PRIMARY KEY,
+  index_id          TEXT NOT NULL,
+  nav_date          TEXT NOT NULL,
+  nav_value         NUMERIC(16,6) NOT NULL,
+  daily_return      NUMERIC(10,6),
+  cumulative_return DOUBLE PRECISION,
+  -- The benchmark leg. Production has carried these since the table was
+  -- created and nothing ever wrote them, so every index reported a return with
+  -- no answer to "compared to what". They are NULLABLE on purpose: two live
+  -- indexes are benchmarked to symbols with no price rows (ESGU, OMXS30), and
+  -- a zero there would read as "matched the benchmark" rather than "unknown".
+  benchmark_value   NUMERIC(16,6),
+  benchmark_return  DOUBLE PRECISION,
+  excess_return     DOUBLE PRECISION,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS market_data_raw (
+  id           TEXT PRIMARY KEY,
+  source_id    TEXT NOT NULL,
+  data_type    TEXT NOT NULL,
+  symbol       TEXT,
+  title        TEXT,
+  content      TEXT,
+  published_at TIMESTAMPTZ,
+  fetched_at   TIMESTAMPTZ DEFAULT NOW(),
+  metadata     TEXT DEFAULT '{}',
+  is_processed INTEGER NOT NULL DEFAULT 0
+);
+
+-- ── Historical price sync target ────────────────────────────────────────────
+-- The UNIQUE is (symbol, price_date, source) — three columns, not two. The
+-- sync INSERT omits `source`, so every row takes the default and duplicate
+-- (symbol, price_date) pairs from different feeds collide on ONE conflict key
+-- inside a single statement. price_date is TEXT here, matching production.
+CREATE TABLE IF NOT EXISTS market_historical_prices (
+  id             SERIAL PRIMARY KEY,
+  symbol         TEXT NOT NULL,
+  price_date     TEXT NOT NULL,
+  open           DOUBLE PRECISION,
+  high           DOUBLE PRECISION,
+  low            DOUBLE PRECISION,
+  close          DOUBLE PRECISION,
+  adjusted_close DOUBLE PRECISION,
+  volume         BIGINT,
+  source         TEXT DEFAULT 'fmp',
+  fetched_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (symbol, price_date, source)
+);
+
+-- ── Prediction -> portfolio attribution ─────────────────────────────────────
+-- executed_at is TIMESTAMPTZ, which pg returns as a JS Date. The sweep used to
+-- call .slice(0, 10) on it (and on predictions.validated_at) and threw on every
+-- row for four months. Keeping the real types here is what makes that testable.
+CREATE TABLE IF NOT EXISTS market_index_rebalances (
+  id                 TEXT PRIMARY KEY,
+  index_id           TEXT NOT NULL,
+  rebalance_type     TEXT DEFAULT 'scheduled',
+  reasoning          TEXT,
+  nav_at_rebalance   NUMERIC,
+  executed_at        TIMESTAMPTZ DEFAULT NOW(),
+  pre_holdings       JSONB,
+  post_holdings      JSONB,
+  trades             JSONB,
+  prediction_signals JSONB DEFAULT '[]'::jsonb,
+  trigger_type       TEXT DEFAULT 'scheduled'
+);
+
+CREATE TABLE IF NOT EXISTS market_prediction_attribution (
+  id                SERIAL PRIMARY KEY,
+  prediction_id     TEXT NOT NULL,
+  rebalance_id      TEXT NOT NULL,
+  signal_score      DOUBLE PRECISION,
+  weight_change     DOUBLE PRECISION,
+  subsequent_return DOUBLE PRECISION,
+  attribution_pnl   DOUBLE PRECISION,
+  computed_at       TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── Investigations + why-chains ─────────────────────────────────────────────
+-- The auto-dispatch step re-scans EVERY validated prediction on every run, so
+-- creation must be idempotent on (trigger_type, trigger_reference). It was not:
+-- 21 anomalous predictions became 1,419 investigations, 67.6 copies each.
+CREATE TABLE IF NOT EXISTS market_investigation_tasks (
+  id                   TEXT PRIMARY KEY,
+  trigger_type         TEXT NOT NULL,
+  trigger_reference    TEXT,
+  title                TEXT NOT NULL,
+  question             TEXT NOT NULL,
+  status               TEXT DEFAULT 'open',
+  assigned_consul      TEXT,
+  findings             TEXT DEFAULT '[]',
+  atoms_created        TEXT DEFAULT '[]',
+  process_improvements TEXT DEFAULT '[]',
+  root_cause           TEXT,
+  created_at           TIMESTAMPTZ DEFAULT NOW(),
+  completed_at         TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS market_why_chains (
+  id                     TEXT PRIMARY KEY,
+  investigation_id       TEXT,
+  prediction_id          TEXT,
+  title                  TEXT,
+  root_cause_type        TEXT,
+  root_cause_description TEXT,
+  impact_assessment      TEXT,
+  num_levels             INTEGER DEFAULT 0,
+  status                 TEXT DEFAULT 'in_progress',
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  completed_at           TIMESTAMPTZ,
+  direction              TEXT DEFAULT 'failure_analysis',
+  root_cause_reached     INTEGER DEFAULT 0,
+  chain_data             TEXT DEFAULT '[]',
+  root_cause_summary     TEXT,
+  atoms_created          TEXT DEFAULT '[]',
+  correlations_updated   TEXT DEFAULT '[]',
+  signal_weights_updated TEXT DEFAULT '[]',
+  blind_spots_identified TEXT DEFAULT '[]',
+  process_improvements   TEXT DEFAULT '[]',
+  investigation_tasks_spawned TEXT,
+  systemic_impact        TEXT,
+  theses_affected        INTEGER,
+  indexes_affected       INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS market_why_chain_levels (
+  id                     SERIAL PRIMARY KEY,
+  chain_id               TEXT NOT NULL,
+  level_number           INTEGER,
+  question               TEXT,
+  answer                 TEXT,
+  evidence_atoms         TEXT DEFAULT '[]',
+  atom_created           TEXT,
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  level_type             TEXT DEFAULT 'symptom',
+  atoms_created_at_level TEXT DEFAULT '[]',
+  research_performed     TEXT
+  -- NO key_insight. It was here, and in no migration anywhere, so this fixture
+  -- described a table production does not have. The reaper was written against
+  -- that shape, its test passed against that shape, and in production the
+  -- SELECT threw 42703 on every sweep — nine chains sat 'in_progress'
+  -- indefinitely while the suite stayed green. key_insight is a field in the
+  -- LLM's JSON response, never a column; the level's finding is `answer`.
+);
+
+-- Conditional accuracy: the aggregates, and the ledger that keeps the roll-up
+-- idempotent (migration 258). Without the ledger the roll-up counts the same
+-- prediction on every pass over its 7-day window.
+CREATE TABLE IF NOT EXISTS market_conditional_accuracy (
+  id              SERIAL PRIMARY KEY,
+  feature_key     TEXT NOT NULL,
+  feature_value   TEXT NOT NULL,
+  scope           TEXT DEFAULT 'live',
+  total           INTEGER NOT NULL DEFAULT 0,
+  correct         INTEGER NOT NULL DEFAULT 0,
+  accuracy        NUMERIC(10,6),
+  avg_brier       NUMERIC(10,6),
+  last_updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (feature_key, feature_value, scope)
+);
+
+CREATE TABLE IF NOT EXISTS market_conditional_accuracy_applied (
+  prediction_id TEXT PRIMARY KEY,
+  scope         TEXT NOT NULL DEFAULT 'live',
+  applied_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Scheduler phase bookkeeping (migration 074, wired up 2026-08-26). Separates
+-- "hung" (status still 'running') from "never fired" (no row) -- the two
+-- failure modes that looked identical when the only output was the terminal.
+CREATE TABLE IF NOT EXISTS market_schedule_runs (
+  id            SERIAL PRIMARY KEY,
+  phase         TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'running',
+  started_at    TIMESTAMPTZ DEFAULT NOW(),
+  completed_at  TIMESTAMPTZ,
+  items_fetched INTEGER DEFAULT 0,
+  atoms_created INTEGER DEFAULT 0,
+  error         TEXT,
+  metadata      JSONB DEFAULT '{}'::jsonb,
+  -- Migration 263. The unique index below is the mechanism that stops a slot
+  -- from being run twice when cron and the catch-up tick both think it is due,
+  -- so the fixture must carry it or the claim tests would pass against a table
+  -- that cannot actually enforce the thing they assert.
+  slot_at       TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_market_schedule_runs_phase_slot
+  ON market_schedule_runs (phase, slot_at);
+
+-- Atoms, for the decay pass. valid_until is TEXT on purpose: that is the real
+-- column type, and comparing it to NOW() is what threw on every Phase 1 run
+-- from the PostgreSQL migration until 2026-08-27.
+CREATE TABLE IF NOT EXISTS market_atoms (
+  id               TEXT PRIMARY KEY,
+  content          TEXT,
+  atom_type        TEXT,
+  confidence       DOUBLE PRECISION,
+  category         TEXT,
+  valid_until      TEXT,
+  is_active        INTEGER DEFAULT 1,
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW(),
+  decay_applied_at TIMESTAMPTZ
 );

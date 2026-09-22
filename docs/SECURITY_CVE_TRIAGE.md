@@ -278,3 +278,30 @@ version in the lockfile, not the parent's declared range.)
 `socket.io-parser` was one of the ten bare `>=` floors flagged on 07-25; it is now bounded.
 Nine remain (`protobufjs`, `hono`, `@hono/node-server`, `@xmldom/xmldom`, `tmp`,
 `@grpc/grpc-js`, `find-my-way`, `ws`, `form-data`) — still a tracked follow-up.
+
+## Addendum — 2026-09-03 (5 blocking HIGH advisories; both fixes semver-compatible)
+
+The gate went red on the first CI run after a three-day gap — **5 high paths across 2
+packages**, all published against modules already in the tree, none related to the branch's
+own changes. Both fixes stayed inside the range their parents already declare, so neither
+needed a new override shape.
+
+| Package | Advisory | Was | Fix | Path |
+|---|---|---|---|---|
+| `fast-uri` ×4 | GHSA-5jgf-p345-68v8 (host confusion, skipped IDN canonicalization on scheme-relative refs, `>=3.1.3 <3.1.6`), GHSA-f65p-4m7j-42xc (SSRF via malformed IPv6 normalization, `>=3.0.0 <3.1.6`), GHSA-fph4-wmhf-6fwf (SSRF via repeated hostname percent-decoding, `>=3.1.2 <3.1.6`), GHSA-jqff-g426-hqxp (host confusion via percent-encoded scheme normalization, `>=3.0.0 <3.1.6`) | override `>=3.1.5 <4.0.0`, resolved 3.1.5 | **floor raised → `>=3.1.6 <4.0.0`** (same bounded shape; resolves 3.1.7, still inside the `^3.0.1` ajv declares) | `.>ajv>fast-uri` — same reachability as the 08-12 entry: ajv-formats URI validation of remote portal capability descriptors |
+| `mysql2` | GHSA-3f6p-5ww8-9rcr — auth plugin downgrade to `mysql_clear_password` leaks plaintext credentials (CWE-522), `<3.22.0` | direct `^3.17.3`, **resolved 3.18.2** | **direct bump → `^3.22.0`** (resolves 3.24.3) | `.>mysql2` — reachable: `server/services/db-drivers/mysql-driver.ts` and `workflow-executor.ts` connect to a user-configured MySQL/MariaDB host with credentials from the vault. A hostile or on-path server can request the downgrade and harvest them in plaintext |
+
+### The mysql2 finding is the fourth instance of the same lesson
+
+`^3.17.3` already permitted the patched 3.22.0 — the *declared range* was never wrong, the
+*lockfile resolution* was stale at 3.18.2. This is exactly the 08-12 correction to the 06-11
+`express-rate-limit` / `ip-address` entry, and the 07-25 note before it: **audit the resolved
+version, not the declared range.** The floor is raised to `^3.22.0` anyway so a future
+`pnpm install` cannot silently resolve back below the patch line.
+
+### Bare-floor cleanup
+
+No change this batch. Nine unbounded `>=` floors remain (`protobufjs`, `hono`,
+`@hono/node-server`, `@xmldom/xmldom`, `tmp`, `@grpc/grpc-js`, `find-my-way`, `ws`,
+`form-data`) — still a tracked follow-up. `pnpm.auditConfig.ignoreGhsas` remains **empty**;
+accepted-with-reason state remains **None**.

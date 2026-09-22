@@ -1,4 +1,3 @@
-import { getAnthropicUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import type { MarketComputationService } from './market-computation-service.js';
 import type Anthropic from '@anthropic-ai/sdk';
@@ -65,10 +64,6 @@ export async function createMarketRCIService(
   // ── REASON phase — select template + params ────────────────────────────
 
   async function reason(question: string, context?: string): Promise<TemplateSuggestion> {
-    if (!anthropicClient) {
-      throw new Error('Anthropic client not configured — RCI requires AI');
-    }
-
     const systemPrompt = reasonPrompt || `You are a quantitative analyst. Given a natural language question about markets, select the most appropriate computation template and provide parameters.
 
 Available templates:
@@ -80,17 +75,16 @@ Respond with JSON only: { "template": "template_name", "params": { ... }, "reaso
       ? `Question: ${question}\n\nContext: ${context}`
       : `Question: ${question}`;
 
-    const response = await anthropicClient.messages.create({
-      model: await getAnthropicUtilityModel(db),
-      max_tokens: 1024,
+    const { callChat } = await import('./provider-router.js');
+    const { getMarketsModel } = await import('./markets-model-store.js');
+    const response = await callChat({
+      model: await getMarketsModel(db),
+      maxTokens: 1024,
       system: systemPrompt + '\n\nAvailable templates:\n' + buildTemplateList(),
       messages: [{ role: 'user', content: userContent }],
+      jsonMode: true,
     });
-
-    const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map(b => b.text)
-      .join('');
+    const text = response.text;
 
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -126,35 +120,23 @@ Respond with JSON only: { "template": "template_name", "params": { ... }, "reaso
     templateName: string,
     computeOutput: unknown,
   ): Promise<{ summary: string; confidence: number; caveats: string[] }> {
-    if (!anthropicClient) {
-      return {
-        summary: 'AI interpretation unavailable — see raw computation output.',
-        confidence: 0,
-        caveats: ['Anthropic client not configured'],
-      };
-    }
-
     const systemPrompt = interpretPrompt || `You are a senior financial analyst. Given a user's question and the raw computation results, provide a clear, actionable interpretation.
 
 Respond with JSON only: { "summary": "plain English interpretation", "confidence": 0.0-1.0, "caveats": ["any limitations or warnings"] }`;
 
-    const response = await anthropicClient.messages.create({
-      // Direct Anthropic client call — cannot wrap with mapModelToProvider
-      // here. Fixed invalid id (was ...-20250514, which the Anthropic API
-      // rejects; registry id is ...-20250929).
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 2048,
+    const { callChat } = await import('./provider-router.js');
+    const { getMarketsModel } = await import('./markets-model-store.js');
+    const response = await callChat({
+      model: await getMarketsModel(db),
+      maxTokens: 2048,
       system: systemPrompt,
       messages: [{
         role: 'user',
         content: `Original question: ${question}\n\nTemplate used: ${templateName}\n\nComputation results:\n${JSON.stringify(computeOutput, null, 2)}`,
       }],
+      jsonMode: true,
     });
-
-    const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map(b => b.text)
-      .join('');
+    const text = response.text;
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

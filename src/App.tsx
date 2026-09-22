@@ -306,6 +306,7 @@ const MarketIndexCreatePage = lazy(() => import('./pages/markets/MarketIndexCrea
 const MarketLearningPage = lazy(() => import('./pages/markets/MarketLearningPage'));
 const MarketInvestigationPage = lazy(() => import('./pages/markets/MarketInvestigationPage'));
 const MarketWorkflowsPage = lazy(() => import('./pages/markets/MarketWorkflowsPage'));
+const MarketDeadLettersPage = lazy(() => import('./pages/markets/MarketDeadLettersPage'));
 const MarketComputationPage = lazy(() => import('./pages/markets/MarketComputationPage'));
 const MarketAtomsPage = lazy(() => import('./pages/markets/MarketAtomsPage'));
 const MarketWhyChainsPage = lazy(() => import('./pages/markets/MarketWhyChainsPage'));
@@ -757,6 +758,7 @@ export default function App() {
           <Route path="/markets/learning" element={<MarketLearningPage />} />
           <Route path="/markets/investigations" element={<MarketInvestigationPage />} />
           <Route path="/markets/workflows" element={<MarketWorkflowsPage />} />
+          <Route path="/markets/dead-letters" element={<MarketDeadLettersPage />} />
           <Route path="/markets/computation" element={<MarketComputationPage />} />
           <Route path="/markets/atoms" element={<MarketAtomsPage />} />
           <Route path="/markets/why-chains" element={<MarketWhyChainsPage />} />

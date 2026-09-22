@@ -233,25 +233,39 @@ export async function detectPatterns(db: DatabaseAdapter): Promise<DetectedPatte
 
 /**
  * Record a detected pattern in the DB and optionally create a briefing proposal.
- * Returns the created proposal ID, or null if skipped.
+ *
+ * Returns `ok` — whether the detection was persisted — separately from
+ * `proposalId`, which is null whenever no briefingId was passed. Callers used
+ * to read a null return as failure, but null is the ORDINARY result: the
+ * heartbeat calls this with no briefing on an `action: 'none'` cycle, and the
+ * /patterns route always passes null. Both then reported "0 recorded" on a
+ * completely successful run, and would equally have reported 0 on a completely
+ * failed one. The two cases need different answers.
  */
 export async function recordPatternDetection(
   db: DatabaseAdapter,
   pattern: DetectedPattern,
   briefingId: string | null
-): Promise<string | null> {
+): Promise<{ ok: boolean; proposalId: string | null }> {
   const detectionId = randomUUID();
   try {
     // Upsert pattern definition
     const existing = await db.get('SELECT id FROM orchestrator_patterns WHERE id = ?', pattern.pattern_id);
     if (!existing) {
+      // detection_criteria is NOT NULL (migration 024) and was never supplied,
+      // so this INSERT failed with 23502 on every new pattern — the table held
+      // zero rows while the heartbeat logged "3 patterns detected, 3 recorded"
+      // twice an hour. signal_data is what the column is for: the JSON of the
+      // conditions that fired the detection.
       await db.run(`
         INSERT INTO orchestrator_patterns
-          (id, pattern_type, name, description, suggested_action, auto_execute, executions_count, last_detected_at)
-        VALUES (?, ?, ?, ?, ?, ?, 0, NOW())
-      `, 
+          (id, pattern_type, name, description, detection_criteria, suggested_action,
+           confidence_threshold, auto_execute, executions_count, last_detected_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW())
+      `,
         pattern.pattern_id, pattern.pattern_type, pattern.name,
-        pattern.description, pattern.suggested_action,
+        pattern.description, JSON.stringify(pattern.signal_data ?? {}),
+        pattern.suggested_action, pattern.confidence,
         pattern.auto_execute ? 1 : 0
       );
     } else {
@@ -289,10 +303,10 @@ export async function recordPatternDetection(
       VALUES (?, ?, ?, ?, 0)
     `, detectionId, pattern.pattern_id, JSON.stringify({ ...pattern.signal_data, pattern_id: pattern.pattern_id }), proposalId);
 
-    return proposalId;
+    return { ok: true, proposalId };
   } catch (e) {
     console.warn('[pattern-engine] recordPatternDetection error:', e);
-    return null;
+    return { ok: false, proposalId: null };
   }
 }
 

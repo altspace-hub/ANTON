@@ -21,6 +21,33 @@ interface ConditionalAccuracyRow {
 
 // ── Factory ──────────────────────────────────────────────────────────────────
 
+/**
+ * Cut points for the confidence_band prediction feature.
+ *
+ * The first cut was 0.50 / 0.65, picked before there was any data to pick
+ * from. The pulse prompt caps confidence at 0.40-0.75 and steers tactical
+ * calls into the lower half, so 184 of 234 pulse predictions landed in 'mid'
+ * and exactly 2 in 'low'. A dimension that is 79% one value conditions
+ * nothing — it is the same dead weight as signal_type being 'ai' for every
+ * row, just less obvious.
+ *
+ * These are the observed terciles over those 234 rows (p33 = 0.56,
+ * p67 = 0.60), which split them 75 / 65 / 94.
+ *
+ * Worth re-deriving whenever the generator's confidence range moves: a band
+ * that has drifted back onto one value is silently useless again, and nothing
+ * will report it.
+ */
+export const CONFIDENCE_BAND_CUTS = { mid: 0.56, high: 0.60 } as const;
+
+/** Band a stated confidence for the conditional-accuracy feature set. */
+export function confidenceBand(confidence: number): 'low' | 'mid' | 'high' {
+  if (!Number.isFinite(confidence)) return 'low';
+  if (confidence < CONFIDENCE_BAND_CUTS.mid) return 'low';
+  if (confidence < CONFIDENCE_BAND_CUTS.high) return 'mid';
+  return 'high';
+}
+
 export async function createConditionalAccuracyService(db: DatabaseAdapter) {
 
   /**
@@ -61,6 +88,19 @@ export async function createConditionalAccuracyService(db: DatabaseAdapter) {
     const features: Record<string, string> =
       typeof row.features === 'string' ? JSON.parse(row.features) : (row.features ?? {});
     const scope = isBacktest ? (backtestId ?? 'backtest') : 'live';
+
+    // Idempotence. The caller re-scans "validated in the last 7 days" on every
+    // run, so without this a daily workflow counts the same outcome up to
+    // seven times: `total` inflates and `accuracy` drifts toward whatever the
+    // most-rescanned rows happened to say. Claim the prediction first — if
+    // another pass already has it, this one does nothing.
+    const claimed = await db.get<{ prediction_id: string }>(
+      `INSERT INTO market_conditional_accuracy_applied (prediction_id, scope)
+       VALUES (?, ?) ON CONFLICT (prediction_id) DO NOTHING
+       RETURNING prediction_id`,
+      predictionId, scope,
+    );
+    if (!claimed) return;
 
     for (const [key, value] of Object.entries(features)) {
       if (!value) continue;

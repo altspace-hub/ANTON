@@ -51,9 +51,11 @@ const CHIP_ACTIVE = 'border-adv-teal bg-adv-teal-dim text-adv-teal';
 const CHIP_INACTIVE = 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white';
 
 const MODEL_OPTIONS: { value: ModelId; label: string }[] = [
+  { value: 'claude-opus-5', label: 'Opus 5' },
+  { value: 'claude-sonnet-5', label: 'Sonnet 5' },
+  { value: 'claude-fable-5', label: 'Fable 5' },
   { value: 'claude-opus-4-8', label: 'Opus 4.8' },
   { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },
-  { value: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
   { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5' },
 ];
 
@@ -426,9 +428,17 @@ export default function Settings() {
   const [ecoOllama, setEcoOllama] = useState<{ available: boolean; models: string[] }>({ available: false, models: [] });
   const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null }>>([]);
 
+  // Subscription execution engines (sdk:<model> / codex:<model>): enabled
+  // engines' models are valid default-model choices — they run on this
+  // machine's subscription sign-in, not an API key.
+  const [subscriptionModels, setSubscriptionModels] = useState<Array<{ id: string; label: string }>>([]);
+
   // Wave 3.8: utility model for background tasks (extraction, scoring,
   // naming). Server-persisted only (app_settings 'utility_model').
   const [utilityModel, setUtilityModel] = useState<string>('claude-haiku-4-5-20251001');
+  // Markets pillar model ('' = unset → utility model applies). Server-persisted
+  // only (app_settings 'markets_model').
+  const [marketsModel, setMarketsModel] = useState<string>('');
   // Double-check (four-eyes) — optional second-model review. Off by default.
   const [doubleCheckEnabled, setDoubleCheckEnabled] = useState<boolean>(false);
   const [verifierModel, setVerifierModel] = useState<string>('claude-haiku-4-5-20251001');
@@ -548,6 +558,15 @@ export default function Settings() {
       .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; enabled: boolean }> }) =>
         setEcoEndpoints((data.endpoints ?? []).filter((e) => e.enabled)))
       .catch(() => {});
+
+    // Subscription engines: union of enabled engines' models (same probe as ModelSelector)
+    const engineState = (r: Response) => r.ok ? r.json() : { enabled: false, models: [] };
+    Promise.all([
+      fetch('/api/settings/sdk-engine').then(engineState).catch(() => ({ enabled: false, models: [] })),
+      fetch('/api/settings/codex-engine').then(engineState).catch(() => ({ enabled: false, models: [] })),
+    ]).then((engines: Array<{ enabled?: boolean; models?: Array<{ id: string; label: string }> }>) => {
+      setSubscriptionModels(engines.flatMap((e) => (e.enabled ? e.models ?? [] : [])));
+    }).catch(() => {});
   }, []);
 
   // Saves a provider key: applied immediately server-side (no restart) and
@@ -590,6 +609,7 @@ export default function Settings() {
     loadBrandConfig();
     loadCustomModels();
     loadUtilityModel();
+    loadMarketsModel();
     loadDoubleCheck();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
@@ -631,6 +651,31 @@ export default function Settings() {
   function handleSetUtilityModel(model: string) {
     setUtilityModel(model);
     fetchWithAuth('/api/settings/utility-model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    }).catch(() => {
+      // Non-fatal — server keeps its previous value; UI refetches on next visit
+    });
+    flash();
+  }
+
+  // Markets pillar model — what markets background intelligence runs on
+  // (atom extraction, theses, why-chains, analyst notes, consuls).
+  // '' = unset → the utility model applies.
+  async function loadMarketsModel() {
+    try {
+      const res = await fetchWithAuth('/api/settings/markets-model');
+      if (res.ok) {
+        const data = await res.json() as { model?: string | null };
+        setMarketsModel(data.model ?? '');
+      }
+    } catch { /* default (utility model) stands */ }
+  }
+
+  function handleSetMarketsModel(model: string) {
+    setMarketsModel(model);
+    fetchWithAuth('/api/settings/markets-model', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model }),
@@ -1529,6 +1574,24 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* Subscription engines — enabled in Local & cost-effective models */}
+            {subscriptionModels.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-1.5 text-xs text-adv-gray">Subscription (SDK) — runs on your subscription sign-in, no API credits needed</p>
+                <div className="flex flex-wrap gap-2">
+                  {subscriptionModels.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => handleSetModel(m.id as ModelId)}
+                      className={`${CHIP_BASE} ${defaultModel === m.id ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* OpenAI */}
             <div className="mb-3">
               <p className="mb-1.5 text-xs text-adv-gray">
@@ -1539,10 +1602,10 @@ export default function Settings() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {([
-                  { value: 'gpt-5.4',      label: 'GPT-5.4',       tier: '★ Latest' },
-                  { value: 'gpt-4.1',      label: 'GPT-4.1',       tier: '● Flagship' },
-                  { value: 'gpt-4o',       label: 'GPT-4o',        tier: '◑ Balanced' },
-                  { value: 'gpt-4o-mini',  label: 'GPT-4o Mini',   tier: '○ Fast' },
+                  { value: 'gpt-5.6-sol',   label: 'GPT-5.6 Sol',   tier: '★ Frontier' },
+                  { value: 'gpt-5.6-terra', label: 'GPT-5.6 Terra', tier: '● Balanced' },
+                  { value: 'gpt-5.6-luna',  label: 'GPT-5.6 Luna',  tier: '○ Fast' },
+                  { value: 'gpt-5.4',       label: 'GPT-5.4',       tier: '◑ Previous' },
                 ] as { value: ModelId; label: string; tier: string }[]).map(({ value: modelValue, label }) => {
                   const disabled = !providerStatus.OPENAI_API_KEY;
                   return (
@@ -1713,6 +1776,42 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Markets AI model — what the Markets pillar's background intelligence runs on */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-adv-gray">{t('settings.marketsModel', 'Markets AI model')}</span>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.marketsModelDesc', 'Used by Markets automation: atom extraction, theses, why-chains, analyst notes, consuls and the prediction verifier. Subscription (SDK) models run on your Claude sign-in — no API credits. "Default" follows the Utility model.')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { value: '', label: t('settings.marketsModelDefault', 'Default (utility model)'), disabled: false },
+                ...subscriptionModels.map((m) => ({ value: m.id, label: m.label, disabled: false })),
+                { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', disabled: false },
+                { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', disabled: false },
+                { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
+                { value: 'mistral-medium-latest', label: 'Mistral Medium 3.5', disabled: !providerStatus.MISTRAL_API_KEY },
+                ...(ecoOllama.available && ecoOllama.models.length > 0
+                  ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
+                  : []),
+                ...ecoEndpoints.filter((e) => e.defaultModel).map((e) => ({
+                  value: `compat:${e.slug}:${e.defaultModel}`, label: `${e.displayName} (${e.defaultModel})`, disabled: false,
+                })),
+              ] as { value: string; label: string; disabled: boolean }[]).map(({ value, label, disabled }) => (
+                <button
+                  key={value || 'default'}
+                  onClick={() => { if (!disabled) handleSetMarketsModel(value); }}
+                  disabled={disabled}
+                  title={disabled ? t('settings.notConfigured') : undefined}
+                  className={`${CHIP_BASE} ${marketsModel === value ? CHIP_ACTIVE : disabled ? 'border-border bg-adv-dark text-adv-gray/40 cursor-not-allowed' : CHIP_INACTIVE}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Double-check (four-eyes review) — optional second-model verification */}
           <div>
             <div className="mb-2 flex items-center justify-between">
@@ -1736,6 +1835,9 @@ export default function Settings() {
                   { value: 'gpt-4o-mini', label: 'GPT-4o Mini', disabled: !providerStatus.OPENAI_API_KEY },
                   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', disabled: !providerStatus.GOOGLE_API_KEY },
                   { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
+                  // Subscription engines (sdk:/codex:) — verify on the machine's
+                  // subscription sign-in, no API credits needed.
+                  ...subscriptionModels.map((m) => ({ value: m.id, label: m.label, disabled: false })),
                   ...(ecoOllama.available && ecoOllama.models.length > 0
                     ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
                     : []),

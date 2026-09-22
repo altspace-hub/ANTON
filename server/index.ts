@@ -130,7 +130,9 @@ import { createPostMarketMonitoringRoutes } from './routes/post-market-monitorin
 import { createMarketsRoutes } from './routes/markets.js';
 import { createMarketComputationRoutes } from './routes/market-computation.js';
 import { createMarketDataService } from './services/market-data-service.js';
-import { createMarketAtomService } from './services/market-atom-service.js';
+import { createMarketAtomService, planExtractionBatches } from './services/market-atom-service.js';
+import { createSchedulePhaseRecorder, retryableSlotSql } from './services/market-schedule-recorder.js';
+import { previousSlotFor, selectCatchUpPhase } from './services/market-schedule-slots.js';
 import { createMarketThesesRoutes } from './routes/market-theses.js';
 import { createMarketEntitiesRoutes } from './routes/market-entities.js';
 import { createMarketPatternsRoutes } from './routes/market-patterns.js';
@@ -1254,9 +1256,15 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       String(process.env.MARKETS_FETCH_DISABLED || '').toLowerCase() === 'true';
     const marketsAutorebalanceDisabled =
       String(process.env.MARKETS_AUTOREBALANCE_DISABLED || '').toLowerCase() === 'true';
+    // Rehearse rebalancing without committing holdings. Only meaningful while
+    // the live path is paused; see sweepShadowRebalance.
+    const marketsRebalanceShadow =
+      String(process.env.MARKETS_REBALANCE_SHADOW || '').toLowerCase() === 'true';
     if (marketsThinkingDisabled) console.log('[markets-schedule] MARKETS_THINKING_DISABLED=true — LLM phases will skip');
     if (marketsFetchDisabled) console.log('[markets-schedule] MARKETS_FETCH_DISABLED=true — data fetches will skip');
     if (marketsAutorebalanceDisabled) console.log('[markets-schedule] MARKETS_AUTOREBALANCE_DISABLED=true — scheduled rebalances will skip');
+    if (marketsRebalanceShadow && marketsAutorebalanceDisabled) console.log('[markets-schedule] MARKETS_REBALANCE_SHADOW=true — rebalances recorded but NOT executed');
+    if (marketsRebalanceShadow && !marketsAutorebalanceDisabled) console.warn('[markets-schedule] MARKETS_REBALANCE_SHADOW ignored — live rebalancing is enabled');
 
     // ── Markets automation opt-in (plan 1.11) ──────────────────────────────
     // MARKETS_AUTOMATION=true is the explicit opt-in master switch for every
@@ -1276,9 +1284,125 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       `[markets-schedule] Automation tiers — free deterministic loops: ON | LLM phases: ${marketsLlmOn ? 'ON' : 'OFF'} | external data fetch: ${marketsFetchOn ? 'ON' : 'OFF'}` +
       (marketsAutomation ? '' : ' (set MARKETS_AUTOMATION=true to enable the token/data-spending crons)'),
     );
+    // Phase bookkeeping lives in its own module so it can be tested; see
+    // market-schedule-recorder.ts for why it exists at all.
+    const { recordPhase } = createSchedulePhaseRecorder(db);
+
+    // ── Slot claiming + catch-up (2026-09-03) ──────────────────────────────
+    // A scheduled slot that does not fire is lost for good. Over 08-31..09-03,
+    // 12 of 54 due slots were missed (77.8% delivery), and the misses cluster
+    // by TIME rather than by phase: at 18:00 two separate registrations
+    // (phase4-midday-intelligence and intraday-price-refresh) are co-fated on
+    // all four days, which no per-phase defect can produce.
+    //
+    // Three causes, and only the first two are understood:
+    //
+    //   1. The host froze. Windows Modern Standby 09-02 16:30:23 -> 19:08:27
+    //      (Kernel-Power 506/507) swallowed that day's 18:00; the 25H2 update
+    //      reboots swallowed 09-03's. Worth knowing: Modern Standby is NOT
+    //      governed by the "lid close = do nothing / idle sleep = Never"
+    //      settings, so those being correct proves nothing.
+    //   2. node-cron never replays. node_modules/node-cron 4.2.1
+    //      dist/esm/scheduler/runner.js advances past any slot whose timer
+    //      callback lands even one second late — `while (expectedNextExecution
+    //      < currentDate) { logger.warn('missed execution'); ... }` — then runs
+    //      only on an exact-second match. The sole trace is a console warning
+    //      nobody keeps.
+    //   3. Six of the twelve are still unexplained. 09-02 12:30, 14:00, 14:30,
+    //      15:00, 15:45 and 09-03 07:00 were missed while an independent
+    //      `*/30 * * * *` node-cron heartbeat in the SAME process fired within
+    //      290 ms at the identical minutes, and the markets phases left no rows
+    //      and no side effects — no fetches, no atoms.
+    //
+    // Not knowing (3) is the point. Every phase is now registered twice over:
+    // on cron, which fires it on time when cron works, and in a registry the
+    // tick below sweeps for slots that came and went unclaimed. A suspend, a
+    // dropped timer, a restart straddling the slot and whatever (3) turns out
+    // to be all present identically — an unclaimed slot — and are all covered
+    // by the same sweep. Migration 263's unique index on (phase, slot_at)
+    // decides the race between the two callers, so a slot still runs exactly
+    // once however many of them think it is due.
+    //
+    // This is the conclusion the free half of the loop already reached on
+    // 2026-08-21 ("stop asking is it 12:00 and start asking is there
+    // outstanding work"), finally applied to the spending half — the half that
+    // generates predictions, and so the half whose silence starves the learning
+    // loop while every dashboard still looks healthy.
+    interface PhaseOptions {
+      /** How stale a missed slot may be and still be worth running, in minutes. */
+      catchUpWithinMin?: number;
+      /**
+       * Consulted ONLY by the catch-up tick, never by cron: has this phase's
+       * work already happened by some other route today?
+       *
+       * A missed slot is worth rescuing; repeating work that already happened
+       * is not. The phases that mint predictions are the ones where this
+       * matters, because a second batch on the same symbols enters the accuracy
+       * record as independent observations when it is nothing of the kind —
+       * commit 2d973f8f had to delete 13 such rows for exactly this reason
+       * ("9 of 13 duplicated the 09:00 batch by symbol and direction"). The
+       * boot and resume catch-ups already run daily intelligence on their own
+       * heartbeat, so without this the slot catch-up would double it.
+       */
+      alreadyDone?: () => Promise<boolean>;
+    }
+    interface CatchUpPhase {
+      expr: string;
+      phase: string;
+      run: () => Promise<void>;
+      catchUpWithinMin: number;
+      alreadyDone?: () => Promise<boolean>;
+    }
+    const catchUpPhases: CatchUpPhase[] = [];
+    /** Long enough to rescue a morning slot before lunch; short enough that a
+     *  machine woken at midnight does not fire a whole day of stale phases. */
+    const DEFAULT_CATCH_UP_MIN = 6 * 60;
+
+    /** True when a workflow of this id completed today (Europe/Stockholm). */
+    const workflowRanToday = async (workflowId: string): Promise<boolean> => {
+      const row = await db.get<{ n: number | string }>(
+        `SELECT COUNT(*) AS n FROM workflow_runs
+          WHERE workflow_id = ? AND status = 'completed' AND started_at >= CURRENT_DATE`,
+        workflowId,
+      );
+      return Number(row?.n ?? 0) > 0;
+    };
+
+    /**
+     * Register a phase on cron AND in the catch-up registry. The cron callback
+     * resolves its own slot so it claims the same row the catch-up would, which
+     * is what stops the two from doubling up.
+     */
+    const registerPhase = (
+      expr: string,
+      phase: string,
+      fn: () => Promise<void>,
+      opts: PhaseOptions = {},
+    ): void => {
+      catchUpPhases.push({
+        expr,
+        phase,
+        run: fn,
+        catchUpWithinMin: opts.catchUpWithinMin ?? DEFAULT_CATCH_UP_MIN,
+        alreadyDone: opts.alreadyDone,
+      });
+      cron.schedule(expr, () => {
+        // Short lookback: at fire time the slot IS now. If cron is running so
+        // late that no slot resolves, fall through to an unclaimed row rather
+        // than skipping the work — the pre-263 behaviour.
+        const slot = previousSlotFor(expr, new Date(), MARKET_TZ.timezone, 5);
+        void recordPhase(phase, fn, slot ?? undefined);
+      }, MARKET_TZ);
+    };
+
     /** Register a cron only when the token/data-spending tier is opted in. */
-    const scheduleSpending = (expr: string, fn: () => Promise<void>): void => {
-      if (marketsAutomation) cron.schedule(expr, fn, MARKET_TZ);
+    const scheduleSpending = (
+      expr: string,
+      phase: string,
+      fn: () => Promise<void>,
+      opts: PhaseOptions = {},
+    ): void => {
+      if (marketsAutomation) registerPhase(expr, phase, fn, opts);
     };
 
     // ── Sustainable schedule: fetch less, process more, quality over speed ──
@@ -1288,24 +1412,44 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       return Number(row?.count) || 0;
     }
 
+    /**
+     * Drain `limit` raw rows into atoms.
+     *
+     * Batched: items go to the model a dozen at a time (fewer for bulky
+     * fundamentals) instead of one call each. Before this, the drain was one
+     * call per item — 200 a weekday against ~450 arriving — so the queue only
+     * ever grew, and the 500-item gate above then switched news fetching off
+     * for days at a time. The `limit` is a row count, not a call count, so the
+     * same number here now costs roughly a twelfth of the calls.
+     */
     async function processBacklog(limit: number) {
       const unprocessed = await db.all<{ id: string; data_type: string; content: string; title: string | null }>(
         "SELECT id, data_type, content, title FROM market_data_raw WHERE is_processed = 0 AND data_type NOT IN ('price') ORDER BY fetched_at ASC LIMIT ?", limit
       );
+      const items = unprocessed.map(row => ({
+        id: row.id,
+        text: row.title ? `${row.title}\n\n${row.content}` : row.content,
+        dataType: row.data_type,
+      }));
+
       let processed = 0;
-      for (const row of unprocessed) {
+      for (const batch of planExtractionBatches(items)) {
         try {
-          const text = row.title ? `${row.title}\n\n${row.content}` : row.content;
-          await marketAtomService.extractAtomsFromRawData(row.id, text, row.data_type);
-          processed++;
-        } catch { /* skip */ }
-        await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', row.id);
+          const byId = await marketAtomService.extractAtomsFromRawDataBatch(batch);
+          // Count a document as processed when it actually yielded atoms —
+          // the old per-item counter incremented on "the call did not throw",
+          // which reported success for extractions that returned nothing.
+          for (const item of batch) if ((byId.get(item.id)?.length ?? 0) > 0) processed++;
+        } catch { /* skip — rows are still marked processed below */ }
+        for (const item of batch) {
+          await db.run('UPDATE market_data_raw SET is_processed = 1 WHERE id = ?', item.id);
+        }
       }
       return processed;
     }
 
     // Phase 1: Morning Intelligence (07:00 CET) — fetch + LLM (opt-in)
-    scheduleSpending('0 7 * * 1-5', async () => {
+    scheduleSpending('0 7 * * 1-5', 'phase1-morning-intelligence', async () => {
       console.log('[markets-schedule] Phase 1: Morning Intelligence');
       try {
         await marketAtomService.applyAtomDecay();
@@ -1321,14 +1465,14 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         if (marketsThinkingDisabled) {
           console.log('[markets-schedule] Phase 1: backlog processing skipped (MARKETS_THINKING_DISABLED)');
         } else {
-          const processed = await processBacklog(40);
+          const processed = await processBacklog(150);
           console.log(`[markets-schedule] Phase 1 complete — processed ${processed} articles`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 1 error:', err); }
     });
 
     // Phase 2: Pre-Open (14:30 CET) — light fetch + process (opt-in)
-    scheduleSpending('30 14 * * 1-5', async () => {
+    scheduleSpending('30 14 * * 1-5', 'phase2-pre-open', async () => {
       console.log('[markets-schedule] Phase 2: Pre-Open');
       try {
         const backlog = await getBacklogSize();
@@ -1336,14 +1480,14 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         if (marketsThinkingDisabled) {
           console.log('[markets-schedule] Phase 2: backlog processing skipped (MARKETS_THINKING_DISABLED)');
         } else {
-          const processed = await processBacklog(20);
+          const processed = await processBacklog(100);
           console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
     });
 
     // Phase 3: Market Open (15:45 CET) — prices only, external fetch (opt-in)
-    scheduleSpending('45 15 * * 1-5', async () => {
+    scheduleSpending('45 15 * * 1-5', 'phase3-market-open', async () => {
       console.log('[markets-schedule] Phase 3: Market Open');
       if (marketsFetchDisabled) {
         console.log('[markets-schedule] Phase 3 skipped (MARKETS_FETCH_DISABLED)');
@@ -1361,7 +1505,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     });
 
     // Phase 4: Mid-Day Intelligence (18:00 CET) — THE main cycle, fetch + LLM (opt-in)
-    scheduleSpending('0 18 * * 1-5', async () => {
+    scheduleSpending('0 18 * * 1-5', 'phase4-midday-intelligence', async () => {
       console.log('[markets-schedule] Phase 4: Mid-Day Intelligence');
       try {
         const backlog = await getBacklogSize();
@@ -1369,18 +1513,46 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         if (marketsThinkingDisabled) {
           console.log('[markets-schedule] Phase 4 skipped (MARKETS_THINKING_DISABLED) — daily intelligence + backlog deferred');
         } else {
-          const processed = await processBacklog(40);
+          const processed = await processBacklog(150);
           console.log(`[markets-schedule] Phase 4: processed ${processed} articles, running intelligence...`);
-          await workflowOrchestrator.runDailyIntelligence();
+          const result = await workflowOrchestrator.runDailyIntelligence();
+          if (result.status === 'failed') {
+            // The result used to be discarded here, so the recorder could only
+            // ever see success and the slot could never be retried. Rethrown so
+            // recordPhase marks the slot 'failed' and the catch-up tick can come
+            // back for it — which is the whole point: on 2026-09-04 the 18:00
+            // cycle died with no network at 22:18:03, the WiFi returned four
+            // seconds later, and nothing tried again.
+            throw new Error(`daily intelligence run ${result.runId} produced nothing`);
+          }
           console.log('[markets-schedule] Phase 4 complete');
         }
-      } catch (err) { console.error('[markets-schedule] Phase 4 error:', err); }
-    });
+      } catch (err) {
+        console.error('[markets-schedule] Phase 4 error:', err);
+        throw err instanceof Error ? err : new Error(String(err));
+      }
+    // The boot and resume catch-ups run daily intelligence on their own 24-hour
+    // heartbeat, so by the time a missed 18:00 slot is noticed the day's cycle
+    // may already have happened — as it had on 2026-09-03, at 12:21, while the
+    // 18:00 slot sat unclaimed. Rescuing the slot then would mint a second
+    // batch of predictions over the same symbols and file them in the accuracy
+    // record as independent observations.
+    }, { alreadyDone: () => workflowRanToday('wf_markets_daily_intelligence') });
 
     // Phase 5: Market Close (22:15 CET) — EOD prices + NAV. Stays registered
     // always: the NAV/leaderboard/checkpoint legs are free deterministic
     // in-DB work. Only the external fetch leg requires the automation opt-in.
-    cron.schedule('15 22 * * 1-5', async () => {
+    //
+    // Registered through registerPhase rather than a bare cron since
+    // 2026-09-03. It was the one phase writing no market_schedule_runs row at
+    // all, so a missing NAV was indistinguishable from a NAV that ran and found
+    // nothing — the precise blind spot that let ANTON Sweden 100 drop out of
+    // the series for three sessions unnoticed. It is also the phase that stamps
+    // the two prediction portfolios, which currently have no NAV history at
+    // all, so a silent miss here costs the measurement the books exist for.
+    // Twelve-hour catch-up window: a NAV row written late the next morning is
+    // vastly better than a permanent hole in the daily spine.
+    registerPhase('15 22 * * 1-5', 'phase5-market-close', async () => {
       console.log('[markets-schedule] Phase 5: Market Close + NAV');
       try {
         if (marketsFetchOn) await marketDataService.fetchAllSources();
@@ -1394,17 +1566,17 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         } catch { /* non-fatal */ }
         console.log('[markets-schedule] Phase 5 complete — NAV calculated + prices synced');
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
-    }, MARKET_TZ);
+    }, { catchUpWithinMin: 12 * 60 });
 
     // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis, LLM (opt-in)
-    scheduleSpending('0 23 * * 1-5', async () => {
+    scheduleSpending('0 23 * * 1-5', 'phase6-post-market', async () => {
       console.log('[markets-schedule] Phase 6: Post-Market Processing + Fundamental Analysis');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 6 skipped (MARKETS_THINKING_DISABLED)');
         return;
       }
       try {
-        const processed = await processBacklog(60);
+        const processed = await processBacklog(200);
 
         // Rotating fundamental analysis: 3 companies per night
         // Cycles through all followed companies over ~2 weeks
@@ -1454,8 +1626,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
     });
 
-    // Phase 7: Weekend Deep Dive (Saturday 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
-    scheduleSpending('0 10 * * 6', async () => {
+    // Phase 7: Weekend Deep Dive (Sat + Sun 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
+    scheduleSpending('0 10 * * 6,0', 'phase7-weekend-deep-dive', async () => {
       console.log('[markets-schedule] Phase 7: Weekend Deep Dive');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 7 skipped (MARKETS_THINKING_DISABLED)');
@@ -1463,7 +1635,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       }
       try {
         await workflowOrchestrator.runPredictionValidation();
-        const processed = await processBacklog(100);
+        const processed = await processBacklog(400);
 
         // Weekend: analyze up to 8 companies (bigger batch)
         try {
@@ -1475,10 +1647,14 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           console.log(`[markets-schedule] Phase 7 complete — validated predictions, processed ${processed} articles`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 7 error:', err); }
-    });
+    // 26 hours, the most generous window of any phase. Phase 7 is the only
+    // caller of runPredictionValidation, which re-derives the claim-type
+    // signal weights; migration 262 reset those to neutral on 31 August and
+    // they cannot move again until this runs. Missing a weekend costs a week.
+    }, { catchUpWithinMin: 26 * 60 });
 
     // Phase 8: Weekly Pulse — short-term directional predictions (Monday + Thursday 09:00 CET), LLM (opt-in)
-    scheduleSpending('0 9 * * 1,4', async () => {
+    scheduleSpending('0 9 * * 1,4', 'phase8-weekly-pulse', async () => {
       console.log('[markets-schedule] Phase 8: Weekly Pulse Predictions');
       if (marketsThinkingDisabled) {
         console.log('[markets-schedule] Phase 8 skipped (MARKETS_THINKING_DISABLED)');
@@ -1488,20 +1664,27 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         await workflowOrchestrator.runWeeklyPulse();
         console.log('[markets-schedule] Phase 8 complete');
       } catch (err) { console.error('[markets-schedule] Phase 8 error:', err); }
-    });
+    // Same reasoning as Phase 4: the pulse mints predictions, so a rescued slot
+    // must not duplicate a pulse that already ran by another route today.
+    }, { alreadyDone: () => workflowRanToday('wf_markets_weekly_pulse') });
 
-    // Daily auto-verification of expired predictions (12:00 CET weekdays).
-    // Stays registered always: directional/price-target grading is free
-    // (pure price comparison). LLM (binary/event) verification only runs
-    // when the automation opt-in + thinking flag both allow it — deferred
-    // predictions stay retriable.
-    cron.schedule('0 12 * * 1-5', async () => {
+    // Auto-verification of expired predictions. Stays registered always:
+    // directional/price-target grading is free (pure price comparison). LLM
+    // (binary/event) verification only runs when the automation opt-in + the
+    // thinking flag both allow it — deferred predictions stay retriable.
+    //
+    // findExpired() only returns ungraded predictions past their horizon, so a
+    // pass is idempotent and cheap when there is nothing due: running it often
+    // costs a query and buys back a day of feedback latency.
+    let lastVerifyPassAt = 0;
+    async function runVerificationPass(label: string): Promise<void> {
+      lastVerifyPassAt = Date.now();
       try {
         const { createPredictionVerifier } = await import('./services/market-prediction-verifier.js');
         const verifier = await createPredictionVerifier(db);
         const result = await verifier.runAutoVerification({ allowLLM: marketsLlmOn });
         if (result.verified > 0 || result.unverifiable > 0 || result.deferred_llm > 0) {
-          console.log(`[markets-verify] Daily: verified=${result.verified} (${result.correct}✓ ${result.incorrect}✗) unverifiable=${result.unverifiable} llm_deferred=${result.deferred_llm}`);
+          console.log(`[markets-verify] ${label}: verified=${result.verified} (${result.correct}✓ ${result.incorrect}✗) unverifiable=${result.unverifiable} llm_deferred=${result.deferred_llm}`);
         }
         // Plan 1.10d: compute confidence calibration after a successful
         // verification pass — pure SQL arithmetic over validated predictions,
@@ -1516,11 +1699,91 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
             console.error('[markets-verify] Calibration check failed:', calErr instanceof Error ? calErr.message : calErr);
           }
         }
-      } catch (err) { console.error('[markets-verify] Daily verification error:', err); }
-    }, MARKET_TZ);
+        // Conditional-accuracy roll-up, on the same cadence as the grading it
+        // consumes. It used to live only in the weekly validation workflow,
+        // so predictions were graded daily and aggregated never: on
+        // 2026-08-27 the table held 0 rows against 44 graded predictions, and
+        // getConditionalAccuracy — which needs 3 observations before it
+        // returns anything — had never had a single row to return.
+        //
+        // Selecting on the applied ledger rather than a time window means
+        // this also backfills whatever earlier grading left behind, and
+        // migration 258's claim check makes re-running it free of charge.
+        try {
+          const { createConditionalAccuracyService } = await import('./services/market-conditional-accuracy-service.js');
+          const conditional = await createConditionalAccuracyService(db);
+          const pending = await db.all<{ id: string; was_correct: number; brier_score: string | null }>(`
+            SELECT p.id, p.was_correct, p.brier_score
+              FROM market_predictions p
+              LEFT JOIN market_conditional_accuracy_applied ap ON ap.prediction_id = p.id
+             WHERE p.status = 'validated' AND p.was_correct IS NOT NULL
+               AND p.features IS NOT NULL AND p.features::text <> '{}'
+               AND ap.prediction_id IS NULL
+             ORDER BY p.validated_at
+             LIMIT 500
+          `);
+          for (const row of pending) {
+            await conditional.updateConditionalAccuracy(
+              row.id, row.was_correct === 1, Number(row.brier_score) || 0, false,
+            );
+          }
+          if (pending.length > 0) {
+            console.log(`[markets-verify] Conditional accuracy: rolled up ${pending.length} newly graded prediction(s)`);
+          }
+        } catch (condErr) {
+          console.error('[markets-verify] Conditional accuracy roll-up failed:', condErr instanceof Error ? condErr.message : condErr);
+        }
+      } catch (err) { console.error(`[markets-verify] ${label} verification error:`, err); }
+    }
+
+    // Investigate leg, daily. Dispatching anomalies is pure DB work and both
+    // creators are idempotent on their trigger key, so it runs under any tier;
+    // working the why-chain queue costs up to MAX_LEVELS model calls per chain
+    // and is gated on the LLM opt-in. Previously both lived only inside the
+    // Saturday runPredictionValidation, so a missed Saturday cost a week and
+    // the chain queue drained at 10/run/week.
+    let lastInvestigationPassAt = 0;
+    async function runInvestigationPass(label: string): Promise<void> {
+      lastInvestigationPassAt = Date.now();
+      try {
+        const r = await workflowOrchestrator.runInvestigationSweep({ allowLLM: marketsLlmOn });
+        if (r.dispatched > 0 || r.chainsExecuted > 0 || r.chainsReaped > 0) {
+          console.log(`[markets-investigate] ${label}: new=${r.dispatched} (of ${r.matched} anomalies) chains_executed=${r.chainsExecuted} reaped=${r.chainsReaped}${r.llmSkipped ? ' (LLM leg skipped)' : ''}`);
+        }
+      } catch (err) { console.error(`[markets-investigate] ${label} failed:`, err); }
+    }
+
+    // 13:00 — after the 12:00 verification pass, so anomalies graded that day
+    // are dispatched the same day rather than waiting for the weekend.
+    cron.schedule('0 13 * * *', () => { void runInvestigationPass('scheduled'); }, MARKET_TZ);
+
+    // Same monotonic net as verification: node-cron skips slots the host sleeps
+    // through, and this workstation sleeps.
+    setInterval(() => {
+      if (Date.now() - lastInvestigationPassAt < 24 * 60 * 60 * 1000) return;
+      void runInvestigationPass('gap-catchup');
+    }, 30 * 60 * 1000).unref();
+
+    // Every day, not just weekdays: the tactical band (1-3 day horizons, added
+    // 2026-08-14) resolves on Fridays and Saturdays too, and a weekday-only
+    // pass left those sitting until Monday. Four passes so a single missed
+    // slot costs hours instead of a full day.
+    cron.schedule('0 8,12,16,20 * * *', () => { void runVerificationPass('scheduled'); }, MARKET_TZ);
+
+    // Sleep safety net. node-cron resolves the next wall-clock slot and simply
+    // skips slots the host sleeps through — on 2026-08-17 this workstation was
+    // in Modern Standby 11:27→17:26 and 18:00→08:39, so the 12:00 pass never
+    // fired and twelve predictions sat ungraded. setInterval is monotonic: an
+    // overdue timer fires once on resume, which is exactly the signal needed.
+    const VERIFY_MAX_GAP_MS = 6 * 60 * 60 * 1000;
+    setInterval(() => {
+      if (Date.now() - lastVerifyPassAt < VERIFY_MAX_GAP_MS) return;
+      console.log('[markets-verify] No pass in the last 6h (host asleep or restarted) — running catch-up');
+      void runVerificationPass('gap-catchup');
+    }, 15 * 60 * 1000).unref();
 
     // Reduced hourly fetch: prices only every 2 hours during market (14:00-22:00) — external fetch (opt-in)
-    scheduleSpending('0 14,16,18,20,22 * * 1-5', async () => {
+    scheduleSpending('0 14,16,18,20,22 * * 1-5', 'intraday-price-refresh', async () => {
       if (marketsFetchDisabled) return;
       try {
         const priceSources = await db.all<{ id: string }>(
@@ -1530,7 +1793,10 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
       } catch { /* silent */ }
-    });
+      // 90 minutes: slots are two hours apart, so a missed refresh is worth
+      // rescuing only until the next one supersedes it. Fetching the 14:00
+      // prices at 20:00 buys nothing and spends an API call.
+    }, { catchUpWithinMin: 90 });
 
     // ── Free (no-LLM, no-fetch) repair sweeps M1-M3/M5-M7 ────────────────
     // Extracted into named functions (2026-07-17) so the same idempotent bodies
@@ -1606,6 +1872,112 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
 
     // M6: time-based scheduled rebalance sweep. Deterministic (no LLM); gated by
     // MARKETS_AUTOREBALANCE_DISABLED for manual-only environments.
+    /**
+     * Shadow rebalance: record what the signals WOULD trade, move nothing.
+     *
+     * Runs only while live rebalancing is paused — the two are alternatives,
+     * not layers, and running both would double-count attribution against the
+     * same holdings. Free of LLM cost: generateRebalanceProposal is arithmetic
+     * over predictions and prices.
+     */
+    async function sweepShadowRebalance(): Promise<void> {
+      if (!marketsRebalanceShadow || !marketsAutorebalanceDisabled) return;
+      try {
+        const { createMarketIndexRebalanceService } =
+          await import('./services/market-index-rebalance-service.js');
+        const svc = await createMarketIndexRebalanceService(db);
+        const r = await svc.runShadowRebalances();
+        if (r.proposed.length > 0) {
+          const total = r.proposed.reduce((a, p) => a + p.trades, 0);
+          console.log(`[markets-rebalance-shadow] checked=${r.checked} proposed=${r.proposed.length} would-be trades=${total} (nothing executed)`);
+        }
+      } catch (err) {
+        console.error('[markets-rebalance-shadow] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }
+
+    /**
+     * M8 — rebuild the two prediction portfolios from the live prediction set.
+     *
+     * Deliberately NOT gated behind MARKETS_AUTOREBALANCE_DISABLED. That flag
+     * pauses runScheduledRebalances, the conviction-driven rebalancer that was
+     * stopped on effectiveness grounds, and it should stay paused until that
+     * question is settled. This is a different mechanism doing a different job:
+     * it takes no view of its own, spends no tokens, and calls no external API.
+     * It mechanically mirrors whatever the predictions currently say into two
+     * paper books so their curves can be compared. Silencing it with the older
+     * flag would leave the measurement off precisely while the thing it
+     * measures is under review.
+     *
+     * Its own switch, MARKETS_PREDICTION_ALLOCATOR_DISABLED, exists so it can
+     * be stopped without touching anything else.
+     */
+    async function sweepPredictionAllocation(): Promise<void> {
+      if (String(process.env.MARKETS_PREDICTION_ALLOCATOR_DISABLED || '').toLowerCase() === 'true') return;
+      try {
+        const { allocateFromPredictions } = await import('./services/market-prediction-allocator.js');
+        for (const [indexId, weighting] of [
+          ['midx_pred_equal', 'equal'],
+          ['midx_pred_conf', 'confidence'],
+        ] as const) {
+          const exists = await db.get('SELECT id FROM market_indexes WHERE id = ? AND status = ?', indexId, 'active');
+          if (!exists) continue;   // portfolio not created on this instance
+          const r = await allocateFromPredictions(db, indexId, weighting);
+          console.log(
+            `[markets-prediction-alloc] ${indexId} (${weighting}): `
+            + `${r.long_positions} long / ${r.short_positions} short `
+            + `from ${r.predictions_considered} prediction(s), `
+            + `net ${(r.net_exposure * 100).toFixed(0)}% gross ${(r.gross_exposure * 100).toFixed(0)}%`
+            + `${r.skipped_no_price > 0 ? `, ${r.skipped_no_price} unpriceable` : ''}`
+            // Reported every run, not buried: 'flat' is the most accurate
+            // bucket and is deliberately untraded, so its absence from the
+            // book must stay visible rather than looking like a dropped call.
+            + `${r.flat_not_expressible > 0 ? `, ${r.flat_not_expressible} flat not expressible` : ''}`
+            + `${r.offsetting_symbols > 0 ? `, ${r.offsetting_symbols} offsetting` : ''}`,
+          );
+        }
+      } catch (err) {
+        console.error('[markets-prediction-alloc] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }
+
+    /**
+     * M9 — confidence recalibration.
+     *
+     * Free: pure arithmetic over already-graded predictions, no LLM, no
+     * external call. Safe under MARKETS_THINKING_DISABLED.
+     *
+     * The routine measures itself before it writes anything and declines when
+     * the mapping does not beat leaving stated confidence alone, so scheduling
+     * it is not the same as committing to apply it. On the current sample it
+     * measures, declines, and logs why. It starts applying on its own once the
+     * mapping earns it.
+     */
+    async function sweepConfidenceRecalibration(): Promise<void> {
+      if (String(process.env.MARKETS_RECALIBRATION_DISABLED || '').toLowerCase() === 'true') return;
+      try {
+        const { applyCalibration } = await import('./services/market-confidence-recalibration.js');
+        const r = await applyCalibration(db);
+        if (r.applied) {
+          console.log(
+            `[markets-recalibration] applied to ${r.updated} open prediction(s)`
+            + ` (Brier ${r.report.brier_stated?.toFixed(4)} → ${r.report.brier_calibrated?.toFixed(4)}`
+            + `, ${r.report.total_graded} graded since ${r.report.since})`,
+          );
+        } else {
+          console.log(
+            `[markets-recalibration] declined — ${r.reason}`
+            + ` (${r.report.total_graded} graded since ${r.report.since};`
+            + ` stated ${r.report.brier_stated?.toFixed(4)},`
+            + ` calibrated ${r.report.brier_calibrated?.toFixed(4)},`
+            + ` flat ${r.report.brier_flat?.toFixed(4)})`,
+          );
+        }
+      } catch (err) {
+        console.error('[markets-recalibration] sweep error:', err instanceof Error ? err.message : err);
+      }
+    }
+
     async function sweepScheduledRebalance(): Promise<void> {
       if (marketsAutorebalanceDisabled) return;
       try {
@@ -1640,12 +2012,17 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     // Run every free sweep once (catch-up entrypoint). Each has its own
     // try/catch so one failure never blocks the rest.
     async function runMarketsFreeSweeps(trigger: string): Promise<void> {
-      console.log(`[markets-free-sweeps] running M1-M7 (trigger: ${trigger})`);
+      console.log(`[markets-free-sweeps] running M1-M9 (trigger: ${trigger})`);
       await sweepPatternWeightFeedback();
       await sweepAttributionPnL();
       await sweepThesisLifecycle();
       await sweepInvestigationLifecycle();
+      // Before allocation so a calibrated number, once the mapping earns its
+      // keep, is fresh for anything downstream that chooses to read it.
+      await sweepConfidenceRecalibration();
+      await sweepPredictionAllocation();
       await sweepScheduledRebalance();
+      await sweepShadowRebalance();
       await sweepBacklogTriage();
     }
 
@@ -1654,7 +2031,9 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     cron.schedule('0 4 * * *', () => { void sweepAttributionPnL(); }, MARKET_TZ);
     cron.schedule('0 5 * * *', () => { void sweepThesisLifecycle(); }, MARKET_TZ);
     cron.schedule('30 5 * * *', () => { void sweepInvestigationLifecycle(); }, MARKET_TZ);
+    cron.schedule('45 5 * * *', () => { void sweepConfidenceRecalibration(); }, MARKET_TZ);
     cron.schedule('0 6 * * *', () => { void sweepScheduledRebalance(); }, MARKET_TZ);
+    cron.schedule('15 6 * * *', () => { void sweepShadowRebalance(); }, MARKET_TZ);
     cron.schedule('30 6 * * *', () => { void sweepBacklogTriage(); }, MARKET_TZ);
 
     // Catch-up: also run all free sweeps at 12:00 CET (a time the workstation is
@@ -1663,8 +2042,160 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     cron.schedule('0 12 * * *', () => { void runMarketsFreeSweeps('1200-catchup'); }, MARKET_TZ);
     setTimeout(() => { void runMarketsFreeSweeps('startup-catchup'); }, 120_000).unref();
 
+    // ── Self-heal tick ────────────────────────────────────────────────────
+    // Measured on 2026-08-21: this workstation was awake for 80 minutes out of
+    // 901 — asleep 91% of the day. Every fixed-time slot (07:00, 08:00, 12:00,
+    // 13:00, 14:00, 14:30) fell inside a sleep window, so the day produced
+    // nothing at all: no fetch, no atoms, no grading. Scheduling by time of day
+    // does not work on a laptop that is almost never awake at a given time, and
+    // the resume detector below only helps when a resume is long enough to
+    // notice.
+    //
+    // So stop asking "is it 12:00?" and start asking "is there outstanding
+    // work?" — on a short tick, every day including weekends. Whenever the
+    // machine happens to be awake, the free half of the loop catches up.
+    //
+    // Strictly free: these sweeps are DB arithmetic and price comparisons.
+    // Grading and anomaly dispatch are included because a missed grade delays
+    // every downstream signal. Why-chain execution and backlog extraction are
+    // NOT — they spend, and belong on their own cadence.
+    const SELF_HEAL_MS = 20 * 60_000;
+    let selfHealBusy = false;
+    async function selfHealTick(): Promise<void> {
+      if (selfHealBusy) return;
+      selfHealBusy = true;
+      try {
+        // Prices first — NAV and grading both depend on them, so a stale spine
+        // silently disables the two things most worth having. Gated on actual
+        // staleness rather than the clock: fetch only when the newest bar
+        // predates the last completed session, which makes this a no-op on a
+        // machine that is keeping up and a rescue on one that is not.
+        if (marketsFetchOn) {
+          try {
+            const newest = await db.get<{ d: string | null }>(
+              `SELECT TO_CHAR(MAX(published_at), 'YYYY-MM-DD') AS d
+                 FROM market_data_raw WHERE data_type = 'price'`);
+            const today = new Date().toISOString().slice(0, 10);
+            const dow = new Date().getDay();
+            // On a weekend the most recent session is Friday, so only chase a
+            // bar older than that; midweek, anything before today is stale.
+            const staleBefore = dow === 6 || dow === 0
+              ? new Date(Date.now() - (dow === 6 ? 1 : 2) * 86_400_000).toISOString().slice(0, 10)
+              : today;
+            if (!newest?.d || newest.d < staleBefore) {
+              const priceSources = await db.all<{ id: string }>(
+                "SELECT id FROM market_data_sources WHERE is_active = 1 AND provider = 'fmp' AND config::text LIKE '%price%'");
+              for (const src of priceSources) {
+                try { await marketDataService.fetchFromSource(src.id); } catch { /* skip one source */ }
+              }
+              console.log(`[markets-self-heal] price spine was stale (newest ${newest?.d ?? 'none'}) — refreshed`);
+            }
+          } catch (err) {
+            console.warn('[markets-self-heal] price refresh failed:', err instanceof Error ? err.message : err);
+          }
+        }
+
+        await runMarketsFreeSweeps('self-heal');
+        await runVerificationPass('self-heal');
+        // allowLLM:false — dispatch anomalies and reap stalled chains (both
+        // free); leave paid chain execution to the daily pass.
+        await workflowOrchestrator.runInvestigationSweep({ allowLLM: false });
+      } catch (err) {
+        console.error('[markets-self-heal] tick failed:', err instanceof Error ? err.message : err);
+      } finally {
+        selfHealBusy = false;
+      }
+    }
+    setInterval(() => { void selfHealTick(); }, SELF_HEAL_MS).unref();
+
+    // ── Slot catch-up tick ────────────────────────────────────────────────
+    // The counterpart to the self-heal tick, for the phases that cannot be
+    // made work-driven because they cost money: ask every five minutes whether
+    // any phase's most recent due slot came and went without a run, and if so
+    // run it. Deliberately on setInterval — the whole point is that this must
+    // survive whatever stopped node-cron on 2026-09-02, and setInterval kept
+    // ticking through the entire six-hour window in which cron fired nothing.
+    //
+    // ONE phase per tick, oldest slot first. A machine that wakes to several
+    // overdue phases would otherwise start them together, and the SDK engine
+    // caps concurrency at 2 and throws over the cap — so a stampede would not
+    // just be expensive, it would fail. Five minutes apart is slow enough to
+    // be safe and fast enough that a full backlog clears within the half hour.
+    //
+    // Each phase's own window (catchUpWithinMin) decides what is still worth
+    // doing: re-fetching prices from six hours ago is waste, re-running the
+    // morning intelligence pass at lunchtime is the whole point.
+    const CATCH_UP_TICK_MS = 5 * 60_000;
+    let catchUpBusy = false;
+    async function slotCatchUpTick(): Promise<void> {
+      if (catchUpBusy) return;
+      catchUpBusy = true;
+      try {
+        const now = new Date();
+        const isSlotClaimed = async (phase: string, slot: Date): Promise<boolean> => {
+          // Not "does a row exist" but "is a row holding this slot" — a failed
+          // attempt with retries left is still owed. The predicate is the
+          // recorder's, shared rather than restated, because the recorder makes
+          // the real decision atomically and a gate that disagreed with it would
+          // either churn on slots it cannot claim or silently skip slots it can.
+          const row = await db.get<{ n: number | string }>(
+            `SELECT COUNT(*) AS n FROM market_schedule_runs
+              WHERE phase = ? AND slot_at = ? AND NOT (${retryableSlotSql()})`,
+            phase, slot.toISOString(),
+          );
+          return Number(row?.n ?? 0) > 0; // completed, running, or out of attempts
+        };
+        const { chosen, skippedAlreadyDone, alsoOverdue } =
+          await selectCatchUpPhase(catchUpPhases, now, MARKET_TZ.timezone, isSlotClaimed);
+
+        for (const skipped of skippedAlreadyDone) {
+          console.log(
+            `[markets-catchup] ${skipped.phase} slot ${skipped.slot.toISOString()} was missed, but its work already ran today — skipping rather than duplicating it`,
+          );
+        }
+        if (!chosen) return;
+
+        const lateMin = Math.round((now.getTime() - chosen.slot.getTime()) / 60_000);
+        console.log(
+          `[markets-catchup] ${chosen.entry.phase} slot ${chosen.slot.toISOString()} never ran (${lateMin} min late) — running it now` +
+          (alsoOverdue > 0 ? `; ${alsoOverdue} more overdue, one per tick` : ''),
+        );
+        // recordPhase re-checks the claim atomically, so a cron that fires the
+        // same slot in this window still wins or loses cleanly.
+        const ran = await recordPhase(chosen.entry.phase, chosen.entry.run, chosen.slot);
+        if (!ran) console.log(`[markets-catchup] ${chosen.entry.phase} slot was claimed elsewhere first — skipped`);
+      } catch (err) {
+        console.error('[markets-catchup] slot catch-up tick failed:', err instanceof Error ? err.message : err);
+      } finally {
+        catchUpBusy = false;
+      }
+    }
+    setInterval(() => { void slotCatchUpTick(); }, CATCH_UP_TICK_MS).unref();
+
+    // Sleep catch-up for the SPENDING phases (2026-08-14): the workstation
+    // also sleeps through 07:00 without rebooting, and node-cron never
+    // replays missed jobs — the first night of re-enabled automation lost
+    // Phase 6 (23:00) and Phase 1 (07:00) exactly this way while the boot
+    // catch-up (which only fires on restart) never got its chance. At 12:30
+    // on weekdays, if nothing has been extracted yet today, run one
+    // Phase-1-sized pass so a slept-through morning self-heals.
+    scheduleSpending('30 12 * * 1-5', 'midday-extraction-topup', async () => {
+      try {
+        if (marketsThinkingDisabled) return;
+        const extractedToday = await db.get<{ n: number | string }>(
+          'SELECT COUNT(*) AS n FROM market_atoms WHERE created_at >= CURRENT_DATE'
+        );
+        if (Number(extractedToday?.n ?? 0) > 0) return; // morning phases ran — nothing was missed
+        console.log('[markets-catchup] 12:30 sleep catch-up — no atoms extracted today, running a Phase-1-sized pass');
+        const backlog = await getBacklogSize();
+        if (!marketsFetchDisabled && backlog < 500) await marketDataService.fetchAllSources();
+        const processed = await processBacklog(40);
+        console.log(`[markets-catchup] 12:30 sleep catch-up complete — processed ${processed} (backlog was ${backlog})`);
+      } catch (err) { console.error('[markets-catchup] 12:30 sleep catch-up error:', err); }
+    });
+
     // News fetch 3x per day (not hourly) — 08:00, 15:00, 21:00 — external fetch (opt-in)
-    scheduleSpending('0 8,15,21 * * 1-5', async () => {
+    scheduleSpending('0 8,15,21 * * 1-5', 'news-fetch', async () => {
       if (marketsFetchDisabled) return;
       const backlog = await getBacklogSize();
       if (backlog > 1000) {
@@ -1679,7 +2210,9 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           try { await marketDataService.fetchFromSource(src.id); } catch { /* skip */ }
         }
       } catch { /* silent */ }
-    });
+      // Four hours: news accumulates rather than expiring, so a late fetch
+      // still feeds the backlog the extraction phases drain.
+    }, { catchUpWithinMin: 4 * 60 });
 
     // Event trigger check 3x per day (not hourly)
     cron.schedule('0 9,16,22 * * 1-5', async () => {
@@ -1728,19 +2261,37 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
 
     console.log('[markets-schedule] Sustainable CET schedule active — quality over speed');
 
-    // ── Startup Catch-Up: recover missed workflows after downtime ──────────
-    setTimeout(async () => {
+    // ── Catch-Up: recover missed workflows after downtime ─────────────────
+    // Runs at startup AND on resume from host sleep (see the drift detector
+    // below). Every step is idempotent and heartbeat-gated, so an extra run
+    // costs a handful of queries.
+    let catchUpRunning = false;
+    async function runMarketsCatchUp(trigger: string): Promise<void> {
+      if (catchUpRunning) { console.log(`[markets-catchup] ${trigger} skipped — a catch-up is already running`); return; }
+      catchUpRunning = true;
       try {
-        console.log('[markets-catchup] Checking for missed workflows...');
+        console.log(`[markets-catchup] Checking for missed workflows (${trigger})...`);
         const now = new Date();
         const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
         const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
         let catchUpActions = 0;
 
-        // 1. Process backlog immediately (always useful after restart) — LLM-spending
+        // 1. Process backlog immediately (always useful after restart) — LLM-spending.
+        // Free triage runs FIRST: processBacklog takes rows oldest-first, so
+        // after downtime the paid pass would otherwise burn its whole budget
+        // on stale rows the 30-day triage rule is about to discard anyway.
+        if (marketsLlmOn) {
+          await sweepBacklogTriage();
+        }
         const backlog = await getBacklogSize();
         if (backlog > 0 && marketsLlmOn) {
-          const processed = await processBacklog(Math.min(backlog, 100));
+          // 400, not 100: the old ceiling was sized when each row cost its own
+          // model call, and it was left behind when the scheduled caps were
+          // raised for batching. At ~12 rows a call this is roughly 33 calls,
+          // less than the 100-row ceiling used to cost, and it matters because
+          // a boot is the one chance to get back under the 500-item fetch gate
+          // — below which news ingestion is switched off entirely.
+          const processed = await processBacklog(Math.min(backlog, 400));
           console.log(`[markets-catchup] Processed ${processed}/${backlog} backlog items`);
           catchUpActions++;
         } else if (backlog > 0) {
@@ -1806,6 +2357,14 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           } catch (err) { console.error('[markets-catchup] NAV catch-up failed:', err); }
         }
 
+        // 3b. Grade anything already past its horizon (free — price comparison).
+        // A restart is the one moment we know the scheduled passes may have
+        // been missed, and it costs a single query when nothing is due.
+        await runVerificationPass('boot-catchup');
+
+        // 3c. Then dispatch anything that grading just turned into an anomaly.
+        await runInvestigationPass('boot-catchup');
+
         // 4. Check if prediction validation ran this week (should run Saturday) — LLM-spending
         if ((dayOfWeek === 6 || dayOfWeek === 0) && marketsLlmOn) {
           const lastValidation = await db.get<{ started_at: string }>(
@@ -1833,8 +2392,31 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           const daysSincePulse = lastPulse
             ? (now.getTime() - new Date(lastPulse.started_at).getTime()) / 86400000
             : Infinity;
-          if (daysSincePulse > 4 && isWeekday) {
-            console.log(`[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
+
+          // A single missed pulse used to be unrecoverable. The pulse is
+          // scheduled Monday and Thursday — a 3.5-day cadence — so a
+          // "> 4 days since the last success" test can only fire after TWO
+          // consecutive misses. On 2026-08-20 the Thursday run failed at 09:00
+          // (the engine was saturated by backlog work) and this check saw three
+          // days since Monday, declared it fine, and the day's predictions were
+          // simply lost.
+          //
+          // Ask the question that actually matters instead: it is a pulse day
+          // and today has produced no successful pulse. The staleness test is
+          // kept as the backstop for everything else.
+          const isPulseDay = dayOfWeek === 1 || dayOfWeek === 4;
+          const pulseToday = await db.get<{ n: string }>(
+            `SELECT COUNT(*)::text AS n FROM workflow_runs
+              WHERE workflow_id = 'wf_markets_weekly_pulse'
+                AND status IN ('completed', 'success')
+                AND started_at >= CURRENT_DATE`
+          );
+          const missedTodaysPulse = isPulseDay && Number(pulseToday?.n ?? 0) === 0;
+
+          if ((daysSincePulse > 4 || missedTodaysPulse) && isWeekday) {
+            console.log(missedTodaysPulse
+              ? "[markets-catchup] Today's scheduled pulse has not completed — running now"
+              : `[markets-catchup] Weekly pulse last ran ${daysSincePulse === Infinity ? 'never' : Math.round(daysSincePulse) + ' days ago'} — running now`);
             try {
               await workflowOrchestrator.runWeeklyPulse();
               catchUpActions++;
@@ -1852,14 +2434,44 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         } catch { /* MVs may not exist yet */ }
 
         if (catchUpActions > 0) {
-          console.log(`[markets-catchup] Startup recovery complete — ${catchUpActions} actions taken`);
+          console.log(`[markets-catchup] ${trigger} recovery complete — ${catchUpActions} actions taken`);
         } else {
-          console.log('[markets-catchup] All workflows up to date — nothing to catch up');
+          console.log(`[markets-catchup] All workflows up to date (${trigger}) — nothing to catch up`);
         }
       } catch (err) {
-        console.error('[markets-catchup] Startup catch-up failed:', err);
+        console.error(`[markets-catchup] ${trigger} catch-up failed:`, err);
+      } finally {
+        catchUpRunning = false;
       }
-    }, 10_000); // Run 10 seconds after startup to let everything initialize
+    }
+
+    // Run 10 seconds after startup to let everything initialize.
+    setTimeout(() => { void runMarketsCatchUp('startup'); }, 10_000);
+
+    // ── Host-sleep drift detector ─────────────────────────────────────────
+    // This workstation runs Modern Standby: on 2026-08-17 it was asleep
+    // 11:27→17:26 and 18:00→08:39, and node-cron resolves the NEXT wall-clock
+    // slot rather than replaying ones it slept through — so Phase 4 (18:00
+    // daily intelligence), Phase 5 (22:15 NAV + price sync + checkpoints) and
+    // Phase 6 (23:00) simply never happened, with nothing to notice afterwards.
+    // Boot catch-up covers a restart; nothing covered a resume.
+    //
+    // A short interval whose wall clock has jumped far more than its period is
+    // an unambiguous resume signal — true whether the host froze the process
+    // (clock advanced, timer late) or suspended entirely (timer fires on wake).
+    // Date.now() rather than a monotonic source is deliberate: it is the wall
+    // clock the cron slots were missed against.
+    const DRIFT_TICK_MS = 60_000;
+    const DRIFT_THRESHOLD_MS = 10 * 60_000;
+    let lastDriftTickAt = Date.now();
+    setInterval(() => {
+      const now = Date.now();
+      const drift = now - lastDriftTickAt;
+      lastDriftTickAt = now;
+      if (drift < DRIFT_THRESHOLD_MS) return;
+      console.log(`[markets-catchup] Wall clock jumped ${Math.round(drift / 60_000)} min — host resumed; running catch-up`);
+      void runMarketsCatchUp('resume');
+    }, DRIFT_TICK_MS).unref();
 
   } catch (err) {
     console.error('[markets-schedule] Failed to start market scheduled jobs:', err);
@@ -1943,6 +2555,15 @@ const DRAIN_TIMEOUT_MS = 30_000;
 
 function shutdown(signal: string): void {
   logger.info({ signal }, 'Graceful shutdown initiated');
+
+  // Tell the SDK engine we are going down, so an in-flight run that aborts
+  // reports "the server restarted" rather than guessing at a timeout. Under
+  // `tsx watch` a file save is by far the most common cause of an abort during
+  // development, and sending the user to retry or change model is the wrong
+  // advice for it.
+  void import('./services/claude-sdk-client.js')
+    .then((m) => m.markSdkEngineShuttingDown?.())
+    .catch(() => {});
 
   // ANTON Studio P6 — SIGTERM only the preview dev-servers WE spawned (by their
   // tracked ChildProcess handles). Never taskkill, never kill by name/port.
