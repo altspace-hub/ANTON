@@ -16,6 +16,7 @@ import crypto from 'crypto';
 import fs from 'fs-extra';
 import type { DatabaseAdapter } from '../db/database.js';
 
+import { checkFolderPath } from '../lib/folder-guard.js';
 import { extractTextFromFile } from './text-extractor.js';
 import { fetchUrl } from './url-fetcher.js';
 import { retrieveChunks } from './rag/retriever.js';
@@ -188,9 +189,14 @@ export async function resolveKnowledgeSources(
   // ── MODE 3: Local Folder(s) ─────────────────────────────────────────────────
 
   if (config.modes.localFolder?.enabled && config.modes.localFolder.folderPaths.length > 0) {
-    const extensions = config.modes.localFolder.fileFilter?.length
-      ? config.modes.localFolder.fileFilter
+    // The file filter arrives in the same request body as the folder paths, so it
+    // is NOT a trust boundary: an unclamped filter of [''] matches every
+    // extensionless file (id_rsa, credentials…) and ['.pem'] would harvest keys.
+    // Intersect with SUPPORTED_EXTENSIONS — the caller may narrow, never widen.
+    const requestedExtensions = config.modes.localFolder.fileFilter?.length
+      ? config.modes.localFolder.fileFilter.map(e => String(e).toLowerCase())
       : SUPPORTED_EXTENSIONS;
+    const extensions = requestedExtensions.filter(e => SUPPORTED_EXTENSIONS.includes(e));
     const recursive = config.modes.localFolder.recursive ?? true;
     let totalFilesIndexed = 0;
 
@@ -200,7 +206,25 @@ export async function resolveKnowledgeSources(
         continue;
       }
 
-      const allFilePaths = await scanFolder(folderPath, recursive, extensions);
+      // folderPaths comes straight off the POST /api/claude/message body and
+      // ends at fs.readdir + extractTextFromFile, i.e. arbitrary host files
+      // pasted into the prompt. Same whitelist the folder browser enforces
+      // (CLAUDE.md pattern 6); skip the folder rather than failing the whole run
+      // so one bad path does not lose the user's other sources.
+      const guard = checkFolderPath(folderPath);
+      if (!guard.ok) {
+        contextParts.push(`\n### LOCAL FOLDER (REFUSED — ${guard.error}; add it to ALLOWED_FOLDER_PATHS to use it): ${folderPath}`);
+        sourceDetails.push({
+          type: 'local_folder',
+          name: folderPath,
+          path: folderPath,
+          contentHashed: false,
+          note: `refused — ${guard.error}`,
+        });
+        continue;
+      }
+
+      const allFilePaths = await scanFolder(guard.resolved, recursive, extensions);
       // TOKEN-05: Cap per-folder and apply remaining total budget
       const remainingTotal = MAX_FILES_TOTAL - totalFilesIndexed;
       const filePaths = allFilePaths

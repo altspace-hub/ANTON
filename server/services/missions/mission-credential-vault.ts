@@ -242,6 +242,27 @@ export async function requestOauthTokenRefresh(args: {
   };
 }
 
+/**
+ * The tenant boundary for the API-facing vault operations, produced by
+ * `ownerFilter(req, 'created_by')` in the route layer. Empty (`{ sql: '' }`) in solo
+ * mode and for admins, ` AND created_by = ?` for a non-admin in team mode.
+ *
+ * It is threaded into the SQL rather than checked after the fetch so a credential the
+ * caller may not see is never loaded into memory or into the access log — the same
+ * property middleware/ownership.ts states for its own guards.
+ *
+ * Deliberately OPTIONAL, and every omission below is deliberate too: resolveSecret and
+ * the executor lookups run in the mission execution path where there is no request and
+ * no req.user, and scoping them would break a running mission rather than protect
+ * anything (they are reached only through a mission the caller already owns).
+ */
+export interface CredentialOwnerScope {
+  sql: string;
+  params: readonly string[];
+}
+
+const UNSCOPED: CredentialOwnerScope = { sql: '', params: [] };
+
 export function createCredentialVault(db: DatabaseAdapter) {
 
   async function createCredential(input: CreateCredentialInput, createdByUserId: string): Promise<StoredCredential> {
@@ -274,22 +295,32 @@ export function createCredentialVault(db: DatabaseAdapter) {
 
   /**
    * Returns metadata only (no secret). Safe for API responses + audit.
+   *
+   * `scope` must be supplied by request-driven callers; omitting it reads any row on the
+   * instance, which is correct only for the execution path.
    */
-  async function getCredentialMeta(id: string): Promise<StoredCredential | null> {
-    const row = await db.get<CredentialRow>(`SELECT * FROM missions.credential_vault WHERE id = ?`, id);
+  async function getCredentialMeta(id: string, scope: CredentialOwnerScope = UNSCOPED): Promise<StoredCredential | null> {
+    const row = await db.get<CredentialRow>(
+      `SELECT * FROM missions.credential_vault WHERE id = ?${scope.sql}`,
+      id, ...scope.params,
+    );
     if (!row) return null;
     return rowToMeta(row);
   }
 
-  async function listCredentials(filter?: { service?: string; activeOnly?: boolean }): Promise<StoredCredential[]> {
-    const where: string[] = [];
+  async function listCredentials(
+    filter?: { service?: string; activeOnly?: boolean },
+    scope: CredentialOwnerScope = UNSCOPED,
+  ): Promise<StoredCredential[]> {
+    // 1=1 so the scope fragment's leading ' AND ' is well-formed with no other filters —
+    // the unfiltered call is precisely the one that used to return every tenant's rows.
+    const where: string[] = ['1=1'];
     const args: unknown[] = [];
     if (filter?.service) { where.push('service_name = ?'); args.push(filter.service); }
     if (filter?.activeOnly !== false) { where.push('is_active = TRUE'); }
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const rows = await db.all<CredentialRow>(
-      `SELECT * FROM missions.credential_vault ${whereSql} ORDER BY created_at DESC`,
-      ...args,
+      `SELECT * FROM missions.credential_vault WHERE ${where.join(' AND ')}${scope.sql} ORDER BY created_at DESC`,
+      ...args, ...scope.params,
     );
     return rows.map(rowToMeta);
   }
@@ -383,18 +414,31 @@ export function createCredentialVault(db: DatabaseAdapter) {
    * Rotate a credential — replace the secret with a new one, keeping the
    * same id (so missions referencing it don't break).
    */
-  async function rotateCredential(id: string, newSecret: string): Promise<void> {
-    const row = await db.get<{ id: string }>(`SELECT id FROM missions.credential_vault WHERE id = ?`, id);
+  async function rotateCredential(id: string, newSecret: string, scope: CredentialOwnerScope = UNSCOPED): Promise<void> {
+    const row = await db.get<{ id: string }>(
+      `SELECT id FROM missions.credential_vault WHERE id = ?${scope.sql}`, id, ...scope.params,
+    );
     if (!row) throw new Error('Credential not found');
+    // Scope repeated on the UPDATE, not just the SELECT above: the check and the write
+    // must not be able to drift apart the next time this query is edited.
     await db.run(
-      `UPDATE missions.credential_vault SET encrypted_data = ? WHERE id = ?`,
-      encrypt(newSecret), id,
+      `UPDATE missions.credential_vault SET encrypted_data = ? WHERE id = ?${scope.sql}`,
+      encrypt(newSecret), id, ...scope.params,
     );
     await logAccess(id, 'rotate');
   }
 
-  async function revokeCredential(id: string): Promise<void> {
-    await db.run(`UPDATE missions.credential_vault SET is_active = FALSE WHERE id = ?`, id);
+  async function revokeCredential(id: string, scope: CredentialOwnerScope = UNSCOPED): Promise<void> {
+    // Existence is checked first so revoking someone else's credential answers "not
+    // found" instead of a cheerful 200 over an UPDATE that matched nothing.
+    const row = await db.get<{ id: string }>(
+      `SELECT id FROM missions.credential_vault WHERE id = ?${scope.sql}`, id, ...scope.params,
+    );
+    if (!row) throw new Error('Credential not found');
+    await db.run(
+      `UPDATE missions.credential_vault SET is_active = FALSE WHERE id = ?${scope.sql}`,
+      id, ...scope.params,
+    );
     await logAccess(id, 'revoke');
   }
 
@@ -438,11 +482,24 @@ export function createCredentialVault(db: DatabaseAdapter) {
     );
   }
 
-  async function listAccessLog(credentialId: string, limit = 100): Promise<Array<{ id: number; access_type: string; mission_id: string | null; task_id: string | null; service_accessed: string | null; success: boolean; error_message: string | null; timestamp: string }>> {
+  /**
+   * missions.credential_access_log carries no owner column of its own, so the boundary
+   * is enforced by joining back to the credential it belongs to. An EXISTS subquery
+   * would read the same; the join keeps the predicate on the row actually being
+   * returned, so a later `SELECT *` cannot widen it by accident.
+   *
+   * The vault side is aliased `v`, so callers build this scope with
+   * `ownerFilter(req, 'v.created_by')` — the column is qualified at the call site rather
+   * than rewritten here, because a string rewrite over generated SQL is exactly the kind
+   * of guard that stops matching when the query is edited.
+   */
+  async function listAccessLog(credentialId: string, limit = 100, scope: CredentialOwnerScope = UNSCOPED): Promise<Array<{ id: number; access_type: string; mission_id: string | null; task_id: string | null; service_accessed: string | null; success: boolean; error_message: string | null; timestamp: string }>> {
     return db.all(
-      `SELECT id, access_type, mission_id, task_id, service_accessed, success, error_message, timestamp
-       FROM missions.credential_access_log WHERE credential_id = ? ORDER BY timestamp DESC LIMIT ?`,
-      credentialId, limit,
+      `SELECT l.id, l.access_type, l.mission_id, l.task_id, l.service_accessed, l.success, l.error_message, l.timestamp
+       FROM missions.credential_access_log l
+       JOIN missions.credential_vault v ON v.id = l.credential_id
+       WHERE l.credential_id = ?${scope.sql} ORDER BY l.timestamp DESC LIMIT ?`,
+      credentialId, ...scope.params, limit,
     );
   }
 

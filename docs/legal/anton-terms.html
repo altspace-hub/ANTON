@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of Service — ANTON · FutureChain</title>
+<meta name="description" content="Terms for the ANTON apps: self-custody software, irreversible payments, and what we do and do not provide.">
+<style>
+  :root{
+    --ground:#0b1118; --raised:#131b25; --raised-2:#18222e; --rule:#1f2a37;
+    --ink:#d6dee7; --ink-dim:#8a98a8; --ink-faint:#5a6878;
+    --accent:#6ba3dd; --accent-soft:#4a7fb5; --accent-glow:rgba(107,163,221,.13);
+    --gold:#d9b36c; --warn:#e8703f;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    --gutter:clamp(20px,5vw,64px);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --ground:#eef2f5; --raised:#ffffff; --raised-2:#f6f9fb; --rule:#d3dce4;
+      --ink:#17222e; --ink-dim:#556677; --ink-faint:#7d8b9a;
+      --accent:#1a4f8e; --accent-soft:#143d6f; --accent-glow:rgba(26,79,142,.09);
+      --gold:#8a6512; --warn:#b0431a;
+    }
+  }
+  :root[data-theme="light"]{
+    --ground:#eef2f5; --raised:#ffffff; --raised-2:#f6f9fb; --rule:#d3dce4;
+    --ink:#17222e; --ink-dim:#556677; --ink-faint:#7d8b9a;
+    --accent:#1a4f8e; --accent-soft:#143d6f; --accent-glow:rgba(26,79,142,.09);
+    --gold:#8a6512; --warn:#b0431a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+       font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:clamp(40px,7vw,88px) var(--gutter) 120px}
+  a{color:var(--accent)} a:hover{color:var(--accent-soft)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+           color:var(--ink-faint)}
+  h1{font-size:clamp(30px,5vw,42px);line-height:1.15;letter-spacing:-.02em;margin:14px 0 0;
+     text-wrap:balance}
+  h2{font-size:20px;line-height:1.3;margin:52px 0 12px;letter-spacing:-.01em;
+     padding-top:20px;border-top:1px solid var(--rule)}
+  p,li{color:var(--ink-dim)} p{margin:0 0 14px} li{margin-bottom:9px}
+  strong{color:var(--ink)}
+  .meta{font-family:var(--mono);font-size:13px;color:var(--ink-faint);margin-top:14px}
+  .lede{font-size:18px;color:var(--ink);margin-top:26px}
+  .note{background:var(--raised);border:1px solid var(--rule);border-left:3px solid var(--accent);
+        border-radius:8px;padding:18px 20px;margin:20px 0}
+  .note.warn{border-left-color:var(--warn)}
+  .note.todo{border-left-color:var(--gold);background:var(--raised-2)}
+  .note p:last-child{margin-bottom:0}
+  code{font-family:var(--mono);font-size:13.5px;color:var(--ink);
+       background:var(--accent-glow);padding:1px 5px;border-radius:3px}
+  .foot{margin-top:64px;padding-top:22px;border-top:1px solid var(--rule);
+        font-family:var(--mono);font-size:12.5px;color:var(--ink-faint)}
+  ul{padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="eyebrow">ANTON &middot; FutureChain</div>
+<h1>Terms of Service</h1>
+<div class="meta">Version 0.2 &middot; Draft for counsel &middot; 5 September 2026</div>
+
+<div class="note todo">
+  <p><strong>Before publishing:</strong> fill the legal entity in &sect;1 and the contact address
+  in &sect;12, both marked <code>[OPERATOR]</code>. Terms without an identifiable counterparty
+  are not enforceable and will not pass a Play review.</p>
+</div>
+
+<p class="lede">These apps hand you the keys and step out of the way. That is the point of them,
+and it is also the risk: there is nobody who can reverse a payment, unlock a wallet, or recover a
+lost recovery phrase &mdash; including us.</p>
+
+<h2>1. Who we are</h2>
+<div class="note todo">
+  <p><code>[OPERATOR]</code> Legal entity name, organisation number, registered address.</p>
+</div>
+<p>These terms are between you and the entity named above ("we", "us"), the publisher of the
+ANTON applications &mdash; ANTON Pay, ANTON Comm, ANTON Business, ANTON Companion and ANTON Agent
+(together, the "Apps") &mdash; and the operator of the FutureChain relay and node services (the
+"Services").</p>
+
+<h2>2. What the Apps are &mdash; and are not</h2>
+<p>The Apps are <strong>self-custody software</strong>. Cryptographic keys for wallets and
+messaging identities are generated and stored on <em>your</em> device. We never receive, hold or
+transmit your private keys or recovery phrases. We do not hold customer funds, execute orders on
+your behalf, or act as an exchange, broker or custodian.</p>
+<p>We are <strong>not authorised as a crypto-asset service provider</strong>. A crypto-asset white
+paper under Regulation (EU) 2023/1114 (MiCA) has been notified to Sweden's Finansinspektionen and
+published. That is a disclosure obligation. It is not an authorisation, a licence, or an
+endorsement of the Apps by any authority, and nothing in the Apps should be read as claiming
+otherwise.</p>
+<p>Nothing in the Apps is financial, investment, tax or legal advice.</p>
+
+<h2>3. Self-custody risks &mdash; please read this part</h2>
+<ul>
+  <li>If you lose your device <strong>and</strong> your recovery phrase, your wallet and its
+  contents are <strong>permanently unrecoverable</strong>. Nobody, including us, can restore
+  them.</li>
+  <li>Blockchain payments are <strong>irreversible</strong>. A payment sent to the wrong address
+  cannot be undone by us or by anyone else. There is no chargeback.</li>
+  <li>There is <strong>no deposit guarantee</strong>. FTC held in a wallet is not a bank deposit
+  and is not covered by any deposit-insurance scheme.</li>
+  <li>Anyone who obtains your 24-word recovery phrase can spend your funds. Never photograph it,
+  store it in a password manager or cloud note, or type it into anything other than a wallet you
+  are deliberately restoring.</li>
+  <li>The value of FTC may go up or down, and there is currently no reference market price. Any
+  fiat figure shown in an app is an estimate at a rate you entered yourself.</li>
+</ul>
+
+<h2>4. Getting in and out of FTC</h2>
+<p>We do not operate an on-ramp or an off-ramp. Converting between FTC and ordinary currency is
+arranged between you and your own exchange partner, under their terms, including any identity
+checks they require. We are not a party to that relationship.</p>
+
+<h2>5. Fees</h2>
+<p>The network fee is fixed by protocol rule at 0.1% of the amount, capped at 0.1&nbsp;FTC and
+floored at 250 satoshi. Your device computes that fee and signs it into the payment before it is
+sent, so it cannot be changed afterwards; a node can accept the payment or reject it, but cannot
+recompute the fee. The fee is paid to whoever settles the block. It is not revenue we collect,
+and there is no fee auction or priority lane.</p>
+
+<h2>6. The relay and network services</h2>
+<p>We operate relay infrastructure that routes end-to-end-encrypted messages, and node access for
+submitting transactions. The Services are provided on a best-effort basis; we may throttle,
+suspend or discontinue them for maintenance, security or legal reasons. Because the Apps are
+self-custody, your funds and your identity keys remain yours whatever happens to our
+infrastructure, and you may point an app at a different node, including one you run yourself.</p>
+
+<h2>7. Acceptable use</h2>
+<p>You may not use the Apps or Services to break the law, to harm or harass others, to attempt to
+disrupt or overload our infrastructure, or to circumvent protections built into the software
+(including parental controls and rate limits).</p>
+
+<h2>8. Public blockchain data</h2>
+<p>Payments on the FutureChain network are <strong>public and permanent</strong>. The amount, the
+fee, the sender and recipient addresses, the time and the settling block are visible to anyone,
+for ever, and cannot be edited or withdrawn.</p>
+<div class="note warn">
+  <p>A payment also carries a structured ISO&nbsp;20022 message containing the payer's name and
+  any reference you attach. <strong>That message is not encrypted</strong> &mdash; the protocol
+  field it travels in is misleadingly named &mdash; and it is read by the node that screens your
+  payment. Today that node discards it after screening, so it is not retrievable afterwards by
+  anyone. Treat anything you write into a payment reference as readable by whoever handles the
+  payment, and never put a secret in one.</p>
+</div>
+
+<h2>9. Compliance screening</h2>
+<p>Payments are screened before they settle. A payment that fails screening is <strong>rejected
+rather than settled</strong>, and we may decline to relay or submit it. The screening decision is
+recorded with the payment. We may be required to retain or disclose information in response to a
+lawful request.</p>
+
+<h2>10. No warranty; limitation of liability</h2>
+<p>The Apps and Services are provided <strong>"as is"</strong> and "as available", without
+warranties of any kind, to the maximum extent permitted by law. To the same extent, we are not
+liable for indirect or consequential loss, or for loss of funds caused by lost keys or recovery
+phrases, mistyped addresses, device compromise, or network unavailability. Nothing in these terms
+limits liability that cannot be limited under applicable law, including your statutory rights as a
+consumer.</p>
+
+<h2>11. Changes</h2>
+<p>We may update these terms. Material changes will be announced in the Apps and on this page,
+with the version and date above. Continued use after a change takes effect constitutes
+acceptance.</p>
+
+<h2>12. Governing law and contact</h2>
+<p>These terms are governed by the laws of Sweden. Disputes are subject to the jurisdiction of the
+Swedish courts, without prejudice to mandatory consumer-protection rules of your country of
+residence.</p>
+<div class="note todo">
+  <p><code>[OPERATOR]</code> Contact address for legal and support enquiries.</p>
+</div>
+<p><a href="mailto:info@futurechain.solutions">info@futurechain.solutions</a></p>
+
+<div class="foot">
+  Companion document: <a href="/anton/privacy">Privacy Policy</a>. Draft &mdash; not reviewed by
+  counsel. &sect;2 (no authorisation), &sect;5 (fee rule) and &sect;8 (ISO message) state verified
+  system behaviour and should not be softened without checking the system still behaves that way.
+</div>
+
+</div>
+</body>
+</html>

@@ -204,6 +204,10 @@ describeOrSkip('session_output: embed write path + paraphrase retrieval fixture'
         query,
         contentTypes: ['session_output'],
         topK: 5,
+        // This fixture asserts RETRIEVAL, not isolation — it seeds one operator's
+        // outputs and checks a paraphrase finds them. Owner scoping is covered by
+        // tests/lib/owned-row.test.ts against a real database.
+        scope: hybrid.INSTANCE_WIDE_SEARCH,
       });
       const ids = results.map((r) => r.content_id);
       expect(ids).toContain(messageIdByKey.get(expectKey));
@@ -222,6 +226,7 @@ describeOrSkip('session_output: embed write path + paraphrase retrieval fixture'
       query: 'transaction monitoring thresholds recalibrated quarterly',
       contentTypes: ['checkpoint'],
       topK: 5,
+      scope: hybrid.INSTANCE_WIDE_SEARCH,
     });
     expect(results.every((r) => r.content_type !== 'session_output')).toBe(true);
   });

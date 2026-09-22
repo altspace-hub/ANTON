@@ -22,6 +22,12 @@ import xlsx from 'xlsx';
 import ExcelJS from 'exceljs';
 import { Dataset, createDataset } from './data-transformer.js';
 import type { DatabaseAdapter } from '../db/database.js';
+import { assertSqlIdentifier } from '../lib/sql-identifier.js';
+import { createConnectionManager } from './connection-manager.js';
+import { getDriver, isNoSQLDriver } from './db-drivers/driver-registry.js';
+import type { DbConfig } from './db-drivers/driver-interface.js';
+import { resolveExplicitDbDriver } from './workflow-step-registry.js';
+import { assertQueryPermitted, assertTablesAllowed, resolveMaxRows } from './connection-guard.js';
 
 // ==================== Import Operations ====================
 
@@ -35,10 +41,18 @@ export interface ImportConfig {
   delimiter?: string; // For CSV (default: ',')
   hasHeader?: boolean; // CSV/Excel has header row (default: true)
 
-  // Database source
+  // Database source — always an EXTERNAL configured connection, never ANTON's own DB.
   connectionId?: string;
   query?: string;
-  db?: DatabaseAdapter; // Direct DB instance (for testing)
+  /**
+   * ANTON's own database handle, used ONLY to look the connection up in `connections`.
+   *
+   * DO NOT run `query` through this. It used to be exactly that (`config.db.all(config.query)`
+   * with `config.db = db` injected by POST /api/data/import), which handed a request body
+   * arbitrary SQL — stacked statements included, since a query with no bind values goes
+   * over pg's simple protocol — against ANTON's own tables. See importFromDatabase.
+   */
+  db?: DatabaseAdapter;
 
   // Common
   preview?: boolean; // Return first 100 rows only
@@ -161,25 +175,64 @@ async function importJSON(filePath: string): Promise<Array<Record<string, any>>>
 }
 
 /**
- * Import from database
+ * Import from a database.
+ *
+ * The query runs against the EXTERNAL database the user configured as a connection —
+ * which is what the step's own UI asks for ("Database Connection", listing
+ * `connections` of type `database`, plus a SQL query box). The server used to ignore
+ * `connectionId` entirely and run the query through ANTON's own DatabaseAdapter, so an
+ * unauthenticated POST to /api/data/import could read or modify any ANTON table, and
+ * could stack statements (no bind values ⇒ pg simple protocol ⇒ multi-statement).
+ *
+ * Same guards as the `database_query` workflow step, for the same reason: the query text
+ * is caller- or template-supplied, so it is scoped before any driver sees it.
  */
 async function importFromDatabase(config: ImportConfig): Promise<Dataset> {
   if (!config.query) {
     throw new Error('query is required for database import');
   }
 
+  if (!config.connectionId) {
+    throw new Error(
+      'connectionId is required for database import — choose a configured database connection. ' +
+      "ANTON's own application database is not a queryable import source."
+    );
+  }
+
   if (!config.db) {
     throw new Error('Database connection required');
   }
 
+  const manager = await createConnectionManager(config.db);
+  const conn = await manager.get(config.connectionId);
+  if (!conn) {
+    throw new Error(`Connection not found: ${config.connectionId}`);
+  }
+  if (conn.type !== 'database') {
+    throw new Error(`Connection ${config.connectionId} is not a database connection`);
+  }
+
+  const cfg = conn.config as Record<string, unknown>;
+  // Driver must be explicit on the connection — never silently default to sqlite.
+  const driverName = resolveExplicitDbDriver(cfg);
+
+  // Read-only unless the connection was granted 'write', single statement only, and
+  // restricted to the connection's allowed_tables. These throw ConnectionGuardError.
+  assertQueryPermitted(conn.permissions, config.query);
+  assertTablesAllowed(cfg, config.query);
+
+  const driver = await getDriver(driverName);
+  if (isNoSQLDriver(driver)) {
+    throw new Error(`Driver "${driverName}" does not support SQL queries`);
+  }
+
+  const maxRows = resolveMaxRows(cfg);
+
   try {
-    const rows = await config.db.all(config.query) as Array<Record<string, any>>;
-
-    if (config.preview) {
-      return createDataset(rows.slice(0, 100), `db:query`);
-    }
-
-    return createDataset(rows, `db:query`);
+    const result = await driver.query(cfg as unknown as DbConfig, config.query);
+    const limit = config.preview ? Math.min(100, maxRows) : maxRows;
+    const rows = result.rows.slice(0, limit) as Array<Record<string, any>>;
+    return createDataset(rows, `db:${conn.display_name}`);
   } catch (error) {
     throw new Error(`Database query failed: ${(error as Error).message}`);
   }
@@ -368,30 +421,41 @@ async function exportToDatabase(dataset: Dataset, config: ExportConfig): Promise
 
   const insertMode = config.insertMode || 'insert';
 
+  // The table name comes from the request body and the column names from a CSV header
+  // row, and both are concatenated into SQL below (identifiers cannot be bound). Check
+  // them first: a header of `x); DROP TABLE users; --` otherwise became a second
+  // statement, which pg executes because these strings reach it via the simple protocol.
+  //
+  // Validated but NOT quoted, deliberately: this writes into a table someone else
+  // created, so wrapping the names in double quotes would change an unquoted (and
+  // therefore case-folded) `MyTable` into a different object and break a working export.
+  const tableName = assertSqlIdentifier(config.tableName, 'table name');
+  const columns = dataset.columns.map((col) => assertSqlIdentifier(col.name, 'column name'));
+
   try {
-    const columns = dataset.columns.map((col) => col.name);
     const placeholders = columns.map(() => '?').join(', ');
 
     let sql: string;
     if (insertMode === 'insert') {
-      sql = `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+      sql = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
     } else if (insertMode === 'replace' || insertMode === 'upsert') {
       // Upsert: insert or update all columns on conflict with the first column (assumed primary key)
       const updateCols = columns.slice(1).map(c => `${c} = EXCLUDED.${c}`).join(', ');
       sql = updateCols
-        ? `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${columns[0]}) DO UPDATE SET ${updateCols}`
-        : `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${columns[0]}) DO NOTHING`;
+        ? `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${columns[0]}) DO UPDATE SET ${updateCols}`
+        : `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (${columns[0]}) DO NOTHING`;
     } else {
-      sql = `INSERT INTO ${config.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+      sql = `INSERT INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
     }
 
-    // Insert rows
+    // Insert rows — read each value by the dataset's own column name, which is what the
+    // rows are keyed by (identifier validation above constrains the SQL, not the data).
     for (const row of dataset.rows) {
-      const values = columns.map((col) => row[col]);
+      const values = dataset.columns.map((col) => row[col.name]);
       await config.db.run(sql, ...values);
     }
 
-    return `Inserted ${dataset.rows.length} rows into ${config.tableName}`;
+    return `Inserted ${dataset.rows.length} rows into ${tableName}`;
   } catch (error) {
     throw new Error(`Database insert failed: ${(error as Error).message}`);
   }

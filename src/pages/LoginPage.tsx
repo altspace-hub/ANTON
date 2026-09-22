@@ -32,6 +32,12 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Shown only once the server says this account has a second factor. There is no MFA
+  // settings screen yet — enrolment is API-only (POST /api/auth/mfa/enable) — but an
+  // account that HAS enrolled must still be able to sign in here, or turning MFA on
+  // locks the user out of the web UI.
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaToken, setMfaToken] = useState('');
   const [activeImage] = useState(0); // Always show the default image
 
   const isSoloMode = !!onEnterWithoutLogin;
@@ -118,9 +124,15 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
     setError('');
     setIsSubmitting(true);
     try {
-      await login(username, password);
+      await login(username, password, mfaToken || undefined);
+      setMfaRequired(false);
+      setMfaToken('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+      if ((err as { mfaRequired?: boolean }).mfaRequired) {
+        setMfaRequired(true);
+        setMfaToken('');   // a rejected code is never worth resubmitting
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -336,6 +348,28 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                   </div>
                 )}
 
+                {/* Second factor — only after the server has asked for one */}
+                {mfaRequired && (
+                  <div>
+                    <label htmlFor="mfaToken" className="mb-1.5 block text-sm font-semibold text-gray-700">
+                      Authentication code
+                    </label>
+                    <input
+                      id="mfaToken"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      value={mfaToken}
+                      onChange={(e) => setMfaToken(e.target.value.replace(/\D/g, ''))}
+                      disabled={isSubmitting}
+                      autoFocus
+                      placeholder="6-digit code from your authenticator app"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm tracking-[0.3em] text-gray-900 placeholder:tracking-normal placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
+                    />
+                  </div>
+                )}
+
                 {/* Error */}
                 {error && (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -346,7 +380,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                 {/* Sign in */}
                 <button
                   type="submit"
-                  disabled={isSubmitting || !username || !password}
+                  disabled={isSubmitting || !username || !password || (mfaRequired && mfaToken.length !== 6)}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-adv-teal px-4 py-3.5 text-[15px] font-bold text-white transition-all hover:bg-adv-teal-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                   style={{
                     boxShadow: username && password ? '0 4px 20px rgba(13,125,108,0.30)' : 'none',

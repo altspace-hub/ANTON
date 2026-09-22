@@ -6,6 +6,8 @@
 // messages.
 
 import type { DatabaseAdapter } from '../../db/database.js';
+import { isTeamMode } from '../../middleware/role-guards.js';
+import type { OwnedRequest } from '../../middleware/ownership.js';
 
 export interface LocalIdentity {
   contact_hash: string;
@@ -32,6 +34,13 @@ export async function getLocalIdentity(db: DatabaseAdapter): Promise<LocalIdenti
  *
  * Throws an Error with a meaningful message on failure (route handlers
  * convert these to 403/409 responses).
+ *
+ * NOT an authorisation check, despite the 403 it produces. `claimed` is optional and
+ * every internal caller passes undefined, so for them this is only a liveness check on
+ * the instance's community identity — it returns the same identity to every caller and
+ * cannot tell one authenticated user from another. Row-level access is enforced by
+ * requireMissionOwner (routes/mission-access.ts) and by the owner scope on the vault
+ * queries; do not read a passing resolveCallerIdentity as "this caller owns it".
  */
 export async function resolveCallerIdentity(
   db: DatabaseAdapter,
@@ -48,9 +57,37 @@ export async function resolveCallerIdentity(
 }
 
 /**
+ * The user_id to STAMP on rows this REQUEST creates — missions.missions.created_by
+ * and missions.credential_vault.created_by, both FK to public.users.
+ *
+ * Team mode: the authenticated caller, always. resolveUserId() below resolves ONE
+ * instance-wide identity, so on a shared install every colleague's missions and vault
+ * entries were written with the same created_by and no owner predicate could tell them
+ * apart — that is the hole this closes, and stamping is half of it (the guards are the
+ * other half). req.user.id is safe as an FK here: team-mode authMiddleware only stamps
+ * it after joining public.users, so the row provably exists.
+ *
+ * Solo mode: deliberately unchanged, and this is the part not to "simplify". req.user.id
+ * is the literal 'solo', and an instance that predates SOLO_USER_ID has no users row
+ * with that id — writing it blind would violate the FK and fail every mission create on
+ * the owner's own laptop. resolveUserId's sentinel walk is what keeps solo working.
+ */
+export async function resolveActorUserId(db: DatabaseAdapter, req: OwnedRequest): Promise<string> {
+  if (!isTeamMode()) return resolveUserId(db);
+  const id = req.user?.id;
+  // Never fall back to the instance identity here: an unauthenticated write in team
+  // mode landing on the shared sentinel is exactly the attribution loss being removed.
+  if (!id) throw new Error('Authentication required');
+  return id;
+}
+
+/**
  * Resolves the user_id for FK references. In solo mode the platform uses
  * 'solo' or 'default' as a sentinel user_id. We accept either and fall back
  * to the user_id stored against the community identity.
+ *
+ * NOT an authorisation decision: it returns the same instance-wide value for every
+ * caller. Use resolveActorUserId() for anything stamped on a per-request write.
  */
 export async function resolveUserId(db: DatabaseAdapter): Promise<string> {
   const identity = await getLocalIdentity(db);

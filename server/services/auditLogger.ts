@@ -203,6 +203,24 @@ export async function logAuditEvent(db: DatabaseAdapter, event: GeneralAuditEven
 }
 
 /**
+ * A row-ownership predicate produced by `ownerFilter(req, 'user_id')`
+ * (server/middleware/ownership.ts): ` AND user_id = ?` plus its parameter in team mode
+ * for a non-admin, and two empty values for solo and for admins.
+ *
+ * Structurally typed rather than imported so this service stays free of express and of
+ * the middleware layer. The default is unscoped, because these functions are also the
+ * shape any future server-side caller would reach for — but every ROUTE must pass one:
+ * an audit list that quietly returns every tenant's rows is the bug that made this
+ * parameter necessary.
+ */
+export interface AuditOwnerScope {
+  sql: string;
+  params: readonly unknown[];
+}
+
+const UNSCOPED: AuditOwnerScope = { sql: '', params: [] };
+
+/**
  * Get audit log entries with filtering
  */
 export async function getAuditLog(
@@ -214,7 +232,8 @@ export async function getAuditLog(
     endDate?: string;
     limit?: number;
     offset?: number;
-  } = {}
+  } = {},
+  scope: AuditOwnerScope = UNSCOPED,
 ) {
   let query = 'SELECT * FROM audit_log WHERE 1=1';
   const params: unknown[] = [];
@@ -236,6 +255,11 @@ export async function getAuditLog(
     params.push(filters.endDate);
   }
 
+  // Appended after the caller's filters and before ORDER BY, so the bound values stay
+  // in placeholder order.
+  query += scope.sql;
+  params.push(...scope.params);
+
   query += ' ORDER BY timestamp DESC';
   query += ' LIMIT ?';
   params.push(filters.limit || 50);
@@ -251,23 +275,41 @@ export async function getAuditLog(
 /**
  * Get comprehensive audit statistics
  */
-export async function getAuditStats(db: DatabaseAdapter) {
+export async function getAuditStats(db: DatabaseAdapter, scope: AuditOwnerScope = UNSCOPED) {
   const today = new Date().toISOString().split('T')[0];
   const thisMonth = today.substring(0, 7);
 
+  // Every one of the five queries takes the predicate. Four of them had no WHERE at
+  // all, hence the `WHERE 1=1` — ownerFilter always emits a fragment starting ` AND `,
+  // which is deliberate (see middleware/ownership.ts) so that removing a condition
+  // later cannot silently turn a scoped query into an unscoped one.
   return {
-    totalCalls: ((await db.get('SELECT COUNT(*) as c FROM audit_log')) as { c: number } | undefined)?.c ?? 0,
+    totalCalls: ((await db.get(
+      `SELECT COUNT(*) as c FROM audit_log WHERE 1=1${scope.sql}`,
+      ...scope.params,
+    )) as { c: number } | undefined)?.c ?? 0,
     callsToday: (
-      await db.get('SELECT COUNT(*) as c FROM audit_log WHERE timestamp >= ?', today + 'T00:00:00') as { c: number }
+      await db.get(
+        `SELECT COUNT(*) as c FROM audit_log WHERE timestamp >= ?${scope.sql}`,
+        today + 'T00:00:00', ...scope.params,
+      ) as { c: number }
     ).c,
     costThisMonth: (
-      await db.get('SELECT COALESCE(SUM(estimated_cost_usd),0) as c FROM audit_log WHERE timestamp >= ?', thisMonth + '-01') as { c: number }
+      await db.get(
+        `SELECT COALESCE(SUM(estimated_cost_usd),0) as c FROM audit_log WHERE timestamp >= ?${scope.sql}`,
+        thisMonth + '-01', ...scope.params,
+      ) as { c: number }
     ).c,
     byModel: await db.all(
-        'SELECT model, COUNT(*) as calls, SUM(estimated_cost_usd) as total_cost FROM audit_log GROUP BY model ORDER BY calls DESC'
+        `SELECT model, COUNT(*) as calls, SUM(estimated_cost_usd) as total_cost
+           FROM audit_log WHERE 1=1${scope.sql} GROUP BY model ORDER BY calls DESC`,
+        ...scope.params,
       ),
     byModule: await db.all(
-        'SELECT module_id, COUNT(*) as calls FROM audit_log WHERE module_id IS NOT NULL GROUP BY module_id ORDER BY calls DESC LIMIT 10'
+        `SELECT module_id, COUNT(*) as calls
+           FROM audit_log WHERE module_id IS NOT NULL${scope.sql}
+          GROUP BY module_id ORDER BY calls DESC LIMIT 10`,
+        ...scope.params,
       ),
   };
 }

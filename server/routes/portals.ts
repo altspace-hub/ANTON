@@ -13,8 +13,9 @@
  *     `ownerId` stored in `portals.metadata`. The walkthrough's POST creates
  *     a session bound to req.user.id; finalize stamps the portal row's
  *     metadata.ownerId. Pre-auth portals (rare, only relevant for solo-mode
- *     historical state) are owned by the first authenticated caller per
- *     pragmatic legacy compat.
+ *     historical state) carry no ownerId; in SOLO mode they are owned by the
+ *     first authenticated caller per pragmatic legacy compat, and in TEAM mode
+ *     they are admin-only — see makeRequirePortalOwner below.
  *   - Visitor endpoints (.../visit/...) and search/templates are public —
  *     anyone can fetch a portal page or invoke a declared capability.
  */
@@ -28,6 +29,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
 import { assertSafeLanEgressUrl } from '../lib/ssrf-guard.js';
 import { requireAuth } from '../middleware/auth.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 
 import { createPortalDatabaseService } from '../services/portals/portal-database-service.js';
 import { createPortalHandler } from '../services/portals/portal-handler.js';
@@ -60,11 +62,22 @@ function makeRequirePortalOwner(db: DatabaseAdapter) {
       );
       if (!row) return res.status(404).json({ error: 'Portal not found' });
       const ownerId = row.metadata?.ownerId;
-      // Solo-mode legacy compat: portals created before owner stamping have
-      // no ownerId; the first authenticated caller in solo mode is allowed
-      // through (gates immediately tighten once owner is stamped on next
-      // mutation via finalizeSession or POST /portals).
-      if (ownerId && ownerId !== req.user.id) {
+      if (ownerId) {
+        if (ownerId !== req.user.id) {
+          return res.status(403).json({ error: 'Not the portal owner' });
+        }
+      } else if (isTeamMode() && req.user.role !== 'admin') {
+        // Legacy compat for UNOWNED rows — portals created before owner stamping, or
+        // by a path that never populated metadata.ownerId — used to fall through to
+        // next() for ANY caller. The comment called that solo-mode compatibility but
+        // the code never checked the mode, so on a `DEPLOYMENT_MODE=team` install one
+        // unstamped row was writable by every authenticated user: PATCH the portal,
+        // PUT its capabilities (which re-signs and republishes the descriptor to the
+        // relay under the original owner's portal address), replace its pages, or read
+        // its visitor inbox. Keep the fallthrough for solo (one operator, and denying
+        // it would strand their own legacy portals) and for team-mode admins (so an
+        // unowned row still has a recovery path — a guard nobody can satisfy is an
+        // outage, not a fix). Everyone else is refused.
         return res.status(403).json({ error: 'Not the portal owner' });
       }
       next();

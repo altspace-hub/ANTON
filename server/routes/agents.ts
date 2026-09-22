@@ -5,11 +5,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
-import { createAgentService } from '../services/agent-service.js';
+import { createAgentService, type AgentProfile } from '../services/agent-service.js';
 import { createAgentProcessor } from '../services/agent-processor.js';
 import { createAgentBuilder } from '../services/agent-builder.js';
 import { safeError } from '../lib/error-response.js';
 import { p2pLimiter } from '../middleware/rate-limit.js';
+import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
+import { loadOwnedRow, respondToRowAccessError, isRowAccessError } from '../lib/owned-row.js';
 
 const createAgentSchema = z.object({
   name: z.string().min(1).max(200),
@@ -38,6 +40,48 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
   const processor = await createAgentProcessor(db);
   const builder = await createAgentBuilder(db);
 
+  // ── Ownership ──────────────────────────────────────────────────────
+  //
+  // Every /agents/:id route below used to address the row by id alone. agent_profiles
+  // has carried `created_by` since migration 111 but nothing wrote it and nothing read
+  // it, so on a DEPLOYMENT_MODE=team install any authenticated user — role 'viewer'
+  // included — could read another tenant's system_prompt and knowledge scopes, repoint
+  // a rest_api connector at a host they control and then execute it through the
+  // operator's decrypted vault credentials, or archive a production agent outright.
+  // Migration 265 stamps the legacy rows; createAgent stamps new ones; these two
+  // helpers are the read side.
+  //
+  // loadOwnedRow (lib/owned-row.ts) IS the fetch, deliberately: a handler that forgets
+  // the guard has no agent to work with, rather than quietly reading someone else's.
+  // It 404s — never 403 — so an id cannot be used to confirm that another tenant's
+  // agent exists. Solo mode and admins are pass-through; see middleware/ownership.ts.
+
+  /** The agent at :id, or throw RowAccessError(401|404). */
+  function loadOwnedAgent(req: OwnedRequest, id: string, notFoundMessage = 'Agent not found') {
+    return loadOwnedRow<AgentProfile>(db, req, {
+      table: 'agent_profiles', ownerColumn: 'created_by', id, notFoundMessage,
+    });
+  }
+
+  /**
+   * Same, for the one route whose :id has always accepted a slug as well as an id.
+   * The retry goes through the SAME owner check — never an unscoped fallback, which
+   * would make `slug` a way around everything above.
+   */
+  async function loadOwnedAgentByIdOrSlug(req: OwnedRequest, idOrSlug: string): Promise<AgentProfile> {
+    try {
+      return await loadOwnedAgent(req, idOrSlug);
+    } catch (err) {
+      if (isRowAccessError(err) && err.status === 404) {
+        return await loadOwnedRow<AgentProfile>(db, req, {
+          table: 'agent_profiles', ownerColumn: 'created_by', id: idOrSlug,
+          idColumn: 'slug', notFoundMessage: 'Agent not found',
+        });
+      }
+      throw err;
+    }
+  }
+
   // ── CRUD ───────────────────────────────────────────────────────────
 
   router.get('/agents', async (req, res) => {
@@ -45,7 +89,7 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
       const agents = await service.listAgents({
         status: req.query.status as string | undefined,
         limit: req.query.limit ? Number(req.query.limit) : undefined,
-      });
+      }, ownerFilter(req, 'created_by'));
       res.json({ success: true, agents });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
@@ -59,64 +103,98 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
 
   router.get('/agents/:id', async (req, res) => {
     try {
-      const agent = await service.getAgent(req.params.id) ?? await service.getAgentBySlug(req.params.id);
-      if (!agent) { res.status(404).json({ error: 'Agent not found' }); return; }
+      const agent = await loadOwnedAgentByIdOrSlug(req, req.params.id);
       const stats = await service.getAgentStats(agent.id);
       res.json({ success: true, agent, stats });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      // First in the catch: respondToRowAccessError must win over the generic arm,
+      // or the 404 contract turns into a 500. See lib/owned-row.ts.
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.post('/agents', async (req, res) => {
     try {
+      // No identity, no agent. An agent with a NULL created_by is one no owner
+      // predicate can ever match, so it would be invisible to its own creator in team
+      // mode — the state migration 111 left every row in.
+      const createdBy = req.user?.id;
+      if (!createdBy) { res.status(401).json({ error: 'Authentication required' }); return; }
       const parsed = createAgentSchema.safeParse(req.body);
       if (!parsed.success) { res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }); return; }
-      const id = await service.createAgent(parsed.data);
+      const id = await service.createAgent({ ...parsed.data, createdBy });
       res.status(201).json({ success: true, id });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
   router.patch('/agents/:id', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       await service.updateAgent(req.params.id, req.body);
       res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.delete('/agents/:id', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       await service.deleteAgent(req.params.id);
       res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.post('/agents/:id/activate', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       await service.updateAgent(req.params.id, { status: 'active' });
       res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.post('/agents/:id/pause', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       await service.updateAgent(req.params.id, { status: 'paused' });
       res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // ── Connectors ─────────────────────────────────────────────────────
 
+  // agent_connectors has no owner column of its own — a connector belongs to whoever
+  // owns its agent. Guarding the parent is therefore the whole check, and it must come
+  // before the INSERT: attaching a connector to somebody else's agent is the step that
+  // turns a read hole into an exfiltration channel run on their credentials.
   router.get('/agents/:id/connectors', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       const connectors = await db.all(
         'SELECT id, name, connector_type, description, is_active, last_used_at, last_error, created_at FROM agent_connectors WHERE agent_id = ? ORDER BY created_at',
         req.params.id
       );
       res.json({ success: true, connectors });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.post('/agents/:id/connectors', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       const { name, connectorType, description, config, authConfig } = req.body as {
         name: string; connectorType: string; description?: string;
         config: Record<string, unknown>; authConfig?: Record<string, unknown>;
@@ -138,19 +216,27 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
          JSON.stringify(config), encryptedAuth);
 
       res.status(201).json({ success: true, id });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.delete('/agents/:id/connectors/:connectorId', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       await db.run('DELETE FROM agent_connectors WHERE id = ? AND agent_id = ?', req.params.connectorId, req.params.id);
       res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // Test a connector
   router.post('/agents/:id/connectors/:connectorId/test', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       const { createConnectorExecutor } = await import('../services/agent-connector-executor.js');
       const executor = await createConnectorExecutor(db);
       const connector = await db.get<{ name: string }>(
@@ -165,24 +251,45 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         params: req.body.params ?? {},
       });
       res.json({ success: true, result });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // ── Conversations ──────────────────────────────────────────────────
 
   router.get('/agents/:id/conversations', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       const conversations = await service.listConversations(req.params.id, req.query.limit ? Number(req.query.limit) : 20);
       res.json({ success: true, conversations });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   router.get('/agents/conversations/:conversationId', async (req, res) => {
     try {
+      // Resolve the OWNING AGENT before reading a single message. A transcript carries
+      // whatever the requester said to the agent and whatever it answered with, so a
+      // conversation id must not be a second door onto an agent the caller cannot open;
+      // agent_conversations has no owner column of its own, only agent_id. Fetching just
+      // that link keeps the message rows out of memory until the check has passed.
+      const link = await db.get<{ agent_id: string }>(
+        'SELECT agent_id FROM agent_conversations WHERE id = ?', req.params.conversationId,
+      );
+      if (!link) { res.status(404).json({ error: 'Conversation not found' }); return; }
+      await loadOwnedAgent(req, link.agent_id, 'Conversation not found');
+
       const data = await service.getConversation(req.params.conversationId);
       if (!data) { res.status(404).json({ error: 'Conversation not found' }); return; }
       res.json({ success: true, ...data });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // ── Route Query to Best Agent ──────────────────────────────────────
@@ -191,7 +298,12 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const { query } = req.body as { query: string };
       if (!query) { res.status(400).json({ error: 'query required' }); return; }
-      const match = await processor.routeQuery(query);
+      // routeQuery's own docstring says "the authenticated route (POST /api/agents/route)
+      // passes it" — it did not. Without the scope this hands back another tenant's agent
+      // NAME and ID: the enumeration listAgents refuses, reached by the side door.
+      // /agents/public/route below deliberately passes nothing, because a storefront is
+      // meant to be instance-wide.
+      const match = await processor.routeQuery(query, ownerFilter(req, 'created_by'));
       res.json({ success: true, match });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
@@ -376,18 +488,31 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
     try {
       const { message, conversationId } = req.body as { message: string; conversationId?: string };
       if (!message) { res.status(400).json({ error: 'message required' }); return; }
+      // The most consequential per-agent route to have missed the guard: a query runs the
+      // agent's system prompt AND its connectors, so unguarded it executes another
+      // tenant's rest_api and database connectors through the vault credentials those
+      // connectors resolve, and returns the output. Reading their config was the lesser
+      // half of what this exposed.
+      await loadOwnedAgent(req, req.params.id);
       const result = await processor.processQuery(req.params.id, message, { conversationId, source: 'direct' });
       res.json({ success: true, ...result });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // ── Stats ──────────────────────────────────────────────────────────
 
   router.get('/agents/:id/stats', async (req, res) => {
     try {
+      await loadOwnedAgent(req, req.params.id);
       const stats = await service.getAgentStats(req.params.id);
       res.json({ success: true, stats });
-    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+    } catch (err) {
+      if (respondToRowAccessError(err, res)) return;
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   return router;

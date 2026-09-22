@@ -12,9 +12,11 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createMissionController } from '../services/missions/mission-controller.js';
 import { createMissionState, newTaskId } from '../services/missions/mission-state.js';
 import { hasDependencyCycle, validateActionTaskConfig } from '../services/missions/mission-decomposition.js';
-import { resolveCallerIdentity, getLocalIdentity, resolveUserId } from '../services/missions/mission-identity.js';
+import { resolveCallerIdentity, getLocalIdentity, resolveActorUserId } from '../services/missions/mission-identity.js';
 import { seedBuiltinTemplates } from '../services/missions/seed-templates.js';
 import { claudeLimiter } from '../middleware/rate-limit.js';
+import { ownerFilter } from '../middleware/ownership.js';
+import { createMissionOwnerGuard } from './mission-access.js';
 import { safeError } from '../lib/error-response.js';
 import type { MissionTask, TaskType } from '../services/missions/types.js';
 
@@ -163,7 +165,11 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
         await resolveCallerIdentity(db, parsed.data.created_by_contact_hash);
       } catch (err) { sendIdentityError(res, err); return; }
 
-      const userId = await resolveUserId(db);
+      // The CALLER owns what they create. resolveUserId() (the old call here) returned
+      // the instance-wide community identity, so on a team install every colleague's
+      // missions were stamped with the same created_by and became mutually visible.
+      // Solo is unaffected — resolveActorUserId still walks the sentinels there.
+      const userId = await resolveActorUserId(db, req);
       // template_parameters flows through to the controller, which persists
       // the values into the mission context for deterministic ${param}
       // substitution at decomposition time (Wave-3 3A.1).
@@ -185,12 +191,26 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
       const status = statusParam
         ? (statusParam.split(',').filter(Boolean) as Array<'draft' | 'briefed' | 'active' | 'paused' | 'review' | 'completed' | 'aborted'>)
         : undefined;
-      const missions = await state.listMissions({ status, createdBy, limit });
+      // `created_by` is a caller-chosen FILTER, never the authorisation boundary — with
+      // it omitted the list used to return every tenant's missions. ownerScope is the
+      // boundary and is applied on top: empty in solo and for admins, ` AND created_by = ?`
+      // for a non-admin in team mode.
+      const missions = await state.listMissions({
+        status, createdBy, limit, ownerScope: ownerFilter(req, 'created_by'),
+      });
       res.json({ success: true, missions });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }
   });
+
+  // ── Ownership boundary for everything addressed by a mission id ────────────
+  //
+  // Mounted here, AFTER the collection routes above, because `/missions/:id` matches any
+  // second segment — `/missions/identity` would bind id='identity' and 404. Any new
+  // COLLECTION path under /missions must therefore be registered ABOVE this line; any new
+  // per-mission route goes below it and is guarded for free. See mission-access.ts.
+  router.use('/missions/:id', createMissionOwnerGuard(db));
 
   // GET /api/missions/:id — full state (mission + tasks + dependencies + counts)
   router.get('/missions/:id', async (req, res) => {

@@ -18,7 +18,11 @@ not taken from the doc's checkboxes.
 **At-a-glance verdict:** the scoped launch (Android + ANTON Local, self-custody) is **on track
 from the engineering side**. Launch is gated almost entirely on **operator + legal**.
 
-**GREEN (verified):** all 4 keystores present + gitignored + never committed; EdDSA R8
+**GREEN (verified):** all 4 keystores present + gitignored from the public repo;
+(*2026-09-06: "never committed" is no longer accurate — a deliberate encrypted-at-rest-by-
+repo-privacy backup import on 2026-07-17 placed four of the five signing keys in the private
+backup repo. Treat the backup checkbox as PARTIALLY done and read the operator note before
+relying on it: the fifth key, Agent's, is still single-machine.*) EdDSA R8
 `-dontwarn` in all 4 proguard files; `versionName` standardized `1.0.0`/`versionCode 1`;
 typecheck clean; GitHub CI green + substantive; risk-disclosure gate now in ALL THREE money apps
 (not just Pay); `stub_mode` auto-cutover wired; both 06-10 plans largely executed (Business
@@ -56,7 +60,8 @@ cheap-model spine, A2A demo ladder; remittance i18n 2,830 keys). Test counts: se
 1. `[LEGAL]` **#1 risk, start now** — counsel-approved disclosure copy (bump `DISCLOSURE_VERSION`
    from 1 when it lands), real ToS/Privacy (drafts bannered at terms.futurechain.eu), MiCA/CASP
    classification, DPO/DPA. Brief: `docs/LEGAL_ACTION_BRIEF.md`.
-2. `[OPS]` 🔑 **back up the 4 keystores + `.env`** — local-only on this machine (verified
+2. `[OPS]` 🔑 **back up the keystores + `.env`** — PARTIALLY DONE 2026-07-17; Agent's key (created
+   2026-07-29, after that import) is still single-machine. `.env` is still local-only (verified
    gitignored). Highest-risk single item; recipe in `SESSION_HANDOVER_2026-06-10.md §0`.
 3. `[OPS]` **set `INSTANCE_KEY_ENCRYPTION_KEY` in `.env`** — still ABSENT (verified name-only);
    without it the instance Ed25519 privkey sits plaintext in Postgres. (`ENCRYPTION_KEY` present.)

@@ -373,6 +373,52 @@ export async function createMarketDataService(db: DatabaseAdapter) {
 
   // ── Provider Adapters ────────────────────────────────────────────────────
 
+  /**
+   * Statuses that mean the PROVIDER refused the account, not that one symbol is
+   * missing from an otherwise working feed.
+   *
+   * 402 is the one that prompted this: EODHD's free tier allows 20 requests a day and
+   * the config asks for exactly 20 symbols, so the first fetch cycle spends the quota
+   * and every later cycle that day is refused outright.
+   */
+  const PROVIDER_REFUSAL_STATUSES = new Set([401, 402, 403, 429]);
+
+  /**
+   * Turns "ingested nothing because the provider said no" into a recorded error.
+   *
+   * The per-symbol loops below `continue` past a bad response, which is right for one
+   * delisted ticker and wrong for an account-level refusal: the adapter returns 0, the
+   * wrapper sees no exception, and market_data_sources gets last_fetch_status='success'
+   * with a fresh last_fetch_at. Both EODHD sources sat like that for two days while
+   * every request 402'd — "success", zero items, no error, nothing to alert on.
+   *
+   * This is the THIRD instance of the shape in this file. fetchEODHD carries a comment
+   * about a feed that "reported success daily" while its newest bar aged two and a half
+   * weeks, and the earnings-calendar call carries one about a 404 that "read as a
+   * successful zero-item fetch forever". Hence a shared tracker rather than a third
+   * one-off.
+   *
+   * Deliberately narrow: it only fires when NOTHING was ingested. A partial fetch —
+   * some symbols refused, others fine — stays a success, because the data that did
+   * arrive is real and failing the whole source would discard it.
+   */
+  function createRefusalTracker(provider: string) {
+    const seen = new Map<number, number>();
+    return {
+      note(status: number): void {
+        if (PROVIDER_REFUSAL_STATUSES.has(status)) seen.set(status, (seen.get(status) ?? 0) + 1);
+      },
+      assertNotRefused(ingested: number): void {
+        if (ingested > 0 || seen.size === 0) return;
+        const detail = [...seen.entries()].map(([status, count]) => `HTTP ${status} x${count}`).join(', ');
+        throw new Error(
+          `${provider} refused every request and nothing was ingested (${detail}). ` +
+          'Check the account plan or daily quota.',
+        );
+      },
+    };
+  }
+
   async function fetchAlphaVantage(sourceId: string, config: Record<string, unknown>): Promise<number> {
     const apiKey = config.api_key_env
       ? process.env[config.api_key_env as string]
@@ -526,6 +572,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
   }
 
   async function fetchFMP(sourceId: string, config: Record<string, unknown>): Promise<number> {
+    const refusals = createRefusalTracker('FMP');
     const apiKey = config.api_key_env
       ? process.env[config.api_key_env as string]
       : (config.api_key as string | undefined);
@@ -541,7 +588,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
-        if (!response.ok) continue;
+        if (!response.ok) { refusals.note(response.status); continue; }
         const rawData = await response.json() as Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }> | { historical?: Array<{ date: string; open: number; high: number; low: number; close: number; volume: number }> };
         const historical = Array.isArray(rawData) ? rawData : (rawData.historical ?? []);
         for (const day of historical.slice(0, 30)) {
@@ -574,6 +621,8 @@ export async function createMarketDataService(db: DatabaseAdapter) {
             });
             ingested++;
           }
+        } else {
+          refusals.note(response.status);
         }
       } catch { /* skip */ }
 
@@ -595,6 +644,8 @@ export async function createMarketDataService(db: DatabaseAdapter) {
             });
             ingested++;
           }
+        } else {
+          refusals.note(response.status);
         }
       } catch { /* skip */ }
     } else if (dataType === 'stock_news') {
@@ -642,7 +693,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
         const response = await fetch(url);
         await incrementFmpCount();
-        if (!response.ok) continue;
+        if (!response.ok) { refusals.note(response.status); continue; }
         const profiles = await response.json() as Array<Record<string, unknown>>;
         for (const profile of profiles) {
           await ingestRawData({
@@ -783,6 +834,7 @@ export async function createMarketDataService(db: DatabaseAdapter) {
         const resp = await fetch(url);
         await incrementFmpCount();
         if (!resp.ok) {
+          refusals.note(resp.status);
           console.warn(`[market-data] FMP earnings-calendar HTTP ${resp.status}`);
         } else {
           const events = await resp.json() as Array<{ symbol: string; date: string; eps: number; epsEstimated: number; revenue: number; revenueEstimated: number }>;
@@ -813,12 +865,14 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       } catch { /* skip */ }
     }
 
+    refusals.assertNotRefused(ingested);
     return ingested;
   }
 
   // ── EODHD (End of Day Historical Data) ────────────────────────────────────
 
   async function fetchEODHD(sourceId: string, config: Record<string, unknown>): Promise<number> {
+    const refusals = createRefusalTracker('EODHD');
     const apiKey = config.api_key_env
       ? process.env[config.api_key_env as string]
       : (config.api_key as string | undefined);
@@ -842,7 +896,11 @@ export async function createMarketDataService(db: DatabaseAdapter) {
 
       try {
         const response = await fetch(url);
-        if (!response.ok) { console.warn(`[market-data] EODHD ${ticker}: HTTP ${response.status}`); continue; }
+        if (!response.ok) {
+          refusals.note(response.status);
+          console.warn(`[market-data] EODHD ${ticker}: HTTP ${response.status}`);
+          continue;
+        }
         const days = await response.json() as Array<{ date: string; open: number; high: number; low: number; close: number; adjusted_close: number; volume: number }>;
 
         // EODHD returns the window ASCENDING (oldest first) — unlike FMP and
@@ -872,6 +930,10 @@ export async function createMarketDataService(db: DatabaseAdapter) {
       }
     }
 
+    // Nothing ingested AND the provider refused us: record it as an error rather than
+    // a zero-item success. Deliberately does NOT deactivate the source — a daily quota
+    // resets, and a source that switches itself off needs a human to switch it back on.
+    refusals.assertNotRefused(ingested);
     return ingested;
   }
 

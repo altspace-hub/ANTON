@@ -262,6 +262,16 @@ export interface CatchUpEntry {
   catchUpWithinMin: number;
   /** Optional: has this phase's work already happened by another route? */
   alreadyDone?: () => Promise<boolean>;
+  /**
+   * Optional: is this slot one the phase should run at all?
+   *
+   * Distinct from `alreadyDone`, and the difference matters to the catch-up. "Already
+   * done" means a missed slot whose work happened anyway; this means a slot that was
+   * never owed — a session-bound phase on a market holiday. Without it, skipping in
+   * cron would achieve nothing: the catch-up would find the slot unclaimed a few
+   * minutes later and dutifully "rescue" the very run that was skipped on purpose.
+   */
+  shouldRunOnSlot?: (slot: Date) => boolean;
 }
 
 export interface CatchUpSelection<T extends CatchUpEntry = CatchUpEntry> {
@@ -269,6 +279,8 @@ export interface CatchUpSelection<T extends CatchUpEntry = CatchUpEntry> {
   chosen: { entry: T; slot: Date } | null;
   /** Missed slots whose work had already happened, so they were not run. */
   skippedAlreadyDone: Array<{ phase: string; slot: Date }>;
+  /** Slots the phase was never owed — a session-bound phase on a non-trading day. */
+  skippedNotOwed: Array<{ phase: string; slot: Date }>;
   /** Overdue phases left for later ticks (one is run per tick, deliberately). */
   alsoOverdue: number;
 }
@@ -295,6 +307,7 @@ export async function selectCatchUpPhase<T extends CatchUpEntry>(
   isSlotClaimed: (phase: string, slot: Date) => Promise<boolean>,
 ): Promise<CatchUpSelection<T>> {
   const skippedAlreadyDone: Array<{ phase: string; slot: Date }> = [];
+  const skippedNotOwed: Array<{ phase: string; slot: Date }> = [];
   const overdue: Array<{ entry: T; slot: Date }> = [];
 
   for (const entry of entries) {
@@ -303,6 +316,12 @@ export async function selectCatchUpPhase<T extends CatchUpEntry>(
     // that redoing it buys nothing.
     if (!slot) continue;
     if (await isSlotClaimed(entry.phase, slot)) continue;
+    // Before the claim question and before alreadyDone: a slot that was never owed is
+    // not a miss to be rescued, and asking the database about it would be noise.
+    if (entry.shouldRunOnSlot && !entry.shouldRunOnSlot(slot)) {
+      skippedNotOwed.push({ phase: entry.phase, slot });
+      continue;
+    }
     if (entry.alreadyDone && (await entry.alreadyDone())) {
       skippedAlreadyDone.push({ phase: entry.phase, slot });
       continue;
@@ -310,7 +329,7 @@ export async function selectCatchUpPhase<T extends CatchUpEntry>(
     overdue.push({ entry, slot });
   }
 
-  if (overdue.length === 0) return { chosen: null, skippedAlreadyDone, alsoOverdue: 0 };
+  if (overdue.length === 0) return { chosen: null, skippedAlreadyDone, skippedNotOwed, alsoOverdue: 0 };
   overdue.sort((a, b) => a.slot.getTime() - b.slot.getTime());
-  return { chosen: overdue[0], skippedAlreadyDone, alsoOverdue: overdue.length - 1 };
+  return { chosen: overdue[0], skippedAlreadyDone, skippedNotOwed, alsoOverdue: overdue.length - 1 };
 }

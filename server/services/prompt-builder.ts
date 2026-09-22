@@ -1,6 +1,6 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { applyAntonBoosts, applyTokenBudget } from './atom-boost.js';
-import { hybridSearch } from './hybrid-search.js';
+import { hybridSearch, INSTANCE_WIDE_SEARCH } from './hybrid-search.js';
 import { createHkpService } from './hkp-service.js';
 
 /**
@@ -486,6 +486,9 @@ async function retrievePackEntityContent(
         topK: PACK_LAYER_MAX_ENTITIES,
         minSimilarity: 0.25,
         includeDocumentChunks: false,
+        // Pack entities are instance-wide reference material with no owner column,
+        // and the prompt layer has no request to derive a principal from anyway.
+        scope: INSTANCE_WIDE_SEARCH,
       });
       const fromActivePacks = results.filter(r => activeIds.has(splitContentId(r.content_id).packId));
       const capped = applyTokenBudget(fromActivePacks, PACK_LAYER_TOKEN_BUDGET);
@@ -610,6 +613,8 @@ export async function buildAtomLayer(
           contentTypes: ['knowledge_atom'],
           topK: 25,
           minSimilarity: 0.25,
+          // Atoms only — unowned, same reasoning as the pack layer above.
+          scope: INSTANCE_WIDE_SEARCH,
         });
 
         if (!Array.isArray(results) || results.length === 0) return withLessons(await buildAtomLayerFallback(db, areaId));

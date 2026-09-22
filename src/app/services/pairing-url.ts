@@ -67,6 +67,85 @@ export function parsePairingLink(raw: string): ParsedPairingLink | null {
 }
 
 /**
+ * What the user is shown BEFORE an inline-package pairing is allowed to run.
+ *
+ * Every field here is CLAIMED by the package, i.e. attacker-controlled if the
+ * link did not come from the admin's screen. That is the point: the human is
+ * the one who checks these against what their admin is showing. Nothing in
+ * here may be treated as verified by code.
+ */
+export interface PairingConfirmation {
+  instanceName: string;
+  contactHash: string | null;
+  transport: 'public_https' | 'mesh' | 'unknown';
+  /** Host the phone will actually talk to — first relay, else an endpoint. */
+  reachVia: string | null;
+  requiresCode: boolean;
+  /** Set when the package pre-binds this device to a role on that instance. */
+  boundRole: string | null;
+}
+
+/** Labels are rendered as text (React escapes them), but a 4 KB "display name"
+ *  would still push the confirm buttons off-screen — clamp it. */
+const MAX_LABEL_CHARS = 64;
+
+function asLabel(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const s = v.trim();
+  return s ? s.slice(0, MAX_LABEL_CHARS) : null;
+}
+
+function hostOf(v: unknown): string | null {
+  const s = asLabel(v);
+  if (!s) return null;
+  try { return new URL(s).host || s; } catch { return s; }
+}
+
+/**
+ * Summarise an inline enrollment package for the pairing-confirmation screen.
+ *
+ * Pure + total: a malformed or hostile package must still produce something
+ * displayable, because the whole job of the confirm screen is to let a human
+ * refuse a package that code cannot judge.
+ */
+export function describeInlinePackage(pkg: Record<string, unknown>): PairingConfirmation {
+  const t = pkg.transport;
+  const relays = Array.isArray(pkg.relay_endpoints) ? pkg.relay_endpoints : [];
+  const endpoints = (typeof pkg.endpoints === 'object' && pkg.endpoints !== null)
+    ? pkg.endpoints as Record<string, unknown>
+    : {};
+  return {
+    instanceName: asLabel(pkg.instance_display_name) ?? asLabel(pkg.server_label) ?? 'Unnamed instance',
+    contactHash: asLabel(pkg.instance_contact_hash),
+    transport: t === 'mesh' || t === 'public_https' ? t : 'unknown',
+    reachVia: hostOf(relays[0]) ?? hostOf(endpoints.wan) ?? hostOf(endpoints.lan) ?? asLabel(pkg.server_label),
+    requiresCode: pkg.requires_confirmation_code === true,
+    boundRole: asLabel(pkg.intended_role),
+  };
+}
+
+/**
+ * Build the `anton://enroll?pkg=…` QR URL for a mesh enrollment package.
+ *
+ * Drops `confirmation_code` before encoding. /enrollment/start returns that
+ * six-digit code to the ADMIN so they can read it aloud; it is the only
+ * out-of-band factor in the pairing ritual and the only thing that stops a QR
+ * photographed (or swapped) between issue and scan from being used. Spreading
+ * the whole start response into the QR put the code inside the very artefact
+ * it is supposed to protect. Never re-add it to the encoded package.
+ */
+export function buildInlinePairingUrl(pkg: object, serverLabel: string): string {
+  // JSON round-trip so we never mutate the caller's package object; the
+  // package is JSON-only data and is about to be JSON-encoded anyway.
+  const safe = JSON.parse(JSON.stringify(pkg)) as Record<string, unknown>;
+  delete safe.confirmation_code;
+  // Optional human label so the UI can show "paired with X" before the
+  // completion succeeds. The phone never resolves it.
+  safe.server_label = serverLabel;
+  return `anton://enroll?pkg=${encodeBase64UrlJson(safe)}`;
+}
+
+/**
  * Validates a direct-fetch server URL. HTTPS is required for any host reached
  * over a network; plain HTTP is permitted ONLY for same-device loopback
  * (developer / in-browser testing), which never crosses the wire.

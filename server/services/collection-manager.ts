@@ -66,8 +66,20 @@ export async function createCollection(db: DatabaseAdapter, collection: Omit<Kno
 /**
  * List all collections
  */
-export async function listCollections(db: DatabaseAdapter): Promise<KnowledgeCollection[]> {
-  return await db.all<KnowledgeCollection>('SELECT * FROM knowledge_collections ORDER BY created_at DESC');
+export async function listCollections(
+  db: DatabaseAdapter,
+  /**
+   * Owner scope from `ownerFilter(req, 'created_by')`. Omitted means unscoped, which
+   * is correct for solo mode and for admins; on a shared instance this list is the
+   * enumeration step that makes every other collection route reachable, so a
+   * non-admin must only see their own. Same shape as getCollectionDocuments below.
+   */
+  scope: { sql: string; params: string[] } = { sql: '', params: [] },
+): Promise<KnowledgeCollection[]> {
+  return await db.all<KnowledgeCollection>(
+    `SELECT * FROM knowledge_collections WHERE 1=1${scope.sql} ORDER BY created_at DESC`,
+    ...scope.params,
+  );
 }
 
 /**

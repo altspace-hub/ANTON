@@ -11,6 +11,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createMissionGrowBridge } from '../services/missions/mission-grow-bridge.js';
 import { resolveCallerIdentity } from '../services/missions/mission-identity.js';
 import { safeError } from '../lib/error-response.js';
+import { createMissionOwnerGuard } from './mission-access.js';
 
 function sendIdentityError(res: import('express').Response, err: unknown): void {
   const msg = safeError(err);
@@ -21,9 +22,15 @@ function sendIdentityError(res: import('express').Response, err: unknown): void 
 
 export function createMissionGrowRoutes(db: DatabaseAdapter): Router {
   const router = Router();
+
+  // Every route here keys on a mission id and there is no collection path, so a
+  // router.use('/missions/:id', …) would also have worked. Per-route keeps the four
+  // sub-routers uniform, and the next collection path added here cannot silently
+  // inherit a guard that would 404 it.
+  const missionOwner = createMissionOwnerGuard(db);
   const bridge = createMissionGrowBridge(db);
 
-  router.get('/missions/:id/grow-outputs', async (req, res) => {
+  router.get('/missions/:id/grow-outputs', missionOwner, async (req, res) => {
     try {
       const outputs = await bridge.listMissionGrowOutputs(String(req.params.id));
       res.json({ success: true, ...outputs });
@@ -34,7 +41,7 @@ export function createMissionGrowRoutes(db: DatabaseAdapter): Router {
 
   // Manual emission — used by ops, integration tests, and any mission task
   // that wants to write to Grow without going through the LLM block parser.
-  router.post('/missions/:id/grow/lead', async (req, res) => {
+  router.post('/missions/:id/grow/lead', missionOwner, async (req, res) => {
     try {
       const schema = z.object({
         task_id: z.string().optional(),
@@ -66,7 +73,7 @@ export function createMissionGrowRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/:id/grow/opportunity', async (req, res) => {
+  router.post('/missions/:id/grow/opportunity', missionOwner, async (req, res) => {
     try {
       const schema = z.object({
         task_id: z.string().optional(),
@@ -95,7 +102,7 @@ export function createMissionGrowRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/missions/:id/grow/signal', async (req, res) => {
+  router.post('/missions/:id/grow/signal', missionOwner, async (req, res) => {
     try {
       const schema = z.object({
         task_id: z.string().optional(),

@@ -229,13 +229,23 @@ export function createVideoRoutes(db: DatabaseAdapter): Router {
   //    /video/channel/*, or /video/playlists/*.) ──
   router.get('/video/:id', requireAuth, async (req: Request, res: Response) => {
     try {
+      // The visibility predicate mirrors /video/feed above, and it is the ONLY
+      // thing standing between a private upload and any authenticated caller:
+      // this row's storage_key is minted into a signed playback URL below, so a
+      // read filtered on id + state alone handed a working stream of someone
+      // else's 'private' video to anyone who knew (or harvested) its id.
+      // 'friends-circle' is deliberately owner-only for now — friend_contacts is
+      // keyed by the peer's Ed25519 pubkey, not users.id, so there is no join
+      // from a logged-in viewer to "is a friend of the uploader" yet. Do not
+      // widen this list back until that join exists.
       const video = await db.get<Record<string, unknown>>(
         `SELECT v.id, v.title, v.description, v.visibility, v.duration_seconds,
                 v.uploader_user_id, v.storage_key, v.created_at, COALESCE(u.display_name, u.username) AS uploader_name
          FROM video_uploads v
          LEFT JOIN users u ON u.id = v.uploader_user_id
-         WHERE v.id = ? AND v.state = 'ready'`,
-        req.params.id,
+         WHERE v.id = ? AND v.state = 'ready'
+           AND (v.visibility IN ('public', 'unlisted') OR v.uploader_user_id = ?)`,
+        req.params.id, req.user!.id,
       );
       if (!video) { res.status(404).json({ error: 'Not found' }); return; }
       const playbackUrl = await storage.getSignedGetUrl(String(video.storage_key));

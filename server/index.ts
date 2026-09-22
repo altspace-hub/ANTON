@@ -42,7 +42,7 @@ import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
 import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
-import { createAuthRoutes } from './routes/auth.js';
+import { createAuthRoutes, createAuthMfaRoutes } from './routes/auth.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createCompliancePolicyRoutes } from './routes/compliance-policy.js';
 import { createAnalyticsRouter } from './routes/analytics.js';
@@ -132,6 +132,7 @@ import { createMarketComputationRoutes } from './routes/market-computation.js';
 import { createMarketDataService } from './services/market-data-service.js';
 import { createMarketAtomService, planExtractionBatches } from './services/market-atom-service.js';
 import { createSchedulePhaseRecorder, retryableSlotSql } from './services/market-schedule-recorder.js';
+import { isTradingDay, tradingDayStatus } from './services/market-calendar.js';
 import { previousSlotFor, selectCatchUpPhase } from './services/market-schedule-slots.js';
 import { createMarketThesesRoutes } from './routes/market-theses.js';
 import { createMarketEntitiesRoutes } from './routes/market-entities.js';
@@ -567,6 +568,13 @@ app.use('/api', csrfProtection);
 // Apply per-user rate limiter to all authenticated API routes
 app.use('/api', userLimiter);
 
+// MFA enrolment — deliberately mounted HERE and not with the rest of the auth router
+// at line ~469. Those routes have to be reachable without a session (login, OAuth
+// callbacks); these three read req.user, which only exists below authMiddleware, so up
+// there they answered 401 to every caller and MFA could never be enabled. Moving this
+// line above authMiddleware breaks MFA enrolment again, silently.
+app.use('/api', createAuthMfaRoutes(db));
+
 app.use('/api', await createHealthRouter(db));
 app.use('/api', createIntelligenceHealthRoutes(db)); // Wave 3.9: honest background-intelligence status
 app.use('/', await createMetricsRouter(db)); // OBS-03: Prometheus /metrics — mounted at root, not /api
@@ -642,6 +650,31 @@ app.use('/api', await createSchoolRoutes(db));
 app.use('/api', await createNewsRoutes(db, anthropic));
 app.use('/api', await createFinanceRoutes(db, anthropic));
 app.use('/api', await createTravelRoutes(db, anthropic));
+// Community — the pillar is SINGLE-IDENTITY-PER-INSTANCE by design, not by oversight.
+// community_identity holds exactly one row (`user_id TEXT NOT NULL DEFAULT 'default'
+// UNIQUE`, migrations-pg/077:18) and every query in routes/community.ts pins
+// user_id / owner_user_id / creator_user_id to that 'default' sentinel, because the
+// contact hash, the Ed25519 signing key and the X25519 E2E key that peers verify
+// belong to the INSTANCE — a peer ANTON has no way to address one colleague inside
+// another instance, so there is no per-user identity to bind to.
+//
+// The consequence in team mode is impersonation, not a data-scoping bug: every
+// authenticated user would read the one shared mailbox, accept connection requests,
+// re-point payment_address / agent_wallet_address (the addresses contacts pay), and
+// send mail SIGNED AS the instance, with the recipient attributing it to whoever
+// activated the identity. So the pillar is admin-only on a shared install.
+//
+// requireAdminOrSolo is a no-op in solo mode (the default: one operator, whom
+// authMiddleware stamps role:'admin' anyway), so nothing changes on a laptop.
+//
+// Scoped to the '/api/community' PREFIX, exactly like /api/futurechain/gateway below
+// — a middleware on '/api' here would 403 non-admins across every route mounted after
+// this line. It MUST stay ABOVE every router that serves /community/* paths
+// (community.ts here, plus task-delegation, community-signing, delegation-compliance
+// and community-projects further down): Express runs middleware in registration order,
+// so a community router mounted ABOVE this line would never reach the guard.
+// tests/routes/community-team-gate.test.ts pins that ordering.
+app.use('/api/community', requireAdminOrSolo);
 app.use('/api', await createCommunityRoutes(db));
 // Beehive — multi-party reasoning sessions across N ANTONs (Phase 1: lifecycle only)
 const { createBeehiveRoutes } = await import('./routes/beehive.js');
@@ -1332,6 +1365,17 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       /** How stale a missed slot may be and still be worth running, in minutes. */
       catchUpWithinMin?: number;
       /**
+       * This phase is about the trading SESSION, so it has nothing to do on a day the
+       * market is shut. Skips both the cron firing and the catch-up rescue — skipping
+       * only one would be worse than skipping neither, since the other would run it
+       * anyway a few minutes later and the skip would read as a scheduler bug.
+       *
+       * Set on the session-bound phases only. News, extraction and the weekly pulse
+       * keep running on a holiday: the world does not stop publishing because the NYSE
+       * is shut, and the backlog still needs draining.
+       */
+      marketHoursOnly?: boolean;
+      /**
        * Consulted ONLY by the catch-up tick, never by cron: has this phase's
        * work already happened by some other route today?
        *
@@ -1352,6 +1396,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       run: () => Promise<void>;
       catchUpWithinMin: number;
       alreadyDone?: () => Promise<boolean>;
+      /** See CatchUpEntry in services/market-schedule-slots.ts — a slot never owed. */
+      shouldRunOnSlot?: (slot: Date) => boolean;
     }
     const catchUpPhases: CatchUpPhase[] = [];
     /** Long enough to rescue a morning slot before lunch; short enough that a
@@ -1385,8 +1431,26 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         run: fn,
         catchUpWithinMin: opts.catchUpWithinMin ?? DEFAULT_CATCH_UP_MIN,
         alreadyDone: opts.alreadyDone,
+        shouldRunOnSlot: opts.marketHoursOnly ? (slot) => isTradingDay(slot) : undefined,
       });
       cron.schedule(expr, () => {
+        // The same question the catch-up asks, asked here too. Answered from the slot
+        // rather than from `new Date()` so a phase firing at 23:00 CET is judged on the
+        // New York day its slot belongs to, not on the server's.
+        if (opts.marketHoursOnly) {
+          const today = new Date();
+          const status = tradingDayStatus(today);
+          if (status === 'holiday' || status === 'weekend') {
+            console.log(`[markets-schedule] ${phase}: ${status} — skipping, the session-bound phases have nothing to read`);
+            return;
+          }
+          if (status === 'unknown-year') {
+            // Fail open, loudly. The holiday list ends in 2026; a scheduler that
+            // silently stopped a year of market-hours work would be far worse than one
+            // that runs on ten days it need not.
+            console.warn(`[markets-schedule] ${phase}: no holiday calendar for this year — running anyway. Extend US_MARKET_HOLIDAYS in services/market-calendar.ts.`);
+          }
+        }
         // Short lookback: at fire time the slot IS now. If cron is running so
         // late that no slot resolves, fall through to an unclaimed row rather
         // than skipping the work — the pre-263 behaviour.
@@ -1484,7 +1548,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           console.log(`[markets-schedule] Phase 2 complete — processed ${processed}, backlog: ${backlog}`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 2 error:', err); }
-    });
+    }, { marketHoursOnly: true });
 
     // Phase 3: Market Open (15:45 CET) — prices only, external fetch (opt-in)
     scheduleSpending('45 15 * * 1-5', 'phase3-market-open', async () => {
@@ -1502,7 +1566,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         }
         console.log('[markets-schedule] Phase 3 complete — prices captured');
       } catch (err) { console.error('[markets-schedule] Phase 3 error:', err); }
-    });
+    }, { marketHoursOnly: true });
 
     // Phase 4: Mid-Day Intelligence (18:00 CET) — THE main cycle, fetch + LLM (opt-in)
     scheduleSpending('0 18 * * 1-5', 'phase4-midday-intelligence', async () => {
@@ -1566,7 +1630,10 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         } catch { /* non-fatal */ }
         console.log('[markets-schedule] Phase 5 complete — NAV calculated + prices synced');
       } catch (err) { console.error('[markets-schedule] Phase 5 error:', err); }
-    }, { catchUpWithinMin: 12 * 60 });
+    }, {
+      marketHoursOnly: true,
+      catchUpWithinMin: 12 * 60,
+    });
 
     // Phase 6: Post-Market (23:00 CET) — backlog + rotating fundamental analysis, LLM (opt-in)
     scheduleSpending('0 23 * * 1-5', 'phase6-post-market', async () => {
@@ -1624,7 +1691,7 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
           console.log(`[markets-schedule] Phase 6 complete — processed ${processed} articles (analysis skipped)`);
         }
       } catch (err) { console.error('[markets-schedule] Phase 6 error:', err); }
-    });
+    }, { marketHoursOnly: true });
 
     // Phase 7: Weekend Deep Dive (Sat + Sun 10:00 CET) — validation + bigger analysis batch, LLM (opt-in)
     scheduleSpending('0 10 * * 6,0', 'phase7-weekend-deep-dive', async () => {
@@ -1796,7 +1863,10 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       // 90 minutes: slots are two hours apart, so a missed refresh is worth
       // rescuing only until the next one supersedes it. Fetching the 14:00
       // prices at 20:00 buys nothing and spends an API call.
-    }, { catchUpWithinMin: 90 });
+    }, {
+      marketHoursOnly: true,
+      catchUpWithinMin: 90,
+    });
 
     // ── Free (no-LLM, no-fetch) repair sweeps M1-M3/M5-M7 ────────────────
     // Extracted into named functions (2026-07-17) so the same idempotent bodies
