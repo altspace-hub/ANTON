@@ -138,6 +138,9 @@ export function createMissionRoutes(db: DatabaseAdapter): Router {
       if (result.seeded > 0) {
         console.log(`[missions] Seeded ${result.seeded} built-in template(s).`);
       }
+      if (result.refreshed > 0) {
+        console.log(`[missions] Refreshed ${result.refreshed} built-in template(s) to the current definition.`);
+      }
     } catch (err) {
       console.error('[missions] Template seeding failed:', err instanceof Error ? err.message : err);
     }

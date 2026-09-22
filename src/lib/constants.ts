@@ -2693,6 +2693,8 @@ export const AREAS = [
     icon: 'Shield',
     color: 'adv-teal',
     moduleIds: [
+      // The umbrella AMLR Art. 10 assessment first; the drill-downs follow.
+      'business-wide-risk-assessment',
       'gap-analysis', 'document-creation', 'sanctions-advisory', 'regulatory-monitor',
       'training-content', 'data-management', 'risk-assessment', 'investigation-support',
       'engagement-proposal', 'engagement-execution', 'management-presentation', 'model-validation',

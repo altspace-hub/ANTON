@@ -156,20 +156,23 @@ const AMLR_READINESS_TEMPLATE: MissionTemplate = {
         title: 'FCP scope assessment',
         description: 'Run the fcp-scope-assessor module against the business description to recommend which FCP domains apply (AML/CFT mandatory; sanctions / fraud default-on; the others domain-specific).',
         task_type: 'llm',
+        // The executor loads this module's system prompt for the task
+        // (mission-task-module.ts) — naming it in the prompt alone did nothing.
+        module_id: 'fcp-scope-assessor',
         estimated_tokens: 6000,
         sort_order: 1,
         depends_on: [],
-        prompt: 'Use the fcp-scope-assessor module on the supplied business description, jurisdictions and institution_type. Output the scope JSON (per fcp-scope-assessor system-prompt) ready to write into atlas_fcp_scope.',
+        prompt: 'Assess the FCP scope for the supplied business description, jurisdictions and institution_type. Output the scope as the module specifies, ready for the person to apply when they create the Risk Atlas.',
       },
       {
         local_id: 't2',
-        title: 'Atlas creation + pack selection',
-        description: 'Create a new Risk Atlas with the right industry pack pre-selected for the institution_type. The scope from t1 is applied to atlas_fcp_scope.',
+        title: 'Atlas set-up recommendation',
+        description: 'Recommend the Risk Atlas set-up — industry pack, FCP domains from t1, name — for the person to create at Risk Atlas → New. A mission cannot create an Atlas itself.',
         task_type: 'analysis',
         estimated_tokens: 4000,
         sort_order: 2,
         depends_on: ['t1'],
-        prompt: 'Pick the industry pack matching institution_type (fcp-bank / fcp-casp / fcp-payment-institution / fcp-investment-firm / fcp-real-estate-agent / fcp-notary-law-firm / fcp-accounting-tax-advisor / fcp-tcsp / fcp-dealer-high-value-goods / fcp-motor-vehicle-dealer / fcp-yacht-aircraft-broker / fcp-gambling-operator / fcp-football-club-agent / fcp-crowdfunding). Output the suggested Atlas creation payload (name, industry_pack_id, mode, business_description). The executor will POST /api/atlas and write the scope from t1.',
+        prompt: 'Pick the industry pack matching institution_type (fcp-bank / fcp-casp / fcp-payment-institution / fcp-investment-firm / fcp-real-estate-agent / fcp-notary-law-firm / fcp-accounting-tax-advisor / fcp-tcsp / fcp-dealer-high-value-goods / fcp-motor-vehicle-dealer / fcp-yacht-aircraft-broker / fcp-gambling-operator / fcp-football-club-agent / fcp-crowdfunding). Output the recommended Atlas set-up (name, industry pack, mode, business description, and the FCP domains to activate from t1) as a short checklist the person follows at Risk Atlas → New.',
       },
       {
         local_id: 't3',
@@ -179,43 +182,47 @@ const AMLR_READINESS_TEMPLATE: MissionTemplate = {
         estimated_tokens: 0,
         sort_order: 3,
         depends_on: ['t2'],
-        checkpoint_message: 'Review the FCP scope and proposed Atlas. Approve to proceed to the Business-Wide Risk Assessment, or reject with feedback.',
+        checkpoint_message: 'Review the FCP scope and the recommended Atlas set-up, and create the Atlas (Risk Atlas → New) if you want the living register. Approve to proceed to the Business-Wide Risk Assessment, or reject with feedback.',
       },
       {
         local_id: 't4',
         title: 'Business-Wide Risk Assessment (BWRA)',
-        description: 'Run the business-wide-risk-assessment module on the Atlas to draft Stages 1-7 and produce a regulator-ready BWRA document.',
+        description: 'Draft the regulator-ready BWRA document with the business-wide-risk-assessment module, from the scope and set-up agreed at t3.',
         task_type: 'llm',
+        module_id: 'business-wide-risk-assessment',
         estimated_tokens: 30000,
         sort_order: 4,
         depends_on: ['t3'],
-        prompt: 'Invoke the business-wide-risk-assessment module on the Atlas from t2 with institution_type, jurisdictions and business_description. The atlas-* sub-modules will produce per-stage diffs. Final output: regulator-ready BWRA Markdown (12 sections per the module spec).',
+        prompt: 'Write the business-wide risk assessment for the supplied institution_type, jurisdictions and business_description, using the FCP scope from t1 and the set-up from t2. Final output: the regulator-ready BWRA in Markdown, structured as the module specifies.',
       },
       {
         local_id: 't5',
         title: 'AMLR gap analysis',
-        description: 'Cross-reference the BWRA against AMLR Article 10 / EBA Risk Factor Guidelines via the amlr-gap-analysis module. Produces a prioritised gap list.',
+        description: 'Cross-reference the BWRA against AMLR Article 10 / EBA Risk Factor Guidelines with the gap-analysis (AMLR Gap Analysis) module. Produces a prioritised gap list.',
         task_type: 'llm',
+        module_id: 'gap-analysis',
         estimated_tokens: 18000,
         sort_order: 5,
         depends_on: ['t4'],
-        prompt: 'Run the amlr-gap-analysis module against the BWRA from t4. Output a prioritised gap list with article references (AMLR Art. 10, 20-23, 26, 34; EBA RFG 2023 §3.4; MiCA Art. 67-85 if CASP).',
+        prompt: 'Run the AMLR gap analysis against the BWRA from t4. Output a prioritised gap list with article references (AMLR Art. 10, 20-23, 26, 34; EBA RFG 2023 §3.4; MiCA Art. 67-85 if CASP).',
       },
       {
         local_id: 't6',
         title: 'Policies + procedures pack',
         description: 'Generate the documented policies and procedures the Atlas + gap analysis identify as required (AML/CFT policy, KYC/CDD procedures, sanctions screening procedure, STR / SAR pathway, training, escalation).',
         task_type: 'llm',
+        module_id: 'document-creation',
         estimated_tokens: 25000,
         sort_order: 6,
         depends_on: ['t5'],
-        prompt: 'For each control in the Atlas with a vulnerability gap or "Adequate" rating, draft the supporting policy / procedure. Use the existing policy-document module per item. Bundle the outputs as one composite deliverable.',
+        prompt: 'For each control in the Atlas with a vulnerability gap or "Adequate" rating, draft the supporting policy / procedure. Bundle the outputs as one composite deliverable.',
       },
       {
         local_id: 't7',
         title: 'Training plan + materials',
         description: 'Generate a 30-min baseline FCP training (Universal Core) plus role-specific modules (MLRO, front-office, back-office, board) per the institution_type.',
         task_type: 'llm',
+        module_id: 'training-content',
         estimated_tokens: 18000,
         sort_order: 7,
         depends_on: ['t6'],
@@ -265,8 +272,9 @@ const AMLR_READINESS_TEMPLATE: MissionTemplate = {
   required_modules: [
     'fcp-scope-assessor',
     'business-wide-risk-assessment',
-    'amlr-gap-analysis',
-    'policy-document',
+    'gap-analysis',
+    'document-creation',
+    'training-content',
   ],
   times_used: 0,
   avg_completion_time_seconds: null,
@@ -1581,31 +1589,62 @@ const TREND_SCOUT_TEMPLATE: MissionTemplate = {
   updated_at: new Date().toISOString(),
 };
 
+/** Every built-in template, in seeding order. */
+export const BUILTIN_TEMPLATES: MissionTemplate[] = [
+  KNOWLEDGE_SYNTHESIS_TEMPLATE,
+  AMLR_READINESS_TEMPLATE,
+  CONTENT_FACTORY_TEMPLATE,
+  OUTBOUND_SALES_TEMPLATE,
+  OUTBOUND_SALES_V2_TEMPLATE,
+  ECOMMERCE_AUTOPILOT_TEMPLATE,
+  FINANCIAL_ANALYST_TEMPLATE,
+  AI_AGENCY_TEMPLATE,
+  PROPERTY_MANAGER_TEMPLATE,
+  TREND_SCOUT_TEMPLATE,
+];
+
 /**
- * Seed built-in mission templates. Idempotent — uses ON CONFLICT DO NOTHING
- * via insertTemplate so re-running the seeder is safe.
+ * Seed built-in mission templates. Idempotent: a missing template is inserted,
+ * and an existing BUILT-IN whose definition differs from this file is refreshed
+ * (usage stats kept). User templates are never touched.
  */
-export async function seedBuiltinTemplates(db: DatabaseAdapter): Promise<{ seeded: number }> {
+export async function seedBuiltinTemplates(db: DatabaseAdapter): Promise<{ seeded: number; refreshed: number }> {
   const state = createMissionState(db);
-  const templates: MissionTemplate[] = [
-    KNOWLEDGE_SYNTHESIS_TEMPLATE,
-    AMLR_READINESS_TEMPLATE,
-    CONTENT_FACTORY_TEMPLATE,
-    OUTBOUND_SALES_TEMPLATE,
-    OUTBOUND_SALES_V2_TEMPLATE,
-    ECOMMERCE_AUTOPILOT_TEMPLATE,
-    FINANCIAL_ANALYST_TEMPLATE,
-    AI_AGENCY_TEMPLATE,
-    PROPERTY_MANAGER_TEMPLATE,
-    TREND_SCOUT_TEMPLATE,
-  ];
+  const templates = BUILTIN_TEMPLATES;
   let count = 0;
+  let refreshed = 0;
   for (const tmpl of templates) {
     const existing = await state.getTemplate(tmpl.id);
     if (!existing) {
       await state.insertTemplate(tmpl);
       count++;
+    } else if (existing.is_builtin && builtinDefinitionChanged(existing, tmpl)) {
+      // A built-in template is owned by this file: a fix here must reach an
+      // instance that seeded the old version (usage stats are kept).
+      await state.refreshBuiltinTemplate(tmpl);
+      refreshed++;
     }
   }
-  return { seeded: count };
+  return { seeded: count, refreshed };
+}
+
+/** JSON with object keys sorted: PostgreSQL's jsonb does not keep key order. */
+export function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    return `{${Object.keys(obj).filter((k) => obj[k] !== undefined).sort()
+      .map((k) => `${JSON.stringify(k)}:${stableJson(obj[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/** The parts of a built-in template the code owns. */
+export function builtinDefinitionChanged(stored: MissionTemplate, code: MissionTemplate): boolean {
+  const pick = (t: MissionTemplate) => stableJson([
+    t.name, t.description, t.pillar, t.category, t.version, t.author,
+    t.parameters_schema, t.task_graph_template, t.default_data_scope, t.default_budget,
+    t.default_autonomy_level, t.success_criteria_template, t.required_modules,
+  ]);
+  return pick(stored) !== pick(code);
 }

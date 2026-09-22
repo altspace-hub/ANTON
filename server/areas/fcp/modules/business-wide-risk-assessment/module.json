@@ -3,7 +3,7 @@
   "id": "business-wide-risk-assessment",
   "label": "Business-Wide Risk Assessment (BWRA) — FCP",
   "shortLabel": "BWRA",
-  "description": "AMLR Article 10 / FATF R.1 business-wide risk assessment for obliged entities. Built on the Risk Atlas seven-stage methodology with the FCP Bank or CASP industry pack pre-selected. Outputs a regulator-ready BWRA document and seeds an Atlas the institution maintains as a living workspace.",
+  "description": "AMLR Article 10 / FATF R.1 business-wide risk assessment for obliged entities. Follows the Risk Atlas seven-stage methodology and its scoring rules. Outputs a regulator-ready BWRA document; paste a Risk Atlas board pack to write it around the scores the institution already maintains.",
   "icon": "FileShield",
   "color": "adv-red",
   "areaId": "fcp",
@@ -24,7 +24,7 @@
         { "value": "payment_institution",      "label": "Payment Institution / EMI" },
         { "value": "investment_firm",          "label": "Investment Firm (MiFID II)" },
         { "value": "insurance",                "label": "Life Insurer (obliged)" },
-        { "value": "real_estate_agent",        "label": "Real Estate Agent (obliged from 2027)" },
+        { "value": "real_estate_agent",        "label": "Real Estate Agent" },
         { "value": "law_firm",                 "label": "Law Firm / Notary (obliged where applicable)" },
         { "value": "accountant_tax_advisor",   "label": "Accountant / Tax Advisor (obliged)" },
         { "value": "tcsp",                     "label": "Trust & Company Service Provider" },
@@ -44,7 +44,7 @@
       ]
     },
     { "id": "business_description", "type": "textarea", "label": "Business description", "required": true, "placeholder": "Customer base, services, channels, geographies, transaction volumes, key counterparties." },
-    { "id": "atlas_id", "type": "text", "label": "Existing Atlas id (optional — leave blank to create one)", "required": false }
+    { "id": "atlas_board_pack", "type": "textarea", "label": "Risk Atlas board pack (optional)", "required": false, "placeholder": "Paste the board pack exported from your Risk Atlas (or upload the .docx). Its scores are used as they stand — the assessment writes around them rather than re-scoring." }
   ],
   "recommendedPersonas": ["senior-mlro", "senior-risk-officer", "risk-coach"],
   "recommendedSkills": ["threat-path-methodology", "control-evidence-scoring", "residual-calculation", "amlr-article-reference"],

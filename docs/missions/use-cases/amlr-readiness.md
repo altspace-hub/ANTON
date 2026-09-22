@@ -8,12 +8,12 @@
 
 ## What it does
 
-End-to-end programme for an **AMLR-obliged entity** to stand up its Article 16 financial-crime-prevention programme. The mission walks the entity through:
+End-to-end programme for an **AMLR-obliged entity** to stand up its AMLR financial-crime-prevention programme (Art. 9 internal controls, Art. 10 business-wide risk assessment). The mission walks the entity through:
 
 1. FCP scope assessment (which AMLR domains apply)
-2. Risk Atlas seeding (industry pack + initial threat-path landscape)
-3. Business-Wide Risk Assessment (BWRA — Article 16 mandatory)
-4. AMLR gap analysis (per Article 16 control catalogue)
+2. Risk Atlas set-up recommendation (industry pack + domains; the person creates the Atlas)
+3. Business-Wide Risk Assessment (BWRA — AMLR Article 10)
+4. AMLR gap analysis (internal policies, procedures and controls — AMLR Article 9)
 5. Policies and procedures generation
 6. Training plan
 7. Independent audit preparation
@@ -42,9 +42,9 @@ The full task graph spans ~10 named tasks, each with explicit checkpoints. Trunc
 | Stage | Task family | Checkpoint? |
 |---|---|---|
 | 1 — Scope | Determine which FCP domains are obliged for this entity (`fcp-scope-assessor` module) | yes |
-| 2 — Atlas | Seed the Risk Atlas with the appropriate industry pack; review industry-baseline threat paths | yes |
+| 2 — Atlas | Recommend the Risk Atlas set-up (industry pack, domains); the person creates the Atlas at the checkpoint | yes |
 | 3 — BWRA | Run the Business-Wide Risk Assessment; review residual scores per threat path | yes |
-| 4 — Gap analysis | AMLR Article 16 control catalogue compared against current controls; surface gaps | yes |
+| 4 — Gap analysis | AMLR internal-controls requirements (Art. 9) compared against current controls; surface gaps | yes |
 | 5 — Policies | Generate policies + procedures from gap analysis (covers customer DD, transaction monitoring, screening, training, governance, etc.) | yes |
 | 6 — Training plan | Role-based training matrix derived from organisation profile | yes |
 | 7 — Audit prep | Produce independent-audit evidence pack + interview prep | yes |
@@ -95,8 +95,8 @@ Variable per template instance. Default autonomy is `check_in`. Token budget is 
 
 This is the canonical example of a Mission spanning multiple pillars:
 
-- **Work modules** invoked: `fcp-scope-assessor`, `business-wide-risk-assessment`, the seven `atlas-stage-N` modules, `policies-generator`, plus FCP-specific gap and training modules
-- **Risk Atlas pillar** updated as the mission progresses
+- **Work modules** each step runs as (`module_id`): `fcp-scope-assessor`, `business-wide-risk-assessment`, `gap-analysis`, `document-creation`, `training-content`
+- **Risk Atlas pillar** — the mission recommends the set-up; the person creates and maintains the Atlas, and its board pack can feed the BWRA
 - **Evidence Pack** built and signed via the existing `evidence-pack-builder`
 - **Grow bridge** writes mission progress into `grow_signals` so business-development sees the engagement status
 

@@ -687,6 +687,29 @@ export function createMissionState(db: DatabaseAdapter) {
     );
   }
 
+  /**
+   * Bring a BUILT-IN template's definition up to date with the code. The seed
+   * inserts with ON CONFLICT DO NOTHING, so a fixed template (2026-09-22: the
+   * AMLR programme naming modules that did not exist) never reached an
+   * instance that had seeded the old one. Usage stats and is_active are left
+   * alone; a user's own template (is_builtin = FALSE) is never touched.
+   */
+  async function refreshBuiltinTemplate(t: MissionTemplate): Promise<void> {
+    await db.run(
+      `UPDATE missions.mission_templates
+          SET name = ?, description = ?, pillar = ?, category = ?, version = ?, author = ?,
+              parameters_schema = ?, task_graph_template = ?, default_data_scope = ?, default_budget = ?,
+              default_autonomy_level = ?, success_criteria_template = ?, required_modules = ?,
+              updated_at = NOW()
+        WHERE id = ? AND is_builtin = TRUE`,
+      t.name, t.description, t.pillar, t.category, t.version, t.author,
+      JSON.stringify(t.parameters_schema), JSON.stringify(t.task_graph_template),
+      JSON.stringify(t.default_data_scope), JSON.stringify(t.default_budget),
+      t.default_autonomy_level, t.success_criteria_template, JSON.stringify(t.required_modules),
+      t.id,
+    );
+  }
+
   async function getTemplate(id: string): Promise<MissionTemplate | null> {
     const row = await db.get<TemplateRow>(`SELECT * FROM missions.mission_templates WHERE id = ?`, id);
     return row ? rowToTemplate(row) : null;
@@ -736,7 +759,7 @@ export function createMissionState(db: DatabaseAdapter) {
     // decisions
     recordDecision, listDecisions, countDecisions,
     // templates
-    insertTemplate, getTemplate, listTemplates,
+    insertTemplate, refreshBuiltinTemplate, getTemplate, listTemplates,
     // re-exports for use elsewhere
     rowToTask, rowToMission,
   };

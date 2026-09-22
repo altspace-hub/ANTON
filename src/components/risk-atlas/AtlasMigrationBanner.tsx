@@ -1,7 +1,8 @@
-// AtlasMigrationBanner — shown on legacy FCP modules that overlap with the
-// Risk Atlas seven-stage methodology. Encourages the user to anchor their
-// work in an Atlas (single source of truth) rather than producing one-off
-// outputs that drift away from the live risk register.
+// AtlasMigrationBanner — shown on the FCP modules whose output is a risk
+// assessment, pointing to the Risk Atlas as the place to keep the scores
+// between assessments. (Until 2026-09-22 it targeted four module ids that do
+// not exist and so never rendered, and it said the module "now lives inside the
+// Risk Atlas" — which has no AI analysis of its own.)
 //
 // Dismiss state is per-module + per-browser. The banner is non-blocking —
 // the underlying module continues to work as before.
@@ -10,12 +11,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldAlert, X } from 'lucide-react';
 
-const ATLAS_MODULES = new Set([
+export const ATLAS_MODULES = new Set([
   'business-wide-risk-assessment',
-  'amlr-gap-analysis',
-  'sanctions-compliance-assessment',
-  'kyc-cdd-framework-review',
-  'transaction-monitoring-assessment',
+  'risk-assessment',
 ]);
 
 export default function AtlasMigrationBanner({ moduleId, areaId }: { moduleId: string | undefined; areaId: string | undefined }) {
@@ -40,11 +38,11 @@ export default function AtlasMigrationBanner({ moduleId, areaId }: { moduleId: s
       <div className="flex items-start gap-2">
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-adv-teal" />
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-adv-teal">This module now lives inside the Risk Atlas.</div>
+          <div className="font-medium text-adv-teal">Keep the scores in a Risk Atlas.</div>
           <div className="mt-0.5 text-adv-gray">
-            The Risk Atlas is the seven-stage threat-path source of truth — exposures, threats, vulnerabilities,
-            inherent / residual scoring, controls, appetite and review cycles in one place. Run this module standalone for a
-            one-off output, or open / create an Atlas to maintain it as a living register.
+            The Risk Atlas is a living risk register: threat paths, controls, residual scores and appetite, scored by fixed
+            rules and kept between assessments. This module writes the assessment; paste or upload an Atlas board pack and
+            it writes around the scores you already maintain.
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Link to="/atlas" className="rounded border border-adv-teal bg-adv-teal/20 px-2 py-1 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/30">
