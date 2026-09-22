@@ -21,6 +21,7 @@ import * as codexClient from './codex-sdk-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
+import { withCurrentDate } from '../lib/current-date.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
 // ── Configuration ──────────────────────────────────────────────
@@ -31,6 +32,8 @@ interface UnifiedStreamConfig {
   creativity?: CreativityLevel;
   system: string;
   staticSystemPrompt?: string;
+  /** Tell the model today's date (default true). See server/lib/current-date.ts. */
+  currentDate?: boolean;
   messages: Array<{ role: 'user' | 'assistant'; content: string | object[] }>;
   tools?: Array<{ type: string; name: string }>;
   maxTokens?: number;
@@ -172,6 +175,7 @@ export async function streamToResponse(
   res: StreamSink,
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
+  config = withCurrentDate(config);
   const provider = getProviderFromModelId(config.model, config.db);
 
   // Subscription execution engines — sdk:<model> / codex:<model> run through
@@ -361,6 +365,7 @@ export async function streamToResponse(
 // ── Non-Streaming Request (for Review Engine, etc.) ───────────
 
 export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCompletionData> {
+  config = withCurrentDate(config);
   const provider = getProviderFromModelId(config.model, config.db);
 
   // Subscription execution engines — aggregate the stream into one completion.
@@ -439,6 +444,7 @@ export async function streamToHandler(
   onEvent: (event: object) => void,
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
+  config = withCurrentDate(config);
   const provider = getProviderFromModelId(config.model, config.db);
 
   if (provider === 'anthropic' || provider === 'anthropic_sdk' || provider === 'openai_codex') {

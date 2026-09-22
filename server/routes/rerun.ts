@@ -748,6 +748,10 @@ export async function replayRun(
     result = await callChat({
       model: modelRequested,
       system: record.composed_prompt,
+      // Replay promises the stored prompt byte-for-byte and records its hash. The
+      // router would otherwise append TODAY's date to a prompt that may predate the
+      // date layer, or that already carries the date the original run saw.
+      currentDate: false,
       messages,
       thinkingLevel,
       ...(tools ? { tools } : {}),

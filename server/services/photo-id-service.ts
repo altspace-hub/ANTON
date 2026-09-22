@@ -29,6 +29,7 @@ import { getClient, isApiKeyConfigured } from './claude-client.js';
 import { resolveModel } from './provider-router.js';
 import { getProviderFromModelId } from './model-adapter.js';
 import { ServiceError } from '../lib/hardware-helpers.js';
+import { appendCurrentDate } from '../lib/current-date.js';
 
 // ── Vision gate ───────────────────────────────────────────────────────────────
 
@@ -257,7 +258,10 @@ Photos follow.`;
     const resp = await anthropic.messages.create({
       model,
       max_tokens: 2000,
-      system: systemPrompt,
+      // Direct API call, outside the router, so it adds the date itself. It matters
+      // here: a part whose date code is LATER than today is a counterfeit indicator,
+      // and without the date the model cannot tell a future code from a recent one.
+      system: appendCurrentDate(systemPrompt),
       messages: [{ role: 'user', content }],
     });
 

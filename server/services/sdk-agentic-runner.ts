@@ -49,6 +49,7 @@ import {
 } from './claude-sdk-client.js';
 import { resolveModel, callChat } from './provider-router.js';
 import { getModuleSystemPrompt } from './module-loader.js';
+import { appendCurrentDate } from '../lib/current-date.js';
 
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
@@ -317,7 +318,11 @@ export async function runAgentic(config: AgenticRunConfig, onEvent: (event: Agen
       prompt: config.prompt,
       options: {
         model: underlying,
-        systemPrompt: `${config.system}\n\n${toolResultBoundaryLine(config.webSearch === true)}`,
+        // This runner calls the Agent SDK directly — it needs MCP tools — so it does not
+        // pass through callChat/streamChat and must add the date itself. Without it the
+        // gap assessor's batches, mission task steps and engagement steps reasoned about
+        // "in force yet?" from the model's training date.
+        systemPrompt: `${appendCurrentDate(config.system)}\n\n${toolResultBoundaryLine(config.webSearch === true)}`,
         tools: config.webSearch ? [...SDK_WEB_TOOLS] : [],
         allowedTools,
         mcpServers: { [MCP_SERVER_NAME]: server },

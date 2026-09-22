@@ -49,6 +49,7 @@ import { getEffectiveDefaultModel } from './default-model-store.js';
 import { enqueueAudit } from './audit-queue.js';
 import type { AuditEntry } from './auditLogger.js';
 import { capabilityModelId } from './engine-model-id.js';
+import { withCurrentDate } from '../lib/current-date.js';
 import { resolveOllamaNumCtx } from './context-budget.js';
 import {
   convertClaudeToolsToOpenAI,
@@ -86,6 +87,15 @@ export interface StreamChatConfig {
   tier?: ModelTier;
   /** System prompt */
   system: string;
+  /**
+   * Whether to tell the model today's date (default true). Every call gets it
+   * appended to its system prompt unless the prompt already carries it — see
+   * server/lib/current-date.ts. Pass `false` ONLY where the system prompt must
+   * reach the model byte-for-byte: replay, which resends a stored prompt and
+   * records its hash, would otherwise send today's date instead of the date the
+   * original run saw.
+   */
+  currentDate?: boolean;
   /** Conversation messages */
   messages: Array<{ role: string; content: string }>;
   /** Max output tokens */
@@ -331,10 +341,14 @@ export function resolveMistralThinking(
  *
  * Returns the accumulated result after stream completes.
  */
+// withCurrentDate lives in ../lib/current-date.ts, shared with unified-llm-client.ts.
+export { withCurrentDate };
+
 export async function streamChat(
   config: StreamChatConfig,
   res: Response
 ): Promise<ChatResult> {
+  config = withCurrentDate(config);
   const modelId = resolveModel(config.model, config.tier);
   let provider: string;
   try {
@@ -822,6 +836,7 @@ export function buildUtilityAuditEntry(input: UtilityAuditInput): AuditEntry {
  * 'error' before the error is rethrown.
  */
 export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
+  config = withCurrentDate(config);
   if (!config.purpose || !config.db) return dispatchCallChat(config);
 
   const modelId = resolveModel(config.model, config.tier);
