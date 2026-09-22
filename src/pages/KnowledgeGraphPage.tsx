@@ -3,6 +3,7 @@ import { Network, RefreshCw, Search, GitMerge, Clock, Download, Edit2, Trash2, M
 import KnowledgeGraphViewer from '../features/intelligence/KnowledgeGraphViewer';
 import { EntityMergeModal } from '../features/intelligence/EntityMergeModal';
 import { GraphAnalyticsPanel } from '../features/intelligence/GraphAnalyticsPanel';
+import { asArray } from '@/lib/as-array';
 
 interface EntityNode {
   id: string;
@@ -62,8 +63,7 @@ export default function KnowledgeGraphPage() {
   async function fetchMergeLog() {
     try {
       const response = await fetch('/api/knowledge-graph/merge-log?limit=10');
-      const data = await response.json();
-      setMergeLog(data);
+      setMergeLog(asArray<MergeLogEntry>(await response.json()));
     } catch (error) {
       console.error('Failed to fetch merge log:', error);
     }

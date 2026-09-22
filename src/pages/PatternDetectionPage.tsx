@@ -15,6 +15,7 @@ import {
 import { fetchWithAuth } from '@/lib/api';
 import { PatternCard } from '../features/intelligence/PatternCard';
 import { DetectedPattern } from '../features/intelligence/types';
+import { asArray } from '@/lib/as-array';
 
 interface SchedulerStatus {
   enabled: boolean;
@@ -76,9 +77,9 @@ export default function PatternDetectionPage() {
       const schedulerData = await schedulerRes.json();
       const historyData = await historyRes.json();
 
-      setPatterns(patternsData.patterns || []);
+      setPatterns(asArray(patternsData?.patterns));
       setSchedulerStatus(schedulerData);
-      setDetectionHistory(historyData.runs || []);
+      setDetectionHistory(asArray(historyData?.runs));
 
       // Update scheduler config form
       if (schedulerData.cronExpression) {

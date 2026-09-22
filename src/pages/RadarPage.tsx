@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchWithAuth } from '@/lib/api';
 import { Radio, Plus, Search, Filter, ExternalLink, Check, X, AlertCircle, FileText, Gavel, BookOpen, MessageSquare, FileCheck, RefreshCw, Square, Settings, ChevronDown, ChevronUp, Shield, Users, Cpu, Landmark, AlertTriangle, TrendingUp, Layers, Pencil, Trash2, Database } from 'lucide-react';
+import { asArray } from '@/lib/as-array';
 
 interface RadarSource {
   id: string;
@@ -160,8 +161,8 @@ export default function RadarPage() {
         fetch(`/api/radar/sources?active=false`, { headers: getAuthHeader() }),
       ]);
       setSummary(await summaryRes.json() as RadarSummary);
-      setItems(await itemsRes.json() as RadarItem[]);
-      setSources(await sourcesRes.json() as RadarSource[]);
+      setItems(asArray<RadarItem>(await itemsRes.json()));
+      setSources(asArray<RadarSource>(await sourcesRes.json()));
     } catch (err) {
       console.error('[radar] fetch error:', err);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Users, BarChart3, GitBranch, Loader2 } from 'lucide-react';
+import { asArray } from '@/lib/as-array';
 
 interface AnalyticsProps {
   onEntityClick?: (entityType: string, entityId: string) => void;
@@ -50,20 +51,18 @@ export function GraphAnalyticsPanel({ onEntityClick }: AnalyticsProps) {
 
       if (activeTab === 'centrality') {
         const res = await fetch('/api/knowledge-graph/analytics/degree-centrality?limit=15');
-        const data = await res.json();
-        setDegreeCentrality(data);
+        setDegreeCentrality(asArray<DegreeCentrality>(await res.json()));
       } else if (activeTab === 'pagerank') {
         const res = await fetch('/api/knowledge-graph/analytics/pagerank?limit=15');
-        const data = await res.json();
-        setPagerank(data);
+        setPagerank(asArray(await res.json()));
       } else if (activeTab === 'communities') {
         const res = await fetch('/api/knowledge-graph/analytics/communities?iterations=10');
-        const data = await res.json();
-        setCommunities(data);
+        setCommunities(asArray(await res.json()));
       } else if (activeTab === 'stats') {
         const res = await fetch('/api/knowledge-graph/analytics/stats');
-        const data = await res.json();
-        setStats(data);
+        // An error answer is an object too — only a real stats payload is kept.
+        const data: unknown = await res.json();
+        setStats(res.ok && data && typeof data === 'object' && !('error' in data) ? (data as GraphStats) : null);
       }
     } catch (error) {
       console.error('Failed to load analytics:', error);

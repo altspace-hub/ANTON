@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { GraduationCap, Eye, UserCheck, Crown, ArrowRight, Brain, Loader2, ChevronDown, HelpCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MODULES } from '@/lib/constants';
+import { asArray } from '@/lib/as-array';
 
 interface ApprenticeProfile {
   id: string;
@@ -52,9 +53,9 @@ export default function ApprenticePage() {
 
   useEffect(() => {
     fetch('/api/apprentice/profiles', { headers: getAuthHeader() })
-      .then((r) => r.json() as Promise<ApprenticeProfile[]>)
-      .then((data) => {
-        setProfiles(data);
+      .then((r) => r.json())
+      .then((data: unknown) => {
+        setProfiles(asArray<ApprenticeProfile>(data));
         setLoading(false);
       })
       .catch(() => setLoading(false));

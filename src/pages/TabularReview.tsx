@@ -17,6 +17,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Loader2, Trash2, Upload, X } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { asArray } from '@/lib/as-array';
 
 interface PlaybookColumnSummary {
   id: string;
@@ -165,10 +166,11 @@ export default function TabularReview() {
   useEffect(() => {
     fetch('/api/tabular-review/playbooks', { headers: getAuthHeader() })
       .then((r) => r.json())
-      .then((data: { playbooks: PlaybookSummary[] }) => {
-        setPlaybooks(data.playbooks);
-        if (data.playbooks[0] && !data.playbooks.find((p) => p.id === selectedPlaybookId)) {
-          setSelectedPlaybookId(data.playbooks[0].id);
+      .then((data: { playbooks?: unknown }) => {
+        const list = asArray<PlaybookSummary>(data?.playbooks);
+        setPlaybooks(list);
+        if (list[0] && !list.find((p) => p.id === selectedPlaybookId)) {
+          setSelectedPlaybookId(list[0].id);
         }
       })
       .catch((e) => setErrorMsg(String(e)));
@@ -493,7 +495,7 @@ export default function TabularReview() {
       </header>
 
       {!showGrid && (
-        <main className="max-w-3xl mx-auto px-6 py-8">
+        <section className="max-w-3xl mx-auto px-6 py-8">
           <p className="text-sm text-[#666] mb-6">
             Drop a folder of policy or procedure documents. ANTON runs an AI checklist over each one
             and returns an interactive grid: rows are documents, columns are obligations, cells say
@@ -592,11 +594,11 @@ export default function TabularReview() {
             </button>
             {errorMsg && <span className="text-sm text-[#9F2424]">{errorMsg}</span>}
           </div>
-        </main>
+        </section>
       )}
 
       {showGrid && snapshot && (
-        <main className="px-4 py-4">
+        <section className="px-4 py-4">
           {/* Status bar */}
           <div className="flex items-center gap-3 mb-3 text-sm">
             <span className="font-medium">{snapshot.run.name}</span>
@@ -677,7 +679,7 @@ export default function TabularReview() {
               </tbody>
             </table>
           </div>
-        </main>
+        </section>
       )}
 
       {/* Cell detail drawer */}

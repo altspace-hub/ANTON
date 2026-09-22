@@ -20,6 +20,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { asArray } from '@/lib/as-array';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -176,9 +177,9 @@ export default function AnalyticsPage() {
       fetch('/api/analytics/cost-trend?days=30', { headers }).then((r) => r.json()).catch(() => []),
     ]).then(([ov, sot, mu, ct]) => {
       if (ov) setOverview(ov as OverviewData);
-      setSessionsOverTime((sot as TimePoint[]) || []);
-      setModuleUsage((mu as ModuleUsage[]) || []);
-      setCostTrend((ct as CostPoint[]) || []);
+      setSessionsOverTime(asArray<TimePoint>(sot));
+      setModuleUsage(asArray<ModuleUsage>(mu));
+      setCostTrend(asArray<CostPoint>(ct));
       setLoading(false);
     });
   }, []);

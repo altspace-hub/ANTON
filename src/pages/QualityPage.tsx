@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { MODULES } from '@/lib/constants';
 import { getModuleFeedbackStats, exportQualityBaselineAnton } from '@/lib/api';
+import { asArray } from '@/lib/as-array';
 
 interface QualityBaseline {
   module_id: string;
@@ -258,7 +259,7 @@ export default function QualityPage() {
     setLoading(true);
     try {
       const res = await fetch('/api/quality/leaderboard', { headers: getAuthHeader() });
-      const data = (await res.json()) as QualityBaseline[];
+      const data = asArray<QualityBaseline>(await res.json());
       setLeaderboard(data);
       // Fetch feedback stats for all modules in parallel
       if (data.length > 0) {
