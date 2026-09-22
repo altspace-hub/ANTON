@@ -21,13 +21,25 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Per-user rate limiter — 100 requests per minute per user (falls back to IP in solo mode)
+// Per-user rate limiter on every /api request (falls back to IP when there is no user).
+//
+// Sized for the web client, not for a hand-written API caller: one module page
+// load makes ~48 requests, the home page ~30, Settings ~60. The old ceiling of
+// 100/min refused ordinary navigation by the fifth page, and a refused boot
+// crashed pages and sent module runs to the API key (2026-09-22 Work QA).
+// Model calls keep their own, much tighter claudeLimiter.
+const DEFAULT_API_REQUESTS_PER_MIN = 1200;
+function apiRequestsPerMinute(): number {
+  const n = Number(process.env.API_RATE_LIMIT_PER_MIN);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_API_REQUESTS_PER_MIN;
+}
+
 // Using user ID prevents shared-office IP starvation where all colleagues share one NAT IP.
 // validate: false suppresses ERR_ERL_KEY_GEN_IPV6 (express-rate-limit v8 static analysis
 // fires for any keyGenerator that references req.ip, even when IPv6 is handled correctly).
 export const userLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100,
+  max: apiRequestsPerMinute(),
   validate: false,
   keyGenerator: (req: Request) => {
     const user = (req as Request & { user?: AuthUser }).user;

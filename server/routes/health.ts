@@ -2,6 +2,25 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { isApiKeyConfigured } from '../services/claude-client.js';
+import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
+import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
+import { appVersion } from '../lib/app-version.js';
+
+/**
+ * Which engines can take a model call right now. `apiKeyConfigured` alone
+ * told a subscription-only instance it had no AI at all ("API Not
+ * Configured"), although every run worked on the SDK engine.
+ */
+export function engineStatus(): {
+  anthropicApi: boolean; sdk: boolean; codex: boolean; otherProviders: boolean; ready: boolean;
+} {
+  const anthropicApi = isApiKeyConfigured();
+  const sdk = isSdkEngineEnabled();
+  const codex = isCodexEngineEnabled();
+  const otherProviders = !!(process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY || process.env.MISTRAL_API_KEY
+    || (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_API_KEY));
+  return { anthropicApi, sdk, codex, otherProviders, ready: anthropicApi || sdk || codex || otherProviders };
+}
 
 // OBS-04: active SSE stream counter — incremented/decremented in claude.ts
 let _activeStreams = 0;
@@ -26,7 +45,7 @@ export async function createHealthRouter(db: DatabaseAdapter) {
       const row = await db.get(
         "SELECT COUNT(*) as c FROM workflow_executions WHERE status IN ('pending','running')"
       ) as { c: number } | undefined;
-      queueDepth = row?.c ?? 0;
+      queueDepth = Number(row?.c ?? 0);   // Postgres returns COUNT(*) as a string
     } catch { /* table may not exist yet */ }
 
     // Memory usage (MB, rounded)
@@ -42,11 +61,12 @@ export async function createHealthRouter(db: DatabaseAdapter) {
     res.status(dbOk ? 200 : 503).json({
       status,
       apiKeyConfigured: isApiKeyConfigured(),
+      engines: engineStatus(),
       database: dbOk,
       activeStreams: _activeStreams,
       queueDepth,
       memory,
-      version: '0.2.0',
+      version: appVersion(),
       uptime: Math.round(process.uptime()),
     });
   });

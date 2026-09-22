@@ -68,7 +68,11 @@
   "header": {
     "appName": "Anton",
     "apiConnected": "API Connected",
-    "apiNotConfigured": "API Not Configured",
+    "apiNotConfigured": "No AI engine configured",
+    "subscriptionConnected": "Subscription engine",
+    "subscriptionAndApi": "Subscription + API key",
+    "engineChecking": "Checking…",
+    "serverUnreachable": "Server not responding",
     "switchToLight": "Switch to light mode",
     "switchToCorporate": "Switch to corporate mode",
     "switchToDark": "Switch to dark mode",

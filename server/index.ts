@@ -13,6 +13,7 @@ import type { DatabaseAdapter } from './db/database.js';
 import { listTablesQuery, tableExistsQuery } from './db/dialect-helpers.js';
 import { authLimiter, userLimiter, claudeLimiter, webhookLimiter, p2pLimiter } from './middleware/rate-limit.js';
 import { createHealthRouter } from './routes/health.js';
+import { appVersion } from './lib/app-version.js';
 import { createIntelligenceHealthRoutes } from './routes/intelligence-health.js';
 import { createClaudeRoutes } from './routes/claude.js';
 import { createRerunRoutes } from './routes/rerun.js';
@@ -578,7 +579,7 @@ if (APP_GATEWAY_ENABLED) {
 // Deployment config endpoint (public — no auth required)
 app.get('/api/config', (req, res) => {
   const deploymentMode = process.env.DEPLOYMENT_MODE || 'solo';
-  const base = { deploymentMode, version: '0.2.0' };
+  const base = { deploymentMode, version: appVersion() };
 
   const oauthFlags = {
     googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
