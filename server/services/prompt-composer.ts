@@ -198,6 +198,11 @@ export interface PromptComposerConfig {
    * output is a deliverable. Pass `false` to opt a call out.
    */
   provenanceContract?: boolean;
+  /**
+   * The instant the request is being answered, for the current-date layer.
+   * Defaults to the server clock. A test seam — production callers leave it unset.
+   */
+  now?: Date;
 }
 
 // ── Composed output ────────────────────────────────────────
@@ -225,6 +230,7 @@ export interface ComposedPart {
  *   4a  Resume context   4b Project context   4.5 Goals & values
  *
  *   Dynamic (changes per request — never cached):
+ *   0d  Current date (first dynamic layer, so the cached prefix is untouched)
  *   0   User profile                 1 Creativity  1b Tone  1c Emoji  1d Communications  1e Output language
  *   5   Expert personas              6 Skills      6b Output format instruction
  *   7   Provenance & limits contract (deliverables only)
@@ -382,6 +388,50 @@ function buildProfileBlock(p: UserProfileData): string | null {
   return hasContent ? lines.join('\n') : null;
 }
 
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December'];
+
+/**
+ * Layer 0d: the current date.
+ *
+ * Until 2026-09-22 no layer carried it. The API engine never sent one, and the
+ * subscription engine passes this prompt as a plain `systemPrompt` string, which
+ * REPLACES Claude Code's default prompt — including the environment block that
+ * normally tells the model what day it is. A module run therefore left the model to
+ * infer "now" from its training, and a model trained to mid-2026 infers a date
+ * before most of what this catalogue is dated around. `green-claims-review` says
+ * "before 27 September 2026 the old law applies; from that date the new prohibitions
+ * bite" — with no date supplied, the model has to guess which side of that line it
+ * is on. The Cyber Resilience Act reporting duty became mandatory on 11 September
+ * 2026, and a model that believes it is May describes a live duty as upcoming.
+ *
+ * LOCAL date, not UTC. ANTON is local-first: the server's clock is the user's
+ * clock. At 00:30 on 27 September in Stockholm it is still 26 September in UTC, and
+ * `toISOString()` would put the user on the wrong side of exactly the kind of line
+ * this layer exists for.
+ *
+ * Weekday included because deadline arithmetic needs it — "within 72 hours",
+ * "by the next business day" — and fixed tables rather than toLocaleDateString(),
+ * whose output depends on the ICU build the server happens to ship with.
+ */
+export function currentDateBlock(now: Date): string {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+  const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return [
+    '## CURRENT DATE',
+    `Today is ${WEEKDAYS[now.getDay()]} ${d} ${MONTHS[m]} ${y} (${iso}).`,
+    '',
+    'Treat this as the date of this request. Where a rule, obligation or deadline turns on a '
+      + 'date — a regime that applies from a given day, a transposition deadline, a reporting '
+      + 'clock — compare it against today, not against when your training ended. Something '
+      + 'your training records as upcoming may already be in force, and something it records '
+      + 'as current may have been replaced.',
+  ].join('\n');
+}
+
 /** Layer 1d: Communications context. */
 function buildCommunicationsBlock(audience?: string, channel?: string): string | null {
   if (!audience && !channel) return null;
@@ -500,6 +550,13 @@ export async function composeSystemPromptParts(config: PromptComposerConfig): Pr
   pushStatic('layer4_5_goals_values', config.goalsValuesPrompt);
 
   // ── Dynamic layers ───────────────────────────────────────
+
+  // Layer 0d: Current date — the FIRST dynamic layer, never a static one. It changes
+  // every midnight, so in the static part it would invalidate the API engine's
+  // cached block daily; and because the subscription engine sends static + dynamic
+  // as one string, placing it anywhere before the static part would break the
+  // prefix that engine caches. First after the static part keeps both intact.
+  pushDynamic('layer0_current_date', currentDateBlock(config.now ?? new Date()));
 
   // Layer 0: User Profile
   if (config.userProfile) pushDynamic('layer0_profile', buildProfileBlock(config.userProfile));
