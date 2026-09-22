@@ -17,10 +17,29 @@ import type { ModelId } from '@/lib/types';
  * the owner made last, on whichever machine. A per-session model the user
  * has already picked in the composer is left alone.
  */
+/** Waits between attempts when the server refuses (rate limit, restart). */
+const RETRY_DELAYS_MS = [2000, 5000, 15000];
+
+async function fetchDefaultModel(): Promise<Response | null> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch('/api/settings/default-model');
+      // A refused answer is not "no default": a rate-limited boot that gave up
+      // here kept the bare API fallback and sent runs to the API key.
+      if (res.ok) return res;
+      if (res.status !== 429 && res.status < 500) return null;
+    } catch {
+      // Network error — fall through to the retry.
+    }
+    if (attempt >= RETRY_DELAYS_MS.length) return null;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+  }
+}
+
 export async function syncDefaultModelFromServer(): Promise<void> {
   try {
-    const res = await fetch('/api/settings/default-model');
-    if (!res.ok) return;
+    const res = await fetchDefaultModel();
+    if (!res) return;
     const data = (await res.json()) as { model?: string | null; source?: 'settings' | 'env' | null };
     if (!data.model || data.source !== 'settings') return;
     const serverModel = data.model as ModelId;

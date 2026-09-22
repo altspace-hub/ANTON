@@ -22,8 +22,9 @@ export default defineConfig({
   ],
   /* Shared settings for all projects */
   use: {
-    /* Base URL — assumes `pnpm run dev` is running on :5173 */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',
+    /* Base URL — `pnpm run dev` serves the client on :5183 (vite.config.ts). CI
+       serves the built app on :5173 and sets PLAYWRIGHT_BASE_URL explicitly. */
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5183',
     /* Capture screenshot on failure */
     screenshot: 'only-on-failure',
     /* Record video on retry */

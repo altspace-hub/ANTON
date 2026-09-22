@@ -15,6 +15,7 @@
  */
 
 import AdmZip from 'adm-zip';
+import { isSafePathSegment } from '../lib/safe-id.js';
 import crypto from 'crypto';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
@@ -441,6 +442,10 @@ export async function bundleBuiltinModuleToAnton(
   /** Wave 6: lets installed (imported) skills / personas resolve too; null = static sources only. */
   db: DatabaseAdapter | null = null,
 ): Promise<Buffer> {
+  // The id comes from the :moduleId route parameter and is joined into a path:
+  // one segment only, or `../modules/<other>` (and worse) resolved outside it.
+  if (!isSafePathSegment(moduleId)) throw new Error(`Invalid module id: ${JSON.stringify(moduleId)}`);
+
   // Find which area contains this module by scanning area directories
   let moduleDir: string | null = null;
   let areaId: string | null = null;

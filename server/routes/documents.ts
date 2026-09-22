@@ -184,7 +184,7 @@ export async function createDocumentsRouter(db: DatabaseAdapter) {
   router.get('/documents/collection/:collectionId/stats', async (req, res) => {
     try {
       const { collectionId } = req.params;
-      const stats = getCollectionIndexStats(db, collectionId);
+      const stats = await getCollectionIndexStats(db, collectionId);
       res.json(stats);
     } catch (error) {
       console.error('[documents] Stats error:', error);

@@ -7,6 +7,7 @@ import { useConfigStore } from '@/stores/useConfigStore';
 import { streamMessage, createSession, generateSessionTitle, recordModuleUse } from '@/lib/api';
 import { buildOutputInstruction } from '@/lib/output-format-definitions';
 import type { Message, StreamEvent } from '@/lib/types';
+import { isErrorMessage, describeRunError } from '@/lib/run-error';
 
 // ── AI Title Generator ──────────────────────────────────────
 // After the first answer the server writes a 5-8 word title from the
@@ -19,9 +20,8 @@ import type { Message, StreamEvent } from '@/lib/types';
 /** Assistant bubbles that carry an error are not part of the conversation;
  *  re-sending them as history taught the model to apologise for engine
  *  outages it never had. */
-const ERROR_BUBBLE_PREFIX = '⚠️ Error:';
 function conversationOnly(messages: Message[]): Message[] {
-  return messages.filter((m) => !(m.role === 'assistant' && m.content.startsWith(ERROR_BUBBLE_PREFIX)));
+  return messages.filter((m) => !isErrorMessage(m));
 }
 
 export function useClaude() {
@@ -243,7 +243,7 @@ export function useClaude() {
               id: crypto.randomUUID(),
               sessionId: activeSessionId || '',
               role: 'assistant',
-              content: `⚠️ Error: ${event.message}`,
+              content: describeRunError(event.message),
               createdAt: new Date().toISOString(),
             });
             break;
@@ -259,7 +259,7 @@ export function useClaude() {
             id: crypto.randomUUID(),
             sessionId: activeSessionId || '',
             role: 'assistant',
-            content: `⚠️ Error: ${msg}`,
+            content: describeRunError(msg),
             createdAt: new Date().toISOString(),
           });
         }

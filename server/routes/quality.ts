@@ -25,7 +25,7 @@ export async function createQualityRoutes(db: DatabaseAdapter, anthropic?: any) 
   // GET /api/quality/trend/:moduleId — quality trend for a module
   router.get('/quality/trend/:moduleId', requireAuth, async (req, res) => {
     try {
-      res.json(ratchet.getModuleQualityTrend(req.params.moduleId as string));
+      res.json(await ratchet.getModuleQualityTrend(req.params.moduleId as string));
     } catch (error) {
       console.error('Quality trend error:', error);
       res.status(500).json({ error: 'Failed to fetch quality trend' });
@@ -35,7 +35,7 @@ export async function createQualityRoutes(db: DatabaseAdapter, anthropic?: any) 
   // GET /api/quality/leaderboard — top scoring modules
   router.get('/quality/leaderboard', requireAuth, async (req, res) => {
     try {
-      res.json(ratchet.getQualityLeaderboard());
+      res.json(await ratchet.getQualityLeaderboard());
     } catch (error) {
       console.error('Quality leaderboard error:', error);
       res.status(500).json({ error: 'Failed to fetch quality leaderboard' });
@@ -50,7 +50,7 @@ export async function createQualityRoutes(db: DatabaseAdapter, anthropic?: any) 
       if (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
         return res.status(400).json({ error: 'rating must be an integer between 1 and 5' });
       }
-      const result = ratchet.submitFeedback({ moduleId, rating, sessionId, qualityScoreId, areaId, comment });
+      const result = await ratchet.submitFeedback({ moduleId, rating, sessionId, qualityScoreId, areaId, comment });
       res.json(result);
     } catch (error) {
       console.error('Feedback submit error:', error);
@@ -141,7 +141,7 @@ export async function createQualityRoutes(db: DatabaseAdapter, anthropic?: any) 
   // GET /api/quality/feedback/stats/:moduleId — user feedback stats for a module
   router.get('/quality/feedback/stats/:moduleId', requireAuth, async (req, res) => {
     try {
-      res.json(ratchet.getFeedbackStats(req.params.moduleId as string));
+      res.json(await ratchet.getFeedbackStats(req.params.moduleId as string));
     } catch (error) {
       console.error('Feedback stats error:', error);
       res.status(500).json({ error: 'Failed to fetch feedback stats' });

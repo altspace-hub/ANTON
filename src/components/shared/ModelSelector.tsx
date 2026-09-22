@@ -244,6 +244,14 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
                 API
               </span>
             )}
+            {/* Which engine will be billed. Subscription models already say so in
+                their label ("… (subscription)"); a bare API id said nothing, so
+                "Claude Opus 5" could be either — and only one of them was funded. */}
+            {currentModel && !sdkMatch && !isAzureModel && !isCompatModel && (
+              <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-400" title="Billed to the provider API key in .env">
+                API key
+              </span>
+            )}
           </div>
           <ChevronDown className={`h-4 w-4 text-adv-gray transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>

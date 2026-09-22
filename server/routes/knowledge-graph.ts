@@ -149,7 +149,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   // GET /api/knowledge-graph/analytics/stats — get graph statistics
   router.get('/knowledge-graph/analytics/stats', async (req, res) => {
     try {
-      const stats = analytics.getGraphStats();
+      const stats = await analytics.getGraphStats();
       res.json(stats);
     } catch (error: unknown) {
       res.status(500).json({ error: errMsg(error) });
@@ -160,7 +160,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   router.get('/knowledge-graph/analytics/degree-centrality', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
-      const results = analytics.calculateDegreeCentrality(limit);
+      const results = await analytics.calculateDegreeCentrality(limit);
       res.json(results);
     } catch (error: unknown) {
       res.status(500).json({ error: errMsg(error) });
@@ -171,7 +171,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
   router.get('/knowledge-graph/analytics/betweenness-centrality', async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
-      const results = analytics.calculateBetweennessCentrality(limit);
+      const results = await analytics.calculateBetweennessCentrality(limit);
       res.json(results);
     } catch (error: unknown) {
       res.status(500).json({ error: errMsg(error) });
@@ -183,7 +183,7 @@ export async function createKnowledgeGraphRoutes(db: DatabaseAdapter) {
     try {
       const limit = parseInt(req.query.limit as string) || 20;
       const iterations = parseInt(req.query.iterations as string) || 20;
-      const results = analytics.calculatePageRank(iterations, 0.85, limit);
+      const results = await analytics.calculatePageRank(iterations, 0.85, limit);
       res.json(results);
     } catch (error: unknown) {
       res.status(500).json({ error: errMsg(error) });

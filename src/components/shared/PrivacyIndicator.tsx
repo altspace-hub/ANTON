@@ -32,7 +32,7 @@ export default function PrivacyIndicator() {
 
   return (
     <div
-      className="hidden items-center gap-1.5 rounded-lg border border-adv-teal/20 bg-adv-teal/5 px-2 py-1 xl:flex"
+      className="hidden items-center gap-1.5 whitespace-nowrap rounded-lg border border-adv-teal/20 bg-adv-teal/5 px-2 py-1 xl:flex"
       title={
         fullyOffline
           ? 'Running fully offline — no data leaves your machine'

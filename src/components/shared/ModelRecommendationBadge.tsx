@@ -91,10 +91,14 @@ function formatCostMultiplier(x: number): string {
   return `${cheaper}× cheaper`;
 }
 
-/** Honest registry pricing, compact: "~$1/$5 per 1M" or "free (local)". */
-function formatPricing(p?: ModelPricing): string {
+/** Honest registry pricing, compact: "~$1/$5 per 1M", "subscription" or "free, local". */
+function formatPricing(p?: ModelPricing, modelId?: string): string {
   if (!p) return '';
-  if (p.inputPer1M === 0 && p.outputPer1M === 0) return 'free (local)';
+  if (p.inputPer1M === 0 && p.outputPer1M === 0) {
+    // A zero price is either a local model or a subscription engine (sdk: /
+    // codex:), which is neither local nor free — it draws on the plan.
+    return modelId && /^(sdk|codex):/.test(modelId) ? 'subscription' : 'free, local';
+  }
   const fmt = (n: number) => (n >= 10 ? `$${Math.round(n)}` : `$${n}`);
   return `~${fmt(p.inputPer1M)}/${fmt(p.outputPer1M)} per 1M`;
 }
@@ -213,7 +217,7 @@ export default function ModelRecommendationBadge({
     });
   };
 
-  const pricingText = formatPricing(recommendation.pricing);
+  const pricingText = formatPricing(recommendation.pricing, recommendation.recommended);
 
   return (
     <div className="relative inline-block" ref={containerRef}>
@@ -296,7 +300,7 @@ export default function ModelRecommendationBadge({
                   </div>
                   <p className="mt-0.5 text-xs text-adv-gray leading-relaxed">
                     {alt.reason}
-                    {alt.pricing && <span className="ml-1 text-adv-gray">· {formatPricing(alt.pricing)}</span>}
+                    {alt.pricing && <span className="ml-1 text-adv-gray">· {formatPricing(alt.pricing, alt.model)}</span>}
                   </p>
                 </div>
                 {onModelSelect && (

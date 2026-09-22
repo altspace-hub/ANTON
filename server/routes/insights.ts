@@ -25,8 +25,8 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
       const areaId = req.query.area_id ? String(req.query.area_id) : undefined;
       const limit = Math.min(parseInt(String(req.query.limit || '50')), 100);
 
-      const insights = intelService.listInsights(userId, { dismissed, areaId, limit });
-      const unreadCount = intelService.countUnread(userId);
+      const insights = await intelService.listInsights(userId, { dismissed, areaId, limit });
+      const unreadCount = await intelService.countUnread(userId);
 
       res.json({ insights, unread_count: unreadCount });
     } catch (err) {
@@ -39,7 +39,7 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
   router.get('/insights/unread-count', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const count = intelService.countUnread(userId);
+      const count = await intelService.countUnread(userId);
       res.json({ count });
     } catch (err) {
       res.status(500).json({ error: 'Failed to get count' });
@@ -71,7 +71,7 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
   router.post('/insights/generate', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const result = intelService.runInsightGeneration(userId);
+      const result = await intelService.runInsightGeneration(userId);
       res.json(result);
     } catch (err) {
       console.error('[insights] generate error:', err);
@@ -83,7 +83,7 @@ export async function createInsightsRoutes(db: DatabaseAdapter): Promise<Router>
   router.post('/insights', async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      const insight = intelService.createInsight({ ...req.body, user_id: userId });
+      const insight = await intelService.createInsight({ ...req.body, user_id: userId });
       res.status(201).json({ insight });
     } catch (err) {
       console.error('[insights] create error:', err);

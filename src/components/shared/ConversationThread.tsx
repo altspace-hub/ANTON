@@ -7,6 +7,7 @@ import { User, Bot, Brain, Pencil, BookOpen, Layers } from 'lucide-react';
 import { useStreamStore } from '@/stores/useStreamStore';
 import QualityIndicatorBar from '@/components/shared/QualityIndicatorBar';
 import MessageWithThinking from '@/components/shared/MessageWithThinking';
+import { isErrorMessage } from '@/lib/run-error';
 
 // PERF-03: virtualise the conversation list when it grows large (> 20 messages)
 // Below that threshold, render directly to avoid virtualiser overhead.
@@ -50,11 +51,16 @@ const MemoMessage = memo(function MemoMessage({ msg, moduleId, canEdit, onEditMe
             thinkingContent={msg.thinkingContent}
           />
         ) : (
-          <div className="prose-output max-w-none text-adv-off-white">
+          <div
+            className={isErrorMessage(msg)
+              ? 'prose-output max-w-none rounded-lg border border-adv-red/40 bg-adv-red/5 px-3 py-2 text-adv-off-white'
+              : 'prose-output max-w-none text-adv-off-white'}
+            role={isErrorMessage(msg) ? 'alert' : undefined}
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
           </div>
         )}
-        {msg.role === 'assistant' && (
+        {msg.role === 'assistant' && !isErrorMessage(msg) && (
           <QualityIndicatorBar content={msg.content} moduleId={moduleId} />
         )}
         {citations.length > 0 && (

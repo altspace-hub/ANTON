@@ -17,11 +17,11 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   // POST /api/patterns/detect — run all detectors
   router.post('/patterns/detect', async (req, res) => {
     try {
-      const result = patternDetection.runAllDetectors();
+      const result = await patternDetection.runAllDetectors();
       res.json({
         success: true,
         ...result,
-        detectorState: patternDetection.getDetectorState(),
+        detectorState: await patternDetection.getDetectorState(),
       });
     } catch (error: unknown) {
       console.error('[pattern-detection] Error running detectors:', error);

@@ -62,6 +62,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
     >
       <button
         type="button"
+        title={t('modeToggle.work', 'Work')}
         onClick={() => handleToggle('work')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'work'
@@ -71,11 +72,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'work'}
       >
         <Briefcase className="h-3.5 w-3.5" aria-hidden="true" />
-        {t('modeToggle.work', 'Work')}
+        <span className={activeMode === 'work' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.work', 'Work')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.school', 'School')}
         onClick={() => handleToggle('school')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'school'
@@ -85,11 +87,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'school'}
       >
         <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
-        {t('modeToggle.school', 'School')}
+        <span className={activeMode === 'school' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.school', 'School')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.life', 'Life')}
         onClick={() => handleToggle('life')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'life'
@@ -99,11 +102,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'life'}
       >
         <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
-        Life
+        <span className={activeMode === 'life' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.life', 'Life')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.community', 'Collaboration')}
         onClick={() => handleToggle('community')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'community'
@@ -113,11 +117,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'community'}
       >
         <Users className="h-3.5 w-3.5" aria-hidden="true" />
-        Collaboration
+        <span className={activeMode === 'community' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.community', 'Collaboration')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.markets', 'Markets')}
         onClick={() => handleToggle('markets')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'markets'
@@ -127,11 +132,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'markets'}
       >
         <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-        Markets
+        <span className={activeMode === 'markets' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.markets', 'Markets')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.payments', 'Payments')}
         onClick={() => handleToggle('payments')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'payments'
@@ -141,11 +147,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'payments'}
       >
         <Wallet className="h-3.5 w-3.5" aria-hidden="true" />
-        Payments
+        <span className={activeMode === 'payments' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.payments', 'Payments')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.pathfinder', 'Pathfinder')}
         onClick={() => handleToggle('pathfinder')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'pathfinder'
@@ -155,11 +162,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'pathfinder'}
       >
         <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-        Pathfinder
+        <span className={activeMode === 'pathfinder' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.pathfinder', 'Pathfinder')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.portals', 'Portals')}
         onClick={() => handleToggle('portals')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'portals'
@@ -169,11 +177,12 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'portals'}
       >
         <Globe className="h-3.5 w-3.5" aria-hidden="true" />
-        Portals
+        <span className={activeMode === 'portals' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.portals', 'Portals')}</span>
       </button>
 
       <button
         type="button"
+        title={t('modeToggle.missions', 'Missions')}
         onClick={() => handleToggle('missions')}
         className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal focus:ring-offset-1 focus:ring-offset-adv-dark ${
           activeMode === 'missions'
@@ -183,7 +192,7 @@ export default function ModeToggle({ className = '' }: ModeToggleProps) {
         aria-pressed={activeMode === 'missions'}
       >
         <Target className="h-3.5 w-3.5" aria-hidden="true" />
-        Missions
+        <span className={activeMode === 'missions' ? '' : 'sr-only 2xl:not-sr-only'}>{t('modeToggle.missions', 'Missions')}</span>
       </button>
     </div>
   );

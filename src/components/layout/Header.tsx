@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Settings, Circle, Sun, Moon, Building2, Menu, Command } from 'lucide-react';
 import { MODULES } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { headerEngineStatus } from '@/lib/engine-status';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { BudgetIndicator } from '@/components/shared/BudgetIndicator';
 import PrivacyIndicator from '@/components/shared/PrivacyIndicator';
@@ -17,7 +19,17 @@ interface HeaderProps {
 export default function Header({ onMenuClick }: HeaderProps) {
   const { t } = useTranslation();
   const location = useLocation();
-  const { health, theme, toggleTheme } = useSettingsStore();
+  const { health, theme, toggleTheme, checkHealth } = useSettingsStore();
+
+  // The header is on every page, so it owns the health check — it used to run
+  // only on the Dashboard and Settings, and every other page showed a red
+  // "API Not Configured" until one of those was visited. Re-checked each
+  // minute so a restarted server or a newly enabled engine shows up.
+  useEffect(() => {
+    void checkHealth();
+    const timer = window.setInterval(() => { void checkHealth(); }, 60_000);
+    return () => window.clearInterval(timer);
+  }, [checkHealth]);
   const { user: authUser, isTeamMode } = useAuthStore();
 
   // Build breadcrumb
@@ -51,7 +63,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
     parts.push({ label: t('nav.marketplace'), path: '/marketplace' });
   }
 
-  const apiOk = health?.apiKeyConfigured;
+  const engine = headerEngineStatus(health);
+  const dotClass = engine.tone === 'ok' ? 'fill-adv-green text-adv-green'
+    : engine.tone === 'pending' ? 'fill-adv-gray text-adv-gray'
+    : engine.tone === 'unreachable' ? 'fill-adv-gold text-adv-gold'
+    : 'fill-adv-red text-adv-red';
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-adv-dark-2 px-4 lg:px-6">
@@ -65,12 +81,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </button>
 
       {/* Breadcrumb */}
-      <nav className="flex flex-1 items-center gap-2 text-sm">
+      {/* min-w-0 + truncate: a long module name shortens instead of wrapping onto
+          three lines and pushing the right-hand controls off screen. */}
+      <nav className="flex min-w-0 flex-1 items-center gap-2 text-sm">
         {parts.map((part, i) => (
-          <span key={part.path} className="flex items-center gap-2">
+          <span key={part.path} className={`flex items-center gap-2 ${i === parts.length - 1 ? 'min-w-0' : 'shrink-0'}`}>
             {i > 0 && <span className="text-adv-gray">/</span>}
             {i === parts.length - 1 ? (
-              <span className="text-adv-off-white">{part.label}</span>
+              <span className="truncate whitespace-nowrap text-adv-off-white" title={part.label}>{part.label}</span>
             ) : (
               <Link to={part.path} className="text-adv-gray hover:text-adv-teal transition-colors">
                 {part.label}
@@ -81,15 +99,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </nav>
 
       {/* Right side */}
-      <div className="flex items-center gap-4">
+      <div className="ml-3 flex shrink-0 items-center gap-3">
         {/* Work ↔ School mode toggle */}
         <ModeToggle className="hidden sm:flex" />
         {/* API Status */}
         <div className="flex items-center gap-2 text-xs">
-          <Circle
-            className={`h-2 w-2 ${apiOk ? 'fill-adv-green text-adv-green' : 'fill-adv-red text-adv-red'}`}
-          />
-          <span className="hidden text-adv-gray sm:inline">{apiOk ? t('header.apiConnected') : t('header.apiNotConfigured')}</span>
+          <Circle className={`h-2 w-2 ${dotClass}`} aria-hidden="true" />
+          <span className="hidden whitespace-nowrap text-adv-gray sm:inline">{t(engine.key, engine.fallback)}</span>
         </div>
 
         {/* Privacy / Data Sovereignty Indicator */}

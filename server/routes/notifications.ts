@@ -24,8 +24,8 @@ export default function createNotificationsRouter(db: DatabaseAdapter) {
   // GET /api/notifications/count - unread count
   router.get('/notifications/count', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'solo';
-      const unread = getUnreadCount(db, userId);
+      const userId = req.user?.id || 'solo';
+      const unread = await getUnreadCount(db, userId);
       res.json({ unread });
     } catch (err) {
       res.status(500).json({ error: 'Failed to get notification count' });

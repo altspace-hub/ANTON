@@ -121,7 +121,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   // GET /api/admin/budgets — all user budget statuses (admin only)
   router.get('/admin/budgets', requireRole('admin'), async (_req, res) => {
     try {
-      const budgets = budgetManager.getAllUserBudgets(db);
+      const budgets = await budgetManager.getAllUserBudgets(db);
       res.json({ budgets });
     } catch (err) {
       const message = safeError(err);
@@ -140,7 +140,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      const success = budgetManager.updateUserBudget(db, userId, monthlyTokenBudget, alertThreshold);
+      const success = await budgetManager.updateUserBudget(db, userId, monthlyTokenBudget, alertThreshold);
       res.json({ success });
     } catch (err) {
       const message = safeError(err);
@@ -152,7 +152,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   router.post('/admin/users/:id/reset-usage', requireRole('admin'), async (req, res) => {
     try {
       const userId = String(req.params.id);
-      const success = budgetManager.resetMonthlyUsage(db, userId);
+      const success = await budgetManager.resetMonthlyUsage(db, userId);
       res.json({ success });
     } catch (err) {
       const message = safeError(err);
