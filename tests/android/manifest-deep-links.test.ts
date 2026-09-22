@@ -227,12 +227,15 @@ describe.each(OTHER_TREES)('%s Android manifest — deep links', (dir) => {
       ctx.skip();
       return;
     }
+    // Line endings aside: with core.autocrlf=true the committed fixture checks out
+    // as CRLF while the (untracked) Android tree stays LF — same content.
+    const lf = (s: string) => s.replace(/\r\n/g, '\n');
     expect(
-      readFileSync(fixturePath(dir), 'utf8'),
+      lf(readFileSync(fixturePath(dir), 'utf8')),
       `${dir}: the committed fixture no longer matches ${dir}/app/src/main/AndroidManifest.xml.\n` +
       'CI checks the fixture, so an un-refreshed fixture means the real manifest is unguarded.\n' +
       'Refresh it:\n' +
       `  cp ${dir}/app/src/main/AndroidManifest.xml tests/android/fixtures/${dir}.AndroidManifest.xml`,
-    ).toBe(readFileSync(livePath(dir), 'utf8'));
+    ).toBe(lf(readFileSync(livePath(dir), 'utf8')));
   });
 });

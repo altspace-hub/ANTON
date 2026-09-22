@@ -258,7 +258,9 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 const short = (h: string | null | undefined, n = 12): string => (h ? `${h.slice(0, n)}…` : '—');
-const cell = (s: string): string => s.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+// Backslashes first, then pipes (CodeQL js/incomplete-sanitization): escaping
+// only `|` turns `\|` in a source name into `\\|`, which splits the cell.
+const cell = (s: string): string => s.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
 
 /** The Markdown appendix appended to every export. */
 export function renderProvenanceAppendix(f: ProvenanceFacts): string {

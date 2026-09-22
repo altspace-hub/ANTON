@@ -23,6 +23,7 @@ import { executeApiCall } from './executors/api-call-executor.js';
 import { executeDatabaseQuery } from './executors/database-query-executor.js';
 import { executeBrowser } from './executors/browser-executor.js';
 import { hasTaskOutputRefs, substituteTaskOutputRefs } from './mission-task-piping.js';
+import { resolveTaskModule } from './mission-task-module.js';
 import type { DatabaseAdapter } from '../../db/database.js';
 import type { Mission, MissionTask } from './types.js';
 
@@ -374,6 +375,17 @@ export function createMissionExecutor(db: DatabaseAdapter) {
           .join('\n\n---\n\n')}`
       : 'No prior task outputs yet — this is the first executable task in the mission.';
 
+    // A task that names an expert module runs with that module's prompt (see
+    // mission-task-module.ts). A name that cannot be applied is logged, not fatal.
+    const taskModule = await resolveTaskModule(task.module_id);
+    if (taskModule.warning) {
+      await state.logActivity(mission.id, {
+        activityType: 'module_not_applied',
+        description: `${task.title}: ${taskModule.warning}`,
+        taskId: task.id,
+      });
+    }
+
     const systemPrompt = `You are ANTON, executing a task within a long-running autonomous mission.
 
 MISSION
@@ -403,7 +415,7 @@ blocks alongside the prose. They will be routed to the Grow CRM. Only emit
 when you have real data — do NOT speculate.
 - \`\`\`grow_lead { "firstName": "...", "lastName": "...", "email": "...", "organisation": { "name": "..." } }\`\`\`
 - \`\`\`grow_opportunity { "title": "...", "value": 50000, "currency": "EUR", "stageId": "qualified" }\`\`\`
-- \`\`\`grow_signal { "signalType": "regulatory", "title": "...", "priority": "high", "source": "..." }\`\`\``;
+- \`\`\`grow_signal { "signalType": "regulatory", "title": "...", "priority": "high", "source": "..." }\`\`\`${taskModule.block}`;
 
     // The actual task prompt (from decomposition) is the user message.
     const userPrompt = (task.module_config as { prompt?: string })?.prompt

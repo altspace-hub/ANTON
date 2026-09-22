@@ -25,7 +25,9 @@ export type AtlasEventType =
   | 'fcp_scope_changed' | 'fcp_scope_updated' | 'atlas_updated'
   // Addendum 1 — cross-domain bundles
   | 'cross_domain_bundle_created' | 'cross_domain_bundle_member_added'
-  | 'cross_domain_bundle_member_removed' | 'cross_domain_bundle_deleted';
+  | 'cross_domain_bundle_member_removed' | 'cross_domain_bundle_deleted'
+  // 2026-09-22 — a BWRA document generated from this Atlas (atlas-bwra.ts)
+  | 'bwra_generated';
 
 export interface LogEventInput {
   atlasId: string;

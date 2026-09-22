@@ -185,4 +185,18 @@ describe('renderProvenanceAppendix', () => {
     expect(md).toContain('requested m\\|x');
     expect(md).toContain('a\\|b c');
   });
+
+  it('escapes backslashes before pipes, so `\\|` in a source name cannot split a cell (CodeQL js/incomplete-sanitization)', () => {
+    const md = renderProvenanceAppendix({
+      sessionId: 's', runId: 'r', createdAt: null, engine: null, modelRequested: 'm', modelServed: null, thinking: null, effort: null, costBasis: null,
+      moduleId: null, modulePromptVersion: null, modulePromptSha256: null, foundationVersionId: null, guardrailApplied: null, provenanceContract: null,
+      promptSha256: null, promptChars: null, promptTruncated: false, outputSha256Stored: null, outputSha256Exported: 'f'.repeat(64), outputMatchesStored: null,
+      sources: [{ type: 'url', name: 'x\\|y', contentHashed: true, sha256: 'a'.repeat(64) }], layers: [], packs: [], frameworks: [], frameworkArticles: 0, atomChars: 0, ragChunks: 0,
+      webSearch: false, skippedCount: 0, skippedTokens: 0, structuredStatus: null, structuredError: null, quality: null, review: null, exportVersion: null, exportContentHash: 'ffff',
+    });
+    const row = md.split('\n').find((l) => l.startsWith('| 1 |')) ?? '';
+    expect(row).toContain('x\\\\\\|y');
+    // six columns → exactly seven unescaped separators
+    expect(row.match(/(?<!\\)(?:\\\\)*\|/g)?.length).toBe(7);
+  });
 });

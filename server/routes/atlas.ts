@@ -45,6 +45,13 @@
 //     GET    /api/atlas/:id/triggers
 //     POST   /api/atlas/:id/triggers
 //
+//   Business-wide risk assessment (atlas-bwra.ts)
+//     POST   /api/atlas/:id/bwra                 (start a job; re-attaches if running)
+//     GET    /api/atlas/:id/bwra/job
+//     GET    /api/atlas/:id/bwra
+//     GET    /api/atlas/:id/bwra/:docId
+//     GET    /api/atlas/:id/bwra/:docId/docx
+//
 //   Maintenance
 //     GET    /api/atlas/:id/review-cycles
 //     POST   /api/atlas/:id/review-cycles
@@ -68,6 +75,9 @@ import { createAtlasEventLogger } from '../services/risk-atlas/atlas-event-logge
 import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.js';
 import { seedAtlasFromProposal } from '../services/risk-atlas/atlas-pack-seeder.js';
 import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
+import { createAtlasBwra, BwraInputError } from '../services/risk-atlas/atlas-bwra.js';
+import { startStepJob, getStepJobSummary } from '../services/step-job-registry.js';
+import { generateDocx } from '../services/export-docx.js';
 import { createAtlasIntegrityRunner, listIntegrityRules } from '../services/risk-atlas/atlas-integrity-rules.js';
 import { createAtlasFcpScopeService } from '../services/risk-atlas/atlas-fcp-scope-service.js';
 import { createQualityRatchet } from '../services/quality-ratchet.js';
@@ -99,6 +109,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
   const service = createAtlasService(db, { eventLogger: events });
   const packs = createAtlasPackLoader(db);
   const atlasExport = createAtlasExport(db);
+  const bwra = createAtlasBwra(db);
   const integrity = createAtlasIntegrityRunner(db);
   const fcp = createAtlasFcpScopeService(db);
   // Quality ratchet — lazily resolved on first request to avoid blocking
@@ -698,6 +709,81 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       const safeName = encodeURIComponent(id) + '.docx';
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="atlas-board-${safeName}"`);
+      res.send(buf);
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  // ── Generate BWRA (2026-09-22) ─────────────────────────────────────────
+  // Code renders every score table from the Atlas; the model writes only the
+  // narrative (atlas-bwra.ts). A run takes minutes, so it is a job keyed per
+  // Atlas: a reload re-attaches and a second click does not start a second run.
+  const bwraJobKey = (atlasId: string) => `atlas-bwra:${atlasId}`;
+
+  router.post('/atlas/:id/bwra', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const userId = (req as AuthedRequest).user!.id;
+      const meta: Record<string, unknown> = { atlasId: id, status: 'Starting' };
+      const { job, started } = startStepJob(bwraJobKey(id), meta, async (sink) => {
+        try {
+          const doc = await bwra.generate(id, userId, (status) => {
+            meta.status = status;
+            sink.write(`data: ${JSON.stringify({ type: 'status', message: status })}\n\n`);
+          });
+          meta.docId = doc.id;
+          meta.consistencyIssues = doc.consistency_issues.length;
+          meta.status = 'Done';
+        } catch (err) {
+          // The job's error is shown to the page: only an input problem is
+          // explained verbatim; anything else goes through safeError.
+          throw new Error(err instanceof BwraInputError ? err.message : safeError(err));
+        }
+      });
+      res.status(started ? 202 : 200).json({ started, job: getStepJobSummary(job.key) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/bwra/job', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      res.json({ job: getStepJobSummary(bwraJobKey(id)) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/bwra', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      res.json({ documents: await bwra.list(id) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/bwra/:docId', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const doc = await bwra.get(id, String(req.params.docId));
+      if (!doc) { res.status(404).json({ error: 'Document not found' }); return; }
+      res.json({ document: doc });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/bwra/:docId/docx', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const doc = await bwra.get(id, String(req.params.docId));
+      if (!doc) { res.status(404).json({ error: 'Document not found' }); return; }
+      const buf = await generateDocx(doc.markdown, {
+        title: doc.markdown.split('\n')[0].replace(/^#\s*/, ''),
+        moduleId: 'business-wide-risk-assessment',
+        sessionId: id,
+        author: 'ANTON Risk Atlas',
+      });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="bwra-${encodeURIComponent(id)}-${doc.created_at.slice(0, 10)}.docx"`);
       res.send(buf);
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });

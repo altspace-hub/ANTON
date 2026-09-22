@@ -16,7 +16,7 @@ const STAGES = [
   { n: 2, name: 'Threat paths',       what: 'How a threat moves (typologies, predicate offences, chains of intent).' },
   { n: 3, name: 'Vulnerabilities',    what: 'Weaknesses that allow the threat to land (control gaps, blind spots).' },
   { n: 4, name: 'Inherent risk',      what: 'max(Exposure, Threat, Vulnerability) — deterministic, no LLM.' },
-  { n: 5, name: 'Controls',           what: 'Strong / Adequate / Weak — worst-of rollup. LLM rationale, deterministic score.' },
+  { n: 5, name: 'Controls',           what: 'Strong / Adequate / Weak — worst-of rollup, deterministic score, your rationale and evidence.' },
   { n: 6, name: 'Residual risk',      what: 'Inherent − reduction, clamped to [1,5]. Reproducible across runs.' },
   { n: 7, name: 'Appetite',           what: '5×5 grid: 1–2 within · 3 boundary · 4 outside · 5 unacceptable.' },
 ];
@@ -58,10 +58,12 @@ export default function RiskAtlasAboutPage() {
           <h2 className="text-lg font-semibold mb-3">Why Risk Atlas exists</h2>
           <p className="text-sm text-adv-gray leading-relaxed">
             Most risk tools either give you a static heat-map (impossible to defend in an audit)
-            or a free-text LLM scoring pass (impossible to reproduce). Risk Atlas keeps the
-            <strong className="text-adv-off-white"> deterministic engine</strong> and uses the LLM only for
-            <em> rationale</em>. Every score is reproducible across runs; every claim is
-            backed by a five-character minimum evidence string. Audit-defensible by construction.
+            or a free-text LLM scoring pass (impossible to reproduce). Risk Atlas keeps a
+            <strong className="text-adv-off-white"> deterministic engine</strong>: you record the paths,
+            controls and evidence; fixed rules compute every score. Every score is reproducible across runs;
+            every claim is backed by a five-character minimum evidence string. Audit-defensible by construction.
+            For the written assessment, Generate BWRA writes the narrative around the Atlas's own tables and
+            never re-scores them.
           </p>
         </section>
 
@@ -121,7 +123,7 @@ export default function RiskAtlasAboutPage() {
             <li>• Inherent score = <code className="text-adv-off-white">max(E, T, V)</code> — never an LLM call.</li>
             <li>• Control reduction rolled up worst-of (Strong / Adequate / Weak).</li>
             <li>• Residual = inherent − reduction, clamped to [1, 5].</li>
-            <li>• LLM only writes the rationale prose. Scores are never AI-determined.</li>
+            <li>• Scores are never AI-determined. AI writes only the narrative of a generated BWRA, around tables taken from the Atlas, and every score it states is checked.</li>
             <li>• Six built-in integrity rules (ATLAS-INT-001..006) flag anything inconsistent.</li>
           </ul>
         </section>

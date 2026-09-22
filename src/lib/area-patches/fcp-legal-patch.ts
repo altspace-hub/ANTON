@@ -206,6 +206,27 @@ export const NEW_FCP_MODULES: ModuleDefinition[] = [
       },
     },
   },
+  // ── Business-wide risk assessment (2026-09-22) ─────────────────────────
+  // The AMLR Art. 10 BWRA module existed on disk since the Risk Atlas build
+  // (April 2026) but was never listed, so nobody could find it. Defaults
+  // mirror its module.json (the catalogue is authoritative for listed modules).
+  {
+    id: 'business-wide-risk-assessment',
+    label: 'Business-Wide Risk Assessment (BWRA)',
+    shortLabel: 'BWRA',
+    icon: 'ShieldAlert',
+    description: 'AMLR Article 10 / FATF R.1 business-wide risk assessment for obliged entities, using the Risk Atlas seven-stage method and scoring rules. Produces a regulator-ready BWRA; paste a Risk Atlas board pack to write it around the scores you already maintain.',
+    color: 'adv-teal',
+    defaults: {
+      thinking: 'investigate',
+      creativity: 'balanced',
+      outputFormats: ['risk-register', 'policy-document', 'executive-summary'],
+      knowledgeSources: {
+        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: '' },
+        localFolder: { enabled: true, folderPaths: [], recursive: true },
+      },
+    },
+  },
 ];
 
 // ── Legal Area — New Modules ─────────────────────────────────────────────────

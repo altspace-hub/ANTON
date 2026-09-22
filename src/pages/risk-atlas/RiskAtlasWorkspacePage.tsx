@@ -14,6 +14,7 @@ import ThreatPathsTab from '../../components/risk-atlas/ThreatPathsTab';
 import ControlsTab from '../../components/risk-atlas/ControlsTab';
 import MaintenanceTab from '../../components/risk-atlas/MaintenanceTab';
 import CrossDomainBundlesSection from '../../components/risk-atlas/CrossDomainBundlesSection';
+import GenerateBwraSection from '../../components/risk-atlas/GenerateBwraSection';
 
 type TabKey = 'dashboard' | 'paths' | 'controls' | 'events' | 'maintenance';
 type AppetitePosition = 'within' | 'boundary' | 'outside' | 'unacceptable';
@@ -183,6 +184,8 @@ function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
       <CrossDomainBundlesSection atlasId={atlasId} />
 
       <ExportRow atlasId={atlasId} />
+
+      <GenerateBwraSection atlasId={atlasId} />
 
       <QualityScoreCard atlasId={atlasId} />
 

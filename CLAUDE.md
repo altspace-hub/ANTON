@@ -380,9 +380,9 @@ The Portals Pillar is ANTON's **proof of inter-instance interoperability** — e
 
 ## Risk Atlas (universal seven-stage threat-path methodology)
 
-The Risk Atlas generalises the CASP BWRA threat-path methodology into a universal causal-chain risk engine that any business — bakery to bank — can use to maintain a living risk register. It's the canonical example of how Atlas-style "deterministic engine + LLM-rationale" workspaces are built in ANTON.
+The Risk Atlas generalises the CASP BWRA threat-path methodology into a universal causal-chain risk engine that any business — bakery to bank — can use to maintain a living risk register. It's the canonical example of an ANTON deterministic engine: the person records paths, controls and evidence; fixed rules compute every score. The Atlas makes one kind of model call: **Generate BWRA** (`server/services/risk-atlas/atlas-bwra.ts`, `POST /api/atlas/:id/bwra`, a job keyed per Atlas). Code renders every stage table from the Atlas; the model writes only the narrative (the BWRA module prompt + an "Atlas mode" instruction); a consistency check records any narrative that states a score or count different from the Atlas; documents are kept in `atlas_bwra_documents` (migration 280) and download as .docx. Nothing else in the Atlas calls a model (apart from the board-pack quality score), and no model ever sets a score.
 
-**Core methodology (deterministic).** Stages 1-7: Exposures → Threat paths → Vulnerabilities → Inherent risk (= max(E, T, V)) → Controls (Strong / Adequate / Weak rolled up worst-of) → Residual (= inherent − reduction, clamped [1,5]) → Appetite (5x5 grid: 1-2 within / 3 boundary / 4 outside / 5 unacceptable). The LLM never decides residual scores — only the rationale around them. Audit-defensible by construction.
+**Core methodology (deterministic).** Stages 1-7: Exposures → Threat paths → Vulnerabilities → Inherent risk (= max(E, T, V)) → Controls (Strong / Adequate / Weak rolled up worst-of) → Residual (= inherent − reduction, clamped [1,5]) → Appetite (5x5 grid: 1-2 within / 3 boundary / 4 outside / 5 unacceptable). No model decides a score. Audit-defensible by construction.
 
 **Data model.** Migrations `125_risk_atlas_foundation.sql` → `129_risk_atlas_addendum_review_fixes.sql` define 18 tables: `risk_atlases`, `atlas_threat_paths`, `atlas_exposure_points`, `atlas_vulnerabilities`, `atlas_controls`, `atlas_inherent_scores`, `atlas_residual_scores`, `atlas_appetite_statements`, `atlas_escalation_triggers`, `atlas_review_cycles`, `atlas_industry_packs`, `atlas_events`, `atlas_fcp_scope`, `atlas_cross_domain_path_bundles` and members.
 
@@ -401,12 +401,12 @@ The Risk Atlas generalises the CASP BWRA threat-path methodology into a universa
 | `server/routes/atlas.ts` | ~30 REST endpoints, all gated by `ensureAtlasAccess(db, req, atlasId)`. |
 | `src/pages/risk-atlas/RiskAtlasWorkspacePage.tsx` | 5-tab workspace shell. |
 | `src/pages/risk-atlas/SmallBusinessDashboardPage.tsx` | Simplified solo-operator landing. |
-| `server/areas/risk/modules/atlas-*` | 7 atlas-* modules — Stage 1-7 LLM specialisations. |
+| `server/areas/risk/modules/atlas-*` | 7 atlas-* stage prompts + the 7b consolidator. **Nothing invokes them yet** — they propose Atlas *changes* as JSON diffs, which needs a "build my Atlas with AI" assistant with an accept/reject UI (not built). Generate BWRA does not use them. |
 | `server/areas/risk/modules/atlas-company-appetite-consolidator/` | Stage 7b — board-readable rollup. |
-| `server/areas/fcp/modules/business-wide-risk-assessment/` | AMLR Article 10 business-wide risk assessment (BWRA) — orchestrates atlas-* modules. Article 10 is the BWRA; Article 16 is group-wide requirements. |
-| `server/areas/fcp/modules/fcp-scope-assessor/` | AI-guided FCP-domain activation. |
+| `server/areas/fcp/modules/business-wide-risk-assessment/` | AMLR Article 10 business-wide risk assessment (BWRA) — a listed FCP Work module; one run writes the 12-section BWRA with the Atlas scoring rules, or around a pasted/uploaded Atlas board pack. It does not call the atlas-* prompts. Article 10 is the BWRA; Article 16 is group-wide requirements. |
+| `server/areas/fcp/modules/fcp-scope-assessor/` | AI-guided FCP-domain activation (used by the AMLR mission; not listed in Work). |
 
-**Mission template.** `tmpl_amlr_readiness_v1` (`server/services/missions/seed-templates.ts`) is the 10-task end-to-end programme for an AMLR-obliged entity: scope → Atlas → BWRA → gap analysis → policies → training → audit, with four explicit checkpoints.
+**Mission template.** `tmpl_amlr_readiness_v1` (`server/services/missions/seed-templates.ts`) is the 10-task end-to-end programme for an AMLR-obliged entity: scope → Atlas set-up recommendation (the person creates the Atlas) → BWRA → gap analysis → policies → training → audit, with four explicit checkpoints. Its steps name their modules in `module_id`, and the mission executor runs each step with that module's system prompt (`server/services/missions/mission-task-module.ts`; an unknown id is logged as `module_not_applied`). Built-in templates are refreshed from the code when their definition changes.
 
 **Atlas integrity rules** are deterministic — surface live findings (residual ≥ 4 with no appetite, Strong control without ≥5-char evidence, outside-appetite path missing action / target date, etc.) on the workspace dashboard. Pure functions over a snapshot, easy to test.
 

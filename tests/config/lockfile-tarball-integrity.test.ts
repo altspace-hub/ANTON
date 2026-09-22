@@ -80,7 +80,8 @@ const SHEETJS_CDN = 'cdn.sheetjs.com';
 const CODELOAD = 'codeload.github.com';
 
 describe('pnpm-lock.yaml — remote tarball dependencies carry an integrity hash', () => {
-  const lockfile = readFileSync(LOCKFILE, 'utf8');
+  // LF-normalised: pnpm writes LF, but a core.autocrlf=true checkout is CRLF.
+  const lockfile = readFileSync(LOCKFILE, 'utf8').replace(/\r\n/g, '\n');
 
   const entries = [...lockfile.matchAll(TARBALL_ENTRY)].map((m) => ({
     name: m[1],

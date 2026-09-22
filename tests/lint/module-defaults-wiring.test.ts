@@ -11,7 +11,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
+// Line endings normalised: with core.autocrlf=true a Windows checkout has CRLF,
+// and the patterns below match literal newline sequences.
+const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8').replace(/\r\n/g, '\n');
 const page = read('src/pages/ModulePage.tsx');
 const hook = read('src/hooks/useClaude.ts');
 const api = read('src/lib/api.ts');

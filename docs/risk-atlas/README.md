@@ -23,7 +23,7 @@
 | 2. Threat paths | Typologies, predicate offences, intent chains | numeric + LLM-narrated |
 | 3. Vulnerabilities | Control gaps, blind spots | numeric |
 | 4. Inherent risk | `max(Exposure, Threat, Vulnerability)` | **pure formula** |
-| 5. Controls | Strong / Adequate / Weak — worst-of rollup | numeric, LLM rationale |
+| 5. Controls | Strong / Adequate / Weak — worst-of rollup | numeric, your rationale + evidence |
 | 6. Residual risk | `Inherent − reduction`, clamped [1,5] | **pure formula** |
 | 7. Appetite | 5×5 grid: 1–2 within · 3 boundary · 4 outside · 5 unacceptable | numeric |
 
