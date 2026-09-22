@@ -9,7 +9,8 @@
  * "supporting evidence". The owner decision: the general atom layer stays OFF
  * for Work until the memory has 100 module atoms and 30 ratings behind it;
  * collection keeps running, Coding Studio project lessons are untouched, and
- * the thumbs stay visible so the ratings can accrue.
+ * the thumbs stay visible so the ratings can accrue. Ratings of answers count
+ * as well as ratings of memory (see ATOM_INJECTION_GATE_SQL.ratings).
  *
  * This module is the single place that decides. The mode lives in
  * app_settings ('auto' | 'on' | 'off', missing row = 'auto'); the counts are
@@ -45,7 +46,15 @@ export const ATOM_INJECTION_GATE_SQL = {
   mode: 'SELECT value FROM app_settings WHERE key = ?',
   moduleAtoms:
     'SELECT COUNT(*) AS c FROM knowledge_atoms WHERE is_active = 1 AND source_module_id IS NOT NULL AND coding_project_id IS NULL AND atom_origin IS NULL',
-  ratings: 'SELECT COUNT(*) AS c FROM retrieval_feedback WHERE was_relevant IS NOT NULL',
+  // Memory ratings alone could never reach the threshold: retrieval_feedback
+  // rows exist only when atoms were injected, and injection waits for the
+  // ratings (2026-09-22 Work QA: 482 rows, 0 rated). The ratings people give
+  // are on the answer — the verdict / rating form (output_feedback) and the
+  // stars (post_market_events) — so those count too.
+  ratings:
+    "SELECT (SELECT COUNT(*) FROM retrieval_feedback WHERE was_relevant IS NOT NULL)"
+    + " + (SELECT COUNT(*) FROM output_feedback)"
+    + " + (SELECT COUNT(*) FROM post_market_events WHERE event_type = 'quality_rating') AS c",
   upsertMode: 'INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
 } as const;
 
