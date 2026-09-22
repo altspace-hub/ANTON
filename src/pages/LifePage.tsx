@@ -5,8 +5,21 @@
  * Route: /life
  *
  * Entry point when the user clicks the "Life" tab in the header.
- * Shows 4 section cards: News, Finance, Travel, Community.
+ * Shows 5 section cards: News, Finance, Travel, Community, Personal Modules.
  * Each section has a tagline, sub-feature list, and a primary CTA.
+ *
+ * 2026-09-18 (Wave 6, track B): the fifth card. CLAUDE.md had described this
+ * pillar as "personal-life modules (microfinance, BoP finance, consumer
+ * protection)" since 2026-04-10, pointing at a `src/pages/life/` that has
+ * never existed in the history, while the page itself (2026-03-05) and both
+ * later docs (`docs/life/README.md`, `docs/marketing/life.md`, 2026-04-26)
+ * describe News / Finance / Travel. The doc was the wrong half and has been
+ * corrected — but the underlying complaint was fair: `personal-finance`,
+ * `consumer-rights`, `credit-navigator` and `personal-dev` are personal-life
+ * areas with no door on the personal-life pillar. This card is that door.
+ *
+ * Note that `appMode` is derived from the pathname, so opening `/module/<id>`
+ * from here reads as the Work pillar — the same jump NGOHubPage makes.
  */
 
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +28,7 @@ import {
   ChevronRight, Shield, TrendingUp, Radio, User,
   PiggyBank, BarChart2, Calculator, Globe,
   Plane, BookOpen, MessageCircle, CalendarDays, Mail, Users2,
+  LayoutGrid, CreditCard, ShieldCheck, Briefcase,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -92,6 +106,21 @@ const SECTIONS: SectionCard[] = [
       { icon: <MessageCircle className="h-3.5 w-3.5" />,label: 'Forum',   to: '/community/forum' },
     ],
   },
+  {
+    id: 'modules',
+    icon: <LayoutGrid className="h-7 w-7" />,
+    label: 'Personal Modules',
+    tagline: 'Expert modules for the personal side — household money, debt, consumer rights, and your career.',
+    color: '#27AE60',
+    to: '/module/budget-planning',
+    cta: 'Open Personal Modules',
+    features: [
+      { icon: <PiggyBank className="h-3.5 w-3.5" />,   label: 'Budget & Savings',  to: '/module/budget-planning' },
+      { icon: <CreditCard className="h-3.5 w-3.5" />,  label: 'Debt & Loans',      to: '/module/debt-management' },
+      { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: 'Consumer Rights',   to: '/module/product-complaint' },
+      { icon: <Briefcase className="h-3.5 w-3.5" />,   label: 'Career & CV',       to: '/module/cv-writer' },
+    ],
+  },
 ];
 
 // ── Section card ──────────────────────────────────────────────────────────
@@ -167,7 +196,7 @@ export default function LifePage() {
       <div className="mb-10 text-center">
         <h1 className="mb-2 text-3xl font-bold text-adv-white">Life Platform</h1>
         <p className="text-adv-gray">
-          News · Finance · Travel · Community — everything outside of work, in one place.
+          News · Finance · Travel · Community · Personal Modules — everything outside of work, in one place.
         </p>
       </div>
 

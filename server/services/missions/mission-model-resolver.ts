@@ -5,8 +5,8 @@
 //
 // Resolution order per tier:
 //   1. strategy.<tier>_model when set, not 'auto', and resolvable
-//      (exact MODEL_REGISTRY id OR a dynamic ollama:/compat:/azure: id that
-//      can't be statically enumerated).
+//      (exact MODEL_REGISTRY id OR a dynamic ollama:/compat:/azure:/sdk:/codex:
+//      id that can't be statically enumerated).
 //   2. provider_preference='anthropic' (+ key present) pins the Claude tier
 //      default without remapping.
 //   3. mapModelToProvider(<Claude tier default>) — the established pattern:
@@ -31,7 +31,11 @@ const CLAUDE_TIER_DEFAULTS: Record<ModelStrategyTier, string> = {
  */
 export function isResolvableModelId(modelId: string): boolean {
   if (MODEL_REGISTRY[modelId]) return true;
-  return modelId.startsWith('ollama:') || modelId.startsWith('compat:') || modelId.startsWith('azure:');
+  // Same prefix set utility-model.ts accepts. sdk:/codex: were missing, so a
+  // mission configured for the subscription engine was silently rejected and
+  // ran on the metered Claude tier default instead.
+  return modelId.startsWith('ollama:') || modelId.startsWith('compat:') || modelId.startsWith('azure:')
+    || modelId.startsWith('sdk:') || modelId.startsWith('codex:');
 }
 
 /**

@@ -1,0 +1,715 @@
+{
+  "id": "eu-procurement-2014-24",
+  "name": "EU Public Procurement Directive",
+  "shortName": "Directive 2014/24/EU",
+  "reference": "Directive 2014/24/EU",
+  "coverage": "transcribed",
+  "referenceAliases": [
+    "Directive 2014/24/EU on public procurement"
+  ],
+  "applicationDate": "2016-04-18",
+  "supervisor": "National contracting authorities and review bodies",
+  "themes": [
+    "Scope, definitions and general principles",
+    "Rules on public contracts",
+    "Particular procurement regimes",
+    "Governance",
+    "Delegated powers, implementing powers and final provisions"
+  ],
+  "eurLex": "CELEX:32014L0024",
+  "articleCount": 94,
+  "divisionKind": "Title",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Scope, definitions and general principles",
+      "articles": "1-24"
+    },
+    {
+      "number": "II",
+      "title": "Rules on public contracts",
+      "articles": "25-73"
+    },
+    {
+      "number": "III",
+      "title": "Particular procurement regimes",
+      "articles": "74-82"
+    },
+    {
+      "number": "IV",
+      "title": "Governance",
+      "articles": "83-86"
+    },
+    {
+      "number": "V",
+      "title": "Delegated powers, implementing powers and final provisions",
+      "articles": "87-94"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32014L0024",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Subject-matter and scope",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive establishes rules on the procedures for procurement by contracting authorities with respect to public contracts as well as design contests, whose value is estimated to be not less than the thresholds laid down in Article 4."
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "For the purposes of this Directive, the following definitions apply: (1) ‘contracting authorities' means the State, regional or local authorities, bodies governed by public law or associations formed by one or more such authorities or one or more such bodies governed by public law; (2) ‘central government authorities'…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Mixed procurement",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Paragraph 2 shall apply to mixed contracts which have as their subject-matter different types of procurement all of which are covered by this Directive."
+    },
+    {
+      "id": "Art.4",
+      "title": "Threshold amounts",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall apply to procurements with a value net of value-added tax (VAT) estimated to be equal to or greater than the following thresholds: (a) EUR 5 186 000 for public works contracts; (b) EUR 134 000 for public supply and service contracts awarded by central government authorities and design contests…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Methods for calculating the estimated value of procurement",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "The calculation of the estimated value of a procurement shall be based on the total amount payable, net of VAT, as estimated by the contracting authority, including any form of option and any renewals of the contracts as explicitly set out in the procurement documents."
+    },
+    {
+      "id": "Art.6",
+      "title": "Revision of the thresholds and of the list of central government authorities",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Every two years from 30 June 2013, the Commission shall verify that the thresholds set out in points (a), (b) and (c) of Article 4 correspond to the thresholds established in the World Trade Organisation Agreement on Government Procurement (GPA) and shall, where necessary, revise them in accordance with this Article."
+    },
+    {
+      "id": "Art.7",
+      "title": "Contracts in the water, energy, transport and postal services sectors",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall not apply to public contracts and design contests which, under Directive 2014/25/EU, are awarded or organised by contracting authorities exercising one or more of the activities referred to in Articles 8 to 14 of that Directive and are awarded for the pursuit of those activities, to public…"
+    },
+    {
+      "id": "Art.8",
+      "title": "Specific exclusions in the field of electronic communications",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall not apply to public contracts and design contests for the principal purpose of permitting the contracting authorities to provide or exploit public communications networks or to provide to the public one or more electronic communications services."
+    },
+    {
+      "id": "Art.9",
+      "title": "Public contracts awarded and design contests organised pursuant to international rules",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall not apply to public contracts and design contests which the contracting authority is obliged to award or organise in accordance with procurement procedures different from those laid down in this Directive established by any of the following: (a) a legal instrument creating international law…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Specific exclusions for service contracts",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall not apply to public service contracts for: (a) the acquisition or rental, by whatever financial means, of land, existing buildings or other immovable property or concerning rights thereon; (b) the acquisition, development, production or co-production of programme material intended for audiovisual…"
+    },
+    {
+      "id": "Art.11",
+      "title": "Service contracts awarded on the basis of an exclusive right",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall not apply to public service contracts awarded by a contracting authority to another contracting authority or to an association of contracting authorities on the basis of an exclusive right which they enjoy pursuant to a law, regulation or published administrative provision which is compatible with…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Public contracts between entities within the public sector",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "A public contract awarded by a contracting authority to a legal person governed by private or public law shall fall outside the scope of this Directive where all of the following conditions are fulfilled: (a) the contracting authority exercises over the legal person concerned a control which is similar to that which…"
+    },
+    {
+      "id": "Art.13",
+      "title": "Contracts subsidised by contracting authorities",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall apply to the awarding of the following contracts: (a) works contracts which are subsidised directly by contracting authorities by more than 50 % and the estimated value of which, net of VAT, is equal to or greater than EUR 5 186 000, where those contracts involve one of the following activities:…"
+    },
+    {
+      "id": "Art.14",
+      "title": "Research and development services",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall only apply to public service contracts for research and development services which are covered by CPV codes 73000000-2 to 73120000-9, 73300000-5, 73420000-2 and 73430000-5 provided that both of the following conditions are fulfilled: (a) the benefits accrue exclusively to the contracting authority…"
+    },
+    {
+      "id": "Art.15",
+      "title": "Defence and security",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall apply to the awarding of public contracts and to design contests organised in the fields of defence and security, with the exception of the following contracts: (a) contracts falling within the scope of Directive 2009/81/EC; (b) contracts to which Directive 2009/81/EC does not apply pursuant to…"
+    },
+    {
+      "id": "Art.16",
+      "title": "Mixed procurement involving defence or security aspects",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "In the case of mixed contracts which have as their subject-matter procurement covered by this Directive as well as procurement covered by Article 346 TFEU or Directive 2009/81/EC, this Article shall apply."
+    },
+    {
+      "id": "Art.17",
+      "title": "Public contracts and design contests involving defence or security aspects which are awarded or organised pursuant to international rules",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "This Directive shall not apply to public contracts and design contests involving defence or security aspects which the contracting authority is obliged to award or organise in accordance with procurement procedures different from those laid down in this Directive established by any of the following: (a) an…"
+    },
+    {
+      "id": "Art.18",
+      "title": "Principles of procurement",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Contracting authorities shall treat economic operators equally and without discrimination and shall act in a transparent and proportionate manner."
+    },
+    {
+      "id": "Art.19",
+      "title": "Economic operators",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Economic operators that, under the law of the Member State in which they are established, are entitled to provide the relevant service, shall not be rejected solely on the ground that, under the law of the Member State in which the contract is awarded, they would be required to be either natural or legal persons."
+    },
+    {
+      "id": "Art.20",
+      "title": "Reserved contracts",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Member States may reserve the right to participate in public procurement procedures to sheltered workshops and economic operators whose main aim is the social and professional integration of disabled or disadvantaged persons or may provide for such contracts to be performed in the context of sheltered employment…"
+    },
+    {
+      "id": "Art.21",
+      "title": "Confidentiality",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Unless otherwise provided in this Directive or in the national law to which the contracting authority is subject, in particular legislation concerning access to information, and without prejudice to the obligations relating to the advertising of awarded contracts and to the information to candidates and tenderers set…"
+    },
+    {
+      "id": "Art.22",
+      "title": "Rules applicable to communication",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Member States shall ensure that all communication and information exchange under this Directive, in particular electronic submission, are performed using electronic means of communication in accordance with the requirements of this Article."
+    },
+    {
+      "id": "Art.23",
+      "title": "Nomenclatures",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Any references to nomenclatures in the context of public procurement shall be made using the Common Procurement Vocabulary (CPV) as adopted by Regulation (EC) No 2195/2002."
+    },
+    {
+      "id": "Art.24",
+      "title": "Conflicts of interest",
+      "chapter": "I",
+      "theme": "Scope, definitions and general principles",
+      "requirement": "Member States shall ensure that contracting authorities take appropriate measures to effectively prevent, identify and remedy conflicts of interest arising in the conduct of procurement procedures so as to avoid any distortion of competition and to ensure equal treatment of all economic operators."
+    },
+    {
+      "id": "Art.25",
+      "title": "Conditions relating to the GPA and other international agreements",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In so far as they are covered by Annexes 1, 2, 4 and 5 and the General Notes to the European Union's Appendix I to the GPA and by the other international agreements by which the Union is bound, contracting authorities shall accord to the works, supplies, services and economic operators of the signatories to those…"
+    },
+    {
+      "id": "Art.26",
+      "title": "Choice of procedures",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "When awarding public contracts, contracting authorities shall apply the national procedures adjusted to be in conformity with this Directive, provided that, without prejudice to Article 32, a call for competition has been published in accordance with this Directive."
+    },
+    {
+      "id": "Art.27",
+      "title": "Open procedure",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In open procedures, any interested economic operator may submit a tender in response to a call for competition. The minimum time limit for the receipt of tenders shall be 35 days from the date on which the contract notice was sent."
+    },
+    {
+      "id": "Art.28",
+      "title": "Restricted procedure",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In restricted procedures, any economic operator may submit a request to participate in response to a call for competition containing the information set out in Annex V parts B or C as the case may be by providing the information for qualitative selection that is requested by the contracting authority."
+    },
+    {
+      "id": "Art.29",
+      "title": "Competitive procedure with negotiation",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In competitive procedures with negotiation, any economic operator may submit a request to participate in response to a call for competition containing the information set out in Annex V parts B and C by providing the information for qualitative selection that is requested by the contracting authority."
+    },
+    {
+      "id": "Art.30",
+      "title": "Competitive dialogue",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In competitive dialogues, any economic operator may submit a request to participate in response to a contract notice by providing the information for qualitative selection that is requested by the contracting authority."
+    },
+    {
+      "id": "Art.31",
+      "title": "Innovation partnership",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In innovation partnerships, any economic operator may submit a request to participate in response to a contract notice by providing the information for qualitative selection that is requested by the contracting authority."
+    },
+    {
+      "id": "Art.32",
+      "title": "Use of the negotiated procedure without prior publication",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In the specific cases and circumstances laid down in paragraphs 2 to 5, Member States may provide that contracting authorities may award public contracts by a negotiated procedure without prior publication."
+    },
+    {
+      "id": "Art.33",
+      "title": "Framework agreements",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may conclude framework agreements, provided that they apply the procedures provided for in this Directive."
+    },
+    {
+      "id": "Art.34",
+      "title": "Dynamic purchasing systems",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "For commonly used purchases the characteristics of which, as generally available on the market, meet the requirements of the contracting authorities, contracting authorities may use a dynamic purchasing system."
+    },
+    {
+      "id": "Art.35",
+      "title": "Electronic auctions",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may use electronic auctions, in which new prices, revised downwards, and/or new values concerning certain elements of tenders are presented."
+    },
+    {
+      "id": "Art.36",
+      "title": "Electronic catalogues",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Where the use of electronic means of communication is required, contracting authorities may require tenders to be presented in the format of an electronic catalogue or to include an electronic catalogue."
+    },
+    {
+      "id": "Art.37",
+      "title": "Centralised purchasing activities and central purchasing bodies",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Member States may provide that contracting authorities may acquire supplies and/or services from a central purchasing body offering the centralised purchasing activity referred to in point (a) of point (14) of Article 2(1)."
+    },
+    {
+      "id": "Art.38",
+      "title": "Occasional joint procurement",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Two or more contracting authorities may agree to perform certain specific procurements jointly."
+    },
+    {
+      "id": "Art.39",
+      "title": "Procurement involving contracting authorities from different Member States",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Without prejudice to Article 12, contracting authorities from different Member States may act jointly in the award of public contracts by using one of the means provided for in this Article."
+    },
+    {
+      "id": "Art.40",
+      "title": "Preliminary market consultations",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Before launching a procurement procedure, contracting authorities may conduct market consultations with a view to preparing the procurement and informing economic operators of their procurement plans and requirements."
+    },
+    {
+      "id": "Art.41",
+      "title": "Prior involvement of candidates or tenderers",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Where a candidate or tenderer or an undertaking related to a candidate or tenderer has advised the contracting authority, whether in the context of Article 40 or not, or has otherwise been involved in the preparation of the procurement procedure, the contracting authority shall take appropriate measures to ensure that…"
+    },
+    {
+      "id": "Art.42",
+      "title": "Technical specifications",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "The technical specifications as defined in point 1 of Annex VII shall be set out in the procurement documents. The technical specification shall lay down the characteristics required of a works, service or supply."
+    },
+    {
+      "id": "Art.43",
+      "title": "Labels",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Where contracting authorities intend to purchase works, supplies or services with specific environmental, social or other characteristics they may, in the technical specifications, the award criteria or the contract performance conditions, require a specific label as means of proof that the works, services or supplies…"
+    },
+    {
+      "id": "Art.44",
+      "title": "Test reports, certification and other means of proof",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may require that economic operators provide a test report from a conformity assessment body or a certificate issued by such a body as means of proof of conformity with requirements or criteria set out in the technical specifications, the award criteria or the contract performance conditions."
+    },
+    {
+      "id": "Art.45",
+      "title": "Variants",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may authorise or require tenderers to submit variants. They shall indicate in the contract notice or, where a prior information notice is used as a means of calling for competition, in the invitation to confirm interest whether or not they authorise or require variants."
+    },
+    {
+      "id": "Art.46",
+      "title": "Division of contracts into lots",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may decide to award a contract in the form of separate lots and may determine the size and subject-matter of such lots."
+    },
+    {
+      "id": "Art.47",
+      "title": "Setting time limits",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "When fixing the time limits for the receipt of tenders and requests to participate, contracting authorities shall take account of the complexity of the contract and the time required for drawing up tenders, without prejudice to the minimum time limits set out in Articles 27 to 31."
+    },
+    {
+      "id": "Art.48",
+      "title": "Prior information notices",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may make known their intentions of planned procurements through the publication of a prior information notice."
+    },
+    {
+      "id": "Art.49",
+      "title": "Contract notices",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contract notices shall be used as a means of calling for competition in respect of all procedures, without prejudice to the second subparagraph of Article 26(5) and Article 32."
+    },
+    {
+      "id": "Art.50",
+      "title": "Contract award notices",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Not later than 30 days after the conclusion of a contract or of a framework agreement, following the decision to award or conclude it, contracting authorities shall send a contract award notice on the results of the procurement procedure."
+    },
+    {
+      "id": "Art.51",
+      "title": "Form and manner of publication of notices",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Notices referred to in Articles 48, 49 and 50 shall include the information set out in Annex V in the format of standard forms, including standard forms for corrigenda."
+    },
+    {
+      "id": "Art.52",
+      "title": "Publication at national level",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Notices referred to in Articles 48, 49 and 50 and the information contained therein shall not be published at national level before the publication pursuant to Article 51."
+    },
+    {
+      "id": "Art.53",
+      "title": "Electronic availability of procurement documents",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities shall by electronic means offer unrestricted and full direct access free of charge to the procurement documents from the date of publication of a notice in accordance with Article 51 or the date on which an invitation to confirm interest was sent."
+    },
+    {
+      "id": "Art.54",
+      "title": "Invitations to candidates",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In restricted procedures, competitive dialogue procedures, innovation partnerships and competitive procedures with negotiation, contracting authorities shall simultaneously and in writing invite the selected candidates to submit their tenders or, in the case of a competitive dialogue, to take part in the dialogue."
+    },
+    {
+      "id": "Art.55",
+      "title": "Informing candidates and tenderers",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities shall as soon as possible inform each candidate and tenderer of decisions reached concerning the conclusion of a framework agreement, the award of the contract or admittance to a dynamic purchasing system, including the grounds for any decision not to conclude a framework agreement, not to…"
+    },
+    {
+      "id": "Art.56",
+      "title": "General principles",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracts shall be awarded on the basis of criteria laid down in accordance with Articles 67 to 69, provided that the contracting authority has verified in accordance with Articles 59 to 61 that all of the following conditions are fulfilled: (a) the tender complies with the requirements, conditions and criteria set…"
+    },
+    {
+      "id": "Art.57",
+      "title": "Exclusion grounds",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities shall exclude an economic operator from participation in a procurement procedure where they have established, by verifying in accordance with Articles 59, 60 and 61, or are otherwise aware that that economic operator has been the subject of a conviction by final judgment for one of the…"
+    },
+    {
+      "id": "Art.58",
+      "title": "Selection criteria",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Selection criteria may relate to: (a) suitability to pursue the professional activity; (b) economic and financial standing; (c) technical and professional ability."
+    },
+    {
+      "id": "Art.59",
+      "title": "European Single Procurement Document",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "At the time of submission of requests to participate or of tenders, contracting authorities shall accept the European Single Procurement Document (ESPD), consisting of an updated self-declaration as preliminary evidence in replacement of certificates issued by public authorities or third parties confirming that the…"
+    },
+    {
+      "id": "Art.60",
+      "title": "Means of proof",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may require the certificates, statements and other means of proof referred to in paragraphs 2, 3 and 4 of this Article and Annex XII as evidence for the absence of grounds for exclusion as referred to in Article 57 and for the fulfilment of the selection criteria in accordance with Article 58."
+    },
+    {
+      "id": "Art.61",
+      "title": "Online repository of certificates (e-Certis)",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "With a view to facilitating cross-border tendering, Member States shall ensure that the information concerning certificates and other forms of documentary evidence introduced in e-Certis established by the Commission is constantly kept up-to-date."
+    },
+    {
+      "id": "Art.62",
+      "title": "Quality assurance standards and environmental management standards",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities shall, where they require the production of certificates drawn up by independent bodies attesting that the economic operator complies with certain quality assurance standards, including on accessibility for disabled persons, refer to quality assurance systems based on the relevant European…"
+    },
+    {
+      "id": "Art.63",
+      "title": "Reliance on the capacities of other entities",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "With regard to criteria relating to economic and financial standing as set out pursuant to Article 58(3), and to criteria relating to technical and professional ability as set out pursuant to Article 58(4), an economic operator may, where appropriate and for a particular contract, rely on the capacities of other…"
+    },
+    {
+      "id": "Art.64",
+      "title": "Official lists of approved economic operators and certification by bodies established under public or private law",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Member States may establish or maintain either official lists of approved contractors, suppliers or service providers or provide for a certification by certification bodies complying with European certification standards within the meaning of Annex VII. They shall inform the Commission and the other Member States of…"
+    },
+    {
+      "id": "Art.65",
+      "title": "Reduction of the number of otherwise qualified candidates to be invited to participate",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "In restricted procedures, competitive procedures with negotiation, competitive dialogue procedures and innovation partnerships, contracting authorities may limit the number of candidates meeting the selection criteria that they will invite to tender or to conduct a dialogue, provided the minimum number, in accordance…"
+    },
+    {
+      "id": "Art.66",
+      "title": "Reduction of the number of tenders and solutions",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Where contracting authorities exercise the option of reducing the number of tenders to be negotiated as provided for in Article 29(6) or of solutions to be discussed as provided for in Article 30(4), they shall do so by applying the award criteria stated in the procurement documents."
+    },
+    {
+      "id": "Art.67",
+      "title": "Contract award criteria",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Without prejudice to national laws, regulations or administrative provisions concerning the price of certain supplies or the remuneration of certain services, contracting authorities shall base the award of public contracts on the most economically advantageous tender."
+    },
+    {
+      "id": "Art.68",
+      "title": "Life-cycle costing",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Life-cycle costing shall to the extent relevant cover parts or all of the following costs over the life cycle of a product, service or works: (a) costs, borne by the contracting authority or other users, such as: (i) costs relating to acquisition, (ii) costs of use, such as consumption of energy and other resources,…"
+    },
+    {
+      "id": "Art.69",
+      "title": "Abnormally low tenders",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities shall require economic operators to explain the price or costs proposed in the tender where tenders appear to be abnormally low in relation to the works, supplies or services."
+    },
+    {
+      "id": "Art.70",
+      "title": "Conditions for performance of contracts",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracting authorities may lay down special conditions relating to the performance of a contract, provided that they are linked to the subject-matter of the contract within the meaning of Article 67(3) and indicated in the call for competition or in the procurement documents."
+    },
+    {
+      "id": "Art.71",
+      "title": "Subcontracting",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Observance of the obligations referred to in Article 18(2) by subcontractors is ensured through appropriate action by the competent national authorities acting within the scope of their responsibility and remit."
+    },
+    {
+      "id": "Art.72",
+      "title": "Modification of contracts during their term",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Contracts and framework agreements may be modified without a new procurement procedure in accordance with this Directive in any of the following cases: (a) where the modifications, irrespective of their monetary value, have been provided for in the initial procurement documents in clear, precise and unequivocal review…"
+    },
+    {
+      "id": "Art.73",
+      "title": "Termination of contracts",
+      "chapter": "II",
+      "theme": "Rules on public contracts",
+      "requirement": "Member States shall ensure that contracting authorities have the possibility, at least under the following circumstances and under the conditions determined by the applicable national law, to terminate a public contract during its term, where: (a) the contract has been subject to a substantial modification, which…"
+    },
+    {
+      "id": "Art.74",
+      "title": "Award of contracts for social and other specific services",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "Public contracts for social and other specific services listed in Annex XIV shall be awarded in accordance with this Chapter, where the value of the contracts is equal to or greater than the threshold indicated in point (d) of Article 4."
+    },
+    {
+      "id": "Art.75",
+      "title": "Publication of notices",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "Contracting authorities intending to award a public contract for the services referred to in Article 74 shall make known their intention by any of the following means: (a) by means of a contract notice, which shall contain the information referred to in Annex V Part H, in accordance with the standard forms referred to…"
+    },
+    {
+      "id": "Art.76",
+      "title": "Principles of awarding contracts",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "Member States shall put in place national rules for the award of contracts subject to this Chapter in order to ensure contracting authorities comply with the principles of transparency and equal treatment of economic operators."
+    },
+    {
+      "id": "Art.77",
+      "title": "Reserved contracts for certain services",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "Member States may provide that contracting authorities may reserve the right for organisations to participate in procedures for the award of public contracts exclusively for those health, social and cultural services referred to in Article 74, which are covered by CPV codes 75121000-0, 75122000-7, 75123000-4,…"
+    },
+    {
+      "id": "Art.78",
+      "title": "Scope",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "This Chapter shall apply to: (a) design contests organised as part of a procedure leading to the award of a public service contract; (b) design contests with prizes or payments to participants."
+    },
+    {
+      "id": "Art.79",
+      "title": "Notices",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "Contracting authorities that intend to carry out a design contest shall make known their intention by means of a contest notice. Where they intend to award a subsequent service contract pursuant to Article 32(4), this shall be indicated in the contest notice."
+    },
+    {
+      "id": "Art.80",
+      "title": "Rules on the organisation of design contests and the selection of participants",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "When organising design contests, contracting authorities shall apply procedures which are adapted to the provisions of Title I and this Chapter."
+    },
+    {
+      "id": "Art.81",
+      "title": "Composition of the jury",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "The jury shall be composed exclusively of natural persons who are independent of participants in the contest. Where a particular professional qualification is required from participants in a contest, at least a third of the members of the jury shall have that qualification or an equivalent qualification."
+    },
+    {
+      "id": "Art.82",
+      "title": "Decisions of the jury",
+      "chapter": "III",
+      "theme": "Particular procurement regimes",
+      "requirement": "The jury shall be autonomous in its decisions or opinions. The jury shall examine the plans and projects submitted by the candidates anonymously and solely on the basis of the criteria indicated in the contest notice."
+    },
+    {
+      "id": "Art.83",
+      "title": "Enforcement",
+      "chapter": "IV",
+      "theme": "Governance",
+      "requirement": "In order to effectively ensure correct and efficient implementation, Member States shall ensure that at least the tasks set out in this Article are performed by one or more authorities, bodies or structures."
+    },
+    {
+      "id": "Art.84",
+      "title": "Individual reports on procedures for the award of contracts",
+      "chapter": "IV",
+      "theme": "Governance",
+      "requirement": "For every contract or framework agreement covered by this Directive, and every time a dynamic purchasing system is established, contracting authorities shall draw up a written report which shall include at least the following: (a) the name and address of the contracting authority, the subject-matter and value of the…"
+    },
+    {
+      "id": "Art.85",
+      "title": "National reporting and statistical information",
+      "chapter": "IV",
+      "theme": "Governance",
+      "requirement": "The Commission shall review the quality and completeness of data that can be extracted from the notices, referred to in Articles 48, 49, 50, 75 and 79, which are published in accordance with Annex VIII. Where the quality and completeness of the data referred to in the first subparagraph of this paragraph is not…"
+    },
+    {
+      "id": "Art.86",
+      "title": "Administrative cooperation",
+      "chapter": "IV",
+      "theme": "Governance",
+      "requirement": "Member States shall provide mutual assistance to each other, and shall put in place measures for effective cooperation with one another, in order to ensure exchange of information on issues referred to in Articles 42, 43, 44, 57, 59, 60, 62, 64 and 69."
+    },
+    {
+      "id": "Art.87",
+      "title": "Exercise of the delegation",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article. The power to adopt delegated acts referred to in Articles 6, 22, 23, 56 and 68 shall be conferred on the Commission for an indeterminate period of time from 17 April 2014."
+    },
+    {
+      "id": "Art.88",
+      "title": "Urgency procedure",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "Delegated acts adopted under this Article shall enter into force without delay and shall apply as long as no objection is expressed in accordance with paragraph 2."
+    },
+    {
+      "id": "Art.89",
+      "title": "Committee procedure",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "The Commission shall be assisted by the Advisory Committee on Public Procurement established by Council Decision 71/306/EEC ( 42 ) . That committee shall be a committee within the meaning of Regulation (EU) No 182/2011."
+    },
+    {
+      "id": "Art.90",
+      "title": "Transposition and transitional provisions",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with this Directive by 18 April 2016."
+    },
+    {
+      "id": "Art.91",
+      "title": "Repeals",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "Directive 2004/18/EC is repealed with effect from 18 April 2016. References to the repealed Directive shall be construed as references to this Directive and shall be read in accordance with the correlation table in Annex XV."
+    },
+    {
+      "id": "Art.92",
+      "title": "Review",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "The Commission shall review the economic effects on the internal market, in particular in terms of factors such as the cross-border award of contracts and transaction costs, resulting from the application of the thresholds set in Article 4 and report thereon to the European Parliament and the Council by 18 April 2019."
+    },
+    {
+      "id": "Art.93",
+      "title": "Entry into force",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "This Directive shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union ."
+    },
+    {
+      "id": "Art.94",
+      "title": "Addressees",
+      "chapter": "V",
+      "theme": "Delegated powers, implementing powers and final provisions",
+      "requirement": "This Directive is addressed to the Member States. Done at Strasbourg, 26 February 2014. Services publics fédéraux (Ministries): 1. Federale Overheidsdiensten (Ministries): 2."
+    }
+  ]
+}

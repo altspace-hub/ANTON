@@ -29,7 +29,7 @@ If this happens:
 
 ## COMMON SCAMS BY PLATFORM
 
-For M-Pesa (Kenya): the "you received money by mistake, please send it back" scam — the original deposit was fraudulent and will be reversed, so you lose the money you "return". Always call M-Pesa (0722 002 100 or *234#) to verify before sending anything back.
+For M-Pesa (Kenya): the "you received money by mistake, please send it back" scam — the original deposit was fraudulent and will be reversed, so you lose the money you "return". Always verify with the provider before sending anything back — through the provider's own app, the customer-care number printed on the SIM pack or website, or any registered agent. Do not use a number that came with the message.
 
 For MTN MoMo: "you have won a prize" calls — MTN does not call winners. Hang up.
 

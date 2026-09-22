@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchWithAuth } from '@/lib/api';
+import {
+  fetchWithAuth, fetchMemoryGovernance, updateMemoryGovernance, type MemoryGovernance, type MemoryGovernancePatch,
+  fetchModuleAccessRules, addModuleAccessRule, removeModuleAccessRule, fetchModuleAccessPreview,
+  type ModuleAccessRule, type ModuleAccessRuleRole, type ModuleAccessEffect, type ModuleAccessPreview,
+  fetchEngineGuards, updateEngineGuards, type EngineGuards,
+} from '@/lib/api';
+import { AREAS, MODULES } from '@/lib/constants';
 import { useSearchParams } from 'react-router-dom';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -53,6 +59,7 @@ const CHIP_INACTIVE = 'border-border bg-adv-dark text-adv-gray hover:border-adv-
 const MODEL_OPTIONS: { value: ModelId; label: string }[] = [
   { value: 'claude-opus-5', label: 'Opus 5' },
   { value: 'claude-sonnet-5', label: 'Sonnet 5' },
+  { value: 'claude-fable-5-1', label: 'Fable 5.1' },
   { value: 'claude-fable-5', label: 'Fable 5' },
   { value: 'claude-opus-4-8', label: 'Opus 4.8' },
   { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },
@@ -442,6 +449,30 @@ export default function Settings() {
   // Double-check (four-eyes) — optional second-model review. Off by default.
   const [doubleCheckEnabled, setDoubleCheckEnabled] = useState<boolean>(false);
   const [verifierModel, setVerifierModel] = useState<string>('claude-haiku-4-5-20251001');
+  // Wave 4b: memory & governance — the injection gate, sign-off before export,
+  // automatic structured extraction. null until the first load answers.
+  const [memoryGovernance, setMemoryGovernance] = useState<MemoryGovernance | null>(null);
+  const [memoryGovernanceError, setMemoryGovernanceError] = useState<string | null>(null);
+
+  // Wave 6 track F — per-role module access (team mode, admin). The rule list
+  // and the "N of M modules" preview are re-read after every add / remove.
+  const [moduleAccessRules, setModuleAccessRules] = useState<ModuleAccessRule[]>([]);
+  const [moduleAccessPreview, setModuleAccessPreview] = useState<ModuleAccessPreview | null>(null);
+  const [moduleAccessError, setModuleAccessError] = useState<string | null>(null);
+  const [moduleAccessBusy, setModuleAccessBusy] = useState(false);
+  const [newRuleRole, setNewRuleRole] = useState<ModuleAccessRuleRole>('viewer');
+  const [newRuleScope, setNewRuleScope] = useState<'area' | 'module' | 'all'>('area');
+  const [newRuleAreaId, setNewRuleAreaId] = useState<string>(AREAS[0]?.id ?? '');
+  const [newRuleModuleId, setNewRuleModuleId] = useState('');
+  const [newRuleEffect, setNewRuleEffect] = useState<ModuleAccessEffect>('deny');
+  const [newRuleNote, setNewRuleNote] = useState('');
+
+  // Wave 6 track A2 — the daily cap on subscription (sdk:) runs. The input
+  // holds text so the field can be emptied (= unlimited); a failed save puts
+  // the last server value back.
+  const [engineGuards, setEngineGuards] = useState<EngineGuards | null>(null);
+  const [engineGuardsInput, setEngineGuardsInput] = useState('');
+  const [engineGuardsError, setEngineGuardsError] = useState<string | null>(null);
 
   // Wave 3.9: honest background-intelligence status (red/amber/green strip)
   const intelHealth = useIntelligenceHealth();
@@ -611,8 +642,17 @@ export default function Settings() {
     loadUtilityModel();
     loadMarketsModel();
     loadDoubleCheck();
+    loadMemoryGovernance();
+    loadEngineGuards();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkHealth, fetchDeploymentConfig]);
+
+  useEffect(() => {
+    if (activeTab === 'team' && isAdmin) {
+      loadModuleAccess();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, isAdmin]);
 
   useEffect(() => {
     if (activeTab === 'general') {
@@ -715,6 +755,155 @@ export default function Settings() {
       body: JSON.stringify({ model }),
     }).catch(() => { /* non-fatal */ });
     flash();
+  }
+
+  // Wave 4b — memory & governance. Loaded once; every change is written
+  // straight away and the state is replaced with what the server answers.
+  async function loadMemoryGovernance() {
+    try {
+      setMemoryGovernance(await fetchMemoryGovernance());
+      setMemoryGovernanceError(null);
+    } catch (err) {
+      setMemoryGovernanceError(err instanceof Error ? err.message : 'Could not load memory & governance settings');
+    }
+  }
+
+  async function handleUpdateMemoryGovernance(patch: MemoryGovernancePatch) {
+    const previous = memoryGovernance;
+    if (!previous) return;
+    // Optimistic — the control moves at once; a failed save puts it back.
+    setMemoryGovernance({
+      ...previous,
+      atomInjection: patch.atomInjectionMode !== undefined
+        ? { ...previous.atomInjection, mode: patch.atomInjectionMode }
+        : previous.atomInjection,
+      oversightBlocksExport: patch.oversightBlocksExport ?? previous.oversightBlocksExport,
+      structuredExtractionAuto: patch.structuredExtractionAuto ?? previous.structuredExtractionAuto,
+    });
+    setMemoryGovernanceError(null);
+    try {
+      setMemoryGovernance(await updateMemoryGovernance(patch));
+      flash();
+    } catch (err) {
+      setMemoryGovernance(previous);
+      setMemoryGovernanceError(err instanceof Error ? err.message : 'Could not save — the previous value stands');
+    }
+  }
+
+  // Wave 6 track F — module access rules (team mode, admin only).
+  async function loadModuleAccess() {
+    try {
+      const [rules, preview] = await Promise.all([fetchModuleAccessRules(), fetchModuleAccessPreview()]);
+      setModuleAccessRules(rules);
+      setModuleAccessPreview(preview);
+      setModuleAccessError(null);
+    } catch (err) {
+      setModuleAccessError(err instanceof Error ? err.message : 'Could not load module access rules');
+    }
+  }
+
+  async function handleAddModuleAccessRule() {
+    const moduleId = newRuleScope === 'module' ? newRuleModuleId.trim() : null;
+    const areaId = newRuleScope === 'area' ? newRuleAreaId : null;
+    if (newRuleScope === 'module' && !moduleId) {
+      setModuleAccessError(t('settings.moduleAccessNeedModule', 'Enter the id of the module the rule is for.'));
+      return;
+    }
+    if (newRuleScope === 'area' && !areaId) {
+      setModuleAccessError(t('settings.moduleAccessNeedArea', 'Choose the area the rule is for.'));
+      return;
+    }
+    setModuleAccessBusy(true);
+    setModuleAccessError(null);
+    try {
+      await addModuleAccessRule({
+        role: newRuleRole,
+        moduleId,
+        areaId,
+        wildcard: newRuleScope === 'all',
+        effect: newRuleEffect,
+        note: newRuleNote.trim() || null,
+      });
+      setNewRuleModuleId('');
+      setNewRuleNote('');
+      await loadModuleAccess();
+      flash();
+    } catch (err) {
+      setModuleAccessError(err instanceof Error ? err.message : 'Could not add the rule');
+    } finally {
+      setModuleAccessBusy(false);
+    }
+  }
+
+  async function handleRemoveModuleAccessRule(id: string) {
+    setModuleAccessBusy(true);
+    setModuleAccessError(null);
+    try {
+      await removeModuleAccessRule(id);
+      await loadModuleAccess();
+      flash();
+    } catch (err) {
+      setModuleAccessError(err instanceof Error ? err.message : 'Could not remove the rule');
+    } finally {
+      setModuleAccessBusy(false);
+    }
+  }
+
+  function describeRuleScope(rule: ModuleAccessRule): string {
+    if (rule.moduleId) {
+      const mod = MODULES.find((m) => m.id === rule.moduleId);
+      return mod ? `${mod.label} (${rule.moduleId})` : rule.moduleId;
+    }
+    if (rule.areaId) {
+      const area = AREAS.find((a) => a.id === rule.areaId);
+      return t('settings.moduleAccessAreaScope', 'Area: {{area}}', { area: area ? area.label : rule.areaId });
+    }
+    return t('settings.moduleAccessEveryModule', 'Every module');
+  }
+
+  // Wave 6 track A2 — engine guards. The field shows the server value; a save
+  // that fails reverts to it.
+  async function loadEngineGuards() {
+    try {
+      const guards = await fetchEngineGuards();
+      setEngineGuards(guards);
+      setEngineGuardsInput(guards.sdkDailyRunCap === null ? '' : String(guards.sdkDailyRunCap));
+      setEngineGuardsError(null);
+    } catch (err) {
+      setEngineGuards(null);
+      setEngineGuardsError(err instanceof Error ? err.message : 'Could not read the engine guards');
+    }
+  }
+
+  async function handleSaveEngineGuards() {
+    if (!engineGuards) return;
+    const previous = engineGuards;
+    const revert = () => setEngineGuardsInput(previous.sdkDailyRunCap === null ? '' : String(previous.sdkDailyRunCap));
+    const trimmed = engineGuardsInput.trim();
+    let sdkDailyRunCap: number | null;
+    if (trimmed === '') {
+      sdkDailyRunCap = null;
+    } else {
+      const n = Number(trimmed);
+      // The server accepts an integer of at least 1, or null for no cap.
+      if (!Number.isInteger(n) || n < 1) {
+        revert();
+        setEngineGuardsError(t('settings.sdkDailyRunCapInvalid', 'Enter a whole number of runs (1 or more), or leave the field empty for no cap.'));
+        return;
+      }
+      sdkDailyRunCap = n;
+    }
+    if (sdkDailyRunCap === previous.sdkDailyRunCap) return;
+    setEngineGuardsError(null);
+    try {
+      const guards = await updateEngineGuards({ sdkDailyRunCap });
+      setEngineGuards(guards);
+      setEngineGuardsInput(guards.sdkDailyRunCap === null ? '' : String(guards.sdkDailyRunCap));
+      flash();
+    } catch (err) {
+      revert();
+      setEngineGuardsError(err instanceof Error ? err.message : 'Could not save — the previous cap stands');
+    }
   }
 
   function handleSetThinking(thinking: ThinkingLevel) {
@@ -1016,6 +1205,163 @@ export default function Settings() {
                   );
                 })}
               </div>
+            )}
+          </div>
+
+          {/* Module access (Wave 6 track F) — which modules a role may run. Team
+              mode only: the tab itself is admin-in-team-mode, so the rules are
+              edited by the one person who may. Default open: no rule = allowed. */}
+          <div className="rounded-xl border border-border bg-adv-card p-6">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-adv-teal" />
+              <h2 className="text-sm font-semibold text-adv-white">{t('settings.moduleAccess', 'Module access')}</h2>
+            </div>
+            <p className="mt-1 text-sm text-adv-gray">
+              {t('settings.moduleAccessDesc', 'Which modules an analyst or a viewer may run. With no rule every module is open; a module rule beats an area rule, an area rule beats a rule for every module, and within one scope deny beats allow. Admins are never restricted. Applies in team mode.')}
+            </p>
+
+            {/* Preview — what the rules add up to, per role */}
+            <p className="mt-3 text-sm text-adv-off-white" aria-live="polite">
+              {moduleAccessPreview
+                ? t('settings.moduleAccessPreview', 'Analyst can run {{analyst}} of {{total}} modules; viewer {{viewer}} of {{total}}.', {
+                    analyst: moduleAccessPreview.roles.analyst?.allowed ?? moduleAccessPreview.total,
+                    viewer: moduleAccessPreview.roles.viewer?.allowed ?? moduleAccessPreview.total,
+                    total: moduleAccessPreview.total,
+                  })
+                : t('settings.moduleAccessPreviewLoading', 'Counting the modules each role can run…')}
+            </p>
+
+            {/* Rule list */}
+            <div className="mt-4">
+              {moduleAccessRules.length === 0 ? (
+                <p className="text-sm text-adv-gray">{t('settings.moduleAccessNoRules', 'No rules yet — every role can run every module.')}</p>
+              ) : (
+                <ul className="divide-y divide-border rounded-lg border border-border" aria-label={t('settings.moduleAccessRules', 'Module access rules')}>
+                  {moduleAccessRules.map((rule) => (
+                    <li key={rule.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
+                      <span className="w-16 text-sm font-medium capitalize text-adv-off-white">{rule.role}</span>
+                      <span className={`rounded-lg border px-2 py-0.5 text-sm ${rule.effect === 'deny' ? 'border-adv-red/50 text-adv-red' : 'border-adv-green/50 text-adv-green'}`}>
+                        {rule.effect === 'deny' ? t('settings.moduleAccessDeny', 'Deny') : t('settings.moduleAccessAllow', 'Allow')}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-adv-off-white" title={describeRuleScope(rule)}>{describeRuleScope(rule)}</span>
+                      {rule.note && <span className="min-w-0 max-w-xs truncate text-sm text-adv-gray" title={rule.note}>{rule.note}</span>}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveModuleAccessRule(rule.id)}
+                        disabled={moduleAccessBusy}
+                        aria-label={t('settings.moduleAccessRemoveRule', 'Remove rule')}
+                        title={t('settings.moduleAccessRemoveRule', 'Remove rule')}
+                        className="rounded p-1 text-adv-gray transition-colors hover:text-adv-red disabled:opacity-60"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Add a rule */}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label htmlFor="module-access-role" className="mb-1 block text-sm text-adv-gray">{t('settings.moduleAccessRole', 'Role')}</label>
+                <select
+                  id="module-access-role"
+                  value={newRuleRole}
+                  onChange={(e) => { const v = e.target.value; if (v === 'viewer' || v === 'analyst') setNewRuleRole(v); }}
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                >
+                  <option value="viewer">{t('settings.roleViewer', 'Viewer')}</option>
+                  <option value="analyst">{t('settings.roleAnalyst', 'Analyst')}</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="module-access-scope" className="mb-1 block text-sm text-adv-gray">{t('settings.moduleAccessScope', 'Scope')}</label>
+                <select
+                  id="module-access-scope"
+                  value={newRuleScope}
+                  onChange={(e) => { const v = e.target.value; if (v === 'area' || v === 'module' || v === 'all') setNewRuleScope(v); }}
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                >
+                  <option value="area">{t('settings.moduleAccessScopeArea', 'An area')}</option>
+                  <option value="module">{t('settings.moduleAccessScopeModule', 'One module')}</option>
+                  <option value="all">{t('settings.moduleAccessScopeAll', 'Every module')}</option>
+                </select>
+              </div>
+              {newRuleScope === 'area' && (
+                <div>
+                  <label htmlFor="module-access-area" className="mb-1 block text-sm text-adv-gray">{t('settings.moduleAccessArea', 'Area')}</label>
+                  <select
+                    id="module-access-area"
+                    value={newRuleAreaId}
+                    onChange={(e) => setNewRuleAreaId(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                  >
+                    {AREAS.map((area) => (
+                      <option key={area.id} value={area.id}>{area.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {newRuleScope === 'module' && (
+                <div>
+                  <label htmlFor="module-access-module" className="mb-1 block text-sm text-adv-gray">{t('settings.moduleAccessModuleId', 'Module id')}</label>
+                  <input
+                    id="module-access-module"
+                    type="text"
+                    list="module-access-module-ids"
+                    value={newRuleModuleId}
+                    onChange={(e) => setNewRuleModuleId(e.target.value)}
+                    placeholder="gap-analysis"
+                    className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray/60 focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                  />
+                  <datalist id="module-access-module-ids">
+                    {MODULES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                  </datalist>
+                </div>
+              )}
+              {newRuleScope === 'all' && (
+                <p className="self-end pb-2 text-sm text-adv-gray">{t('settings.moduleAccessScopeAllHint', 'Covers every module the role has no closer rule for.')}</p>
+              )}
+              <div>
+                <label htmlFor="module-access-effect" className="mb-1 block text-sm text-adv-gray">{t('settings.moduleAccessEffect', 'Effect')}</label>
+                <select
+                  id="module-access-effect"
+                  value={newRuleEffect}
+                  onChange={(e) => { const v = e.target.value; if (v === 'allow' || v === 'deny') setNewRuleEffect(v); }}
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                >
+                  <option value="deny">{t('settings.moduleAccessDeny', 'Deny')}</option>
+                  <option value="allow">{t('settings.moduleAccessAllow', 'Allow')}</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2 lg:col-span-3">
+                <label htmlFor="module-access-note" className="mb-1 block text-sm text-adv-gray">{t('settings.moduleAccessNote', 'Note (optional)')}</label>
+                <input
+                  id="module-access-note"
+                  type="text"
+                  value={newRuleNote}
+                  onChange={(e) => setNewRuleNote(e.target.value)}
+                  maxLength={500}
+                  placeholder={t('settings.moduleAccessNotePlaceholder', 'Why this rule exists')}
+                  className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray/60 focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  onClick={handleAddModuleAccessRule}
+                  disabled={moduleAccessBusy}
+                  className="flex items-center gap-1.5 rounded-lg bg-adv-teal-dim px-3 py-2 text-sm text-adv-teal transition-colors hover:bg-adv-teal/20 disabled:opacity-60"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('settings.moduleAccessAddRule', 'Add rule')}
+                </button>
+              </div>
+            </div>
+
+            {moduleAccessError && (
+              <p className="mt-3 text-sm text-adv-red" role="alert">{moduleAccessError}</p>
             )}
           </div>
         </div>
@@ -1589,6 +1935,39 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
+
+                {/* Engine guards (Wave 6 track A2) — a daily cap on subscription
+                    runs. Empty = unlimited. Saved on blur / Enter; a failed save
+                    puts the server's value back. */}
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <label htmlFor="sdk-daily-run-cap" className="text-sm text-adv-gray">
+                    {t('settings.sdkDailyRunCap', 'Daily cap on subscription runs')}
+                  </label>
+                  <input
+                    id="sdk-daily-run-cap"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    value={engineGuardsInput}
+                    disabled={!engineGuards}
+                    onChange={(e) => setEngineGuardsInput(e.target.value)}
+                    onBlur={handleSaveEngineGuards}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                    placeholder={t('settings.sdkDailyRunCapUnlimited', 'unlimited')}
+                    aria-label={t('settings.sdkDailyRunCap', 'Daily cap on subscription runs')}
+                    aria-describedby="sdk-runs-today"
+                    className="w-32 rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white placeholder:text-adv-gray/60 focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
+                  />
+                  <span id="sdk-runs-today" className="text-sm text-adv-gray" aria-live="polite">
+                    {engineGuards
+                      ? t('settings.sdkRunsToday', '{{count}} runs today', { count: engineGuards.sdkRunsToday })
+                      : t('settings.sdkRunsTodayUnavailable', 'run count unavailable')}
+                  </span>
+                </div>
+                {engineGuardsError && (
+                  <p className="mt-2 text-sm text-adv-red" role="alert">{engineGuardsError}</p>
+                )}
               </div>
             )}
 
@@ -1900,6 +2279,105 @@ export default function Settings() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Memory & governance (Wave 4b) — what learned memory reaches a Work run,
+          whether an unsigned gated run may leave, and whether every run pays
+          for a structured extraction. Same chip/toggle pattern as Double-check. */}
+      <div className="mb-6 rounded-xl border border-border bg-adv-card p-6">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-adv-teal" />
+          <h2 className="text-sm font-semibold text-adv-white">{t('settings.memoryGovernance', 'Memory & governance')}</h2>
+        </div>
+        <p className="mt-1 text-xs text-adv-gray">
+          {t('settings.memoryGovernanceDesc', 'What learned memory reaches a Work run, whether a high-stakes run may be exported before a professional has signed it off, and whether every run pays for a structured extraction.')}
+        </p>
+
+        <div className="mt-5 space-y-5">
+          {/* Memory injection into Work runs — auto / on / off, with the gate's live reason */}
+          <div>
+            <label htmlFor="memory-injection-mode" className="mb-2 block text-sm text-adv-gray">
+              {t('settings.memoryInjection', 'Memory injection into Work runs')}
+            </label>
+            <select
+              id="memory-injection-mode"
+              value={memoryGovernance?.atomInjection.mode ?? 'auto'}
+              disabled={!memoryGovernance}
+              onChange={(e) => {
+                const mode = e.target.value;
+                if (mode === 'auto' || mode === 'on' || mode === 'off') handleUpdateMemoryGovernance({ atomInjectionMode: mode });
+              }}
+              className="w-full max-w-md rounded-lg border border-border bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
+            >
+              <option value="auto">{t('settings.memoryInjectionAuto', 'Auto — inject once memory has earned its place')}</option>
+              <option value="on">{t('common.on', 'On')}</option>
+              <option value="off">{t('common.off', 'Off')}</option>
+            </select>
+            <p className="mt-2 text-xs text-adv-gray" aria-live="polite">
+              {memoryGovernance
+                ? memoryGovernance.atomInjection.reason
+                : t('settings.memoryInjectionLoading', 'Reading the memory gate…')}
+            </p>
+          </div>
+
+          {/* Professional sign-off before export — the three EU AI Act gated modules */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span id="oversight-blocks-export-label" className="text-sm text-adv-gray">
+                {t('settings.oversightBlocksExport', 'Require professional sign-off before export')}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleUpdateMemoryGovernance({ oversightBlocksExport: !memoryGovernance?.oversightBlocksExport })}
+                disabled={!memoryGovernance}
+                role="switch"
+                aria-checked={!!memoryGovernance?.oversightBlocksExport}
+                aria-labelledby="oversight-blocks-export-label"
+                className={`${CHIP_BASE} ${memoryGovernance?.oversightBlocksExport ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+              >
+                {memoryGovernance?.oversightBlocksExport ? t('common.on', 'On') : t('common.off', 'Off')}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.oversightBlocksExportDesc', 'When on, a run of the three gated modules — Gap Analysis, Sanctions Advisory and Investigation Support — cannot be exported until a professional has signed it off. Off by default: the sign-off is recorded either way; this only decides whether an unsigned export is refused.')}
+            </p>
+          </div>
+
+          {/* Structured extraction after every run — costs a model turn on the subscription engine */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span id="structured-extraction-auto-label" className="text-sm text-adv-gray">
+                {t('settings.structuredExtractionAuto', 'Extract structured data automatically after every run')}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleUpdateMemoryGovernance({ structuredExtractionAuto: !memoryGovernance?.structuredExtractionAuto })}
+                disabled={!memoryGovernance}
+                role="switch"
+                aria-checked={!!memoryGovernance?.structuredExtractionAuto}
+                aria-labelledby="structured-extraction-auto-label"
+                className={`${CHIP_BASE} ${memoryGovernance?.structuredExtractionAuto ? CHIP_ACTIVE : CHIP_INACTIVE}`}
+              >
+                {memoryGovernance?.structuredExtractionAuto ? t('common.on', 'On') : t('common.off', 'Off')}
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-adv-gray">
+              {t('settings.structuredExtractionAutoDesc', 'Feeds the Transform panel (spreadsheets, decks, diagrams) without waiting. On the subscription engine this costs one extra model turn per run, so it defaults off there; off, the extraction runs the first time a transform needs it.')}
+              {memoryGovernance && (
+                <>
+                  {' '}
+                  {memoryGovernance.structuredExtractionAutoDefault
+                    ? t('settings.structuredExtractionDefaultOn', 'Default for the current model: on.')
+                    : t('settings.structuredExtractionDefaultOff', 'Default for the current model: off.')}
+                </>
+              )}
+            </p>
+          </div>
+
+          {memoryGovernanceError && (
+            <p className="text-xs text-adv-red" role="alert">{memoryGovernanceError}</p>
+          )}
         </div>
       </div>
 

@@ -156,9 +156,6 @@ export async function aiScreenStudentMessage(
   if (!text) return { concern: null };
 
   try {
-    // getAnthropicUtilityModel returns a Claude id by construction — it falls back to
-    // DEFAULT_UTILITY_MODEL for any non-Anthropic override — but its declared type is
-    // the widened `string`. The cast is the type system catching up, not a claim.
     // Provider-neutral, and that is not a nicety.
     //
     // The first version of this file called the Anthropic SDK directly via callSync and

@@ -7,6 +7,8 @@
  *   POST /api/embeddings/reindex          — Trigger on-demand re-embedding
  *   GET  /api/embeddings/stats            — Embedding coverage stats
  *   GET  /api/embeddings/config           — Current provider config
+ *   GET  /api/embeddings/provider         — Active vs pinned embedding provider + row counts per model/dimension
+ *   POST /api/embeddings/reembed-mismatched — Re-embed rows from another provider (admin; dryRun defaults to true)
  *   GET  /api/embeddings/feedback/:sessionId — Retrieval feedback for a session
  */
 
@@ -15,10 +17,30 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { hybridSearch, findSimilar, INSTANCE_WIDE_SEARCH, searchScopeForRequest } from '../services/hybrid-search.js';
 import { getEmbeddingAdapter, isZeroVector } from '../services/embedding-adapter.js';
-import { resetVectorStore } from '../services/vector-store-adapter.js';
+import { resetVectorStore, getVectorStore } from '../services/vector-store-adapter.js';
 import { backfillKnowledgeAtoms, backfillCheckpoints, embedModuleDescriptions } from '../services/embedding-pipeline.js';
 import { applyAntonBoosts, applyTokenBudget } from '../services/atom-boost.js';
+import {
+  checkEmbeddingPin,
+  countEmbeddingRowsByModel,
+  countMismatchedEmbeddingRows,
+  mismatchedGroups,
+  repinToActive,
+} from '../services/embedding-pin.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import { safeError } from '../lib/error-response.js';
+
+/** Rows one reembed-mismatched call may touch, and the hard ceiling a caller can ask for. */
+export const REEMBED_DEFAULT_LIMIT = 200;
+export const REEMBED_MAX_LIMIT = 1000;
+const REEMBED_DEFAULT_BATCH = 25;
+const REEMBED_MAX_BATCH = 100;
+
+function clampInt(v: unknown, fallback: number, max: number): number {
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(Math.floor(n), max);
+}
 
 export async function createEmbeddingRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -339,29 +361,168 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
     }
   });
 
+  // ── GET /provider — Active vs pinned embedding provider ──────────────────
+  // The pin (app_settings embedding_provider / embedding_model /
+  // embedding_dimension) is what this instance's vectors were produced with;
+  // `active` is what the environment resolves to now. `rows` counts the
+  // embeddings table per (model, dimension) so a mismatch is visible as data,
+  // not just as a flag.
+
+  router.get('/provider', async (_req, res) => {
+    try {
+      const adapter = getEmbeddingAdapter();
+      const status = await checkEmbeddingPin(db, adapter);
+      const rows = await countEmbeddingRowsByModel(db);
+      const mismatched = mismatchedGroups(rows, status.active);
+      res.json({
+        active: status.active,
+        pinned: status.pinned,
+        mismatch: status.mismatch,
+        rows,
+        totalRows: rows.reduce((n, r) => n + r.count, 0),
+        mismatchedRows: mismatched.reduce((n, r) => n + r.count, 0),
+        mismatchedGroups: mismatched,
+      });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── POST /reembed-mismatched — Re-embed rows from another provider ───────
+  // Admin (solo: anyone). Body { dryRun?: boolean (default TRUE), limit?: number
+  // (≤ 1000, default 200), batchSize?: number (≤ 100, default 25) }. A dry run
+  // only counts. A real run re-embeds up to `limit` rows whose model or
+  // dimension differ from the active adapter, in batches, storing each new
+  // vector under the active model (a new row — the unique key includes the
+  // model) and deleting the old row once the new one is in. A row whose embed
+  // fails (zero vector) is left as it was and counted under `failed`. When no
+  // mismatched row remains the pin follows the active adapter.
+
+  router.post('/reembed-mismatched', requireAdminOrSolo, async (req, res) => {
+    try {
+      const body = (req.body ?? {}) as { dryRun?: unknown; limit?: unknown; batchSize?: unknown };
+      const dryRun = body.dryRun !== false;
+      const limit = clampInt(body.limit, REEMBED_DEFAULT_LIMIT, REEMBED_MAX_LIMIT);
+      const batchSize = clampInt(body.batchSize, REEMBED_DEFAULT_BATCH, REEMBED_MAX_BATCH);
+
+      const adapter = getEmbeddingAdapter();
+      const status = await checkEmbeddingPin(db, adapter);
+      const groups = mismatchedGroups(await countEmbeddingRowsByModel(db), status.active);
+      const mismatchedRows = groups.reduce((n, r) => n + r.count, 0);
+
+      if (dryRun) {
+        return res.json({
+          dryRun: true,
+          active: status.active,
+          pinned: status.pinned,
+          mismatch: status.mismatch,
+          mismatchedRows,
+          mismatchedGroups: groups,
+          wouldReembed: Math.min(limit, mismatchedRows),
+          limit,
+          batchSize,
+        });
+      }
+
+      const store = getVectorStore(db);
+      const rows = await db.all<{
+        id: string; content_type: string; content_id: string; content_text: string;
+        embedding_model: string; metadata: string | null;
+      }>(
+        `SELECT id, content_type, content_id, content_text, embedding_model, metadata
+           FROM embeddings
+          WHERE embedding_model <> ? OR embedding_dimension <> ?
+          ORDER BY id
+          LIMIT ?`,
+        status.active.model, status.active.dimension, limit,
+      );
+
+      let reembedded = 0;
+      let failed = 0;
+      let skipped = 0;
+      for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize).filter((r) => {
+          if (r.content_text?.trim()) return true;
+          skipped++;
+          return false;
+        });
+        if (batch.length === 0) continue;
+        const vectors = await adapter.embedBatch(batch.map((r) => r.content_text));
+        for (let j = 0; j < batch.length; j++) {
+          const row = batch[j];
+          const vector = vectors[j];
+          if (!vector || isZeroVector(vector)) { failed++; continue; }
+          let metadata: Record<string, unknown> = {};
+          try { metadata = JSON.parse(row.metadata || '{}') as Record<string, unknown>; } catch { /* keep {} */ }
+          await store.store({
+            contentType: row.content_type,
+            contentId: row.content_id,
+            contentText: row.content_text,
+            vector,
+            model: adapter.model,
+            metadata,
+          });
+          // The old row only — the new one carries the active model.
+          await db.run('DELETE FROM embeddings WHERE id = ? AND embedding_model <> ?', row.id, adapter.model);
+          reembedded++;
+        }
+      }
+
+      const remaining = await countMismatchedEmbeddingRows(db, status.active);
+      let repinned = false;
+      if (remaining === 0 && (status.mismatch || status.pinned === null)) {
+        await repinToActive(db, adapter);
+        repinned = true;
+      }
+
+      res.json({
+        dryRun: false,
+        active: status.active,
+        scanned: rows.length,
+        reembedded,
+        failed,
+        skipped,
+        remaining,
+        repinned,
+        limit,
+        batchSize,
+      });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
   // ── GET /feedback/:sessionId — Retrieval feedback for a session ──────────
+  // Wave 4: `?messageId=` narrows to the atoms injected into ONE answer
+  // (retrieval_feedback.message_id, migration 275), so the thumbs under an
+  // answer rate what went into that answer and not the whole session.
 
   router.get('/feedback/:sessionId', async (req, res) => {
     try {
       const { sessionId } = req.params;
+      const messageId = typeof req.query.messageId === 'string' && req.query.messageId.trim()
+        ? req.query.messageId.trim()
+        : null;
       // Finding #3: db.get returns a single row (or undefined), but this endpoint
       // returns a LIST of injected atoms. db.get cast to an array meant injectedAtoms
       // was one object and total was undefined; with no rows, db.get → undefined and
       // `rows.length` threw → 500. db.all returns the array the UI (OutputToolbar /
       // InjectedAtomsPanel) iterates, and [] for an empty session (no 500).
-      const rows = await db.all(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant,
+      const where = messageId ? 'WHERE rf.session_id = ? AND rf.message_id = ?' : 'WHERE rf.session_id = ?';
+      const params = messageId ? [sessionId, messageId] : [sessionId];
+      const rows = await db.all(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant, rf.message_id,
                 ka.content, ka.atom_type, ka.category, ka.confidence
          FROM retrieval_feedback rf
          LEFT JOIN knowledge_atoms ka ON ka.id = rf.atom_id
-         WHERE rf.session_id = ?
+         ${where}
          ORDER BY rf.retrieval_score DESC`
-      , sessionId) as Array<{
+      , ...params) as Array<{
         atom_id: string; retrieval_method: string; retrieval_score: number;
-        injected_at: string; was_relevant: number | null;
+        injected_at: string; was_relevant: number | null; message_id: string | null;
         content: string; atom_type: string; category: string; confidence: number;
       }>;
 
-      res.json({ sessionId, injectedAtoms: rows, total: rows.length });
+      res.json({ sessionId, messageId, injectedAtoms: rows, total: rows.length });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });
     }

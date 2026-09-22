@@ -99,6 +99,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "data-storytelling"
+  ],
   "tags": [
     "mis",
     "reporting",

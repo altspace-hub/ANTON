@@ -3,15 +3,29 @@
   "name": "DIFC + ADGM Digital Asset Frameworks — DFSA Crypto Tokens + FSRA Digital Asset Framework (2025)",
   "shortName": "DIFC + ADGM DA",
   "reference": "DFSA Crypto Token regime + ADGM FSRA Digital Asset Framework (amended 10 June 2025)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "dfsaUrl": "https://www.dfsa.ae/what-we-do/financial-services-product-development/crypto-tokens",
   "fsraUrl": "https://www.adgm.com/operating-in-adgm/financial-services-regulation-authority/digital-assets",
   "adgmAmendmentInForce": "2025-06-10",
   "supervisor": "DFSA (DIFC) + FSRA (ADGM)",
   "articleCount": 11,
   "chapters": [
-    {"number": "DFSA", "title": "DFSA Crypto Token regime (DIFC)", "articles": "DFSA CTKN module"},
-    {"number": "FSRA", "title": "ADGM FSRA Digital Asset framework (amended 10 Jun 2025)", "articles": "ADGM FSRA Rulebook"},
-    {"number": "Crosscutting", "title": "Cross-cutting standards", "articles": "AML + market conduct + custody"}
+    {
+      "number": "DFSA",
+      "title": "DFSA Crypto Token regime (DIFC)",
+      "articles": "DFSA CTKN module"
+    },
+    {
+      "number": "FSRA",
+      "title": "ADGM FSRA Digital Asset framework (amended 10 Jun 2025)",
+      "articles": "ADGM FSRA Rulebook"
+    },
+    {
+      "number": "Crosscutting",
+      "title": "Cross-cutting standards",
+      "articles": "AML + market conduct + custody"
+    }
   ],
   "themes": [
     "DFSA Crypto Token",

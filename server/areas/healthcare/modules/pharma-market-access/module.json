@@ -59,7 +59,7 @@
     {
       "id": "markets",
       "label": "Target Markets",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "eu-ema",

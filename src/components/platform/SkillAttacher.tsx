@@ -1,35 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Zap, ChevronDown, ChevronRight, X } from 'lucide-react';
-import { fetchSkills } from '@/lib/api';
-
-interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  tags: string[];
-}
+import { useSkillCatalog } from '@/hooks/useSkills';
+import type { SkillSummary } from '@/lib/types';
 
 interface SkillAttacherProps {
   selected: string[];
   onChange: (skills: string[]) => void;
 }
 
+/**
+ * Display order of the category groups. Mirrors SKILL_CATEGORIES in
+ * server/services/skills-manager.ts; a category outside this list sorts last
+ * under its raw name rather than disappearing.
+ */
+const CATEGORY_ORDER = ['methodology', 'domain', 'technical', 'thematic', 'jurisdiction', 'language', 'communication', 'style'];
+
 const CATEGORY_LABELS: Record<string, string> = {
-  language: 'Language',
-  communication: 'Communication',
   methodology: 'Methodology',
   domain: 'Domain',
+  technical: 'Technical standards',
+  thematic: 'Thematic knowledge',
+  jurisdiction: 'Jurisdiction',
+  language: 'Language',
+  communication: 'Communication',
   style: 'Style',
 };
 
+function categoryRank(category: string): number {
+  const i = CATEGORY_ORDER.indexOf(category);
+  return i === -1 ? CATEGORY_ORDER.length : i;
+}
+
 export default function SkillAttacher({ selected, onChange }: SkillAttacherProps) {
   const [expanded, setExpanded] = useState(false);
-  const [skills, setSkills] = useState<Skill[]>([]);
-
-  useEffect(() => {
-    fetchSkills().then(setSkills).catch(() => {});
-  }, []);
+  const { skills } = useSkillCatalog();
 
   const toggle = (id: string) => {
     if (selected.includes(id)) {
@@ -39,12 +43,21 @@ export default function SkillAttacher({ selected, onChange }: SkillAttacherProps
     }
   };
 
-  const grouped = skills.reduce<Record<string, Skill[]>>((acc, skill) => {
+  const grouped = skills.reduce<Record<string, SkillSummary[]>>((acc, skill) => {
     const cat = skill.category || 'other';
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(skill);
     return acc;
   }, {});
+
+  // Fixed group order, names alphabetical inside a group — the twelve
+  // jurisdiction packs read as a country list instead of load order.
+  const groups = Object.entries(grouped)
+    .sort(([a], [b]) => categoryRank(a) - categoryRank(b) || a.localeCompare(b))
+    .map(([category, list]) => ({
+      category,
+      skills: [...list].sort((x, y) => x.name.localeCompare(y.name)),
+    }));
 
   return (
     <div className="rounded-xl border border-border bg-adv-card">
@@ -93,10 +106,11 @@ export default function SkillAttacher({ selected, onChange }: SkillAttacherProps
 
           {/* Skill grid by category */}
           <div className="space-y-3">
-            {Object.entries(grouped).map(([category, catSkills]) => (
+            {groups.map(({ category, skills: catSkills }) => (
               <div key={category}>
                 <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-adv-gray">
                   {CATEGORY_LABELS[category] || category}
+                  <span className="ml-1.5 normal-case tracking-normal opacity-60">({catSkills.length})</span>
                 </div>
                 <div className="space-y-1.5">
                   {catSkills.map((skill) => {

@@ -3,6 +3,8 @@
   "name": "Economic Crime and Corporate Transparency Act 2023",
   "shortName": "ECCTA",
   "reference": "ECCTA 2023 c.56",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.legislation.gov.uk/ukpga/2023/56",
   "royalAssent": "2023-10-26",
   "ftpfInForce": "2025-09-01",
@@ -10,12 +12,36 @@
   "supervisor": "SFO / FCA / HMRC / NCA",
   "articleCount": 18,
   "chapters": [
-    {"number": "1", "title": "Companies House reform (Part 1)", "articles": "Pt.1"},
-    {"number": "2", "title": "Limited partnerships, register of overseas entities (Parts 2–3)", "articles": "Pt.2-3"},
-    {"number": "3", "title": "Cryptoassets — civil recovery and confiscation (Part 4)", "articles": "Pt.4"},
-    {"number": "4", "title": "Investigation powers (Part 5)", "articles": "Pt.5"},
-    {"number": "5", "title": "Corporate criminal liability — identification principle (Part 5, s.196)", "articles": "s.196"},
-    {"number": "6", "title": "Failure to prevent fraud (Part 5, ss.199-206 + Sched 13)", "articles": "ss.199-206"}
+    {
+      "number": "1",
+      "title": "Companies House reform (Part 1)",
+      "articles": "Pt.1"
+    },
+    {
+      "number": "2",
+      "title": "Limited partnerships, register of overseas entities (Parts 2–3)",
+      "articles": "Pt.2-3"
+    },
+    {
+      "number": "3",
+      "title": "Cryptoassets — civil recovery and confiscation (Part 4)",
+      "articles": "Pt.4"
+    },
+    {
+      "number": "4",
+      "title": "Investigation powers (Part 5)",
+      "articles": "Pt.5"
+    },
+    {
+      "number": "5",
+      "title": "Corporate criminal liability — identification principle (Part 5, s.196)",
+      "articles": "s.196"
+    },
+    {
+      "number": "6",
+      "title": "Failure to prevent fraud (Part 5, ss.199-206 + Sched 13)",
+      "articles": "ss.199-206"
+    }
   ],
   "themes": [
     "Failure-to-prevent fraud",

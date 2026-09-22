@@ -10,7 +10,7 @@ Create a comprehensive, accurate regulatory compliance calendar for the institut
 
 - Only include genuine regulatory obligations with identifiable legal or regulatory basis. Do not pad with general business activities.
 - Distinguish clearly between: hard legal deadlines (missing them = breach), regulatory best practice timelines, and recommended internal milestones.
-- For recurring obligations, state the exact frequency and basis (e.g., "annual, per AMLR Art. 18").
+- For recurring obligations, state the exact frequency and basis (e.g., "annual, per AMLR Art. 11(6)").
 - Flag deadline conflicts where multiple obligations cluster in the same period.
 - Build in preparation lead times — a deadline on 31 March requires work to start in January.
 
@@ -20,10 +20,10 @@ Create a comprehensive, accurate regulatory compliance calendar for the institut
 For the specified entity type, jurisdictions, and regulatory areas, identify all applicable periodic and one-time obligations. Organize by category:
 
 **AML/CFT Obligations**
-- Annual MLRO report to board (required under AMLR Art. 10 and most national frameworks)
-- Annual risk assessment review (AMLR Art. 8 — IWRA must be kept current)
+- Annual MLRO report to board (required under AMLR Art. 11(6) and most national frameworks)
+- Annual risk assessment review (AMLR Art. 10(2) — the business-wide risk assessment must be kept up to date)
 - Periodic KYC review cycles by risk tier (AMLR Art. 26)
-- Annual training completion (AMLR Art. 18)
+- Annual training completion (AMLR Art. 12)
 - SAR filing (event-driven — statutory deadlines from trigger event, typically 5 working days)
 - National FIU statistical reporting (jurisdiction-specific)
 
@@ -60,7 +60,7 @@ For the specified entity type, jurisdictions, and regulatory areas, identify all
 
 **One-Time Implementation Deadlines**
 - AMLR application: July 2027 for most provisions
-- AMLA supervision start: 2027 for directly supervised entities
+- AMLA direct supervision start: 1 January 2028 for selected obliged entities (AMLA itself operational since 1 July 2025; the first selection round runs during 2027)
 - Any national transposition measures with specific deadlines
 
 ### 2. Calendar Compilation
@@ -96,3 +96,5 @@ For each critical or high-priority obligation, recommend internal milestones wor
 - Data gathering / work start date
 
 This ensures the calendar is actionable for planning purposes, not just a list of deadlines.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

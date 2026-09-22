@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
-import { callSync } from '../services/claude-client.js';
+import { callChat } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
 
 export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promise<Router> {
@@ -120,9 +120,12 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
       }
       messages.push({ role: 'user', content: userMessage });
 
-      const result = await callSync({
-        model: 'claude-sonnet-4-5-20250929',
-        thinking: 'think',
+      // Discovery chat: medium tier of the Settings default.
+      const result = await callChat({
+        tier: 'medium',
+        thinkingLevel: 'think',
+        maxTokens: 8192,
+        db,
         system: buildDiscoverySystemPrompt(project.name, project.target_tool, existingGoals, existingNotes),
         messages,
       });
@@ -167,9 +170,12 @@ export async function createInstructionBuilderRoutes(db: DatabaseAdapter): Promi
       const visionGoals = safeJsonParse(project.vision_goals, {});
       const discoveryNotes = safeJsonParse(project.discovery_notes, {});
 
-      const result = await callSync({
-        model: 'claude-opus-4-8',
-        thinking: 'think_hard',
+      // Architecture proposal: large tier (the Settings default model).
+      const result = await callChat({
+        tier: 'large',
+        thinkingLevel: 'think_hard',
+        maxTokens: 32000,
+        db,
         system: `You are a senior software architect and CTO creating an architecture proposal.
 
 Based on the project vision, goals, and discovery notes, produce a comprehensive architecture proposal with:
@@ -227,9 +233,12 @@ Format as well-structured Markdown. Be specific and actionable.`,
 
       for (const member of panelMembers) {
         const reviewId = randomUUID();
-        const result = await callSync({
-          model: 'claude-sonnet-4-5-20250929',
-          thinking: 'think',
+        // Panel review: medium tier.
+        const result = await callChat({
+          tier: 'medium',
+          thinkingLevel: 'think',
+          maxTokens: 8192,
+          db,
           system: `You are a ${member.name} reviewing a project plan and architecture proposal.
 
 Provide your expert review with:
@@ -321,9 +330,12 @@ Format your response as:
       const reviewSummary = reviews.map((r: any) => `${r.reviewer_persona_id}: ${r.verdict} — ${(r.findings || '').substring(0, 500)}`).join('\n');
 
       // Generate primary instruction file
-      const primaryResult = await callSync({
-        model: 'claude-opus-4-8',
-        thinking: 'think_hard',
+      // Primary instruction file: large tier (the Settings default model).
+      const primaryResult = await callChat({
+        tier: 'large',
+        thinkingLevel: 'think_hard',
+        maxTokens: 32000,
+        db,
         system: buildGenerationSystemPrompt(profile, structureTemplate),
         messages: [{
           role: 'user',
@@ -359,9 +371,12 @@ Generate a complete, production-ready ${profile.primary_filename} file that an A
         const suppFileNames = ['ARCHITECTURE.md', 'ROADMAP.md', 'DECISIONS.md', 'DOMAIN_REQUIREMENTS.md', 'TEST_PLAN.md'];
 
         for (const filename of suppFileNames) {
-          const suppResult = await callSync({
-            model: 'claude-sonnet-4-5-20250929',
-            thinking: 'think',
+          // Supplementary files: medium tier.
+          const suppResult = await callChat({
+            tier: 'medium',
+            thinkingLevel: 'think',
+            maxTokens: 16000,
+            db,
             system: `Generate a supplementary project documentation file called "${filename}" based on the project context. This file accompanies the main CLAUDE.md instruction file for a Claude Code project. Be specific and actionable. Format as clean Markdown.`,
             messages: [{
               role: 'user',

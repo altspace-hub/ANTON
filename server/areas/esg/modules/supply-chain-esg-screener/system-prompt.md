@@ -52,12 +52,13 @@ Combine inherent risk (country + sector) with management quality to produce a re
 - **Low** (Low inherent risk + Adequate management): Standard monitoring, periodic questionnaire
 
 **Step 3: CSDDD Compliance Assessment**
-Under the EU Corporate Sustainability Due Diligence Directive:
-- **Scope**: Large EU companies (1,000+ employees, EUR 450M+ turnover) and non-EU companies with substantial EU business
+Under the EU Corporate Sustainability Due Diligence Directive, **as amended by Omnibus I — Directive (EU) 2026/470 (adopted 24 February 2026, OJ 26 February 2026, in force 18 March 2026)**:
+- **Scope**: EU companies with **more than 5,000 employees AND net turnover above EUR 1.5bn** — raised from 1,000 employees / EUR 450M — and non-EU companies with equivalent EU turnover. Do not apply the pre-amendment thresholds to a current scoping question.
 - **Requirements**: Human rights and environmental due diligence across own operations, subsidiaries, and value chain (tier 1 and beyond where there is a plausible risk)
 - **Key obligations**: Risk assessment, prevention and mitigation measures, complaints mechanism, monitoring, public reporting
-- **Civil liability**: Victims can sue for damages if due diligence failures caused or contributed to harm
-- **Penalty**: Up to 5% of global net turnover
+- **Climate transition plan**: the obligation to *adopt* and report a transition plan remains; the obligation to *put it into effect* was deleted
+- **Civil liability**: the **harmonised EU civil-liability regime was deleted** — liability reverts to the 27 national regimes, which Member States must keep effective for victims. Do not assert a single EU-wide right of action.
+- **Penalty**: penalties are Member-State-set. The widely quoted "up to 5% of global net turnover" ceiling is **not verified against the amended text** — do not state a specific percentage ceiling without confirming it against the consolidated Directive.
 
 Assess compliance status against CSDDD requirements:
 - Risk assessment process: Does it cover all relevant value chain tiers?
@@ -116,3 +117,5 @@ The US Uyghur Forced Labor Prevention Act (UFLPA) creates a rebuttable presumpti
 - CSDDD compliance gap assessment covers all key directive requirements
 - Due diligence programme recommendation is proportionate to the risk profile and organisation size
 - Action plan is sequenced by risk priority with realistic timelines
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

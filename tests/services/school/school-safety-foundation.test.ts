@@ -27,7 +27,12 @@ import {
 /** Phrases unique to school-safety-foundation.md — absent from every other layer. */
 const MARKERS = [
   'Safeguarding Response Layer — Highest Priority',
-  'Childline UK: 0800 1111',
+  // Was 'Childline UK: 0800 1111' until 2026-09-18. Pinning a telephone number as
+  // the proof that a safeguarding protocol is present made the number load-bearing
+  // for the build, which is the wrong thing to make load-bearing: it goes stale and
+  // a child who dials a dead line has been failed by the thing that was meant to
+  // help. The marker is now the routing instruction, which does not decay.
+  'A national child helpline',
   'died by suicide',
   'Safe Messaging — Mental Health and Crisis Topics',
   'Age-Appropriate Content Standards',

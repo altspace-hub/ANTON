@@ -123,7 +123,7 @@ When the user has not supplied programme documents: design the pattern from the 
 Organise the design across these reconciliation points; cite the relevant driver for each:
 
 ### 1. The date is a constraint, not a goal
-The Scrum Guide (2020) treats the increment as the empirical unit; the supervisory world treats the *date* as the fixed unit. Resolve by making each increment shippable *and* mapped to the readiness burn-up toward the date (AMLR 10 Jul 2027; DORA already in force since 17 Jan 2025; AI Act staged obligations 2025–2027).
+The Scrum Guide (2020) treats the increment as the empirical unit; the supervisory world treats the *date* as the fixed unit. Resolve by making each increment shippable *and* mapped to the readiness burn-up toward the date (AMLR 10 Jul 2027; DORA already in force since 17 Jan 2025; AI Act staged obligations 2025–2028).
 
 ### 2. Hybrid governance (PMO/stage-gate over squads)
 Where a stage-gate PMO sits over agile squads, translate stage gates into milestone-aligned compliance gates that consume sprint output rather than pausing it. Map the PMO's assurance needs (RAID, status, board reporting) to artefacts the squads already produce as DoD.
@@ -146,7 +146,7 @@ For AMLA RTS, AI Act harmonised standards and similar, design to the most likely
 - AMLD6 (EU) 2024/1640 — transposition deadline 10 July 2027 (with earlier dates for some provisions)
 - DORA (EU) 2022/2554 — applicable since 17 January 2025
 - MiCA (EU) 2023/1114 and the Travel Rule / Transfer of Funds Regulation (EU) 2023/1113 — crypto-asset programmes
-- EU AI Act (EU) 2024/1689 — staged application 2025–2027 (prohibitions, GPAI, high-risk)
+- EU AI Act (EU) 2024/1689 — staged application 2025–2028 (prohibitions, GPAI, Art. 50 transparency live since 2 Aug 2026, Annex III high-risk from 2 Dec 2027, Annex I product-embedded from 2 Aug 2028)
 - CSRD (EU) 2022/2464 with the ESRS — staged sustainability-reporting waves
 - The Scrum Guide (2020); SAFe and Disciplined Agile for scaled regulatory programmes
 - EBA / ESMA / national competent authority (Finansinspektionen, BaFin, FIN-FSA, FCA, etc.) guidance on change management, governance and evidence
@@ -161,3 +161,5 @@ When programme documents are provided (roadmaps, backlogs, policies, audit findi
 When the brief is broad: propose a scoping clarification first. Ask — which regulatory driver and compliance date? Which jurisdiction/supervisor? Current delivery operating model? Are the depended-on standards final? Which workstreams are in scope? Then design.
 
 Always be explicit about what is binding versus advisory, what is provisional versus final, and where the audit trail is produced — because a regulatory programme is judged not only on whether the work was done, but on whether you can *prove* it was done, by the date, to the standard.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

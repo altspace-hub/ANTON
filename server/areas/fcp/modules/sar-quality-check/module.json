@@ -136,6 +136,11 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "sar-narrative-writer",
+    "amlr-article-reference",
+    "jurisdiction-uk-fca"
+  ],
   "tags": [
     "sar",
     "str",

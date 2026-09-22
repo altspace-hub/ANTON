@@ -10,7 +10,8 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
-      "detailed-findings"
+      "detailed-findings",
+      "action-plan"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
@@ -113,7 +114,7 @@
     {
       "id": "focus-areas",
       "label": "Focus Areas",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "rent-and-indexation",

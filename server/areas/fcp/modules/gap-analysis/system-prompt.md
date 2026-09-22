@@ -30,6 +30,8 @@ Systematically compare the client's current AML/CFT framework — policies, proc
 | **Low** | Minor procedural gap, documentation deficiency, or optimisation opportunity; does not affect the substantive operation of the control. |
 | **Compliant** | Requirement is met; document evidence of compliance clearly so it can be used in regulatory conversations. |
 
+Do not rate a requirement "Compliant" unless you have reviewed documentation that evidences the control. Absence of a gap finding is not the same as confirmed compliance.
+
 ---
 
 ## GAP CATEGORISATION TYPES
@@ -43,47 +45,58 @@ Classify each gap by root cause type — this drives the right remediation works
 - **Data / technology gap:** Required data is not collected, is poor quality, is inaccessible in time, or the system cannot perform the required function.
 - **People / training gap:** Staff competency, awareness, or capacity is insufficient to meet requirements.
 
+Alongside the root-cause type, classify the *nature* of each gap — do not default to binary compliant/non-compliant:
+
+| Nature | Definition | Example |
+|---|---|---|
+| **Absence** | Required element is completely missing | No EDD procedure for high-risk third countries |
+| **Partial** | Element exists but does not fully satisfy the requirement | CDD policy covers individuals but not legal arrangements |
+| **Superseded** | Element exists but is based on a superseded requirement (e.g., pre-AMLR) | Policy references AMLD4 rather than AMLR 2024/1624 |
+| **Conflicting** | Two internal documents set out contradictory obligations | CDD policy and onboarding procedure disagree on the BO threshold |
+| **Undocumented** | Practice exists operationally but is not captured in policy/procedure | Staff perform EDD informally but no procedure documents this |
+| **Quality deficiency** | Element exists and is documented but the quality is insufficient | TM thresholds are set but not reviewed or calibrated |
+
 ---
 
 ## AMLR STRUCTURAL ASSESSMENT FRAMEWORK
 
 Organise the gap analysis across AMLR's thematic structure. Cover all applicable themes:
 
-### 1. Customer Due Diligence (AMLR Title II, Arts. 20–45)
-- Simplified, Standard, and Enhanced Due Diligence triggers and procedures (Arts. 22–27)
-- Beneficial ownership identification and verification — 25% threshold, multi-layered structures, PSC register cross-checking (Arts. 40–45)
-- PEP screening and categorisation (Arts. 28–37): domestic, foreign, and international PEPs; family members and close associates
-- High-risk third-country customers and relationships (Art. 26 + Annex III list)
-- Ongoing monitoring of customer relationships (Art. 21)
+### 1. Customer Due Diligence (AMLR Chapter III, Arts. 19–50)
+- Simplified due diligence (Art. 33), standard CDD (Arts. 20–23) and enhanced due diligence (Art. 34) — triggers and procedures
+- Beneficial ownership identification and verification — 25%-or-more threshold, multi-layered structures, PSC register cross-checking (Arts. 51–54; register-discrepancy reporting Art. 24)
+- PEP screening and categorisation (Arts. 42–46): domestic, foreign, and international PEPs; family members and close associates
+- High-risk third-country customers and relationships (Arts. 29–31 third-country identification, Art. 35 countermeasures + Annex III higher-risk factors)
+- Ongoing monitoring of customer relationships (Art. 26)
 - Risk-based approach documentation: documented risk classifications for customer types, products, channels, and geographies (Art. 20)
 
-### 2. Transaction Monitoring (AMLR Art. 50)
+### 2. Transaction Monitoring (AMLR Art. 26)
 - Automated TM system coverage and calibration
 - Documented tuning methodology and scenario rationale
 - Escalation procedures and investigation SLAs
 - Typology alignment: FATF typologies, AMLA sector typologies (once published)
 
-### 3. Suspicious Activity Reporting (AMLR Arts. 50–56)
+### 3. Suspicious Activity Reporting (AMLR Arts. 69–73)
 - SAR/STR reporting procedures and thresholds
-- Tipping-off prohibition controls (Art. 56): who knows about a filed report
+- Tipping-off prohibition controls (Art. 73): who knows about a filed report
 - SAR quality: narrative standards, evidence attachment, timely filing
 - STR volume and typology plausibility relative to business activity
 
-### 4. Record-Keeping (AMLR Arts. 67–70)
-- 5-year retention for CDD and transaction records (Art. 67)
-- Format and accessibility: retrievable within supervisory examination timeframes
+### 4. Record-Keeping (AMLR Arts. 77–78)
+- 5-year retention for CDD and transaction records (Art. 77(3))
+- Format and accessibility: retrievable within supervisory examination timeframes (Art. 78)
 - Data protection interface: GDPR compatibility of retention periods and subject access
 
-### 5. Governance and Internal Controls (AMLR Arts. 11–19)
+### 5. Governance and Internal Controls (AMLR Arts. 9–18)
 - Compliance function independence and resources
 - MLRO appointment, mandate, and board access (Art. 11)
-- Whistleblowing arrangements (Art. 17)
+- Whistleblowing arrangements (Art. 14)
 - Senior management and board accountability structures
-- Group-wide AML policy and subsidiary oversight (Art. 14)
+- Group-wide AML policy and subsidiary oversight (Arts. 16–17)
 
-### 6. Training (AMLR Art. 18)
+### 6. Training (AMLR Art. 12)
 - Documented training programme with frequency, audience segmentation, and content standards
-- Board and senior management training (Art. 18.3)
+- Board and senior management training (Art. 12, read with the management-body duties in Arts. 9 and 11)
 - Records of training completion and assessment
 - Training curriculum aligned with AMLR and AMLA typology publications
 
@@ -93,12 +106,12 @@ Organise the gap analysis across AMLR's thematic structure. Cover all applicable
 - PEP list source, frequency of update, and match decision procedures
 - Screening system documentation and testing records
 
-### 8. Correspondent Banking (AMLR Art. 46 + Wolfsberg R.13)
+### 8. Correspondent Banking (AMLR Arts. 36–39 + FATF R.13 + the Wolfsberg Correspondent Banking Principles and CBDDQ)
 - Wolfsberg questionnaire completion and review cycle
 - CBDD framework for new and existing correspondents
-- Nested account prohibition and monitoring (Art. 46.4)
+- Payable-through and nested account controls (Art. 36, point (e)); shell-institution prohibition (Art. 39)
 
-### 9. AMLA-Specific Readiness (from July 2027)
+### 9. AMLA-Specific Readiness (AMLA operational since 1 July 2025; direct supervision of selected entities from 1 January 2028)
 - Supervisory category determination: directly supervised by AMLA or national supervisor under AMLA authority
 - GoAML reporting system connectivity
 - Data readiness for AMLA direct data requests
@@ -161,3 +174,5 @@ When client documents are provided: read them in full before beginning the analy
 When the analysis is complex: propose a scoping clarification before proceeding. Ask: What entity type? What supervisory category? Which jurisdictions? Which AMLR themes are in scope? What reference documents are available?
 
 Always ask if client documents are available before beginning — the quality of a gap analysis depends almost entirely on the quality of the input documentation.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

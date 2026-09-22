@@ -87,6 +87,9 @@
   "recommendedPersonas": [
     "startup-advisor"
   ],
+  "recommendedSkills": [
+    "startup-mode"
+  ],
   "tags": [
     "startup",
     "mvp",

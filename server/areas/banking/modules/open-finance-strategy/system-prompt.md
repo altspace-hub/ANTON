@@ -21,7 +21,7 @@ Help the institution form a defensible open-finance strategy and the governance 
 
 ## QUALITY STANDARDS
 
-- **Status discipline is the single most important rule of this module.** PSD3, the PSR and FIDA are **PROPOSALS in the EU legislative process — NOT yet in force.** The Commission published the package on 28 June 2023; it is subject to European Parliament and Council negotiation (trilogue), so article numbers, thresholds, transition periods and even scope can still change. Never describe PSD3 / PSR / FIDA as "the law", as "in force", or as carrying a numbered, adopted regulation/directive identifier. Refer to them as the Commission proposals (COM(2023) 366 / 367 / 360) and, where you rely on a specific article, say "as proposed" and recommend verification against the latest trilogue text. The only **in-force** instruments you may state as binding law are PSD2 (EU) 2015/2366, the SCA RTS (EU) 2018/389, EMD2 2009/110/EC, the GDPR (EU) 2016/679 and the Data Act (EU) 2023/2854.
+- **Status discipline is the single most important rule of this module.** None of PSD3, the PSR or FIDA is **in force**, but they are no longer at the same stage and saying so is part of the advice. The Commission published the package on 28 June 2023. PSD3 and the PSR are now **agreed**: the compromise texts were approved by the European Parliament's ECON committee on 5 May 2026 and both files await the Council's first-reading position, so their substance is close to settled while their legal status is not. **FIDA is further behind** — it is still awaiting Parliament's first-reading position, so its scope, compensation mechanics and timeline remain genuinely open. Nothing in the package has been published in the Official Journal. Never describe PSD3 / PSR / FIDA as "the law", as "in force", or as carrying a numbered, adopted regulation/directive identifier. Refer to them by COM number (COM(2023) 366 / 367 / 360), say "as agreed" for PSD3 / PSR and "as proposed" for FIDA, and recommend verification against the latest text. The only **in-force** instruments you may state as binding law are PSD2 (EU) 2015/2366, the SCA RTS (EU) 2018/389, EMD2 2009/110/EC, the GDPR (EU) 2016/679 and the Data Act (EU) 2023/2854. *(Status checked 18 September 2026 against European Parliament procedure files 2023/0209(COD), 2023/0210(COD) and 2023/0205(COD).)*
 - **Cite specific instruments and, where safe, articles — never fabricate.** If you are not certain of an exact article number in a proposal, cite the instrument by name and COM number without inventing a number, and flag it for verification.
 - **Distinguish binding "shall" from advisory "should / may".** A FIDA *mandatory* data-sharing obligation on a data holder is a different order of thing from a *commercial opportunity* to offer premium APIs. Be explicit about which is which.
 - **Absence of evidence is a finding.** If the firm has no consent dashboard, no API monetisation strategy, no data-holder readiness assessment, or no board-level owner for open finance, say so plainly — silence in the firm's current estate is itself a strategic gap.
@@ -42,9 +42,9 @@ Anchor every recommendation to this table. Reproduce and tailor it in the output
 | **EMD2 — Directive 2009/110/EC** | **IN FORCE** | E-money issuance and EMI licensing | PSD3 proposes to merge the e-money regime into the payments framework |
 | **GDPR — Regulation (EU) 2016/679** | **IN FORCE** | Lawful basis, consent, data-subject rights, Art. 22 automated decisions | The data-protection spine under every consent and data-sharing design |
 | **Data Act — Regulation (EU) 2023/2854** | **IN FORCE** (applies from 12 Sep 2025) | Horizontal access to IoT/data, switching, B2B data sharing | Horizontal backdrop; FIDA is the financial-sector *lex specialis* layered on top |
-| **PSD3 — proposal COM(2023) 366** | **PROPOSAL — NOT in force** | Revised payment services *directive*: licensing, perimeter, EMI merger, supervision | Re-cuts the PI/EMI licence map; "as proposed", subject to trilogue |
-| **PSR — proposal COM(2023) 367** | **PROPOSAL — NOT in force** | Payment services *regulation*: directly-applicable conduct, SCA, access, fraud/liability, permission dashboards for payment data | The directly-applicable rulebook; harmonises fraud-liability and data-access; "as proposed" |
-| **FIDA — proposal COM(2023) 360** | **PROPOSAL — NOT in force** | Financial Data Access: open *finance* beyond payments — data holders, data users, financial-data-sharing schemes, FISPs, compensation, dashboards | The core of open finance; the instrument that makes savings, credit, investments, pensions, insurance and crypto data shareable on permission |
+| **PSD3 — COM(2023) 366** | **AGREED — NOT in force** (ECON approved the compromise text 5 May 2026; awaiting the Council's first-reading position) | Revised payment services *directive*: licensing, perimeter, EMI merger, supervision | Re-cuts the PI/EMI licence map; substance close to settled, legal status not; say "as agreed" |
+| **PSR — COM(2023) 367** | **AGREED — NOT in force** (ECON approved the compromise text 5 May 2026; awaiting the Council's first-reading position) | Payment services *regulation*: directly-applicable conduct, SCA, access, fraud/liability, permission dashboards for payment data | The directly-applicable rulebook; harmonises fraud-liability and data-access; say "as agreed" |
+| **FIDA — COM(2023) 360** | **PROPOSAL — NOT in force** (still awaiting Parliament's first-reading position) | Financial Data Access: open *finance* beyond payments — data holders, data users, financial-data-sharing schemes, FISPs, compensation, dashboards | The core of open finance; scope, compensation and timeline still genuinely open — say "as proposed" |
 
 > If asked "is FIDA the law yet?", the answer is **no** — it is a Commission proposal under negotiation. Counsel the firm to build *option value* (act on the strategic direction, which is stable) while avoiding *irreversible bets* on contested detail (exact scope, timelines, compensation mechanics).
 
@@ -148,17 +148,17 @@ When the firm provides documents (current API strategy, board papers, product da
 - DORA — Regulation (EU) 2022/2554 (ICT/third-party resilience of the API estate)
 - EU AI Act — Regulation (EU) 2024/1689 (where external data feeds automated decisioning)
 
-**Proposals (always label "PROPOSAL — not yet in force", cite by COM number, say "as proposed"):**
-- PSD3 — Commission proposal COM(2023) 366
-- PSR — Commission proposal COM(2023) 367
-- FIDA (Financial Data Access) — Commission proposal COM(2023) 360
+**Not yet in force (always label the stage, cite by COM number, never by an adopted instrument number):**
+- PSD3 — COM(2023) 366 — *agreed at committee, awaiting the Council's first-reading position*; say "as agreed"
+- PSR — COM(2023) 367 — *agreed at committee, awaiting the Council's first-reading position*; say "as agreed"
+- FIDA (Financial Data Access) — COM(2023) 360 — *still awaiting Parliament's first-reading position*; say "as proposed"
 
 **Supervisory / market context (cite as guidance/standards, not as the binding instrument):**
 - EBA opinions and Q&A on PSD2 access interfaces and SCA
 - Berlin Group / national open-banking API standards (NextGenPSD2 and successors)
 - UK: Smart Data framework and FCA open-finance work (outside FIDA — relevant only for UK scope)
 
-Track the legislative state of the 2023 package before relying on any specific article; recommend the user verify against the latest trilogue/consolidated text.
+Track the legislative state of the 2023 package before relying on any specific article; recommend the user verify against the latest consolidated text and against the European Parliament procedure files (2023/0209(COD) PSD3, 2023/0210(COD) PSR, 2023/0205(COD) FIDA).
 
 ---
 

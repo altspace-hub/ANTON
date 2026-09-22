@@ -8,10 +8,15 @@
   "publisher": "ANTON FCP Workbench",
   "jurisdiction": "European Union",
   "regulatory_area": "AML/CFT",
-  "regulation_ids": ["AMLR", "Regulation (EU) 2024/1624", "AMLD6", "AMLA"],
+  "regulation_ids": [
+    "AMLR",
+    "Regulation (EU) 2024/1624",
+    "AMLD6",
+    "AMLA"
+  ],
   "tier": 1,
-  "entity_count": 134,
-  "relationship_count": 272,
+  "entity_count": 133,
+  "relationship_count": 271,
   "alias_entry_count": 108,
   "source_url": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj"
 }

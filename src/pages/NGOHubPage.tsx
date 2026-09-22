@@ -2,8 +2,19 @@
  * NGOHubPage.tsx
  *
  * Landing page for the NGO & Social Impact section.
- * Groups all 9 NGO-tagged areas in one place, with a
+ * Groups the 15 base-of-pyramid / social-impact areas in one place, with a
  * 2-step AI needs wizard that routes users to the right module.
+ *
+ * 2026-09-18 (Wave 6, track B): this page keeps its own hand-curated area
+ * list, because the hub is an editorial surface — which areas belong on it,
+ * how they cluster and which module opens first are judgement calls, not
+ * facts derivable from `AREAS`. What is NOT a judgement call is whether the
+ * ids resolve and how many modules an area has, so `moduleCount` is derived
+ * from `AREAS` at render time and `tests/lib/ngo-hub-integrity.test.ts`
+ * pins the rest. Five areas were unreachable from here until this pass:
+ * food-business, artisan-craft, personal-finance-bop, consumer-rights and
+ * government-services — 40 modules with no door on the one surface built
+ * for the people who need them.
  */
 
 import { useState } from 'react';
@@ -14,11 +25,18 @@ import {
   ArrowRight, ChevronRight, ChevronLeft,
   Globe, Users, Leaf, Scale,
   Stethoscope, Wheat, BookOpen, Wallet,
+  ChefHat, Palette, ShieldCheck, Building2,
 } from 'lucide-react';
+import { AREAS } from '../lib/constants';
 
 // ── Area catalogue ──────────────────────────────────────────────────
 
-interface NgoArea {
+/** How many modules an area actually has, straight from the catalogue. */
+const MODULE_COUNT_BY_AREA = new Map<string, number>(
+  AREAS.map((a) => [a.id as string, a.moduleIds.length]),
+);
+
+export interface NgoArea {
   id: string;
   name: string;
   description: string;
@@ -27,11 +45,10 @@ interface NgoArea {
   bg: string;           // Tailwind bg-* class
   border: string;       // Tailwind border-* class
   clusterLabel: string;
-  moduleCount: number;
   firstModuleId: string; // First module to open when user browses this area
 }
 
-const NGO_AREAS: NgoArea[] = [
+export const NGO_AREAS: NgoArea[] = [
   {
     id: 'community-health',
     name: 'Community Health',
@@ -41,7 +58,6 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
     clusterLabel: 'Health & Wellbeing',
-    moduleCount: 8,
     firstModuleId: 'symptom-assessment',
   },
   {
@@ -53,7 +69,6 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-green/10',
     border: 'border-adv-green/20',
     clusterLabel: 'Food & Agriculture',
-    moduleCount: 8,
     firstModuleId: 'crop-planning-advisor',
   },
   {
@@ -65,8 +80,18 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-green/10',
     border: 'border-adv-green/20',
     clusterLabel: 'Food & Agriculture',
-    moduleCount: 5,
     firstModuleId: 'animal-health-disease',
+  },
+  {
+    id: 'food-business',
+    name: 'Food & Restaurant Micro-Business',
+    description: 'Street food, small kitchens and catering: hygiene, licences, menu pricing, bulk buying, waste.',
+    icon: ChefHat,
+    color: 'text-adv-gold',
+    bg: 'bg-adv-gold/10',
+    border: 'border-adv-gold/20',
+    clusterLabel: 'Food & Agriculture',
+    firstModuleId: 'food-safety-hygiene',
   },
   {
     id: 'land-rights',
@@ -77,7 +102,6 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-gold/10',
     border: 'border-adv-gold/20',
     clusterLabel: 'Rights & Justice',
-    moduleCount: 6,
     firstModuleId: 'land-title-verification',
   },
   {
@@ -89,8 +113,29 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-red-500/10',
     border: 'border-red-500/20',
     clusterLabel: 'Rights & Justice',
-    moduleCount: 5,
     firstModuleId: 'employment-rights-checker',
+  },
+  {
+    id: 'consumer-rights',
+    name: 'Consumer Protection',
+    description: 'Faulty goods, scams, mobile-money disputes, banking and utility complaints, consumer court.',
+    icon: ShieldCheck,
+    color: 'text-adv-teal',
+    bg: 'bg-adv-teal-dim',
+    border: 'border-adv-teal/20',
+    clusterLabel: 'Rights & Justice',
+    firstModuleId: 'scam-fraud-warning',
+  },
+  {
+    id: 'government-services',
+    name: 'Government Services Navigator',
+    description: 'ID documents, subsidies, permits, social protection, complaints against officials, court process.',
+    icon: Building2,
+    color: 'text-adv-blue',
+    bg: 'bg-adv-blue/10',
+    border: 'border-adv-blue/20',
+    clusterLabel: 'Rights & Justice',
+    firstModuleId: 'document-id-application',
   },
   {
     id: 'education-literacy',
@@ -101,7 +146,6 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-blue/10',
     border: 'border-adv-blue/20',
     clusterLabel: 'Learning & Skills',
-    moduleCount: 6,
     firstModuleId: 'adult-literacy-tutor',
   },
   {
@@ -113,8 +157,29 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-gold/10',
     border: 'border-adv-gold/20',
     clusterLabel: 'Economic Empowerment',
-    moduleCount: 5,
     firstModuleId: 'business-registration-guide',
+  },
+  {
+    id: 'artisan-craft',
+    name: 'Artisan & Craft Business',
+    description: 'Costing handmade goods, selling online, quality for export, co-ops, fair trade, protecting designs.',
+    icon: Palette,
+    color: 'text-adv-teal',
+    bg: 'bg-adv-teal-dim',
+    border: 'border-adv-teal/20',
+    clusterLabel: 'Economic Empowerment',
+    firstModuleId: 'product-costing-pricing',
+  },
+  {
+    id: 'personal-finance-bop',
+    name: 'Personal Finance & Savings',
+    description: 'Budgeting on a small income, savings goals, mobile-money safety, remittance costs, basic insurance.',
+    icon: PiggyBank,
+    color: 'text-adv-green',
+    bg: 'bg-adv-green/10',
+    border: 'border-adv-green/20',
+    clusterLabel: 'Economic Empowerment',
+    firstModuleId: 'budget-builder',
   },
   {
     id: 'credit-navigator',
@@ -125,7 +190,6 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-teal-dim',
     border: 'border-adv-teal/20',
     clusterLabel: 'Economic Empowerment',
-    moduleCount: 4,
     firstModuleId: 'loan-comparison',
   },
   {
@@ -137,7 +201,6 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-teal-dim',
     border: 'border-adv-teal/20',
     clusterLabel: 'Economic Empowerment',
-    moduleCount: 5,
     firstModuleId: 'financial-inclusion-strategy',
   },
   {
@@ -149,14 +212,13 @@ const NGO_AREAS: NgoArea[] = [
     bg: 'bg-adv-green/10',
     border: 'border-adv-green/20',
     clusterLabel: 'Programme Management',
-    moduleCount: 4,
     firstModuleId: 'log-frame-generator',
   },
 ];
 
 // ── Needs wizard ─────────────────────────────────────────────────────
 
-interface WizardCategory {
+export interface WizardCategory {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -164,14 +226,14 @@ interface WizardCategory {
   needs: WizardNeed[];
 }
 
-interface WizardNeed {
+export interface WizardNeed {
   label: string;
   areaId: string;
   moduleId?: string;
   hint: string;      // Pre-filled context hint passed to the module
 }
 
-const WIZARD_CATEGORIES: WizardCategory[] = [
+export const WIZARD_CATEGORIES: WizardCategory[] = [
   {
     id: 'health',
     label: 'Health & Wellbeing',
@@ -197,6 +259,9 @@ const WIZARD_CATEGORIES: WizardCategory[] = [
       { label: 'Water and irrigation challenges', areaId: 'smallholder-farming', moduleId: 'water-irrigation-management', hint: 'Managing water and irrigation for smallholder farms.' },
       { label: 'Livestock or poultry health', areaId: 'livestock-poultry', moduleId: 'animal-health-disease', hint: 'Animal health and husbandry for small-scale farmers.' },
       { label: 'Getting better market prices', areaId: 'smallholder-farming', moduleId: 'market-price-guide', hint: 'Understanding market prices and selling strategies.' },
+      { label: 'Government subsidy or farm support programme', areaId: 'smallholder-farming', moduleId: 'subsidy-navigator', hint: 'Finding agricultural subsidies and government support programmes a smallholder can actually apply for, and what the application needs.' },
+      { label: 'Selling cooked food — hygiene and safety', areaId: 'food-business', moduleId: 'food-safety-hygiene', hint: 'Food safety and hygiene for a street food vendor, small kitchen or home-based food business.' },
+      { label: 'Pricing a menu or a catering job', areaId: 'food-business', moduleId: 'menu-pricing-cost-control', hint: 'Working out food costs, portion sizes and a price that leaves a margin.' },
     ],
   },
   {
@@ -210,6 +275,9 @@ const WIZARD_CATEGORIES: WizardCategory[] = [
       { label: 'Workplace problem — pay or dismissal', areaId: 'workers-rights', moduleId: 'employment-rights-checker', hint: 'Workers\' rights regarding pay, dismissal, and contracts.' },
       { label: 'Unsafe working conditions', areaId: 'workers-rights', moduleId: 'workplace-safety-rights', hint: 'Workplace safety rights and how to raise concerns.' },
       { label: 'Migrant worker rights', areaId: 'workers-rights', moduleId: 'migrant-worker-rights', hint: 'Rights for migrant and informal workers.' },
+      { label: 'Cheated by a shop, lender or mobile money', areaId: 'consumer-rights', moduleId: 'scam-fraud-warning', hint: 'Recognising a scam or unfair practice, and what to do after being cheated.' },
+      { label: 'Getting an ID, permit or official document', areaId: 'government-services', moduleId: 'document-id-application', hint: 'Applying for an identity document, permit or registration, and what papers are needed.' },
+      { label: 'Applying for government support or a grant', areaId: 'government-services', moduleId: 'social-protection-navigator', hint: 'Finding social protection, grants and support schemes a household qualifies for, and how to apply.' },
     ],
   },
   {
@@ -222,6 +290,9 @@ const WIZARD_CATEGORIES: WizardCategory[] = [
       { label: 'Understanding a loan or credit offer', areaId: 'credit-navigator', moduleId: 'loan-comparison', hint: 'Understanding loan terms, rights with lenders, and comparing options.' },
       { label: 'In debt — need help managing it', areaId: 'credit-navigator', moduleId: 'predatory-lending-checker', hint: 'Managing debt and avoiding dangerous debt traps.' },
       { label: 'Running a microfinance programme', areaId: 'microfinance', moduleId: 'financial-inclusion-strategy', hint: 'MFI compliance, social performance, and risk management.' },
+      { label: 'Budgeting and saving on a small income', areaId: 'personal-finance-bop', moduleId: 'budget-builder', hint: 'Building a household budget on a small or irregular income.' },
+      { label: 'Sending or receiving money — fees and safety', areaId: 'personal-finance-bop', moduleId: 'remittance-cost-comparison', hint: 'Comparing the real cost of remittance and mobile-money channels, and sending money safely.' },
+      { label: 'Making and selling crafts or handmade goods', areaId: 'artisan-craft', moduleId: 'product-costing-pricing', hint: 'Costing handmade products properly and setting a price that pays for the maker\'s time.' },
     ],
   },
   {
@@ -240,7 +311,7 @@ const WIZARD_CATEGORIES: WizardCategory[] = [
 
 // ── Common journeys ───────────────────────────────────────────────────
 
-const JOURNEYS = [
+export const JOURNEYS = [
   {
     title: 'Community Health Response',
     description: 'From first symptoms to safe referral and follow-up care.',
@@ -285,12 +356,18 @@ const JOURNEYS = [
 
 // ── Cluster grouping ─────────────────────────────────────────────────
 
-const CLUSTER_ORDER = [
+// A card whose clusterLabel is missing from this list renders NOWHERE — the
+// areas grid is built by mapping CLUSTER_ORDER, not by mapping NGO_AREAS. That
+// is how the Humanitarian card was invisible from Feb 2026 until 2026-09-18
+// while the stats strip still counted it. `tests/lib/ngo-hub-integrity.test.ts`
+// pins it.
+export const CLUSTER_ORDER = [
   'Health & Wellbeing',
   'Food & Agriculture',
   'Rights & Justice',
   'Economic Empowerment',
   'Learning & Skills',
+  'Programme Management',
 ];
 
 const CLUSTER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -299,6 +376,7 @@ const CLUSTER_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   'Rights & Justice': Scale,
   'Economic Empowerment': Wallet,
   'Learning & Skills': BookOpen,
+  'Programme Management': Globe,
 };
 
 // ── Component ────────────────────────────────────────────────────────
@@ -332,11 +410,11 @@ export default function NGOHubPage() {
   function openResult() {
     if (!selectedNeed) return;
     const { areaId, moduleId, hint } = selectedNeed;
-    if (moduleId) {
-      navigate(`/module/${moduleId}`, { state: { areaId, prefill: hint } });
-    } else {
-      navigate(`/module/${areaId}`, { state: { areaId, prefill: hint } });
-    }
+    // ModulePage reads the hint from ?prefill — it has no useLocation and never
+    // read the router state this used to pass, so every hand-written hint was
+    // silently dropped on arrival (fixed 2026-09-18, Wave 6 track B).
+    const target = moduleId ?? areaId;
+    navigate(`/module/${target}?prefill=${encodeURIComponent(hint)}`);
   }
 
   function resetWizard() {
@@ -352,7 +430,7 @@ export default function NGOHubPage() {
     areas: NGO_AREAS.filter((a) => a.clusterLabel === cluster),
   })).filter((g) => g.areas.length > 0);
 
-  const totalModules = NGO_AREAS.reduce((sum, a) => sum + a.moduleCount, 0);
+  const totalModules = NGO_AREAS.reduce((sum, a) => sum + (MODULE_COUNT_BY_AREA.get(a.id) ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-adv-dark">
@@ -524,7 +602,7 @@ export default function NGOHubPage() {
               return (
                 <button
                   key={journey.title}
-                  onClick={() => navigate(`/module/${journey.firstModuleId}`, { state: { areaId: journey.areaId } })}
+                  onClick={() => navigate(`/module/${journey.firstModuleId}`)}
                   className={`flex flex-col gap-3 rounded-xl border bg-adv-card p-4 text-left transition-colors ${journey.color}`}
                 >
                   <div className="flex items-center gap-2">
@@ -561,10 +639,11 @@ export default function NGOHubPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {areas.map((area) => {
                 const Icon = area.icon;
+                const moduleCount = MODULE_COUNT_BY_AREA.get(area.id) ?? 0;
                 return (
                   <button
                     key={area.id}
-                    onClick={() => navigate(`/module/${area.firstModuleId}`, { state: { areaId: area.id } })}
+                    onClick={() => navigate(`/module/${area.firstModuleId}`)}
                     className={`flex flex-col gap-3 rounded-xl border ${area.border} ${area.bg} p-5 text-left hover:border-opacity-60 transition-all group`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -573,7 +652,7 @@ export default function NGOHubPage() {
                         <span className="text-sm font-semibold text-adv-white">{area.name}</span>
                       </div>
                       <span className="text-xs text-adv-gray shrink-0 mt-0.5">
-                        {area.moduleCount} modules
+                        {moduleCount} modules
                       </span>
                     </div>
                     <p className="text-xs text-adv-gray leading-relaxed">{area.description}</p>

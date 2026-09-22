@@ -10,8 +10,7 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
-      "detailed-findings",
-      "decision-memo"
+      "sharia-compliance-opinion"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
@@ -118,7 +117,8 @@
   ],
   "recommendedSkills": [
     "skill-aaoifi-standards",
-    "skill-ifsb-standards"
+    "skill-ifsb-standards",
+    "jurisdiction-sa-sama"
   ],
   "tags": [
     "product-review",

@@ -42,6 +42,11 @@ describe('isResolvableModelId', () => {
     expect(isResolvableModelId('claude-bananas')).toBe(false);
     expect(isResolvableModelId('gpt-99-ultra')).toBe(false);
   });
+
+  it('accepts the subscription-engine prefixes (sdk:/codex:), as utility-model already did', () => {
+    expect(isResolvableModelId('sdk:claude-opus-5')).toBe(true);
+    expect(isResolvableModelId('codex:gpt-5.4')).toBe(true);
+  });
 });
 
 describe('resolveMissionModel', () => {
@@ -86,6 +91,20 @@ describe('resolveMissionModel', () => {
   it('honours a defaultModel override (decomposition plans on Sonnet, not Opus)', () => {
     onlyProvider('anthropic');
     expect(resolveMissionModel('planning', undefined, 'claude-sonnet-4-6')).toBe('claude-sonnet-4-6');
+  });
+
+  it('lets a mission pin the subscription engine explicitly', () => {
+    onlyProvider('anthropic');
+    // Previously rejected as unresolvable and silently replaced by the metered Claude tier default.
+    expect(resolveMissionModel('execution', { execution_model: 'sdk:claude-opus-5' })).toBe('sdk:claude-opus-5');
+  });
+
+  it('follows an sdk: instance default for the tier defaults — even with a key present', () => {
+    onlyProvider('anthropic');
+    process.env.DEFAULT_MODEL = 'sdk:claude-opus-5';
+    expect(resolveMissionModel('planning')).toBe('sdk:claude-opus-5');     // large
+    expect(resolveMissionModel('execution')).toBe('sdk:claude-sonnet-5');  // medium
+    expect(resolveMissionModel('utility')).toBe('sdk:claude-sonnet-5');    // small
   });
 });
 

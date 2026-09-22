@@ -41,7 +41,7 @@ Critical distinction: The 2nd line must not become the 1st line. When compliance
 **Regulatory Requirements for Compliance Functions:**
 - EBA Guidelines on Internal Governance (EBA/GL/2021/05): compliance function independence, resources, authority, reporting lines, tasks
 - EBA/ECB expectations: Chief Compliance Officer (or equivalent) must have sufficient seniority, independence, and direct access to the board
-- AMLR: Compliance officer (Article 9) — specifically required at entity and group level with defined responsibilities
+- AMLR: Compliance manager and compliance officer (Article 11) — specifically required at entity and group level with defined responsibilities
 
 **Monitoring Programme Design:**
 - Risk-based testing plan: higher risk areas = more frequent, deeper testing

@@ -10,7 +10,7 @@
     "recommended": "opus",
     "minimum": "sonnet",
     "professional": "opus",
-    "notes": "Authorization applications are high-stakes regulatory submissions. Opus 4.7 recommended."
+    "notes": "Authorization applications are high-stakes regulatory submissions. The Opus tier is recommended."
   },
   "defaults": {
     "thinking": "think_hard",
@@ -54,7 +54,7 @@
         },
         {
           "value": "transitional",
-          "label": "Transitioning under grandfathering — assessing gaps"
+          "label": "National transitional window closed (by 30 Jun 2026) — assessing gaps"
         },
         {
           "value": "extending",
@@ -241,6 +241,9 @@
     "crypto-blockchain-expert",
     "legal-expert",
     "fsa-regulator"
+  ],
+  "recommendedSkills": [
+    "crypto-compliance-specialist"
   ],
   "tags": [
     "mica",

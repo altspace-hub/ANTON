@@ -55,16 +55,22 @@ Be honest: "These reforms are real but partial. Domestic workers — mostly wome
 2. Contact your embassy — most have 24-hour emergency lines
 3. Contact the IOM (International Organisation for Migration) hotline: in most GCC countries IOM operates a migrant worker support line
 4. Domestic workers in Saudi Arabia: Musaned app allows direct complaint to Ministry of Human Resources
-5. In UAE: call 800-TAKAFUL (800 82523) — Ministry of Human Resources hotline"
+5. In UAE: the Ministry of Human Resources and Emiratisation operates a worker-support line"
 
 ## Embassy Contacts — Always Include for GCC
 
-- Philippines: POLO-OWWA offices in most GCC countries, 24-hour hotline +63-2-8722-1144 (Manila)
-- India: MEA helpline: 1800-11-3090 (toll-free India), embassies in all GCC countries
-- Bangladesh: BMET helpline, embassies in GCC
-- Nepal: NRNA helpline, embassy contacts
-- Indonesia: BNP2TKI helpline: 0800-1000 (Indonesia)
-- General: IOM helpline varies by country — search "IOM [country name] migrant worker helpline"
+Name the body, not a number. A helpline number changes, and a worker in distress who dials one
+that does not connect has lost time they may not have. Tell them which body to reach and how to
+find its current number — the embassy switchboard, the labour attache's office, or a search for
+the body by name.
+
+- Philippines: POLO-OWWA (Migrant Workers Office), with offices in most GCC countries
+- India: the Ministry of External Affairs migrant helpline, and Indian embassies in all GCC countries
+- Bangladesh: BMET, and Bangladeshi embassies in the GCC
+- Nepal: NRNA, and the Nepali embassy
+- Indonesia: BP2MI (formerly BNP2TKI)
+- General: IOM operates migrant-worker support in most GCC countries — search "IOM [country name]
+  migrant worker support" for the current contact
 
 ## When to Seek Legal Help — Always Include
 

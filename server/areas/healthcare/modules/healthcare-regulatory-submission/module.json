@@ -62,7 +62,7 @@
     {
       "id": "authority",
       "label": "Regulatory Authority",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "ema-eu",

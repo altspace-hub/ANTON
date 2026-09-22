@@ -124,6 +124,36 @@ describe('resolveContextBudget', () => {
   });
 });
 
+describe('sdk:-prefixed ids — the subscription engine runs the same model', () => {
+  // The prefix picks the ENGINE; the model is unchanged. Looked up raw, the
+  // product default sdk:claude-opus-5 missed the table and was budgeted as a
+  // 32k "unknown local model": 16,576 knowledge tokens on a 1M window, and a
+  // CONTEXT_TOO_LARGE rejection for anything bigger.
+  it('resolves the window of the underlying model', async () => {
+    expect(await resolveContextWindow('sdk:claude-opus-5')).toBe(1_000_000);
+    expect(await resolveContextWindow('sdk:claude-haiku-4-5-20251001')).toBe(200_000);
+  });
+
+  it('budgets the 1M default engine at 800k, exactly like the bare id', async () => {
+    expect(await resolveContextBudget('sdk:claude-opus-5')).toBe(800_000);
+    expect(await resolveContextBudget('sdk:claude-opus-5')).toBe(await resolveContextBudget('claude-opus-5'));
+  });
+
+  it('derives a mid-size budget from the underlying output ceiling, not the 8k fallback', async () => {
+    expect(await resolveContextBudget('sdk:claude-haiku-4-5-20251001'))
+      .toBe(await resolveContextBudget('claude-haiku-4-5-20251001'));
+  });
+
+  it('still honours the operator cap (the dev box .env sets 180000)', async () => {
+    process.env.MAX_CONTEXT_TOKENS = '180000';
+    expect(await resolveContextBudget('sdk:claude-opus-5')).toBe(180_000);
+  });
+
+  it('does not widen an sdk: id the table does not know (negative control)', async () => {
+    expect(await resolveContextWindow('sdk:not-a-model')).toBe(32_768);
+  });
+});
+
 describe('resolveOllamaNumCtx', () => {
   it('caps at 32k by default (unreachable Ollama → 32k window)', async () => {
     expect(await resolveOllamaNumCtx('ollama:qwen2.5')).toBe(32_768);

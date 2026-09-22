@@ -3,15 +3,33 @@
   "name": "Corporate Transparency Act + BO Reporting — narrowed by FinCEN Interim Final Rule (March 2025)",
   "shortName": "US CTA + BOIR (narrowed)",
   "reference": "AMLA 2020 Title LXIV (CTA) + FinCEN BOIR Final Rule (Sept 2022) + FinCEN Interim Final Rule (26 March 2025)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "ctaInForce": "2024-01-01",
   "ifrNarrowedScope": "2025-03-26",
   "supervisor": "FinCEN",
   "articleCount": 8,
   "chapters": [
-    {"number": "Hist", "title": "Original CTA / BOIR framework + litigation history", "articles": "CTA + BOIR + NSBA v Yellen + Top Cop Shop"},
-    {"number": "IFR", "title": "FinCEN Interim Final Rule (26 March 2025) — narrowed scope", "articles": "IFR + Notice of Proposed Rulemaking"},
-    {"number": "Current", "title": "Current in-scope regime (foreign reporting companies + foreign-individual BOs)", "articles": "Post-IFR rules"},
-    {"number": "Reliance", "title": "FI reliance on BO data for CDD", "articles": "BSA CDD Rule interaction"}
+    {
+      "number": "Hist",
+      "title": "Original CTA / BOIR framework + litigation history",
+      "articles": "CTA + BOIR + NSBA v Yellen + Top Cop Shop"
+    },
+    {
+      "number": "IFR",
+      "title": "FinCEN Interim Final Rule (26 March 2025) — narrowed scope",
+      "articles": "IFR + Notice of Proposed Rulemaking"
+    },
+    {
+      "number": "Current",
+      "title": "Current in-scope regime (foreign reporting companies + foreign-individual BOs)",
+      "articles": "Post-IFR rules"
+    },
+    {
+      "number": "Reliance",
+      "title": "FI reliance on BO data for CDD",
+      "articles": "BSA CDD Rule interaction"
+    }
   ],
   "themes": [
     "Original CTA framework",

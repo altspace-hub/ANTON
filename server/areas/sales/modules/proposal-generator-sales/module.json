@@ -30,6 +30,38 @@
   },
   "guidedInputs": [
     {
+      "id": "proposal_type",
+      "type": "select",
+      "label": "Proposal type",
+      "description": "The situation decides the shape of the document — an RFP response and a follow-up note are not the same artefact.",
+      "options": [
+        {
+          "value": "proactive",
+          "label": "Proactive proposal (we are proposing)"
+        },
+        {
+          "value": "rfp_response",
+          "label": "RFP / RFI / tender response"
+        },
+        {
+          "value": "follow_up",
+          "label": "Follow-up proposal after a meeting"
+        },
+        {
+          "value": "framework",
+          "label": "Framework agreement / supplier panel"
+        },
+        {
+          "value": "extension",
+          "label": "Engagement extension or expansion"
+        },
+        {
+          "value": "thought_leadership",
+          "label": "Unsolicited thought-leadership proposal"
+        }
+      ]
+    },
+    {
       "id": "prospect_name",
       "type": "text",
       "label": "Prospect / client name",

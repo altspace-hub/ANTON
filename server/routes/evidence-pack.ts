@@ -11,8 +11,10 @@
  *     spec §14 proposal). Other actions are open to any authenticated user
  *     who created or owns the pack — Phase 1 scopes ownership to created_by.
  *
- * Phase 1 supports session + project scopes only. Phase 2 adds workflow_run +
- * mission + canvas + date_range. Phase 3 adds the compliance-mapper preview.
+ * Scopes: session, project, mission, gap_assessment, engagement, task, and
+ * custom (a list of source rows — what POST /:id/scope/add builds when a
+ * user adds a session or assessment to an existing draft pack). Phase 3
+ * adds the compliance-mapper preview.
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -25,7 +27,10 @@ import { safeError } from '../lib/error-response.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { childLogger } from '../lib/logger.js';
 
-import { collectForScope, type ScopeDefinition } from '../services/evidence-pack/collector.js';
+import {
+  collectForScope, scopeToCustomItem, CUSTOM_SCOPE_TABLES,
+  type ScopeDefinition, type CustomScope,
+} from '../services/evidence-pack/collector.js';
 import { assemblePack, finalisePack, readPackRow, type AssembledPack } from '../services/evidence-pack/assembler.js';
 import { bundleEvidencePackToAnton } from '../services/evidence-pack/bundler.js';
 import { generateEvidencePackPdf } from '../services/evidence-pack/pdf-layout.js';
@@ -36,10 +41,33 @@ const log = childLogger('evidence-pack-route');
 
 // ── Validation ─────────────────────────────────────────────────────────────
 
-const sessionScopeSchema = z.object({ type: z.literal('session'), sessionId: z.string().min(1) });
-const projectScopeSchema = z.object({ type: z.literal('project'), projectId: z.string().min(1) });
+// includePrompts: composed prompts + evidence document texts travel verbatim
+// only when the pack was created with it (default false — they can carry
+// client documents; hashes travel regardless).
+const includePrompts = z.boolean().optional();
+const sessionScopeSchema = z.object({ type: z.literal('session'), sessionId: z.string().min(1), includePrompts });
+const projectScopeSchema = z.object({ type: z.literal('project'), projectId: z.string().min(1), includePrompts });
 const missionScopeSchema = z.object({ type: z.literal('mission'), missionId: z.string().min(1) });
-const scopeSchema = z.discriminatedUnion('type', [sessionScopeSchema, projectScopeSchema, missionScopeSchema]);
+const gapAssessmentScopeSchema = z.object({ type: z.literal('gap_assessment'), assessmentId: z.string().min(1), includePrompts });
+const engagementScopeSchema = z.object({ type: z.literal('engagement'), engagementId: z.string().min(1), includePrompts });
+const taskScopeSchema = z.object({ type: z.literal('task'), taskId: z.string().min(1) });
+const customScopeSchema = z.object({
+  type: z.literal('custom'),
+  items: z.array(z.object({
+    table: z.string().refine((t) => t in CUSTOM_SCOPE_TABLES, { message: 'Unknown custom scope table' }),
+    id: z.string().min(1),
+  })).min(1).max(200),
+  includePrompts,
+});
+/** A scope with one root row — what a pack is created with and what scope/add appends. */
+const singleScopeSchema = z.discriminatedUnion('type', [
+  sessionScopeSchema, projectScopeSchema, missionScopeSchema,
+  gapAssessmentScopeSchema, engagementScopeSchema, taskScopeSchema,
+]);
+const scopeSchema = z.discriminatedUnion('type', [
+  sessionScopeSchema, projectScopeSchema, missionScopeSchema,
+  gapAssessmentScopeSchema, engagementScopeSchema, taskScopeSchema, customScopeSchema,
+]);
 
 const createPackSchema = z.object({
   title: z.string().min(1).max(300),
@@ -187,6 +215,43 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
         itemCount: assembled.collectedItems.length,
         itemsByType: assembled.manifest.itemsByType,
       });
+    } catch (err) {
+      res.status(400).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Add a source row to a draft pack's scope ───────────────────────────
+  // "Add this session / assessment to an evidence pack" from the output page
+  // or the gap wizard. A single-target scope becomes a custom list holding
+  // the old root plus the new one; a custom scope grows by one entry. The
+  // caller runs /collect afterwards. Draft packs only — a finalised pack's
+  // contents are signed.
+  router.post('/evidence-pack/:id/scope/add', requireAuth, async (req, res) => {
+    try {
+      if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      const added = singleScopeSchema.parse(req.body?.scope);
+      const pack = await readPackRow(db, String(req.params.id));
+      if (!pack) return res.status(404).json({ error: 'Pack not found' });
+      if (pack.status !== 'draft') {
+        return res.status(409).json({ error: `Pack is ${pack.status}; its scope is locked` });
+      }
+      const current = pack.scope_ref as unknown as ScopeDefinition;
+      const entries: CustomScope['items'] = current.type === 'custom'
+        ? [...current.items]
+        : (() => { const root = scopeToCustomItem(current); return root ? [root] : []; })();
+      const newEntry = scopeToCustomItem(added);
+      if (!newEntry) return res.status(400).json({ error: 'Scope cannot be added' });
+      const already = entries.some((e) => e.table === newEntry.table && e.id === newEntry.id);
+      if (!already) entries.push(newEntry);
+      const wantsPrompts = ('includePrompts' in current && current.includePrompts === true)
+        || ('includePrompts' in added && added.includePrompts === true);
+      const scope: CustomScope = { type: 'custom', items: entries, ...(wantsPrompts ? { includePrompts: true } : {}) };
+      await db.run(
+        `UPDATE evidence_packs SET scope_type = 'custom', scope_ref = ?::jsonb WHERE id = ?`,
+        JSON.stringify(scope), pack.id,
+      );
+      log.info({ packId: pack.id, table: newEntry.table, added: !already, entryCount: entries.length }, 'pack_scope_extended');
+      res.json({ pack: await readPackRow(db, pack.id), added: !already });
     } catch (err) {
       res.status(400).json({ error: safeError(err) });
     }
@@ -721,12 +786,25 @@ async function logAccess(
  * deterministic given the same source data, so re-collecting then re-
  * assembling for export is safe (and intentional per spec §13.4: same scope
  * → same hash if no underlying data changed).
+ *
+ * A finalised pack is pinned to the item set that was signed: rows the
+ * collector has since learned to walk (run records, quality scores, reviews,
+ * exports) are dropped for packs finalised before they were collected, so
+ * such a pack exports with the manifest it was signed with. A source row
+ * that changed or vanished after signing still surfaces as a hash mismatch.
  */
 async function rebuildAssembledPack(db: DatabaseAdapter, packId: string): Promise<AssembledPack | null> {
   const pack = await readPackRow(db, packId);
   if (!pack) return null;
   const scope = pack.scope_ref as unknown as ScopeDefinition;
   const collected = await collectForScope(db, scope);
+  if (pack.status !== 'draft') {
+    const signedRows = await db.all<{ item_type: string; item_id: string }>(
+      `SELECT item_type, item_id FROM evidence_pack_items WHERE pack_id = ?`, packId,
+    );
+    const signed = new Set(signedRows.map((r) => `${r.item_type}:${r.item_id}`));
+    collected.items = collected.items.filter((i) => signed.has(`${i.itemType}:${i.itemId}`));
+  }
   return assemblePack(db, {
     packId: pack.id,
     title: pack.title,

@@ -17,7 +17,7 @@
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": true,
+        "webSearchEnabled": false,
         "description": "Architecture patterns, cloud services, scalability best practices"
       }
     }

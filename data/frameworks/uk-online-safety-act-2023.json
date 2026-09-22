@@ -3,6 +3,8 @@
   "name": "Online Safety Act 2023",
   "shortName": "OSA",
   "reference": "OSA 2023 c.50",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.legislation.gov.uk/ukpga/2023/50",
   "royalAssent": "2023-10-26",
   "illegalHarmsDutiesInForce": "2025-03-17",
@@ -10,11 +12,31 @@
   "supervisor": "Ofcom",
   "articleCount": 12,
   "chapters": [
-    {"number": "2", "title": "Scope — regulated services", "articles": "ss.2-7"},
-    {"number": "3", "title": "Duties of care", "articles": "ss.8-39"},
-    {"number": "4", "title": "Codes of practice", "articles": "ss.40-50"},
-    {"number": "5", "title": "Supplementary duties (transparency, complaints)", "articles": "ss.64-76"},
-    {"number": "7", "title": "Enforcement", "articles": "ss.130-149"}
+    {
+      "number": "2",
+      "title": "Scope — regulated services",
+      "articles": "ss.2-7"
+    },
+    {
+      "number": "3",
+      "title": "Duties of care",
+      "articles": "ss.8-39"
+    },
+    {
+      "number": "4",
+      "title": "Codes of practice",
+      "articles": "ss.40-50"
+    },
+    {
+      "number": "5",
+      "title": "Supplementary duties (transparency, complaints)",
+      "articles": "ss.64-76"
+    },
+    {
+      "number": "7",
+      "title": "Enforcement",
+      "articles": "ss.130-149"
+    }
   ],
   "themes": [
     "Illegal content duties",

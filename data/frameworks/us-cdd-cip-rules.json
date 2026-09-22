@@ -3,15 +3,33 @@
   "name": "FinCEN CDD Rule + CIP Rule — operational detail (31 CFR 1010.230 + 31 CFR 1020.220)",
   "shortName": "US CDD + CIP Rules",
   "reference": "31 CFR 1010.230 (CDD Rule) + 31 CFR 1020.220 (CIP Rule for banks; parallel rules for broker-dealers + mutual funds + futures merchants)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "cddRuleInForce": "2018-05-11",
   "cipRuleInForce": "2003-10-01",
   "supervisor": "FinCEN + functional regulators",
   "articleCount": 10,
   "chapters": [
-    {"number": "CIP", "title": "Customer Identification Program (31 CFR 1020.220)", "articles": "CIP rules"},
-    {"number": "CDD", "title": "Customer Due Diligence (31 CFR 1010.230)", "articles": "CDD Rule"},
-    {"number": "BO", "title": "Beneficial Ownership identification + verification", "articles": "CDD Rule §(b)(1)-(2)"},
-    {"number": "Ongoing", "title": "Ongoing monitoring + risk-based update", "articles": "CDD Rule §(b)(4)"}
+    {
+      "number": "CIP",
+      "title": "Customer Identification Program (31 CFR 1020.220)",
+      "articles": "CIP rules"
+    },
+    {
+      "number": "CDD",
+      "title": "Customer Due Diligence (31 CFR 1010.230)",
+      "articles": "CDD Rule"
+    },
+    {
+      "number": "BO",
+      "title": "Beneficial Ownership identification + verification",
+      "articles": "CDD Rule §(b)(1)-(2)"
+    },
+    {
+      "number": "Ongoing",
+      "title": "Ongoing monitoring + risk-based update",
+      "articles": "CDD Rule §(b)(4)"
+    }
   ],
   "themes": [
     "CIP",

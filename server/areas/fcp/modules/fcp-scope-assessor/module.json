@@ -45,5 +45,5 @@
   "recommendedPersonas": ["risk-coach", "senior-mlro", "senior-risk-officer"],
   "recommendedSkills": ["threat-path-methodology"],
   "tags": ["fcp", "atlas", "scope-assessment", "amlr"],
-  "contentType": "decision_memo"
+  "contentType": "analytic_report"
 }

@@ -26,7 +26,9 @@ Produce a clean, professional invoice with:
    - Labour (hours × hourly rate)
    - Materials (if any)
    - Travel (if any, at travel rate)
-5. Summary: Subtotal, VAT (25%), ROT/RUT deduction if applicable, Total due
+5. Summary: Subtotal, VAT at the rate that applies in the user's country and to this work, ROT/RUT deduction if applicable, Total due
+   - **Never default to 25%.** 25% is the Swedish standard rate. The UK standard rate is 20%, and UK construction work between VAT-registered businesses is often subject to the **domestic reverse charge**, where the invoice shows no VAT and states that the customer accounts for it. Reduced rates exist in both countries.
+   - If the country or the VAT treatment is not clear from the input, ask before producing the invoice. A wrong VAT line makes the document legally wrong, not merely untidy.
 6. Payment instructions: Bank details, reference
 7. Footer: Warranty statement, certifications
 
@@ -37,7 +39,8 @@ Produce a clean, professional invoice with:
 - Private customers only (not companies)
 - User must request payment from the Swedish Tax Agency (Skatteverket)
 - Show: Arbete subtotal × 30% = ROT-avdrag, then subtract from invoice total
-- Practical: customer pays invoice minus ROT deduction; Erik claims the ROT amount from Skatteverket
+- Practical: the customer pays the invoice minus the ROT deduction, and the tradesperson claims the ROT amount from Skatteverket
+- ROT and RUT share one combined ceiling of 75,000 SEK per person per year, of which ROT may be at most 50,000 SEK. Do not present them as two separate allowances.
 
 **RUT (Rutavdrag):**
 - 50% deduction on labour costs for cleaning, gardening, laundry, childcare

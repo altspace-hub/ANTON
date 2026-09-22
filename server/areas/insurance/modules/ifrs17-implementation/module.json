@@ -59,7 +59,7 @@
     },
     {
       "id": "measurement_model",
-      "type": "multiselect",
+      "type": "multi-select",
       "label": "Applicable Measurement Models",
       "options": [
         {

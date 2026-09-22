@@ -32,6 +32,7 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import type { Server } from 'http';
 import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
+import { resolveTestDatabaseUrl } from '../helpers/test-database-url';
 
 if (!process.env.ENCRYPTION_KEY) process.env.ENCRYPTION_KEY = 'c'.repeat(64);
 
@@ -326,14 +327,9 @@ describe('no /coding/projects/:id route ships without the guard', () => {
  * Skips when DATABASE_URL is absent (the convention the other DB-backed suites use).
  */
 function resolveDatabaseUrl(): string | undefined {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    const env = readFileSync(join(process.cwd(), '.env'), 'utf8');
-    const m = env.match(/^DATABASE_URL=(.+)$/m);
-    return m ? m[1].trim() : undefined;
-  } catch {
-    return undefined;
-  }
+  // tests/setup/db-guard.ts (vitest globalSetup) decides what DATABASE_URL is for
+  // this run; a test never reads .env to find a database.
+  return resolveTestDatabaseUrl();
 }
 
 const DATABASE_URL = resolveDatabaseUrl();

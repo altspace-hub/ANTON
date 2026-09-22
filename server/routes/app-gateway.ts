@@ -25,6 +25,7 @@ import type { createRadarFetcher } from '../services/radar-fetcher.js';
 import { hybridSearch, NO_OWNED_CONTENT } from '../services/hybrid-search.js';
 import { callChat, resolveModel } from '../services/provider-router.js';
 import { createAppMailService, type MailProviderKind } from '../services/app-mail-service.js';
+import { resolvePinnedModuleIds, resolveIntentChips, intentCategoryModuleIds } from '../services/app-module-pins.js';
 import type { ModuleDefinition } from '../../src/lib/types.js';
 import { safeError } from '../lib/error-response.js';
 // MODULES + AREAS are loaded at boot via dynamic import — the existing
@@ -1638,13 +1639,63 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
   function companionColor(c: string | undefined): 'red' | 'blue' | 'teal' | 'gold' | 'green' {
     return COMPANION_COLOR_MAP[c || ''] ?? 'teal';
   }
-  // Curated 4-tile pinned set the phone home screen highlights. Anything not
-  // in MODULES is filtered out so a typo never ships an empty tile.
-  const PINNED_MODULE_IDS = ['sanctions-advisory', 'gap-analysis', 'document-creation', 'regulatory-monitor'] as const;
-
-  publicRouter.get('/org/:orgId/modules', appAuth, orgMember, (_req, res) => {
+  // The 4-tile pinned set and the intent chips are resolved per user and per
+  // org — see server/services/app-module-pins.ts for the ladder and for why
+  // the old global four (a compliance consultant's workflow, served to every
+  // phone on every instance) were wrong. Anything not in MODULES is filtered
+  // out so a retired id never ships an empty tile.
+  publicRouter.get('/org/:orgId/modules', appAuth, orgMember, async (req, res) => {
     const byId = new Map(MODULES_CATALOG.map(m => [m.id, m]));
-    const pinned = PINNED_MODULE_IDS
+    const isKnown = (id: string): boolean => byId.has(id);
+    const orgId = String(req.params.orgId);
+    const userId = req.appUser!.id;
+
+    // Signal 1 — what this person opens on their phone, most-used first.
+    // Signal 3 — what everyone in this org opens. Both come from the sessions
+    // table, which records resolved_module_id on every module-scoped session.
+    // Signal 2 — what the org admin configured this deployment to route to.
+    // Signal 4 — org_type. A failed read degrades to the next rung, never 500s.
+    const [personalRows, orgRows, intentRows, org] = await Promise.all([
+      db.all<{ module_id: string }>(
+        `SELECT resolved_module_id AS module_id
+           FROM app_sessions
+          WHERE connected_user_id = $1 AND org_id = $2 AND resolved_module_id IS NOT NULL
+          GROUP BY resolved_module_id
+          ORDER BY COUNT(*) DESC, MAX(updated_at) DESC
+          LIMIT 12`,
+        userId, orgId,
+      ).catch(() => []),
+      db.all<{ module_id: string }>(
+        `SELECT resolved_module_id AS module_id
+           FROM app_sessions
+          WHERE org_id = $1 AND resolved_module_id IS NOT NULL
+          GROUP BY resolved_module_id
+          ORDER BY COUNT(*) DESC, MAX(updated_at) DESC
+          LIMIT 12`,
+        orgId,
+      ).catch(() => []),
+      db.all<{ name: string; default_module_id: string | null; allowed_modules: unknown }>(
+        `SELECT name, default_module_id, allowed_modules
+           FROM org_intent_categories
+          WHERE org_id = $1 AND is_active = TRUE
+          ORDER BY priority DESC, created_at ASC
+          LIMIT 12`,
+        orgId,
+      ).catch(() => []),
+      db.get<{ org_type: string | null }>(
+        'SELECT org_type FROM org_profiles WHERE id = $1', orgId,
+      ).catch(() => null),
+    ]);
+
+    const configured = intentRows.flatMap(intentCategoryModuleIds);
+    const pinnedIds = resolvePinnedModuleIds({
+      personal: personalRows.map(r => r.module_id),
+      configured,
+      orgPopular: orgRows.map(r => r.module_id),
+      orgType: org?.org_type ?? null,
+    }, isKnown);
+
+    const pinned = pinnedIds
       .map(id => byId.get(id))
       .filter((m): m is ModuleDefinition => !!m)
       .map(m => ({
@@ -1655,10 +1706,12 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
         busy: false,
       }));
 
+    const chips = resolveIntentChips(intentRows.map(r => r.name), org?.org_type ?? null);
+
     // Browse = full catalog minus what's already pinned, alphabetised by label.
-    const pinnedIds = new Set<string>(PINNED_MODULE_IDS as readonly string[]);
+    const pinnedSet = new Set<string>(pinnedIds);
     const browse = MODULES_CATALOG
-      .filter(m => !pinnedIds.has(m.id))
+      .filter(m => !pinnedSet.has(m.id))
       .map(m => ({
         id: m.id,
         name: m.shortLabel || m.label,
@@ -1666,7 +1719,7 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
-    res.json({ pinned, browse });
+    res.json({ pinned, browse, chips });
   });
 
   // Cache of parsed prompt previews (file → {persona, role}). Prompts are
@@ -1678,14 +1731,12 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
     if (promptPreviewCache.has(moduleId)) return promptPreviewCache.get(moduleId)!;
     const result = { persona: null as string | null, role: null as string | null };
     try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const url = await import('url');
-      // Resolve relative to this source file so it works under both ts-node
-      // and the compiled dist tree.
-      const here = path.dirname(url.fileURLToPath(import.meta.url));
-      const promptPath = path.resolve(here, '..', 'prompts', `${moduleId}.md`);
-      const raw = await fs.readFile(promptPath, 'utf-8');
+      // Same resolver the module runner uses: the live server/areas prompt
+      // first, then the server/prompts ghost fallback for ids with no module
+      // dir — so the persona preview never reads a stale shadow copy.
+      const { getModuleSystemPrompt } = await import('../services/module-loader.js');
+      const raw = await getModuleSystemPrompt(moduleId);
+      if (!raw) throw new Error(`no prompt for ${moduleId}`);
       // Persona = first non-blank, non-heading paragraph after the H1
       const lines = raw.split(/\r?\n/);
       let i = 0;

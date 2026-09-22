@@ -1,0 +1,158 @@
+{
+  "formatVersion": "1.0",
+  "id": "right-to-repair-claim",
+  "label": "Right to Repair Claim",
+  "shortLabel": "Repair Claim",
+  "description": "Work out what a consumer with a faulty product is actually entitled to: repair versus replacement under the legal guarantee of conformity, the separate manufacturer repair duty under Directive (EU) 2024/1799 for listed product categories, the European Repair Information Form, and the dispute route. Jurisdiction-status aware — the EU limb depends on national transposition, and the UK and US run on different law entirely.",
+  "icon": "PackageCheck",
+  "color": "adv-red",
+  "areaId": "consumer-legal",
+  "defaults": {
+    "thinking": "investigate",
+    "creativity": "balanced",
+    "outputFormats": [
+      "detailed-findings",
+      "step-by-step-guide"
+    ],
+    "transparencyLevel": 1,
+    "knowledgeSources": {
+      "claudeKnowledge": {
+        "enabled": true,
+        "webSearchEnabled": true,
+        "description": "EU repair and sale-of-goods regime: Directive (EU) 2024/1799, Directive (EU) 2019/771 as amended, national transposing measures and their status; UK Consumer Rights Act 2015; US state repair statutes and the Magnuson-Moss Warranty Act"
+      },
+      "localFolder": {
+        "enabled": true,
+        "folderPaths": [],
+        "recursive": true
+      }
+    }
+  },
+  "guidedInputs": [
+    {
+      "id": "legal_system",
+      "type": "select",
+      "label": "Where was the product bought?",
+      "description": "Decides which law applies. The EU repair directives do not reach the UK or the US, and those two have their own, different frameworks.",
+      "required": true,
+      "options": [
+        { "value": "eu_eea", "label": "An EU / EEA country" },
+        { "value": "uk", "label": "United Kingdom" },
+        { "value": "us", "label": "United States" },
+        { "value": "other", "label": "Somewhere else" }
+      ]
+    },
+    {
+      "id": "country",
+      "type": "text",
+      "label": "Which country, or which US state?",
+      "description": "In the EU the answer turns on that Member State's own transposing law and its liability period. In the US it turns on state law. Without this the answer can only be given conditionally.",
+      "placeholder": "e.g. Sweden, Germany, Ireland — or California, New York"
+    },
+    {
+      "id": "purchase_date",
+      "type": "text",
+      "label": "Date of purchase (and delivery, if different)",
+      "description": "Decisive. It sets the liability period and the burden-of-proof window, and it answers the 31 July 2026 cut-off: the newer EU additions do not apply to sales contracts concluded before that date.",
+      "required": true,
+      "placeholder": "e.g. bought 3 March 2026, delivered 11 March 2026"
+    },
+    {
+      "id": "fault_description",
+      "type": "textarea",
+      "label": "What is wrong, and when did it start?",
+      "description": "Describe the fault, when it first appeared, whether it has happened before, and whether the product has been repaired or opened by anyone.",
+      "required": true,
+      "placeholder": "e.g. the drum stopped spinning mid-cycle after 14 months. It was repaired once under warranty at month 9 for the same symptom."
+    },
+    {
+      "id": "product_category",
+      "type": "select",
+      "label": "Product category",
+      "description": "The standalone manufacturer repair duty reaches only the categories on Annex II of Directive (EU) 2024/1799. Anything else falls back to the seller's legal guarantee.",
+      "options": [
+        { "value": "washing_machine", "label": "Washing machine or washer-dryer (Annex II)" },
+        { "value": "dishwasher", "label": "Dishwasher (Annex II)" },
+        { "value": "refrigerating", "label": "Fridge, freezer or other refrigerating appliance (Annex II)" },
+        { "value": "display", "label": "TV, monitor or other electronic display (Annex II)" },
+        { "value": "welding", "label": "Welding equipment (Annex II)" },
+        { "value": "vacuum", "label": "Vacuum cleaner (Annex II)" },
+        { "value": "server_storage", "label": "Server or data storage product (Annex II)" },
+        { "value": "phone_tablet", "label": "Mobile phone, cordless phone or tablet (Annex II)" },
+        { "value": "tumble_dryer", "label": "Tumble dryer (Annex II)" },
+        { "value": "lmt_battery", "label": "E-bike, e-scooter or other light means of transport battery good (Annex II)" },
+        { "value": "other", "label": "Something else (not on the Annex II list)" }
+      ]
+    },
+    {
+      "id": "bought_from",
+      "type": "select",
+      "label": "Who was it bought from?",
+      "description": "A private seller is not a trader, and the legal guarantee does not apply to that sale at all. A cross-border purchase opens the European Consumer Centre route.",
+      "options": [
+        { "value": "shop_same_country", "label": "A shop or trader in the same country" },
+        { "value": "trader_other_eu", "label": "A trader in another EU / EEA country" },
+        { "value": "marketplace", "label": "An online marketplace (third-party seller)" },
+        { "value": "trader_non_eu", "label": "A trader outside the EU / EEA" },
+        { "value": "private", "label": "A private individual (not a business)" },
+        { "value": "second_hand", "label": "A trader, but the goods were second-hand" }
+      ]
+    },
+    {
+      "id": "remedy_sought",
+      "type": "select",
+      "label": "What do you want to happen?",
+      "description": "Under the legal guarantee the consumer chooses between repair and replacement, unless the choice is impossible or disproportionate for the seller.",
+      "options": [
+        { "value": "repair", "label": "Repair" },
+        { "value": "replacement", "label": "Replacement" },
+        { "value": "refund", "label": "Refund / end the contract" },
+        { "value": "price_reduction", "label": "Keep it, but pay less" },
+        { "value": "unsure", "label": "Not sure — advise me which is strongest" }
+      ]
+    },
+    {
+      "id": "trader_response",
+      "type": "textarea",
+      "label": "What has the trader or manufacturer said so far?",
+      "description": "Quote any refusal, any charge quoted, and any reason given — for example that the warranty lapsed, that a third-party repair voided it, or that only replacement is available.",
+      "placeholder": "e.g. \"Out of warranty, repair quoted at 180 EUR. They said the guarantee was void because a local shop opened it last year.\""
+    },
+    {
+      "id": "repair_form_held",
+      "type": "boolean",
+      "label": "Has a repairer given you a European Repair Information Form?",
+      "description": "If so, its conditions are fixed for 30 calendar days, and accepting within that period binds the repairer to perform on those terms."
+    }
+  ],
+  "recommendedSkills": [
+    "eu-regulatory-navigator"
+  ],
+  "recommendedPersonas": [
+    "consumer-rights-advocate",
+    "paralegal-aid",
+    "legal-expert"
+  ],
+  "tags": [
+    "right-to-repair",
+    "consumer",
+    "faulty-goods",
+    "legal-guarantee",
+    "eu",
+    "repair",
+    "warranty"
+  ],
+  "contentType": "analytic_report",
+  "exampleInput": "My washing machine has broken and the shop is refusing to help. I bought it from an electrical retailer in Sweden on 3 March 2026 and it was delivered on 11 March 2026. It cost about 6,900 SEK.\n\nThe drum stopped spinning mid-cycle two weeks ago, about 18 months after delivery. The same symptom happened once before at around month nine, and the retailer repaired it then without charging me.\n\nThe retailer now says the machine is out of warranty and that I should contact the manufacturer directly. The manufacturer's service line quoted 2,400 SEK for a repair and said the warranty was void anyway because a local repair shop opened the machine last year to look at a drainage problem.\n\nI would rather have it repaired properly than replaced. What am I entitled to, and what should I write to them?",
+  "exampleValues": {
+    "legal_system": "eu_eea",
+    "country": "Sweden",
+    "purchase_date": "Bought 3 March 2026, delivered 11 March 2026",
+    "fault_description": "The drum stopped spinning mid-cycle about 18 months after delivery. The same symptom occurred at around month nine and was repaired by the retailer free of charge at the time. A local repair shop opened the machine last year to look at a separate drainage problem.",
+    "product_category": "washing_machine",
+    "bought_from": "shop_same_country",
+    "remedy_sought": "repair",
+    "trader_response": "Retailer says it is out of warranty and to contact the manufacturer. Manufacturer quoted 2,400 SEK and said the warranty is void because a third-party repairer opened the machine.",
+    "repair_form_held": false
+  }
+}

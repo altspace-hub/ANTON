@@ -8,9 +8,10 @@
   "color": "adv-gold",
   "defaults": {
     "thinking": "investigate",
-    "creativity": "balanced",
+    "creativity": "strict",
     "outputFormats": [
-      "detailed-findings"
+      "detailed-findings",
+      "gap-scoring-matrix"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
@@ -129,7 +130,7 @@
     {
       "id": "due-diligence-scope",
       "label": "Due Diligence Scope",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "legal-title",

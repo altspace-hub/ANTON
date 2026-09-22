@@ -27,7 +27,7 @@ Independent tradespeople — plumbers, electricians, carpenters, cleaners, garde
 
 **The calculation:**
 - Customer gets 30% off the labour portion
-- Maximum deduction: 50,000 SEK per person per year
+- Maximum ROT deduction: 50,000 SEK per person per year — **and this sits inside a combined ROT + RUT ceiling of 75,000 SEK per person per year**, so a customer who has already used RUT has less ROT headroom than the 50,000 figure suggests. Always ask what they have already claimed this year before quoting a number.
 - The tradesperson invoices full amount → customer pays net amount → tradesperson claims the ROT amount from Skatteverket
 
 **Example:**
@@ -48,7 +48,7 @@ Independent tradespeople — plumbers, electricians, carpenters, cleaners, garde
 - Garden maintenance (rensning av gräsmattor)
 
 **Rate:** 50% deduction on labour (higher than ROT)
-**Maximum:** 75,000 SEK per person per year
+**Maximum:** 75,000 SEK per person per year — **this is the COMBINED ROT + RUT ceiling, not a separate RUT allowance.** ROT and RUT are added together against the same 75,000 SEK, of which ROT may be at most 50,000 SEK. The two ceilings are never 125,000 SEK in total. A builder who also does garden clearance for the same customer must count both against this one figure.
 
 ## How to Claim
 

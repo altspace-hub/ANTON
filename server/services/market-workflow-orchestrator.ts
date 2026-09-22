@@ -18,6 +18,9 @@ import { createMarketIntelligenceService } from './market-intelligence-service.j
 import { createMarketThesisService } from './market-thesis-service.js';
 import { promptSlot, promptSlotObject } from './market-prompt-slot.js';
 import { dailyIntelligenceOutcome } from './market-run-outcome.js';
+import { callChat } from './provider-router.js';
+import { getMarketsModel } from './markets-model-store.js';
+import { modelCanWebSearch, webSearchTool } from './routed-web-search.js';
 import { createMarketIndexRebalanceService } from './market-index-rebalance-service.js';
 import { createMarketFundamentalScoringService } from './market-fundamental-scoring-service.js';
 import { createConditionalAccuracyService, confidenceBand } from './market-conditional-accuracy-service.js';
@@ -65,15 +68,23 @@ export async function createMarketWorkflowOrchestrator(
   db: DatabaseAdapter,
   computationService: MarketComputationService,
   dataService: MarketDataService,
-  anthropicApiKey?: string,
+  /**
+   * Web-search opt-in. This position used to take an Anthropic API key, which
+   * both switched web search on and built a client billed to it. No key is
+   * used any more — every call runs through the router on the markets model —
+   * but a truthy value keeps its old meaning ("web-search steps may search"),
+   * and no current caller passes one, so those steps stay plain routed calls
+   * exactly as before instead of starting to spend on search unannounced.
+   */
+  webSearchOptIn?: string | boolean,
   temporalService?: TemporalReasoningService | null,
 ) {
   // Initialize investigation + why-chains + learning + thesis + rebalance services
   const investigationService = await createMarketInvestigationService(db);
   const whyChainsService = await createMarketWhyChainsService(db);
   const learningService = await createMarketIntelligenceService(db);
-  const anthropicClient = anthropicApiKey ? new (await import('@anthropic-ai/sdk')).default({ apiKey: anthropicApiKey }) : undefined;
-  const thesisService = await createMarketThesisService(db, anthropicClient);
+  // The thesis service's client parameter is unused; no client is built here.
+  const thesisService = await createMarketThesisService(db);
   const rebalanceService = await createMarketIndexRebalanceService(db);
   const fundamentalScoringService = await createMarketFundamentalScoringService(db);
   const conditionalAccuracyService = await createConditionalAccuracyService(db);
@@ -108,36 +119,23 @@ export async function createMarketWorkflowOrchestrator(
     thinking?: string,
     useWebSearch?: boolean,
   ): Promise<string> {
-    if (useWebSearch && anthropicApiKey) {
-      // Use Claude directly with web search tool for real-time market data
-      const Anthropic = (await import('@anthropic-ai/sdk')).default;
-      const client = new Anthropic({ apiKey: anthropicApiKey });
-      const response = await client.messages.create({
-        // Direct Anthropic client (web_search tool requires it) — cannot wrap
-        // with mapModelToProvider here. Fixed invalid id (was ...-20250514,
-        // which the Anthropic API rejects; registry id is ...-20250929).
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Parameters<typeof client.messages.create>[0]['tools'],
-      });
-      let text = '';
-      for (const block of response.content) {
-        if (block.type === 'text') text += block.text;
-      }
-      return text;
-    }
-    // Fall back to existing callChat (provider-agnostic; honor the configured
-    // markets model — Settings → "Markets AI model", else the utility model)
-    const { callChat } = await import('./provider-router.js');
-    const { getMarketsModel } = await import('./markets-model-store.js');
+    // One path for every step: the configured markets model (Settings →
+    // "Markets AI model", else the routed utility model), through the router.
+    // Web search is added only when the orchestrator was opted in AND the
+    // model can really search (Anthropic API with a key, or the subscription
+    // engine) — other providers would drop the tool and answer from memory.
+    const model = await getMarketsModel(db);
+    const search = Boolean(useWebSearch && webSearchOptIn && modelCanWebSearch(model));
     const result = await callChat({
-      model: await getMarketsModel(db),
+      model,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,
       thinkingLevel: thinking,
+      ...(search ? { tools: [webSearchTool(5)] } : {}),
+      // Scheduled/headless market workflows — never a person waiting.
+      background: true,
+      db,
     });
     return result.text;
   }

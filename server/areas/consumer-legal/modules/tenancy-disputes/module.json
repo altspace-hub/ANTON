@@ -11,7 +11,8 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
-      "detailed-findings"
+      "detailed-findings",
+      "action-plan"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

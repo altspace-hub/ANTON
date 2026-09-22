@@ -35,7 +35,7 @@
       "type": "textarea",
       "label": "What should it be? (criteria)",
       "description": "The regulation, policy, or standard that was not met.",
-      "placeholder": "e.g., AMLR Article 36 requires EDD for PEP customers including source of wealth documentation. Internal CDD Policy v2.1 Section 4.3 requires EDD completion within 10 days of PEP identification."
+      "placeholder": "e.g., AMLR Article 42(1)(b) requires source-of-wealth and source-of-funds measures for PEP customers. Internal CDD Policy v2.1 Section 4.3 requires EDD completion within 10 days of PEP identification."
     },
     {
       "id": "root_cause",

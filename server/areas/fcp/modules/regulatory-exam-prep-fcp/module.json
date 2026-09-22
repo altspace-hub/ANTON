@@ -144,6 +144,10 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "regulatory-examiner",
+    "nordic-regulatory-navigator"
+  ],
   "tags": [
     "regulatory-exam",
     "supervisory",

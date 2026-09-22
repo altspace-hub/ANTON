@@ -22,7 +22,8 @@ When no template is set up:
    - Labour: estimated hours × hourly rate
    - Materials: estimated cost (note "as quoted by supplier — subject to availability")
    - Travel: if applicable
-   - Subtotal, VAT (25% if applicable), Total
+   - Subtotal, VAT at the rate that applies in the user's country and to this work, Total
+   - **Never default to 25%.** That is the Swedish standard rate; the UK standard rate is 20%, reduced rates exist in both, and UK construction work between VAT-registered businesses is often subject to the domestic reverse charge. Ask if the country or treatment is unclear.
 6. **What's included**: Bullet list of exactly what this price covers
 7. **What's NOT included** (very important): Any items that could lead to disputes
    - "Price does not include: removal of existing fittings, plastering/painting, discovery of hidden damage"

@@ -53,6 +53,7 @@ interface RegistrySupplement {
 const REGISTRY_SUPPLEMENT: Record<string, RegistrySupplement> = {
   'claude-opus-5':              { displayName: 'Claude Opus 5',     costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-sonnet-5':            { displayName: 'Claude Sonnet 5',   costTier: 2, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-fable-5-1':           { displayName: 'Claude Fable 5.1',  costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-fable-5':             { displayName: 'Claude Fable 5',    costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-opus-4-8':            { displayName: 'Claude Opus 4.8',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-opus-4-7':            { displayName: 'Claude Opus 4.7',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },

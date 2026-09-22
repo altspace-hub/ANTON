@@ -35,7 +35,13 @@ export interface GuidedInputField {
 // ── Module defaults ──────────────────────────────────────────
 
 export interface ModuleDefaults {
-  thinking: 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first';
+  /** The six levels of the ladder. `deep_investigate` was missing here while
+   *  src/lib/types.ts, server/services/thinking-map.ts, anton-module-config.ts
+   *  and user-module-defaults.ts all carried it, so a module.json that asked
+   *  for the deepest level was a type error nobody saw (module.json is read
+   *  with fs.readJson and cast). Kept in step by the validator in
+   *  module-loader.ts, which checks against user-module-defaults' list. */
+  thinking: 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
   creativity: 'strict' | 'balanced' | 'creative';
   model?: string;
   outputFormats: string[];
@@ -147,5 +153,13 @@ export interface AreaConfig {
 
 export interface LoadedArea extends AreaConfig {
   modules: ModuleConfig[];
+  /** Area context with the maintainer footer stripped — see stripMaintainerFooter(). */
   areaContext: string;
+  /**
+   * The month from the stripped `_As of: YYYY-MM_` footer, or null when the file is
+   * undated. The footer itself never reaches a model (it is an imperative the model
+   * cannot obey), but the DATE is a fact the provenance-and-limits layer needs: it is
+   * what lets an answer say how old the domain context behind it was.
+   */
+  areaContextAsOf: string | null;
 }

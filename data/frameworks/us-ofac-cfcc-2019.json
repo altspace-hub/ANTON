@@ -3,17 +3,43 @@
   "name": "OFAC Framework for Compliance Commitments — Sanctions Compliance Program",
   "shortName": "OFAC CFCC",
   "reference": "OFAC Framework for OFAC Compliance Commitments (May 2019)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://ofac.treasury.gov/media/16331/download?inline",
   "issued": "2019-05-02",
   "supervisor": "OFAC — US Department of the Treasury",
   "articleCount": 14,
   "chapters": [
-    {"number": "EE1", "title": "Essential Element 1 — Management Commitment", "articles": "EE1"},
-    {"number": "EE2", "title": "Essential Element 2 — Risk Assessment", "articles": "EE2"},
-    {"number": "EE3", "title": "Essential Element 3 — Internal Controls", "articles": "EE3"},
-    {"number": "EE4", "title": "Essential Element 4 — Testing + Auditing", "articles": "EE4"},
-    {"number": "EE5", "title": "Essential Element 5 — Training", "articles": "EE5"},
-    {"number": "RA", "title": "Root-cause analysis + remediation (Enforcement Guidance)", "articles": "Common deficiencies"}
+    {
+      "number": "EE1",
+      "title": "Essential Element 1 — Management Commitment",
+      "articles": "EE1"
+    },
+    {
+      "number": "EE2",
+      "title": "Essential Element 2 — Risk Assessment",
+      "articles": "EE2"
+    },
+    {
+      "number": "EE3",
+      "title": "Essential Element 3 — Internal Controls",
+      "articles": "EE3"
+    },
+    {
+      "number": "EE4",
+      "title": "Essential Element 4 — Testing + Auditing",
+      "articles": "EE4"
+    },
+    {
+      "number": "EE5",
+      "title": "Essential Element 5 — Training",
+      "articles": "EE5"
+    },
+    {
+      "number": "RA",
+      "title": "Root-cause analysis + remediation (Enforcement Guidance)",
+      "articles": "Common deficiencies"
+    }
   ],
   "themes": [
     "Management commitment",

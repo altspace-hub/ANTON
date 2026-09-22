@@ -7,7 +7,7 @@
   "description": "Analyse Solvency II regulatory requirements, assess compliance gaps, and produce structured findings reports. Covers Pillar 1 (quantitative requirements), Pillar 2 (governance and risk management), and Pillar 3 (reporting and disclosure). Supports ORSA reviews, SCR/MCR calculations governance, and supervisory reporting readiness.",
   "color": "adv-blue",
   "defaults": {
-    "thinking": "think_hard",
+    "thinking": "investigate",
     "creativity": "strict",
     "outputFormats": [
       "gap-scoring-matrix",
@@ -94,7 +94,7 @@
     {
       "id": "pillar-focus",
       "label": "Pillar Focus",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "pillar-1-quantitative",

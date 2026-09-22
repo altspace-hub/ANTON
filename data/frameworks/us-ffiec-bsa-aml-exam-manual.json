@@ -3,15 +3,37 @@
   "name": "FFIEC BSA / AML Examination Manual — operational examination yardstick",
   "shortName": "FFIEC BSA/AML Manual",
   "reference": "FFIEC BSA/AML Examination Manual",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://bsaaml.ffiec.gov/manual",
   "supervisor": "FFIEC (FRB + FDIC + NCUA + OCC + CFPB + state liaison)",
   "articleCount": 10,
   "chapters": [
-    {"number": "Found", "title": "Foundation + risk assessment", "articles": "Manual Pt I"},
-    {"number": "BSA", "title": "BSA / AML program (5 pillars examination)", "articles": "Manual Pt II"},
-    {"number": "Op", "title": "Operational compliance (SAR/CTR/CIP/sanctions)", "articles": "Manual Pt III"},
-    {"number": "EDD", "title": "EDD + special accounts", "articles": "Manual Pt IV"},
-    {"number": "Special", "title": "Special topics (digital assets + RIAs + cyber)", "articles": "Manual updates 2022-2024"}
+    {
+      "number": "Found",
+      "title": "Foundation + risk assessment",
+      "articles": "Manual Pt I"
+    },
+    {
+      "number": "BSA",
+      "title": "BSA / AML program (5 pillars examination)",
+      "articles": "Manual Pt II"
+    },
+    {
+      "number": "Op",
+      "title": "Operational compliance (SAR/CTR/CIP/sanctions)",
+      "articles": "Manual Pt III"
+    },
+    {
+      "number": "EDD",
+      "title": "EDD + special accounts",
+      "articles": "Manual Pt IV"
+    },
+    {
+      "number": "Special",
+      "title": "Special topics (digital assets + RIAs + cyber)",
+      "articles": "Manual updates 2022-2024"
+    }
   ],
   "themes": [
     "Risk assessment",

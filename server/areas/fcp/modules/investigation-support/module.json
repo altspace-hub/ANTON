@@ -61,6 +61,10 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "sar-narrative-writer",
+    "jurisdiction-uk-fca"
+  ],
   "tags": [
     "investigation",
     "str",

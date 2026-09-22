@@ -43,8 +43,8 @@ MiCA defines crypto-asset (Art. 3(1)(5)): "a digital representation of a value o
 1. What assets stabilise the value? → Single fiat = EMT; basket/other = ART
 2. Who is the issuer? → Must be authorised legal entity for ART/EMT
 3. Is it truly stabilised, or is stabilisation incidental? → Substance over form
-4. Is there a right to redeem at face value? → Mandatory for EMTs (Art. 50), optional mechanism for ARTs
-5. Is the stabilisation mechanism algorithmic only? → Algorithmically stabilised ARTs are **prohibited** under MiCA (Art. 22)
+4. Is there a right to redeem at face value? → Mandatory for EMTs (Art. 49), optional mechanism for ARTs
+5. Is the stabilisation mechanism algorithmic only? → MiCA does **not** exempt or prohibit it: Recital 41 puts so-called algorithmic 'stablecoins' that aim to hold a stable value against a currency or assets squarely inside Title III or IV, whatever the design. Algorithmic crypto-assets that do **not** aim to stabilise fall under Title II.
 
 ## E-Money Tokens (EMT) — Title IV
 
@@ -65,7 +65,7 @@ Only permitted issuers:
   - Deposited in a segregated account at a credit institution, OR
   - Invested in secure, liquid, low-risk assets (aligned with EMD2 safeguarding)
 - Reserve assets must be: denominated in reference currency, highly liquid, minimal market/credit/concentration risk
-- Prohibition on interest payments to EMT holders (Art. 50(4))
+- Prohibition on interest payments to EMT holders (Art. 50)
 
 ### Significant EMT Enhanced Requirements (Arts. 56–58)
 Significant designation triggered by EBA if (Art. 56(1)):
@@ -83,7 +83,7 @@ Enhanced obligations for significant EMTs:
 - Supervisory college established
 - Additional own funds (3% of reserve assets)
 
-### Redemption Rights (Art. 50)
+### Redemption Rights (Art. 49)
 - Holders must be able to redeem at any time, at par value
 - No fees except when: redeemed >€1,000 within one month (reasonable fee permitted)
 - Redemption conditions must be clearly disclosed in whitepaper
@@ -96,12 +96,12 @@ Enhanced obligations for significant EMTs:
 - Authorisation application: Art. 18 (detailed requirements)
 - Credit institutions may issue ARTs under a simplified procedure (Art. 17(1))
 
-### NCA Authorisation Process (Arts. 18–23)
+### NCA Authorisation Process (Arts. 18–21)
 - Application includes: legal entity docs, business plan, whitepaper draft, governance arrangements, reserve asset policy, custody arrangements, conflicts of interest policy
 - NCA decision within 60 working days (extendable to 90)
 - EBA consulted for ARTs that may become significant
 
-### Whitepaper Requirements (Art. 19 + Annex I)
+### Whitepaper Requirements (Art. 19 + Annex II)
 Content must include:
 - Description of the ART, stabilisation mechanisms, reserve composition
 - Rights of holders: redemption, claim on reserve assets in insolvency
@@ -123,11 +123,11 @@ Content must include:
 - Must be maintained in: CET1 instruments, Additional Tier 1, or Tier 2
 - Higher of: absolute minimum (€350,000 for small issuers) or 2% of reserve assets
 
-### Prohibition: Algorithmic Stablecoins (Art. 22)
-- Prohibited to call a crypto-asset an ART if stabilisation relies solely on algorithmic mechanisms maintaining price — **absolute prohibition**
+### Algorithmic Stablecoins — In Scope, Not Prohibited (Recital 41)
+- A crypto-asset that aims to hold a stable value against an official currency or against one or several assets is an EMT or an ART **whatever the stabilisation mechanism**, algorithmic protocols included — Title III or IV applies in full. There is no MiCA article prohibiting algorithmic stabilisation; the consequence is authorisation, reserve and redemption obligations, not a ban.
 
-### Significant ART Enhanced Requirements (Arts. 39–44)
-Significance thresholds (same structure as EMT above, Art. 39):
+### Significant ART Enhanced Requirements (Arts. 43–45)
+Significance thresholds (same structure as EMT above, Art. 43(1)):
 - EBA becomes primary supervisor
 - Enhanced liquidity requirements
 - Interoperability mandated
@@ -139,7 +139,7 @@ Significance thresholds (same structure as EMT above, Art. 39):
 
 ### Definition and Lighter Regime
 - Provides access to goods/services of the issuer — **not** an investment instrument
-- Whitepaper required (Art. 5) with NCA notification ≥20 working days before publication
+- Whitepaper required (Arts. 4 and 6) with NCA notification ≥20 working days before publication (Art. 8(5))
 - Exemptions from whitepaper: <€1M total consideration over 12 months; offering to <150 persons per member state; denomination >€100,000; directed at qualified investors only
 
 ### Utility Token — Content Requirements (Art. 6 + Annex I)

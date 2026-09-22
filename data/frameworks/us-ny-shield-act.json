@@ -3,13 +3,23 @@
   "name": "New York Stop Hacks and Improve Electronic Data Security Act (SHIELD Act)",
   "shortName": "NY SHIELD",
   "reference": "NY Gen Bus Law §899-aa + §899-bb",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://ag.ny.gov/internet/data-breach",
   "inForce": "2020-03-21",
   "supervisor": "New York Attorney General",
   "articleCount": 7,
   "chapters": [
-    {"number": "1", "title": "§899-aa — Breach notification (expanded)", "articles": "§899-aa"},
-    {"number": "2", "title": "§899-bb — Reasonable security (data security)", "articles": "§899-bb"}
+    {
+      "number": "1",
+      "title": "§899-aa — Breach notification (expanded)",
+      "articles": "§899-aa"
+    },
+    {
+      "number": "2",
+      "title": "§899-bb — Reasonable security (data security)",
+      "articles": "§899-bb"
+    }
   ],
   "themes": [
     "Breach notification",

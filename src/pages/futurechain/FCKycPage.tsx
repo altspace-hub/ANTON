@@ -369,7 +369,7 @@ export default function FCKycPage() {
               placeholder='e.g., "Salary from FutureChain AB" or "Savings accumulated over 10 years"'
               rows={2}
             />
-            <p className="text-[10px] text-adv-gray/60 mt-1">A brief description helps meet CDD requirements under AMLR Article 16.</p>
+            <p className="text-[10px] text-adv-gray/60 mt-1">A brief description helps meet CDD requirements under AMLR Article 20.</p>
           </div>
         </div>
 
@@ -392,7 +392,7 @@ export default function FCKycPage() {
             <p className="text-xs text-adv-off-white/70 leading-relaxed">
               A <strong className="text-adv-off-white">Politically Exposed Person (PEP)</strong> holds or has held a prominent public function, such as
               a head of state, senior politician, judicial or military official, or senior executive of a state-owned enterprise.
-              Family members and close associates of PEPs are also subject to enhanced due diligence requirements under AMLR Articles 22-25 and FATF Recommendation 12.
+              Family members and close associates of PEPs are also subject to enhanced due diligence requirements under AMLR Articles 42-46 and FATF Recommendation 12.
             </p>
           </div>
         )}
@@ -537,11 +537,11 @@ export default function FCKycPage() {
               <ul className="space-y-1 text-xs text-adv-off-white/70">
                 <li className="flex items-start gap-2">
                   <span className="text-adv-gold mt-0.5">&#x2022;</span>
-                  <span><strong className="text-adv-off-white/90">AMLR Articles 16-21:</strong> Customer identification and verification</span>
+                  <span><strong className="text-adv-off-white/90">AMLR Articles 19-23:</strong> Customer identification and verification</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-adv-gold mt-0.5">&#x2022;</span>
-                  <span><strong className="text-adv-off-white/90">AMLR Articles 22-25:</strong> Enhanced due diligence for higher-risk situations</span>
+                  <span><strong className="text-adv-off-white/90">AMLR Articles 34-41:</strong> Enhanced due diligence for higher-risk situations</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-adv-gold mt-0.5">&#x2022;</span>

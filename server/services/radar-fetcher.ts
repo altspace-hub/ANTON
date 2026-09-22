@@ -1,9 +1,9 @@
 import type { DatabaseAdapter } from '../db/database.js';
 
-import type Anthropic from '@anthropic-ai/sdk';
 import Parser from 'rss-parser';
-import { getRoutedUtilityModel, getAnthropicUtilityModel } from './utility-model.js';
+import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { modelCanWebSearch, providerOfModel, webSearchTool } from './routed-web-search.js';
 import { SUBCATEGORY_KEYWORDS, CATEGORY_SCORE_PROMPTS, type RadarCategory } from './radar-constants.js';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -103,7 +103,13 @@ function classifySubcategory(title: string, summary: string): { subcategory: str
 
 // ── Fetcher factory ──────────────────────────────────────────────
 
-export async function createRadarFetcher(db: DatabaseAdapter, anthropic: Anthropic) {
+/**
+ * `_legacyClient` is the Anthropic client index.ts still passes; it is no
+ * longer used — the web-search strategy runs through the provider router on
+ * the routed utility model. Kept positional so the boot wiring compiles
+ * unchanged.
+ */
+export async function createRadarFetcher(db: DatabaseAdapter, _legacyClient?: unknown) {
   const rssParser = new Parser({
     timeout: 15000,
     headers: { 'User-Agent': 'ANTON-FCP-Workbench/1.0 (Regulatory Monitor)' },
@@ -187,13 +193,23 @@ export async function createRadarFetcher(db: DatabaseAdapter, anthropic: Anthrop
       ? `Find startup/company news, funding rounds, technology breakthroughs, market signals, and investment-relevant items published in the last 30 days.`
       : `Find regulatory publications, consultations, guidelines, and enforcement actions published in the last 30 days.`;
 
+    // Utility tier, through the router. Only a model that can really search
+    // (Anthropic API with a key, or the Claude subscription engine) may run a
+    // web-search source: any other provider would drop the tool and invent
+    // "recent publications" from memory.
+    const model = await getRoutedUtilityModel(db);
+    if (!modelCanWebSearch(model)) {
+      throw new Error(`Web-search sources need a Claude model that can search the web (utility model ${model} on ${providerOfModel(model)} cannot)`);
+    }
+
     try {
-      const message = await anthropic.messages.create({
-        // Anthropic-bound (web_search tool): honours a Claude utility
-        // override, falls back to Haiku for non-Claude utility models.
-        model: await getAnthropicUtilityModel(db),
-        max_tokens: 4096,
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }] as unknown as Anthropic.Messages.Tool[],
+      const message = await callChat({
+        model,
+        system: 'You monitor publications for a regulatory and market radar. Use the web_search tool, then answer with a JSON array only.',
+        maxTokens: 4096,
+        tools: [webSearchTool(5)],
+        background: true,
+        db,
         messages: [
           {
             role: 'user',
@@ -219,11 +235,7 @@ If you find nothing relevant, return: []`,
         ],
       });
 
-      // Extract text from response
-      const responseText = message.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map((block) => block.text)
-        .join('');
+      const responseText = message.text;
 
       // Try to parse JSON from the response
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
@@ -258,7 +270,7 @@ If you find nothing relevant, return: []`,
           };
         });
     } catch (err) {
-      console.error(`[radar-fetcher] Claude web search failed for ${source.display_name}:`, err);
+      console.error(`[radar-fetcher] purpose=radar-web-search failed for source ${source.id}:`, err instanceof Error ? err.message : err);
       return [];
     }
   }

@@ -1,0 +1,309 @@
+{
+  "id": "eu-consumer-rights-2011-83",
+  "name": "Consumer Rights Directive",
+  "shortName": "CRD",
+  "reference": "Directive 2011/83/EU",
+  "coverage": "transcribed",
+  "referenceAliases": [
+    "Directive 2011/83/EU on consumer rights",
+    "Consumer Rights Directive"
+  ],
+  "applicationDate": "2014-06-13",
+  "supervisor": "National consumer protection authorities (CPC network)",
+  "themes": [
+    "Subject matter, definitions and scope",
+    "Consumer information for contracts other than distance or off-premises contracts",
+    "Consumer information and right of withdrawal for distance and off-premises contracts",
+    "Other consumer rights",
+    "General provisions",
+    "Final provisions"
+  ],
+  "eurLex": "CELEX:32011L0083",
+  "articleCount": 35,
+  "divisionKind": "Chapter",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Subject matter, definitions and scope",
+      "articles": "1-4"
+    },
+    {
+      "number": "II",
+      "title": "Consumer information for contracts other than distance or off-premises contracts",
+      "articles": "5"
+    },
+    {
+      "number": "III",
+      "title": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "articles": "6-16"
+    },
+    {
+      "number": "IV",
+      "title": "Other consumer rights",
+      "articles": "17-22"
+    },
+    {
+      "number": "V",
+      "title": "General provisions",
+      "articles": "23-30"
+    },
+    {
+      "number": "VI",
+      "title": "Final provisions",
+      "articles": "31-35"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32011L0083",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "I",
+      "theme": "Subject matter, definitions and scope",
+      "requirement": "The purpose of this Directive is, through the achievement of a high level of consumer protection, to contribute to the proper functioning of the internal market by approximating certain aspects of the laws, regulations and administrative provisions of the Member States concerning contracts concluded between consumers…"
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Subject matter, definitions and scope",
+      "requirement": "For the purpose of this Directive, the following definitions shall apply: (1) ‘consumer' means any natural person who, in contracts covered by this Directive, is acting for purposes which are outside his trade, business, craft or profession; (2) ‘trader' means any natural person or any legal person, irrespective of…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Scope",
+      "chapter": "I",
+      "theme": "Subject matter, definitions and scope",
+      "requirement": "This Directive shall apply, under the conditions and to the extent set out in its provisions, to any contract concluded between a trader and a consumer."
+    },
+    {
+      "id": "Art.4",
+      "title": "Level of harmonisation",
+      "chapter": "I",
+      "theme": "Subject matter, definitions and scope",
+      "requirement": "Member States shall not maintain or introduce, in their national law, provisions diverging from those laid down in this Directive, including more or less stringent provisions to ensure a different level of consumer protection, unless otherwise provided for in this Directive."
+    },
+    {
+      "id": "Art.5",
+      "title": "Information requirements for contracts other than distance or off-premises contracts",
+      "chapter": "II",
+      "theme": "Consumer information for contracts other than distance or off-premises contracts",
+      "requirement": "Before the consumer is bound by a contract other than a distance or an off-premises contract, or any corresponding offer, the trader shall provide the consumer with the following information in a clear and comprehensible manner, if that information is not already apparent from the context: (a) the main characteristics…"
+    },
+    {
+      "id": "Art.6",
+      "title": "Information requirements for distance and off-premises contracts",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "Before the consumer is bound by a distance or off-premises contract, or any corresponding offer, the trader shall provide the consumer with the following information in a clear and comprehensible manner: (a) the main characteristics of the goods or services, to the extent appropriate to the medium and to the goods or…"
+    },
+    {
+      "id": "Art.7",
+      "title": "Formal requirements for off-premises contracts",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "With respect to off-premises contracts, the trader shall give the information provided for in Article 6(1) to the consumer on paper or, if the consumer agrees, on another durable medium."
+    },
+    {
+      "id": "Art.8",
+      "title": "Formal requirements for distance contracts",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "With respect to distance contracts, the trader shall give the information provided for in Article 6(1) or make that information available to the consumer in a way appropriate to the means of distance communication used in plain and intelligible language."
+    },
+    {
+      "id": "Art.9",
+      "title": "Right of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "Save where the exceptions provided for in Article 16 apply, the consumer shall have a period of 14 days to withdraw from a distance or off-premises contract, without giving any reason, and without incurring any costs other than those provided for in Article 13(2) and Article 14."
+    },
+    {
+      "id": "Art.10",
+      "title": "Omission of information on the right of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "If the trader has not provided the consumer with the information on the right of withdrawal as required by point (h) of Article 6(1), the withdrawal period shall expire 12 months from the end of the initial withdrawal period, as determined in accordance with Article 9(2)."
+    },
+    {
+      "id": "Art.11",
+      "title": "Exercise of the right of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "Before the expiry of the withdrawal period, the consumer shall inform the trader of his decision to withdraw from the contract."
+    },
+    {
+      "id": "Art.12",
+      "title": "Effects of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "The exercise of the right of withdrawal shall terminate the obligations of the parties: (a) to perform the distance or off-premises contract; or (b) to conclude the distance or off-premises contract, in cases where an offer was made by the consumer."
+    },
+    {
+      "id": "Art.13",
+      "title": "Obligations of the trader in the event of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "The trader shall reimburse all payments received from the consumer, including, if applicable, the costs of delivery without undue delay and in any event not later than 14 days from the day on which he is informed of the consumer's decision to withdraw from the contract in accordance with Article 11."
+    },
+    {
+      "id": "Art.14",
+      "title": "Obligations of the consumer in the event of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "Unless the trader has offered to collect the goods himself, the consumer shall send back the goods or hand them over to the trader or to a person authorised by the trader to receive the goods, without undue delay and in any event not later than 14 days from the day on which he has communicated his decision to withdraw…"
+    },
+    {
+      "id": "Art.15",
+      "title": "Effects of the exercise of the right of withdrawal on ancillary contracts",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "Without prejudice to Article 15 of Directive 2008/48/EC of the European Parliament and of the Council of 23 April 2008 on credit agreements for consumers ( 20 ) , if the consumer exercises his right of withdrawal from a distance or an off-premises contract in accordance with Articles 9 to 14 of this Directive, any…"
+    },
+    {
+      "id": "Art.16",
+      "title": "Exceptions from the right of withdrawal",
+      "chapter": "III",
+      "theme": "Consumer information and right of withdrawal for distance and off-premises contracts",
+      "requirement": "Member States shall not provide for the right of withdrawal set out in Articles 9 to 15 in respect of distance and off-premises contracts as regards the following: (a) service contracts after the service has been fully performed if the performance has begun with the consumer's prior express consent, and with the…"
+    },
+    {
+      "id": "Art.17",
+      "title": "Scope",
+      "chapter": "IV",
+      "theme": "Other consumer rights",
+      "requirement": "Articles 18 and 20 shall apply to sales contracts. Those Articles shall not apply to contracts for the supply of water, gas or electricity, where they are not put up for sale in a limited volume or set quantity, of district heating or the supply of digital content which is not supplied on a tangible medium."
+    },
+    {
+      "id": "Art.18",
+      "title": "Delivery",
+      "chapter": "IV",
+      "theme": "Other consumer rights",
+      "requirement": "Unless the parties have agreed otherwise on the time of delivery, the trader shall deliver the goods by transferring the physical possession or control of the goods to the consumer without undue delay, but not later than 30 days from the conclusion of the contract."
+    },
+    {
+      "id": "Art.19",
+      "title": "Fees for the use of means of payment",
+      "chapter": "IV",
+      "theme": "Other consumer rights",
+      "requirement": "Member States shall prohibit traders from charging consumers, in respect of the use of a given means of payment, fees that exceed the cost borne by the trader for the use of such means."
+    },
+    {
+      "id": "Art.20",
+      "title": "Passing of risk",
+      "chapter": "IV",
+      "theme": "Other consumer rights",
+      "requirement": "In contracts where the trader dispatches the goods to the consumer, the risk of loss of or damage to the goods shall pass to the consumer when he or a third party indicated by the consumer and other than the carrier has acquired the physical possession of the goods."
+    },
+    {
+      "id": "Art.21",
+      "title": "Communication by telephone",
+      "chapter": "IV",
+      "theme": "Other consumer rights",
+      "requirement": "Member States shall ensure that where the trader operates a telephone line for the purpose of contacting him by telephone in relation to the contract concluded, the consumer, when contacting the trader is not bound to pay more than the basic rate."
+    },
+    {
+      "id": "Art.22",
+      "title": "Additional payments",
+      "chapter": "IV",
+      "theme": "Other consumer rights",
+      "requirement": "Before the consumer is bound by the contract or offer, the trader shall seek the express consent of the consumer to any extra payment in addition to the remuneration agreed upon for the trader's main contractual obligation."
+    },
+    {
+      "id": "Art.23",
+      "title": "Enforcement",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "Member States shall ensure that adequate and effective means exist to ensure compliance with this Directive."
+    },
+    {
+      "id": "Art.24",
+      "title": "Penalties",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "Member States shall lay down the rules on penalties applicable to infringements of the national provisions adopted pursuant to this Directive and shall take all measures necessary to ensure that they are implemented."
+    },
+    {
+      "id": "Art.25",
+      "title": "Imperative nature of the Directive",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "If the law applicable to the contract is the law of a Member State, consumers may not waive the rights conferred on them by the national measures transposing this Directive."
+    },
+    {
+      "id": "Art.26",
+      "title": "Information",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "Member States shall take appropriate measures to inform consumers and traders of the national provisions transposing this Directive and shall, where appropriate, encourage traders and code owners as defined in point (g) of Article 2 of Directive 2005/29/EC, to inform consumers of their codes of conduct."
+    },
+    {
+      "id": "Art.27",
+      "title": "Inertia selling",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "The consumer shall be exempted from the obligation to provide any consideration in cases of unsolicited supply of goods, water, gas, electricity, district heating or digital content or unsolicited provision of services, prohibited by Article 5(5) and point 29 of Annex I to Directive 2005/29/EC. In such cases, the…"
+    },
+    {
+      "id": "Art.28",
+      "title": "Transposition",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "Member States shall adopt and publish, by 13 December 2013, the laws, regulations and administrative provisions necessary to comply with this Directive."
+    },
+    {
+      "id": "Art.29",
+      "title": "Reporting requirements",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "Where a Member State makes use of any of the regulatory choices referred to in Article 3(4), Article 6(7), Article 6(8), Article 7(4), Article 8(6) and Article 9(3), it shall inform the Commission thereof by 13 December 2013, as well as of any subsequent changes."
+    },
+    {
+      "id": "Art.30",
+      "title": "Reporting by the Commission and review",
+      "chapter": "V",
+      "theme": "General provisions",
+      "requirement": "By 13 December 2016, the Commission shall submit a report on the application of this Directive to the European Parliament and the Council. That report shall include in particular an evaluation of the provisions of this Directive regarding digital content including the right of withdrawal."
+    },
+    {
+      "id": "Art.31",
+      "title": "Repeals",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "Directive 85/577/EEC and Directive 97/7/EC, as amended by Directive 2002/65/EC of the European Parliament and of the Council of 23 September 2002 concerning the distance marketing of consumer financial services ( 21 ) and by Directives 2005/29/EC and 2007/64/EC, are repealed as of 13 June 2014."
+    },
+    {
+      "id": "Art.32",
+      "title": "Amendment to Directive 93/13/EEC",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "In Directive 93/13/EEC, the following Article is inserted: 1."
+    },
+    {
+      "id": "Art.33",
+      "title": "Amendment to Directive 1999/44/EC",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "In Directive 1999/44/EC, the following Article is inserted: 1. Where, in accordance with Article 8(2), a Member State adopts more stringent consumer protection provisions than those provided for in Article 5(1) to (3) and in Article 7(1), it shall inform the Commission thereof, as well as of any subsequent changes."
+    },
+    {
+      "id": "Art.34",
+      "title": "Entry into force",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "This Directive shall enter into force on the 20th day following its publication in the Official Journal of the European Union ."
+    },
+    {
+      "id": "Art.35",
+      "title": "Addressees",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "This Directive is addressed to the Member States. Done at Strasbourg, 25 October 2011. You have the right to withdraw from this contract within 14 days without giving any reason."
+    }
+  ]
+}

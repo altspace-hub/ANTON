@@ -61,7 +61,7 @@ The Accounting & Finance area covers the full spectrum of financial accounting, 
 
 ## How the Modules Help
 
-Each module targets a specific accounting workflow. **Ifrs-gaap-analysis** and **ifrs-implementation-advisor** assist with technical interpretation and gap assessment. **Month-end-checklist** drives disciplined close processes. **Financial-analysis** and **management-reporting** produce board-ready outputs from underlying data. **Internal-controls-sox** supports control documentation and testing. **Transfer-pricing** and **transfer-pricing-documentation** structure defensible intercompany policies. **Tax-planning** and **vat-return-preparer** address compliance obligations. **Treasury-cash-management** supports liquidity decision-making. **Aaoifi-compliance** serves Islamic finance institutions with Shari'a-aligned accounting guidance.
+Each module targets a specific accounting workflow. **Ifrs-gaap-analysis** and **ifrs-implementation-advisor** assist with technical interpretation and gap assessment. **Month-end-checklist** drives disciplined close processes. **Financial-analysis** and **management-reporting** produce board-ready outputs from underlying data. **Internal-controls-sox** supports control documentation and testing. **Transfer-pricing** and **transfer-pricing-documentation-accounting** structure defensible intercompany policies. **Tax-planning** and **vat-return-preparer** address compliance obligations. **Treasury-cash-management** supports liquidity decision-making. **Aaoifi-compliance** serves Islamic finance institutions with Shari'a-aligned accounting guidance.
 
 ## Analytical Principles
 

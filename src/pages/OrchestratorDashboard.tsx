@@ -74,6 +74,30 @@ interface SpendGateState {
   reason: string;
 }
 
+/** GET /api/orchestrator/status → heartbeat (server/services/orchestrator-heartbeat.ts getHeartbeatStatus) */
+interface HeartbeatStatus {
+  enabled: boolean;
+  scheduled: boolean;
+  intervalMinutes: number | null;
+  fullyDisabled: boolean;
+  paused: boolean;
+  earned: { earned: boolean; forced: boolean; ratedInWindow: number; windowDays: number; reason: string };
+  running: boolean;
+  lastCycleAt: string | null;
+  cyclesLastHour: number;
+  forceKey: string;
+  limits: Record<string, number>;
+}
+
+const HARD_LIMIT_LABELS: Record<string, string> = {
+  MAX_PROPOSALS_PER_BRIEFING: 'proposals / briefing',
+  MAX_HEARTBEATS_PER_HOUR: 'heartbeats / hour',
+  MAX_AUTO_EXECUTIONS_PER_DAY: 'auto-executions / day',
+  MIN_HEARTBEAT_INTERVAL_MINUTES: 'min heartbeat interval (min)',
+  MAX_TRAIL_ENTRIES: 'trail entries / trail',
+  MAX_COST_PER_CYCLE_USD: 'USD / heartbeat cycle',
+};
+
 interface BriefingSummary {
   id: string;
   period: string;
@@ -262,7 +286,7 @@ function ConfigPanel({ config, onSaved }: {
           </div>
           <p className="text-xs text-adv-gray">
             {config.heartbeat_enabled
-              ? 'ANTON monitors signals on a schedule and generates briefings automatically.'
+              ? 'ANTON monitors signals on a schedule and generates briefings automatically — once earned: a proposal rated in the last 90 days, or the orchestrator_heartbeat_force setting.'
               : 'Heartbeat is off. Use "Generate Briefing" to trigger manually at any time.'}
           </p>
         </div>
@@ -388,6 +412,7 @@ export default function OrchestratorDashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [apiConfigured, setApiConfigured] = useState(false);
   const [spendGate, setSpendGate] = useState<SpendGateState | null>(null);
+  const [heartbeatStatus, setHeartbeatStatus] = useState<HeartbeatStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
@@ -413,6 +438,7 @@ export default function OrchestratorDashboard() {
       setUnreadCount(data.unreadBriefings ?? 0);
       setApiConfigured(data.apiConfigured ?? false);
       setSpendGate(data.spendGate ?? null);
+      setHeartbeatStatus(data.heartbeat ?? null);
     } catch { /* ignore */ }
   }, []);
 
@@ -762,8 +788,37 @@ export default function OrchestratorDashboard() {
                 Stage {stage?.current_stage ?? 1}: {STAGE_NAMES[stage?.current_stage ?? 1]}
               </p>
             </div>
-            <div className="text-right text-xs text-adv-gray">
-              {lastHeartbeat ? (
+            <div className="text-right text-xs text-adv-gray max-w-xs">
+              {heartbeatStatus ? (
+                <>
+                  <div className="flex items-center gap-1 justify-end">
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      heartbeatStatus.running ? 'bg-adv-green' : heartbeatStatus.enabled ? 'bg-adv-gold' : 'bg-adv-gray-med'
+                    }`} />
+                    Heartbeat {heartbeatStatus.enabled ? 'enabled' : 'disabled'}
+                    {heartbeatStatus.enabled && (
+                      <span className={heartbeatStatus.earned.earned ? 'text-adv-teal' : 'text-adv-gold'}>
+                        {' · '}{heartbeatStatus.earned.forced ? 'forced' : heartbeatStatus.earned.earned ? 'earned' : 'idle'}
+                      </span>
+                    )}
+                  </div>
+                  {heartbeatStatus.enabled && (
+                    <div className={heartbeatStatus.earned.earned ? 'text-adv-gray' : 'text-adv-gold'}>{heartbeatStatus.earned.reason}</div>
+                  )}
+                  {heartbeatStatus.enabled && !heartbeatStatus.scheduled && (
+                    <div className="text-adv-gold">Timer not registered this boot — restart the server to schedule it.</div>
+                  )}
+                  <div>
+                    Last cycle: {heartbeatStatus.lastCycleAt ? formatTime(heartbeatStatus.lastCycleAt) : 'never'}
+                    {lastHeartbeat && lastHeartbeat.status !== 'ok' && <span className="text-adv-red"> (error)</span>}
+                  </div>
+                  <div>
+                    {heartbeatStatus.cyclesLastHour} cycle{heartbeatStatus.cyclesLastHour === 1 ? '' : 's'} in the last hour
+                    {' '}(max {heartbeatStatus.limits.MAX_HEARTBEATS_PER_HOUR})
+                    {heartbeatStatus.intervalMinutes !== null && ` · every ${heartbeatStatus.intervalMinutes} min`}
+                  </div>
+                </>
+              ) : lastHeartbeat ? (
                 <>
                   <div className="flex items-center gap-1 justify-end">
                     <span className={`w-1.5 h-1.5 rounded-full ${lastHeartbeat.status === 'ok' ? 'bg-adv-green' : 'bg-adv-red'}`} />
@@ -902,7 +957,7 @@ export default function OrchestratorDashboard() {
 
           {stage?.current_stage === 4 && (
             <div className="text-sm text-adv-teal font-medium">
-              Full autonomous mode — workflow chaining active (max depth: 10).
+              Full autonomous mode.
               Auto-executions: {stage.auto_executions || 0} | Quality: {Math.round((stage.avg_quality_score || 0) * 100)}%
             </div>
           )}
@@ -928,7 +983,12 @@ export default function OrchestratorDashboard() {
             </div>
             <div className="flex items-start gap-2">
               <span className="text-adv-gold font-bold shrink-0">Hard limits:</span>
-              <span>Max 10 proposals/briefing, 6 heartbeats/hour, 20 auto-executions/day, 10-deep chain max</span>
+              <span>
+                {heartbeatStatus
+                  ? Object.entries(heartbeatStatus.limits).map(([key, value]) => `${value} ${HARD_LIMIT_LABELS[key] ?? key}`).join(' · ')
+                  : 'loading…'}
+                {' '}(compiled in — read-only, not changeable through the API)
+              </span>
             </div>
           </div>
         </div>
@@ -966,7 +1026,7 @@ export default function OrchestratorDashboard() {
 
       {/* ── Config panel (collapsible, interactive) ─────────────────────── */}
       {showConfig && config && (
-        <ConfigPanel config={config} onSaved={(updated) => setConfig(updated)} />
+        <ConfigPanel config={config} onSaved={(updated) => { setConfig(updated); void fetchStatus(); }} />
       )}
 
       {/* ── Main content: briefing + proposals ────────────────────────────── */}
@@ -1473,9 +1533,9 @@ export default function OrchestratorDashboard() {
               Complete 20 auto-executions with &lt;10% override rate to advance to Stage 4.</>
             )}
             {stage?.current_stage === 4 && (
-              <><strong className="text-adv-teal">Stage 4: Autonomous Orchestrator</strong> — Full autonomous mode with
-              intelligent workflow chaining (max depth: 10). ANTON proactively manages workflows and escalates to human
-              review only when confidence drops below threshold.</>
+              <><strong className="text-adv-teal">Stage 4: Autonomous Orchestrator</strong> — Full autonomous mode.
+              ANTON proactively manages workflows and escalates to human review only when confidence drops below
+              threshold. Workflow chaining is not built yet.</>
             )}
           </div>
         </div>

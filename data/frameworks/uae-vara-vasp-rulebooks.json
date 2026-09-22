@@ -3,16 +3,38 @@
   "name": "VARA Rulebooks — Virtual Asset Service Provider Licensing (Dubai)",
   "shortName": "VARA Rulebooks",
   "reference": "VARA Rulebooks (Compliance + per-category Rulebooks)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.vara.ae/en/regulations/rulebooks/",
   "established": "2022-03",
   "supervisor": "VARA — Virtual Assets Regulatory Authority",
   "articleCount": 11,
   "chapters": [
-    {"number": "Scope", "title": "Scope + the 7 licensable activities", "articles": "VARA Compliance Rulebook + Regulations"},
-    {"number": "Compliance", "title": "Compliance Rulebook (cross-cutting)", "articles": "VARA Compliance Rulebook"},
-    {"number": "Activities", "title": "Per-category activity rulebooks", "articles": "7 activity Rulebooks"},
-    {"number": "Prohibitions", "title": "Prohibited virtual assets + activities", "articles": "VARA quarterly review"},
-    {"number": "Enforcement", "title": "Supervision + enforcement", "articles": "VARA enforcement framework"}
+    {
+      "number": "Scope",
+      "title": "Scope + the 7 licensable activities",
+      "articles": "VARA Compliance Rulebook + Regulations"
+    },
+    {
+      "number": "Compliance",
+      "title": "Compliance Rulebook (cross-cutting)",
+      "articles": "VARA Compliance Rulebook"
+    },
+    {
+      "number": "Activities",
+      "title": "Per-category activity rulebooks",
+      "articles": "7 activity Rulebooks"
+    },
+    {
+      "number": "Prohibitions",
+      "title": "Prohibited virtual assets + activities",
+      "articles": "VARA quarterly review"
+    },
+    {
+      "number": "Enforcement",
+      "title": "Supervision + enforcement",
+      "articles": "VARA enforcement framework"
+    }
   ],
   "themes": [
     "Scope",

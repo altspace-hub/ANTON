@@ -10,6 +10,7 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
+      "detailed-findings",
       "impact-assessment"
     ],
     "transparencyLevel": 1,

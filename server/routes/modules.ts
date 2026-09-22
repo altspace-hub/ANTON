@@ -12,8 +12,9 @@
 
 import { Router } from 'express';
 import { getAreas, getArea, getModule, getAllModules, getModuleSystemPrompt } from '../services/module-loader.js';
-import { getPersonas, getPersona } from '../services/personas-manager.js';
-import { getAllSkillsAsync } from '../services/skills-manager.js';
+import { listServerPersonaIds, resolvePersonaInstruction } from '../services/prompt-builder.js';
+import { EXPERT_ROLES } from '../../src/lib/expert-roles.js';
+import { getAllSkills } from '../services/skills-manager.js';
 
 const router = Router();
 
@@ -104,36 +105,54 @@ router.get('/modules/:id/prompt', async (req, res) => {
 
 // ── Personas ──────────────────────────────────────────────────
 
-router.get('/personas', async (_req, res) => {
+/**
+ * Personas. Until Wave 8 these two endpoints were served by personas-manager.ts,
+ * a registry the prompt composer did not read — so the list a caller got here and
+ * the text a run actually injected were two different things. They now answer from
+ * the same source the composer resolves, which is the only way the endpoint can be
+ * trusted to describe what a run will do.
+ */
+const personaMeta = new Map(EXPERT_ROLES.map((r) => [r.id, r]));
+
+function personaSummary(id: string): { id: string; label: string; description: string; category?: string } {
+  const meta = personaMeta.get(id);
+  return {
+    id,
+    label: meta?.label ?? id,
+    description: meta?.description ?? '',
+    ...(meta?.category ? { category: meta.category } : {}),
+  };
+}
+
+router.get('/personas', (_req, res) => {
   try {
-    const personas = await getPersonas();
-    // Strip prompt from listing response (large field, returned on single-fetch only)
-    const safe = personas.map(({ prompt: _p, ...rest }) => rest);
-    res.json(safe);
+    const ids = [...new Set([...listServerPersonaIds(), ...personaMeta.keys()])].sort();
+    res.json(ids.map(personaSummary));
   } catch {
     res.status(500).json({ error: 'Failed to load personas' });
   }
 });
 
-router.get('/personas/:id', async (req, res) => {
+router.get('/personas/:id', (req, res) => {
   try {
-    const persona = await getPersona(req.params.id);
-    if (!persona) {
+    const prompt = resolvePersonaInstruction(req.params.id);
+    if (!prompt) {
       res.status(404).json({ error: 'Persona not found' });
       return;
     }
-    res.json(persona);
+    res.json({ ...personaSummary(req.params.id), prompt });
   } catch {
     res.status(500).json({ error: 'Failed to load persona' });
   }
 });
 
 // ── All skills (built-in + disk) ──────────────────────────────
+// Same list and shape as GET /api/skills (routes/skills.ts): the disk packs are
+// preloaded at boot into the synchronous index, so no async load here.
 
 router.get('/skills/all', async (_req, res) => {
   try {
-    const skills = await getAllSkillsAsync();
-    const safe = skills.map(({ prompt: _p, ...rest }) => rest);
+    const safe = getAllSkills().map(({ prompt: _p, ...rest }) => rest);
     res.json(safe);
   } catch {
     res.status(500).json({ error: 'Failed to load skills' });

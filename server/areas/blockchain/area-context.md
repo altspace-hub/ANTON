@@ -11,11 +11,18 @@ The digital asset sector has moved from regulatory grey zone to fully regulated 
 |---|---|---|
 | MiCA — Regulation (EU) 2023/1114 | CASPs, EMT/ART/utility token issuers | Stablecoins: 30 Jun 2024; CASPs: 30 Dec 2024 |
 | TFR — Regulation (EU) 2023/1113 (Transfer of Funds) | CASP transfers of crypto-assets | 30 Dec 2024 |
-| AMLR — Regulation (EU) 2024/1624 | All obliged entities incl. CASPs | Phased from 2027 (CASPs earlier under AMLD6) |
-| AMLD6 — Directive (EU) 2018/843 | VASPs as obliged entities | In force (transitioning to AMLR) |
+| AMLR — Regulation (EU) 2024/1624 | All obliged entities incl. CASPs | Applies from 10 July 2027; there is no earlier crypto-specific milestone (see note) |
+| AMLD5 — Directive (EU) 2018/843 | VASPs as obliged entities | In force through national transposition until Directive (EU) 2015/849 is repealed on 10 July 2027 |
+| AMLD6 — Directive (EU) 2024/1640 | Institutional and supervisory framework (replaces Directive (EU) 2015/849) | Transposition staggered; general deadline 10 July 2027 (see note) |
 | DORA — Regulation (EU) 2022/2554 | ICT risk for financial entities incl. CASPs | 17 Jan 2025 |
 | DLT Pilot Regime — Regulation (EU) 2022/858 | Tokenised financial instruments | In force (pilot) |
 | MiFID II | Crypto qualifying as financial instruments | In force |
+
+**Note — the two AML dates a CASP is most likely to get wrong.**
+
+*AMLR has one application date for CASPs.* Regulation (EU) 2024/1624, Article 90: "It shall apply from 10 July 2027, except in relation to obliged entities referred to in Article 3, points (3)(n) and (o), to which it shall apply from 10 July 2029." Those two points are football agents and professional football clubs — not crypto. No crypto-asset service provider is on an earlier or a later date than 10 July 2027. Earlier crypto obligations come from the TFR and from national law, not from AMLR.
+
+*AMLD6 transposition is staggered.* Directive (EU) 2024/1640, Article 78: member states transpose by 10 July 2027, by way of derogation Article 74 (the amendments to Directive (EU) 2015/849) by 10 July 2025, Articles 11, 12, 13 and 15 (access to beneficial-ownership registers) by 10 July 2026, and Article 18 (single access point to real-estate information) by 10 July 2029. Article 77 repeals Directive (EU) 2015/849 with effect from 10 July 2027.
 
 ### International Standards
 - **FATF Recommendation 15** — VASPs must apply AML/CFT measures equivalent to other financial institutions
@@ -75,3 +82,7 @@ The digital asset sector has moved from regulatory grey zone to fully regulated 
 6. **DeFi remains unsettled** — be explicit about regulatory ambiguity; do not overstate the clarity of the rules
 7. **FATF standards inform EU law** — EBA guidelines consistently reference FATF guidance; treat FATF as highly persuasive even where not binding
 8. **Blockchain analytics are probabilistic** — risk scores and cluster attributions carry uncertainty; always caveat
+
+_Sources checked 18 September 2026: the AMLR application dates and the football-agent / football-club carve-out were read from Article 90 and Article 3(3) of Regulation (EU) 2024/1624, and the AMLD6 transposition deadlines and the repeal of Directive (EU) 2015/849 from Articles 77 and 78 of Directive (EU) 2024/1640, both in the Official Journal text obtained from the EU Publications Office (publications.europa.eu, CELEX 32024R1624 and 32024L1640). Directive (EU) 2018/843 was confirmed as AMLD5 from the citation in that same text._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

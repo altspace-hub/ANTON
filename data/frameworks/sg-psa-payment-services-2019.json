@@ -3,19 +3,49 @@
   "name": "Payment Services Act 2019 (PSA) — Singapore",
   "shortName": "PSA SG",
   "reference": "Payment Services Act 2019",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.mas.gov.sg/regulation/acts/payment-services-act",
   "inForce": "2020-01-28",
   "dptAmendmentsInForce": "2024-04-04",
   "supervisor": "MAS",
   "articleCount": 10,
   "chapters": [
-    {"number": "1", "title": "Scope — 7 regulated payment activities", "articles": "Part 1 + 2"},
-    {"number": "2", "title": "Licensing — MC / SPI / MPI tiers", "articles": "Part 2"},
-    {"number": "3", "title": "DPT service requirements", "articles": "Sections 6, 13 + DPT amendments 2024"},
-    {"number": "4", "title": "Safeguarding of customer money + assets", "articles": "Sections 23-25"},
-    {"number": "5", "title": "AML/CFT obligations (cross-ref MAS notices)", "articles": "MAS Notice PSN01/PSN02"},
-    {"number": "6", "title": "Cyber + technology + outsourcing", "articles": "MAS TRM + Outsourcing"},
-    {"number": "7", "title": "Enforcement", "articles": "Part 7"}
+    {
+      "number": "1",
+      "title": "Scope — 7 regulated payment activities",
+      "articles": "Part 1 + 2"
+    },
+    {
+      "number": "2",
+      "title": "Licensing — MC / SPI / MPI tiers",
+      "articles": "Part 2"
+    },
+    {
+      "number": "3",
+      "title": "DPT service requirements",
+      "articles": "Sections 6, 13 + DPT amendments 2024"
+    },
+    {
+      "number": "4",
+      "title": "Safeguarding of customer money + assets",
+      "articles": "Sections 23-25"
+    },
+    {
+      "number": "5",
+      "title": "AML/CFT obligations (cross-ref MAS notices)",
+      "articles": "MAS Notice PSN01/PSN02"
+    },
+    {
+      "number": "6",
+      "title": "Cyber + technology + outsourcing",
+      "articles": "MAS TRM + Outsourcing"
+    },
+    {
+      "number": "7",
+      "title": "Enforcement",
+      "articles": "Part 7"
+    }
   ],
   "themes": [
     "Scope",

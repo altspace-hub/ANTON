@@ -114,7 +114,9 @@
       "directive": "2014/24/EU",
       "article": 27,
       "minimum_time_limit": "35 days (reducible to 15)",
-      "shortlisting": false
+      "shortlisting": false,
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-open",
@@ -128,7 +130,9 @@
       "article": 28,
       "minimum_candidates": 5,
       "minimum_time_request": "30 days",
-      "minimum_time_tender": "30 days"
+      "minimum_time_tender": "30 days",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-restricted",
@@ -141,7 +145,9 @@
       "directive": "2014/24/EU",
       "article": 29,
       "minimum_candidates": 3,
-      "conditions": "Art.26(4)(a)-(d)"
+      "conditions": "Art.26(4)(a)-(d)",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-comp-negotiation",
@@ -154,7 +160,9 @@
       "directive": "2014/24/EU",
       "article": 30,
       "minimum_candidates": 3,
-      "conditions": "Art.26(4)(a)-(d)"
+      "conditions": "Art.26(4)(a)-(d)",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-competitive-dialogue",
@@ -167,7 +175,9 @@
       "directive": "2014/24/EU",
       "article": 31,
       "minimum_candidates": 3,
-      "purpose": "development and purchase of innovative solutions"
+      "purpose": "development and purchase of innovative solutions",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-innovation-partnership",
@@ -180,7 +190,9 @@
       "directive": "2014/24/EU",
       "article": 32,
       "exceptional": true,
-      "conditions": "strictly limited"
+      "conditions": "strictly limited",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "process",
     "entity_id": "proc-negotiated-without-publication",
@@ -219,8 +231,11 @@
     "description": "Contracting authority (Art.2(1) of 2014/24/EU): the State, regional or local authorities, bodies governed by public law, or associations of such authorities/bodies. Bodies governed by public law are defined by three cumulative criteria: (1) established for the specific purpose of meeting needs in the general interest, not having an industrial or commercial character; (2) having legal personality; (3) financed for the most part by the State/regional/local authorities or other bodies governed by public law, or subject to management supervision by them, or having administrative/managerial/supervisory board with more than half members appointed by them.",
     "metadata": {
       "directive": "2014/24/EU",
-      "article": "2(1)",
-      "includes": "State, regional/local authorities, bodies governed by public law"
+      "article": "2",
+      "includes": "State, regional/local authorities, bodies governed by public law",
+      "instrument": "Directive 2014/24/EU",
+      "article_ref": "2(1)",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-contracting-authority",
@@ -231,8 +246,11 @@
     "description": "Economic operator (Art.2(1)(10) of 2014/24/EU): any natural or legal person, or public entity, or group of such persons and/or entities, including any temporary association of undertakings, which offers the execution of works and/or a work, the supply of products or the provision of services on the market. Encompasses contractors, suppliers, service providers. Groups may submit joint tenders without being required to form a specific legal entity, though the contracting authority may require such formation after award if necessary for contract performance.",
     "metadata": {
       "directive": "2014/24/EU",
-      "article": "2(1)(10)",
-      "includes": "contractors, suppliers, service providers, consortia"
+      "article": "2",
+      "includes": "contractors, suppliers, service providers, consortia",
+      "instrument": "Directive 2014/24/EU",
+      "article_ref": "2(1)(10)",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-economic-operator",
@@ -245,7 +263,9 @@
       "directive": "2014/24/EU",
       "article": 58,
       "turnover_cap": "maximum 2x contract value",
-      "categories": "suitability, economic standing, technical ability"
+      "categories": "suitability, economic standing, technical ability",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-selection-criteria",
@@ -256,9 +276,12 @@
     "description": "Mandatory exclusion grounds (Art.57(1) of 2014/24/EU). Contracting authorities must exclude economic operators convicted by final judgment of: (a) participation in a criminal organisation; (b) corruption; (c) fraud; (d) terrorist offences; (e) money laundering or terrorist financing; (f) child labour and trafficking. Exclusion based on final court judgment. Verification through criminal records, ECRIS system. Self-cleaning possible (Art.57(6)): evidence of remedial measures, compensation, organisational changes.",
     "metadata": {
       "directive": "2014/24/EU",
-      "article": "57(1)",
+      "article": "57",
       "grounds": "criminal organisation, corruption, fraud, terrorism, money laundering, child labour/trafficking",
-      "self_cleaning": "Art.57(6)"
+      "self_cleaning": "Art.57(6)",
+      "instrument": "Directive 2014/24/EU",
+      "article_ref": "57(1)",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-exclusion-mandatory",
@@ -269,9 +292,12 @@
     "description": "Discretionary exclusion grounds (Art.57(4) of 2014/24/EU). Contracting authorities may exclude economic operators for: (a) breach of environmental, social or labour law obligations; (b) bankruptcy or insolvency; (c) grave professional misconduct; (d) anti-competitive agreements; (e) conflict of interest that cannot be remedied; (f) significant or persistent deficiencies in prior public contract; (g) misrepresentation; (h) undue influence on decision-making process; (i) non-payment of taxes or social security. Self-cleaning also available.",
     "metadata": {
       "directive": "2014/24/EU",
-      "article": "57(4)",
+      "article": "57",
       "self_cleaning": "Art.57(6)",
-      "national_discretion": "Member States may make some grounds mandatory"
+      "national_discretion": "Member States may make some grounds mandatory",
+      "instrument": "Directive 2014/24/EU",
+      "article_ref": "57(4)",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-exclusion-discretionary",
@@ -284,7 +310,9 @@
       "directive": "2014/24/EU",
       "article": 59,
       "implementing_regulation": "2016/7",
-      "format": "electronic (eESPD) or paper"
+      "format": "electronic (eESPD) or paper",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-espd",
@@ -296,7 +324,9 @@
     "metadata": {
       "directive": "2014/24/EU",
       "article": 67,
-      "approaches": "lowest price, lowest cost, best price-quality ratio"
+      "approaches": "lowest price, lowest cost, best price-quality ratio",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-award-criteria-meat",
@@ -308,7 +338,9 @@
     "metadata": {
       "directive": "2014/24/EU",
       "article": 68,
-      "includes_externalities": true
+      "includes_externalities": true,
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-life-cycle-costing",
@@ -321,7 +353,9 @@
       "directive": "2014/24/EU",
       "article": 33,
       "maximum_duration": "4 years (except duly justified)",
-      "minimum_operators_multi": 3
+      "minimum_operators_multi": 3,
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-framework-agreement",
@@ -334,7 +368,9 @@
       "directive": "2014/24/EU",
       "article": 34,
       "format": "fully electronic",
-      "evaluation_deadline": "10 working days for admission"
+      "evaluation_deadline": "10 working days for admission",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-dps",
@@ -346,7 +382,9 @@
     "metadata": {
       "directive": "2014/24/EU",
       "article": 35,
-      "exclusions": "works/services with intellectual performance"
+      "exclusions": "works/services with intellectual performance",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-e-auction",
@@ -382,8 +420,11 @@
     "description": "Equal treatment and non-discrimination (Art.18(1) of 2014/24/EU). Contracting authorities must treat economic operators equally and without discrimination and must act in a transparent and proportionate manner. Procurement must not be designed with the effect of artificially narrowing competition (Art.18(1) second subparagraph). Practical implications: identical information to all candidates, same deadlines, objective criteria, no tailor-made specifications for a specific operator, no conflicts of interest (Art.24). CJEU enforces strictly.",
     "metadata": {
       "directive": "2014/24/EU",
-      "article": "18(1)",
-      "treaty_basis": "Art.18 TFEU (non-discrimination)"
+      "article": "18",
+      "treaty_basis": "Art.18 TFEU (non-discrimination)",
+      "instrument": "Directive 2014/24/EU",
+      "article_ref": "18(1)",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-equal-treatment",
@@ -397,7 +438,9 @@
       "article": 72,
       "de_minimis_services": "10%",
       "de_minimis_works": "15%",
-      "additional_cap": "50%"
+      "additional_cap": "50%",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-contract-modification",
@@ -409,7 +452,9 @@
     "metadata": {
       "directive": "2014/24/EU",
       "article": 69,
-      "mandatory_rejection": "if due to breach of Art.18(2) obligations"
+      "mandatory_rejection": "if due to breach of Art.18(2) obligations",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "obligation",
     "entity_id": "concept-abnormally-low",
@@ -421,7 +466,9 @@
     "metadata": {
       "directive": "2014/24/EU",
       "article": 71,
-      "direct_payment": "optional, at Member State discretion"
+      "direct_payment": "optional, at Member State discretion",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-subcontracting",
@@ -435,7 +482,9 @@
       "article": 12,
       "cjeu_origin": "C-107/98 Teckal",
       "activity_threshold": "80%",
-      "private_capital": "excluded"
+      "private_capital": "excluded",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "I"
     },
     "entity_type": "concept",
     "entity_id": "concept-in-house",
@@ -448,7 +497,9 @@
       "directive": "2014/24/EU",
       "article": 46,
       "sme_objective": true,
-      "principle": "divide or explain"
+      "principle": "divide or explain",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-lots-division",
@@ -498,7 +549,9 @@
     "metadata": {
       "directive": "2014/24/EU",
       "article": 24,
-      "scope": "staff, procurement service providers, family, associates"
+      "scope": "staff, procurement service providers, family, associates",
+      "instrument": "Directive 2014/24/EU",
+      "chapter": "I"
     },
     "entity_type": "obligation",
     "entity_id": "concept-conflict-of-interest",
@@ -604,9 +657,12 @@
     "description": "Self-cleaning (Art.57(6) of 2014/24/EU). An economic operator subject to exclusion grounds (mandatory or discretionary) may provide evidence that measures taken are sufficient to demonstrate its reliability. Measures include: payment of compensation for damage, active cooperation with investigating authorities, concrete technical, organisational and personnel measures to prevent further criminal offences or misconduct. Contracting authority assesses whether measures are sufficient, considering gravity and circumstances. If insufficient, authority provides reasons for exclusion. CJEU has clarified limits in C-124/17 Vossloh.",
     "metadata": {
       "directive": "2014/24/EU",
-      "article": "57(6)",
+      "article": "57",
       "cjeu_case": "C-124/17 Vossloh Laeis",
-      "measures": "compensation, cooperation, organisational reform"
+      "measures": "compensation, cooperation, organisational reform",
+      "instrument": "Directive 2014/24/EU",
+      "article_ref": "57(6)",
+      "chapter": "II"
     },
     "entity_type": "concept",
     "entity_id": "concept-self-cleaning",
@@ -662,7 +718,10 @@
     "ref_id": "cross-procurement-competition",
     "description": "Public procurement and EU competition law cross-reference. Anti-competitive behaviour in procurement (bid-rigging, cover bidding, market allocation) violates Art.101 TFEU and constitutes a discretionary exclusion ground (Art.57(4)(d) of 2014/24/EU). Contracting authorities should be alert to signs of collusion (identical tenders, rotation patterns, subcontracting between competitors). European Commission and national competition authorities actively pursue procurement cartels. Leniency programmes incentivise disclosure. Damages actions by contracting authorities under Directive 2014/104/EU.",
     "metadata": {
-      "regulations": ["2014/24/EU", "TFEU Art.101"],
+      "regulations": [
+        "2014/24/EU",
+        "TFEU Art.101"
+      ],
       "cross_area": true,
       "exclusion_basis": "Art.57(4)(d)"
     },
@@ -674,7 +733,10 @@
     "ref_id": "cross-procurement-state-aid",
     "description": "Public procurement and EU State aid law cross-reference. A properly conducted, competitive, transparent and non-discriminatory procurement procedure is generally considered to exclude State aid (market price obtained). Conversely, failure to follow procurement rules may constitute evidence of State aid (Art.107 TFEU) if the public authority overpays. Key CJEU case: overcompensation in services of general economic interest (SGEI) — Altmark criteria (C-280/00). Relevant for public-private partnerships, concessions, and public service obligations.",
     "metadata": {
-      "regulations": ["2014/24/EU", "TFEU Art.107"],
+      "regulations": [
+        "2014/24/EU",
+        "TFEU Art.107"
+      ],
       "cross_area": true,
       "cjeu_case": "C-280/00 Altmark Trans"
     },

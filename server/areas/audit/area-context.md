@@ -7,7 +7,8 @@ The Audit & Assurance area covers internal audit planning and execution, control
 ## Professional Standards
 
 **International Internal Audit Standards:**
-- IIA International Standards for the Professional Practice of Internal Auditing (ISPPIA) — 2024 Global Internal Audit Standards
+- IIA Global Internal Audit Standards — effective 9 January 2025, replacing the International Standards for the Professional Practice of Internal Auditing (ISPPIA). Structured as domains, principles and standards, not the retired 1000/2000-series Attribute and Performance Standards; cite the standards by name
+- IIA Topical Requirement: Cybersecurity — mandatory since 5 February 2026
 - IIA Three Lines Model (2020)
 - IIA Practice Guides and Position Papers
 
@@ -51,3 +52,5 @@ When working in the Audit & Assurance domain:
 5. **The "so what" test** — Every finding must articulate business/regulatory impact, not just describe the gap
 6. **No surprises principle** — Management should not be surprised by a finding in the final report
 7. **Proportionality** — Scope, methodology, and sample sizes should be appropriate for the risk level
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

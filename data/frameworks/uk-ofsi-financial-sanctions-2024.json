@@ -3,6 +3,8 @@
   "name": "UK OFSI Financial Sanctions Framework — SAMLA 2018 + OFSI General Guidance (2024)",
   "shortName": "OFSI Framework",
   "reference": "SAMLA 2018 + OFSI General Guidance for Financial Sanctions (2024 update)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.gov.uk/government/publications/financial-sanctions-faqs",
   "samlaInForce": "2018-05-23",
   "ofsiEstablished": "2016-03-31",
@@ -10,13 +12,41 @@
   "supervisor": "OFSI — HM Treasury",
   "articleCount": 13,
   "chapters": [
-    {"number": "Scope", "title": "Scope — UK persons + relevant firms", "articles": "SAMLA s.21 + Russia Regs Sched 5"},
-    {"number": "List", "title": "UK Consolidated List + designations", "articles": "OFSI Consolidated List"},
-    {"number": "OC", "title": "Ownership + control attribution", "articles": "Russia Regs r.6 + OFSI Guidance"},
-    {"number": "Lic", "title": "Licensing — General + Specific", "articles": "Russia Regs + SAMLA"},
-    {"number": "Rpt", "title": "Reporting obligation", "articles": "Russia Regs Sched 5 + OFSI Guidance"},
-    {"number": "Enf", "title": "Enforcement + Civil Monetary Penalties", "articles": "SAMLA s.146 + OFSI CMP Guidance"},
-    {"number": "2025", "title": "2025 enforcement step-change + turnover-fines consultation", "articles": "OFSI Annual Review 2024-25 + consultation"}
+    {
+      "number": "Scope",
+      "title": "Scope — UK persons + relevant firms",
+      "articles": "SAMLA s.21 + Russia Regs Sched 5"
+    },
+    {
+      "number": "List",
+      "title": "UK Consolidated List + designations",
+      "articles": "OFSI Consolidated List"
+    },
+    {
+      "number": "OC",
+      "title": "Ownership + control attribution",
+      "articles": "Russia Regs r.6 + OFSI Guidance"
+    },
+    {
+      "number": "Lic",
+      "title": "Licensing — General + Specific",
+      "articles": "Russia Regs + SAMLA"
+    },
+    {
+      "number": "Rpt",
+      "title": "Reporting obligation",
+      "articles": "Russia Regs Sched 5 + OFSI Guidance"
+    },
+    {
+      "number": "Enf",
+      "title": "Enforcement + Civil Monetary Penalties",
+      "articles": "SAMLA s.146 + OFSI CMP Guidance"
+    },
+    {
+      "number": "2025",
+      "title": "2025 enforcement step-change + turnover-fines consultation",
+      "articles": "OFSI Annual Review 2024-25 + consultation"
+    }
   ],
   "themes": [
     "Scope",

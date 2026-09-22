@@ -8,9 +8,9 @@
  * - Recommendations (what to do next)
  */
 
-import { getAnthropicUtilityModel } from './utility-model.js';
+import { getRoutedUtilityModel } from './utility-model.js';
+import { callChat } from './provider-router.js';
 import type { DatabaseAdapter } from '../db/database.js';
-import Anthropic from '@anthropic-ai/sdk';
 
 interface InsightParams {
   timeRange?: 'day' | 'week' | 'month' | 'all';
@@ -30,7 +30,12 @@ interface Insight {
   created_at: string;
 }
 
-export async function createInsightsGenerator(db: DatabaseAdapter, client: Anthropic) {
+/**
+ * The model call goes through the provider router on the routed utility model
+ * (Settings "Utility model", mapped to the configured provider) — no client
+ * is constructed or passed in any more.
+ */
+export async function createInsightsGenerator(db: DatabaseAdapter) {
 
   /**
    * Generate insights from recent knowledge atoms using Claude
@@ -108,21 +113,21 @@ Focus on:
 Return ONLY the JSON array, no markdown, no explanation.`;
 
     try {
-      const message = await client.messages.create({
-        model: await getAnthropicUtilityModel(db), // Fast and cost-effective
-        max_tokens: 2048,
+      // Utility tier: a short structured summary, not a module run.
+      const message = await callChat({
+        model: await getRoutedUtilityModel(db),
+        system: 'You analyse knowledge atoms and answer with a JSON array only.',
+        maxTokens: 2048,
         messages: [
           {
             role: 'user',
             content: context,
           },
         ],
+        db,
       });
 
-      let responseText = '';
-      for (const block of message.content) {
-        if (block.type === 'text') responseText += block.text;
-      }
+      const responseText = message.text;
 
       // Parse JSON response
       const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/```\s*$/, '');
@@ -151,7 +156,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
 
       return insights;
     } catch (err) {
-      console.error('[insights-generator] Failed to generate insights:', err);
+      console.error('[insights-generator] purpose=intelligence-insights failed to generate insights:', err instanceof Error ? err.message : err);
       return [];
     }
   }

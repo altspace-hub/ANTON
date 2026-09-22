@@ -394,6 +394,6 @@ export function buildDJScreeningLayer(result: DJScreenResult, adverseMedia?: Adv
     lines.push('');
   }
 
-  lines.push(`**Regulatory context:** AMLR Art. 22 (PEP obligations), Art. 40 (EDD requirements), Art. 16 (ongoing monitoring)`);
+  lines.push(`**Regulatory context:** AMLR Art. 42 (PEP obligations), Art. 34 (EDD requirements), Art. 26 (ongoing monitoring)`);
   return lines.join('\n');
 }

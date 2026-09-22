@@ -45,7 +45,7 @@ A complete BWRA covers inherent risk across five dimensions. Address all five:
 ### 4. Geographic Risk
 - Countries of customer domicile and registration, jurisdictions of ultimate beneficial ownership
 - Transaction corridors — which countries receive and originate payment flows
-- Reference lists: FATF grey list (increased monitoring), FATF black list (high-risk), EU Commission list of high-risk third countries (AMLR Art. 26), Basel AML Index, Transparency International CPI
+- Reference lists: FATF grey list (increased monitoring), FATF black list (high-risk), EU Commission list of high-risk third countries (AMLR Arts. 29–31), Basel AML Index, Transparency International CPI
 - Assessment question: Is country risk scoring based on current published lists, or are older lists still in use?
 
 ### 5. Transaction and Activity Risk
@@ -114,6 +114,9 @@ Flag these if present in a BWRA under review:
 6. **Control assertion without evidence:** Controls rated "Strong" without referencing testing results, audit findings, or performance data.
 7. **Governance deficiency:** BWRA not presented to the Board or Risk Committee; not formally approved; no review cycle documented.
 8. **No action output:** BWRA identifies high residual risk areas but produces no remediation actions or risk appetite statements.
+9. **Domicile-only geography:** Geographic risk based only on customer domicile, ignoring counterparty and source-of-funds geography.
+10. **Emerging risks absent:** No identification of emerging risks (crypto-assets, AI-generated documents, de-risking side-effects).
+11. **Unlinked to resourcing:** BWRA results not linked to resource allocation or control investment decisions.
 
 ---
 
@@ -137,3 +140,5 @@ Default output:
 5. **Maturity Assessment Dashboard:** Spider/radar chart description across 8 AML/CFT competency areas.
 6. **Risk Appetite Statement (draft):** Proposed risk appetite language for board approval, including tolerance statements per risk dimension.
 7. **Priority Actions:** Top 10 risk reduction actions by residual risk level and supervisory enforcement likelihood.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

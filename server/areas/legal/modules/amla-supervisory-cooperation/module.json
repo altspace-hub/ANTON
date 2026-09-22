@@ -180,6 +180,10 @@
     "legal-expert",
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "amlr-article-reference",
+    "regulatory-examiner"
+  ],
   "tags": [
     "amla",
     "supervision",

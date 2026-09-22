@@ -9,14 +9,15 @@ This area covers sustainability reporting, environmental risk analysis, ESG stra
 ### CSRD — Corporate Sustainability Reporting Directive (2022/2464/EU)
 Mandatory sustainability reporting for large and listed EU companies. Replaces the Non-Financial Reporting Directive (NFRD).
 
-**Scope and timeline:**
-- FY 2024 (reporting in 2025): Large listed companies already subject to NFRD (~1,000 companies)
-- FY 2025 (reporting in 2026): All other large companies (>250 employees, >€40M turnover, >€20M balance sheet — meeting 2 of 3)
-- FY 2026 (reporting in 2027): Listed SMEs (with opt-out until 2028)
-- FY 2028 (reporting in 2029): Non-EU companies with significant EU turnover (>€150M)
+**Scope and timeline (twice amended — do not use the original wave table):**
+- FY 2024 (reported in 2025): wave 1 — large listed companies already subject to NFRD (~1,000 companies) — reported under the original scope (>250 employees, >€40M turnover, >€20M balance sheet, meeting 2 of 3).
+- The **"stop the clock" Directive (EU) 2025/794 of 14 April 2025** then deferred the waves that had not yet started by two years: large companies not previously under NFRD to FY2027, listed SMEs to FY2028.
+- **Omnibus I — Directive (EU) 2026/470, adopted 24 February 2026, published in the OJ 26 February 2026, in force 18 March 2026** — replaced the scope test outright. Reporting now applies only to undertakings with **more than 1,000 employees AND net turnover above €450M**, for financial years starting on or after **1 January 2027**. Listed SMEs are out of scope.
+- Non-EU: third-country parent with **EU net turnover above €450M** (raised from €150M) and an EU subsidiary or branch above **€200M**.
+- Member States may exempt undertakings from reporting for financial years beginning between 1 January 2025 and 31 December 2026. Undertakings below the new thresholds report voluntarily if at all (VSME — Commission Recommendation (EU) 2025/1710).
 
 ### ESRS — European Sustainability Reporting Standards
-Issued by EFRAG, adopted by European Commission. The actual disclosure requirements.
+Issued by EFRAG, adopted by European Commission. The actual disclosure requirements. The original set is Commission Delegated Regulation (EU) 2023/2772; the Commission adopted **revised, simplified ESRS on 3 July 2026** (delegated acts amending it), applying to financial years beginning on or after 1 January 2027 and cutting roughly 60% of the mandatory datapoints — the original ESRS Set 1 governs earlier financial years. The Commission's power to adopt **binding sector-specific standards was deleted** by Directive (EU) 2026/470 and replaced with non-binding sector guidance.
 
 **Universal standards (all entities):**
 - **ESRS 1** — General Requirements (principles, drafting, materiality, value chain)
@@ -78,7 +79,7 @@ The DMA is the foundation of all CSRD reporting. It determines which ESRS standa
 ## Assurance Requirements
 
 - CSRD mandates **limited assurance** from the outset (attestation that report is reasonable)
-- Pathway to **reasonable assurance** (audit-equivalent) from 2028 as standards develop
+- The empowerment to move to **reasonable assurance** (audit-equivalent) was removed by Directive (EU) 2026/470 — limited assurance is the standing requirement, and the Commission must adopt the EU limited-assurance standards by **1 July 2027**
 - Internal controls over sustainability information are now essential — analogous to ICFR (Internal Controls over Financial Reporting)
 
 ## Common Implementation Challenges
@@ -89,3 +90,5 @@ The DMA is the foundation of all CSRD reporting. It determines which ESRS standa
 4. **Value chain reach** — Understanding suppliers' and customers' sustainability practices
 5. **Estimation methodologies** — Many data points will require estimation; methodology must be documented and defensible
 6. **Assurance readiness** — Controls, documentation, and audit trails must be established before year-end
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

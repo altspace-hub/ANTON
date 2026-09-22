@@ -48,6 +48,18 @@
         {
           "value": "international-organisation",
           "label": "International organisation (FATF, EU, UN)"
+        },
+        {
+          "value": "green-paper",
+          "label": "Legislative consultation / green paper"
+        },
+        {
+          "value": "call-for-evidence",
+          "label": "Call for evidence"
+        },
+        {
+          "value": "technical-standards",
+          "label": "Technical standards consultation (RTS / ITS)"
         }
       ]
     },
@@ -76,6 +88,18 @@
         {
           "value": "business",
           "label": "Business"
+        },
+        {
+          "value": "regulated-entity",
+          "label": "Regulated entity responding on its own behalf"
+        },
+        {
+          "value": "advisory-firm",
+          "label": "Advisory / consulting firm"
+        },
+        {
+          "value": "individual-expert",
+          "label": "Individual expert"
         }
       ]
     },

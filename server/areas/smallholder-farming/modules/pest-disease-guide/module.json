@@ -16,7 +16,7 @@
     "thinking": "think",
     "creativity": "balanced",
     "outputFormats": [
-      "quick-briefing"
+      "field-guide"
     ],
     "transparencyLevel": 0,
     "knowledgeSources": {
@@ -188,6 +188,9 @@
   "recommendedPersonas": [
     "agricultural-extension-worker",
     "veteran-farmer"
+  ],
+  "recommendedSkills": [
+    "skill-crop-database"
   ],
   "tags": [
     "pest-control",

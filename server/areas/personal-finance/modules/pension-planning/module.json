@@ -94,7 +94,7 @@
     {
       "id": "pension-types",
       "label": "Existing Pension Arrangements",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "state-pension",

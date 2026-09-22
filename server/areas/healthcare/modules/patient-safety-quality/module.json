@@ -91,7 +91,7 @@
     {
       "id": "focus",
       "label": "Safety Focus Areas",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "serious-adverse-events",

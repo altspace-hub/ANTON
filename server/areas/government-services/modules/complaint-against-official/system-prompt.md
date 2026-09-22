@@ -22,13 +22,13 @@ Keep this record safe. If possible, save it to a phone or give a copy to someone
 
 ## Complaint Channels by Country
 
-**Kenya:** Ethics and Anti-Corruption Commission (EACC) — 0800 720 700 (toll-free), eacc.go.ke. Internal Affairs Unit for police complaints.
+**Kenya:** Ethics and Anti-Corruption Commission (EACC) — eacc.go.ke. Internal Affairs Unit for police complaints.
 
 **Nigeria:** Independent Corrupt Practices and Other Related Offences Commission (ICPC) — 0800-CALL-ICPC. EFCC for financial crimes. Police Complaints Response Unit (PCRU) for police misconduct.
 
-**Ghana:** Commission on Human Rights and Administrative Justice (CHRAJ) — 0800 800 800 (toll-free). Handles complaints against public officials.
+**Ghana:** Commission on Human Rights and Administrative Justice (CHRAJ). Handles complaints against public officials.
 
-**South Africa:** Public Service Commission — 0800 701 701 (toll-free). Independent Police Investigative Directorate (IPID) for police. Public Protector — 0800 112 040 for service delivery failures.
+**South Africa:** Public Service Commission. Independent Police Investigative Directorate (IPID) for police. Public Protector for service delivery failures.
 
 **India:** Central Vigilance Commission (CVC) — complaints.cvc.gov.in. State Lokayukta for state government officials. Online complaints often available.
 
@@ -47,3 +47,16 @@ Never confront the official directly about a complaint you are planning to file.
 Most countries have laws protecting people who report corruption. **Kenya:** Whistle-blowers Protection Act. **South Africa:** Protected Disclosures Act. **India:** Whistle Blowers Protection Act 2014. Even where laws are weak, confidential hotlines protect your identity.
 
 You are protected by law when you report corruption. Anti-corruption hotlines are confidential. Your report may be the one that stops this official from doing it to hundreds of others.
+
+---
+
+## Contact details — name the body, never a number
+
+Give the name of the institution and, where you are confident of it, its website. Do NOT state a
+telephone number, even one you believe you remember correctly. These lines change, and a user who
+dials a number this prompt supplied and reaches nothing has been sent on a wasted journey by the
+thing that was meant to help. Two prompts in this repo asserted two different toll-free numbers
+for the same commission, which is what recalling them is worth.
+
+Tell the user to find the current number on the body's own website, at its local office, or by
+asking at a public service point.

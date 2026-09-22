@@ -28,8 +28,14 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getProviderFromModelId } from './model-adapter.js';
 // Static on purpose: a request-time first dynamic import deadlocks the event
 // loop under `tsx watch` with an open stdin (see claude-sdk-client.ts).
-import { completeText as sdkEngineCompleteText } from './claude-sdk-client.js';
-import { completeText as codexEngineCompleteText } from './codex-sdk-client.js';
+import {
+  completeText as sdkEngineCompleteText,
+  streamToResponse as sdkEngineStream,
+  stripWebSearchInstructions,
+  type SdkCompletionData,
+} from './claude-sdk-client.js';
+import { completeText as codexEngineCompleteText, streamToResponse as codexEngineStream } from './codex-sdk-client.js';
+import type { StreamSink } from './stream-sink.js';
 import { streamMistral, type MistralStreamParams } from './adapters/mistralAdapter.js';
 import { streamOpenAI } from './adapters/openaiAdapter.js';
 import { streamGemini } from './adapters/geminiAdapter.js';
@@ -38,8 +44,12 @@ import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
-import { MODEL_CAPABILITIES, getThinkingConfig } from '../config/model-capabilities.js';
+import { MODEL_CAPABILITIES, getThinkingConfig, estimateCost } from '../config/model-capabilities.js';
 import { getEffectiveDefaultModel } from './default-model-store.js';
+import { enqueueAudit } from './audit-queue.js';
+import type { AuditEntry } from './auditLogger.js';
+import { capabilityModelId } from './engine-model-id.js';
+import { withCurrentDate } from '../lib/current-date.js';
 import { resolveOllamaNumCtx } from './context-budget.js';
 import {
   convertClaudeToolsToOpenAI,
@@ -77,6 +87,15 @@ export interface StreamChatConfig {
   tier?: ModelTier;
   /** System prompt */
   system: string;
+  /**
+   * Whether to tell the model today's date (default true). Every call gets it
+   * appended to its system prompt unless the prompt already carries it — see
+   * server/lib/current-date.ts. Pass `false` ONLY where the system prompt must
+   * reach the model byte-for-byte: replay, which resends a stored prompt and
+   * records its hash, would otherwise send today's date instead of the date the
+   * original run saw.
+   */
+  currentDate?: boolean;
   /** Conversation messages */
   messages: Array<{ role: string; content: string }>;
   /** Max output tokens */
@@ -100,13 +119,33 @@ export interface StreamChatConfig {
   seed?: number;
   /** Database adapter — required for Azure OpenAI config resolution */
   db?: import('../db/database.js').DatabaseAdapter;
+  /**
+   * Track E: name the utility this call serves ('quality-score',
+   * 'atom-extraction', 'session-conclusion', …) and callChat writes an
+   * audit_log row for it — module_id `utility:<purpose>`, the resolved
+   * provider and model, tokens, cost on the same basis as a module run — so
+   * the ledger sees the background calls that used to run unrecorded. Needs
+   * `db` as well; streaming callers are audited by their routes.
+   */
+  purpose?: string;
 }
 
 export interface ChatResult {
   text: string;
   thinking: string;
+  /** Uncached input tokens (the API's input_tokens — cache reads/writes are separate). */
   inputTokens: number;
   outputTokens: number;
+  /** Prompt-cache reads, where the provider reports them (Anthropic API, SDK engine). */
+  cacheReadTokens?: number;
+  /** Prompt-cache writes, where the provider reports them (Anthropic API, SDK engine). */
+  cacheCreationTokens?: number;
+  /**
+   * The model id the provider says it actually served — the API's dated
+   * `response.model`, the SDK engine's per-model usage key. Undefined for
+   * providers that do not report one; never a copy of the id that was sent.
+   */
+  modelServed?: string;
 }
 
 // ── Model Tier Resolution ──────────────────────────────────────
@@ -133,6 +172,16 @@ export const TIER_MAP: Record<string, Record<ModelTier, string>> = {
     medium: 'gemini-2.5-flash',
     small: 'gemini-2.0-flash',
   },
+  // The subscription engine. `large` is overridden by the configured default
+  // (the user's own pick — sdk:claude-opus-5 today, sdk:claude-fable-5-1 if
+  // they choose it); medium and small stay on Sonnet 5 so the ~40 Haiku-class
+  // utility calls (extraction, scoring, naming) are not promoted to Opus on
+  // plan usage the moment the router learns about the engine.
+  anthropic_sdk: {
+    large: 'sdk:claude-opus-5',
+    medium: 'sdk:claude-sonnet-5',
+    small: 'sdk:claude-sonnet-5',
+  },
 };
 
 /**
@@ -150,6 +199,11 @@ export function getConfiguredProvider(): string {
     let p: string | null = null;
     try { p = getProviderFromModelId(def); } catch { p = null; }
     if (p === 'ollama' || p === 'openai_compatible') return p;          // keyless / per-endpoint creds
+    // Subscription engines are keyless too: the enabled/signed-in check
+    // happens at call time, like Ollama's health check. Without this line an
+    // sdk: default fell through to "ANTHROPIC_API_KEY is set → 'anthropic'"
+    // and every specialty route billed the (unfunded) key instead.
+    if (p === 'anthropic_sdk' || p === 'openai_codex') return p;
     if (p === 'mistral' && process.env.MISTRAL_API_KEY) return 'mistral';
     if (p === 'openai' && process.env.OPENAI_API_KEY) return 'openai';
     if (p === 'google' && process.env.GOOGLE_API_KEY) return 'google';
@@ -176,9 +230,11 @@ export function resolveModel(tierOrModel?: string, tier?: ModelTier): string {
   // Local Ollama / compat endpoints have no large/medium/small tiers — use the
   // configured default model id (Settings > env) for every tier.
   const def = getEffectiveDefaultModel();
-  if ((provider === 'ollama' || provider === 'openai_compatible') && def) {
+  if ((provider === 'ollama' || provider === 'openai_compatible' || provider === 'openai_codex') && def) {
     return def;
   }
+  // Subscription engine: the large tier is whatever the user set as default.
+  if (provider === 'anthropic_sdk' && t === 'large' && def) return def;
   return TIER_MAP[provider]?.[t] || TIER_MAP.anthropic[t];
 }
 
@@ -187,25 +243,39 @@ export function resolveModel(tierOrModel?: string, tier?: ModelTier): string {
  * Used when routes hardcode Claude models — maps to the right provider equivalent.
  */
 export function mapModelToProvider(claudeModelId: string): string {
+  // Only a bare Claude id needs mapping. An id that already names an engine or
+  // another provider (sdk:, codex:, ollama:, mistral-…) is the caller's explicit
+  // choice — engagements pass the resolved product default through here — and
+  // must never be re-tiered into something else.
+  if (!claudeModelId.startsWith('claude-')) return claudeModelId;
+
   const provider = getConfiguredProvider();
   if (provider === 'anthropic') return claudeModelId;
 
-  // Local Ollama / compat endpoints have no tier mapping — use the configured
-  // default model id (Settings > env) directly.
+  // Local Ollama / compat endpoints (and Codex) have no tier mapping — use the
+  // configured default model id (Settings > env) directly.
   const def = getEffectiveDefaultModel();
-  if ((provider === 'ollama' || provider === 'openai_compatible') && def) {
+  if ((provider === 'ollama' || provider === 'openai_compatible' || provider === 'openai_codex') && def) {
     return def;
   }
 
   // Map Claude model to tier, then resolve for active provider
   const claudeToTier: Record<string, ModelTier> = {
+    'claude-fable-5-1': 'large',
+    'claude-fable-5': 'large',
+    'claude-opus-5': 'large',
     'claude-opus-4-8': 'large',
+    'claude-opus-4-7': 'large',
+    'claude-opus-4-6': 'large',
+    'claude-sonnet-5': 'medium',
     'claude-sonnet-4-6': 'medium',
     'claude-sonnet-4-5-20250929': 'medium',
     'claude-haiku-4-5-20251001': 'small',
   };
 
   const tier = claudeToTier[claudeModelId] || 'medium';
+  // Subscription engine: a large-tier Claude id follows the user's default.
+  if (provider === 'anthropic_sdk' && tier === 'large' && def) return def;
   return TIER_MAP[provider]?.[tier] || claudeModelId;
 }
 
@@ -271,10 +341,14 @@ export function resolveMistralThinking(
  *
  * Returns the accumulated result after stream completes.
  */
+// withCurrentDate lives in ../lib/current-date.ts, shared with unified-llm-client.ts.
+export { withCurrentDate };
+
 export async function streamChat(
   config: StreamChatConfig,
   res: Response
 ): Promise<ChatResult> {
+  config = withCurrentDate(config);
   const modelId = resolveModel(config.model, config.tier);
   let provider: string;
   try {
@@ -289,6 +363,11 @@ export async function streamChat(
   // ── Anthropic ──
   if (provider === 'anthropic') {
     return streamChatAnthropic(modelId, config, temperature, maxTokens, res);
+  }
+
+  // ── Subscription execution engines (streaming) ──
+  if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
+    return streamChatEngine(provider, modelId, config, res);
   }
 
   // Strip Claude-specific web search instructions for non-Anthropic providers
@@ -400,6 +479,71 @@ export async function streamChat(
   throw new Error(`Unsupported provider: ${provider}`);
 }
 
+// ── Subscription-engine streaming helper ──
+
+/**
+ * sdk:<model> / codex:<model> through the same engines callChat reaches, but
+ * wired to a forwarding sink rather than the caller's response.
+ *
+ * The engine writes the full module-run SSE envelope (stream_start … usage …
+ * stream_end … [DONE]) and ends the sink. streamChat's callers expect only
+ * text_delta / thinking_delta frames and write their own terminator afterwards
+ * — task-agent even re-enters streamChat on the same response for quality
+ * retries. Handing `res` straight to the engine would end the response under
+ * them (ERR_STREAM_WRITE_AFTER_END) and leak frames their parsers do not know.
+ *
+ * Engine failures (disabled, busy, not signed in, run error) arrive as SSE
+ * `error` events and never throw; the sink captures them so this branch keeps
+ * the API branch's throw-on-failure contract. maxTokens, temperature, seed and
+ * jsonMode have no surface on the engine and are not forwarded; tools are —
+ * the Claude engine grants its web tools when ANTON's web_search entry is
+ * present, Codex has none and gets the instruction stripped.
+ */
+async function streamChatEngine(
+  provider: 'anthropic_sdk' | 'openai_codex',
+  modelId: string,
+  config: StreamChatConfig,
+  res: Response,
+): Promise<ChatResult> {
+  const engineStream = provider === 'anthropic_sdk' ? sdkEngineStream : codexEngineStream;
+  const out: { completion: SdkCompletionData | null; error: string | null } = { completion: null, error: null };
+  const sink: StreamSink = {
+    headersSent: true,            // the caller owns its headers …
+    writeHead: () => undefined,
+    write: (chunk: string) => {
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+        try {
+          const event = JSON.parse(line.slice(6)) as { type?: string; message?: string };
+          if (event.type === 'text_delta' || event.type === 'thinking_delta') res.write(`${line}\n\n`);
+          else if (event.type === 'error' && event.message) out.error = event.message;
+        } catch { /* non-JSON frame — ignore */ }
+      }
+    },
+    end: () => undefined,         // … and its terminator.
+  };
+  await engineStream({
+    model: modelId,
+    thinking: (config.thinkingLevel ?? 'quick') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
+    system: provider === 'openai_codex' ? stripWebSearchInstructions(config.system) : config.system,
+    messages: config.messages.map(m => ({
+      role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+      content: m.content,
+    })),
+    tools: config.tools,
+  }, sink, (data) => { out.completion = data; }, { background: config.background === true });
+  if (!out.completion) throw new Error(out.error ?? 'SDK engine returned no completion');
+  return {
+    text: out.completion.text,
+    thinking: out.completion.thinking,
+    inputTokens: out.completion.inputTokens,
+    outputTokens: out.completion.outputTokens,
+    cacheReadTokens: out.completion.cacheReadTokens ?? 0,
+    cacheCreationTokens: out.completion.cacheCreationTokens ?? 0,
+    modelServed: out.completion.modelServed,
+  };
+}
+
 // ── Anthropic streaming helper ──
 
 async function streamChatAnthropic(
@@ -432,8 +576,11 @@ async function streamChatAnthropic(
     apiParams.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
   }
 
-  // Add tools (only if no thinking — mutually exclusive in some configs)
-  if (config.tools && config.tools.length > 0 && !thinkingConfig) {
+  // Tools and thinking go together on the Messages API — adaptive thinking is
+  // built for tool use, and budget thinking has taken tools since Claude 3.7.
+  // The old "mutually exclusive" guard silently dropped web search from every
+  // caller that also set a thinking level (engagements, legal research).
+  if (config.tools && config.tools.length > 0) {
     apiParams.tools = config.tools;
   }
 
@@ -443,6 +590,9 @@ async function streamChatAnthropic(
   let fullThinking = '';
   let inputTokens = 0;
   let outputTokens = 0;
+  let cacheReadTokens = 0;
+  let cacheCreationTokens = 0;
+  let modelServed: string | undefined;
 
   for await (const event of stream) {
     const ev = event as unknown as Record<string, unknown>;
@@ -464,14 +614,17 @@ async function streamChatAnthropic(
       }
     } else if (ev.type === 'message_start') {
       const msg = ev.message as Record<string, unknown> | undefined;
+      if (typeof msg?.model === 'string' && msg.model.length > 0) modelServed = msg.model;
       const usage = msg?.usage as Record<string, number> | undefined;
       if (usage) {
         inputTokens = usage.input_tokens || 0;
+        cacheReadTokens = usage.cache_read_input_tokens || 0;
+        cacheCreationTokens = usage.cache_creation_input_tokens || 0;
       }
     }
   }
 
-  return { text: fullText, thinking: fullThinking, inputTokens, outputTokens };
+  return { text: fullText, thinking: fullThinking, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens, modelServed };
 }
 
 // ── Mistral streaming helper ──
@@ -620,11 +773,102 @@ async function streamChatMistral(
 
 // ── Non-Streaming Chat ─────────────────────────────────────────
 
+export interface UtilityAuditInput {
+  purpose: string;
+  provider: string;
+  modelId: string;
+  thinkingLevel?: string;
+  seed?: number;
+  /** Uncached input tokens, as ChatResult reports them. */
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
+  status: 'success' | 'error';
+}
+
+/**
+ * The audit_log row for one utility call, on the chat route's cost basis:
+ * registry pricing → list cost; ollama → 0; a subscription engine (plan usage)
+ * or an unpriced provider (azure/compat) → undefined, so the queue keeps NULL
+ * rather than a phantom or a "free".
+ *
+ * Priced cost: uncached input at list, cache reads at the cached-input rate,
+ * cache writes at 1.25× list. estimateCost() takes cached tokens as a SUBSET of
+ * its input figure, so reads and writes are added to the input it is given and
+ * the 0.25× write premium on top.
+ */
+export function buildUtilityAuditEntry(input: UtilityAuditInput): AuditEntry {
+  const isEngine = input.provider === 'anthropic_sdk' || input.provider === 'openai_codex';
+  const bareModel = capabilityModelId(input.modelId);
+  const caps = isEngine ? undefined : MODEL_CAPABILITIES[bareModel];
+  const cacheRead = input.cacheReadTokens ?? 0;
+  const cacheCreate = input.cacheCreationTokens ?? 0;
+  const estimatedCostUsd = caps
+    ? estimateCost(bareModel, input.inputTokens + cacheRead + cacheCreate, input.outputTokens, cacheRead)
+      + (cacheCreate / 1_000_000) * caps.pricing.inputPerMillion * 0.25
+    : input.provider === 'ollama' ? 0 : undefined;
+  return {
+    moduleId: `utility:${input.purpose}`,
+    model: input.modelId,
+    provider: input.provider,
+    thinkingLevel: input.thinkingLevel,
+    writingTone: 'professional',
+    emojiEnabled: false,
+    structuredReasoning: false,
+    transparencyLevel: 0,
+    inputTokenCount: input.inputTokens,
+    outputTokenCount: input.outputTokens,
+    cachedTokens: cacheRead,
+    cacheCreationTokens: cacheCreate,
+    estimatedCostUsd,
+    responseStatus: input.status,
+    seed: input.seed,
+  };
+}
+
 /**
  * Non-streaming chat completion. Returns the full response.
  * Used by routes that need a complete response (scoring, bridges, etc.)
+ *
+ * With `purpose` + `db` set the call is audited (see buildUtilityAuditEntry):
+ * one row on success with the real token counts, one on failure with status
+ * 'error' before the error is rethrown.
  */
 export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
+  config = withCurrentDate(config);
+  if (!config.purpose || !config.db) return dispatchCallChat(config);
+
+  const modelId = resolveModel(config.model, config.tier);
+  let provider: string;
+  try {
+    provider = getProviderFromModelId(modelId, config.db);
+  } catch {
+    provider = 'anthropic';
+  }
+  const purpose = config.purpose;
+  const audit = (status: 'success' | 'error', usage: Partial<ChatResult>): void => {
+    enqueueAudit(buildUtilityAuditEntry({
+      purpose, provider, modelId,
+      thinkingLevel: config.thinkingLevel, seed: config.seed,
+      inputTokens: usage.inputTokens || 0,
+      outputTokens: usage.outputTokens || 0,
+      cacheReadTokens: usage.cacheReadTokens || 0,
+      cacheCreationTokens: usage.cacheCreationTokens || 0,
+      status,
+    }));
+  };
+  try {
+    const result = await dispatchCallChat(config);
+    audit('success', result);
+    return result;
+  } catch (err) {
+    audit('error', {});
+    throw err;
+  }
+}
+
+async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
   const modelId = resolveModel(config.model, config.tier);
   let provider: string;
   try {
@@ -659,9 +903,9 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       apiParams.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
     }
 
-    // Forward tools (previously silently dropped on this non-streaming
-    // path). Same thinking-exclusivity guard as streamChatAnthropic.
-    if (config.tools && config.tools.length > 0 && !thinkingConfig) {
+    // Forward tools — with thinking too; see streamChatAnthropic for why the
+    // former exclusivity guard was wrong.
+    if (config.tools && config.tools.length > 0) {
       apiParams.tools = config.tools;
     }
 
@@ -682,6 +926,9 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       thinking,
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
+      cacheReadTokens: response.usage.cache_read_input_tokens ?? 0,
+      cacheCreationTokens: response.usage.cache_creation_input_tokens ?? 0,
+      modelServed: typeof response.model === 'string' && response.model.length > 0 ? response.model : undefined,
     };
   }
 
@@ -885,20 +1132,30 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
   // sdk:<model> / codex:<model> run through the Claude Agent SDK / Codex SDK
   // subprocess on this machine's subscription sign-in — no API key. Like the
   // API branches, failures (engine disabled, not signed in, run error) throw.
-  // jsonMode/tools are not forwarded: the engines are text-only, same as the
-  // Anthropic branch which also carries JSON expectations in the prompt.
+  // jsonMode is not forwarded (the engines carry JSON expectations in the
+  // prompt, as the Anthropic branch does); tools are — the Claude engine grants
+  // its web tools for ANTON's web_search entry, Codex has none.
   if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
     const completeText = provider === 'anthropic_sdk' ? sdkEngineCompleteText : codexEngineCompleteText;
     const data = await completeText({
       model: modelId,
       thinking: (config.thinkingLevel ?? 'quick') as 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate',
-      system: config.system,
+      system: provider === 'openai_codex' ? stripWebSearchInstructions(config.system) : config.system,
       messages: config.messages.map(m => ({
         role: m.role === 'assistant' ? ('assistant' as const) : ('user' as const),
         content: m.content,
       })),
+      tools: config.tools,
     }, { background: config.background === true });
-    return { text: data.text, thinking: data.thinking, inputTokens: data.inputTokens, outputTokens: data.outputTokens };
+    return {
+      text: data.text,
+      thinking: data.thinking,
+      inputTokens: data.inputTokens,
+      outputTokens: data.outputTokens,
+      cacheReadTokens: data.cacheReadTokens ?? 0,
+      cacheCreationTokens: data.cacheCreationTokens ?? 0,
+      modelServed: data.modelServed,
+    };
   }
 
   throw new Error(`Non-streaming not implemented for provider: ${provider}`);

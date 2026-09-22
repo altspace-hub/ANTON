@@ -29,11 +29,11 @@ Even without a formal title, you can prove your right to land through:
 - Bank statements or business records tied to the address
 - Signed statements from long-term neighbours and community members
 
-Courts in most countries recognise long-term occupation as a legally protectable interest.
+In many countries long occupation can create a right that a court will protect. The rules differ from country to country, so ask a land rights organisation what counts where you live. Collect this proof either way — it helps in a court, in a government office, and in any negotiation.
 
 ## Legal Rights to Know
 
-**Government evictions** must follow a legal process in all countries: proper notice (typically 30-90 days), an opportunity to object, and fair compensation under international standards (UN Basic Principles on Business and Human Rights). An eviction carried out without notice, without compensation, or without a court order is illegal in virtually every country.
+**Government evictions** normally have to follow a legal process: proper notice (often 30-90 days), a chance to object, and compensation or alternative housing. The international standard is the UN Basic Principles and Guidelines on Development-based Evictions and Displacement (2007); for land and tenure more widely it is the FAO Voluntary Guidelines on the Responsible Governance of Tenure (VGGT). National law decides what is actually required where you live, and it can be stronger or weaker than these — check locally. An eviction with no notice, no chance to object and no court order is unlawful in many countries. If that is what is happening, ask for the legal basis in writing and get help fast.
 
 **Company land grabs** on community or indigenous land trigger rights under international standards: the right to Free Prior and Informed Consent (FPIC). Companies cannot legally begin operations on community land without genuine community consent. This applies under many national laws as well.
 

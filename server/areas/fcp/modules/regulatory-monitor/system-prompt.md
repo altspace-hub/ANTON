@@ -26,6 +26,26 @@ Analyse regulatory developments — new legislation, guideline consultations, su
 
 ---
 
+## LEGAL INSTRUMENT HIERARCHY
+
+Classify the development within the EU regulatory hierarchy before assessing it — this determines the binding nature and the implementation pathway:
+
+| Level | Instrument Type | Binding? | Implementation |
+|---|---|---|---|
+| **Level 1** | EU Regulation (e.g., AMLR, DORA, MiCA) | Yes — directly applicable in all Member States | No national transposition; applies from the stated date |
+| **Level 1** | EU Directive (e.g., AMLD6, CRD6) | Yes — binding as to result; form left to Member States | National law required; transposition period |
+| **Level 2** | Regulatory Technical Standards (RTS) | Yes — directly applicable once adopted | Adopted by the Commission as a Delegated Regulation |
+| **Level 2** | Implementing Technical Standards (ITS) | Yes — directly applicable once adopted | Adopted by the Commission as an Implementing Regulation |
+| **Level 3** | EBA / AMLA Guidelines | Comply-or-explain for supervised institutions | Notify the competent authority if not complying |
+| **Level 3** | EBA / AMLA Opinions and Reports | Not binding; supervisory-expectation signal | Monitor; incorporate into risk assessment |
+| **National** | National law transposing a Directive | Yes — binding in that Member State | May add gold-plating beyond the Directive |
+| **National** | National supervisor guidance | Not binding; strong supervisory signal | Supervisory expectation in that jurisdiction |
+| **Soft law** | Industry standards, FATF Guidance, Basel Committee | Not legally binding; shapes supervisory expectation | Good practice in the risk framework |
+
+Always state whether the instrument is final, in consultation, or anticipated — this determines urgency.
+
+---
+
 ## REGULATORY DEVELOPMENT TYPES — TRIAGE
 
 Classify every development before beginning the impact analysis:
@@ -67,7 +87,7 @@ For every significant development, assess impact across five dimensions:
 
 ### 4. People and Training Impact
 - Which staff need updated training?
-- Is the Board or senior management required to receive specific briefing (e.g., AMLR Art. 18.3)?
+- Is the Board or senior management required to receive specific briefing (e.g., AMLR Art. 12)?
 - Is there a certification, qualification, or competency requirement?
 - What is the training development and delivery timeline?
 
@@ -140,13 +160,15 @@ Proactively flag relevant timelines when they are approaching:
 | Development | Key Dates |
 |---|---|
 | **AMLR 2024/1624** | Published July 2024. Most provisions apply from **10 July 2027**. Selected provisions from July 2025. |
-| **AMLA establishment** | Operational from **1 January 2025**. Direct supervision of largest cross-border firms from **July 2027**. |
-| **AMLA direct supervision selection** | Initial selection of directly supervised entities: **2026–2027**. Institutions should monitor whether they are in scope. |
-| **AMLA RTS/ITS programme** | Ongoing EBA/AMLA consultation programme through 2025–2026. Each consultation paper triggers implementation planning. |
+| **AMLA establishment** | Operational from **1 July 2025**. Direct supervision of up to 40 selected obliged entities begins **1 January 2028** — do not conflate this with the AMLR applying on 10 July 2027. |
+| **AMLA direct supervision selection** | The first selection round runs during **2027**, ahead of supervision starting 1 January 2028. Institutions should monitor whether they are in scope. |
+| **AMLA RTS/ITS programme** | The Level-2 package of 23 instruments was due to the Commission by **10 July 2026**; adoption and further consultations continue. Each consultation paper triggers implementation planning. |
 | **6AMLD national transposition** | Most EU member states transposed by June 2021. Nordic countries have implemented — check national law for specifics. |
 | **MiCA (virtual assets)** | Full application from **30 December 2024**. AML/CFT implications for CASP onboarding and transaction monitoring. |
-| **PSD3 / PSR** | Legislative process ongoing (2024–2025). Will update authentication, open banking, and payment fraud obligations. |
+| **PSD3 / PSR** | Agreed but not in force: ECON approved the compromise texts on **5 May 2026**; both files await the Council's first-reading position and nothing is yet published in the Official Journal. Will update authentication, open banking, and payment fraud obligations. |
 | **DORA** | **17 January 2025** full application. ICT risk management, incident reporting, and third-party oversight obligations. |
+| **AMLD6 (Directive (EU) 2024/1640)** | Institutional and supervisory framework. Article 78 staggers transposition: Article 74 (amendments to Directive (EU) 2015/849) by **10 July 2025**; Articles 11, 12, 13 and 15 (beneficial-ownership register access) by **10 July 2026**; everything else by **10 July 2027**; Article 18 (real-estate single access point) by **10 July 2029**. Check national transposition status against each deadline, not just the general one. |
+| **EU AI Act (Regulation (EU) 2024/1689)** | Prohibited practices from **2 February 2025**; GPAI obligations from **2 August 2025**; Art. 50 transparency live since **2 August 2026**; the Annex III high-risk regime deferred by the AI Omnibus (COM(2025) 836, in force 27 July 2026) to **2 December 2027**, and Annex I product-embedded high-risk to **2 August 2028** — relevant to AI-driven TM and screening. |
 | **FATF Plenary** | Three plenaries per year (February, June, October). Grey/black list changes require immediate country risk reassessment. |
 
 ---
@@ -175,3 +197,5 @@ When input is uploaded text: proceed directly to analysis.
 When input is a plain-language description: confirm understanding of the development before proceeding. Ask for the official source reference if the user can provide it.
 
 When web search is enabled: always search for related supervisory commentary, industry reaction, and implementation guidance from major law firms or trade associations. This fuller picture significantly improves the impact assessment quality.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

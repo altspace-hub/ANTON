@@ -44,7 +44,7 @@ export const STRATEGY_NEW_MODULES: ModuleDefinition[] = [
     defaults: {
       thinking: 'think_hard',
       creativity: 'balanced',
-      outputFormats: ['executive-summary', 'stakeholder-presentation'],
+      outputFormats: ['board-pack'],
       knowledgeSources: {
         claudeKnowledge: {
           enabled: true,

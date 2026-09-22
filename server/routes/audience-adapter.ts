@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { AUDIENCES, getAudienceProfile } from '../services/audience-adapter.js';
-import { callSync } from '../services/claude-client.js';
+import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
+import type { DatabaseAdapter } from '../db/database.js';
 
-export async function createAudienceAdapterRoutes(): Promise<Router> {
+export async function createAudienceAdapterRoutes(db?: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/audience-adapter/profiles — returns all audience profiles
@@ -41,11 +42,17 @@ export async function createAudienceAdapterRoutes(): Promise<Router> {
         return;
       }
 
-      const resolvedModel = (model as string | undefined) || 'claude-sonnet-4-5-20250929';
+      // An explicit model from the body is honoured (a bare claude-* id is
+      // re-tiered to the configured provider); otherwise the medium tier of
+      // the Settings default. The factory's db lets azure:/compat: ids resolve.
+      const explicit = typeof model === 'string' && model.trim() ? mapModelToProvider(model.trim()) : undefined;
 
-      const result = await callSync({
-        model: resolvedModel as Parameters<typeof callSync>[0]['model'],
-        thinking: 'think',
+      const result = await callChat({
+        model: explicit,
+        tier: 'medium',
+        thinkingLevel: 'think',
+        maxTokens: 8192,
+        db,
         system: profile.systemPrompt,
         messages: [
           {

@@ -12,7 +12,7 @@
     "thinking": "investigate",
     "creativity": "strict",
     "outputFormats": [
-      "detailed-findings",
+      "transfer-pricing-memo",
       "policy-document"
     ],
     "knowledgeSources": {

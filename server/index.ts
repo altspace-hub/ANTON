@@ -36,6 +36,9 @@ import { createMarketConsulRoutes } from './routes/market-consul.js';
 import { createCivicExtendedRoutes } from './routes/civic-extended.js';
 import { createExchangeRoutes } from './routes/exchange.js';
 import { createSettingsRoutes } from './routes/settings.js';
+import { createUserModuleDefaultsRoutes } from './routes/user-module-defaults.js';
+import { createRunArtifactRoutes } from './routes/run-artifacts.js';
+import { createModuleAccessRoutes } from './routes/module-access.js';
 import { createCustomModelEndpointsRoutes } from './routes/custom-model-endpoints.js';
 import { seedApeApiEndpoint } from './services/apeapi-seed.js';
 import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
@@ -73,6 +76,11 @@ import { createKnowledgeGraphRoutes } from './routes/knowledge-graph.js';
 import { createIntelligenceDashboardRoutes } from './routes/intelligence-dashboard.js';
 import { createPatternDetectionRoutes } from './routes/pattern-detection.js';
 import { createPatternDetection } from './services/pattern-detection.js';
+import { startMemorySweep } from './services/memory-sweep.js';
+import { ensureWorkComplianceRules } from './services/work-compliance-rules.js';
+import { markInterruptedRuns } from './services/run-recovery.js';
+import { createAuditEventsMiddleware } from './middleware/audit-events.js';
+import { createEngineGuardRoutes } from './routes/engine-guards.js';
 import { createCommandRoutes } from './routes/commands.js';
 import { createComplianceRoutes } from './routes/compliance.js';
 import { createDataRoutes } from './routes/data.js';
@@ -368,6 +376,21 @@ try {
   console.warn('[fc] applyEnvOverrides failed:', err instanceof Error ? err.message : err);
 }
 
+// Skills: read the packs under server/skills/ into the synchronous skill index
+// so the prompt composer's resolveSkills() and GET /api/skills see them. Until
+// this ran, only the inline built-ins resolved and a disk pack attached to a
+// session was not injected. A failed load keeps the built-ins and boots.
+try {
+  const { preloadDiskSkills } = await import('./services/skills-manager.js');
+  await preloadDiskSkills();
+  // Wave 6: personas installed from module bundles resolve like built-ins.
+  const { preloadInstalledPersonas } = await import('./services/prompt-builder.js');
+  const installedPersonas = await preloadInstalledPersonas(db);
+  if (installedPersonas > 0) console.log(`[personas] ${installedPersonas} imported persona(s) resolvable`);
+} catch (err) {
+  console.warn('[skills-manager] disk skill preload failed — built-in skills only:', err instanceof Error ? err.message : err);
+}
+
 // Initialize workspace root directory
 await ensureWorkspacesRoot();
 
@@ -402,6 +425,34 @@ setTimeout(async () => {
     console.error('[pattern-detection] Initial scan error:', error);
   }
 }, 30000);
+
+// Memory sweep (Wave 4): outputs whose learning never finished — the summary
+// lost the engine slot, the extractor failed, the server restarted — are
+// retried hourly, oldest first. MEMORY_SWEEP_DISABLED=true turns it off.
+try {
+  startMemorySweep(db);
+} catch (error) {
+  console.warn('[memory-sweep] failed to start:', error instanceof Error ? error.message : error);
+}
+
+// Wave 6: the seven Work-deliverable compliance rules (category 'work') are
+// seeded idempotently; they run after every module answer
+// (compliance-on-completion.ts, setting compliance_on_completion, default on).
+try {
+  const seeded = await ensureWorkComplianceRules(db);
+  console.log('[compliance] work rules ready:', JSON.stringify(seeded));
+} catch (error) {
+  console.warn('[compliance] work rules not seeded:', error instanceof Error ? error.message : error);
+}
+
+// Wave 5: a restart ends in-process step jobs. Assessments still marked
+// 'assessing' with no live job are marked interrupted so the page can say so.
+try {
+  const recovered = await markInterruptedRuns(db);
+  if (recovered.gapAssessments > 0) console.log(`[run-recovery] ${recovered.gapAssessments} interrupted gap assessment(s) marked`);
+} catch (error) {
+  console.warn('[run-recovery] failed:', error instanceof Error ? error.message : error);
+}
 
 // MCP authentication guard (any deployment mode — was team-only, which left the full
 // unauthenticated tool surface reachable from the LAN on solo installs).
@@ -503,7 +554,9 @@ if (process.env.WEB_CHECKOUT_SWEEP_DISABLED !== 'true') {
 // Radar fetcher is created here (early) so the companion-app gateway can
 // expose POST /api/app/radar/scan; the main /api/radar mount below shares
 // the same instance.
-const radarFetcher = anthropic ? await createRadarFetcher(db, anthropic) : undefined;
+// Wave 6: the fetcher routes its model calls through provider-router, so a
+// key-less subscription install gets radar too (it used to need a key).
+const radarFetcher = await createRadarFetcher(db);
 const APP_GATEWAY_ENABLED = process.env.APP_GATEWAY_ENABLED !== 'false';
 let appGatewaySvc: Awaited<ReturnType<typeof createAppGatewayRoutes>>['service'] | null = null;
 if (APP_GATEWAY_ENABLED) {
@@ -555,6 +608,9 @@ app.get('/api/config', (req, res) => {
 // Auth middleware — protects all subsequent /api routes
 const authMiddleware = await createAuthMiddleware(db);
 app.use('/api', authMiddleware);
+// Wave 6: one audit_events row per mutating API request (method, route pattern,
+// status, duration, user, role — never the body). After auth so req.user is set.
+app.use('/api', createAuditEventsMiddleware(db));
 
 // SEC-14: CSRF token endpoint — registered AFTER auth middleware so req.user is
 // populated. This ensures the token is stored under the correct user key ('solo'
@@ -614,6 +670,10 @@ app.use('/api/markets/consul', createMarketConsulRoutes(db));
 app.use('/api/civic', createCivicExtendedRoutes(db));
 app.use('/api', await createExchangeRoutes(db));
 app.use('/api', await createSettingsRoutes(db));
+app.use('/api', createUserModuleDefaultsRoutes(db));    // Wave 6: last-used settings per module + profile prefill
+app.use('/api', createRunArtifactRoutes(db));           // Wave 5: run records by parent + tool calls
+app.use('/api', createModuleAccessRoutes(db));          // Wave 6: per-role module access rules (team mode)
+app.use('/api', createEngineGuardRoutes(db));           // Wave 5: daily cap on subscription runs
 app.use('/api', createCustomModelEndpointsRoutes(db));
 // Auto-register ApeAPI (compat: bundle) from APEAPI_API_KEY if set — one-step onboarding.
 await seedApeApiEndpoint(db);
@@ -889,7 +949,7 @@ app.use('/api', await createKnowledgePacksRoutes(db));     // Regulatory Knowled
 app.use('/api', await createLegalResearchRoutes(db, anthropic));   // Counsel's Desk — legal research sessions
 app.use('/api', await createGapAssessmentsRoutes(db, anthropic)); // Compliance Gap Assessor
 app.use('/api', createTabularReviewRoutes(db));                    // Tabular Review — folder-of-docs → AI grid (Wave 1: AMLR Obligation Mapping)
-app.use('/api', await createAiAssistRoutes());                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
+app.use('/api', await createAiAssistRoutes(db));                     // AI-assist endpoints (module builder, patterns, deadlines, etc.)
 app.use('/api/task-agent', await createTaskAgentRoutes(db, anthropic)); // ANTON Task Agent — conversational task intake + approach proposal
 app.use('/api', await createRoaringRoutes(db));                   // Roaring — Nordic entity registry + UBO + sanctions
 app.use('/api', await createDowJonesRoutes(db));                  // Dow Jones Risk & Compliance — global screening
@@ -922,7 +982,7 @@ app.use('/api', await createAlignmentReviewerRoutes(db));
 app.use('/api/batch', await createBatchRoutes(anthropic, db));
 app.use('/api', await createSkillPacksRoutes(db));
 app.use('/api', await createModelRouterRoutes(db));
-app.use('/api', await createAudienceAdapterRoutes());
+app.use('/api', await createAudienceAdapterRoutes(db));
 app.use('/api', await createSuggestionsRoutes(db));
 app.use('/api', await createBenchmarkRoutes(db));
 app.use('/api', await createConnectorTemplatesRoutes());

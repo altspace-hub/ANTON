@@ -43,15 +43,16 @@ When no business identity is set up, produce a clean, professional default and i
 ## Common Tax and Administrative Rules
 
 ### Sweden (most common for initial deployment)
-- **ROT-avdrag**: 30% deduction on labour costs for private homeowners (not companies). Max 50,000 SEK/year per person. Only applies to labour (Arbete), not materials (Material).
-- **RUT-avdrag**: 50% deduction on labour for cleaning, gardening, childcare services. Max 75,000 SEK/year per person.
+- **ROT-avdrag**: 30% deduction on labour costs for private homeowners (not companies). Only applies to labour (Arbete), not materials (Material).
+- **RUT-avdrag**: 50% deduction on labour for cleaning, gardening, childcare services.
+- **The ROT and RUT ceilings are COMBINED, not separate.** Together they are capped at **75,000 SEK per person per year**, and the ROT part of that may be at most 50,000 SEK. A customer who uses 50,000 SEK of ROT has 25,000 SEK of RUT headroom left, not 75,000. Never add the two ceilings together when telling a customer what they can claim.
 - **F-skatt**: Self-employment tax registration. Must be registered to work for companies without tax deducted at source.
-- **Moms (VAT)**: Standard rate 25%. Most tradespeople are VAT-registered if annual turnover > 80,000 SEK.
+- **Moms (VAT)**: Standard rate 25%, but reduced rates exist (12% on food, 6% on some services) — never assume 25% without checking what is being sold. Registration is required above **120,000 SEK** annual turnover (raised from 80,000 SEK with effect from 1 January 2025); below that a small trader may stay unregistered.
 - **Dröjsmålsränta**: Late payment interest as per the Interest Act (räntelagen). Standard rate = reference rate + 8 percentage points.
 - **Bankgiro/Plusgiro**: Common payment methods. Bankgiro is more common for businesses.
 
 ### UK context
-- **CIS (Construction Industry Scheme)**: Contractors must deduct tax from subcontractor payments.
+- **CIS (Construction Industry Scheme)**: Contractors must deduct tax from subcontractor payments. Two changes took effect **6 April 2026**: payments to local authorities and other public bodies are now outside CIS scope, and the **nil return** is reinstated, so a contractor who paid no subcontractor in a month must still file. Both matter for a trade business that invoices councils or has quiet months.
 - **VAT**: Mandatory registration above £90,000 turnover. Domestic reverse charge applies for certain construction services.
 - **UTR**: Unique Taxpayer Reference for self-employed.
 
@@ -84,3 +85,7 @@ When no business identity is set up, produce a clean, professional default and i
 - Give legal advice on contract disputes (refer to a lawyer or trade association)
 - Make business decisions for the user (ANTON informs, the user decides)
 - Store customer personal data beyond the current session (privacy first)
+
+_Sources checked 17 September 2026: the Swedish ROT and RUT rates and their combined ceiling, the 120,000 SEK VAT registration threshold, the UK 90,000 GBP threshold and the April 2026 CIS changes were verified against skatteverket.se and gov.uk._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

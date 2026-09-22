@@ -35,7 +35,7 @@ const MERIDIAN_SIGNALS: DemoSignal[] = [
   {
     source: 'radar', urgency: 0.92, relevance: 0.95,
     scenario_tag: 'amlr_deadline',
-    summary: 'AMLR Art.42 Risk Assessment: Meridian must submit BWRA to FIN-FSA by Q3 2025 — current BWRA last updated 2022, covering pre-acquisition scope only',
+    summary: 'AMLR Art.10 Risk Assessment: Meridian must submit BWRA to FIN-FSA by Q3 2025 — current BWRA last updated 2022, covering pre-acquisition scope only',
   },
   {
     source: 'radar', urgency: 0.78, relevance: 0.88,
@@ -106,13 +106,13 @@ const MERIDIAN_SIGNALS: DemoSignal[] = [
   {
     source: 'proactive', urgency: 0.70, relevance: 0.85,
     scenario_tag: 'proactive_insight',
-    summary: 'Proactive insight: Cross-referencing open BWRA gaps with new AMLR Art.42 requirements identifies 7 unaddressed high-risk factors — recommend prioritised gap analysis',
+    summary: 'Proactive insight: Cross-referencing open BWRA gaps with new AMLR Art.10 requirements identifies 7 unaddressed high-risk factors — recommend prioritised gap analysis',
   },
   // Post-acquisition risk signals (M&A integration — highest compliance priority)
   {
     source: 'compliance', urgency: 0.86, relevance: 0.92,
     scenario_tag: 'post_acq_cdd',
-    summary: 'Post-acquisition CDD: 247 LitPay customers inherited without Meridian KYC standards — re-validation required within 30-day window (19 days remaining). AMLR Art.18 — ML/TF risk in acquired entity',
+    summary: 'Post-acquisition CDD: 247 LitPay customers inherited without Meridian KYC standards — re-validation required within 30-day window (19 days remaining). AMLR Art.26 — ML/TF risk in acquired entity',
   },
   {
     source: 'compliance', urgency: 0.79, relevance: 0.88,

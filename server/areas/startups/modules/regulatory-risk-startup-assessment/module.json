@@ -127,6 +127,9 @@
     "strategy-expert",
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "startup-mode"
+  ],
   "tags": [
     "startups",
     "regulatory-risk",

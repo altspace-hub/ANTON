@@ -7,10 +7,11 @@
   "description": "Plan and analyse regulatory pathways for pharmaceuticals, medical devices, and healthcare products. Covers EMA and national agency procedures, clinical trial authorisation, marketing authorisation applications, and post-market surveillance requirements. Produces structured project plans with timelines, milestones, regulatory interactions, and submission strategies.",
   "color": "adv-red",
   "defaults": {
-    "thinking": "investigate",
+    "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
-      "project-plan"
+      "project-plan",
+      "action-plan"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
@@ -69,7 +70,7 @@
     {
       "id": "target-markets",
       "label": "Target Markets",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "eu-centralised",

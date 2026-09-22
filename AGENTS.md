@@ -202,7 +202,7 @@ ANTON is organised into top-level **pillars** the user switches between via the 
 |---|---|
 | **Work** | Default — 150+ professional modules |
 | **School** | Educational interface with teacher oversight |
-| **Life** | Personal-life modules (microfinance, BoP finance, consumer protection) |
+| **Life** | The personal side — News, Finance, Travel, Community, plus a card into the personal-life modules (money, consumer rights, career) |
 | **Pathfinder** | Mode-aware research assistant — `server/services/pathfinder-engine.ts` |
 | **Markets** | Self-learning financial intelligence — 14 migrations, 21 services, 39 Python templates, ANTON 100 indexes, predictions, calibration |
 | **Community** | E2E-encrypted ANTON-to-ANTON messaging, contact hashes, trust scoring |

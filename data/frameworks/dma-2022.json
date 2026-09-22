@@ -1,0 +1,438 @@
+{
+  "id": "dma-2022",
+  "name": "DMA — Digital Markets Act",
+  "shortName": "DMA",
+  "reference": "Regulation (EU) 2022/1925",
+  "coverage": "transcribed",
+  "applicationDate": "2023-05-02",
+  "supervisor": "European Commission",
+  "themes": [
+    "Subject matter, scope and definitions",
+    "Gatekeepers",
+    "Practices of gatekeepers that limit contestability or are unfair",
+    "Market investigation",
+    "Investigative, enforcement and monitoring powers",
+    "Final provisions"
+  ],
+  "eurLex": "CELEX:32022R1925",
+  "articleCount": 54,
+  "divisionKind": "Chapter",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Subject matter, scope and definitions",
+      "articles": "1-2"
+    },
+    {
+      "number": "II",
+      "title": "Gatekeepers",
+      "articles": "3-4"
+    },
+    {
+      "number": "III",
+      "title": "Practices of gatekeepers that limit contestability or are unfair",
+      "articles": "5-15"
+    },
+    {
+      "number": "IV",
+      "title": "Market investigation",
+      "articles": "16-19"
+    },
+    {
+      "number": "V",
+      "title": "Investigative, enforcement and monitoring powers",
+      "articles": "20-43"
+    },
+    {
+      "number": "VI",
+      "title": "Final provisions",
+      "articles": "44-54"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32022R1925",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Subject matter and scope",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "The purpose of this Regulation is to contribute to the proper functioning of the internal market by laying down harmonised rules ensuring for all businesses, contestable and fair markets in the digital sector across the Union where gatekeepers are present, to the benefit of business users and end users."
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "For the purposes of this Regulation, the following definitions apply: (1) ‘gatekeeper' means an undertaking providing core platform services, designated pursuant to Article 3; (2) ‘core platform service' means any of the following: (a) online intermediation services; (b) online search engines; (c) online social…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Designation of gatekeepers",
+      "chapter": "II",
+      "theme": "Gatekeepers",
+      "requirement": "An undertaking shall be designated as a gatekeeper if: (a) it has a significant impact on the internal market; (b) it provides a core platform service which is an important gateway for business users to reach end users; and (c) it enjoys an entrenched and durable position, in its operations, or it is foreseeable that…"
+    },
+    {
+      "id": "Art.4",
+      "title": "Review of the status of gatekeeper",
+      "chapter": "II",
+      "theme": "Gatekeepers",
+      "requirement": "The Commission may, upon request or on its own initiative, reconsider, amend or repeal at any moment a designation decision adopted pursuant to Article 3 for one of the following reasons: (a) there has been a substantial change in any of the facts on which the designation decision was based; (b) the designation…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Obligations for gatekeepers",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "The gatekeeper shall comply with all obligations set out in this Article with respect to each of its core platform services listed in the designation decision pursuant to Article 3(9)."
+    },
+    {
+      "id": "Art.6",
+      "title": "Obligations for gatekeepers susceptible of being further specified under Article 8",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "The Gatekeeper shall comply with all obligations set out in this Article with respect to each of its core platform services listed in the designation decision pursuant to Article 3(9)."
+    },
+    {
+      "id": "Art.7",
+      "title": "Obligation for gatekeepers on interoperability of number-independent interpersonal communications services",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "Where a gatekeeper provides number-independent interpersonal communications services that are listed in the designation decision pursuant to Article 3(9), it shall make the basic functionalities of its number-independent interpersonal communications services interoperable with the number-independent interpersonal…"
+    },
+    {
+      "id": "Art.8",
+      "title": "Compliance with obligations for gatekeepers",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "The gatekeeper shall ensure and demonstrate compliance with the obligations laid down in Articles 5, 6 and 7 of this Regulation. The measures implemented by the gatekeeper to ensure compliance with those Articles shall be effective in achieving the objectives of this Regulation and of the relevant obligation."
+    },
+    {
+      "id": "Art.9",
+      "title": "Suspension",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "Where the gatekeeper demonstrates in a reasoned request that compliance with a specific obligation laid down in Article 5, 6 or 7 for a core platform service listed in the designation decision pursuant to Article 3(9) would endanger, due to exceptional circumstances beyond the gatekeeper's control, the economic…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Exemption for grounds of public health and public security",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "The Commission may, acting on a reasoned request by a gatekeeper or on its own initiative, adopt an implementing act setting out its decision, to exempt that gatekeeper, in whole or in part, from a specific obligation laid down in Article 5, 6 or 7 in relation to a core platform service listed in the designation…"
+    },
+    {
+      "id": "Art.11",
+      "title": "Reporting",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "Within 6 months after its designation pursuant to Article 3, and in accordance with Article 3(10), the gatekeeper shall provide the Commission with a report describing in a detailed and transparent manner the measures it has implemented to ensure compliance with the obligations laid down in Articles 5, 6 and 7."
+    },
+    {
+      "id": "Art.12",
+      "title": "Updating obligations for gatekeepers",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "The Commission is empowered to adopt delegated acts in accordance with Article 49 to supplement this Regulation with regard to the obligations laid down in Articles 5 and 6."
+    },
+    {
+      "id": "Art.13",
+      "title": "Anti-circumvention",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "An undertaking providing core platform services shall not segment, divide, subdivide, fragment or split those services through contractual, commercial, technical or any other means in order to circumvent the quantitative thresholds laid down in Article 3(2)."
+    },
+    {
+      "id": "Art.14",
+      "title": "Obligation to inform about concentrations",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "A gatekeeper shall inform the Commission of any intended concentration within the meaning of Article 3 of Regulation (EC) No 139/2004, where the merging entities or the target of concentration provide core platform services or any other services in the digital sector or enable the collection of data, irrespective of…"
+    },
+    {
+      "id": "Art.15",
+      "title": "Obligation of an audit",
+      "chapter": "III",
+      "theme": "Practices of gatekeepers that limit contestability or are unfair",
+      "requirement": "Within 6 months after its designation pursuant to Article 3, a gatekeeper shall submit to the Commission an independently audited description of any techniques for profiling of consumers that the gatekeeper applies to or across its core platform services listed in the designation decision pursuant to Article 3(9)."
+    },
+    {
+      "id": "Art.16",
+      "title": "Opening of a market investigation",
+      "chapter": "IV",
+      "theme": "Market investigation",
+      "requirement": "When the Commission intends to carry out a market investigation with a view to the possible adoption of decisions pursuant to Articles 17, 18 and 19 it shall adopt a decision opening a market investigation."
+    },
+    {
+      "id": "Art.17",
+      "title": "Market investigation for designating gatekeepers",
+      "chapter": "IV",
+      "theme": "Market investigation",
+      "requirement": "The Commission may conduct a market investigation for the purpose of examining whether an undertaking providing core platform services should be designated as a gatekeeper pursuant to Article 3(8), or in order to identify the core platform services to be listed in the designation decision pursuant to Article 3(9)."
+    },
+    {
+      "id": "Art.18",
+      "title": "Market investigation into systematic non-compliance",
+      "chapter": "IV",
+      "theme": "Market investigation",
+      "requirement": "The Commission may conduct a market investigation for the purpose of examining whether a gatekeeper has engaged in systematic non-compliance. The Commission shall conclude that market investigation within 12 months from the date referred to in Article 16(3), point (a)."
+    },
+    {
+      "id": "Art.19",
+      "title": "Market investigation into new services and new practices",
+      "chapter": "IV",
+      "theme": "Market investigation",
+      "requirement": "The Commission may conduct a market investigation for the purpose of examining whether one or more services within the digital sector should be added to the list of core platform services laid down in Article 2, point (2) or for the purpose of detecting practices that limit the contestability of core platform services…"
+    },
+    {
+      "id": "Art.20",
+      "title": "Opening of proceedings",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Where the Commission intends to open proceedings with a view to the possible adoption of decisions pursuant to Articles 8, 29 and 30, it shall adopt a decision opening a proceeding."
+    },
+    {
+      "id": "Art.21",
+      "title": "Requests for information",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "In order to carry out its duties under this Regulation, the Commission may, by simple request or by decision, require from undertakings and associations of undertakings to provide all necessary information."
+    },
+    {
+      "id": "Art.22",
+      "title": "Power to carry out interviews and take statements",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "In order to carry out its duties under this Regulation, the Commission may interview any natural or legal person which consents to being interviewed, for the purpose of collecting information, relating to the subject-matter of an investigation."
+    },
+    {
+      "id": "Art.23",
+      "title": "Powers to conduct inspections",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "In order to carry out its duties under this Regulation, the Commission may conduct all necessary inspections of an undertaking or association of undertakings."
+    },
+    {
+      "id": "Art.24",
+      "title": "Interim measures",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "In case of urgency due to the risk of serious and irreparable damage for business users or end users of gatekeepers, the Commission may adopt an implementing act ordering interim measures against a gatekeeper on the basis of a prima facie finding of an infringement of Article 5, 6 or 7."
+    },
+    {
+      "id": "Art.25",
+      "title": "Commitments",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "If, during proceedings under Article 18, the gatekeeper concerned offers commitments for the relevant core platform services to ensure compliance with the obligations laid down in Articles 5, 6 and 7 the Commission may adopt an implementing act making those commitments binding on that gatekeeper and declare that there…"
+    },
+    {
+      "id": "Art.26",
+      "title": "Monitoring of obligations and measures",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission shall take the necessary actions to monitor the effective implementation and compliance with the obligations laid down in Articles 5, 6 and 7 and the decisions taken pursuant to Articles 8, 18, 24, 25 and 29."
+    },
+    {
+      "id": "Art.27",
+      "title": "Information by third parties",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Any third party, including business users, competitors or end-users of the core platform services listed in the designation decision pursuant to Article 3(9), as well as their representatives, may inform the national competent authority of the Member State, enforcing the rules referred to in Article 1(6), or the…"
+    },
+    {
+      "id": "Art.28",
+      "title": "Compliance function",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Gatekeepers shall introduce a compliance function, which is independent from the operational functions of the gatekeeper and composed of one or more compliance officers, including the head of the compliance function."
+    },
+    {
+      "id": "Art.29",
+      "title": "Non-compliance",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission shall adopt an implementing act setting out its finding of non-compliance (‘the non-compliance decision') where it finds that a gatekeeper does not comply with one or more of the following: (a) any of the obligations laid down in Article 5, 6 or 7; (b) measures specified by the Commission in a decision…"
+    },
+    {
+      "id": "Art.30",
+      "title": "Fines",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "In the non-compliance decision, the Commission may impose on a gatekeeper fines not exceeding 10 % of its total worldwide turnover in the preceding financial year where it finds that the gatekeeper, intentionally or negligently, fails to comply with: (a) any of the obligations laid down in Articles 5, 6 and 7; (b)…"
+    },
+    {
+      "id": "Art.31",
+      "title": "Periodic penalty payments",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission may adopt a decision imposing on undertakings, including gatekeepers where applicable, and associations of undertakings periodic penalty payments not exceeding 5 % of the average daily worldwide turnover in the preceding financial year per day, calculated from the date set by that decision, in order to…"
+    },
+    {
+      "id": "Art.32",
+      "title": "Limitation periods for the imposition of penalties",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The powers conferred on the Commission by Articles 30 and 31 shall be subject to a 5 year limitation period. Time shall begin to run on the day on which the infringement is committed."
+    },
+    {
+      "id": "Art.33",
+      "title": "Limitation periods for the enforcement of penalties",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The power of the Commission to enforce decisions taken pursuant to Articles 30 and 31 shall be subject to a limitation period of 5 years. Time shall begin to run from the day on which the decision becomes final."
+    },
+    {
+      "id": "Art.34",
+      "title": "Right to be heard and access to the file",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Before adopting a decision pursuant to Article 8, Article 9(1), Article 10(1), Articles 17, 18, 24, 25, 29 and 30 and Article 31(2), the Commission shall give the gatekeeper or undertaking or association of undertakings concerned the opportunity of being heard on: (a) preliminary findings of the Commission, including…"
+    },
+    {
+      "id": "Art.35",
+      "title": "Annual reporting",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission shall submit to the European Parliament and to the Council an annual report on the implementation of this Regulation and the progress made towards achieving its objectives."
+    },
+    {
+      "id": "Art.36",
+      "title": "Professional secrecy",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The information collected pursuant to this Regulation shall be used for the purposes of this Regulation. The information collected pursuant to Article 14 shall be used for the purposes of this Regulation, Regulation (EC) No 139/2004 and national merger rules."
+    },
+    {
+      "id": "Art.37",
+      "title": "Cooperation with national authorities",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission and Member States shall work in close cooperation and coordinate their enforcement actions to ensure coherent, effective and complementary enforcement of available legal instruments applied to gatekeepers within the meaning of this Regulation."
+    },
+    {
+      "id": "Art.38",
+      "title": "Cooperation and coordination with national competent authorities enforcing competition rules",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission and the national competent authorities of the Member States enforcing the rules referred to in Article 1(6) shall cooperate with each other and inform each other about their respective enforcement actions through the European Competition Network (ECN)."
+    },
+    {
+      "id": "Art.39",
+      "title": "Cooperation with national courts",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "In proceedings for the application of this Regulation, national courts may ask the Commission to transmit to them information in its possession or its opinion on questions concerning the application of this Regulation."
+    },
+    {
+      "id": "Art.40",
+      "title": "The high-level group",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "The Commission shall establish a high-level group for the Digital Markets Act (‘the high-level group')."
+    },
+    {
+      "id": "Art.41",
+      "title": "Request for a market investigation",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Three or more Member States may request the Commission to open a market investigation pursuant to Article 17 because they consider that there are reasonable grounds to suspect that an undertaking should be designated as a gatekeeper."
+    },
+    {
+      "id": "Art.42",
+      "title": "Representative actions",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Directive (EU) 2020/1828 shall apply to the representative actions brought against infringements by gatekeepers of provisions of this Regulation that harm or may harm the collective interests of consumers."
+    },
+    {
+      "id": "Art.43",
+      "title": "Reporting of breaches and protection of reporting persons",
+      "chapter": "V",
+      "theme": "Investigative, enforcement and monitoring powers",
+      "requirement": "Directive (EU) 2019/1937 shall apply to the reporting of all breaches of this Regulation and the protection of persons reporting such breaches."
+    },
+    {
+      "id": "Art.44",
+      "title": "Publication of decisions",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "The Commission shall publish the decisions which it takes pursuant to Articles 3 and 4, Article 8(2), Articles 9, 10, 16 to 20 and 24, Article 25(1), Articles 29, 30 and 31."
+    },
+    {
+      "id": "Art.45",
+      "title": "Review by the Court of Justice",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "In accordance with Article 261 TFEU, the Court of Justice has unlimited jurisdiction to review decisions by which the Commission has imposed fines or periodic penalty payments."
+    },
+    {
+      "id": "Art.46",
+      "title": "Implementing provisions",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "The Commission may adopt implementing acts laying down detailed arrangements for the application of the following: (a) the form, content and other details of notifications and submissions pursuant to Article 3; (b) the form, content and other details of the technical measures that gatekeepers shall implement in order…"
+    },
+    {
+      "id": "Art.47",
+      "title": "Guidelines",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "The Commission may adopt guidelines on any of the aspects of this Regulation in order to facilitate its effective implementation and enforcement."
+    },
+    {
+      "id": "Art.48",
+      "title": "Standardisation",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "Where appropriate and necessary, the Commission may mandate European standardisation bodies to facilitate the implementation of the obligations set out in this Regulation by developing appropriate standards."
+    },
+    {
+      "id": "Art.49",
+      "title": "Exercise of the delegation",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article. The power to adopt delegated acts referred to in Article 3(6) and (7) and Article 12(1), (3) and (4) shall be conferred on the Commission for a period of 5 years from 1 November 2022."
+    },
+    {
+      "id": "Art.50",
+      "title": "Committee procedure",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "The Commission shall be assisted by a committee (‘the Digital Markets Advisory Committee'). That committee shall be a committee within the meaning of Regulation (EU) No 182/2011."
+    },
+    {
+      "id": "Art.51",
+      "title": "Amendment to Directive (EU) 2019/1937",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "In Point J of Part I of the Annex to Directive (EU) 2019/1937, the following point is added: ‘(iv) Regulation (EU) 2022/1925 of the European Parliament and of the Council of 14 September 2022 on contestable and fair markets in the digital sector and amending Directives (EU) 2019/1937 and (EU) 2020/1828 (Digital…"
+    },
+    {
+      "id": "Art.52",
+      "title": "Amendment to Directive (EU) 2020/1828",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "In Annex I to Directive (EU) 2020/1828, the following point is added: ‘(67) Regulation (EU) 2022/1925 of the European Parliament and of the Council of 14 September 2022 on contestable and fair markets in the digital sector and amending Directives (EU) 2019/1937 and (EU) 2020/1828 (Digital Markets Act) ( OJ L 265,…"
+    },
+    {
+      "id": "Art.53",
+      "title": "Review",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "By 3 May 2026, and subsequently every 3 years, the Commission shall evaluate this Regulation and report to the European Parliament, the Council and the European Economic and Social Committee."
+    },
+    {
+      "id": "Art.54",
+      "title": "Entry into force and application",
+      "chapter": "VI",
+      "theme": "Final provisions",
+      "requirement": "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union . It shall apply from 2 May 2023."
+    }
+  ]
+}

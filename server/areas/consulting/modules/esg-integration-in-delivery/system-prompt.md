@@ -17,7 +17,7 @@ Make ESG a property of the engagement's core recommendation, not an appendix. Ac
 - Distinguish **binding disclosure obligations** (CSRD/ESRS for in-scope entities; SFDR for financial market participants) from **voluntary or advisory frameworks** (GRI, voluntary net-zero pledges, sector charters). A recommendation that conflicts with a binding obligation is a higher-severity finding than one that merely departs from good practice.
 - Absence of evidence is a finding. A "sustainable" or "carbon-neutral" claim with no underlying calculation, no boundary, and no third-party basis is a greenwashing exposure even if no one has yet challenged it.
 - Separate **impact materiality** (effect of the client on people and environment) from **financial materiality** (effect of sustainability matters on the client's value) — double materiality per ESRS — and be explicit about which lens drives each finding.
-- Greenwashing risk is asymmetric: under-claiming costs credibility; over-claiming costs legal and reputational exposure under the EU Unfair Commercial Practices Directive, the proposed Green Claims Directive (a 2023 PROPOSAL, not yet in force — label it as such), and SFDR Art. 8/9 product-classification scrutiny. Default to claims you can substantiate.
+- Greenwashing risk is asymmetric: under-claiming costs credibility; over-claiming costs legal and reputational exposure under the EU Unfair Commercial Practices Directive 2005/29/EC **as amended by Directive (EU) 2024/825 (Empowering Consumers for the Green Transition), which applies from 27 September 2026 and adds twelve per-se prohibited practices covering generic environmental claims, carbon-offset-based neutrality claims, unrecognised sustainability labels and future-performance claims**, and SFDR Art. 8/9 product-classification scrutiny. The separate **Green Claims Directive** proposal of 2023 is a DIFFERENT instrument and is still a proposal — never merge the two, and label that one as not in force. Default to claims you can substantiate.
 
 ---
 
@@ -84,7 +84,7 @@ Before any deliverable that makes a sustainability claim goes to the client boar
 | **Medium** | Comparative or directional claim ("more sustainable", "low-carbon") without a stated baseline or methodology | Add baseline, method, and time period; cite the standard. |
 | **Low** | Specific, bounded, evidenced claim with method and period stated | Acceptable; keep the evidence trail with the deliverable. |
 
-Apply the recognised greenwashing tests: is the claim **clear, accurate, substantiated, fair, complete, and comparable**? Flag the seven classic sins (hidden trade-off, no proof, vagueness, irrelevance, lesser-of-two-evils, fibbing, false labels). Map exposure to the EU Unfair Commercial Practices Directive (2005/29/EC), the proposed Green Claims Directive (2023 PROPOSAL — label as not yet in force), and SFDR Art. 8/9 product-naming scrutiny for financial-sector deliverables. Replace unsupportable adjectives with quantified, bounded statements.
+Apply the recognised greenwashing tests: is the claim **clear, accurate, substantiated, fair, complete, and comparable**? Flag the seven classic sins (hidden trade-off, no proof, vagueness, irrelevance, lesser-of-two-evils, fibbing, false labels). Map exposure to the EU Unfair Commercial Practices Directive 2005/29/EC **as amended by Directive (EU) 2024/825 (Empowering Consumers for the Green Transition), which applies from 27 September 2026 and adds twelve per-se prohibited practices covering generic environmental claims, carbon-offset-based neutrality claims, unrecognised sustainability labels and future-performance claims**, and SFDR Art. 8/9 product-naming scrutiny for financial-sector deliverables. The 2023 Green Claims Directive proposal is a separate, still-unadopted instrument — label it as such and do not conflate it with 2024/825. For a consumer-facing advertising screen rather than a consulting deliverable, hand off to the `green-claims-review` module. Replace unsupportable adjectives with quantified, bounded statements.
 
 ---
 
@@ -108,7 +108,7 @@ When client documents or a draft deck are provided, screen the actual claims and
 - ISSB — IFRS S1 (General Requirements) and IFRS S2 (Climate-related Disclosures), 2023, effective from 1 Jan 2024 subject to jurisdictional adoption
 - SFDR — Regulation (EU) 2019/2088 (Art. 8 / Art. 9 products, principal adverse impacts)
 - EU Taxonomy — Regulation (EU) 2020/852 (substantial contribution, DNSH, minimum safeguards) + Climate Delegated Act
-- EU Unfair Commercial Practices Directive 2005/29/EC; proposed Green Claims Directive (2023 PROPOSAL — not in force)
+- EU Unfair Commercial Practices Directive 2005/29/EC as amended by Directive (EU) 2024/825 (applies from 27 September 2026); the separate Green Claims Directive proposal of 2023 (still a proposal — not in force)
 - NGFS climate scenarios (transition + physical risk); GRI Standards (impact lens, voluntary)
 - IAS 36 (impairment) and IAS 37 (provisions/contingencies) for transition-risk accounting touchpoints
 - ISO 8000 data-quality discipline for the metric inputs; ISAE 3000 for assurance-readiness of ESG metrics

@@ -10,6 +10,7 @@
     "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
+      "detailed-findings",
       "executive-summary"
     ],
     "transparencyLevel": 1,
@@ -97,7 +98,7 @@
     {
       "id": "methodology",
       "label": "Valuation Methodology",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "comparable-transactions",

@@ -33,6 +33,43 @@ import { initMarketsModelStore, getMarketsModelSetting, setMarketsModel, isValid
 import { testSdkEngine, SDK_ENGINE_MODELS } from '../services/claude-sdk-client.js';
 import { initCodexEngineStore, isCodexEngineEnabled, setCodexEngineEnabled } from '../services/codex-engine-store.js';
 import { testCodexEngine, CODEX_ENGINE_MODELS } from '../services/codex-sdk-client.js';
+import { safeError } from '../lib/error-response.js';
+import {
+  getAtomInjectionStatus,
+  setAtomInjectionMode,
+  isAtomInjectionMode,
+  type AtomInjectionStatus,
+} from '../services/atom-injection-gate.js';
+import { isOversightBlockingExport, setOversightBlocksExport } from '../services/oversight-status.js';
+import { getAutoExtractionSetting, setAutoExtraction } from '../services/structured-extraction-queue.js';
+
+/**
+ * Wave 4b — the three governance settings behind one Settings entry.
+ * Same shape from GET and from POST, so the client can replace its state
+ * with whatever comes back.
+ */
+export interface MemoryGovernanceState {
+  /** The memory-injection gate, read fresh (no 60 s cache). */
+  atomInjection: AtomInjectionStatus;
+  /** Unsigned exports of the three EU AI Act gated modules answer 403. Default OFF. */
+  oversightBlocksExport: boolean;
+  /** Structured extraction after every run (effective value). */
+  structuredExtractionAuto: boolean;
+  /** What applies when nothing is persisted: OFF under an `sdk:` default model, ON otherwise. */
+  structuredExtractionAutoDefault: boolean;
+}
+
+async function readMemoryGovernance(db: DatabaseAdapter): Promise<MemoryGovernanceState> {
+  const atomInjection = await getAtomInjectionStatus(db, { fresh: true });
+  const oversightBlocksExport = await isOversightBlockingExport(db);
+  const extraction = await getAutoExtractionSetting(db);
+  return {
+    atomInjection,
+    oversightBlocksExport,
+    structuredExtractionAuto: extraction.enabled,
+    structuredExtractionAutoDefault: extraction.default,
+  };
+}
 
 // Model-id prefixes accepted as a server-side default. Anything else must
 // match a configured custom-model slot (checked against the DB below).
@@ -331,6 +368,70 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
       model: finalModel,
       isDefault: finalModel === DEFAULT_VERIFIER_MODEL,
     });
+  });
+
+  // ── Memory & governance (Wave 4b) ──────────────────────────────────────
+  // GET is open like the other reads here (counts and booleans, no secrets);
+  // the mutation is admin-gated like every other instance-wide setting.
+  router.get('/settings/memory-governance', async (_req, res) => {
+    try {
+      res.json(await readMemoryGovernance(db));
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // POST /api/settings/memory-governance — any subset of the three keys.
+  // Everything is validated before anything is applied, so a request with one
+  // bad key changes nothing. Only the keys present are written; one log line
+  // per key whose value actually changed. Returns the same shape as the GET.
+  router.post('/settings/memory-governance', requireAdminOrSolo, async (req, res) => {
+    const body = (req.body ?? {}) as {
+      atomInjectionMode?: unknown;
+      oversightBlocksExport?: unknown;
+      structuredExtractionAuto?: unknown;
+    };
+    const { atomInjectionMode, oversightBlocksExport, structuredExtractionAuto } = body;
+
+    if (atomInjectionMode !== undefined && !isAtomInjectionMode(atomInjectionMode)) {
+      res.status(400).json({ error: "atomInjectionMode must be 'auto', 'on' or 'off'" });
+      return;
+    }
+    if (oversightBlocksExport !== undefined && typeof oversightBlocksExport !== 'boolean') {
+      res.status(400).json({ error: 'oversightBlocksExport must be a boolean' });
+      return;
+    }
+    if (structuredExtractionAuto !== undefined && typeof structuredExtractionAuto !== 'boolean') {
+      res.status(400).json({ error: 'structuredExtractionAuto must be a boolean' });
+      return;
+    }
+
+    try {
+      const before = await readMemoryGovernance(db);
+
+      if (atomInjectionMode !== undefined) {
+        await setAtomInjectionMode(db, atomInjectionMode);
+        if (before.atomInjection.mode !== atomInjectionMode) {
+          console.log(`[settings] memory-governance: atomInjectionMode → ${atomInjectionMode}`);
+        }
+      }
+      if (oversightBlocksExport !== undefined) {
+        await setOversightBlocksExport(db, oversightBlocksExport);
+        if (before.oversightBlocksExport !== oversightBlocksExport) {
+          console.log(`[settings] memory-governance: oversightBlocksExport → ${oversightBlocksExport}`);
+        }
+      }
+      if (structuredExtractionAuto !== undefined) {
+        await setAutoExtraction(db, structuredExtractionAuto);
+        if (before.structuredExtractionAuto !== structuredExtractionAuto) {
+          console.log(`[settings] memory-governance: structuredExtractionAuto → ${structuredExtractionAuto}`);
+        }
+      }
+
+      res.json(await readMemoryGovernance(db));
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // GET /api/settings/parse-stats — JSON-parse success/failure counters per

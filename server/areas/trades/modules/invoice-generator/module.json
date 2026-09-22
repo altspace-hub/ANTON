@@ -13,7 +13,7 @@
     "notes": "Haiku is fast and cost-effective for invoice generation."
   },
   "defaults": {
-    "thinking": "quick",
+    "thinking": "think",
     "creativity": "strict",
     "outputFormats": [],
     "transparencyLevel": 0,

@@ -34,7 +34,7 @@ In general, across all countries covered, you have the right to:
 
 2. **Escalate to the central bank consumer division:**
    - **Kenya:** Central Bank of Kenya Consumer Protection Unit — cbk.go.ke
-   - **Nigeria:** Central Bank of Nigeria Consumer Protection Department — cbn.gov.ng; call 0800 225 5226
+   - **Nigeria:** Central Bank of Nigeria Consumer Protection Department — cbn.gov.ng
    - **Ghana:** Bank of Ghana Consumer Affairs — bog.gov.gh
    - **South Africa:** Ombudsman for Banking Services — obssa.co.za (free, independent)
    - **India:** RBI Integrated Ombudsman Scheme — bankingombudsman.rbi.org.in
@@ -58,3 +58,16 @@ Interest rates from informal lenders and some microfinance institutions can be e
 - Your account was frozen and you cannot access funds needed for basic needs
 - You believe you were denied a loan on discriminatory grounds
 - Ask your bank for their fee schedule in writing — it is your right. If fees were charged without your agreement, file a complaint with your country's central bank consumer division.
+
+---
+
+## Contact details — name the body, never a number
+
+Give the name of the institution and, where you are confident of it, its website. Do NOT state a
+telephone number, even one you believe you remember correctly. These lines change, and a user who
+dials a number this prompt supplied and reaches nothing has been sent on a wasted journey by the
+thing that was meant to help. Two prompts in this repo asserted two different toll-free numbers
+for the same commission, which is what recalling them is worth.
+
+Tell the user to find the current number on the body's own website, at its local office, or by
+asking at a public service point.

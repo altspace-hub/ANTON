@@ -3,6 +3,8 @@
   "name": "Federal Act on Combating Money Laundering and the Financing of Terrorism (AMLA — revised 2025/2026)",
   "shortName": "AMLA (CH)",
   "reference": "SR 955.0",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.fedlex.admin.ch/eli/cc/1998/892_892_892/en",
   "originalInForce": "1998-04-01",
   "revisionAdopted": "2025-09-26",
@@ -10,12 +12,36 @@
   "supervisor": "FINMA + MROS",
   "articleCount": 16,
   "chapters": [
-    {"number": "1", "title": "General provisions + scope (Art. 1-2)", "articles": "1-2"},
-    {"number": "1a", "title": "New adviser scope (revised — Art. 2 para 1bis)", "articles": "2(1bis)"},
-    {"number": "2", "title": "Due diligence obligations (Art. 3-8)", "articles": "3-8"},
-    {"number": "3", "title": "Reporting obligations (Art. 9-11a)", "articles": "9-11a"},
-    {"number": "4", "title": "Organisational measures (Art. 8 + AMLO-FINMA)", "articles": "8 + AMLO-FINMA 22-26"},
-    {"number": "5", "title": "Sanctions (Art. 37 + Criminal Code)", "articles": "37 + CC 305bis/305ter"}
+    {
+      "number": "1",
+      "title": "General provisions + scope (Art. 1-2)",
+      "articles": "1-2"
+    },
+    {
+      "number": "1a",
+      "title": "New adviser scope (revised — Art. 2 para 1bis)",
+      "articles": "2(1bis)"
+    },
+    {
+      "number": "2",
+      "title": "Due diligence obligations (Art. 3-8)",
+      "articles": "3-8"
+    },
+    {
+      "number": "3",
+      "title": "Reporting obligations (Art. 9-11a)",
+      "articles": "9-11a"
+    },
+    {
+      "number": "4",
+      "title": "Organisational measures (Art. 8 + AMLO-FINMA)",
+      "articles": "8 + AMLO-FINMA 22-26"
+    },
+    {
+      "number": "5",
+      "title": "Sanctions (Art. 37 + Criminal Code)",
+      "articles": "37 + CC 305bis/305ter"
+    }
   ],
   "themes": [
     "Scope — financial intermediaries",

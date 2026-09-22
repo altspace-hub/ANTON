@@ -3,6 +3,8 @@
   "name": "NIST Cybersecurity Framework 2.0",
   "shortName": "NIST CSF 2.0",
   "reference": "NIST CSWP 29, February 2024",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "applicationDate": "2024-02-26",
   "articleCount": 106,
   "themes": [

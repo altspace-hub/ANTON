@@ -12,7 +12,7 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 
 | Entity Type | Primary MiCA Coverage | Key Supervisor |
 |---|---|---|
-| Crypto-Asset Service Provider (CASP) | Title V (Arts. 59–110) | National NCA / ESMA (significant CASPs) |
+| Crypto-Asset Service Provider (CASP) | Title V (Arts. 59–85) | National NCA / ESMA (significant CASPs) |
 | E-Money Token (EMT) issuer | Title IV (Arts. 48–58) | National NCA + EBA |
 | Asset-Referenced Token (ART) issuer | Title III (Arts. 16–47) | National NCA + EBA (significant ARTs) |
 | Utility token offeror | Title II (Arts. 4–15) | National NCA |
@@ -41,19 +41,19 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 ### Theme 2: Whitepaper Obligations
 - **CASPs**: service-level disclosures on website (Art. 66)
 - **EMT issuers**: whitepaper content (Art. 51), notification to NCA (Art. 48)
-- **ART issuers**: whitepaper approval by NCA (Art. 17), content requirements (Art. 19)
-- **Utility tokens**: whitepaper notification (Art. 5), exemptions (Art. 4)
-- Marketing communications consistency (Arts. 7, 25, 53)
+- **ART issuers**: whitepaper approval by NCA (Art. 21(1); Art. 17(1)(a) for credit institutions), content requirements (Art. 19)
+- **Utility tokens**: whitepaper notification (Art. 8), exemptions (Art. 4(2)–(3))
+- Marketing communications consistency (Arts. 7, 29, 53)
 
-### Theme 3: Governance & Organisational Requirements (CASPs — Arts. 66–76)
+### Theme 3: Governance & Organisational Requirements (CASPs — Arts. 66–74)
 - Management body composition, responsibilities, conflicts of interest
-- Remuneration policies (Art. 66(7))
+- Remuneration policies (no standalone MiCA article — Art. 67(3) own-funds treatment, Art. 80(2) inducement ban, EBA guidelines)
 - Complaints handling procedure (Art. 71)
 - Conflicts of interest policy (Art. 72)
 - Outsourcing arrangements (Art. 73)
-- Business continuity plan (Art. 74)
-- Security policies and ICT risk (Art. 75, cross-reference DORA)
-- Record-keeping requirements (Art. 76)
+- Business continuity plan (Art. 68(7)); orderly wind-down plan (Art. 74)
+- Security policies and ICT risk (Art. 68(8), which applies Regulation (EU) 2022/2554 (DORA) directly)
+- Record-keeping requirements (Art. 68(9))
 
 ### Theme 4: Client Asset Protection & Custody (Arts. 70, 77)
 - Segregation of client funds and crypto-assets
@@ -65,7 +65,7 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 - **CASPs**: Minimum own funds (Art. 67), initial capital
 - **ART issuers**: Own funds (Art. 35), reserve assets (Arts. 36–37)
 - **EMT issuers**: Safeguarding requirements (Art. 54), own funds
-- Significant token designation thresholds and enhanced requirements (Arts. 39–44, 56–58)
+- Significant token designation thresholds and enhanced requirements (Arts. 43–45, 56–58)
 
 ### Theme 6: Market Integrity (Arts. 86–92)
 - Insider information and insider dealing prohibition
@@ -88,15 +88,15 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 - Complaint escalation and redress mechanisms
 
 ### Theme 9: Operational Resilience & ICT
-- MiCA Art. 75 ICT security requirements
+- MiCA Art. 68(8) ICT security requirements, which apply Regulation (EU) 2022/2554 (DORA)
 - Intersection with DORA obligations for CASPs subject to both
 - Incident reporting obligations
 - Operational risk management
 
-### Theme 10: Transitional Provisions
-- Grandfathering for entities operating before MiCA entry into force
-- Transitional period timelines (18 months from Dec 2024 for CASPs)
-- National transitional regimes and NCA notification requirements
+### Theme 10: Transitional Provisions (window closed)
+- The national transitional regimes ran 5 to 18 months from 30 Dec 2024; the last of them expired 30 Jun 2026 — no grandfathering window remains open, so the question is authorisation or cease
+- Whether the entity secured authorisation before its national window closed, and, if not, what its status has been since (continued operation on a lapsed national registration is a live exposure, not a transitional status)
+- Evidence of the NCA notification made during the window, and of any NCA correspondence on its expiry
 
 ## Output Structure
 
@@ -114,3 +114,5 @@ Before analysis, confirm the entity's classification and applicable MiCA titles:
 4. Cross-reference AML/CFT requirements explicitly — MiCA alone does not satisfy TFR or AMLR obligations.
 5. Flag areas where national NCA guidance or Q&A from ESMA/EBA clarifies or extends the MiCA text.
 6. Produce output in the format(s) selected. The gap scoring matrix should be the primary deliverable, supplemented by an executive summary.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

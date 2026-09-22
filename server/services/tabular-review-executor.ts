@@ -3,8 +3,11 @@
  *
  * For each (doc × column) pair the executor:
  *   1. Renders a per-cell prompt from the playbook column + the doc text.
- *   2. Calls Claude via `callSync` (one-shot, no streaming — we want the
- *      whole JSON answer per cell, and we want N cells in flight at once).
+ *   2. Calls the model via the provider router's `callChat` (one-shot, no
+ *      streaming — we want the whole JSON answer per cell, and we want N
+ *      cells in flight at once). The model follows Settings: a Haiku-class
+ *      playbook default resolves to the routed utility model, a larger one
+ *      to its tier on the configured provider (`resolveCellModel`).
  *   3. Parses the JSON status answer.
  *   4. UPDATEs the cell row + publishes an SSE event for any subscribed
  *      client watching the grid update live.
@@ -17,8 +20,21 @@
 
 import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { callSync } from './claude-client.js';
+import { callChat, mapModelToProvider } from './provider-router.js';
+import { getRoutedUtilityModel } from './utility-model.js';
 import type { Playbook, PlaybookColumn } from './tabular-review-playbooks.js';
+
+/**
+ * The model a cell runs on. A playbook names a Claude tier ("haiku" for the
+ * built-in playbooks); the instance decides what that tier is. Haiku-class =
+ * utility work → the Settings utility model, routed. Anything larger keeps its
+ * tier on the configured provider via mapModelToProvider (under an sdk:
+ * default a large tier becomes the default model, medium Sonnet 5).
+ */
+export async function resolveCellModel(db: DatabaseAdapter, playbook: Pick<Playbook, 'defaultModel'>): Promise<string> {
+  if (playbook.defaultModel.includes('haiku')) return getRoutedUtilityModel(db);
+  return mapModelToProvider(playbook.defaultModel);
+}
 
 const DEFAULT_CONCURRENCY = Number(process.env.TABULAR_REVIEW_CONCURRENCY ?? 8);
 const PER_CELL_TIMEOUT_MS = 60_000;
@@ -148,7 +164,7 @@ async function executeCell(
   column: PlaybookColumn,
   playbook: Playbook,
 ): Promise<void> {
-  const model = playbook.defaultModel;
+  const model = await resolveCellModel(db, playbook);
   const startedAt = new Date();
   await db.run(
     `UPDATE tabular_review_cells
@@ -165,14 +181,20 @@ async function executeCell(
 
   try {
     const completion = await Promise.race([
-      callSync({
+      callChat({
         model,
-        thinking: 'quick',
+        thinkingLevel: 'quick',
         system: playbook.systemPrompt,
         messages: [{
           role: 'user',
           content: renderCellPrompt(column, docName, docText, playbook.documentContext),
         }],
+        maxTokens: 2048,
+        jsonMode: true,
+        // A whole grid of cells, started by a POST that returns at once: batch
+        // work, so the subscription engine keeps a slot for interactive runs.
+        background: true,
+        db,
       }),
       new Promise<never>((_, rej) =>
         setTimeout(() => rej(new Error('cell timeout (60s)')), PER_CELL_TIMEOUT_MS),
@@ -181,6 +203,7 @@ async function executeCell(
     result = parseCellResponse(completion.text);
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : String(err);
+    console.warn(`[tabular-review] purpose=tabular-review-cell run=${runId} column=${column.id} failed: ${errorMsg}`);
   }
 
   const completedAt = new Date();

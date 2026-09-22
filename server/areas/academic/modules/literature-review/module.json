@@ -82,6 +82,9 @@
   "recommendedPersonas": [
     "general-assistant"
   ],
+  "recommendedSkills": [
+    "academic-rigour"
+  ],
   "tags": [
     "academic",
     "literature-review",

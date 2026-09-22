@@ -20,6 +20,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createHash } from 'node:crypto';
 import {
   buildSdkEnv,
   flattenMessages,
@@ -29,7 +30,14 @@ import {
   streamToResponse,
   completeText,
   setSdkQueryImplForTests,
+  activeSdkRunsForTests,
+  tryAcquireSdkSlot,
+  releaseSdkSlot,
   SDK_ENGINE_MODELS,
+  SDK_WEB_MAX_TURNS,
+  WEB_SOURCE_RESULT_CAP,
+  type SdkCompletionData,
+  type WebSourceRecord,
 } from '../../server/services/claude-sdk-client.js';
 import { resetSdkEngineStoreForTests } from '../../server/services/sdk-engine-store.js';
 import { getProviderFromModelId } from '../../server/services/model-adapter.js';
@@ -123,12 +131,22 @@ describe('buildSdkEnv — subscription auth by key absence', () => {
       const env = calls[0].options.env as Record<string, string | undefined>;
       expect(env).toBeDefined();
       expect('ANTHROPIC_API_KEY' in env).toBe(false);
-      // The spread must have happened — a bare object would strip PATH and
-      // the subprocess would never start on Windows.
+      // The allow-list must keep PATH — without it the subprocess never
+      // starts on Windows.
       expect(env.PATH ?? env.Path).toBeDefined();
     } finally {
       delete process.env.ANTHROPIC_API_KEY;
     }
+  });
+
+  // Wave 5: an allow-list, not process.env minus one key. The server's env
+  // also holds DATABASE_URL, every other provider's key and the vault key.
+  it('is an allow-list: the database URL and other providers’ keys never reach the subprocess', () => {
+    const env = buildSdkEnv({
+      PATH: '/usr/bin', HOME: '/home/u', CLAUDE_CONFIG_DIR: '/home/u/.claude',
+      DATABASE_URL: 'postgresql://anton:anton@localhost:5432/anton', OPENAI_API_KEY: 'sk-openai', ANTHROPIC_API_KEY: 'sk-ant',
+    });
+    expect(env).toEqual({ PATH: '/usr/bin', HOME: '/home/u', CLAUDE_CONFIG_DIR: '/home/u/.claude' });
   });
 });
 
@@ -154,6 +172,46 @@ describe('SDK options — the text-engine containment set', () => {
     await streamToResponse(BASE_CONFIG, sink);
     expect(calls[0].options.model).toBe('claude-opus-5');
     expect(calls[0].options.systemPrompt).toBe('static part\n\ndynamic part');
+  });
+
+  // The one opt-in widening: ANTON's web_search tool grants exactly the two
+  // network tools. Everything else in the containment set must be unchanged.
+  const WEB_PROMPT = '## WEB SEARCH ENABLED\nUse the web_search tool to find the latest guidance.\n\nTask text.';
+  const WEB_TOOL = [{ type: 'web_search_20250305', name: 'web_search' }];
+
+  it('grants exactly WebSearch + WebFetch, with more turns, when the caller passes the web_search tool', async () => {
+    const calls = fakeSdk([successResult()]);
+    const { sink } = collectingSink();
+    await streamToResponse({ ...BASE_CONFIG, system: WEB_PROMPT, tools: WEB_TOOL }, sink);
+    const o = calls[0].options;
+    expect(o.tools).toEqual(['WebSearch', 'WebFetch']);
+    expect(o.allowedTools).toEqual(['WebSearch', 'WebFetch']);
+    expect(o.maxTurns).toBe(SDK_WEB_MAX_TURNS);
+    expect(o.permissionMode).toBe('dontAsk');        // every other built-in still denied
+    expect(o.settingSources).toEqual([]);
+    expect(o.env).not.toHaveProperty('ANTHROPIC_API_KEY');
+    // the instruction names the tool the request actually carries
+    expect(String(o.systemPrompt)).toContain('Use the WebSearch tool');
+    expect(String(o.systemPrompt)).not.toContain('web_search tool');
+  });
+
+  it('strips the web-search instruction when no web tool is granted — a prompt never names a tool the request lacks', async () => {
+    const calls = fakeSdk([successResult()]);
+    const { sink } = collectingSink();
+    await streamToResponse({ ...BASE_CONFIG, system: WEB_PROMPT }, sink);
+    const o = calls[0].options;
+    expect(o.tools).toEqual([]);
+    expect(o.maxTurns).toBe(1);
+    expect(o).not.toHaveProperty('allowedTools');
+    expect(String(o.systemPrompt)).not.toContain('WEB SEARCH ENABLED');
+    expect(String(o.systemPrompt)).toContain('Task text.');
+  });
+
+  it('keeps a streamed answer when a web run exhausts its turns', async () => {
+    fakeSdk([textDelta('partial answer'), { type: 'result', subtype: 'error_max_turns', usage: { input_tokens: 5, output_tokens: 2 } }]);
+    const data = await completeText({ ...BASE_CONFIG, tools: WEB_TOOL });
+    expect(data.text).toBe('partial answer');
+    expect(data.outputTokens).toBe(2);
   });
 });
 
@@ -232,6 +290,279 @@ describe('streamToResponse — StreamEvent wire contract', () => {
   });
 });
 
+// ── Wave 0: the ledger records what the engine served ───────
+
+describe('Wave 0 — onComplete carries what the engine actually served', () => {
+  it('reports the served model (largest output share), the SDK cost estimate and the exact prompt sent', async () => {
+    const calls = fakeSdk([
+      textDelta('Hello'),
+      successResult({
+        modelUsage: {
+          'claude-haiku-4-5-20251001': { outputTokens: 2 },
+          'claude-opus-5-20260601': { outputTokens: 20 },
+        },
+      }),
+    ]);
+    const { sink, events } = collectingSink();
+    let completion: { modelServed?: string; engineCostUsd?: number; systemPromptSent?: string } | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+
+    expect(completion).not.toBeNull();
+    expect(completion!.modelServed).toBe('claude-opus-5-20260601');
+    expect(completion!.engineCostUsd).toBe(0.01);
+    // The run artifact must pin the string the subprocess received, not the
+    // route's pre-rewording composition.
+    expect(completion!.systemPromptSent).toBe(calls[0].options.systemPrompt);
+    expect(completion!.systemPromptSent).toBe('static part\n\ndynamic part');
+
+    const usage = events().find((e) => e.type === 'usage');
+    expect(usage).toMatchObject({ modelServed: 'claude-opus-5-20260601' });
+  });
+
+  it('prefers the canonical model id when the SDK supplies one', async () => {
+    fakeSdk([textDelta('x'), successResult({ modelUsage: { 'us.anthropic.claude-opus-5': { outputTokens: 9, canonicalModel: 'claude-opus-5' } } })]);
+    const { sink } = collectingSink();
+    let completion: { modelServed?: string } | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(completion!.modelServed).toBe('claude-opus-5');
+  });
+
+  it('leaves modelServed undefined when the SDK reports no per-model usage', async () => {
+    fakeSdk([textDelta('x'), successResult()]);
+    const { sink, events } = collectingSink();
+    let completion: { modelServed?: string } | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(completion!.modelServed).toBeUndefined();
+    const usage = events().find((e) => e.type === 'usage') as Record<string, unknown>;
+    expect('modelServed' in usage).toBe(false);
+  });
+});
+
+// ── Wave 2: web sources recorded from tool events ───────────
+// The SDK carries a WebSearch / WebFetch call as a tool_use block on an
+// `assistant` envelope and its outcome as a tool_result block on a `user`
+// envelope, with the tool's structured output attached as `tool_use_result`
+// (sdk.d.ts SDKAssistantMessage / SDKUserMessage; sdk-tools.d.ts
+// WebSearchOutput / WebFetchOutput). Until Wave 2 the loop dropped both, so a
+// web-grounded run left no record of what it read.
+
+const WEB_TOOLS = [{ type: 'web_search_20250305', name: 'web_search' }];
+const PAGE_TEXT = 'Article 16 — Business-wide risk assessment. Obliged entities shall take appropriate steps to identify and assess the risks of money laundering and terrorist financing to which they are exposed.';
+const EUR_LEX = 'https://eur-lex.europa.eu/eli/reg/2024/1624/oj';
+const sha256 = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
+
+/** SDKAssistantMessage with one tool_use block (the SDK's shape, minus fields the engine never reads). */
+const assistantToolUse = (id: string, name: string, input: Record<string, unknown>) => ({
+  type: 'assistant',
+  message: { role: 'assistant', content: [{ type: 'tool_use', id, name, input }] },
+});
+/** SDKUserMessage carrying the matching tool_result; `envelope` adds tool_use_result / timestamp. */
+const userToolResult = (toolUseId: string, content: string, envelope: Record<string, unknown> = {}, isError = false) => ({
+  type: 'user',
+  message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: toolUseId, content, ...(isError ? { is_error: true } : {}) }] },
+  ...envelope,
+});
+/** WebSearchOutput: results mix the tool's commentary strings with hit lists. */
+const searchOutput = (query: string, hits: Array<{ url: string; title: string }>) => ({
+  query, results: ['Commentary the tool wrote', { tool_use_id: 'srvtoolu_1', content: hits }], durationSeconds: 1.2, searchCount: 1,
+});
+/** WebFetchOutput: `result` is the processed text, not the raw page. */
+const fetchOutput = (url: string, result: string, code = 200) => ({
+  bytes: 48_000, code, codeText: code === 200 ? 'OK' : 'Not Found', result, durationMs: 800, url,
+});
+const sourcesIn = (events: Record<string, unknown>[]) =>
+  events.filter((e) => e.type === 'source_fetched').map((e) => e.source as WebSourceRecord);
+
+describe('Wave 2 — web sources recorded from tool events', () => {
+  it('a WebFetch call and its result become a source_fetched event with sha256 + length — never the page', async () => {
+    fakeSdk([
+      textDelta('Reading the regulation. '),
+      assistantToolUse('toolu_fetch', 'WebFetch', { url: EUR_LEX, prompt: 'Extract Article 16' }),
+      userToolResult('toolu_fetch', PAGE_TEXT, { tool_use_result: fetchOutput(EUR_LEX, PAGE_TEXT), timestamp: '2026-09-16T10:00:00.000Z' }),
+      textDelta('Article 16 requires a business-wide risk assessment.'),
+      successResult(),
+    ]);
+    const { sink, events, done } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse({ ...BASE_CONFIG, tools: WEB_TOOLS }, sink, (d) => { completion = d; });
+
+    // The existing contract is untouched: stream_start first, stream_end last,
+    // and the record lands between the deltas in the order the tool ran.
+    const types = events().map((e) => e.type);
+    expect(types[0]).toBe('stream_start');
+    expect(types[types.length - 1]).toBe('stream_end');
+    expect(done()).toBe(true);
+    expect(types.indexOf('source_fetched')).toBeGreaterThan(types.indexOf('text_delta'));
+    expect(types.indexOf('source_fetched')).toBeLessThan(types.lastIndexOf('text_delta'));
+
+    const sources = sourcesIn(events());
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toEqual({
+      kind: 'web_fetch',
+      url: EUR_LEX,
+      sha256: sha256(PAGE_TEXT),
+      charCount: PAGE_TEXT.length,
+      retrievedAt: '2026-09-16T10:00:00.000Z',
+    });
+    expect(JSON.stringify(sources[0])).not.toContain('Obliged entities');
+
+    expect(completion).not.toBeNull();
+    expect(completion!.webSources).toEqual(sources);
+    expect(completion!.text).toBe('Reading the regulation. Article 16 requires a business-wide risk assessment.');
+  });
+
+  it('a WebSearch records the query and the hits the tool returned (capped), and a later fetch of a hit carries its title', async () => {
+    const hits = Array.from({ length: WEB_SOURCE_RESULT_CAP + 5 }, (_, i) => ({ url: `https://example.org/hit-${i}`, title: `Hit ${i}` }));
+    const query = 'AMLR Article 16 business-wide risk assessment';
+    fakeSdk([
+      assistantToolUse('toolu_search', 'WebSearch', { query }),
+      userToolResult('toolu_search', 'Web search results for query: …', { tool_use_result: searchOutput(query, hits) }),
+      assistantToolUse('toolu_fetch', 'WebFetch', { url: 'https://example.org/hit-3', prompt: 'Read it' }),
+      userToolResult('toolu_fetch', 'The text of hit 3.', { tool_use_result: fetchOutput('https://example.org/hit-3', 'The text of hit 3.') }),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse({ ...BASE_CONFIG, tools: WEB_TOOLS }, sink, (d) => { completion = d; });
+
+    const sources = sourcesIn(events());
+    expect(sources).toHaveLength(2);
+    expect(sources[0]).toMatchObject({ kind: 'web_search', query });
+    expect(sources[0].resultUrls).toHaveLength(WEB_SOURCE_RESULT_CAP);
+    expect(sources[0].resultUrls![0]).toBe('https://example.org/hit-0');
+    expect(sources[0].results![3]).toEqual({ url: 'https://example.org/hit-3', title: 'Hit 3' });
+    expect(sources[0]).not.toHaveProperty('sha256');
+    expect(typeof sources[0].retrievedAt).toBe('string');
+    expect(sources[1]).toMatchObject({
+      kind: 'web_fetch', url: 'https://example.org/hit-3', title: 'Hit 3',
+      sha256: sha256('The text of hit 3.'), charCount: 'The text of hit 3.'.length,
+    });
+    expect(completion!.webSources).toEqual(sources);
+  });
+
+  it('a failed fetch is recorded as an error with no hash; a search without structured output falls back to the URLs the model read', async () => {
+    fakeSdk([
+      assistantToolUse('toolu_bad', 'WebFetch', { url: 'https://example.org/gone', prompt: 'x' }),
+      userToolResult('toolu_bad', 'Error: 404 Not Found', { tool_use_result: fetchOutput('https://example.org/gone', '', 404) }, true),
+      assistantToolUse('toolu_s', 'WebSearch', { query: 'dora article 5' }),
+      userToolResult('toolu_s', 'Links: [{"title":"DORA","url":"https://eur-lex.europa.eu/eli/reg/2022/2554/oj"}]\n\nSummary text.'),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    const { sink, events } = collectingSink();
+    await streamToResponse({ ...BASE_CONFIG, tools: WEB_TOOLS }, sink);
+    const sources = sourcesIn(events());
+    expect(sources).toHaveLength(2);
+    expect(sources[0]).toEqual({ kind: 'web_fetch', url: 'https://example.org/gone', retrievedAt: expect.any(String), isError: true });
+    expect(sources[1]).toMatchObject({
+      kind: 'web_search', query: 'dora article 5',
+      resultUrls: ['https://eur-lex.europa.eu/eli/reg/2022/2554/oj'],
+      results: [{ url: 'https://eur-lex.europa.eu/eli/reg/2022/2554/oj', title: '' }],
+    });
+  });
+
+  it('ignores non-web tool calls, text-only envelopes and results with no matching call — a run without web work reports no sources', async () => {
+    fakeSdk([
+      { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'thinking aloud' }] } },
+      assistantToolUse('toolu_mcp', 'mcp__anton__search_knowledge', { query: 'x' }),
+      userToolResult('toolu_mcp', 'pack text'),
+      userToolResult('toolu_unknown', 'a result with no call'),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(events().some((e) => e.type === 'source_fetched')).toBe(false);
+    expect(completion!.webSources).toEqual([]);
+  });
+});
+
+// ── Wave 4: the slot is the subprocess's, not the request's ──
+// Live finding 2026-09-16: onComplete ran INSIDE the slot. The learning
+// pipeline it starts asks for a background slot (capped at 1 of 2) while the
+// interactive slot that spawned it was still counted — refused "SDK engine
+// busy" on every run, so nothing was ever learned. The slot must be back
+// before onComplete is invoked, released exactly once, and released on every
+// failure path too.
+
+describe('Wave 4 — the slot is released before onComplete runs', () => {
+  it('activeSdkRuns is already back to its previous value when onComplete is invoked', async () => {
+    fakeSdk([textDelta('Hello'), successResult()]);
+    const { sink } = collectingSink();
+    const before = activeSdkRunsForTests();
+    let seenInsideOnComplete: number | null = null;
+    await streamToResponse(BASE_CONFIG, sink, () => { seenInsideOnComplete = activeSdkRunsForTests(); });
+    expect(seenInsideOnComplete).toBe(before);
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('a background slot can be taken from inside onComplete — the exact request the learning pipeline makes', async () => {
+    fakeSdk([textDelta('Hello'), successResult()]);
+    const { sink } = collectingSink();
+    const before = activeSdkRunsForTests();
+    let refusal: string | null | undefined;
+    await streamToResponse(BASE_CONFIG, sink, () => {
+      refusal = tryAcquireSdkSlot(true);   // background: capped at MAX_BACKGROUND_SDK_RUNS = 1
+      if (refusal === null) releaseSdkSlot();
+    });
+    expect(refusal).toBeNull();
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('negative control: with the interactive slot still held, the same background acquire is refused', () => {
+    const before = activeSdkRunsForTests();
+    expect(tryAcquireSdkSlot(false)).toBeNull();          // an interactive run holding its slot
+    try {
+      expect(tryAcquireSdkSlot(true)).toMatch(/SDK engine busy/);
+    } finally {
+      releaseSdkSlot();
+    }
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('an error thrown inside onComplete still leaves the count correct (no double release)', async () => {
+    fakeSdk([textDelta('Hello'), successResult()]);
+    const { sink, done } = collectingSink();
+    const before = activeSdkRunsForTests();
+    await expect(streamToResponse(BASE_CONFIG, sink, () => { throw new Error('ledger write failed'); })).resolves.toBeUndefined();
+    expect(activeSdkRunsForTests()).toBe(before);
+    expect(done()).toBe(true);
+  });
+
+  it('a throwing SDK releases the slot exactly once', async () => {
+    setSdkQueryImplForTests(() => {
+      // eslint-disable-next-line require-yield
+      return (async function* (): AsyncGenerator<{ type: string }> {
+        throw new Error('spawn ENOENT');
+      })();
+    });
+    const { sink } = collectingSink();
+    const before = activeSdkRunsForTests();
+    await streamToResponse(BASE_CONFIG, sink, () => { throw new Error('must not be called'); });
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+
+  it('a refused run (engine busy) never touches the count', async () => {
+    const before = activeSdkRunsForTests();
+    expect(tryAcquireSdkSlot(false)).toBeNull();
+    expect(tryAcquireSdkSlot(false)).toBeNull();          // both interactive slots taken
+    try {
+      const calls = fakeSdk([successResult()]);
+      const { sink, events } = collectingSink();
+      await streamToResponse(BASE_CONFIG, sink, () => { throw new Error('must not be called'); });
+      expect(calls).toHaveLength(0);
+      expect((events().find((e) => e.type === 'error') as { message: string }).message).toMatch(/SDK engine busy/);
+      expect(activeSdkRunsForTests()).toBe(before + 2);
+    } finally {
+      releaseSdkSlot();
+      releaseSdkSlot();
+    }
+    expect(activeSdkRunsForTests()).toBe(before);
+  });
+});
+
 describe('completeText — aggregate for the non-streaming path', () => {
   it('returns the aggregated completion', async () => {
     fakeSdk([textDelta('agg'), successResult()]);
@@ -276,7 +607,13 @@ describe('sdkThinkingOptions — single-source thinking mapping', () => {
       thinking: { type: 'adaptive' },
       effort: 'high',
     });
-    expect(sdkThinkingOptions('investigate', 'claude-fable-5').effort).toBe('max');
+    // investigate reaches the xhigh rung on models that have it; the SDK
+    // documents a fallback to high elsewhere, but ANTON clamps first.
+    expect(sdkThinkingOptions('investigate', 'claude-fable-5').effort).toBe('xhigh');
+    expect(sdkThinkingOptions('investigate', 'claude-fable-5-1').effort).toBe('xhigh');
+    expect(sdkThinkingOptions('investigate', 'claude-sonnet-4-6').effort).toBe('max');
+    expect(sdkThinkingOptions('deep_investigate', 'claude-opus-5').effort).toBe('max');
+    expect(sdkThinkingOptions('think', 'claude-fable-5-1')).toEqual({ thinking: { type: 'adaptive' }, effort: 'medium' });
   });
 
   it('budget models get an explicit budget; quick disables thinking', () => {
@@ -306,5 +643,99 @@ describe('flattenMessages', () => {
     expect(flat.endsWith('q2')).toBe(true);
     // the FINAL user message must sit outside the history wrapper
     expect(flat.split('</conversation_so_far>')[1]).toContain('q2');
+  });
+});
+
+// ── Wave 3: a schema-constrained turn ───────────────────────
+
+describe('completeText — outputFormat (schema-constrained turn)', () => {
+  const SCHEMA = { type: 'object', properties: { answer: { type: 'number' } }, required: ['answer'] };
+
+  it('forwards outputFormat untouched, keeps containment, and returns structuredOutput even with no text', async () => {
+    const calls = fakeSdk([successResult({ result: '', structured_output: { answer: 42 } })]);
+    const data = await completeText({ ...BASE_CONFIG, outputFormat: { type: 'json_schema', schema: SCHEMA } });
+    expect(calls[0].options.outputFormat).toEqual({ type: 'json_schema', schema: SCHEMA });
+    expect(calls[0].options.tools).toEqual([]);
+    expect(calls[0].options.maxTurns).toBe(1);
+    expect(calls[0].options.permissionMode).toBe('dontAsk');
+    expect(data.structuredOutput).toEqual({ answer: 42 });
+    expect(data.text).toBe('');
+    expect(data.inputTokens).toBe(100);
+  });
+
+  it('a text run carries no outputFormat and structuredOutput stays absent', async () => {
+    const calls = fakeSdk([textDelta('hi'), successResult()]);
+    const data = await completeText(BASE_CONFIG);
+    expect('outputFormat' in calls[0].options).toBe(false);
+    expect(data.structuredOutput).toBeUndefined();
+    expect(data.text).toBe('hi');
+  });
+});
+
+// ── Wave 5: thinking from the complete message ──────────────
+// Live finding 2026-09-16: 3 of 3 stored SDK runs had empty thinking. The
+// engine captured thinking only from thinking_delta stream events and never
+// looked at the assistant envelope, whose content blocks are the complete API
+// message — thinking, text, tool_use — the same blocks claude-client.ts hands
+// the chat route as rawContentBlocks for messages.content_blocks.
+
+const assistantMessage = (content: object[]) => ({ type: 'assistant', message: { role: 'assistant', content } });
+const THINKING_BLOCK = { type: 'thinking', thinking: 'Article 16 first, then the scope.', signature: 'sig-1' };
+const TEXT_BLOCK = { type: 'text', text: 'Hello world' };
+
+describe('Wave 5 — thinking and content blocks from the assistant envelope', () => {
+  it('captures thinking from the blocks when the stream carried no thinking_delta, and hands the blocks on as rawContentBlocks', async () => {
+    fakeSdk([textDelta('Hello'), textDelta(' world'), assistantMessage([THINKING_BLOCK, TEXT_BLOCK]), successResult()]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+
+    expect(completion).not.toBeNull();
+    expect(completion!.thinking).toBe('Article 16 first, then the scope.');
+    expect(completion!.text).toBe('Hello world');
+    expect(completion!.rawContentBlocks).toEqual([THINKING_BLOCK, TEXT_BLOCK]);
+    // The page sees it live, and stream_end carries it like a streamed thinking block.
+    expect(events().some((e) => e.type === 'thinking_delta' && e.content === 'Article 16 first, then the scope.')).toBe(true);
+    const end = events().find((e) => e.type === 'stream_end') as { contentBlocks: Array<{ type: string; content: string }> };
+    expect(end.contentBlocks).toEqual([
+      { type: 'thinking', content: 'Article 16 first, then the scope.' },
+      { type: 'text', content: 'Hello world' },
+    ]);
+  });
+
+  it('does not double-count when the stream did carry thinking deltas; rawContentBlocks still passes', async () => {
+    fakeSdk([thinkingDelta('Article 16 first, '), thinkingDelta('then the scope.'), textDelta('Hello'), assistantMessage([THINKING_BLOCK, TEXT_BLOCK]), successResult()]);
+    const { sink, events } = collectingSink();
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, sink, (d) => { completion = d; });
+    expect(completion!.thinking).toBe('Article 16 first, then the scope.');
+    expect(events().filter((e) => e.type === 'thinking_delta')).toHaveLength(2);
+    expect(completion!.rawContentBlocks).toEqual([THINKING_BLOCK, TEXT_BLOCK]);
+  });
+
+  it('a redacted_thinking block leaves a marker, and blocks accumulate across envelopes in order', async () => {
+    const toolUse = { type: 'tool_use', id: 'toolu_1', name: 'WebSearch', input: { query: 'x' } };
+    fakeSdk([
+      assistantMessage([{ type: 'redacted_thinking', data: 'opaque' }, toolUse]),
+      { type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: 'r' }] } },
+      assistantMessage([{ type: 'thinking', thinking: 'Now answer.' }, { type: 'text', text: 'Answer.' }]),
+      textDelta('Answer.'),
+      successResult(),
+    ]);
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse({ ...BASE_CONFIG, tools: [{ type: 'web_search_20250305', name: 'web_search' }] }, collectingSink().sink, (d) => { completion = d; });
+    expect(completion!.thinking).toBe('[redacted thinking block]\n\nNow answer.');
+    expect(completion!.rawContentBlocks).toEqual([
+      { type: 'redacted_thinking', data: 'opaque' }, toolUse,
+      { type: 'thinking', thinking: 'Now answer.' }, { type: 'text', text: 'Answer.' },
+    ]);
+  });
+
+  it('a run with no assistant envelope carries no rawContentBlocks', async () => {
+    fakeSdk([textDelta('x'), successResult()]);
+    let completion: SdkCompletionData | null = null;
+    await streamToResponse(BASE_CONFIG, collectingSink().sink, (d) => { completion = d; });
+    expect(completion!.thinking).toBe('');
+    expect('rawContentBlocks' in completion!).toBe(false);
   });
 });

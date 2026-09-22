@@ -100,7 +100,7 @@
     },
     {
       "id": "special_categories",
-      "type": "toggle",
+      "type": "boolean",
       "label": "Does the processing involve special category data?",
       "description": "Health, biometric, racial/ethnic origin, political opinions, etc."
     }

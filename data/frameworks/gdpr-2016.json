@@ -3,8 +3,9 @@
   "name": "GDPR — General Data Protection Regulation",
   "shortName": "GDPR",
   "reference": "Regulation (EU) 2016/679",
+  "coverage": "transcribed",
   "applicationDate": "2018-05-25",
-  "articleCount": 50,
+  "articleCount": 99,
   "themes": [
     "Principles",
     "Lawful Basis & Consent",
@@ -16,55 +17,800 @@
     "DPIA & Prior Consultation"
   ],
   "articles": [
-    {"id":"Art.1","title":"Subject matter and objectives","theme":"Principles","requirement":"Establishes rules for the protection of natural persons with regard to the processing of personal data and the free movement of such data."},
-    {"id":"Art.2","title":"Material scope","theme":"Principles","requirement":"Applies to processing of personal data wholly or partly by automated means, and to non-automated processing forming part of a filing system."},
-    {"id":"Art.3","title":"Territorial scope","theme":"Principles","requirement":"Applies to controllers/processors established in the EU, and to processing of EU data subjects' data by non-EU entities offering goods/services or monitoring behaviour."},
-    {"id":"Art.4","title":"Definitions","theme":"Principles","requirement":"Defines personal data, processing, controller, processor, consent, personal data breach, supervisory authority, and other key terms."},
-    {"id":"Art.5","title":"Principles relating to processing","theme":"Principles","requirement":"Personal data must be processed lawfully, fairly, transparently, for specified purposes, minimised, accurate, stored limitedly, and with integrity and confidentiality. Controller must demonstrate compliance (accountability)."},
-    {"id":"Art.6","title":"Lawfulness of processing","theme":"Lawful Basis & Consent","requirement":"Processing is lawful only with consent, contractual necessity, legal obligation, vital interests, public interest, or legitimate interests. Controller must identify and document the lawful basis."},
-    {"id":"Art.7","title":"Conditions for consent","theme":"Lawful Basis & Consent","requirement":"Consent must be freely given, specific, informed, and unambiguous. Controller must demonstrate consent was given. Withdrawal must be as easy as giving consent."},
-    {"id":"Art.8","title":"Child's consent for information society services","theme":"Lawful Basis & Consent","requirement":"Processing of a child's data for information society services requires parental consent where the child is below 16 years (Member States may lower to 13)."},
-    {"id":"Art.9","title":"Processing of special categories of data","theme":"Lawful Basis & Consent","requirement":"Processing of racial, ethnic, political, religious, biometric, health, sex life, or trade union data is prohibited unless a specific exception applies (explicit consent, employment law, vital interests, etc.)."},
-    {"id":"Art.10","title":"Processing of personal data relating to criminal convictions and offences","theme":"Lawful Basis & Consent","requirement":"Processing of criminal conviction and offence data only under official authority control or where authorised by Union or Member State law with appropriate safeguards."},
-    {"id":"Art.11","title":"Processing not requiring identification","theme":"Controller & Processor","requirement":"If the controller does not need to identify a data subject, it is not obliged to maintain or acquire additional data solely to comply with the Regulation."},
-    {"id":"Art.12","title":"Transparent information, communication and modalities for the exercise of the rights of the data subject","theme":"Data Subject Rights","requirement":"Controller must provide information in a concise, transparent, intelligible, and easily accessible form using clear and plain language, especially for children."},
-    {"id":"Art.13","title":"Information where data collected from data subject","theme":"Data Subject Rights","requirement":"When collecting data directly, controller must provide identity, purposes, legal basis, recipients, transfer intentions, retention period, and rights information at time of collection."},
-    {"id":"Art.14","title":"Information where data not obtained from data subject","theme":"Data Subject Rights","requirement":"When data is obtained indirectly, controller must provide the same information as Art.13 plus the source and categories of data within one month or at first communication."},
-    {"id":"Art.15","title":"Right of access","theme":"Data Subject Rights","requirement":"Data subjects have the right to obtain confirmation of processing, access to their data, and information about purposes, categories, recipients, retention, rights, and source."},
-    {"id":"Art.16","title":"Right to rectification","theme":"Data Subject Rights","requirement":"Data subjects have the right to obtain rectification of inaccurate personal data and completion of incomplete data without undue delay."},
-    {"id":"Art.17","title":"Right to erasure (right to be forgotten)","theme":"Data Subject Rights","requirement":"Data subjects may request erasure when data is no longer necessary, consent is withdrawn, processing is unlawful, or there is no overriding legitimate ground."},
-    {"id":"Art.18","title":"Right to restriction of processing","theme":"Data Subject Rights","requirement":"Data subjects may request restriction of processing when accuracy is contested, processing is unlawful, data is no longer needed by controller but required by subject, or pending objection verification."},
-    {"id":"Art.19","title":"Notification obligation regarding rectification or erasure of personal data or restriction of processing","theme":"Data Subject Rights","requirement":"Controller must communicate any rectification, erasure, or restriction to each recipient unless impossible or disproportionate, and inform the data subject of those recipients on request."},
-    {"id":"Art.20","title":"Right to data portability","theme":"Data Subject Rights","requirement":"Data subjects have the right to receive their data in a structured, commonly used, machine-readable format and to transmit it to another controller where processing is based on consent or contract and is automated."},
-    {"id":"Art.21","title":"Right to object","theme":"Data Subject Rights","requirement":"Data subjects may object to processing based on public interest or legitimate interests. For direct marketing, the right to object is absolute."},
-    {"id":"Art.22","title":"Automated decision-making and profiling","theme":"Data Subject Rights","requirement":"Data subjects have the right not to be subject to decisions based solely on automated processing, including profiling, which produce legal or similarly significant effects, unless authorised by law or based on explicit consent."},
-    {"id":"Art.24","title":"Responsibility of the controller","theme":"Controller & Processor","requirement":"Controller must implement appropriate technical and organisational measures to ensure and demonstrate that processing complies with the Regulation, taking into account nature, scope, context, and risks."},
-    {"id":"Art.25","title":"Data protection by design and by default","theme":"Controller & Processor","requirement":"Controller must implement data protection principles by design (pseudonymisation, minimisation) and by default (only data necessary for each purpose is processed)."},
-    {"id":"Art.26","title":"Joint controllers","theme":"Controller & Processor","requirement":"Where two or more controllers jointly determine purposes and means, they must transparently determine their respective responsibilities by arrangement, and make the essence available to data subjects."},
-    {"id":"Art.27","title":"Representatives of controllers or processors not established in the Union","theme":"Controller & Processor","requirement":"Controllers or processors not established in the EU but subject to GDPR must designate a representative in the Union in writing."},
-    {"id":"Art.28","title":"Processor","theme":"Controller & Processor","requirement":"Processing by a processor must be governed by a contract or legal act setting out subject matter, duration, nature, purpose, data types, and controller obligations. Processor must not engage sub-processors without authorisation."},
-    {"id":"Art.29","title":"Processing under authority of controller or processor","theme":"Controller & Processor","requirement":"Processor and any person acting under the authority of controller or processor who has access to personal data must process only on instructions from the controller."},
-    {"id":"Art.30","title":"Records of processing activities","theme":"Controller & Processor","requirement":"Controllers and processors must maintain written records of processing activities including purposes, data categories, recipients, transfers, retention, and security measures."},
-    {"id":"Art.32","title":"Security of processing","theme":"Controller & Processor","requirement":"Controller and processor must implement appropriate technical and organisational security measures including pseudonymisation, encryption, confidentiality, resilience, restoration ability, and regular testing."},
-    {"id":"Art.33","title":"Notification of breach to supervisory authority","theme":"Breach Notification","requirement":"Controller must notify the supervisory authority of a personal data breach without undue delay and within 72 hours of becoming aware, unless unlikely to result in risk to rights and freedoms."},
-    {"id":"Art.34","title":"Communication of breach to data subject","theme":"Breach Notification","requirement":"Where a breach is likely to result in high risk to rights and freedoms, the controller must communicate the breach to affected data subjects without undue delay."},
-    {"id":"Art.35","title":"Data protection impact assessment","theme":"DPIA & Prior Consultation","requirement":"Where processing is likely to result in high risk (systematic monitoring, large-scale special categories, automated decision-making), the controller must carry out a DPIA before processing."},
-    {"id":"Art.36","title":"Prior consultation","theme":"DPIA & Prior Consultation","requirement":"Controller must consult the supervisory authority prior to processing where a DPIA indicates that processing would result in high risk in the absence of mitigation measures."},
-    {"id":"Art.37","title":"Designation of the data protection officer","theme":"Controller & Processor","requirement":"Controller and processor must designate a DPO where processing is by a public authority, involves large-scale systematic monitoring, or large-scale processing of special categories."},
-    {"id":"Art.38","title":"Position of the data protection officer","theme":"Controller & Processor","requirement":"DPO must be involved in all data protection matters, provided with resources, must not receive instructions regarding exercise of tasks, and reports directly to highest management level."},
-    {"id":"Art.39","title":"Tasks of the data protection officer","theme":"Controller & Processor","requirement":"DPO must inform and advise, monitor compliance, provide advice on DPIAs, cooperate with the supervisory authority, and act as the contact point."},
-    {"id":"Art.40","title":"Codes of conduct","theme":"Supervisory Authority","requirement":"Member States, supervisory authorities, and the Board shall encourage the drawing up of codes of conduct to contribute to proper application of the Regulation."},
-    {"id":"Art.42","title":"Certification","theme":"Supervisory Authority","requirement":"Member States and supervisory authorities shall encourage establishment of data protection certification mechanisms, seals, and marks to demonstrate compliance."},
-    {"id":"Art.44","title":"General principle for transfers","theme":"International Transfers","requirement":"Any transfer of personal data to a third country or international organisation may only take place if the conditions of Chapter V are complied with."},
-    {"id":"Art.45","title":"Transfers on basis of adequacy decision","theme":"International Transfers","requirement":"Transfers may take place where the Commission has decided that the third country ensures an adequate level of protection. Adequacy decisions are periodically reviewed."},
-    {"id":"Art.46","title":"Transfers subject to appropriate safeguards","theme":"International Transfers","requirement":"In the absence of adequacy, transfers may proceed with appropriate safeguards including standard contractual clauses, binding corporate rules, codes of conduct, or certification mechanisms."},
-    {"id":"Art.47","title":"Binding corporate rules","theme":"International Transfers","requirement":"Binding corporate rules must be approved by the competent supervisory authority and must include application of data protection principles, data subject rights, and acceptance of jurisdiction."},
-    {"id":"Art.49","title":"Derogations for specific situations","theme":"International Transfers","requirement":"In the absence of adequacy or safeguards, transfers may occur on explicit consent, contractual necessity, important public interest, legal claims, vital interests, or from a public register."},
-    {"id":"Art.51","title":"Supervisory authority","theme":"Supervisory Authority","requirement":"Each Member State must establish one or more independent supervisory authorities responsible for monitoring and enforcing the Regulation."},
-    {"id":"Art.56","title":"Competence of lead supervisory authority","theme":"Supervisory Authority","requirement":"The supervisory authority of the main establishment of the controller or processor is the lead authority for cross-border processing, cooperating with concerned authorities."},
-    {"id":"Art.58","title":"Powers of supervisory authorities","theme":"Supervisory Authority","requirement":"Supervisory authorities have investigative powers (audits, access), corrective powers (warnings, bans, fines), and authorisation and advisory powers."},
-    {"id":"Art.77","title":"Right to lodge complaint","theme":"Data Subject Rights","requirement":"Every data subject has the right to lodge a complaint with a supervisory authority if they consider that processing of their personal data infringes the Regulation."},
-    {"id":"Art.82","title":"Right to compensation","theme":"Data Subject Rights","requirement":"Any person who has suffered material or non-material damage as a result of a GDPR infringement has the right to receive compensation from the controller or processor."},
-    {"id":"Art.83","title":"General conditions for imposing fines","theme":"Supervisory Authority","requirement":"Administrative fines up to €10M/2% turnover for controller/processor obligation breaches, and up to €20M/4% turnover for principle, rights, or transfer breaches. Fines must be effective, proportionate, and dissuasive."}
-  ]
+    {
+      "id": "Art.1",
+      "title": "Subject-matter and objectives",
+      "chapter": "I",
+      "theme": "Principles",
+      "requirement": "Establishes rules for the protection of natural persons with regard to the processing of personal data and the free movement of such data."
+    },
+    {
+      "id": "Art.2",
+      "title": "Material scope",
+      "chapter": "I",
+      "theme": "Principles",
+      "requirement": "Applies to processing of personal data wholly or partly by automated means, and to non-automated processing forming part of a filing system."
+    },
+    {
+      "id": "Art.3",
+      "title": "Territorial scope",
+      "chapter": "I",
+      "theme": "Principles",
+      "requirement": "Applies to controllers/processors established in the EU, and to processing of EU data subjects' data by non-EU entities offering goods/services or monitoring behaviour."
+    },
+    {
+      "id": "Art.4",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Principles",
+      "requirement": "Defines personal data, processing, controller, processor, consent, personal data breach, supervisory authority, and other key terms."
+    },
+    {
+      "id": "Art.5",
+      "title": "Principles relating to processing of personal data",
+      "chapter": "II",
+      "theme": "Principles",
+      "requirement": "Personal data must be processed lawfully, fairly, transparently, for specified purposes, minimised, accurate, stored limitedly, and with integrity and confidentiality. Controller must demonstrate compliance (accountability).",
+      "aliases": [
+        "accuracy",
+        "retention",
+        "minimisation",
+        "data quality"
+      ]
+    },
+    {
+      "id": "Art.6",
+      "title": "Lawfulness of processing",
+      "chapter": "II",
+      "theme": "Lawful Basis & Consent",
+      "requirement": "Processing is lawful only with consent, contractual necessity, legal obligation, vital interests, public interest, or legitimate interests. Controller must identify and document the lawful basis."
+    },
+    {
+      "id": "Art.7",
+      "title": "Conditions for consent",
+      "chapter": "II",
+      "theme": "Lawful Basis & Consent",
+      "requirement": "Consent must be freely given, specific, informed, and unambiguous. Controller must demonstrate consent was given. Withdrawal must be as easy as giving consent.",
+      "aliases": [
+        "opt-in",
+        "unsubscribe",
+        "cookie consent",
+        "consent banner"
+      ]
+    },
+    {
+      "id": "Art.8",
+      "title": "Conditions applicable to child's consent in relation to information society services",
+      "chapter": "II",
+      "theme": "Lawful Basis & Consent",
+      "requirement": "Processing of a child's data for information society services requires parental consent where the child is below 16 years (Member States may lower to 13)."
+    },
+    {
+      "id": "Art.9",
+      "title": "Processing of special categories of personal data",
+      "chapter": "II",
+      "theme": "Lawful Basis & Consent",
+      "requirement": "Processing of racial, ethnic, political, religious, biometric, health, sex life, or trade union data is prohibited unless a specific exception applies (explicit consent, employment law, vital interests, etc.).",
+      "aliases": [
+        "patient data",
+        "medical data",
+        "clinical data",
+        "genetic data",
+        "sensitive data"
+      ]
+    },
+    {
+      "id": "Art.10",
+      "title": "Processing of personal data relating to criminal convictions and offences",
+      "chapter": "II",
+      "theme": "Lawful Basis & Consent",
+      "requirement": "Processing of criminal conviction and offence data only under official authority control or where authorised by Union or Member State law with appropriate safeguards."
+    },
+    {
+      "id": "Art.11",
+      "title": "Processing which does not require identification",
+      "chapter": "II",
+      "theme": "Controller & Processor",
+      "requirement": "If the controller does not need to identify a data subject, it is not obliged to maintain or acquire additional data solely to comply with the Regulation."
+    },
+    {
+      "id": "Art.12",
+      "title": "Transparent information, communication and modalities for the exercise of the rights of the data subject",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Controller must provide information in a concise, transparent, intelligible, and easily accessible form using clear and plain language, especially for children."
+    },
+    {
+      "id": "Art.13",
+      "title": "Information to be provided where personal data are collected from the data subject",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "When collecting data directly, controller must provide identity, purposes, legal basis, recipients, transfer intentions, retention period, and rights information at time of collection."
+    },
+    {
+      "id": "Art.14",
+      "title": "Information to be provided where personal data have not been obtained from the data subject",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "When data is obtained indirectly, controller must provide the same information as Art.13 plus the source and categories of data within one month or at first communication."
+    },
+    {
+      "id": "Art.15",
+      "title": "Right of access by the data subject",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects have the right to obtain confirmation of processing, access to their data, and information about purposes, categories, recipients, retention, rights, and source."
+    },
+    {
+      "id": "Art.16",
+      "title": "Right to rectification",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects have the right to obtain rectification of inaccurate personal data and completion of incomplete data without undue delay."
+    },
+    {
+      "id": "Art.17",
+      "title": "Right to erasure (‘right to be forgotten')",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects may request erasure when data is no longer necessary, consent is withdrawn, processing is unlawful, or there is no overriding legitimate ground."
+    },
+    {
+      "id": "Art.18",
+      "title": "Right to restriction of processing",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects may request restriction of processing when accuracy is contested, processing is unlawful, data is no longer needed by controller but required by subject, or pending objection verification."
+    },
+    {
+      "id": "Art.19",
+      "title": "Notification obligation regarding rectification or erasure of personal data or restriction of processing",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Controller must communicate any rectification, erasure, or restriction to each recipient unless impossible or disproportionate, and inform the data subject of those recipients on request."
+    },
+    {
+      "id": "Art.20",
+      "title": "Right to data portability",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects have the right to receive their data in a structured, commonly used, machine-readable format and to transmit it to another controller where processing is based on consent or contract and is automated."
+    },
+    {
+      "id": "Art.21",
+      "title": "Right to object",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects may object to processing based on public interest or legitimate interests. For direct marketing, the right to object is absolute.",
+      "aliases": [
+        "unsubscribe"
+      ]
+    },
+    {
+      "id": "Art.22",
+      "title": "Automated individual decision-making, including profiling",
+      "chapter": "III",
+      "theme": "Data Subject Rights",
+      "requirement": "Data subjects have the right not to be subject to decisions based solely on automated processing, including profiling, which produce legal or similarly significant effects, unless authorised by law or based on explicit consent.",
+      "aliases": [
+        "profile",
+        "automatically",
+        "scoring",
+        "algorithmic"
+      ]
+    },
+    {
+      "id": "Art.23",
+      "title": "Restrictions",
+      "chapter": "III",
+      "theme": "Rights of the data subject",
+      "requirement": "Union or Member State law to which the data controller or processor is subject may restrict by way of a legislative measure the scope of the obligations and rights provided for in Articles 12 to 22 and Article 34, as well as Article 5 in so far as its provisions correspond to the rights and obligations provided for in…"
+    },
+    {
+      "id": "Art.24",
+      "title": "Responsibility of the controller",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Controller must implement appropriate technical and organisational measures to ensure and demonstrate that processing complies with the Regulation, taking into account nature, scope, context, and risks."
+    },
+    {
+      "id": "Art.25",
+      "title": "Data protection by design and by default",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Controller must implement data protection principles by design (pseudonymisation, minimisation) and by default (only data necessary for each purpose is processed).",
+      "aliases": [
+        "privacy by design",
+        "privacy by default"
+      ]
+    },
+    {
+      "id": "Art.26",
+      "title": "Joint controllers",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Where two or more controllers jointly determine purposes and means, they must transparently determine their respective responsibilities by arrangement, and make the essence available to data subjects."
+    },
+    {
+      "id": "Art.27",
+      "title": "Representatives of controllers or processors not established in the Union",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Controllers or processors not established in the EU but subject to GDPR must designate a representative in the Union in writing."
+    },
+    {
+      "id": "Art.28",
+      "title": "Processor",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Processing by a processor must be governed by a contract or legal act setting out subject matter, duration, nature, purpose, data types, and controller obligations. Processor must not engage sub-processors without authorisation."
+    },
+    {
+      "id": "Art.29",
+      "title": "Processing under the authority of the controller or processor",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Processor and any person acting under the authority of controller or processor who has access to personal data must process only on instructions from the controller."
+    },
+    {
+      "id": "Art.30",
+      "title": "Records of processing activities",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Controllers and processors each keep a record, and the two are NOT the same list. The controller record (Art. 30(1)) carries purposes, categories of data subjects and of personal data, categories of recipients, third-country transfers, envisaged retention time limits where possible, and a general description of security measures. The processor record (Art. 30(2)) carries the processor and each controller it acts for, the categories of PROCESSING carried out on behalf of each controller, third-country transfers, and a general description of security measures — it has NO purposes item and NO retention item. Art. 30(5) exempts an organisation with fewer than 250 persons unless any one of three limbs applies: risk to rights and freedoms, processing that is not occasional, or special-category or criminal-conviction data. Art. 30 breach sits in the Art. 83(4)(a) tier — EUR 10 000 000 or 2% of total worldwide annual turnover, whichever is higher — not the 4% tier."
+    },
+    {
+      "id": "Art.31",
+      "title": "Cooperation with the supervisory authority",
+      "chapter": "IV",
+      "theme": "Controller and processor",
+      "requirement": "The controller and the processor and, where applicable, their representatives, shall cooperate, on request, with the supervisory authority in the performance of its tasks."
+    },
+    {
+      "id": "Art.32",
+      "title": "Security of processing",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Controller and processor must implement appropriate technical and organisational security measures including pseudonymisation, encryption, confidentiality, resilience, restoration ability, and regular testing.",
+      "aliases": [
+        "safeguards",
+        "security controls",
+        "cybersecurity"
+      ]
+    },
+    {
+      "id": "Art.33",
+      "title": "Notification of a personal data breach to the supervisory authority",
+      "chapter": "IV",
+      "theme": "Breach Notification",
+      "requirement": "Controller must notify the supervisory authority of a personal data breach without undue delay and within 72 hours of becoming aware, unless unlikely to result in risk to rights and freedoms."
+    },
+    {
+      "id": "Art.34",
+      "title": "Communication of a personal data breach to the data subject",
+      "chapter": "IV",
+      "theme": "Breach Notification",
+      "requirement": "Where a breach is likely to result in high risk to rights and freedoms, the controller must communicate the breach to affected data subjects without undue delay."
+    },
+    {
+      "id": "Art.35",
+      "title": "Data protection impact assessment",
+      "chapter": "IV",
+      "theme": "DPIA & Prior Consultation",
+      "requirement": "Where processing is likely to result in high risk (systematic monitoring, large-scale special categories, automated decision-making), the controller must carry out a DPIA before processing."
+    },
+    {
+      "id": "Art.36",
+      "title": "Prior consultation",
+      "chapter": "IV",
+      "theme": "DPIA & Prior Consultation",
+      "requirement": "Controller must consult the supervisory authority prior to processing where a DPIA indicates that processing would result in high risk in the absence of mitigation measures."
+    },
+    {
+      "id": "Art.37",
+      "title": "Designation of the data protection officer",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "Controller and processor must designate a DPO where processing is by a public authority, involves large-scale systematic monitoring, or large-scale processing of special categories."
+    },
+    {
+      "id": "Art.38",
+      "title": "Position of the data protection officer",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "DPO must be involved in all data protection matters, provided with resources, must not receive instructions regarding exercise of tasks, and reports directly to highest management level."
+    },
+    {
+      "id": "Art.39",
+      "title": "Tasks of the data protection officer",
+      "chapter": "IV",
+      "theme": "Controller & Processor",
+      "requirement": "DPO must inform and advise, monitor compliance, provide advice on DPIAs, cooperate with the supervisory authority, and act as the contact point."
+    },
+    {
+      "id": "Art.40",
+      "title": "Codes of conduct",
+      "chapter": "IV",
+      "theme": "Supervisory Authority",
+      "requirement": "Member States, supervisory authorities, and the Board shall encourage the drawing up of codes of conduct to contribute to proper application of the Regulation."
+    },
+    {
+      "id": "Art.41",
+      "title": "Monitoring of approved codes of conduct",
+      "chapter": "IV",
+      "theme": "Controller and processor",
+      "requirement": "Without prejudice to the tasks and powers of the competent supervisory authority under Articles 57 and 58, the monitoring of compliance with a code of conduct pursuant to Article 40 may be carried out by a body which has an appropriate level of expertise in relation to the subject-matter of the code and is accredited…"
+    },
+    {
+      "id": "Art.42",
+      "title": "Certification",
+      "chapter": "IV",
+      "theme": "Supervisory Authority",
+      "requirement": "Member States and supervisory authorities shall encourage establishment of data protection certification mechanisms, seals, and marks to demonstrate compliance."
+    },
+    {
+      "id": "Art.43",
+      "title": "Certification bodies",
+      "chapter": "IV",
+      "theme": "Controller and processor",
+      "requirement": "Without prejudice to the tasks and powers of the competent supervisory authority under Articles 57 and 58, certification bodies which have an appropriate level of expertise in relation to data protection shall, after informing the supervisory authority in order to allow it to exercise its powers pursuant to point (h)…"
+    },
+    {
+      "id": "Art.44",
+      "title": "General principle for transfers",
+      "chapter": "V",
+      "theme": "International Transfers",
+      "requirement": "Any transfer of personal data to a third country or international organisation may only take place if the conditions of Chapter V are complied with."
+    },
+    {
+      "id": "Art.45",
+      "title": "Transfers on the basis of an adequacy decision",
+      "chapter": "V",
+      "theme": "International Transfers",
+      "requirement": "Transfers may take place where the Commission has decided that the third country ensures an adequate level of protection. Adequacy decisions are periodically reviewed."
+    },
+    {
+      "id": "Art.46",
+      "title": "Transfers subject to appropriate safeguards",
+      "chapter": "V",
+      "theme": "International Transfers",
+      "requirement": "In the absence of adequacy, transfers may proceed with appropriate safeguards including standard contractual clauses, binding corporate rules, codes of conduct, or certification mechanisms."
+    },
+    {
+      "id": "Art.47",
+      "title": "Binding corporate rules",
+      "chapter": "V",
+      "theme": "International Transfers",
+      "requirement": "Binding corporate rules must be approved by the competent supervisory authority and must include application of data protection principles, data subject rights, and acceptance of jurisdiction."
+    },
+    {
+      "id": "Art.48",
+      "title": "Transfers or disclosures not authorised by Union law",
+      "chapter": "V",
+      "theme": "Transfers of personal data to third countries or international organisations",
+      "requirement": "Any judgment of a court or tribunal and any decision of an administrative authority of a third country requiring a controller or processor to transfer or disclose personal data may only be recognised or enforceable in any manner if based on an international agreement, such as a mutual legal assistance treaty, in force…"
+    },
+    {
+      "id": "Art.49",
+      "title": "Derogations for specific situations",
+      "chapter": "V",
+      "theme": "International Transfers",
+      "requirement": "In the absence of adequacy or safeguards, transfers may occur on explicit consent, contractual necessity, important public interest, legal claims, vital interests, or from a public register."
+    },
+    {
+      "id": "Art.50",
+      "title": "International cooperation for the protection of personal data",
+      "chapter": "V",
+      "theme": "Transfers of personal data to third countries or international organisations",
+      "requirement": "In relation to third countries and international organisations, the Commission and supervisory authorities shall take appropriate steps to: (a) develop international cooperation mechanisms to facilitate the effective enforcement of legislation for the protection of personal data; (b) provide international mutual…"
+    },
+    {
+      "id": "Art.51",
+      "title": "Supervisory authority",
+      "chapter": "VI",
+      "theme": "Supervisory Authority",
+      "requirement": "Each Member State must establish one or more independent supervisory authorities responsible for monitoring and enforcing the Regulation."
+    },
+    {
+      "id": "Art.52",
+      "title": "Independence",
+      "chapter": "VI",
+      "theme": "Independent supervisory authorities",
+      "requirement": "Each supervisory authority shall act with complete independence in performing its tasks and exercising its powers in accordance with this Regulation."
+    },
+    {
+      "id": "Art.53",
+      "title": "General conditions for the members of the supervisory authority",
+      "chapter": "VI",
+      "theme": "Independent supervisory authorities",
+      "requirement": "Member States shall provide for each member of their supervisory authorities to be appointed by means of a transparent procedure by: — their parliament; — their government; — their head of State; or — an independent body entrusted with the appointment under Member State law."
+    },
+    {
+      "id": "Art.54",
+      "title": "Rules on the establishment of the supervisory authority",
+      "chapter": "VI",
+      "theme": "Independent supervisory authorities",
+      "requirement": "Each Member State shall provide by law for all of the following: (a) the establishment of each supervisory authority; (b) the qualifications and eligibility conditions required to be appointed as member of each supervisory authority; (c) the rules and procedures for the appointment of the member or members of each…"
+    },
+    {
+      "id": "Art.55",
+      "title": "Competence",
+      "chapter": "VI",
+      "theme": "Independent supervisory authorities",
+      "requirement": "Each supervisory authority shall be competent for the performance of the tasks assigned to and the exercise of the powers conferred on it in accordance with this Regulation on the territory of its own Member State."
+    },
+    {
+      "id": "Art.56",
+      "title": "Competence of the lead supervisory authority",
+      "chapter": "VI",
+      "theme": "Supervisory Authority",
+      "requirement": "The supervisory authority of the main establishment of the controller or processor is the lead authority for cross-border processing, cooperating with concerned authorities."
+    },
+    {
+      "id": "Art.57",
+      "title": "Tasks",
+      "chapter": "VI",
+      "theme": "Independent supervisory authorities",
+      "requirement": "Without prejudice to other tasks set out under this Regulation, each supervisory authority shall on its territory: (a) monitor and enforce the application of this Regulation; (b) promote public awareness and understanding of the risks, rules, safeguards and rights in relation to processing."
+    },
+    {
+      "id": "Art.58",
+      "title": "Powers",
+      "chapter": "VI",
+      "theme": "Supervisory Authority",
+      "requirement": "Supervisory authorities have investigative powers (audits, access), corrective powers (warnings, bans, fines), and authorisation and advisory powers."
+    },
+    {
+      "id": "Art.59",
+      "title": "Activity reports",
+      "chapter": "VI",
+      "theme": "Independent supervisory authorities",
+      "requirement": "Each supervisory authority shall draw up an annual report on its activities, which may include a list of types of infringement notified and types of measures taken in accordance with Article 58(2)."
+    },
+    {
+      "id": "Art.60",
+      "title": "Cooperation between the lead supervisory authority and the other supervisory authorities concerned",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The lead supervisory authority shall cooperate with the other supervisory authorities concerned in accordance with this Article in an endeavour to reach consensus."
+    },
+    {
+      "id": "Art.61",
+      "title": "Mutual assistance",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "Supervisory authorities shall provide each other with relevant information and mutual assistance in order to implement and apply this Regulation in a consistent manner, and shall put in place measures for effective cooperation with one another."
+    },
+    {
+      "id": "Art.62",
+      "title": "Joint operations of supervisory authorities",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The supervisory authorities shall, where appropriate, conduct joint operations including joint investigations and joint enforcement measures in which members or staff of the supervisory authorities of other Member States are involved."
+    },
+    {
+      "id": "Art.63",
+      "title": "Consistency mechanism",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "In order to contribute to the consistent application of this Regulation throughout the Union, the supervisory authorities shall cooperate with each other and, where relevant, with the Commission, through the consistency mechanism as set out in this Section."
+    },
+    {
+      "id": "Art.64",
+      "title": "Opinion of the Board",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall issue an opinion where a competent supervisory authority intends to adopt any of the measures below."
+    },
+    {
+      "id": "Art.65",
+      "title": "Dispute resolution by the Board",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "In order to ensure the correct and consistent application of this Regulation in individual cases, the Board shall adopt a binding decision in the following cases: (a) where, in a case referred to in Article 60(4), a supervisory authority concerned has raised a relevant and reasoned objection to a draft decision of the…"
+    },
+    {
+      "id": "Art.66",
+      "title": "Urgency procedure",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "In exceptional circumstances, where a supervisory authority concerned considers that there is an urgent need to act in order to protect the rights and freedoms of data subjects, it may, by way of derogation from the consistency mechanism referred to in Articles 63, 64 and 65 or the procedure referred to in Article 60,…"
+    },
+    {
+      "id": "Art.67",
+      "title": "Exchange of information",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Commission may adopt implementing acts of general scope in order to specify the arrangements for the exchange of information by electronic means between supervisory authorities, and between supervisory authorities and the Board, in particular the standardised format referred to in Article 64."
+    },
+    {
+      "id": "Art.68",
+      "title": "European Data Protection Board",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The European Data Protection Board (the ‘Board') is hereby established as a body of the Union and shall have legal personality. The Board shall be represented by its Chair."
+    },
+    {
+      "id": "Art.69",
+      "title": "Independence",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall act independently when performing its tasks or exercising its powers pursuant to Articles 70 and 71."
+    },
+    {
+      "id": "Art.70",
+      "title": "Tasks of the Board",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall ensure the consistent application of this Regulation."
+    },
+    {
+      "id": "Art.71",
+      "title": "Reports",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall draw up an annual report regarding the protection of natural persons with regard to processing in the Union and, where relevant, in third countries and international organisations."
+    },
+    {
+      "id": "Art.72",
+      "title": "Procedure",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall take decisions by a simple majority of its members, unless otherwise provided for in this Regulation. The Board shall adopt its own rules of procedure by a two-thirds majority of its members and organise its own operational arrangements."
+    },
+    {
+      "id": "Art.73",
+      "title": "Chair",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall elect a chair and two deputy chairs from amongst its members by simple majority. The term of office of the Chair and of the deputy chairs shall be five years and be renewable once."
+    },
+    {
+      "id": "Art.74",
+      "title": "Tasks of the Chair",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Chair shall have the following tasks: (a) to convene the meetings of the Board and prepare its agenda; (b) to notify decisions adopted by the Board pursuant to Article 65 to the lead supervisory authority and the supervisory authorities concerned; (c) to ensure the timely performance of the tasks of the Board, in…"
+    },
+    {
+      "id": "Art.75",
+      "title": "Secretariat",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The Board shall have a secretariat, which shall be provided by the European Data Protection Supervisor. The secretariat shall perform its tasks exclusively under the instructions of the Chair of the Board."
+    },
+    {
+      "id": "Art.76",
+      "title": "Confidentiality",
+      "chapter": "VII",
+      "theme": "Cooperation and consistency",
+      "requirement": "The discussions of the Board shall be confidential where the Board deems it necessary, as provided for in its rules of procedure."
+    },
+    {
+      "id": "Art.77",
+      "title": "Right to lodge a complaint with a supervisory authority",
+      "chapter": "VIII",
+      "theme": "Data Subject Rights",
+      "requirement": "Every data subject has the right to lodge a complaint with a supervisory authority if they consider that processing of their personal data infringes the Regulation."
+    },
+    {
+      "id": "Art.78",
+      "title": "Right to an effective judicial remedy against a supervisory authority",
+      "chapter": "VIII",
+      "theme": "Remedies, liability and penalties",
+      "requirement": "Without prejudice to any other administrative or non-judicial remedy, each natural or legal person shall have the right to an effective judicial remedy against a legally binding decision of a supervisory authority concerning them."
+    },
+    {
+      "id": "Art.79",
+      "title": "Right to an effective judicial remedy against a controller or processor",
+      "chapter": "VIII",
+      "theme": "Remedies, liability and penalties",
+      "requirement": "Without prejudice to any available administrative or non-judicial remedy, including the right to lodge a complaint with a supervisory authority pursuant to Article 77, each data subject shall have the right to an effective judicial remedy where he or she considers that his or her rights under this Regulation have been…"
+    },
+    {
+      "id": "Art.80",
+      "title": "Representation of data subjects",
+      "chapter": "VIII",
+      "theme": "Remedies, liability and penalties",
+      "requirement": "The data subject shall have the right to mandate a not-for-profit body, organisation or association which has been properly constituted in accordance with the law of a Member State, has statutory objectives which are in the public interest, and is active in the field of the protection of data subjects' rights and…"
+    },
+    {
+      "id": "Art.81",
+      "title": "Suspension of proceedings",
+      "chapter": "VIII",
+      "theme": "Remedies, liability and penalties",
+      "requirement": "Where a competent court of a Member State has information on proceedings, concerning the same subject matter as regards processing by the same controller or processor, that are pending in a court in another Member State, it shall contact that court in the other Member State to confirm the existence of such proceedings."
+    },
+    {
+      "id": "Art.82",
+      "title": "Right to compensation and liability",
+      "chapter": "VIII",
+      "theme": "Data Subject Rights",
+      "requirement": "Any person who has suffered material or non-material damage as a result of a GDPR infringement has the right to receive compensation from the controller or processor."
+    },
+    {
+      "id": "Art.83",
+      "title": "General conditions for imposing administrative fines",
+      "chapter": "VIII",
+      "theme": "Supervisory Authority",
+      "requirement": "Administrative fines up to €10M/2% turnover for controller/processor obligation breaches, and up to €20M/4% turnover for principle, rights, or transfer breaches. Fines must be effective, proportionate, and dissuasive."
+    },
+    {
+      "id": "Art.84",
+      "title": "Penalties",
+      "chapter": "VIII",
+      "theme": "Remedies, liability and penalties",
+      "requirement": "Member States shall lay down the rules on other penalties applicable to infringements of this Regulation in particular for infringements which are not subject to administrative fines pursuant to Article 83, and shall take all measures necessary to ensure that they are implemented."
+    },
+    {
+      "id": "Art.85",
+      "title": "Processing and freedom of expression and information",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Member States shall by law reconcile the right to the protection of personal data pursuant to this Regulation with the right to freedom of expression and information, including processing for journalistic purposes and the purposes of academic, artistic or literary expression."
+    },
+    {
+      "id": "Art.86",
+      "title": "Processing and public access to official documents",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Personal data in official documents held by a public authority or a public body or a private body for the performance of a task carried out in the public interest may be disclosed by the authority or body in accordance with Union or Member State law to which the public authority or body is subject in order to…"
+    },
+    {
+      "id": "Art.87",
+      "title": "Processing of the national identification number",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Member States may further determine the specific conditions for the processing of a national identification number or any other identifier of general application."
+    },
+    {
+      "id": "Art.88",
+      "title": "Processing in the context of employment",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Member States may, by law or by collective agreements, provide for more specific rules to ensure the protection of the rights and freedoms in respect of the processing of employees' personal data in the employment context, in particular for the purposes of the recruitment, the performance of the contract of…"
+    },
+    {
+      "id": "Art.89",
+      "title": "Safeguards and derogations relating to processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Processing for archiving purposes in the public interest, scientific or historical research purposes or statistical purposes, shall be subject to appropriate safeguards, in accordance with this Regulation, for the rights and freedoms of the data subject."
+    },
+    {
+      "id": "Art.90",
+      "title": "Obligations of secrecy",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Member States may adopt specific rules to set out the powers of the supervisory authorities laid down in points (e) and (f) of Article 58(1) in relation to controllers or processors that are subject, under Union or Member State law or rules established by national competent bodies, to an obligation of professional…"
+    },
+    {
+      "id": "Art.91",
+      "title": "Existing data protection rules of churches and religious associations",
+      "chapter": "IX",
+      "theme": "Provisions relating to specific processing situations",
+      "requirement": "Where in a Member State, churches and religious associations or communities apply, at the time of entry into force of this Regulation, comprehensive rules relating to the protection of natural persons with regard to processing, such rules may continue to apply, provided that they are brought into line with this…"
+    },
+    {
+      "id": "Art.92",
+      "title": "Exercise of the delegation",
+      "chapter": "X",
+      "theme": "Delegated acts and implementing acts",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article. The delegation of power referred to in Article 12(8) and Article 43(8) shall be conferred on the Commission for an indeterminate period of time from 24 May 2016."
+    },
+    {
+      "id": "Art.93",
+      "title": "Committee procedure",
+      "chapter": "X",
+      "theme": "Delegated acts and implementing acts",
+      "requirement": "The Commission shall be assisted by a committee. That committee shall be a committee within the meaning of Regulation (EU) No 182/2011. Where reference is made to this paragraph, Article 5 of Regulation (EU) No 182/2011 shall apply."
+    },
+    {
+      "id": "Art.94",
+      "title": "Repeal of Directive 95/46/EC",
+      "chapter": "XI",
+      "theme": "Final provisions",
+      "requirement": "Directive 95/46/EC is repealed with effect from 25 May 2018. References to the repealed Directive shall be construed as references to this Regulation."
+    },
+    {
+      "id": "Art.95",
+      "title": "Relationship with Directive 2002/58/EC",
+      "chapter": "XI",
+      "theme": "Final provisions",
+      "requirement": "This Regulation shall not impose additional obligations on natural or legal persons in relation to processing in connection with the provision of publicly available electronic communications services in public communication networks in the Union in relation to matters for which they are subject to specific obligations…"
+    },
+    {
+      "id": "Art.96",
+      "title": "Relationship with previously concluded Agreements",
+      "chapter": "XI",
+      "theme": "Final provisions",
+      "requirement": "International agreements involving the transfer of personal data to third countries or international organisations which were concluded by Member States prior to 24 May 2016, and which comply with Union law as applicable prior to that date, shall remain in force until amended, replaced or revoked."
+    },
+    {
+      "id": "Art.97",
+      "title": "Commission reports",
+      "chapter": "XI",
+      "theme": "Final provisions",
+      "requirement": "By 25 May 2020 and every four years thereafter, the Commission shall submit a report on the evaluation and review of this Regulation to the European Parliament and to the Council."
+    },
+    {
+      "id": "Art.98",
+      "title": "Review of other Union legal acts on data protection",
+      "chapter": "XI",
+      "theme": "Final provisions",
+      "requirement": "The Commission shall, if appropriate, submit legislative proposals with a view to amending other Union legal acts on the protection of personal data, in order to ensure uniform and consistent protection of natural persons with regard to processing."
+    },
+    {
+      "id": "Art.99",
+      "title": "Entry into force and application",
+      "chapter": "XI",
+      "theme": "Final provisions",
+      "requirement": "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union . It shall apply from 25 May 2018."
+    }
+  ],
+  "eurLex": "CELEX:32016R0679",
+  "divisionKind": "Chapter",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "General provisions",
+      "articles": "1-4"
+    },
+    {
+      "number": "II",
+      "title": "Principles",
+      "articles": "5-11"
+    },
+    {
+      "number": "III",
+      "title": "Rights of the data subject",
+      "articles": "12-23"
+    },
+    {
+      "number": "IV",
+      "title": "Controller and processor",
+      "articles": "24-43"
+    },
+    {
+      "number": "V",
+      "title": "Transfers of personal data to third countries or international organisations",
+      "articles": "44-50"
+    },
+    {
+      "number": "VI",
+      "title": "Independent supervisory authorities",
+      "articles": "51-59"
+    },
+    {
+      "number": "VII",
+      "title": "Cooperation and consistency",
+      "articles": "60-76"
+    },
+    {
+      "number": "VIII",
+      "title": "Remedies, liability and penalties",
+      "articles": "77-84"
+    },
+    {
+      "number": "IX",
+      "title": "Provisions relating to specific processing situations",
+      "articles": "85-91"
+    },
+    {
+      "number": "X",
+      "title": "Delegated acts and implementing acts",
+      "articles": "92-93"
+    },
+    {
+      "number": "XI",
+      "title": "Final provisions",
+      "articles": "94-99"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32016R0679",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "Headings verbatim. A requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  }
 }

@@ -125,7 +125,7 @@
       "type": "textarea",
       "label": "Recent Regulatory Changes to Address",
       "description": "Any specific regulatory changes requiring training awareness.",
-      "placeholder": "e.g. AMLR enters application from July 2027. New beneficial ownership threshold of 15% requires staff re-training. Updated FATF guidance on virtual assets published October 2024..."
+      "placeholder": "e.g. AMLR enters application from July 2027. Harmonised beneficial ownership threshold of 25% or more requires staff re-training. Updated FATF guidance on virtual assets published October 2024..."
     }
   ],
   "recommendedPersonas": [

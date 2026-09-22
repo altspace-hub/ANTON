@@ -55,6 +55,20 @@
       ]
     },
     {
+      "id": "analysis_period",
+      "type": "text",
+      "label": "Analysis period",
+      "description": "For a multi-deal analysis: the period the deals cover.",
+      "placeholder": "e.g. Q1–Q3 2026, or rolling 12 months to September 2026"
+    },
+    {
+      "id": "overall_win_rate",
+      "type": "text",
+      "label": "Overall win rate (if known)",
+      "description": "The headline rate for the period, so findings can be read against it.",
+      "placeholder": "e.g. 31% (17 wins / 55 qualified opportunities)"
+    },
+    {
       "id": "deal_info",
       "type": "textarea",
       "label": "Deal information",

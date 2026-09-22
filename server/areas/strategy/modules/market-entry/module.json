@@ -12,7 +12,7 @@
     "creativity": "balanced",
     "outputFormats": [
       "decision-memo",
-      "project-plan"
+      "detailed-findings"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -61,6 +61,37 @@
       "type": "text",
       "label": "Target market",
       "placeholder": "e.g., Swedish SME banking, Norwegian retail mortgages"
+    },
+    {
+      "id": "our_offering",
+      "type": "textarea",
+      "label": "Our product / service offering",
+      "description": "What you would actually sell in this market. The assessment is only useful when it is tied to a specific offering.",
+      "placeholder": "e.g. Outsourced AML transaction-monitoring tuning and validation, delivered as an annual retainer with quarterly recalibration."
+    },
+    {
+      "id": "timeline",
+      "type": "select",
+      "label": "Entry timeline aspiration",
+      "description": "Constrains which entry modes are realistic — a six-month aspiration rules out most organic builds in regulated markets.",
+      "options": [
+        {
+          "value": "under_6m",
+          "label": "Within 6 months"
+        },
+        {
+          "value": "6_18m",
+          "label": "6–18 months"
+        },
+        {
+          "value": "18_36m",
+          "label": "18–36 months"
+        },
+        {
+          "value": "exploratory",
+          "label": "Exploratory — no fixed timeline"
+        }
+      ]
     },
     {
       "id": "context",

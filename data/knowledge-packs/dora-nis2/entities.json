@@ -350,11 +350,12 @@
     "description": "Lead overseer can request information and documents, conduct investigations including on-site inspections of CTPPs, impose periodic penalty payments. CTPPs outside EU with significant EU presence can be required to establish EU subsidiary.",
     "metadata": {
       "regulation": "DORA",
-      "chapter": 5,
+      "chapter": "V",
       "topic": "lead-overseer-powers",
       "article": "35",
       "source_quote": "Regulation (EU) 2022/2554 Art. 35: \"For the purposes of carrying out the duties laid down in this Section, the Lead Overseer shall have the following powers in respect of the critical ICT third-party service providers: (a) to request all relevant information and documentation in accordance with Article 37;\"",
-      "source_verified": "2026-08-29 — reference corrected from Art.33 to Art.35 against the Official Journal text; quote verbatim"
+      "source_verified": "2026-08-29 — reference corrected from Art.33 to Art.35 against the Official Journal text; quote verbatim",
+      "instrument": "Regulation (EU) 2022/2554"
     },
     "entity_type": "obligation",
     "entity_id": "dora-a33",
@@ -904,8 +905,11 @@
     "description": "DORA applies to: credit institutions, payment institutions, e-money institutions, investment firms, crypto-asset service providers (CASPs), central securities depositories, central counterparties, trading venues, AIFs/UCITS/management companies, insurance/reinsurance undertakings, ICCPs, rating agencies, statutory auditors, data reporting service providers, securitisation repositories, crowdfunding service providers, and ICT third-party service providers.",
     "metadata": {
       "regulation": "DORA",
-      "article": "Art.2",
-      "entity_types_count": 20
+      "article": "2",
+      "entity_types_count": 20,
+      "instrument": "Regulation (EU) 2022/2554",
+      "article_ref": "Art.2",
+      "chapter": "I"
     },
     "entity_type": "document",
     "entity_id": "dora-annex-scope",

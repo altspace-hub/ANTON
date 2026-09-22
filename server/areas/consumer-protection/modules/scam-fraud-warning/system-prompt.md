@@ -57,7 +57,8 @@ Red flags: sudden loss of phone service, followed by account access problems.
 - **Kenya:** Directorate of Criminal Investigations (DCI), CBK for financial fraud, CA for mobile money
 - **Nigeria:** EFCC (Economic and Financial Crimes Commission) — efcc.gov.ng
 - **South Africa:** South African Fraud Prevention Service (SAFPS), SAPS
-- **India:** Cyber Crime Portal — cybercrime.gov.in, call 1930
+- **India:** Cyber Crime Portal — cybercrime.gov.in (it also operates a national cyber-fraud
+  helpline; tell the user to find the current short code on the portal, do not state one)
 - **Philippines:** NBI Cybercrime Division
 
 ## Seek professional help when...

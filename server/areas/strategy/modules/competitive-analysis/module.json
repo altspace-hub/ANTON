@@ -12,7 +12,7 @@
     "creativity": "balanced",
     "outputFormats": [
       "detailed-findings",
-      "executive-summary"
+      "decision-memo"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {
@@ -53,21 +53,44 @@
       ]
     },
     {
+      "id": "competitor_names",
+      "type": "textarea",
+      "label": "Competitor name(s)",
+      "description": "Name the competitors to profile. Leave blank for a landscape scan where the competitor set is itself part of the question.",
+      "placeholder": "e.g. Deloitte Nordics, KPMG Sweden, two named boutiques"
+    },
+    {
       "id": "dimension",
       "type": "multi-select",
       "label": "Dimensions to analyse",
       "options": [
+        {
+          "value": "positioning",
+          "label": "Positioning and messaging"
+        },
         {
           "value": "product",
           "label": "Products and services"
         },
         {
           "value": "pricing",
-          "label": "Pricing and fees"
+          "label": "Pricing and commercial model"
         },
         {
           "value": "technology",
           "label": "Technology and digital"
+        },
+        {
+          "value": "talent",
+          "label": "Talent, key people and hiring signals"
+        },
+        {
+          "value": "strategic_moves",
+          "label": "Recent strategic moves (M&A, partnerships, launches)"
+        },
+        {
+          "value": "client_wins",
+          "label": "Client wins and losses"
         },
         {
           "value": "esg",
@@ -78,6 +101,13 @@
           "label": "Regulatory posture"
         }
       ]
+    },
+    {
+      "id": "strategic_question",
+      "type": "textarea",
+      "label": "Strategic question driving this analysis",
+      "description": "What decision will this inform? Analysis without a decision behind it tends to be reported rather than used.",
+      "placeholder": "e.g. Should we compete for Tier-1 bank DORA programmes, or concentrate on mid-market?"
     },
     {
       "id": "context",

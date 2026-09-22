@@ -1,0 +1,200 @@
+{
+  "id": "eu-ucpd-2005-29",
+  "name": "Unfair Commercial Practices Directive",
+  "shortName": "UCPD",
+  "reference": "Directive 2005/29/EC",
+  "coverage": "transcribed",
+  "referenceAliases": [
+    "Directive 2005/29/EC as amended by Directive (EU) 2024/825",
+    "Unfair Commercial Practices Directive",
+    "UCPD"
+  ],
+  "applicationDate": "2007-12-12",
+  "supervisor": "National consumer protection authorities (CPC network)",
+  "themes": [
+    "General provisions",
+    "Unfair commercial practices",
+    "Codes of conduct",
+    "Final provisions"
+  ],
+  "eurLex": "CELEX:32005L0029",
+  "articleCount": 21,
+  "divisionKind": "Chapter",
+  "chapters": [
+    {
+      "number": "1",
+      "title": "General provisions",
+      "articles": "1-4"
+    },
+    {
+      "number": "2",
+      "title": "Unfair commercial practices",
+      "articles": "5-9"
+    },
+    {
+      "number": "3",
+      "title": "Codes of conduct",
+      "articles": "10"
+    },
+    {
+      "number": "4",
+      "title": "Final provisions",
+      "articles": "11-21"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32005L0029",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Purpose",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "The purpose of this Directive is to contribute to the proper functioning of the internal market and achieve a high level of consumer protection by approximating the laws, regulations and administrative provisions of the Member States on unfair commercial practices harming consumers' economic interests."
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "For the purposes of this Directive: (a) ‘consumer' means any natural person who, in commercial practices covered by this Directive, is acting for purposes which are outside his trade, business, craft or profession; (b) ‘trader' means any natural or legal person who, in commercial practices covered by this Directive,…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Scope",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "This Directive shall apply to unfair business-to-consumer commercial practices, as laid down in Article 5, before, during and after a commercial transaction in relation to a product."
+    },
+    {
+      "id": "Art.4",
+      "title": "Internal market",
+      "chapter": "1",
+      "theme": "General provisions",
+      "requirement": "Member States shall neither restrict the freedom to provide services nor restrict the free movement of goods for reasons falling within the field approximated by this Directive."
+    },
+    {
+      "id": "Art.5",
+      "title": "Prohibition of unfair commercial practices",
+      "chapter": "2",
+      "theme": "Unfair commercial practices",
+      "requirement": "Unfair commercial practices shall be prohibited."
+    },
+    {
+      "id": "Art.6",
+      "title": "Misleading actions",
+      "chapter": "2",
+      "theme": "Unfair commercial practices",
+      "requirement": "A commercial practice shall be regarded as misleading if it contains false information and is therefore untruthful or in any way, including overall presentation, deceives or is likely to deceive the average consumer, even if the information is factually correct, in relation to one or more of the following elements,…"
+    },
+    {
+      "id": "Art.7",
+      "title": "Misleading omissions",
+      "chapter": "2",
+      "theme": "Unfair commercial practices",
+      "requirement": "A commercial practice shall be regarded as misleading if, in its factual context, taking account of all its features and circumstances and the limitations of the communication medium, it omits material information that the average consumer needs, according to the context, to take an informed transactional decision and…"
+    },
+    {
+      "id": "Art.8",
+      "title": "Aggressive commercial practices",
+      "chapter": "2",
+      "theme": "Unfair commercial practices",
+      "requirement": "A commercial practice shall be regarded as aggressive if, in its factual context, taking account of all its features and circumstances, by harassment, coercion, including the use of physical force, or undue influence, it significantly impairs or is likely to significantly impair the average consumer's freedom of…"
+    },
+    {
+      "id": "Art.9",
+      "title": "Use of harassment, coercion and undue influence",
+      "chapter": "2",
+      "theme": "Unfair commercial practices",
+      "requirement": "In determining whether a commercial practice uses harassment, coercion, including the use of physical force, or undue influence, account shall be taken of: (a) its timing, location, nature or persistence; (b) the use of threatening or abusive language or behaviour; (c) the exploitation by the trader of any specific…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Codes of conduct",
+      "chapter": "3",
+      "theme": "Codes of conduct",
+      "requirement": "This Directive does not exclude the control, which Member States may encourage, of unfair commercial practices by code owners and recourse to such bodies by the persons or organisations referred to in Article 11 if proceedings before such bodies are in addition to the court or administrative proceedings referred to in…"
+    },
+    {
+      "id": "Art.11",
+      "title": "Enforcement",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Member States shall ensure that adequate and effective means exist to combat unfair commercial practices in order to enforce compliance with the provisions of this Directive in the interest of consumers."
+    },
+    {
+      "id": "Art.12",
+      "title": "Courts and administrative authorities: substantiation of claims",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Member States shall confer upon the courts or administrative authorities powers enabling them in the civil or administrative proceedings provided for in Article 11: (a) to require the trader to furnish evidence as to the accuracy of factual claims in relation to a commercial practice if, taking into account the…"
+    },
+    {
+      "id": "Art.13",
+      "title": "Penalties",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Member States shall lay down penalties for infringements of national provisions adopted in application of this Directive and shall take all necessary measures to ensure that these are enforced."
+    },
+    {
+      "id": "Art.14",
+      "title": "Amendments to Directive 84/450/EEC",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Directive 84/450/EEC is hereby amended as follows: 1."
+    },
+    {
+      "id": "Art.15",
+      "title": "Amendments to Directives 97/7/EC and 2002/65/EC",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Article 9 of Directive 97/7/EC shall be replaced by the following: Given the prohibition of inertia selling practices laid down in Directive 2005/29/EC of 11 May 2005of the European Parliament and of the Council concerning unfair business-to-consumer commercial practices in the internal market ( *2 ) , Member States…"
+    },
+    {
+      "id": "Art.16",
+      "title": "Amendments to Directive 98/27/EC and Regulation (EC) No 2006/2004",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "In the Annex to Directive 98/27/EC, point 1 shall be replaced by the following: ‘1. Directive 2005/29/EC of the European Parliament and of the Council of 11 May 2005 concerning unfair business-to-consumer commercial practices in the internal market ( OJ L 149, 11.6.2005, p. 22 ).' 2."
+    },
+    {
+      "id": "Art.17",
+      "title": "Information",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Member States shall take appropriate measures to inform consumers of the national law transposing this Directive and shall, where appropriate, encourage traders and code owners to inform consumers of their codes of conduct."
+    },
+    {
+      "id": "Art.18",
+      "title": "Review",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "By 12 June 2011 the Commission shall submit to the European Parliament and the Council a comprehensive report on the application of this Directive, in particular of Articles 3(9) and 4 and Annex I, on the scope for further harmonisation and simplification of Community law relating to consumer protection, and, having…"
+    },
+    {
+      "id": "Art.19",
+      "title": "Transposition",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "Member States shall adopt and publish the laws, regulations and administrative provisions necessary to comply with this Directive by 12 June 2007."
+    },
+    {
+      "id": "Art.20",
+      "title": "Entry into force",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "This Directive shall enter into force on the day following its publication in the Official Journal of the European Union ."
+    },
+    {
+      "id": "Art.21",
+      "title": "Addressees",
+      "chapter": "4",
+      "theme": "Final provisions",
+      "requirement": "This Directive is addressed to the Member States. Done at Strasbourg, 11 May 2005. Misleading commercial practices 1. Claiming to be a signatory to a code of conduct when the trader is not."
+    }
+  ]
+}

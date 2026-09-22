@@ -60,6 +60,49 @@ For organisations receiving more than 20 DSRs per month, implement:
 - Log of all requests, outcomes, and response dates
 - Monthly reporting to DPO
 
+### THE AML / TIPPING-OFF RESTRICTION — HANDLE BEFORE ANY DISCLOSURE
+
+In a financial institution, or any obliged entity under AML/CFT law, this restriction overrides the rights framework above and must be checked **before** any data is released.
+
+**The test.** Does any data within the scope of the request relate to a suspicious transaction or activity report (STR/SAR), a disclosure made to the Financial Intelligence Unit, an ongoing or recent financial-crime investigation, an account freeze or a restraint order, or internal analysis that would reveal any of these?
+
+**If yes, that data must be withheld, and the restriction is absolute.** The institution cannot confirm or deny that a report exists. Tipping off is a criminal offence in most jurisdictions (AMLR (EU) 2024/1624 and the equivalent national provisions carrying forward AMLD Art. 39/41; comparable offences exist in the UK, US and elsewhere). It is not a GDPR balancing test and it does not yield to a data subject's rights.
+
+**How to withhold without tipping off.** Do not tell the data subject that data was withheld *because of* an AML restriction — the confirmation is itself the tipping-off. Withhold the specific data and, where national law and DPA guidance permit, respond in general terms that some data is exempt from disclosure. National positions on how much may be said differ; check the applicable law rather than assuming.
+
+**Escalate, always.** Any request that touches this ground goes to the MLRO and to legal counsel before the response is finalised. Do not resolve it inside the privacy function alone. Record the decision and who authorised it, in a log that is itself access-controlled.
+
+**Erasure is also blocked.** Records retained under AML record-keeping obligations (AMLR: a minimum of five years, extendable to ten by national law; comparable elsewhere) cannot be erased early. This is the Article 17(3)(b) legal-obligation exemption and it should be stated plainly to the data subject as a retention obligation — which is not tipping off, because it applies to every customer.
+
+**Adjacent restrictions in the same family**, each of which needs the same escalation discipline:
+- Ongoing regulatory investigation or supervisory enquiry
+- Crime prevention and detection (a national derogation — verify the applicable national provision, as it is not uniform across the EEA)
+- Legal professional privilege — genuinely privileged legal advice and litigation material only, not everything that passed through the legal team
+- Sanctions: data relating to a designated-person match, a freeze, or a licence application
+
+### DATA SOURCE INVENTORY — WHERE THE DATA ACTUALLY IS
+
+A search plan is only as good as its list of systems. In a financial institution, a subject access request typically has to reach:
+- Core banking and account records
+- Transaction records (note the retention period applied to each)
+- CRM, correspondence, call recordings, chat and complaint records
+- Credit bureau data and internal scoring output — **and the logic of any automated decision**, where Article 22 is engaged
+- KYC and onboarding files, including identity documents and source-of-funds evidence
+- Customer risk rating and its inputs
+- Marketing preferences and the consent records behind them
+- Data shared with third parties (credit reference agencies, group entities, processors) — Article 15(1)(c) requires the recipients
+- Paper files and archived or backup media
+- System and access logs, where relevant to the request
+
+For each source, name who retrieves it and by what date, working backwards from the response deadline — not forwards from today.
+
+### RESPONSE PACK — WHAT TO PRODUCE
+
+- **Acknowledgement letter**, issued immediately: confirms receipt, states the response deadline date, and requests any identity verification still needed (the clock runs from receipt of a valid request, so ask early)
+- **Response letter**: identity verification confirmed, rights addressed, data disclosed by category, a clear statement of any withheld category and the legal basis for withholding (subject to the tipping-off constraint above), and the right to complain to the supervisory authority under Article 77
+- **Redaction log**: every item withheld or redacted, the exemption relied on, why it applies to that specific item, and who authorised it. This is the document that defends the decision if the data subject escalates
+- **Action plan**: identity verification, per-system searches, exemption review by MLRO and Legal, compilation and redaction, sign-off, send — each with an owner and a date inside the deadline
+
 ### COMMON EXEMPTIONS AND THEIR MISUSE
 Controllers frequently over-apply exemptions to avoid the effort of responding. This creates regulatory risk. The most commonly misapplied exemptions:
 - "Third-party data": Not a blanket exemption. Redact third parties' data; do not refuse the entire SAR.
@@ -86,3 +129,5 @@ Produce a DSR management output containing:
 5. Process Design Recommendations (if volume warrants a structured programme)
 6. Response Letter Templates (per request type)
 7. DSR Log Template (for ongoing tracking and audit trail)
+8. Redaction Log (every withheld item, its exemption, and who authorised it)
+9. Escalation Flags (anything requiring MLRO, Legal or DPO sign-off before the response goes out)

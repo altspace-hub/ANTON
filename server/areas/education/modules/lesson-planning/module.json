@@ -11,7 +11,7 @@
     "thinking": "think",
     "creativity": "balanced",
     "outputFormats": [
-      "policy-document"
+      "action-plan"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

@@ -3,6 +3,8 @@
   "name": "Central Bank (Individual Accountability Framework) Act 2023 + SEAR Regulations",
   "shortName": "IAF / SEAR",
   "reference": "Act No. 5 of 2023 + CBI SEAR Regulations + Conduct Standards Regulations + F&P Regulations",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "iafSigned": "2023-03-09",
   "conductStandardsInForce": "2023-12-29",
   "searFirstWaveInForce": "2024-07-01",
@@ -10,11 +12,31 @@
   "supervisor": "Central Bank of Ireland",
   "articleCount": 17,
   "chapters": [
-    {"number": "1", "title": "Foundation — IAF Act 2023", "articles": "IAF Act"},
-    {"number": "2", "title": "SEAR Regulations — Responsibilities", "articles": "SEAR Regs"},
-    {"number": "3", "title": "Conduct Standards Regulations", "articles": "CS Regs"},
-    {"number": "4", "title": "Fitness & Probity Regime", "articles": "F&P Regs + CBR Act 2010"},
-    {"number": "5", "title": "Enforcement + Investigation", "articles": "IAF Act + ASP"}
+    {
+      "number": "1",
+      "title": "Foundation — IAF Act 2023",
+      "articles": "IAF Act"
+    },
+    {
+      "number": "2",
+      "title": "SEAR Regulations — Responsibilities",
+      "articles": "SEAR Regs"
+    },
+    {
+      "number": "3",
+      "title": "Conduct Standards Regulations",
+      "articles": "CS Regs"
+    },
+    {
+      "number": "4",
+      "title": "Fitness & Probity Regime",
+      "articles": "F&P Regs + CBR Act 2010"
+    },
+    {
+      "number": "5",
+      "title": "Enforcement + Investigation",
+      "articles": "IAF Act + ASP"
+    }
   ],
   "themes": [
     "PCF + CF identification",

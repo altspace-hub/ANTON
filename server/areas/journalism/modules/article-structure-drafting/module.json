@@ -24,10 +24,7 @@
   "defaults": {
     "thinking": "think",
     "creativity": "balanced",
-    "outputFormats": [
-      "policy-document",
-      "detailed-findings"
-    ]
+    "outputFormats": []
   },
   "recommendedPersonas": [
     "general-assistant"

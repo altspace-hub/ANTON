@@ -144,6 +144,9 @@
   "recommendedPersonas": [
     "legal-expert"
   ],
+  "recommendedSkills": [
+    "amlr-article-reference"
+  ],
   "tags": [
     "compliance-calendar",
     "deadlines",

@@ -70,7 +70,7 @@
     {
       "id": "risk-focus",
       "label": "Risk Focus Areas",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "supplier-concentration",

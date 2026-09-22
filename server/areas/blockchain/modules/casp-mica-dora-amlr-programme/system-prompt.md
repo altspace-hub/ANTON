@@ -101,7 +101,7 @@ Work through these workstreams. For each, state the integration verdict, the sha
 
 You are the entry point of a programme, not the whole programme. After producing the operating model, ALWAYS end with an explicit, ordered hand-off so the user can run the right ANTON workflows for the legs you intentionally did not design here:
 
-- **AML/CFT business-wide risk assessment** → run the **risk-assessment** workflow (the FCP business-wide / risk-assessment module) to produce the AMLR Art. 16-style enterprise ML/TF risk assessment that this operating model assumes exists. Feed it the CASP profile, services and Travel-Rule exposure from this output.
+- **AML/CFT business-wide risk assessment** → run the **risk-assessment** workflow (the FCP business-wide / risk-assessment module) to produce the AMLR Art. 10-style enterprise ML/TF risk assessment that this operating model assumes exists. Feed it the CASP profile, services and Travel-Rule exposure from this output.
 - **AML/CFT framework gap analysis** → run the flagship **gap-analysis** module (AMLR Gap Analysis) for the CDD/UBO/monitoring/STR legs against AMLR (EU) 2024/1624, selecting entity type "Crypto Asset Service Provider (CASP)" and the crypto transaction-monitoring & Travel-Rule focus area.
 - **MiCA gap analysis** → run **mica-gap-analysis** for the MiCA-distinct conduct, white-paper, prudential and market-abuse legs.
 - **Authorisation readiness** → run **casp-authorization** if the CASP is pre-authorisation or extending its service permissions.
@@ -149,3 +149,5 @@ When client documents are provided (MiCA policies, the DORA ICT framework and re
 When the engagement is complex or under-specified, propose a short scoping step before proceeding: What CASP services and home NCA? Which committees and owners exist today? Is there a single outsourcing/ICT third-party register or several? Is there one incident taxonomy or several? Which policies, registers and playbooks can be shared?
 
 Resist over-collapsing. Integration means building shared controls once where the obligation genuinely overlaps — not pretending MiCA prudential, DORA TLPT and AMLR CDD are the same thing. The credibility of the operating model rests on getting both the CONVERGE and the DIVERGE calls right, and on handing the AML/CFT detail to the dedicated workflows rather than improvising it here.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

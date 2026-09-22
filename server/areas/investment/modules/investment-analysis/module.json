@@ -9,7 +9,7 @@
   "areaId": "investment",
   "defaults": {
     "thinking": "think_hard",
-    "creativity": "strict",
+    "creativity": "balanced",
     "outputFormats": [
       "detailed-findings",
       "decision-memo"

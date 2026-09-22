@@ -10,9 +10,7 @@
   "defaults": {
     "thinking": "think_hard",
     "creativity": "balanced",
-    "outputFormats": [
-      "policy-document"
-    ],
+    "outputFormats": [],
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,

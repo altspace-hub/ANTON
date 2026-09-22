@@ -16,7 +16,7 @@ Assess an institution's data readiness for AMLA-driven requirements: direct supe
 - Assess data readiness using a consistent 5-level scale (defined below).
 - Be specific about data fields, formats, system sources, and ownership — "customer data is mostly available" is unhelpful.
 - Distinguish clearly between three categories:
-  - **Data the institution must hold** (retention obligation — AMLR Art. 67, 5 years)
+  - **Data the institution must hold** (retention obligation — AMLR Art. 77, 5 years)
   - **Data it must report** (GoAML, AMLA direct requests, national FIU reporting)
   - **Data it must make available on supervisory request** (within defined timeframes)
 - Flag manual workarounds, system fragmentation, and data lineage breaks.
@@ -39,7 +39,7 @@ Assess an institution's data readiness for AMLA-driven requirements: direct supe
 
 ### 1. Customer Data (CDD Data)
 
-Key AMLR requirements — Arts. 20–45 and Art. 67:
+Key AMLR requirements — Chapter III (Arts. 19–50), Chapter IV (Arts. 51–55) and Art. 77:
 
 | Data Element | AMLR Reference | Notes |
 |---|---|---|
@@ -47,12 +47,12 @@ Key AMLR requirements — Arts. 20–45 and Art. 67:
 | Date of birth / registration | Art. 22 | Individuals and entities |
 | National identification number | Art. 22 | Passport, national ID, company registration |
 | Address (registered / residential) | Art. 22 | Current address required |
-| Beneficial ownership (25%+ threshold) | Arts. 40–45 | Full chain including intermediaries |
-| PEP status and classification | Arts. 28–37 | Domestic / foreign / international; family and close associates |
-| Source of funds / source of wealth | Arts. 27, 36 | For EDD; documented evidence required |
-| Business purpose / nature of relationship | Art. 21 | Required at onboarding and at review |
+| Beneficial ownership (25%-or-more threshold) | Arts. 51–54 | Full chain including intermediaries |
+| PEP status and classification | Arts. 42–46 | Domestic / foreign / international; family and close associates |
+| Source of funds / source of wealth | Arts. 34(2), 42(1)(b) | For EDD; documented evidence required |
+| Business purpose / nature of relationship | Art. 25 | Required at onboarding and at review |
 | Risk classification | Art. 20 | Low / Standard / High; documented basis |
-| CDD review date and next review trigger | Art. 21 | Risk-based review cycle |
+| CDD review date and next review trigger | Art. 26(2) | Risk-based review cycle |
 
 ### 2. Transaction Data
 
@@ -129,7 +129,7 @@ For each data domain, assess quality across six dimensions:
 
 ## AMLA SUPERVISION READINESS
 
-From July 2027, AMLA directly supervises the largest cross-border financial institutions. Data readiness for AMLA direct supervision includes:
+AMLA has been operational since 1 July 2025. The AMLR applies from 10 July 2027; AMLA's **direct supervision** of the first cohort of selected obliged entities — up to 40 of the largest cross-border institutions — begins **1 January 2028**, after the selection round run during 2027. Do not conflate the two dates. Data readiness for AMLA direct supervision includes:
 
 **AMLA data request readiness:**
 - Can the institution respond to an AMLA data request within the regulatory timeframe (expected: 5–10 business days)?
@@ -140,6 +140,15 @@ From July 2027, AMLA directly supervises the largest cross-border financial inst
 - Has the institution mapped its SAR data to the latest GoAML schema version?
 - Is the technical connection to the national FIU GoAML instance tested and operational?
 - Are SAR XML files validated against the GoAML XSD schema before submission?
+
+**GoAML key field groups (UNODC schema used by many EU FIUs):**
+- **Subject data:** FIU-specific customer identifier, full name, date of birth, nationality, address, occupation, ID document details
+- **Transaction data:** date, amount, currency, account details (IBAN/BIC), transaction type code, originator and beneficiary details
+- **Relationships:** connections between subjects, accounts, entities, and transactions — modelled as a network, not flat records
+- **Narrative:** free-text SAR narrative (structure per the Investigation Support module)
+- **Supporting documentation:** attachments (KYC files, transaction evidence)
+
+Flag institutions not yet connected to their national FIU's GoAML instance — that is a significant readiness gap in itself.
 
 **AMLA supervisory data pack (preparation):**
 - A standard pack includes: BWRA, compliance function organisation chart, TM scenario inventory, SAR statistics, CDD data quality metrics, training records, audit findings. Readiness for each component should be assessed.
@@ -157,7 +166,7 @@ For each data domain, document:
 | **Data Consumer** | Which processes or reports consume this data? (TM alerts, SAR filing, regulatory reporting, risk scoring) |
 | **Refresh Frequency** | How often is the data updated? (Real-time, daily batch, event-triggered, manual) |
 | **Quality Control** | What automated or manual quality checks exist? (Completeness rules, validation rules, exception reports) |
-| **Retention Period** | Is the retention mechanism compliant with AMLR Art. 67 (5 years minimum)? |
+| **Retention Period** | Is the retention mechanism compliant with AMLR Art. 77 (5 years minimum)? |
 
 ---
 
@@ -169,6 +178,9 @@ For institutions in scope of DORA (Regulation 2022/2554):
 - Assess: Recovery Time Objective (RTO) and Recovery Point Objective (RPO) for compliance-critical systems.
 - Assess: whether third-party providers of compliance technology are subject to DORA concentration risk monitoring.
 - Flag: dependency on a single screening vendor or TM system with no tested failover.
+- Assess: whether a major ICT incident affecting TM, screening, or KYC systems would meet DORA's major-incident reporting thresholds, and whether the incident process involves compliance.
+- Assess: whether DORA backup and recovery arrangements preserve the AMLR record-keeping period (5 years) for compliance data.
+- Assess: whether AML/CFT systems are inside the DORA digital operational resilience testing scope.
 
 ---
 
@@ -180,3 +192,5 @@ Present as three phases:
 - **Phase 1 — Immediate (0–3 months):** Data quality quick fixes; manual workarounds to bridge critical gaps; document current state for supervisory file.
 - **Phase 2 — Medium-term (3–12 months):** System configuration, data field additions, automated quality controls, GoAML testing.
 - **Phase 3 — AMLR 2027 readiness (12–24 months):** Full AMLA data pack readiness; AMLA RTS compliance; direct supervision readiness testing.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

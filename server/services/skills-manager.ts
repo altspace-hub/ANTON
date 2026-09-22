@@ -7,15 +7,36 @@
  * Two sources:
  * 1. BUILT_IN_SKILLS — defined inline below (synchronous, always available)
  * 2. Disk skills — loaded from server/skills/{id}/skill.json + skill-content.md
- *    These are loaded lazily on first async call and merged with built-ins.
+ *    `preloadDiskSkills()` (called once at server boot from server/index.ts)
+ *    reads them into an in-memory index so that the SYNCHRONOUS resolvers the
+ *    prompt composer and the routes use — getSkillById / getAllSkills /
+ *    resolveSkills — see disk packs too. Before preload, only built-ins resolve.
+ *    Built-ins win on an id clash.
  */
 
 import path from 'path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
+import type { DatabaseAdapter } from '../db/database.js';
 
 const __dirname_skills = path.dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = path.join(__dirname_skills, '..', 'skills');
+
+/**
+ * Every category a skill may declare. The last two come from the disk packs
+ * under server/skills/ (`technical`: AAOIFI / IFSB standards; `thematic`:
+ * crop database, livestock diseases) — a skill.json category outside this list
+ * is loaded as `domain` with a warning rather than dropped.
+ */
+export const SKILL_CATEGORIES = [
+  'language', 'communication', 'methodology', 'domain', 'style', 'jurisdiction', 'technical', 'thematic',
+] as const;
+
+export type SkillCategory = typeof SKILL_CATEGORIES[number];
+
+export function isSkillCategory(value: unknown): value is SkillCategory {
+  return typeof value === 'string' && (SKILL_CATEGORIES as readonly string[]).includes(value);
+}
 
 export interface Skill {
   id: string;
@@ -23,11 +44,12 @@ export interface Skill {
   description: string;
   version: string;
   author: string;
-  category: 'language' | 'communication' | 'methodology' | 'domain' | 'style' | 'jurisdiction';
+  category: SkillCategory;
   tags: string[];
   applicableAreas?: string[];
   prompt: string;  // Injected as Layer 5 in PromptComposer
-  source?: 'builtin' | 'disk';
+  /** 'installed' = a row of the `skills` table (e.g. arrived inside a .anton module bundle). */
+  source?: 'builtin' | 'disk' | 'installed';
 }
 
 // ── Built-in Skill Library ────────────────────────────────────
@@ -196,14 +218,15 @@ Apply precise citation of AMLR Regulation (EU) 2024/1624 (the Anti-Money Launder
 **Citation Format:** Always reference: Regulation (EU) 2024/1624 + Chapter + Article + Paragraph + Subparagraph + Point. Example: "Article 20(1)(b) AMLR" or "Article 42, paragraph 3 AMLR".
 
 **Key AMLR Structure:**
-- Chapter I (Articles 1-3): Subject matter, scope, definitions
-- Chapter II (Articles 4-9): Internal policies, procedures, and controls
-- Chapter III (Articles 10-30): Customer due diligence (CDD) — simplified, standard, enhanced
-- Chapter IV (Articles 31-43): Beneficial ownership, registers
-- Chapter V (Articles 44-51): Reporting obligations, suspicious transaction reporting
-- Chapter VI (Articles 52-65): Targeted financial sanctions, politically exposed persons
-- Chapter VII (Articles 66-75): Data protection and record retention
-- Chapter VIII (Articles 76-86): Supervision and enforcement
+- Chapter I (Articles 1-8): General provisions — subject matter, definitions, obliged entities, exemptions
+- Chapter II (Articles 9-18): Internal policies, procedures and controls — business-wide risk assessment (Art. 10), compliance functions (Art. 11), training (Art. 12), group-wide requirements (Arts. 16-17), outsourcing (Art. 18)
+- Chapter III (Articles 19-50): Customer due diligence — general CDD (Arts. 19-28), third-country policy (Arts. 29-32), simplified (Art. 33), enhanced (Arts. 34-46), reliance (Arts. 48-50)
+- Chapter IV (Articles 51-68): Beneficial ownership transparency — identification (Arts. 51-55), BO information and entity obligations (Arts. 62-67)
+- Chapter V (Articles 69-74): Reporting obligations — reporting of suspicions (Art. 69), disclosure to FIU (Art. 72), prohibition of disclosure / tipping-off (Art. 73)
+- Chapter VI (Article 75): Information sharing in partnerships
+- Chapter VII (Articles 76-78): Data protection and record retention (Art. 77 retention, Art. 78 provision of records)
+- Chapter VIII (Articles 79-80): Measures mitigating risks from anonymous instruments and large cash payments
+- Chapter IX (Articles 81-90): Final provisions
 
 **AMLR vs AMLD6:** Distinguish between obligations in the directly applicable AMLR and those still requiring national transposition via AMLD6 (Directive (EU) 2024/1640). The AMLR creates uniform EU-wide rules; AMLD6 addresses institutional and supervisory architecture.
 
@@ -222,7 +245,7 @@ The 2024 AML Package has three components that interact:
 When citing requirements, always identify which pillar they come from. A supervisory finding obligation may be in AMLR while the supervisor's enforcement power is in AMLD6 national transposition.
 
 **AMLA RTS/ITS Mandate — Reference by Status:**
-AMLA is mandated to develop 28+ RTS/ITS under AMLR. When referencing areas where AMLA standards will apply, flag: (1) which AMLR article mandates the standard, (2) whether a consultation paper has been published, (3) expected publication date if known. Key RTS areas: risk factors (Art.30), CDD measures (Arts.20–29), beneficial ownership (Art.62), suspicious transaction reporting (Art.69), remote onboarding (Art.23), high-risk third countries (Art.29).`,
+AMLA is mandated to develop 28+ RTS/ITS under AMLR. When referencing areas where AMLA standards will apply, flag: (1) which AMLR article mandates the standard, (2) whether a consultation paper has been published, (3) expected publication date if known. Key RTS areas: CDD information (Art.28), risk factors and guidelines (Art.32), beneficial ownership (Art.62), suspicious transaction reporting (Art.69), timing of verification / remote onboarding (Art.23), high-risk third countries (Arts.29–31).`,
   },
 
   {
@@ -305,8 +328,8 @@ The correct examiner perspective depends on which supervisor has jurisdiction:
 **AMLA Examination Priorities (2025–2028):**
 For entities in scope of AMLA direct supervision, expect focus on:
 1. BWRA quality and AMLR Art.10 compliance — methodology, documentation, ML/TF/CPF completeness
-2. Beneficial ownership verification — AMLR Art.62 compliance, database quality, refresh cycles
-3. PEP identification scope — AMLR Art.52 definition, family/close associates, update frequency
+2. Beneficial ownership verification — AMLR Arts.51–55 identification and Art.62 information quality, database quality, refresh cycles
+3. PEP identification scope — AMLR Art.2(1)(34) definition, Arts.42–46 obligations (Art.46 family and close associates), update frequency
 4. Enhanced CDD implementation — AMLR Art.29 high-risk third country procedures
 5. Transaction monitoring effectiveness — threshold tuning, alert resolution SLAs, analyst quality
 6. Suspicious transaction reporting quality — AMLR Art.69 compliance, narrative standards, timeliness`,
@@ -626,7 +649,7 @@ For each red flag, cite the specific observation: (1) What was observed (transac
 Apply expert beneficial ownership (BO) analysis methodology to all UBO-related content:
 
 **Legal Framework — AMLR Chapter IV:**
-Beneficial owner is defined in AMLR Art.62 as the natural person(s) who ultimately own or control a legal entity. Key thresholds:
+Beneficial owner is defined in AMLR Art.2(1)(28) and identified under Arts.51–55 as the natural person(s) who ultimately own or control a legal entity. Key thresholds:
 - **25%+ shareholding or voting rights** → presumed BO (direct or indirect)
 - **Indirect control** via chain of entities — trace through each layer; the threshold applies at the ultimate natural person level
 - **Dominant influence** via other means (shareholders' agreement, board appointment rights, contractual control) → BO even below 25%
@@ -639,7 +662,7 @@ Beneficial owner is defined in AMLR Art.62 as the natural person(s) who ultimate
 - **Partnerships / LLPs:** Partners with 25%+ economic interest or management control are BOs.
 - **State-owned entities:** Identify the relevant government department or sovereign as controlling entity — apply enhanced due diligence for state-controlled entities.
 
-**BO Verification Standards (AMLR Art.62):**
+**BO Verification Standards (AMLR Arts.22 and 62):**
 Verification must be adequate, accurate, and current:
 - **Tier 1 (low-risk):** Self-declaration + company registry cross-check
 - **Tier 2 (medium-risk):** Company registry + commercial database (Orbis, Refinitiv, LexisNexis) cross-check
@@ -650,7 +673,7 @@ Verification must be adequate, accurate, and current:
 - Jurisdictions selected for secrecy rather than business purpose
 - Nominee directors/shareholders without disclosed principal
 - Recent corporate restructuring coinciding with investigations or sanctions listing
-- BO who is a PEP (triggers EDD under AMLR Art.52)
+- BO who is a PEP (triggers EDD under AMLR Arts.34 and 42)
 - Discrepancy between self-declared BO and registry data`,
   },
 
@@ -704,7 +727,7 @@ ISO 37001 certification provides structured framework: ABMS policy → risk asse
   {
     id: 'market-abuse-investigator',
     name: 'Market Abuse Investigator',
-    description: 'Expert in MAR Art.7-17 (insider dealing, market manipulation, disclosure), MAR STR vs AML SAR dual reporting, and MiCA market abuse (Art.76).',
+    description: 'Expert in MAR Art.7-17 (insider dealing, market manipulation, disclosure), MAR STR vs AML SAR dual reporting, and MiCA market abuse (Arts.86-92).',
     version: '1.0.0',
     author: 'openEXPERT',
     category: 'domain',
@@ -735,7 +758,7 @@ Investment firms and market operators must report suspicious transactions to ESM
 - **Ramping:** Concentrated buying at end of day/period to inflate closing price (benchmark/valuation manipulation)
 - **Front running:** Trading ahead of a known customer order (violates both MAR and MiFID II duty of best execution)
 
-**MiCA Market Abuse (Title VI, Art.76):**
+**MiCA Market Abuse (Title VI, Arts.86–92):**
 MiCA applies equivalent market abuse prohibitions to crypto-assets admitted to trading on CATPs. Identical structure: insider dealing, unlawful disclosure, market manipulation. ESMA coordinates with national CAs on enforcement. Surveillance obligation on CATPs mirrors investment firm obligation under MAR Art.16.`,
   },
 
@@ -752,18 +775,19 @@ MiCA applies equivalent market abuse prohibitions to crypto-assets admitted to t
 Apply expert crypto-asset regulatory analysis grounded in MiCA (Regulation (EU) 2023/1114), the Transfer of Funds Regulation (TFR 2023/1113), AMLR crypto provisions, and FATF Recommendation 15:
 
 **MiCA Regulatory Architecture:**
-- **Title II (Art.16–46):** Asset-referenced tokens (ARTs) — backed by basket of assets, currencies, or commodities. Issuer authorisation required. EMT issuers subject to prudential requirements.
-- **Title III (Art.47–59):** E-money tokens (EMTs) — backed 1:1 by single fiat currency. Issuers must be licensed credit institution or e-money institution.
-- **Title IV / V (Art.59–134):** All other crypto-assets and Crypto-Asset Service Providers (CASPs). CASPs must be authorised by national CA. Passporting across EU member states.
-- **Title VI (Art.76–92):** Market integrity provisions — market abuse (insider dealing, manipulation) mirroring MAR.
+- **Title II (Art.4–15):** Crypto-assets other than ARTs or EMTs — white paper, notification, marketing communications; the lighter regime.
+- **Title III (Art.16–47):** Asset-referenced tokens (ARTs) — backed by a basket of assets, currencies or commodities. Issuer authorisation required; reserve of assets (Arts. 36-40); significant ARTs (Arts. 43-45).
+- **Title IV (Art.48–58):** E-money tokens (EMTs) — backed 1:1 by a single official currency. Issuers must be a licensed credit institution or e-money institution; significant EMTs (Arts. 56-58).
+- **Title V (Art.59–85):** Authorisation and operating conditions for Crypto-Asset Service Providers (CASPs). CASPs must be authorised by a national CA. Passporting across EU member states.
+- **Title VI (Art.86–92):** Market integrity provisions — market abuse (insider dealing, manipulation) mirroring MAR.
 
-**CASP Authorisation (Art.59–75):**
+**CASP Authorisation (Art.59–65):**
 CASPs must: (1) be authorised in home member state, (2) meet minimum capital requirements (€50k–€150k depending on service), (3) have governance, conflict of interest, and complaint-handling frameworks, (4) hold client assets segregated, (5) have business continuity plan. Key CASP services: custody, exchange, trading, portfolio management, advice, transfer services.
 
 **AML/CFT Obligations for Crypto-Assets (AMLR):**
 AMLR (2024/1624) includes CASPs as obliged entities. Key obligations:
 - Full CDD for all transactions above €1,000 (no simplified threshold exception)
-- EDD for transactions linked to self-hosted wallets (Art.29 high-risk)
+- Risk-mitigating measures for transactions with a self-hosted address (Art.40)
 - Beneficial ownership for legal entity customers of CASPs
 - Transaction monitoring — chain analysis to identify suspicious flows
 - SAR/STR filing to national FIU for suspicious transactions
@@ -838,16 +862,16 @@ Prohibits EU operators from complying with secondary sanctions (OFAC Iran, Cuba 
   {
     id: 'correspondent-banking-advisor',
     name: 'Correspondent Banking Advisor',
-    description: 'Expert in CBR due diligence (Wolfsberg, FATF R.13, AMLR Art.26), de-risking analysis, nostro/vostro, SWIFT, nested correspondents, and financial inclusion.',
+    description: 'Expert in CBR due diligence (Wolfsberg, FATF R.13, AMLR Arts.36-39), de-risking analysis, nostro/vostro, SWIFT, nested correspondents, and financial inclusion.',
     version: '1.0.0',
     author: 'openEXPERT',
     category: 'domain',
     tags: ['correspondent banking', 'CBR', 'de-risking', 'Wolfsberg', 'FATF R.13', 'CBDDQ', 'nostro', 'vostro'],
     prompt: `## SKILL: Correspondent Banking Advisor
 
-Apply expert correspondent banking relationship (CBR) analysis grounded in Wolfsberg CBR Principles, FATF Recommendation 13, AMLR Art.26, and Basel BCBS 264:
+Apply expert correspondent banking relationship (CBR) analysis grounded in Wolfsberg CBR Principles, FATF Recommendation 13, AMLR Arts.36–39, and Basel BCBS 264:
 
-**CBR Regulatory Requirements (AMLR Art.26):**
+**CBR Regulatory Requirements (AMLR Art.36):**
 For correspondent relationships with non-EU respondent banks, the EU correspondent must:
 - Gather information about the respondent: business, ownership, management, AML/CFT framework, purpose of relationship
 - Assess the respondent's AML/CFT controls — adequacy of CDD, transaction monitoring, SAR filing
@@ -943,8 +967,135 @@ export function getBuiltInSkills(): Skill[] {
   return _cachedSkills;
 }
 
+/**
+ * Disk packs, once `preloadDiskSkills()` has run. Keyed by id; a built-in with
+ * the same id shadows the disk entry (see getSkillById).
+ */
+let _diskSkillIndex: Map<string, Skill> | null = null;
+
+/** True once the disk packs have been read into the synchronous index. */
+export function isDiskSkillsPreloaded(): boolean {
+  return _diskSkillIndex !== null;
+}
+
+/**
+ * Read every server/skills/{id} pack into the in-memory index the synchronous
+ * resolvers consult. Idempotent. Called once at server start; a failure is the
+ * caller's to log — the built-ins keep working either way.
+ * Returns the number of disk packs indexed.
+ */
+export async function preloadDiskSkills(): Promise<number> {
+  const disk = await loadDiskSkills();
+  const index = new Map<string, Skill>();
+  for (const skill of disk) {
+    if (!skill.id) continue;
+    if (index.has(skill.id)) {
+      console.warn(`[skills-manager] duplicate disk skill id '${skill.id}' — keeping the first one loaded`);
+      continue;
+    }
+    index.set(skill.id, skill);
+  }
+  _diskSkillIndex = index;
+  return index.size;
+}
+
+// ── Installed skills (the `skills` table) — Wave 6, track G ─────────────────
+// A module bundle carries the text of the skills it references; the importer
+// writes them to the `skills` table. The composer resolves skills
+// SYNCHRONOUSLY (resolveSkills → getSkillById), so installed rows are mirrored
+// into an in-memory index: filled once at start (preloadInstalledSkills, from
+// the exchange router factory) and on every install (registerInstalledSkill).
+// Built-ins and disk packs shadow an installed row with the same id — the
+// importer namespaces a clashing id as `bundle:<module>:<id>`, so a clash here
+// only means an identical text was reused. invalidateSkillCache() does NOT
+// clear this index: it mirrors the database, not the disk.
+
+const _installedSkillIndex = new Map<string, Skill>();
+
+export interface InstalledSkillInput {
+  id: string;
+  name: string;
+  prompt: string;
+  description?: string | null;
+  version?: string | null;
+  author?: string | null;
+  category?: string | null;
+  tags?: string[] | string | null;
+}
+
+function toInstalledSkill(row: InstalledSkillInput): Skill | null {
+  if (!row.id || typeof row.prompt !== 'string' || !row.prompt.trim()) return null;
+  let tags: string[] = [];
+  if (Array.isArray(row.tags)) {
+    tags = row.tags.filter((t): t is string => typeof t === 'string');
+  } else if (typeof row.tags === 'string' && row.tags) {
+    try {
+      const parsed: unknown = JSON.parse(row.tags);
+      if (Array.isArray(parsed)) tags = parsed.filter((t): t is string => typeof t === 'string');
+    } catch { tags = []; }
+  }
+  return {
+    id: row.id,
+    name: row.name || row.id,
+    description: row.description ?? '',
+    version: row.version ?? '1.0.0',
+    author: row.author ?? 'import',
+    category: isSkillCategory(row.category) ? row.category : 'domain',
+    tags,
+    prompt: row.prompt,
+    source: 'installed',
+  };
+}
+
+/** Make one installed skill resolvable right away (called after the importer writes the row). */
+export function registerInstalledSkill(row: InstalledSkillInput): void {
+  const skill = toInstalledSkill(row);
+  if (skill) _installedSkillIndex.set(skill.id, skill);
+}
+
+/** Drop one installed skill from the resolver (archive / delete). */
+export function unregisterInstalledSkill(id: string): void {
+  _installedSkillIndex.delete(id);
+}
+
+/**
+ * Mirror every non-archived row of the `skills` table into the resolver.
+ * Never throws — a missing table (un-migrated install) reads as zero rows.
+ * Returns the number of installed skills now resolvable.
+ */
+export async function preloadInstalledSkills(db: DatabaseAdapter): Promise<number> {
+  try {
+    const rows = await db.all<InstalledSkillInput>(
+      'SELECT id, name, description, version, author, category, prompt, tags FROM skills WHERE is_archived = 0',
+    );
+    _installedSkillIndex.clear();
+    for (const row of rows) registerInstalledSkill(row);
+    return _installedSkillIndex.size;
+  } catch {
+    return 0;
+  }
+}
+
+/** Synchronous — built-ins first, then the preloaded disk packs, then installed rows. */
 export function getSkillById(id: string): Skill | undefined {
-  return getBuiltInSkills().find((s) => s.id === id);
+  return getBuiltInSkills().find((s) => s.id === id) ?? _diskSkillIndex?.get(id) ?? _installedSkillIndex.get(id);
+}
+
+/**
+ * Synchronous — every skill the resolver can see right now: built-ins plus the
+ * preloaded disk packs (minus any disk id shadowed by a built-in), plus the
+ * installed rows no built-in or disk pack shadows.
+ */
+export function getAllSkills(): Skill[] {
+  const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
+  const seen = new Set(builtins.map((s) => s.id));
+  const disk = _diskSkillIndex && _diskSkillIndex.size > 0
+    ? [..._diskSkillIndex.values()].filter((s) => !seen.has(s.id))
+    : [];
+  if (disk.length === 0 && _installedSkillIndex.size === 0) return builtins;
+  for (const s of disk) seen.add(s.id);
+  const installed = [..._installedSkillIndex.values()].filter((s) => !seen.has(s.id));
+  return [...builtins, ...disk, ...installed];
 }
 
 /**
@@ -999,8 +1150,10 @@ export function getAutoAttachSkillIds(outputFormats: string[]): string[] {
 }
 
 // ── Disk-based skills ─────────────────────────────────────────
-// Loaded from server/skills/{id}/skill.json + skill-content.md
-// Merged with built-ins on first async request (disk overrides built-in on ID clash).
+// Loaded from server/skills/{id}/skill.json + skill-content.md.
+// `preloadDiskSkills()` above feeds them into the synchronous index; the
+// async helpers below preload on demand and then defer to the sync resolvers,
+// so both paths apply one precedence rule (built-in wins on an id clash).
 
 let _diskSkillsCache: Skill[] | null = null;
 
@@ -1041,13 +1194,22 @@ async function loadDiskSkills(): Promise<Skill[]> {
         ? (await fs.readFile(contentPath, 'utf-8')).trim()
         : '';
 
+      let category: SkillCategory = 'domain';
+      if (raw.category === undefined) {
+        // no category declared — 'domain' is the documented default
+      } else if (isSkillCategory(raw.category)) {
+        category = raw.category;
+      } else {
+        console.warn(`[skills-manager] ${entry.name}/skill.json declares unknown category '${raw.category}' — loaded as 'domain' (known: ${SKILL_CATEGORIES.join(', ')})`);
+      }
+
       diskSkills.push({
         id: raw.id,
         name: raw.label ?? raw.name ?? raw.id,
         description: raw.description ?? '',
         version: raw.version ?? '1.0.0',
         author: raw.author ?? 'openEXPERT',
-        category: (raw.category as Skill['category']) ?? 'domain',
+        category,
         tags: raw.tags ?? [],
         applicableAreas: raw.applicableAreas,
         prompt,
@@ -1064,38 +1226,108 @@ async function loadDiskSkills(): Promise<Skill[]> {
 }
 
 /**
- * Returns all skills — built-ins merged with disk skills.
- * Disk skills override built-ins with the same ID.
+ * Returns all skills — built-ins merged with disk skills — preloading the disk
+ * packs first if server start has not done so yet (tests, ad-hoc scripts).
  */
 export async function getAllSkillsAsync(): Promise<Skill[]> {
-  const disk = await loadDiskSkills();
-  const diskIds = new Set(disk.map((s) => s.id));
-  const builtins = getBuiltInSkills().map((s) => ({ ...s, source: 'builtin' as const }));
-  return [...builtins.filter((s) => !diskIds.has(s.id)), ...disk];
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return getAllSkills();
 }
 
 /**
- * Get a skill by ID — checks disk skills first, then built-ins.
+ * Get a skill by ID, preloading the disk packs on demand.
  */
 export async function getSkillByIdAsync(id: string): Promise<Skill | undefined> {
-  const all = await getAllSkillsAsync();
-  return all.find((s) => s.id === id);
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return getSkillById(id);
 }
 
 /**
- * Resolve skill IDs including disk skills.
+ * Resolve skill IDs, preloading the disk packs on demand.
  */
 export async function resolveSkillsAsync(skillIds: string[]): Promise<string> {
-  if (!skillIds || skillIds.length === 0) return '';
-  const all = await getAllSkillsAsync();
-  const index = new Map(all.map((s) => [s.id, s]));
-  const skills = skillIds.map((id) => index.get(id)).filter(Boolean) as Skill[];
-  if (skills.length === 0) return '';
-  if (skills.length === 1) return skills[0].prompt;
-  return skills.map((s) => s.prompt).join('\n\n---\n\n');
+  if (!isDiskSkillsPreloaded()) await preloadDiskSkills();
+  return resolveSkills(skillIds);
 }
 
+// ── Jurisdiction packs (Wave 6 track H) ───────────────────────
+// A profile says "Singapore", "SG", "MAS" or "Monetary Authority of Singapore";
+// the pack that answers is jurisdiction-sg-mas. Aliases come from each pack's
+// own metadata — the id (`jurisdiction-<iso2>-<regulator>`) and the label
+// (`Country — Regulator Name (ACRONYM)`) — plus a short hand-kept supplement
+// for what the metadata cannot yield (ISO-3 codes, common short forms).
+
+const JURISDICTION_ALIAS_SUPPLEMENT: Record<string, readonly string[]> = {
+  'jurisdiction-ae-cbuae': ['are', 'united arab emirates', 'emirates', 'dubai', 'abu dhabi'],
+  'jurisdiction-gh-bog': ['gha'],
+  'jurisdiction-hk-hkma': ['hkg', 'hong kong sar', 'hksar'],
+  'jurisdiction-in-rbi': ['ind'],
+  'jurisdiction-ke-cbk': ['ken'],
+  'jurisdiction-my-bnm': ['mys'],
+  'jurisdiction-ng-cbn': ['nga'],
+  'jurisdiction-ph-bsp': ['phl'],
+  'jurisdiction-pk-sbp': ['pak'],
+  'jurisdiction-sa-sama': ['sau', 'ksa', 'saudi', 'kingdom of saudi arabia'],
+  'jurisdiction-sg-mas': ['sgp'],
+  'jurisdiction-uk-fca': ['gb', 'gbr', 'uk', 'united kingdom', 'great britain', 'britain', 'england', 'scotland', 'wales', 'northern ireland', 'fca', 'nca'],
+};
+
+/** Lower-case, ASCII-folded, punctuation collapsed to single spaces, leading "the" dropped. */
+function normaliseJurisdictionText(value: string): string {
+  const folded = value.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return folded.replace(/^the\s+/, '');
+}
+
+/** Every phrase that names this pack, normalised. */
+function jurisdictionAliases(skill: Skill): string[] {
+  const aliases = new Set<string>();
+  const idMatch = /^jurisdiction-([a-z]{2})-([a-z0-9]+)$/i.exec(skill.id);
+  if (idMatch) {
+    aliases.add(idMatch[1].toLowerCase());
+    aliases.add(idMatch[2].toLowerCase());
+  }
+  const labelMatch = /^(.+?)\s+—\s+(.+?)\s+\(([^)]+)\)\s*$/.exec(skill.name);
+  if (labelMatch) {
+    aliases.add(normaliseJurisdictionText(labelMatch[1]));
+    aliases.add(normaliseJurisdictionText(labelMatch[2]));
+    aliases.add(normaliseJurisdictionText(labelMatch[3]));
+  }
+  for (const extra of JURISDICTION_ALIAS_SUPPLEMENT[skill.id] ?? []) aliases.add(normaliseJurisdictionText(extra));
+  aliases.delete('');
+  return [...aliases];
+}
+
+/**
+ * The jurisdiction pack a profile / org jurisdiction maps to, or null when no
+ * pack covers it (Sweden, the EU and most of the world have none yet). Matches
+ * by country name, ISO code or regulator name, case-insensitively; a two-letter
+ * code must be the whole value, anything longer may sit inside a longer phrase
+ * ("Singapore (MAS)", "Hong Kong SAR"). The longest alias wins.
+ * Sees the disk packs once `preloadDiskSkills()` has run; the built-in UK pack
+ * resolves either way.
+ */
+export function findJurisdictionSkill(jurisdiction: string): { id: string; name: string } | null {
+  const query = normaliseJurisdictionText(jurisdiction ?? '');
+  if (!query) return null;
+  const padded = ` ${query} `;
+
+  let best: { skill: Skill; length: number } | null = null;
+  for (const skill of getAllSkills()) {
+    if (skill.category !== 'jurisdiction') continue;
+    for (const alias of jurisdictionAliases(skill)) {
+      const hit = alias.length <= 2 ? query === alias : padded.includes(` ${alias} `);
+      if (hit && (!best || alias.length > best.length)) best = { skill, length: alias.length };
+    }
+  }
+  return best ? { id: best.skill.id, name: best.skill.name } : null;
+}
+
+/**
+ * Drop every cache, including the preloaded disk index — after this only the
+ * built-ins resolve until `preloadDiskSkills()` runs again.
+ */
 export function invalidateSkillCache(): void {
   _diskSkillsCache = null;
+  _diskSkillIndex = null;
   _cachedSkills = null;
 }

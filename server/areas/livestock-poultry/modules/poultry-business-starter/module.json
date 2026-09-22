@@ -16,7 +16,7 @@
     "thinking": "think",
     "creativity": "balanced",
     "outputFormats": [
-      "quick-briefing"
+      "plain-language-guide"
     ],
     "transparencyLevel": 0,
     "knowledgeSources": {
@@ -148,6 +148,9 @@
   "recommendedPersonas": [
     "agricultural-extension-worker",
     "veteran-farmer"
+  ],
+  "recommendedSkills": [
+    "skill-livestock-diseases"
   ],
   "tags": [
     "poultry",

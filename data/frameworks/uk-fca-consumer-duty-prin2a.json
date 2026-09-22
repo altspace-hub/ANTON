@@ -3,6 +3,8 @@
   "name": "FCA Consumer Duty (PRIN 2A)",
   "shortName": "Consumer Duty",
   "reference": "FCA Handbook PRIN 2A; Principle 12",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.handbook.fca.org.uk/handbook/PRIN/2A/",
   "policyStatement": "FCA PS22/9",
   "inForceOpenProducts": "2023-07-31",
@@ -10,13 +12,41 @@
   "supervisor": "FCA",
   "articleCount": 10,
   "chapters": [
-    {"number": "P12", "title": "Principle 12 — Duty of care", "articles": "PRIN 2.1.1R"},
-    {"number": "CC", "title": "Cross-cutting rules (PRIN 2A.2)", "articles": "PRIN 2A.2"},
-    {"number": "OC1", "title": "Outcome 1 — Products and services (PRIN 2A.3)", "articles": "PRIN 2A.3"},
-    {"number": "OC2", "title": "Outcome 2 — Price and value (PRIN 2A.4)", "articles": "PRIN 2A.4"},
-    {"number": "OC3", "title": "Outcome 3 — Consumer understanding (PRIN 2A.5)", "articles": "PRIN 2A.5"},
-    {"number": "OC4", "title": "Outcome 4 — Consumer support (PRIN 2A.6)", "articles": "PRIN 2A.6"},
-    {"number": "GOV", "title": "Governance and accountability", "articles": "SYSC + SMCR"}
+    {
+      "number": "P12",
+      "title": "Principle 12 — Duty of care",
+      "articles": "PRIN 2.1.1R"
+    },
+    {
+      "number": "CC",
+      "title": "Cross-cutting rules (PRIN 2A.2)",
+      "articles": "PRIN 2A.2"
+    },
+    {
+      "number": "OC1",
+      "title": "Outcome 1 — Products and services (PRIN 2A.3)",
+      "articles": "PRIN 2A.3"
+    },
+    {
+      "number": "OC2",
+      "title": "Outcome 2 — Price and value (PRIN 2A.4)",
+      "articles": "PRIN 2A.4"
+    },
+    {
+      "number": "OC3",
+      "title": "Outcome 3 — Consumer understanding (PRIN 2A.5)",
+      "articles": "PRIN 2A.5"
+    },
+    {
+      "number": "OC4",
+      "title": "Outcome 4 — Consumer support (PRIN 2A.6)",
+      "articles": "PRIN 2A.6"
+    },
+    {
+      "number": "GOV",
+      "title": "Governance and accountability",
+      "articles": "SYSC + SMCR"
+    }
   ],
   "themes": [
     "Cross-cutting rules",

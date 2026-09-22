@@ -176,44 +176,59 @@ export function createCitationLedger(opts: VerifierOptions = {}) {
     const ref = (input.ref ?? '').trim();
     if (!ref) return { citation: ref, status: 'unresolved', detail: 'Empty citation' };
 
+    /** Article-level verdict against a local framework: found / provably
+     *  absent (full coverage, out of range) / cannot tell (partial coverage). */
+    const articleVerdict = (doc: FrameworkDoc, artNum: number): CitationVerification => {
+      const article = doc.articles.find(
+        (a) => a.id.replace(/^[^0-9]*/, '').replace(/[^0-9].*$/, '') === String(artNum)
+      );
+      if (article) {
+        return {
+          citation: ref,
+          status: 'verified_local',
+          source: `${doc.name}${doc.reference ? ` (${doc.reference})` : ''}`,
+          title: article.title,
+          url: frameworkUrl(doc),
+          detail: 'Article found in local framework data',
+        };
+      }
+      // Full local coverage and article number out of range → it does not exist
+      const fullCoverage = doc.articleCount !== undefined && doc.articleCount === doc.articles.length;
+      if (fullCoverage && artNum > (doc.articleCount ?? 0)) {
+        return {
+          citation: ref,
+          status: 'not_found',
+          source: `${doc.name}${doc.reference ? ` (${doc.reference})` : ''}`,
+          detail: `${doc.shortName} has ${doc.articleCount} articles — Art.${artNum} does not exist`,
+        };
+      }
+      // Partial local coverage — cannot disprove existence
+      return {
+        citation: ref,
+        status: 'unresolved',
+        source: doc.name,
+        detail: 'Local framework data covers this instrument only partially; article not in local extract',
+      };
+    };
+
     // ── 1. Framework-qualified article: "AMLR Art.12(3)(b)" ──────────────────
     const artMatch = ref.match(/^([A-Za-z][A-Za-z0-9]{2,12})\s+Art\.?\s*(\d+)/);
     if (artMatch) {
       const doc = findFrameworkByAcronym(docs, artMatch[1]);
-      const artNum = parseInt(artMatch[2], 10);
-      if (doc) {
-        const article = doc.articles.find(
-          (a) => a.id.replace(/^[^0-9]*/, '').replace(/[^0-9].*$/, '') === String(artNum)
-        );
-        if (article) {
-          return {
-            citation: ref,
-            status: 'verified_local',
-            source: `${doc.name}${doc.reference ? ` (${doc.reference})` : ''}`,
-            title: article.title,
-            url: frameworkUrl(doc),
-            detail: 'Article found in local framework data',
-          };
-        }
-        // Full local coverage and article number out of range → it does not exist
-        const fullCoverage = doc.articleCount !== undefined && doc.articleCount === doc.articles.length;
-        if (fullCoverage && artNum > (doc.articleCount ?? 0)) {
-          return {
-            citation: ref,
-            status: 'not_found',
-            source: `${doc.name}${doc.reference ? ` (${doc.reference})` : ''}`,
-            detail: `${doc.shortName} has ${doc.articleCount} articles — Art.${artNum} does not exist`,
-          };
-        }
-        // Partial local coverage — cannot disprove existence
-        return {
-          citation: ref,
-          status: 'unresolved',
-          source: doc.name,
-          detail: 'Local framework data covers this instrument only partially; article not in local extract',
-        };
-      }
+      if (doc) return articleVerdict(doc, parseInt(artMatch[2], 10));
       return { citation: ref, status: 'unresolved', detail: `No local data for '${artMatch[1]}'` };
+    }
+
+    // ── 1b. Instrument + article in the prompt's mandated form ───────────────
+    // "Regulation (EU) 2024/1624 of the European Parliament and of the Council, Art. 15(3)(b)".
+    // Checked before the instrument-only branch so the article is verified —
+    // the instrument-only path returned verified_local for a real Regulation
+    // whatever article number followed it.
+    const instrArt = ref.match(/^(?:Regulation|Directive)\s+\(E[UC]\)\s+(?:No\s+)?(\d{1,4})\/(\d{1,4})[^\n]*?,\s*Art(?:icle|\.)?\s*(\d+)/i);
+    if (instrArt) {
+      const doc = findFrameworkByRefNumbers(docs, parseInt(instrArt[1], 10), parseInt(instrArt[2], 10));
+      if (doc) return articleVerdict(doc, parseInt(instrArt[3], 10));
+      // No local text for the instrument: fall through to the existence check.
     }
 
     // ── 2. EU Regulation / Directive by number ────────────────────────────────

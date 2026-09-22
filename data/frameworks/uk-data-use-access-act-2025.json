@@ -3,18 +3,44 @@
   "name": "Data (Use and Access) Act 2025",
   "shortName": "DUAA",
   "reference": "DUAA 2025 c.25",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.legislation.gov.uk/ukpga/2025/25",
   "royalAssent": "2025-06-19",
   "mainReformsInForce": "2026-02-05",
   "supervisor": "Information Commission (formerly ICO)",
   "articleCount": 11,
   "chapters": [
-    {"number": "1", "title": "Smart Data", "articles": "Pt.1"},
-    {"number": "2", "title": "Digital identities", "articles": "Pt.2"},
-    {"number": "3", "title": "Health and social-care data", "articles": "Pt.3"},
-    {"number": "4", "title": "Data protection — substantive reforms", "articles": "Pt.4"},
-    {"number": "5", "title": "Information Commission", "articles": "Pt.5"},
-    {"number": "6", "title": "PECR reform", "articles": "Pt.6"}
+    {
+      "number": "1",
+      "title": "Smart Data",
+      "articles": "Pt.1"
+    },
+    {
+      "number": "2",
+      "title": "Digital identities",
+      "articles": "Pt.2"
+    },
+    {
+      "number": "3",
+      "title": "Health and social-care data",
+      "articles": "Pt.3"
+    },
+    {
+      "number": "4",
+      "title": "Data protection — substantive reforms",
+      "articles": "Pt.4"
+    },
+    {
+      "number": "5",
+      "title": "Information Commission",
+      "articles": "Pt.5"
+    },
+    {
+      "number": "6",
+      "title": "PECR reform",
+      "articles": "Pt.6"
+    }
   ],
   "themes": [
     "Recognised legitimate interests",

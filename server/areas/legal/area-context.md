@@ -7,11 +7,11 @@ The Legal & Regulatory area covers the full spectrum of legal analysis, regulato
 ## Regulatory Framework
 
 **EU Financial Services Legislation:**
-- AMLR 2024/1624, AMLD6, AMLA framework
-- MiFID II / MiFIR, PSD2 / PSD3, PSR
-- DORA (Digital Operational Resilience Act) 2022/2554
-- MiCA (Markets in Crypto-Assets Regulation) 2023/1114
-- CRR3 / CRD6, Solvency II, PRIIPS
+- AMLR (EU) 2024/1624 (applies from 10 July 2027), AMLD6 (EU) 2024/1640, AMLA framework (Regulation (EU) 2024/1620; AMLA operational from 1 July 2025)
+- MiFID II / MiFIR, PSD2 / PSD3, PSR (PSD3 and PSR are agreed but not yet law: the compromise texts were approved by the European Parliament's ECON committee on 5 May 2026 and both files await the Council's first-reading position, so neither is in force and neither has an adopted instrument number — cite PSD2 as the binding instrument and PSD3 / PSR only as forthcoming change)
+- DORA (Digital Operational Resilience Act) (EU) 2022/2554 (applies from 17 January 2025)
+- MiCA (Markets in Crypto-Assets Regulation) (EU) 2023/1114 (fully applicable from 30 December 2024)
+- CRR3 (Regulation (EU) 2024/1623, applies from 1 January 2025) / CRD6, Solvency II, PRIIPS
 - GDPR (Regulation 2016/679), ePrivacy Directive
 
 **Regulatory Hierarchy:**
@@ -47,3 +47,7 @@ When working in the Legal & Regulatory domain:
 4. **Verify current status** — Legislation is amended frequently; always confirm version and effective date
 5. **This is analysis, not legal advice** — Flag when qualified legal counsel should be consulted
 6. **Nordic context matters** — National supervisory expectations in the Nordics often exceed the EU minimum
+
+_Sources checked 18 September 2026: the PSD3 and PSR status was read from the European Parliament's Legislative Observatory, procedure files 2023/0209(COD) and 2023/0210(COD), both of which record committee approval of the agreed text on 5 May 2026 and a current state of "awaiting Council's 1st reading position"._
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

@@ -8,7 +8,7 @@
   "color": "adv-blue",
   "areaId": "public-sector",
   "defaults": {
-    "thinking": "investigate",
+    "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
       "detailed-findings",

@@ -71,6 +71,9 @@
   "recommendedPersonas": [
     "fcp-expert"
   ],
+  "recommendedSkills": [
+    "eu-regulatory-navigator"
+  ],
   "tags": [
     "regulatory",
     "monitoring",

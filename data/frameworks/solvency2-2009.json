@@ -3,8 +3,9 @@
   "name": "Solvency II — Insurance Prudential Framework",
   "shortName": "Solvency II",
   "reference": "Directive 2009/138/EC",
+  "coverage": "transcribed",
   "applicationDate": "2016-01-01",
-  "articleCount": 30,
+  "articleCount": 313,
   "themes": [
     "Authorization & Scope",
     "Valuation & Capital (Pillar 1)",
@@ -14,35 +15,2236 @@
     "Group Supervision"
   ],
   "articles": [
-    {"id":"Art.18","title":"Authorization conditions","theme":"Authorization & Scope","requirement":"Insurance/reinsurance undertakings must obtain authorization — business plan, minimum capital, fit and proper management, governance"},
-    {"id":"Art.23","title":"Qualifying holdings","theme":"Authorization & Scope","requirement":"Proposed acquisitions or increases of qualifying holdings require supervisory notification and assessment of acquirer's suitability"},
-    {"id":"Art.41","title":"General governance requirements","theme":"Governance & Risk (Pillar 2)","requirement":"Effective system of governance with clear allocation of responsibilities, fit and proper persons, four key functions"},
-    {"id":"Art.42","title":"Fit and proper requirements","theme":"Governance & Risk (Pillar 2)","requirement":"All persons who effectively run the undertaking or hold key functions must be fit and proper — qualifications, knowledge, experience, reputation"},
-    {"id":"Art.44","title":"Risk management system","theme":"Governance & Risk (Pillar 2)","requirement":"Effective risk management system — strategies, processes, procedures to identify, measure, monitor, manage risks on continuous basis"},
-    {"id":"Art.45","title":"Own Risk and Solvency Assessment (ORSA)","theme":"ORSA","requirement":"Undertakings shall conduct ORSA — assess overall solvency needs, compliance with capital requirements, and significance of deviation from technical provisions assumptions"},
-    {"id":"Art.46","title":"Internal control system","theme":"Governance & Risk (Pillar 2)","requirement":"Effective internal control system including administrative and accounting procedures and an internal control framework"},
-    {"id":"Art.47","title":"Internal audit function","theme":"Governance & Risk (Pillar 2)","requirement":"Effective internal audit function — evaluate adequacy and effectiveness of internal control system and other governance elements"},
-    {"id":"Art.48","title":"Actuarial function","theme":"Governance & Risk (Pillar 2)","requirement":"Effective actuarial function — coordinate calculation of technical provisions, assess sufficiency and quality of data, compare assumptions against experience"},
-    {"id":"Art.49","title":"Outsourcing requirements","theme":"Governance & Risk (Pillar 2)","requirement":"Outsourcing critical or important functions shall not materially impair quality of governance, unduly increase operational risk, or impair supervision"},
-    {"id":"Art.75","title":"Valuation of assets and liabilities","theme":"Valuation & Capital (Pillar 1)","requirement":"Assets valued at amounts for which they could be exchanged; liabilities at amounts for which they could be transferred — fair value hierarchy"},
-    {"id":"Art.76","title":"Technical provisions — general rules","theme":"Valuation & Capital (Pillar 1)","requirement":"Technical provisions correspond to current amount to transfer insurance obligations to another undertaking — best estimate + risk margin"},
-    {"id":"Art.77","title":"Best estimate calculation","theme":"Valuation & Capital (Pillar 1)","requirement":"Best estimate corresponds to probability-weighted average of future cash flows using relevant risk-free yield curve — gross of reinsurance"},
-    {"id":"Art.82","title":"Data quality and application of approximations for technical provisions","theme":"Valuation & Capital (Pillar 1)","requirement":"Assumptions shall be realistic, based on credible information — biometric, expense, claims, lapse, future management actions, policyholder behaviour"},
-    {"id":"Art.100","title":"Solvency Capital Requirement (SCR)","theme":"Valuation & Capital (Pillar 1)","requirement":"SCR calibrated to ensure 99.5% VaR over one year — all quantifiable risks, calculated at least annually, standard formula or internal model"},
-    {"id":"Art.101","title":"SCR calculation — standard formula","theme":"Valuation & Capital (Pillar 1)","requirement":"Standard formula SCR = BSCR + Adj + SCR_op — aggregation using correlation matrices, 6 risk modules"},
-    {"id":"Art.105","title":"SCR risk modules","theme":"Valuation & Capital (Pillar 1)","requirement":"Standard formula risk modules: market risk, counterparty default, life underwriting, health underwriting, non-life underwriting — each with sub-modules"},
-    {"id":"Art.112","title":"Internal model — use test","theme":"Valuation & Capital (Pillar 1)","requirement":"Internal model approval requires demonstrated use in risk management and decision-making (use test) — not just for regulatory calculation"},
-    {"id":"Art.120","title":"Internal model — validation standards","theme":"Valuation & Capital (Pillar 1)","requirement":"Regular cycle of model validation — monitoring performance, review ongoing appropriateness, testing results against experience"},
-    {"id":"Art.128","title":"Minimum Capital Requirement (MCR)","theme":"Valuation & Capital (Pillar 1)","requirement":"MCR calculated quarterly using linear formula — absolute floor, cap and floor relative to SCR (25-45%), ladder of intervention"},
-    {"id":"Art.132","title":"Prudent person principle — investments","theme":"Valuation & Capital (Pillar 1)","requirement":"Assets invested in accordance with prudent person principle — security, quality, liquidity, profitability, proper diversification, ALM"},
-    {"id":"Art.35a","title":"Exemptions from regular supervisory reporting","theme":"Pillar 3 Reporting","requirement":"Regular supervisory reporting — annual and quarterly QRTs, RSR, own fund items, SCR/MCR calculations, ORSA results"},
-    {"id":"Art.51","title":"Solvency and Financial Condition Report (SFCR)","theme":"Pillar 3 Reporting","requirement":"Annual public disclosure of SFCR — business and performance, governance, risk profile, valuation methods, capital management"},
-    {"id":"Art.53","title":"Regular supervisory report","theme":"Pillar 3 Reporting","requirement":"SFCR approved by administrative body, subject to external audit opinion on balance sheet and compliance with regulatory requirements"},
-    {"id":"Art.212","title":"Group supervision scope","theme":"Group Supervision","requirement":"Group supervision applies to insurance and reinsurance undertakings that are part of a group — participation, common management"},
-    {"id":"Art.218","title":"Group risk concentration","theme":"Group Supervision","requirement":"Supervisory authorities shall monitor risk concentrations at group level — reporting significant risk concentrations"},
-    {"id":"Art.220","title":"Group SCR — consolidated method","theme":"Group Supervision","requirement":"Group SCR calculated on consolidated basis using either the standard formula or an approved group internal model"},
-    {"id":"Art.222","title":"Group SCR — alternative methods","theme":"Group Supervision","requirement":"Where consolidated method is not appropriate, deduction and aggregation method may be used — combination of methods possible"},
-    {"id":"Art.246","title":"Governance at group level","theme":"Group Supervision","requirement":"Ultimate parent shall ensure sound governance at group level — group-wide risk management, internal controls, reporting, fit and proper"},
-    {"id":"Art.248","title":"Intra-group transactions","theme":"Group Supervision","requirement":"Supervisory reporting of significant intra-group transactions — type, amount, parties, risk transfer characteristics, conditions"}
-  ]
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "This Directive lays down rules concerning the following: (1) the taking-up and pursuit, within the Community, of the self-employed activities of direct insurance and reinsurance; (2) the supervision of insurance and reinsurance groups; (3) the reorganisation and winding-up of direct insurance undertakings."
+    },
+    {
+      "id": "Art.2",
+      "title": "Scope",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "This Directive shall apply to direct life and non-life insurance undertakings which are established in the territory of a Member State or which wish to become established there."
+    },
+    {
+      "id": "Art.3",
+      "title": "Statutory systems",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to Article 2(3)(c), this Directive shall not apply to insurance forming part of a statutory system of social security."
+    },
+    {
+      "id": "Art.4",
+      "title": "Exclusion from scope due to size",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to Article 3 and Articles 5 to 10, this Directive shall not apply to an insurance undertaking which fulfils all the following conditions: (a) the undertaking's annual gross written premium income does not exceed EUR 5 million; (b) the total of the undertaking's technical provisions, gross of the…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Operations",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In regard to non-life insurance, this Directive shall not apply to the following operations: (1) capital redemption operations, as defined by the law in each Member State; (2) operations of provident and mutual benefit institutions whose benefits vary according to the resources available and in which the contributions…"
+    },
+    {
+      "id": "Art.6",
+      "title": "Assistance",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "This Directive shall not apply to an assistance activity which fulfils all the following conditions: (a) the assistance is provided in the event of an accident or breakdown involving a road vehicle when the accident or breakdown occurs in the territory of the Member State of the undertaking providing cover; (b) the…"
+    },
+    {
+      "id": "Art.7",
+      "title": "Mutual undertakings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "This Directive shall not apply to mutual undertakings which pursue non-life insurance activities and which have concluded with other mutual undertakings an agreement which provides for the full reinsurance of the insurance policies issued by them or under which the accepting undertaking is to meet the liabilities…"
+    },
+    {
+      "id": "Art.8",
+      "title": "Institutions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "This Directive shall not apply to the following institutions which pursue non-life insurance activities unless their statutes or the applicable law are amended as regards capacity: (1) in Denmark, Falck Danmark; (2) in Germany, the following semi-public institutions: (a) Postbeamtenkrankenkasse, (b) Krankenversorgung…"
+    },
+    {
+      "id": "Art.9",
+      "title": "Operations and activities",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In regard to life insurance, this Directive shall not apply to the following operations and activities: (1) operations of provident and mutual-benefit institutions whose benefits vary according to the resources available and which require each of their members to contribute at the appropriate flat rate; (2) operations…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Organisations, undertakings and institutions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In regard to life insurance, this Directive shall not apply to the following organisations, undertakings and institutions: (1) organisations which undertake to provide benefits solely in the event of death, where the amount of such benefits does not exceed the average funeral costs for a single death or where the…"
+    },
+    {
+      "id": "Art.11",
+      "title": "Reinsurance",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In regard to reinsurance, this Directive shall not apply to the activity of reinsurance conducted or fully guaranteed by the government of a Member State when that government is acting, for reasons of substantial public interest, in the capacity of reinsurer of last resort, including in circumstances where such a role…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Reinsurance undertakings closing their activity",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Reinsurance undertakings which by 10 December 2007 ceased to conduct new reinsurance contracts and exclusively administer their existing portfolio in order to terminate their activity shall not be subject to this Directive."
+    },
+    {
+      "id": "Art.13",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "For the purposes of this Directive, the following definitions shall apply: (1) ‘insurance undertaking' means a direct life or non-life insurance undertaking which has received authorisation in accordance with Article 14; (2) ‘captive insurance undertaking' means an insurance undertaking, owned either by a financial…"
+    },
+    {
+      "id": "Art.14",
+      "title": "Principle of authorisation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The taking-up of the business of direct insurance or reinsurance covered by this Directive shall be subject to prior authorisation."
+    },
+    {
+      "id": "Art.15",
+      "title": "Scope of authorisation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "An authorisation pursuant to Article 14 shall be valid for the entire Community. It shall permit insurance and reinsurance undertakings to pursue business there, that authorisation covering also the right of establishment and the freedom to provide services."
+    },
+    {
+      "id": "Art.16",
+      "title": "Ancillary risks",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "An insurance undertaking which has obtained an authorisation for a principal risk belonging to one class or a group of classes as set out in Annex I may also insure risks included in another class without the need to obtain authorisation in respect of such risks provided that the risks fulfil all the following…"
+    },
+    {
+      "id": "Art.17",
+      "title": "Legal form of the insurance or reinsurance undertaking",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The home Member State shall require every undertaking for which authorisation is sought under Article 14 to adopt one of the legal forms set out in Annex III."
+    },
+    {
+      "id": "Art.18",
+      "title": "Conditions for authorisation",
+      "chapter": "I",
+      "theme": "Authorization & Scope",
+      "requirement": "Insurance/reinsurance undertakings must obtain authorization — business plan, minimum capital, fit and proper management, governance"
+    },
+    {
+      "id": "Art.19",
+      "title": "Close links",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where close links exist between the insurance undertaking or reinsurance undertaking and other natural or legal persons, the supervisory authorities shall grant authorisation only if those links do not prevent the effective exercise of their supervisory functions."
+    },
+    {
+      "id": "Art.20",
+      "title": "Head office of insurance undertakings and reinsurance undertakings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require that the head offices of insurance and reinsurance undertakings be situated in the same Member State as their registered offices."
+    },
+    {
+      "id": "Art.21",
+      "title": "Policy conditions and scales of premiums",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall not require the prior approval or systematic notification of general and special policy conditions, of scales of premiums, of the technical bases, used in particular for calculating scales of premiums and technical provisions, or of forms and other printed documents which an undertaking intends to…"
+    },
+    {
+      "id": "Art.22",
+      "title": "Economic requirements of the market",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall not require that any application for authorisation be considered in the light of the economic requirements of the market."
+    },
+    {
+      "id": "Art.23",
+      "title": "Scheme of operations",
+      "chapter": "I",
+      "theme": "Authorization & Scope",
+      "requirement": "Proposed acquisitions or increases of qualifying holdings require supervisory notification and assessment of acquirer's suitability"
+    },
+    {
+      "id": "Art.24",
+      "title": "Shareholders and members with qualifying holdings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authorities of the home Member State shall not grant to an undertaking an authorisation to take up the business of insurance or reinsurance before they have been informed of the identities of the shareholders or members, direct or indirect, whether natural or legal persons, who have qualifying holdings…"
+    },
+    {
+      "id": "Art.25",
+      "title": "Refusal of authorisation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Any decision to refuse an authorisation shall state full reasons and shall be notified to the undertaking concerned. Each Member State shall make provision for a right to apply to the courts where an authorisation is refused."
+    },
+    {
+      "id": "Art.26",
+      "title": "Prior consultation of the authorities of other Member States",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authorities of any other Member State concerned shall be consulted prior to the granting of an authorisation to: (a) a subsidiary of an insurance or reinsurance undertaking authorised in that Member State; (b) a subsidiary of the parent undertaking of an insurance or reinsurance undertaking authorised…"
+    },
+    {
+      "id": "Art.27",
+      "title": "Main objective of supervision",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that the supervisory authorities are provided with the necessary means, and have the relevant expertise, capacity, and mandate to achieve the main objective of supervision, namely the protection of policy holders and beneficiaries."
+    },
+    {
+      "id": "Art.28",
+      "title": "Financial stability and pro-cyclicality",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to the main objective of supervision as set out in Article 27, Member States shall ensure that, in the exercise of their general duties, supervisory authorities shall duly consider the potential impact of their decisions on the stability of the financial systems concerned in the European Union, in…"
+    },
+    {
+      "id": "Art.29",
+      "title": "General principles of supervision",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Supervision shall be based on a prospective and risk-based approach. It shall include the verification on a continuous basis of the proper operation of the insurance or reinsurance business and of the compliance with supervisory provisions by insurance and reinsurance undertakings."
+    },
+    {
+      "id": "Art.30",
+      "title": "Supervisory authorities and scope of supervision",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The financial supervision of insurance and reinsurance undertakings, including that of the business they pursue either through branches or under the freedom to provide services, shall be the sole responsibility of the home Member State."
+    },
+    {
+      "id": "Art.31",
+      "title": "Transparency and accountability",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authorities shall conduct their tasks in a transparent and accountable manner with due respect for the protection of confidential information."
+    },
+    {
+      "id": "Art.32",
+      "title": "Prohibition of refusal of reinsurance contracts or retrocession contracts",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The home Member State of an insurance undertaking shall not refuse a reinsurance contract concluded with a reinsurance undertaking or an insurance undertaking authorised in accordance with Article 14 on grounds directly related to the financial soundness of that reinsurance undertaking or that insurance undertaking."
+    },
+    {
+      "id": "Art.33",
+      "title": "Supervision of branches established in another Member State",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall provide that, where an insurance or reinsurance undertaking authorised in another Member State carries on business through a branch, the supervisory authorities of the home Member State may, after having informed the supervisory authorities of the host Member State concerned, carry out themselves,…"
+    },
+    {
+      "id": "Art.34",
+      "title": "General supervisory powers",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that the supervisory authorities have the power to take preventive and corrective measures to ensure that insurance and reinsurance undertakings comply with the laws, regulations and administrative provisions with which they have to comply in each Member State."
+    },
+    {
+      "id": "Art.35",
+      "title": "Information to be provided for supervisory purposes",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require insurance and reinsurance undertakings to submit to the supervisory authorities the information which is necessary for the purposes of supervision."
+    },
+    {
+      "id": "Art.35a",
+      "title": "Exemptions from regular supervisory reporting",
+      "theme": "Pillar 3 Reporting",
+      "requirement": "Regular supervisory reporting — annual and quarterly QRTs, RSR, own fund items, SCR/MCR calculations, ORSA results",
+      "insertedByAmendment": true
+    },
+    {
+      "id": "Art.36",
+      "title": "Supervisory review process",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that the supervisory authorities review and evaluate the strategies, processes and reporting procedures which are established by the insurance and reinsurance undertakings to comply with the laws, regulations and administrative provisions adopted pursuant to this Directive."
+    },
+    {
+      "id": "Art.37",
+      "title": "Capital add-on",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Following the supervisory review process supervisory authorities may in exceptional circumstances set a capital add-on for an insurance or reinsurance undertaking by a decision stating the reasons."
+    },
+    {
+      "id": "Art.38",
+      "title": "Supervision of outsourced functions and activities",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to Article 49, Member States shall ensure that insurance and reinsurance undertakings which outsource a function or an insurance or reinsurance activity take the necessary steps to ensure that the following conditions are satisfied: (a) the service provider must cooperate with the supervisory…"
+    },
+    {
+      "id": "Art.39",
+      "title": "Transfer of portfolio",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Under the conditions laid down by national law, Member States shall authorise insurance and reinsurance undertakings with head offices within their territory to transfer all or part of their portfolios of contracts, concluded either under the right of establishment or the freedom to provide services, to an accepting…"
+    },
+    {
+      "id": "Art.40",
+      "title": "Responsibility of the administrative, management or supervisory body",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that the administrative, management or supervisory body of the insurance or reinsurance undertaking has the ultimate responsibility for the compliance, by the undertaking concerned, with the laws, regulations and administrative provisions adopted pursuant to this Directive."
+    },
+    {
+      "id": "Art.41",
+      "title": "General governance requirements",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "Effective system of governance with clear allocation of responsibilities, fit and proper persons, four key functions"
+    },
+    {
+      "id": "Art.42",
+      "title": "Fit and proper requirements for persons who effectively run the undertaking or have other key functions",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "All persons who effectively run the undertaking or hold key functions must be fit and proper — qualifications, knowledge, experience, reputation"
+    },
+    {
+      "id": "Art.43",
+      "title": "Proof of good repute",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where a Member State requires of its own nationals proof of good repute, proof of no previous bankruptcy, or both, that Member State shall accept as sufficient evidence in respect of nationals of other Member States the production of an extract from the judicial record or, failing this, of an equivalent document…"
+    },
+    {
+      "id": "Art.44",
+      "title": "Risk management",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "Effective risk management system — strategies, processes, procedures to identify, measure, monitor, manage risks on continuous basis"
+    },
+    {
+      "id": "Art.45",
+      "title": "Own risk and solvency assessment",
+      "chapter": "I",
+      "theme": "ORSA",
+      "requirement": "Undertakings shall conduct ORSA — assess overall solvency needs, compliance with capital requirements, and significance of deviation from technical provisions assumptions"
+    },
+    {
+      "id": "Art.46",
+      "title": "Internal control",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "Effective internal control system including administrative and accounting procedures and an internal control framework"
+    },
+    {
+      "id": "Art.47",
+      "title": "Internal audit",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "Effective internal audit function — evaluate adequacy and effectiveness of internal control system and other governance elements"
+    },
+    {
+      "id": "Art.48",
+      "title": "Actuarial function",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "Effective actuarial function — coordinate calculation of technical provisions, assess sufficiency and quality of data, compare assumptions against experience"
+    },
+    {
+      "id": "Art.49",
+      "title": "Outsourcing",
+      "chapter": "I",
+      "theme": "Governance & Risk (Pillar 2)",
+      "requirement": "Outsourcing critical or important functions shall not materially impair quality of governance, unduly increase operational risk, or impair supervision"
+    },
+    {
+      "id": "Art.50",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures to further specify the following: (a) the elements of the systems referred to in Articles 41, 44, 46 and 47, and in particular the areas to be covered by the asset–liability management and investment policy, as referred to in Article 44(2), of insurance and reinsurance…"
+    },
+    {
+      "id": "Art.51",
+      "title": "Report on solvency and financial condition: contents",
+      "chapter": "I",
+      "theme": "Pillar 3 Reporting",
+      "requirement": "Annual public disclosure of SFCR — business and performance, governance, risk profile, valuation methods, capital management"
+    },
+    {
+      "id": "Art.52",
+      "title": "Information for and reports by CEIOPS",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require the supervisory authorities to provide the following information to CEIOPS on an annual basis: (a) the average capital add-on per undertaking and the distribution of capital add-ons imposed by the supervisory authority during the previous year, measured as a percentage of the Solvency…"
+    },
+    {
+      "id": "Art.53",
+      "title": "Report on solvency and financial condition: applicable principles",
+      "chapter": "I",
+      "theme": "Pillar 3 Reporting",
+      "requirement": "SFCR approved by administrative body, subject to external audit opinion on balance sheet and compliance with regulatory requirements"
+    },
+    {
+      "id": "Art.54",
+      "title": "Report on solvency and financial condition: updates and additional voluntary information",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In the event of any major development affecting significantly the relevance of the information disclosed in accordance with Articles 51 and 53, insurance and reinsurance undertakings shall disclose appropriate information on the nature and effects of that major development."
+    },
+    {
+      "id": "Art.55",
+      "title": "Report on solvency and financial condition: policy and approval",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require insurance and reinsurance undertakings to have appropriate systems and structures in place to fulfil the requirements laid down in Articles 51 and 53 and Article 54(1), as well as to have a written policy ensuring the ongoing appropriateness of any information disclosed in accordance with…"
+    },
+    {
+      "id": "Art.56",
+      "title": "Solvency and financial condition report: implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures further specifying the information which must be disclosed and the means by which this is to be achieved."
+    },
+    {
+      "id": "Art.57",
+      "title": "Acquisitions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require any natural or legal person or such persons acting in concert (the proposed acquirer) who have taken a decision either to acquire, directly or indirectly, a qualifying holding in an insurance or reinsurance undertaking or to further increase, directly or indirectly, such a qualifying…"
+    },
+    {
+      "id": "Art.58",
+      "title": "Assessment period",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authorities shall, promptly and in any event within two working days following receipt of the notification required under Article 57(1), as well as following the possible subsequent receipt of the information referred to in paragraph 2, acknowledge receipt thereof in writing to the proposed acquirer."
+    },
+    {
+      "id": "Art.59",
+      "title": "Assessment",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In assessing the notification provided for in Article 57(1) and the information referred to in Article 58(2) the supervisory authorities shall, in order to ensure the sound and prudent management of the insurance or reinsurance undertaking in which an acquisition is proposed, and having regard to the likely influence…"
+    },
+    {
+      "id": "Art.60",
+      "title": "Acquisitions by regulated financial undertakings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The relevant supervisory authorities shall work in full consultation with each other when carrying out the assessment if the proposed acquirer is one of the following: (a) a credit institution, insurance or reinsurance undertaking, investment firm or management company within the meaning of point 2 of Article 1a of…"
+    },
+    {
+      "id": "Art.61",
+      "title": "Information to the supervisory authority by the insurance or reinsurance undertaking",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "On becoming aware of them, the insurance or reinsurance undertaking shall inform the supervisory authority of its home Member State of any acquisitions or disposals of holdings in its capital that cause those holdings to exceed or fall below any of the thresholds referred to in Article 57 and Article 58(1) to (7)."
+    },
+    {
+      "id": "Art.62",
+      "title": "Qualifying holdings, powers of the supervisory authority",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require that, where the influence exercised by the persons referred to in Article 57 is likely to operate against the sound and prudent management of an insurance or reinsurance undertaking, the supervisory authority of the home Member State of that undertaking in which a qualifying holding is…"
+    },
+    {
+      "id": "Art.63",
+      "title": "Voting rights",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "For the purposes of this Section, the voting rights referred to in Articles 9 and 10 of Directive 2004/109/EC, as well as the conditions regarding aggregation thereof laid down in Article 12(4) and (5) of that Directive, shall be taken into account."
+    },
+    {
+      "id": "Art.64",
+      "title": "Professional secrecy",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall provide that all persons who are working or who have worked for the supervisory authorities, as well as auditors and experts acting on behalf of those authorities, are bound by the obligation of professional secrecy."
+    },
+    {
+      "id": "Art.65",
+      "title": "Exchange of information between supervisory authorities of Member States",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Article 64 shall not preclude the exchange of information between supervisory authorities of different Member States. Such information shall be subject to the obligation of professional secrecy laid down in Article 64."
+    },
+    {
+      "id": "Art.66",
+      "title": "Cooperation agreements with third countries",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States may conclude cooperation agreements providing for the exchange of information with the supervisory authorities of third countries or with authorities or bodies of third countries as defined in Article 68(1) and (2) only if the information to be disclosed is subject to guarantees of professional secrecy…"
+    },
+    {
+      "id": "Art.67",
+      "title": "Use of confidential information",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Supervisory authorities which receive confidential information under Articles 64 or 65 may use it only in the course of their duties and for the following purposes: (1) to check that the conditions governing the taking-up of the business of insurance or reinsurance are met and to facilitate the monitoring of the…"
+    },
+    {
+      "id": "Art.68",
+      "title": "Exchange of information with other authorities",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Articles 64 and 67 shall not preclude any of the following: (a) the exchange of information between several supervisory authorities in the same Member State in the discharge of their supervisory functions; (b) the exchange of information, in the discharge of their supervisory functions, between supervisory authorities…"
+    },
+    {
+      "id": "Art.69",
+      "title": "Disclosure of information to government administrations responsible for financial legislation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Articles 64 and 67 shall not preclude Member States from authorising, under provisions laid down by law, the disclosure of certain information to other departments of their central government administrations responsible for legislation on the supervision of credit institutions, financial institutions, investment…"
+    },
+    {
+      "id": "Art.70",
+      "title": "Transmission of information to central banks and monetary authorities",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to this Section, a supervisory authority may transmit information intended for the performance of their tasks to the following: (1) central banks and other bodies with a similar function in their capacity as monetary authorities; (2) where appropriate, other public authorities responsible for…"
+    },
+    {
+      "id": "Art.71",
+      "title": "Supervisory convergence",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that the mandates of supervisory authorities take into account, in an appropriate way, a European Union dimension."
+    },
+    {
+      "id": "Art.72",
+      "title": "Duties of auditors",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall provide at least that persons authorised within the meaning of Eighth Council Directive 84/253/EEC of 10 April 1984 based on Article 54(3)(g) of the Treaty on the approval of persons responsible for carrying out the statutory audits of accounting documents ( 34 ) , who perform in an insurance or…"
+    },
+    {
+      "id": "Art.73",
+      "title": "Pursuit of life and non-life insurance activity",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance undertakings shall not be authorised to pursue life and non-life insurance activities simultaneously."
+    },
+    {
+      "id": "Art.74",
+      "title": "Separation of life and non-life insurance management",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The separate management referred to in Article 73 shall be organised in such a way that the life insurance activity is distinct from non-life insurance activity."
+    },
+    {
+      "id": "Art.75",
+      "title": "Valuation of assets and liabilities",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Assets valued at amounts for which they could be exchanged; liabilities at amounts for which they could be transferred — fair value hierarchy"
+    },
+    {
+      "id": "Art.76",
+      "title": "General provisions",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Technical provisions correspond to current amount to transfer insurance obligations to another undertaking — best estimate + risk margin"
+    },
+    {
+      "id": "Art.77",
+      "title": "Calculation of technical provisions",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Best estimate corresponds to probability-weighted average of future cash flows using relevant risk-free yield curve — gross of reinsurance"
+    },
+    {
+      "id": "Art.78",
+      "title": "Other elements to be taken into account in the calculation of technical provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In addition to Article 77, when calculating technical provisions, insurance and reinsurance undertakings shall take account of the following: (1) all expenses that will be incurred in servicing insurance and reinsurance obligations; (2) inflation, including expenses and claims inflation; (3) all payments to policy…"
+    },
+    {
+      "id": "Art.79",
+      "title": "Valuation of financial guarantees and contractual options included in insurance and reinsurance contracts",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "When calculating technical provisions, insurance and reinsurance undertakings shall take account of the value of financial guarantees and any contractual options included in insurance and reinsurance policies."
+    },
+    {
+      "id": "Art.80",
+      "title": "Segmentation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall segment their insurance and reinsurance obligations into homogeneous risk groups, and as a minimum by lines of business, when calculating their technical provisions."
+    },
+    {
+      "id": "Art.81",
+      "title": "Recoverables from reinsurance contracts and special purpose vehicles",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The calculation by insurance and reinsurance undertakings of amounts recoverable from reinsurance contracts and special purpose vehicles shall comply with Articles 76 to 80."
+    },
+    {
+      "id": "Art.82",
+      "title": "Data quality and application of approximations, including case-by-case approaches, for technical provisions",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Assumptions shall be realistic, based on credible information — biometric, expense, claims, lapse, future management actions, policyholder behaviour"
+    },
+    {
+      "id": "Art.83",
+      "title": "Comparison against experience",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall have processes and procedures in place to ensure that best estimates, and the assumptions underlying the calculation of best estimates, are regularly compared against experience."
+    },
+    {
+      "id": "Art.84",
+      "title": "Appropriateness of the level of technical provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Upon request from the supervisory authorities, insurance and reinsurance undertakings shall demonstrate the appropriateness of the level of their technical provisions, as well as the applicability and relevance of the methods applied, and the adequacy of the underlying statistical data used."
+    },
+    {
+      "id": "Art.85",
+      "title": "Increase of technical provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "To the extent that the calculation of technical provisions of insurance and reinsurance undertakings does not comply with Articles 76 to 83, the supervisory authorities may require insurance and reinsurance undertakings to increase the amount of technical provisions so that they correspond to the level determined…"
+    },
+    {
+      "id": "Art.86",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures laying down the following: (a) actuarial and statistical methodologies to calculate the best estimate referred to in Article 77(2); (b) the relevant risk-free interest rate term structure to be used to calculate the best estimate referred to in Article 77(2); (c) the…"
+    },
+    {
+      "id": "Art.87",
+      "title": "Own funds",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Own funds shall comprise the sum of basic own funds, referred to in Article 88 and ancillary own funds referred to in Article 89."
+    },
+    {
+      "id": "Art.88",
+      "title": "Basic own funds",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Basic own funds shall consist of the following items: (1) the excess of assets over liabilities, valued in accordance with Article 75 and Section 2; (2) subordinated liabilities."
+    },
+    {
+      "id": "Art.89",
+      "title": "Ancillary own funds",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Ancillary own funds shall consist of items other than basic own funds which can be called up to absorb losses."
+    },
+    {
+      "id": "Art.90",
+      "title": "Supervisory approval of ancillary own funds",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The amounts of ancillary own-fund items to be taken into account when determining own funds shall be subject to prior supervisory approval. The amount ascribed to each ancillary own-fund item shall reflect the loss-absorbency of the item and shall be based upon prudent and realistic assumptions."
+    },
+    {
+      "id": "Art.91",
+      "title": "Surplus funds",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Surplus funds shall be deemed to be accumulated profits which have not been made available for distribution to policy holders and beneficiaries."
+    },
+    {
+      "id": "Art.92",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures specifying the following: (a) the criteria for granting supervisory approval in accordance with Article 90; (b) the treatment of participations, within the meaning of the third subparagraph of Article 212(2), in financial and credit institutions with respect to the…"
+    },
+    {
+      "id": "Art.93",
+      "title": "Characteristics and features used to classify own funds into tiers",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Own-fund items shall be classified into three tiers."
+    },
+    {
+      "id": "Art.94",
+      "title": "Main criteria for the classification into tiers",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Basic own-fund items shall be classified in Tier 1 where they substantially possess the characteristics set out in Article 93(1)(a) and (b), taking into consideration the features set out in Article 93(2)."
+    },
+    {
+      "id": "Art.95",
+      "title": "Classification of own funds into tiers",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that insurance and reinsurance undertakings classify their own-fund items on the basis of the criteria laid down in Article 94."
+    },
+    {
+      "id": "Art.96",
+      "title": "Classification of specific insurance own-fund items",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to Article 95 and Article 97(1)(a) for the purposes of this Directive the following classifications shall be applied: (1) surplus funds falling under Article 91(2) shall be classified in Tier 1; (2) letters of credit and guarantees which are held in trust for the benefit of insurance creditors by an…"
+    },
+    {
+      "id": "Art.97",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures laying down the following: (a) a list of own-fund items, including those referred to in Article 96, deemed to fulfil the criteria, set out in Article 94, which contains for each own-fund item a precise description of the features which determined its classification; (b)…"
+    },
+    {
+      "id": "Art.98",
+      "title": "Eligibility and limits applicable to Tiers 1, 2 and 3",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "As far as the compliance with the Solvency Capital Requirement is concerned, the eligible amounts of Tier 2 and Tier 3 items shall be subject to quantitative limits."
+    },
+    {
+      "id": "Art.99",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures laying down: (a) the quantitative limits referred to in Article 98(1) and (2); (b) the adjustments that should be made to reflect the lack of transferability of those own-fund items that can only be used to cover losses arising from a particular segment of liabilities…"
+    },
+    {
+      "id": "Art.100",
+      "title": "General provisions",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "SCR calibrated to ensure 99.5% VaR over one year — all quantifiable risks, calculated at least annually, standard formula or internal model"
+    },
+    {
+      "id": "Art.101",
+      "title": "Calculation of the Solvency Capital Requirement",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Standard formula SCR = BSCR + Adj + SCR_op — aggregation using correlation matrices, 6 risk modules"
+    },
+    {
+      "id": "Art.102",
+      "title": "Frequency of calculation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall calculate the Solvency Capital Requirement at least once a year and report the result of that calculation to the supervisory authorities."
+    },
+    {
+      "id": "Art.103",
+      "title": "Structure of the standard formula",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Solvency Capital Requirement calculated on the basis of the standard formula shall be the sum of the following items: (a) the Basic Solvency Capital Requirement, as laid down in Article 104; (b) the capital requirement for operational risk, as laid down in Article 107; (c) the adjustment for the loss-absorbing…"
+    },
+    {
+      "id": "Art.104",
+      "title": "Design of the Basic Solvency Capital Requirement",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Basic Solvency Capital Requirement shall comprise individual risk modules, which are aggregated in accordance with point (1) of Annex IV. It shall consist of at least the following risk modules: (a) non-life underwriting risk; (b) life underwriting risk; (c) health underwriting risk; (d) market risk; (e)…"
+    },
+    {
+      "id": "Art.105",
+      "title": "Calculation of the Basic Solvency Capital Requirement",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Standard formula risk modules: market risk, counterparty default, life underwriting, health underwriting, non-life underwriting — each with sub-modules"
+    },
+    {
+      "id": "Art.106",
+      "title": "Calculation of the equity risk sub-module: symmetric adjustment mechanism",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The equity risk sub-module calculated in accordance with the standard formula shall include a symmetric adjustment to the equity capital charge applied to cover the risk arising from changes in the level of equity prices."
+    },
+    {
+      "id": "Art.107",
+      "title": "Capital requirement for operational risk",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The capital requirement for operational risk shall reflect operational risks to the extent they are not already reflected in the risk modules referred to in Article 104."
+    },
+    {
+      "id": "Art.108",
+      "title": "Adjustment for the loss-absorbing capacity of technical provisions and deferred taxes",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The adjustment referred to in Article 103(c) for the loss-absorbing capacity of technical provisions and deferred taxes shall reflect potential compensation of unexpected losses through a simultaneous decrease in technical provisions or deferred taxes or a combination of the two."
+    },
+    {
+      "id": "Art.109",
+      "title": "Simplifications in the standard formula",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings may use a simplified calculation for a specific sub-module or risk module where the nature, scale and complexity of the risks they face justifies it and where it would be disproportionate to require all insurance and reinsurance undertakings to apply the standardised calculation."
+    },
+    {
+      "id": "Art.110",
+      "title": "Significant deviations from the assumptions underlying the standard formula calculation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where it is inappropriate to calculate the Solvency Capital Requirement in accordance with the standard formula, as set out in Subsection 2, because the risk profile of the insurance or reinsurance undertaking concerned deviates significantly from the assumptions underlying the standard formula calculation, the…"
+    },
+    {
+      "id": "Art.111",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In order to ensure that the same treatment is applied to all insurance and reinsurance undertakings calculating the Solvency Capital Requirement on the basis of the standard formula, or to take account of market developments, the Commission shall adopt implementing measures providing for the following: (a) a standard…"
+    },
+    {
+      "id": "Art.112",
+      "title": "General provisions for the approval of full and partial internal models",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Internal model approval requires demonstrated use in risk management and decision-making (use test) — not just for regulatory calculation"
+    },
+    {
+      "id": "Art.113",
+      "title": "Specific provisions for the approval of partial internal models",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In the case of a partial internal model, supervisory approval shall be given only where that model fulfils the requirements set out in Article 112 and the following additional conditions: (a) the reason for the limited scope of application of the model is properly justified by the undertaking; (b) the resulting…"
+    },
+    {
+      "id": "Art.114",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures setting out the following: (1) the procedure to be followed for the approval of an internal model; (2) the adaptations to be made to the standards set out in Articles 120 to 125 in order to take account of the limited scope of the application of the partial internal…"
+    },
+    {
+      "id": "Art.115",
+      "title": "Policy for changing the full and partial internal models",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "As part of the initial approval process of an internal model, the supervisory authorities shall approve the policy for changing the model of the insurance or reinsurance undertaking."
+    },
+    {
+      "id": "Art.116",
+      "title": "Responsibilities of the administrative, management or supervisory bodies",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The administrative, management or supervisory bodies of the insurance and reinsurance undertakings shall approve the application to the supervisory authorities for approval of the internal model referred to in Article 112, as well as the application for approval of any subsequent major changes made to that model."
+    },
+    {
+      "id": "Art.117",
+      "title": "Reversion to the standard formula",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "After having received approval in accordance with Article 112, insurance and reinsurance undertakings shall not revert to calculating the whole or any part of the Solvency Capital Requirement in accordance with the standard formula, as set out in Subsection 2, except in duly justified circumstances and subject to the…"
+    },
+    {
+      "id": "Art.118",
+      "title": "Non-compliance of the internal model",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "If, after having received approval from the supervisory authorities to use an internal model, insurance and reinsurance undertakings cease to comply with the requirements set out in Articles 120 to 125, they shall, without delay, either present to the supervisory authorities a plan to restore compliance within a…"
+    },
+    {
+      "id": "Art.119",
+      "title": "Significant deviations from the assumptions underlying the standard formula calculation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where it is inappropriate to calculate the Solvency Capital Requirement in accordance with the standard formula, as set out in Subsection 2, because the risk profile of the insurance or reinsurance undertaking concerned deviates significantly from the assumptions underlying the standard formula calculation, the…"
+    },
+    {
+      "id": "Art.120",
+      "title": "Use test",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Regular cycle of model validation — monitoring performance, review ongoing appropriateness, testing results against experience"
+    },
+    {
+      "id": "Art.121",
+      "title": "Statistical quality standards",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The internal model, and in particular the calculation of the probability distribution forecast underlying it, shall comply with the criteria set out in paragraphs 2 to 9."
+    },
+    {
+      "id": "Art.122",
+      "title": "Calibration standards",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings may use a different time period or risk measure than that set out in Article 101(3) for internal modelling purposes as long as the outputs of the internal model can be used by those undertakings to calculate the Solvency Capital Requirement in a manner that provides policy…"
+    },
+    {
+      "id": "Art.123",
+      "title": "Profit and loss attribution",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall review, at least annually, the causes and sources of profits and losses for each major business unit."
+    },
+    {
+      "id": "Art.124",
+      "title": "Validation standards",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall have a regular cycle of model validation which includes monitoring the performance of the internal model, reviewing the ongoing appropriateness of its specification, and testing its results against experience."
+    },
+    {
+      "id": "Art.125",
+      "title": "Documentation standards",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall document the design and operational details of their internal model. The documentation shall demonstrate compliance with Articles 120 to 124."
+    },
+    {
+      "id": "Art.126",
+      "title": "External models and data",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The use of a model or data obtained from a third party shall not be considered to be a justification for exemption from any of the requirements for the internal model set out in Articles 120 to 125."
+    },
+    {
+      "id": "Art.127",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall, in order to ensure a harmonised approach to the use of internal models throughout the Community and to enhance the better assessment of the risk profile and management of the business of insurance and reinsurance undertakings, adopt implementing measures with respect to Articles 120 to 126."
+    },
+    {
+      "id": "Art.128",
+      "title": "General provisions",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "MCR calculated quarterly using linear formula — absolute floor, cap and floor relative to SCR (25-45%), ladder of intervention"
+    },
+    {
+      "id": "Art.129",
+      "title": "Calculation of the Minimum Capital Requirement",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Minimum Capital Requirement shall be calculated in accordance with the following principles: (a) it shall be calculated in a clear and simple manner, and in such a way as to ensure that the calculation can be audited; (b) it shall correspond to an amount of eligible basic own funds below which policy holders and…"
+    },
+    {
+      "id": "Art.130",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures specifying the calculation of the Minimum Capital Requirement, referred to in Articles 128 and 129."
+    },
+    {
+      "id": "Art.131",
+      "title": "Transitional arrangements regarding compliance with the Minimum Capital Requirement",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "By way of derogation from Articles 139 and 144, where insurance and reinsurance undertakings comply with the Required Solvency Margin referred to in Article 28 of Directive 2002/83/EC, Article 16a of Directive 73/239/EEC or Article 37, 38 or 39 of Directive 2005/68/EC respectively on 31 October 2012 but do not hold…"
+    },
+    {
+      "id": "Art.132",
+      "title": "Prudent person principle",
+      "chapter": "I",
+      "theme": "Valuation & Capital (Pillar 1)",
+      "requirement": "Assets invested in accordance with prudent person principle — security, quality, liquidity, profitability, proper diversification, ALM"
+    },
+    {
+      "id": "Art.133",
+      "title": "Freedom of investment",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall not require insurance and reinsurance undertakings to invest in particular categories of asset. Member States shall not subject the investment decisions of an insurance or reinsurance undertaking or its investment manager to any kind of prior approval or systematic notification requirements."
+    },
+    {
+      "id": "Art.134",
+      "title": "Localisation of assets and prohibition of pledging of assets",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "With respect to insurance risks situated in the Community, Member States shall not require that the assets held to cover the technical provisions related to those risks are localised within the Community or in any particular Member States."
+    },
+    {
+      "id": "Art.135",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In order to ensure the uniform application of this Directive, the Commission may adopt implementing measures specifying qualitative requirements in the following areas: (a) the identification, measurement, monitoring, managing and reporting of risks arising from investments in relation to the first subparagraph of…"
+    },
+    {
+      "id": "Art.136",
+      "title": "Identification and notification of deteriorating financial conditions by the insurance and reinsurance undertaking",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall have procedures in place to identify deteriorating financial conditions and shall immediately notify the supervisory authorities when such deterioration occurs."
+    },
+    {
+      "id": "Art.137",
+      "title": "Non-Compliance with technical provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where an insurance or reinsurance undertaking does not comply with Chapter VI, Section 2, the supervisory authorities of its home Member State may prohibit the free disposal of its assets after having communicated their intentions to the supervisory authorities of the host Member States."
+    },
+    {
+      "id": "Art.138",
+      "title": "Non-Compliance with the Solvency Capital Requirement",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall immediately inform the supervisory authority as soon as they observe that the Solvency Capital Requirement is no longer complied with, or where there is a risk of non-compliance in the following three months."
+    },
+    {
+      "id": "Art.139",
+      "title": "Non-Compliance with the Minimum Capital Requirement",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance and reinsurance undertakings shall inform the supervisory authority immediately where they observe that the Minimum Capital Requirement is no longer complied with or where there is a risk of non-compliance in the following three months."
+    },
+    {
+      "id": "Art.140",
+      "title": "Prohibition of free disposal of assets located within the territory of a Member State",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall take the measures necessary to be able, in accordance with national law, to prohibit the free disposal of assets located within their territory at the request, in the cases provided for in Articles 137 to 139 and Article 144(2) of the undertaking's home Member State, which shall designate the…"
+    },
+    {
+      "id": "Art.141",
+      "title": "Supervisory powers in deteriorating financial conditions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Notwithstanding Articles 138 and 139, where the solvency position of the undertaking continues to deteriorate, the supervisory authorities shall have the power to take all measures necessary to safeguard the interests of policy holders in the case of insurance contracts, or the obligations arising out of reinsurance…"
+    },
+    {
+      "id": "Art.142",
+      "title": "Recovery plan and finance scheme",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The recovery plan referred to in Article 138(2) and the finance scheme referred to in Article 139(2) shall, at least include particulars or evidence concerning the following: (a) estimates of management expenses, in particular current general expenses and commissions; (b) estimates of income and expenditure in respect…"
+    },
+    {
+      "id": "Art.143",
+      "title": "Implementing measures",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures specifying the factors to be taken into account for the purpose of the application of Article 138(4) including the maximum appropriate period of time, expressed in total number of months, which shall be the same for all insurance and reinsurance undertakings as referred…"
+    },
+    {
+      "id": "Art.144",
+      "title": "Withdrawal of authorisation",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authority of the home Member State may withdraw an authorisation granted to an insurance or reinsurance undertaking in the following cases: (a) the undertaking concerned does not make use of the authorisation within 12 months, expressly renounces it or ceases to pursue business for more than six…"
+    },
+    {
+      "id": "Art.145",
+      "title": "Conditions for branch establishment",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall ensure that an insurance undertaking which proposes to establish a branch within the territory of another Member State notifies the supervisory authorities of its home Member State."
+    },
+    {
+      "id": "Art.146",
+      "title": "Communication of information",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Unless the supervisory authorities of the home Member State have reason to doubt the adequacy of the system of governance or the financial situation of the insurance undertaking or the fit and proper requirements in accordance with Article 42 of the authorised agent, taking into account the business planned, they…"
+    },
+    {
+      "id": "Art.147",
+      "title": "Prior notification to the home Member State",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Any insurance undertaking that intends to pursue business for the first time in one or more Member States under the freedom to provide services shall first notify the supervisory authorities of the home Member State, indicating the nature of the risks or commitments it proposes to cover."
+    },
+    {
+      "id": "Art.148",
+      "title": "Notification by the home Member State",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Within one month of the notification provided for in Article 147, the supervisory authorities of the home Member State shall communicate the following to the Member State or States within the territories of which an insurance undertaking intends to pursue business under the freedom to provide services: (a) a…"
+    },
+    {
+      "id": "Art.149",
+      "title": "Changes in the nature of the risks or commitments",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Any change which an insurance undertaking intends to make to the information referred to in Article 145 shall be subject to the procedure provided for in Articles 147 and 148."
+    },
+    {
+      "id": "Art.150",
+      "title": "Compulsory insurance on third party motor vehicle liability",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where a non-life insurance undertaking, through an establishment situated in one Member State, covers a risk, other than carrier's liability, classified under class 10 in Part A of Annex I which is situated in another Member State, the host Member State shall require that undertaking to become a member of and…"
+    },
+    {
+      "id": "Art.151",
+      "title": "Non-discrimination of persons pursuing claims",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The host Member State shall require the non-life insurance undertaking to ensure that persons pursuing claims arising out of events occurring in its territory are not placed in a less favourable situation as a result of the fact that the undertaking is covering a risk, other than carrier's liability, classified under…"
+    },
+    {
+      "id": "Art.152",
+      "title": "Representative",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "For the purposes referred to in Article 151, the host Member State shall require the non-life insurance undertaking to appoint a representative resident or established in its territory who shall collect all necessary information in relation to claims, and shall possess sufficient powers to represent the undertaking in…"
+    },
+    {
+      "id": "Art.153",
+      "title": "Language",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authorities of the host Member State may require the information which they are authorised to request with regard to the business of insurance undertakings operating in the territory of that Member State to be supplied to them in the official language or languages of that State."
+    },
+    {
+      "id": "Art.154",
+      "title": "Prior notification and prior approval",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The host Member State shall not adopt provisions requiring the prior approval or systematic notification of general and special policy conditions, scales of premiums, or, in the case of life insurance, the technical bases used in particular for calculating scales of premiums and technical provisions, or the forms and…"
+    },
+    {
+      "id": "Art.155",
+      "title": "Insurance undertakings not complying with the legal provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where the supervisory authorities of a host Member State establish that an insurance undertaking with a branch or pursuing business under the freedom to provide services in its territory is not complying with the legal provisions applicable to it in that Member State, they shall require the insurance undertaking…"
+    },
+    {
+      "id": "Art.156",
+      "title": "Advertising",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Insurance undertakings with head offices in Member States may advertise their services, through all available means of communication, in the host Member State, subject to the rules governing the form and content of such advertising adopted in the interest of the general good."
+    },
+    {
+      "id": "Art.157",
+      "title": "Taxes on premiums",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Without prejudice to any subsequent harmonisation, every insurance contract shall be subject exclusively to the indirect taxes and parafiscal charges on insurance premiums in the Member State in which the risk is situated or the Member State of the commitment For the purposes of the first subparagraph, movable…"
+    },
+    {
+      "id": "Art.158",
+      "title": "Reinsurance undertakings not complying with the legal provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where the supervisory authorities of a Member State establish that a reinsurance undertaking with a branch or pursuing business under the freedom to provide services within its territory is not complying with the legal provisions applicable to it in that Member State, they shall require the reinsurance undertaking…"
+    },
+    {
+      "id": "Art.159",
+      "title": "Statistical information on cross-border activities",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Every insurance undertaking shall inform the competent supervisory authority of its home Member State, separately in respect of transactions carried out under the right of establishment and those carried out under the freedom to provide services, of the amount of the premiums, claims and commissions, without deduction…"
+    },
+    {
+      "id": "Art.160",
+      "title": "Winding-up of insurance undertakings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where an insurance undertaking is wound up, commitments arising out of contracts underwritten through a branch or under the freedom to provide services shall be met in the same way as those arising out of the other insurance contracts of that undertaking, without distinction as to nationality as far as the persons…"
+    },
+    {
+      "id": "Art.161",
+      "title": "Winding-up of reinsurance undertakings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Where a reinsurance undertaking is wound up, commitments arising out of contracts underwritten through a branch or under the freedom to provide services shall be met in the same way as those arising out of the other reinsurance contracts of that undertaking."
+    },
+    {
+      "id": "Art.162",
+      "title": "Principle of authorisation and conditions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall make access to the business referred to in the first subparagraph of Article 2(1) by any undertaking with a head office outside the Community subject to an authorisation."
+    },
+    {
+      "id": "Art.163",
+      "title": "Scheme of operations of the branch",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The scheme of operations of the branch referred to in Article 162(2)(h) shall set out the following: (a) the nature of the risks or commitments which the undertaking proposes to cover; (b) the guiding principles as to reinsurance; (c) estimates of the future Solvency Capital Requirement, as laid down in Chapter VI,…"
+    },
+    {
+      "id": "Art.164",
+      "title": "Transfer of portfolio",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Under the conditions laid down by national law, Member States shall authorise branches set up within their territory and covered by this Chapter to transfer all or part of their portfolios of contracts to an accepting undertaking established in the same Member State where the supervisory authorities of that Member…"
+    },
+    {
+      "id": "Art.165",
+      "title": "Technical provisions",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall require undertakings to establish adequate technical provisions to cover the insurance and reinsurance obligations assumed in their territories calculated in accordance with Chapter VI, Section 2."
+    },
+    {
+      "id": "Art.166",
+      "title": "Solvency Capital Requirement and Minimum Capital Requirement",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Each Member State shall require for branches which are set up in its territory an amount of eligible own funds consisting of the items referred to in Article 98(3)."
+    },
+    {
+      "id": "Art.167",
+      "title": "Advantages to undertakings authorised in more than one Member State",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Any undertaking which has requested or obtained authorisation from more than one Member State may apply for the following advantages which may be granted only jointly: (a) the Solvency Capital Requirement referred to in Article 166 shall be calculated in relation to the entire business which it pursues within the…"
+    },
+    {
+      "id": "Art.168",
+      "title": "Accounting, prudential and statistical information and undertakings in difficulty",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "For the purposes of this Section, Article 34, Article 139(3) and Articles 140 and 141 shall apply."
+    },
+    {
+      "id": "Art.169",
+      "title": "Separation of non-life and life business",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Branches referred to in this Section shall not simultaneously pursue life and non-life insurance activities in the same Member State."
+    },
+    {
+      "id": "Art.170",
+      "title": "Withdrawal of authorisation for undertakings authorised in more than one Member State",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "In the case of a withdrawal of authorisation by the authority referred to in Article 167(2) that authority shall notify the supervisory authorities of the other Member States where the undertaking operates and those authorities shall take the appropriate measures."
+    },
+    {
+      "id": "Art.171",
+      "title": "Agreements with third countries",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Community may, by means of agreements concluded pursuant to the Treaty with one or more third countries, agree to the application of provisions different to those provided for in this Section, for the purpose of ensuring, under conditions of reciprocity, adequate protection for policy holders and insured persons…"
+    },
+    {
+      "id": "Art.172",
+      "title": "Equivalence",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission shall adopt implementing measures specifying the criteria to assess whether the solvency regime of a third country applied to reinsurance activities of undertakings with their head office in that third country is equivalent to that laid down in Title I. Those measures, designed to amend non-essential…"
+    },
+    {
+      "id": "Art.173",
+      "title": "Prohibition of pledging of assets",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall not retain or introduce for the establishment of technical provisions a system with gross reserving which requires pledging of assets to cover unearned premiums and outstanding claims provisions where the reinsurer is a third-country insurance or reinsurance undertaking, situated in a country whose…"
+    },
+    {
+      "id": "Art.174",
+      "title": "Principle and conditions for conducting reinsurance activity",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "A Member State shall not apply to third-country reinsurance undertakings taking-up or pursuing reinsurance activity in its territory provisions which result in a more favourable treatment than that granted to reinsurance undertakings which have their head office in that Member State."
+    },
+    {
+      "id": "Art.175",
+      "title": "Agreements with third countries",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The Commission may submit proposals to the Council for the negotiation of agreements with one or more third countries regarding the means of exercising supervision over the following: (a) third-country reinsurance undertakings which conduct reinsurance business in the Community; (b) Community reinsurance undertakings…"
+    },
+    {
+      "id": "Art.176",
+      "title": "Information from Member States to the Commission",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "The supervisory authorities of the Member States shall inform the Commission and the supervisory authorities of the other Member States of any authorisation of a direct or indirect subsidiary, one or more of whose parent undertakings are governed by the laws of a third country."
+    },
+    {
+      "id": "Art.177",
+      "title": "Third-country treatment of Community insurance and reinsurance undertakings",
+      "chapter": "I",
+      "theme": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "requirement": "Member States shall inform the Commission of any general difficulties encountered by their insurance or reinsurance undertakings in establishing themselves and operating in a third country or pursuing activities in a third country."
+    },
+    {
+      "id": "Art.178",
+      "title": "Applicable Law",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Any Member State not subject to the application of Regulation (EC) No 593/2008 shall apply the provisions of that Regulation in order to determine the law applicable to insurance contracts falling within the scope of Article 7 of that Regulation."
+    },
+    {
+      "id": "Art.179",
+      "title": "Related obligations",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Non-life insurance undertakings may offer and conclude compulsory insurance contracts under the conditions set out in this Article."
+    },
+    {
+      "id": "Art.180",
+      "title": "General good",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Neither the Member State in which a risk is situated nor the Member State of the commitment shall prevent a policy holder from concluding a contract with an insurance undertaking authorised under the conditions of Article 14 as long as that conclusion of contract does not conflict with legal provisions protecting the…"
+    },
+    {
+      "id": "Art.181",
+      "title": "Non-life insurance",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall not require the prior approval or systematic notification of general and special policy conditions, scales of premiums, or forms and other printed documents which an insurance undertaking intends to use in its dealings with policy holders."
+    },
+    {
+      "id": "Art.182",
+      "title": "Life insurance",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall not require the prior approval or systematic notification of general and special policy conditions, scales of premiums, technical bases used in particular for calculating scales of premiums and technical provisions or forms and other printed documents which a life insurance undertaking intends to…"
+    },
+    {
+      "id": "Art.183",
+      "title": "General Information for policy holders",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Before a non-life insurance contract is concluded the non-life insurance undertaking shall inform the policy holder of the following: (a) the law applicable to the contract, where the parties do not have a free choice; (b) the fact that the parties are free to choose the law applicable and the law the insurer proposes…"
+    },
+    {
+      "id": "Art.184",
+      "title": "Additional information in the case of non-life insurance offered under the right of establishment or the freedom to provide services",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Where non-life insurance is offered under the right of establishment or the freedom to provide services, the policy holder shall, before any commitment is entered into, be informed of the Member State in which the head office or, where appropriate, the branch with which the contract is to be concluded is situated."
+    },
+    {
+      "id": "Art.185",
+      "title": "Information for policy holders",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Before the life insurance contract is concluded, at least the information set out in paragraphs 2 to 4 shall be communicated to the policy holder."
+    },
+    {
+      "id": "Art.186",
+      "title": "Cancellation period",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall provide for policy holders who conclude individual life insurance contracts to have a period of between 14 and 30 days from the time when they were informed that the contract had been concluded within which to cancel the contract."
+    },
+    {
+      "id": "Art.187",
+      "title": "Policy Conditions",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "General and special policy conditions shall not include any conditions intended to meet, in an individual case, the particular circumstances of the risk to be covered."
+    },
+    {
+      "id": "Art.188",
+      "title": "Abolition of monopolies",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall ensure that monopolies in respect of the taking-up of the business of certain classes of insurance, granted to bodies established within their territories and referred to in Article 8, are abolished."
+    },
+    {
+      "id": "Art.189",
+      "title": "Participation in national guarantee schemes",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Host Member States may require non-life insurance undertakings to join and participate, on the same terms as non-life insurance undertakings authorised in their territories, in any scheme designed to guarantee the payment of insurance claims to insured persons and injured third parties."
+    },
+    {
+      "id": "Art.190",
+      "title": "Community co-insurance operations",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "This Section shall apply to Community co-insurance operations which shall be those co-insurance operations which relate to one or more risks classified under classes 3 to 16 of Part A of Annex I and which fulfil the following conditions: (a) the risk is a large risk; (b) the risk is covered by a single contract at an…"
+    },
+    {
+      "id": "Art.191",
+      "title": "Participation in Community co-insurance",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "The right of insurance undertakings to participate in Community co-insurance shall not be made subject to any provisions other than those of this Section."
+    },
+    {
+      "id": "Art.192",
+      "title": "Technical provisions",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "The amount of the technical provisions shall be determined by the different co-insurers according to the rules fixed by their home Member State or, in the absence of such rules, according to customary practice in that State."
+    },
+    {
+      "id": "Art.193",
+      "title": "Statistical data",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Home Member States shall ensure that co-insurers keep statistical data showing the extent of Community co-insurance operations in which they participate and the Member States concerned."
+    },
+    {
+      "id": "Art.194",
+      "title": "Treatment of co-insurance contracts in winding-up proceedings",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "In the event of an insurance undertaking being wound up, liabilities arising from participation in Community co-insurance contracts shall be met in the same way as those arising under the other insurance contracts of that undertaking without distinction as to the nationality of the insured and of the beneficiaries."
+    },
+    {
+      "id": "Art.195",
+      "title": "Exchange of information between supervisory authorities",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "For the purposes of the implementation of this Section the supervisory authorities of the Member States shall, in the framework of the cooperation referred to in Title I, Chapter IV, Section 5, provide each other with all necessary information."
+    },
+    {
+      "id": "Art.196",
+      "title": "Cooperation on implementation",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "The Commission and the supervisory authorities of the Member States shall cooperate closely for the purposes of examining any difficulties which might arise in implementing this Section."
+    },
+    {
+      "id": "Art.197",
+      "title": "Activities similar to tourist assistance",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States may make provision for assistance to persons who get into difficulties in circumstances other than those referred to in Article 2(2) subject to this Directive."
+    },
+    {
+      "id": "Art.198",
+      "title": "Scope of this Section",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "This Section shall apply to legal expenses insurance referred to in class 17 in Part A of Annex I whereby an insurance undertaking promises, against the payment of a premium, to bear the costs of legal proceedings and to provide other services directly linked to insurance cover, in particular with a view to the…"
+    },
+    {
+      "id": "Art.199",
+      "title": "Separate contracts",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Legal expenses cover shall be the subject of a contract separate from that drawn up for the other classes of insurance or shall be dealt with in a separate section of a single policy in which the nature of the legal expenses cover and, should the Member State so request, the amount of the relevant premium are…"
+    },
+    {
+      "id": "Art.200",
+      "title": "Management of claims",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "The home Member State shall ensure that insurance undertakings adopt, in accordance with the option chosen by the Member State, or at their own choice, where the Member State so agrees, at least one of the methods for the management of claims set out in paragraphs 2, 3 and 4."
+    },
+    {
+      "id": "Art.201",
+      "title": "Free choice of lawyer",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Any contract of legal expenses insurance shall expressly provide that: (a) where recourse is had to a lawyer or other person appropriately qualified according to national law in order to defend, represent or serve the interests of the insured person in any inquiry or proceedings, that insured person shall be free to…"
+    },
+    {
+      "id": "Art.202",
+      "title": "Exception to the free choice of lawyer",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States may provide for exemption from Article 201(1) for legal expenses insurance if all the following conditions are met: (a) the insurance is limited to cases arising from the use of road vehicles in the territory of the Member State concerned; (b) the insurance is connected to a contract to provide…"
+    },
+    {
+      "id": "Art.203",
+      "title": "Arbitration",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall, for the settlement of any dispute between the legal expenses insurance undertaking and the insured and without prejudice to any right of appeal to a judicial body which might be provided for by national law, provide for arbitration or other procedures offering comparable guarantees of objectivity."
+    },
+    {
+      "id": "Art.204",
+      "title": "Conflict of interest",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Whenever a conflict of interests arises or there is disagreement over the settlement of the dispute, the legal expenses insurer or, where appropriate, the claims settlement office shall inform the person insured of the right referred to in Article 201(1) and of the possibility of having recourse to the procedure…"
+    },
+    {
+      "id": "Art.205",
+      "title": "Abolition of specialisation of legal expenses insurance",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall abolish all provisions which prohibit an insurance undertaking from pursuing within their territory legal expenses insurance and other classes of insurance at the same time."
+    },
+    {
+      "id": "Art.206",
+      "title": "Health insurance as an alternative to social security",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States in which contracts covering the risks under class 2 in Part A of Annex I may serve as a partial or complete alternative to health cover provided by the statutory social security system may require that: (a) those contracts comply with the specific legal provisions adopted by that Member State to protect…"
+    },
+    {
+      "id": "Art.207",
+      "title": "Compulsory insurance against accidents at work",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States may require that any insurance undertaking offering, at its own risk, compulsory insurance against accidents at work within their territories comply with the specific provisions of their national law concerning such insurance, except for the provisions concerning financial supervision, which shall be the…"
+    },
+    {
+      "id": "Art.208",
+      "title": "Prohibition on compulsory ceding of part of underwriting",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall not require life insurance undertakings to cede part of their underwriting of activities listed in Article 2(3) to an organisation or organisations designated by national law."
+    },
+    {
+      "id": "Art.209",
+      "title": "Premiums for new business",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Premiums for new business shall be sufficient, on reasonable actuarial assumptions, to enable life insurance undertakings to meet all their commitments and, in particular, to establish adequate technical provisions."
+    },
+    {
+      "id": "Art.210",
+      "title": "Finite reinsurance",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall ensure that insurance and reinsurance undertakings which conclude finite reinsurance contracts or pursue finite reinsurance activities are able to properly identify, measure, monitor, manage, control and report the risks arising from those contracts or activities."
+    },
+    {
+      "id": "Art.211",
+      "title": "Special purpose vehicles",
+      "chapter": "II",
+      "theme": "Specific provisions for insurance and reinsurance",
+      "requirement": "Member States shall allow the establishment within their territory of special purpose vehicles, subject to prior supervisory approval."
+    },
+    {
+      "id": "Art.212",
+      "title": "Definitions",
+      "chapter": "III",
+      "theme": "Group Supervision",
+      "requirement": "Group supervision applies to insurance and reinsurance undertakings that are part of a group — participation, common management"
+    },
+    {
+      "id": "Art.213",
+      "title": "Cases of application of group supervision",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall provide for supervision, at the level of the group, of insurance and reinsurance undertakings which are part of a group, in accordance with this Title."
+    },
+    {
+      "id": "Art.214",
+      "title": "Scope of group supervision",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The exercise of group supervision in accordance with Article 213 shall not imply that the supervisory authorities are required to play a supervisory role in relation to the third-country insurance undertaking, the third-country reinsurance undertaking, the insurance holding company or the mixed-activity insurance…"
+    },
+    {
+      "id": "Art.215",
+      "title": "Ultimate parent undertaking at Community level",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where the participating insurance or reinsurance undertaking or the insurance holding company referred to in Article 213(2)(a) and (b) is itself a subsidiary undertaking of another insurance or reinsurance undertaking or of another insurance holding company which has its head office in the Community, Articles 218 to…"
+    },
+    {
+      "id": "Art.216",
+      "title": "Ultimate parent undertaking at national level",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where the participating insurance or reinsurance undertaking or the insurance holding company which has its head office in the Community, referred to in Article 213(2)(a) and (b), does not have its head office in the same Member State as the ultimate parent undertaking at Community level referred to in Article 215,…"
+    },
+    {
+      "id": "Art.217",
+      "title": "Parent undertaking covering several Member States",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where Member States allow their supervisory authorities to make the decision referred to in Article 216, they shall also allow them to decide to conclude an agreement with supervisory authorities in other Member States where another related ultimate parent undertaking at national level is present, with a view to…"
+    },
+    {
+      "id": "Art.218",
+      "title": "Supervision of group solvency",
+      "chapter": "III",
+      "theme": "Group Supervision",
+      "requirement": "Supervisory authorities shall monitor risk concentrations at group level — reporting significant risk concentrations"
+    },
+    {
+      "id": "Art.219",
+      "title": "Frequency of calculation",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The group supervisor shall ensure that the calculations referred to in Article 218(2) and (3) are carried out at least annually, either by the participating insurance or reinsurance undertakings or by the insurance holding company."
+    },
+    {
+      "id": "Art.220",
+      "title": "Choice of method",
+      "chapter": "III",
+      "theme": "Group Supervision",
+      "requirement": "Group SCR calculated on consolidated basis using either the standard formula or an approved group internal model"
+    },
+    {
+      "id": "Art.221",
+      "title": "Inclusion of proportional share",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The calculation of the group solvency shall take account of the proportional share held by the participating undertaking in its related undertakings."
+    },
+    {
+      "id": "Art.222",
+      "title": "Elimination of double use of eligible own funds",
+      "chapter": "III",
+      "theme": "Group Supervision",
+      "requirement": "Where consolidated method is not appropriate, deduction and aggregation method may be used — combination of methods possible"
+    },
+    {
+      "id": "Art.223",
+      "title": "Elimination of the intra-group creation of capital",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "When calculating group solvency, no account shall be taken of any own funds eligible for the Solvency Capital Requirement arising out of reciprocal financing between the participating insurance or reinsurance undertaking and any of the following: (a) a related undertaking; (b) a participating undertaking; (c) another…"
+    },
+    {
+      "id": "Art.224",
+      "title": "Valuation",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The value of the assets and liabilities shall be assessed in accordance with Article 75."
+    },
+    {
+      "id": "Art.225",
+      "title": "Related insurance and reinsurance undertakings",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where the insurance or reinsurance undertaking has more than one related insurance or reinsurance undertaking, the group solvency calculation shall be carried out by including each of those related insurance or reinsurance undertakings."
+    },
+    {
+      "id": "Art.226",
+      "title": "Intermediate insurance holding companies",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "When calculating the group solvency of an insurance or reinsurance undertaking which holds a participation in a related insurance undertaking, a related reinsurance undertaking, a third-country insurance undertaking or a third-country reinsurance undertaking, through an insurance holding company, the situation of such…"
+    },
+    {
+      "id": "Art.227",
+      "title": "Related third-country insurance and reinsurance undertakings",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "When calculating, in accordance with Article 233, the group solvency of an insurance or reinsurance undertaking which is a participating undertaking in a third-country insurance or reinsurance undertaking, the latter shall, solely for the purposes of that calculation, be treated as a related insurance or reinsurance…"
+    },
+    {
+      "id": "Art.228",
+      "title": "Related credit institutions, investment firms and financial institutions",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "When calculating the group solvency of an insurance or reinsurance undertaking which is a participating undertaking in a credit institution, investment firm or financial institution, Member States shall allow their participating insurance and reinsurance undertakings to apply methods 1 or 2 set out in Annex I to…"
+    },
+    {
+      "id": "Art.229",
+      "title": "Non-availability of the necessary information",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where the information necessary for calculating the group solvency of an insurance or reinsurance undertaking, concerning a related undertaking with its head office in a Member State or a third country, is not available to the supervisory authorities concerned, the book value of that undertaking in the participating…"
+    },
+    {
+      "id": "Art.230",
+      "title": "Method 1 (Default method): Accounting consolidation-based method",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The calculation of the group solvency of the participating insurance or reinsurance undertaking shall be carried out on the basis of the consolidated accounts."
+    },
+    {
+      "id": "Art.231",
+      "title": "Group internal model",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In the case of an application for permission to calculate the consolidated group Solvency Capital Requirement, as well as the Solvency Capital Requirement of insurance and reinsurance undertakings in the group, on the basis of an internal model, submitted by an insurance or reinsurance undertaking and its related…"
+    },
+    {
+      "id": "Art.232",
+      "title": "Group capital add-on",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In determining whether the consolidated group Solvency Capital Requirement appropriately reflects the risk profile of the group, the group supervisor shall pay particular attention to any case where the circumstances referred to in Article 37(1)(a) to (c) may arise at group level, in particular where: (a) a specific…"
+    },
+    {
+      "id": "Art.233",
+      "title": "Method 2 (Alternative method): Deduction and aggregation method",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The group solvency of the participating insurance or reinsurance undertaking shall be the difference between the following: (a) the aggregated group eligible own funds, as provided for in paragraph 2; (b) the value in the participating insurance or reinsurance undertaking of the related insurance or reinsurance…"
+    },
+    {
+      "id": "Art.234",
+      "title": "Implementing measures",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The Commission shall adopt implementing measures specifying the technical principles and methods set out in Articles 220 to 229 and the application of Articles 230 to 233 to ensure uniform application within the Community."
+    },
+    {
+      "id": "Art.235",
+      "title": "Group solvency of an insurance holding company",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where insurance and reinsurance undertakings are subsidiaries of an insurance holding company, the group supervisor shall ensure that the calculation of the solvency of the group is carried out at the level of the insurance holding company applying Article 220(2) to Article 233."
+    },
+    {
+      "id": "Art.236",
+      "title": "Subsidiaries of an insurance or reinsurance undertaking: conditions",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall provide that the rules laid down in Articles 238 and 239 shall apply to any insurance or reinsurance undertaking which is the subsidiary of an insurance or reinsurance undertaking where all of the following conditions are satisfied: (a) the subsidiary, in relation to which the group supervisor has…"
+    },
+    {
+      "id": "Art.237",
+      "title": "Subsidiaries of an insurance or reinsurance undertaking: decision on the application",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In the case of applications for permission to be subject to the rules laid down in Articles 238 and 239, the supervisory authorities concerned shall work together within the college of supervisors, in full consultation, to decide whether or not to grant the permission sought and to determine the other terms and…"
+    },
+    {
+      "id": "Art.238",
+      "title": "Subsidiaries of an insurance or reinsurance undertaking: determination of the Solvency Capital Requirement",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Without prejudice to Article 231, the Solvency Capital Requirement of the subsidiary shall be calculated as set out in paragraphs 2, 4, and 5 of this Article."
+    },
+    {
+      "id": "Art.239",
+      "title": "Subsidiaries of an insurance or reinsurance undertaking: non-compliance with the Solvency and Minimum Capital Requirements",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In the event of non-compliance with the Solvency Capital Requirement and without prejudice to Article 138, the supervisory authority having authorised the subsidiary shall, without delay, forward to the college of supervisors the recovery plan submitted by the subsidiary in order to achieve, within six months from the…"
+    },
+    {
+      "id": "Art.240",
+      "title": "Subsidiaries of an insurance or reinsurance undertaking: end of derogations for a subsidiary",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The rules provided for in Articles 238 and 239 shall cease to apply where: (a) the condition referred to in Article 236(a) is no longer complied with; (b) the condition referred to in Article 236(b) is no longer complied with and the group does not restore compliance with this condition in an appropriate period of…"
+    },
+    {
+      "id": "Art.241",
+      "title": "Subsidiaries of an insurance or reinsurance undertaking: implementing measures",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In order to ensure the uniform application of Articles 236 to 240, the Commission shall adopt implementing measures specifying: (a) the criteria to be applied when assessing whether the conditions stated in Article 236 are satisfied; (b) the criteria to be applied when assessing what should be considered an emergency…"
+    },
+    {
+      "id": "Art.242",
+      "title": "Review",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "By 31 October 2014, the Commission shall make an assessment of the application of Title III, in particular as regards the cooperation of supervisory authorities within, and functionality of, the college of supervisors, the legal status of CEIOPS, and the supervisory practices concerning setting the capital add-ons,…"
+    },
+    {
+      "id": "Art.243",
+      "title": "Subsidiaries of an insurance holding company",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Articles 236 to 242 shall apply mutatis mutandis to insurance and reinsurance undertakings which are the subsidiary of an insurance holding company."
+    },
+    {
+      "id": "Art.244",
+      "title": "Supervision of risk concentration",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Supervision of the risk concentration at group level shall be exercised in accordance with paragraphs 2 and 3 of this Article, Article 246 and Chapter III."
+    },
+    {
+      "id": "Art.245",
+      "title": "Supervision of intra-group transactions",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Supervision of intra-group transactions shall be exercised in accordance with paragraphs 2 and 3 of this Article, Article 246 and Chapter III."
+    },
+    {
+      "id": "Art.246",
+      "title": "Supervision of the system of governance",
+      "chapter": "III",
+      "theme": "Group Supervision",
+      "requirement": "Ultimate parent shall ensure sound governance at group level — group-wide risk management, internal controls, reporting, fit and proper"
+    },
+    {
+      "id": "Art.247",
+      "title": "Group Supervisor",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "A single supervisor, responsible for coordination and exercise of group supervision (group supervisor), shall be designated from among the supervisory authorities of the Member States concerned."
+    },
+    {
+      "id": "Art.248",
+      "title": "Rights and duties of the group supervisor and the other supervisors College of supervisors",
+      "chapter": "III",
+      "theme": "Group Supervision",
+      "requirement": "Supervisory reporting of significant intra-group transactions — type, amount, parties, risk transfer characteristics, conditions"
+    },
+    {
+      "id": "Art.249",
+      "title": "Cooperation and exchange of information between supervisory authorities",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The authorities responsible for the supervision of the individual insurance and reinsurance undertakings in a group and the group supervisor shall cooperate closely, in particular in cases where an insurance or reinsurance undertaking encounters financial difficulties."
+    },
+    {
+      "id": "Art.250",
+      "title": "Consultation between supervisory authorities",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Without prejudice to Article 248, the supervisory authorities concerned shall, where a decision is of importance for the supervisory tasks of other supervisory authorities, prior to that decision, consult each other in the college of supervisors with regard to the following: (a) changes in the shareholder structure,…"
+    },
+    {
+      "id": "Art.251",
+      "title": "Requests from the group supervisor to other supervisory authorities",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The group supervisor may invite the supervisory authorities of the Member State in which a parent undertaking has its head office, and which do not themselves exercise the group supervision pursuant to Article 247, to request from the parent undertaking any information which would be relevant for the exercise of its…"
+    },
+    {
+      "id": "Art.252",
+      "title": "Cooperation with authorities responsible for credit institutions and investment firms",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where an insurance or reinsurance undertaking and either a credit institution as defined in Directive 2006/48/EC or an investment firm as defined in Directive 2004/39/EC, or both, are directly or indirectly related or have a common participating undertaking, the supervisory authorities concerned and the authorities…"
+    },
+    {
+      "id": "Art.253",
+      "title": "Professional secrecy and confidentiality",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall authorise the exchange of information between their supervisory authorities and between their supervisory authorities and other authorities, as referred to in Articles 249 to 252."
+    },
+    {
+      "id": "Art.254",
+      "title": "Access to information",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall ensure that the natural and legal persons included within the scope of group supervision, and their related undertakings and participating undertakings, are able to exchange any information which could be relevant for the purposes of group supervision."
+    },
+    {
+      "id": "Art.255",
+      "title": "Verification of information",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall ensure that their supervisory authorities may carry out within their territory, either directly or through the intermediary of persons whom they appoint for that purpose, on-site verification of the information referred to in Article 254 on the premises of any of the following: (a) the insurance or…"
+    },
+    {
+      "id": "Art.256",
+      "title": "Group solvency and financial condition report",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall require participating insurance and reinsurance undertakings or insurance holding companies to disclose publicly, on an annual basis, a report on the solvency and financial condition at the level of the group."
+    },
+    {
+      "id": "Art.257",
+      "title": "Administrative, management or supervisory body of insurance holding companies",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall require that all persons who effectively run the insurance holding company are fit and proper to perform their duties. Article 42 shall apply mutatis mutandis ."
+    },
+    {
+      "id": "Art.258",
+      "title": "Enforcement measures",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where the insurance or reinsurance undertakings in a group do not comply with the requirements referred to in Articles 218 to 246 or where the requirements are met but solvency may nevertheless be jeopardised or where the intra-group transactions or the risk concentrations are a threat to the financial position of the…"
+    },
+    {
+      "id": "Art.259",
+      "title": "Reporting of CEIOPS",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "CEIOPS shall attend the European Parliament annually for a general parliamentary committee hearing. Where such attendance coincides with the reporting requirement of CEIOPS under Article 71(3), that requirement shall be met, as regards the European Parliament, by the attendance of CEIOPS at that hearing."
+    },
+    {
+      "id": "Art.260",
+      "title": "Parent undertakings outside the Community: verification of equivalence",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In the case referred to in Article 213(2)(c), the supervisory authorities concerned shall verify whether the insurance and reinsurance undertakings, the parent undertaking of which has its head office outside the Community, are subject to supervision, by a third-country supervisory authority, which is equivalent to…"
+    },
+    {
+      "id": "Art.261",
+      "title": "Parent undertakings outside the Community: equivalence",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In the event of equivalent supervision referred to in Article 260, Member States shall rely on the equivalent group supervision exercised by the third-country supervisory authorities, in accordance with paragraph 2."
+    },
+    {
+      "id": "Art.262",
+      "title": "Parent undertakings outside the Community: absence of equivalence",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "In the absence of equivalent supervision referred to in Article 260, Member States shall apply to the insurance and reinsurance undertakings either Articles 218 to 258, mutatis mutandis and with the exception of Articles 236 to 243, or one of the methods set out in paragraph 2."
+    },
+    {
+      "id": "Art.263",
+      "title": "Parent undertakings outside the Community: levels",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Where the parent undertaking referred to in Article 260 is itself a subsidiary of an insurance holding company having its head office outside the Community or of a third-country insurance or reinsurance undertaking, Member States shall apply the verification provided for in Article 260 only at the level of the…"
+    },
+    {
+      "id": "Art.264",
+      "title": "Cooperation with third-country supervisory authorities",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "The Commission may submit proposals to the Council for the negotiation of agreements with one or more third countries regarding the means of exercising group supervision over: (a) insurance or reinsurance undertakings which have, as participating undertakings, undertakings within the meaning of Article 213 which have…"
+    },
+    {
+      "id": "Art.265",
+      "title": "Intra-group transactions",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "Member States shall ensure that, where the parent undertaking of one or more insurance or reinsurance undertakings is a mixed-activity insurance holding company, the supervisory authorities responsible for the supervision of those insurance or reinsurance undertakings exercise general supervision over transactions…"
+    },
+    {
+      "id": "Art.266",
+      "title": "Cooperation with third countries",
+      "chapter": "III",
+      "theme": "Supervision of insurance and reinsurance undertakings in a group",
+      "requirement": "As concerns cooperation with third countries, Article 264 shall apply mutatis mutandis ."
+    },
+    {
+      "id": "Art.267",
+      "title": "Scope of this Title",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "This Title shall apply to reorganisation measures and winding-up proceedings concerning the following: (a) insurance undertakings; (b) branches situated in the territory of the Community of third-country insurance undertakings."
+    },
+    {
+      "id": "Art.268",
+      "title": "Definitions",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "For the purpose of this Title the following definitions shall apply: (a) ‘competent authorities' means the administrative or judicial authorities of the Member States which are competent for the purposes of the reorganisation measures or the winding-up proceedings; (b) ‘branch' means a permanent presence of an…"
+    },
+    {
+      "id": "Art.269",
+      "title": "Adoption of reorganisation measures applicable law",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Only the competent authorities of the home Member State shall be entitled to decide on the reorganisation measures with respect to an insurance undertaking, including its branches."
+    },
+    {
+      "id": "Art.270",
+      "title": "Information to the supervisory authorities",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The competent authorities of the home Member State shall inform as a matter or urgency the supervisory authorities of that Member State of their decision on any reorganisation measure, where possible before the adoption of such a measure and failing that immediately thereafter."
+    },
+    {
+      "id": "Art.271",
+      "title": "Publication of decisions on reorganisation measures",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Where an appeal is possible in the home Member State against a reorganisation measure, the competent authorities of the home Member State, the administrator or any person entitled to do so in the home Member State shall make public the decision on a reorganisation measure in accordance with the publication procedures…"
+    },
+    {
+      "id": "Art.272",
+      "title": "Information to known creditors right to lodge claims",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Where the law of the home Member State requires a claim to be lodged in order for it to be recognised or provides for compulsory notification of a reorganisation measure to creditors whose habitual residence, domicile or head office is situated in that Member State, the competent authorities of the home Member State…"
+    },
+    {
+      "id": "Art.273",
+      "title": "Opening of winding-up proceedings information to the supervisory authorities",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Only the competent authorities of the home Member State shall be entitled to take a decision concerning the opening of winding-up proceedings with regard to an insurance undertaking, including its branches in other Member States."
+    },
+    {
+      "id": "Art.274",
+      "title": "Applicable law",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The decision to open winding-up proceedings with regard to an insurance undertaking, the winding-up proceedings and their effects shall be governed by the law applicable in the home Member State unless otherwise provided in Articles 285 to 292."
+    },
+    {
+      "id": "Art.275",
+      "title": "Treatment of insurance claims",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Member States shall ensure that insurance claims take precedence over other claims against the insurance undertaking in one or both of the following ways: (a) with regard to assets representing the technical provisions, insurance claims shall take absolute precedence over any other claim on the insurance undertaking;…"
+    },
+    {
+      "id": "Art.276",
+      "title": "Special register",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Every insurance undertaking shall keep at its head office a special register of the assets used to cover the technical provisions calculated and invested in accordance with the law of the home Member State."
+    },
+    {
+      "id": "Art.277",
+      "title": "Subrogation to a guarantee scheme",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The home Member State may provide that, where the rights of insurance creditors have been subrogated to a guarantee scheme established in that Member State, claims by that scheme shall not benefit from the provisions of Article 275(1)."
+    },
+    {
+      "id": "Art.278",
+      "title": "Representation of preferential claims by assets",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Member States which choose the option set out in Article 275(1)(b) shall require every insurance undertaking to ensure that the claims which may take precedence over insurance claims pursuant to Article 275(1)(b) and which are registered in the insurance undertaking's accounts are represented, at any moment and…"
+    },
+    {
+      "id": "Art.279",
+      "title": "Withdrawal of the authorisation",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Where the opening of winding-up proceedings is decided in respect of an insurance undertaking, the authorisation of that undertaking shall be withdrawn in accordance with the procedure laid down in Article 144, except to the extent necessary for the purposes of paragraph 2."
+    },
+    {
+      "id": "Art.280",
+      "title": "Publication of decisions on winding-up proceedings",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The competent authority, the liquidator or any person appointed for that purpose by the competent authority shall publish the decision to open winding-up proceedings in accordance with the publication procedures provided for in the home Member State and also publish an extract from the winding-up decision in the…"
+    },
+    {
+      "id": "Art.281",
+      "title": "Information to known creditors",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "When winding-up proceedings are opened, the competent authorities of the home Member State, the liquidator or any person appointed for that purpose by the competent authorities shall without delay individually inform by written notice each known creditor whose habitual residence, domicile or head office is situated in…"
+    },
+    {
+      "id": "Art.282",
+      "title": "Right to lodge claims",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Any creditor, including public authorities of Member States, whose habitual residence, domicile or head office is situated in a Member State other than the home Member State shall have the right to lodge claims or to submit written observations relating to claims."
+    },
+    {
+      "id": "Art.283",
+      "title": "Languages and form",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The information in the notice referred to in Article 281(1) shall be provided in the official language or one of the official languages of the home Member State."
+    },
+    {
+      "id": "Art.284",
+      "title": "Regular information to the creditors",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Liquidators shall, in an appropriate manner, keep creditors regularly informed on the progress of the winding-up. The supervisory authorities of the Member States may request information on developments in the winding-up procedure from the supervisory authorities of the home Member State."
+    },
+    {
+      "id": "Art.285",
+      "title": "Effects on certain contracts and rights",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "By way of derogation from Articles 269 and 274, the effects of the opening of reorganisation measures or of winding-up proceedings shall be governed as follows: (a) in regard to employment contracts and employment relationships, exclusively by the law of the Member State applicable to the employment contract or…"
+    },
+    {
+      "id": "Art.286",
+      "title": "Rights in rem of third parties",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The opening of reorganisation measures or winding-up proceedings shall not affect the rights in rem of creditors or third parties in respect of tangible or intangible, movable or immovable assets – both specific assets and collections of indefinite assets as a whole which change from time to time – which belong to the…"
+    },
+    {
+      "id": "Art.287",
+      "title": "Reservation of title",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The opening of reorganisation measures or winding-up proceedings against an insurance undertaking purchasing an asset shall not affect the rights of a seller which are based on a reservation of title where at the time of the opening of such measures or proceedings the asset is situated within the territory of a Member…"
+    },
+    {
+      "id": "Art.288",
+      "title": "Set-off",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The opening of reorganisation measures or winding-up proceedings shall not affect the right of creditors to demand the set-off of their claims against the claims of the insurance undertaking, where such a set-off is permitted by the law applicable to the claim of the insurance undertaking."
+    },
+    {
+      "id": "Art.289",
+      "title": "Regulated markets",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Without prejudice to Article 286 the effects of a reorganisation measure or the opening of winding-up proceedings on the rights and obligations of the parties to a regulated market shall be governed solely by the law applicable to that market."
+    },
+    {
+      "id": "Art.290",
+      "title": "Detrimental acts",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Article 274(2)(l) shall not apply where a person who has benefited from a legal act which is detrimental to all the creditors provides proof of that act being subject to the law of a Member State other than the home Member State, and proof that that law does not allow any means of challenging that act in the relevant…"
+    },
+    {
+      "id": "Art.291",
+      "title": "Protection of third-party purchasers",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The following law shall be applicable where, by an act concluded after the adoption of a reorganisation measure or the opening of winding-up proceedings, an insurance undertaking disposes, for consideration, of any of the following: (a) in regard to immovable assets, the law of the Member State where the immovable…"
+    },
+    {
+      "id": "Art.292",
+      "title": "Lawsuits pending",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The effects of reorganisation measures or winding-up proceedings on a pending lawsuit concerning an asset or a right of which the insurance undertaking has been divested shall be governed solely by the law of the Member State in which the lawsuit is pending."
+    },
+    {
+      "id": "Art.293",
+      "title": "Administrators and liquidators",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The appointment of the administrator or the liquidator shall be evidenced by a certified copy of the original decision of appointment or by any other certificate issued by the competent authorities of the home Member State."
+    },
+    {
+      "id": "Art.294",
+      "title": "Registration in a public register",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "The administrator, liquidator or any other authority or person duly empowered in the home Member State may request that a reorganisation measure or the decision to open winding-up proceedings be registered in any relevant public register kept in the other Member States."
+    },
+    {
+      "id": "Art.295",
+      "title": "Professional secrecy",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "All persons required to receive or divulge information in connection with the procedures laid down in Articles 270, 273 and 296 shall be bound by the provisions on professional secrecy, as laid down in Articles 64 to 69, with the exception of any judicial authorities to which existing national provisions apply."
+    },
+    {
+      "id": "Art.296",
+      "title": "Treatment of branches of third-country insurance undertakings",
+      "chapter": "IV",
+      "theme": "Reorganisation and winding-up of insurance undertakings",
+      "requirement": "Where a third-country insurance undertaking has branches established in more than one Member State, each branch shall be treated independently with regard to the application of this Title."
+    },
+    {
+      "id": "Art.297",
+      "title": "Right to apply to the courts",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "Member States shall ensure that decisions taken in respect of an insurance or a reinsurance undertaking under laws, regulations and administrative provisions implementing this Directive are subject to the right to apply to the courts."
+    },
+    {
+      "id": "Art.298",
+      "title": "Cooperation between the Member States and the Commission",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "The Member States shall cooperate with each other for the purpose of facilitating the supervision of insurance and reinsurance within the Community and the application of this Directive."
+    },
+    {
+      "id": "Art.299",
+      "title": "Euro",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "Where this Directive makes reference to the euro , the exchange value in national currencies to be used with effect from 31 December of each year shall be the value which applies on the last day of the preceding October for which exchange values for the euro are available in all Community currencies."
+    },
+    {
+      "id": "Art.300",
+      "title": "Revision of amounts expressed in euro",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "The amounts expressed in euro in this Directive shall be revised every five years, by increasing the base amount in euro by the percentage change in the Harmonised Indices of Consumer Prices of all Member States as published by Eurostat starting from 31 October 2012 until the date of revision and rounded up to a…"
+    },
+    {
+      "id": "Art.301",
+      "title": "Committee procedure",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "The Commission shall be assisted by the European Insurance and Occupational Pensions Committee. Where reference is made to this paragraph, Articles 5 and 7 of Decision 1999/468/EC shall apply, having regard to the provisions of Article 8 thereof."
+    },
+    {
+      "id": "Art.302",
+      "title": "Notifications submitted prior to entry into force of the laws, regulations and administrative provisions necessary to comply with Articles 57 to 63",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "The assessment procedure applied to proposed acquisitions for which notifications referred to in Article 57 have been submitted to the competent authorities prior to the entry into force of the laws, regulations and administrative provisions necessary to comply with Articles 57 to 63, shall be carried out in…"
+    },
+    {
+      "id": "Art.303",
+      "title": "Amendments to Directive 2003/41/EC",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "Directive 2003/41/EC shall be amended as follows: 1. Article 17(2) is replaced by the following: ‘2. For the purposes of calculating the minimum amount of additional assets, the rules laid down in Articles 17a to 17d shall apply.'."
+    },
+    {
+      "id": "Art.304",
+      "title": "Duration-based equity risk sub-module",
+      "chapter": "V",
+      "theme": "Other provisions",
+      "requirement": "Member States may authorise life insurance undertakings providing: (a) occupational retirement provision business in accordance with Article 4 of Directive 2003/41/EC, or (b) retirement benefits paid by reference to reaching, or the expectation of reaching, retirement where the premiums paid for those benefits have a…"
+    },
+    {
+      "id": "Art.305",
+      "title": "Derogations and abolition of restrictive measures",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "Member States may exempt non-life insurance undertakings which on 31 January 1975 did not comply with the requirements of Articles 16 and 17 of Directive 73/239/EEC whose annual premium or contribution income on 31 July 1978 fell short of six times the amount of the minimum guarantee fund required under Article 17(2)…"
+    },
+    {
+      "id": "Art.306",
+      "title": "Rights acquired by existing branches and insurance undertakings",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "Branches which started business, in accordance with the provisions in force in the Member State where that branch is situated, before 1 July 1994 shall be presumed to have been subject to the procedure laid down in Articles 145 and 146."
+    },
+    {
+      "id": "Art.307",
+      "title": "Transitional period for Articles 57(3) and 60(6) of Directive 2005/68/EC",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "A Member State may postpone the application of the provisions of Article 57(3) of Directive 2005/68/EC amending Article 15(3) of Directive 73/239/EEC and of the provision of Article 60(6) of Directive 2005/68/EC until 10 December 2008."
+    },
+    {
+      "id": "Art.308",
+      "title": "Right acquired by existing reinsurance undertakings",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "Reinsurance undertakings subject to this Directive which were authorised or entitled to conduct reinsurance business in accordance with the provisions of the Member States in which they have their head offices before 10 December 2005 shall be deemed to be authorised in accordance with Article 14."
+    },
+    {
+      "id": "Art.309",
+      "title": "Transposition",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "Member States shall bring into force the laws, regulations and administrative provisions necessary to comply with Articles 4, 10, 13, 14, 18, 23, 26-32, 34-49, 51-55, 67, 68, 71, 72, 74-85, 87-91, 93-96, 98,100-110, 112, 113, 115-126, 128, 129, 131-134, 136-142, 144, 146, 148, 162-167, 172, 173, 178, 185, 190, 192,…"
+    },
+    {
+      "id": "Art.310",
+      "title": "Repeal",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "Directives 64/225/EEC, 73/239/EEC, 73/240/EEC, 76/580/EEC, 78/473/EEC, 84/641/EEC, 87/344/EEC, 88/357/EEC, 92/49/EEC, 98/78/EC, 2001/17/EC, 2002/83/EC and 2005/68/EC, as amended by the acts listed in Part A of Annex VI, are repealed with effect from 1 November 2012, without prejudice to the obligations of the Member…"
+    },
+    {
+      "id": "Art.311",
+      "title": "Entry into force",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "This Directive shall enter into force on the 20th day following its publication in the Official Journal of the European Union."
+    },
+    {
+      "id": "Art.312",
+      "title": "Addressees",
+      "chapter": "VI",
+      "theme": "Transitional and final provisions",
+      "requirement": "This Directive is addressed to the Member States."
+    }
+  ],
+  "eurLex": "CELEX:32009L0138",
+  "divisionKind": "Title",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "General rules on the taking-up and pursuit of direct insurance and reinsurance activities",
+      "articles": "1-177"
+    },
+    {
+      "number": "II",
+      "title": "Specific provisions for insurance and reinsurance",
+      "articles": "178-211"
+    },
+    {
+      "number": "III",
+      "title": "Supervision of insurance and reinsurance undertakings in a group",
+      "articles": "212-266"
+    },
+    {
+      "number": "IV",
+      "title": "Reorganisation and winding-up of insurance undertakings",
+      "articles": "267-296"
+    },
+    {
+      "number": "V",
+      "title": "Other provisions",
+      "articles": "297-304"
+    },
+    {
+      "number": "VI",
+      "title": "Transitional and final provisions",
+      "articles": "305-312"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32009L0138",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  }
 }

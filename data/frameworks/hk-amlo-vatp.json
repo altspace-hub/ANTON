@@ -3,17 +3,43 @@
   "name": "Hong Kong AMLO (Cap. 615) + VATP regime — Anti-Money Laundering and Counter-Terrorist Financing Ordinance",
   "shortName": "HK AMLO + VATP",
   "reference": "AMLO Cap. 615 + AMLO Amendment Ordinance 2022 (Schedule 3B VATP regime)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "amloInForce": "2012-04-01",
   "vatpAmendmentsInForce": "2023-06-01",
   "supervisor": "HKMA + SFC + IA + Customs (per scope)",
   "articleCount": 12,
   "chapters": [
-    {"number": "Scope", "title": "Designated persons + scope", "articles": "AMLO Section 5 + Schedule 1 + Schedule 3B"},
-    {"number": "CDD", "title": "CDD obligations (Schedule 2)", "articles": "Schedule 2"},
-    {"number": "STR", "title": "Suspicious-transaction reporting + tipping-off", "articles": "AMLO + DTROP + OSCO + UNATMO"},
-    {"number": "Records", "title": "Record keeping (Schedule 2)", "articles": "Schedule 2"},
-    {"number": "VATP", "title": "VATP-specific regime (Schedule 3B)", "articles": "Schedule 3B"},
-    {"number": "Enforcement", "title": "Sanctions + enforcement", "articles": "AMLO Part 4"}
+    {
+      "number": "Scope",
+      "title": "Designated persons + scope",
+      "articles": "AMLO Section 5 + Schedule 1 + Schedule 3B"
+    },
+    {
+      "number": "CDD",
+      "title": "CDD obligations (Schedule 2)",
+      "articles": "Schedule 2"
+    },
+    {
+      "number": "STR",
+      "title": "Suspicious-transaction reporting + tipping-off",
+      "articles": "AMLO + DTROP + OSCO + UNATMO"
+    },
+    {
+      "number": "Records",
+      "title": "Record keeping (Schedule 2)",
+      "articles": "Schedule 2"
+    },
+    {
+      "number": "VATP",
+      "title": "VATP-specific regime (Schedule 3B)",
+      "articles": "Schedule 3B"
+    },
+    {
+      "number": "Enforcement",
+      "title": "Sanctions + enforcement",
+      "articles": "AMLO Part 4"
+    }
   ],
   "themes": [
     "Designated persons",

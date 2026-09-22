@@ -150,5 +150,69 @@ export const TIER_A_MODULES: ModuleDefinition[] = [
         }
       }
     }
+  },
+  // Cyber Resilience Act (EU) 2024/2847 — module-catalogue programme, Wave 5 track B
+  // (2026-09-18). Art. 14 reporting has applied since 11 September 2026; the rest of
+  // the Act applies from 11 December 2027. Two modules, deliberately split along that
+  // line: the runbook serves the live duty, the assessment serves the future one.
+  {
+    "id": "cra-vulnerability-reporting-runbook",
+    "label": "CRA Vulnerability & Incident Reporting Runbook",
+    "shortLabel": "CRA Reporting",
+    "icon": "Siren",
+    "description": "Builds the product-maker's reporting runbook under the Cyber Resilience Act (EU) 2024/2847, Article 14 — live since 11 September 2026. The two clocks (actively exploited vulnerability: 24h / 72h / 14 days after a fix exists; severe incident: 24h / 72h / one month from the notification), routing to the ENISA single reporting platform and the right CSIRT coordinator, an 'actively exploited' decision tree, a coordinated vulnerability disclosure policy, and a machine-readable user-notification (VEX-style) template.",
+    "color": "adv-red",
+    "defaults": {
+      "thinking": "investigate",
+      "creativity": "strict",
+      "outputFormats": [
+        "action-plan",
+        "policy-document",
+        "compliance-calendar",
+        "raci-matrix"
+      ],
+      "knowledgeSources": {
+        "claudeKnowledge": {
+          "enabled": true,
+          "webSearchEnabled": true,
+          "description": ""
+        },
+        "localFolder": {
+          "enabled": true,
+          "folderPaths": [],
+          "recursive": true
+        }
+      }
+    }
+  },
+  {
+    "id": "cra-conformity-assessment",
+    "label": "CRA Product Conformity Assessment",
+    "shortLabel": "CRA Conformity",
+    "icon": "ShieldCheck",
+    "description": "Works out what a connected product must do to carry CE marking under the Cyber Resilience Act (EU) 2024/2847 by 11 December 2027: the product class (default, important class I or II, critical), the Annex I essential-requirements gap, the Annex VII technical-documentation outline, the Article 13(8) support-period determination, the Annex V declaration of conformity, and the Article 32 conformity route — including why an unlisted harmonised standard removes the self-assessment option for class I.",
+    "color": "adv-blue",
+    "defaults": {
+      "thinking": "investigate",
+      "creativity": "strict",
+      "outputFormats": [
+        "gap-scoring-matrix",
+        "detailed-findings",
+        "action-plan",
+        "executive-summary"
+      ],
+      "knowledgeSources": {
+        "claudeKnowledge": {
+          "enabled": true,
+          "webSearchEnabled": true,
+          "description": ""
+        },
+        "localFolder": {
+          "enabled": true,
+          "folderPaths": [],
+          "recursive": true
+        }
+      }
+    }
   }
 ];

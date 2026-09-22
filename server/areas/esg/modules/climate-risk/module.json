@@ -9,10 +9,10 @@
   "areaId": "esg",
   "defaults": {
     "thinking": "investigate",
-    "creativity": "strict",
+    "creativity": "balanced",
     "outputFormats": [
       "detailed-findings",
-      "executive-summary"
+      "impact-assessment"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

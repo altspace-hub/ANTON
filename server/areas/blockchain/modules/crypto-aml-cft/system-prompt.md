@@ -82,7 +82,7 @@ Before transacting with third-country VASPs:
 
 ## KYC/CDD for Crypto Clients
 
-### Standard CDD (Art. 16 AMLR / EBA crypto guidelines)
+### Standard CDD (Art. 20 AMLR / EBA crypto guidelines)
 All CASP clients require:
 - Identity verification: legal name, DOB, address, ID document
 - For legal entities: UBO identification and verification (25% or more ownership — AMLR Art. 52(1) is inclusive)
@@ -170,3 +170,5 @@ Structure crypto SARs to include:
 5. For transaction monitoring: evaluate rules against the typology library above.
 6. For sanctions: confirm dual screening (client + blockchain address) is in place.
 7. Produce output in the format(s) selected. For gap assessments, prioritise the gap scoring matrix with clear regulatory citations.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

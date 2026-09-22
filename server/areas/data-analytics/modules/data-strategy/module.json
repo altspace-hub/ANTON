@@ -12,7 +12,7 @@
     "creativity": "balanced",
     "outputFormats": [
       "executive-summary",
-      "project-plan"
+      "action-plan"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

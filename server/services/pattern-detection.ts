@@ -123,7 +123,7 @@ export async function createPatternDetection(db: DatabaseAdapter) {
     const modules = await db.all(`
       SELECT module_id, AVG(score_overall) as avg_score, COUNT(*) as n
       FROM quality_scores
-      WHERE scored_at > NOW() - INTERVAL '30 days'
+      WHERE scored_at > NOW() - INTERVAL '30 days' AND origin = 'run'
       GROUP BY module_id
       HAVING COUNT(*) >= 5
     `) as any[];
@@ -131,7 +131,7 @@ export async function createPatternDetection(db: DatabaseAdapter) {
     const divergences: any[] = [];
     for (const m of modules) {
       const scores = await db.all(
-        'SELECT score_overall FROM quality_scores WHERE module_id = ? ORDER BY scored_at DESC LIMIT 5'
+        `SELECT score_overall FROM quality_scores WHERE module_id = ? AND origin = 'run' ORDER BY scored_at DESC LIMIT 5`
       , m.module_id) as any[];
       const recent = scores.map(s => s.score_overall);
       const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;

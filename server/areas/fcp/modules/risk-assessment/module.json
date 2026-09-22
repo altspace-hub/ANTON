@@ -66,6 +66,11 @@
     "fcp-expert",
     "data-scientist"
   ],
+  "recommendedSkills": [
+    "risk-based-thinking",
+    "threat-path-methodology",
+    "amlr-article-reference"
+  ],
   "tags": [
     "risk",
     "bwra",

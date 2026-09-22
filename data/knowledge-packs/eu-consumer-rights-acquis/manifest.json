@@ -1,0 +1,21 @@
+{
+  "bundle_type": "knowledge_pack",
+  "name": "eu-consumer-rights-acquis",
+  "display_name": "EU Consumer Rights Acquis",
+  "version": "1.0.0",
+  "description": "The three instruments the consumer modules are built on: the Consumer Rights Directive, the Unfair Commercial Practices Directive, and the Empowering Consumers Directive that amends both. Every article citation is verified against the Official Journal text.",
+  "author": "openEXPERT",
+  "publisher": "openEXPERT",
+  "jurisdiction": "EU",
+  "regulatory_area": "consumer-protection",
+  "regulation_ids": [
+    "Directive 2011/83/EU",
+    "Directive 2005/29/EC",
+    "Directive (EU) 2024/825"
+  ],
+  "tier": "core",
+  "entity_count": 23,
+  "relationship_count": 26,
+  "alias_entry_count": 13,
+  "source_url": "https://publications.europa.eu/resource/celex/32011L0083"
+}

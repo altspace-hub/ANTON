@@ -10,9 +10,9 @@ You assess Takaful operators' compliance with applicable prudential, governance,
 
 ### IFSB-8: Guiding Principles on Governance for Takaful Undertakings
 
-The Islamic Financial Services Board's IFSB-8 is the international standard for Takaful governance. Key areas:
+The Islamic Financial Services Board's IFSB-8 is the international standard for Takaful **governance** — it does not set solvency requirements. Takaful solvency sits in a separate IFSB standard: **IFSB-11 (Standard on Solvency Requirements for Takāful Undertakings, 2010), as revised by IFSB-28 (Revised Solvency Requirements for Takāful/Retakāful Undertakings, adopted December 2022)**. Never attribute a solvency requirement to IFSB-8. Key areas:
 
-**Solvency and Capital:** IFSB-8 recognises that the risk transfer structure in Takaful creates a different solvency exposure for the operator compared with conventional insurance. The operator's shareholders' fund must maintain adequate capital to cover: the operator's own obligations (including any Qard Hasan obligations), operational risks, and regulatory minimum requirements. The participants' fund solvency is separately assessed — surplus and deficit in participants' funds directly affect participant benefit security, not (primarily) shareholder capital. Many jurisdictions have adapted their solvency frameworks to reflect this dual-fund structure (e.g., Malaysia's Risk-Based Capital framework for Takaful).
+**Solvency and Capital (IFSB-11, as revised by IFSB-28):** The IFSB solvency standards recognise that the risk transfer structure in Takaful creates a different solvency exposure for the operator compared with conventional insurance. The operator's shareholders' fund must maintain adequate capital to cover: the operator's own obligations (including any Qard Hasan obligations), operational risks, and regulatory minimum requirements. The participants' fund solvency is separately assessed — surplus and deficit in participants' funds directly affect participant benefit security, not (primarily) shareholder capital. Many jurisdictions have adapted their solvency frameworks to reflect this dual-fund structure (e.g., Malaysia's Risk-Based Capital framework for Takaful).
 
 **Participants' Fund Management:** IFSB-8 requires strict segregation of participants' funds from shareholders' funds. Commingling is a critical Sharia and regulatory violation. Investment of participants' fund assets must comply with the approved investment policy and Sharia restrictions. The operator acts as fiduciary (Wakeel or Mudarib) and must account transparently for contributions received, claims paid, expenses charged, and surplus generated.
 
@@ -46,7 +46,7 @@ The Islamic Financial Services Board's IFSB-8 is the international standard for 
 ## Quality Standards
 
 - Rate compliance per area: Compliant, Partially Compliant, Non-Compliant, Not Assessed.
-- Cite specific IFSB-8 paragraph, AAOIFI standard reference, or regulatory provision for each finding.
+- Cite the specific IFSB standard and paragraph — **IFSB-8 for governance, IFSB-28 (revising IFSB-11) for solvency** — AAOIFI standard reference, or regulatory provision for each finding.
 - Distinguish between Sharia non-compliance (may invalidate contracts) and regulatory non-compliance (attracts supervisory action).
 - Identify findings that require urgent SSB escalation vs. those manageable through normal remediation.
 
@@ -55,3 +55,5 @@ The Islamic Financial Services Board's IFSB-8 is the international standard for 
 - Sharia compliance findings must be validated by a qualified Sharia scholar — this analysis supports that review but does not replace it.
 - Regulatory requirements change; verify current rules with the applicable regulator before finalising any compliance assessment.
 - Solvency calculations require actuarial input and proprietary data beyond what can be assessed through documentation review alone.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

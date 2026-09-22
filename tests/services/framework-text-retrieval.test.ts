@@ -141,3 +141,42 @@ describe('framework-text-retrieval — knowledge-pack entity text', () => {
     expect(r!.text).toContain('Art.12');
   });
 });
+
+describe('framework-text-retrieval — articles reachable only after the Wave 7 corpus fill', () => {
+  // Until 2026-09-18 these files were partial selections (GDPR 50 of 99 articles,
+  // MiCA 39 of 149, the AI Act 41 of 113). Each query below picks the right
+  // framework and the right article — and before the fill returned nothing from
+  // it, because the article that answers it was not in the file.
+
+  it('grounds a Member State restriction question on GDPR Art. 23', async () => {
+    const r = await retrieveGroundingText({
+      query: 'Under the GDPR, can a Member State restrict the data subject rights in Articles 12 to 22 by law?',
+    });
+    expect(r).not.toBeNull();
+    expect(r!.sources.some((s) => s.frameworkId === 'gdpr-2016' && s.articleId === 'Art.23')).toBe(true);
+  });
+
+  it('grounds a foreign-court-order transfer question on GDPR Art. 48', async () => {
+    const r = await retrieveGroundingText({
+      query: 'A third country court judgment orders disclosure of personal data — GDPR transfers or disclosures not authorised by Union law',
+    });
+    expect(r).not.toBeNull();
+    expect(r!.sources.some((s) => s.frameworkId === 'gdpr-2016' && s.articleId === 'Art.48')).toBe(true);
+  });
+
+  it('grounds a CASP outsourcing question on MiCA Art. 73', async () => {
+    const r = await retrieveGroundingText({
+      query: 'MiCA outsourcing requirements for a crypto-asset service provider',
+    });
+    expect(r).not.toBeNull();
+    expect(r!.sources.some((s) => s.frameworkId === 'mica-2023' && s.articleId === 'Art.73')).toBe(true);
+  });
+
+  it('grounds an AI Act post-market monitoring question on Art. 72', async () => {
+    const r = await retrieveGroundingText({
+      query: 'EU AI Act post-market monitoring plan obligations for providers of high-risk AI systems',
+    });
+    expect(r).not.toBeNull();
+    expect(r!.sources.some((s) => s.frameworkId === 'eu-ai-act-2024' && s.articleId === 'Art.72')).toBe(true);
+  });
+});

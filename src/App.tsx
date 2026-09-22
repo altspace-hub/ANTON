@@ -6,6 +6,7 @@ import { useAuthStore } from './stores/useAuthStore';
 import { ensureCsrfToken } from './lib/api';
 import PWAInstallPrompt from './components/shared/PWAInstallPrompt';
 import { CommandPalette } from './components/shared/CommandPalette';
+import { syncDefaultModelFromServer } from './lib/default-model-sync';
 import OnboardingTour, { shouldShowTour } from './components/OnboardingTour';
 
 // Global error boundary — prevents blank-page crashes
@@ -404,6 +405,12 @@ export default function App() {
     document.documentElement.dir = rtlLanguages.includes(i18n.language) ? 'rtl' : 'ltr';
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
+
+  // Adopt the instance default model on this browser — a device that never
+  // opened Settings otherwise boots on a bare API id (see default-model-sync.ts).
+  useEffect(() => {
+    void syncDefaultModelFromServer();
+  }, []);
 
   // Restore language preference from user profile on mount (best-effort).
   // localStorage wins for anonymous/solo users; profile wins when it differs.

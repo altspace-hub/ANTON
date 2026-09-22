@@ -1,46 +1,30 @@
 /**
  * RerunComparison.tsx — side-by-side view of an original output vs a
- * "Rerun with…" output produced by a different model (Wave 2.3).
+ * "Rerun with…" output (Wave 2.3 recompose, Wave 5 verbatim replay).
  *
  * - Both sides rendered as markdown, paragraph by paragraph.
  * - Paragraph-level diff highlight computed client-side: paragraph split +
  *   LCS over normalized paragraphs (no heavy diff dependency).
  * - Per side: model, cost, tokens, quality score (polled — scoring is async).
- * - Source-drift banner when the pinned source manifests differ.
+ * - Recompose: source-drift banner when the pinned source manifests differ.
+ * - Replay: an equality strip — model, prompt hash (always identical: the
+ *   stored prompt was sent byte-for-byte) and output hash — with the one
+ *   line that explains a differing output: sampling.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { X, AlertTriangle, ShieldCheck, Loader2, GitCompare } from 'lucide-react';
+import { X, AlertTriangle, ShieldCheck, Loader2, GitCompare, Equal, Shuffle, Fingerprint } from 'lucide-react';
 import { getAuthHeader } from '@/lib/api';
+import type { RerunResponse, RerunSide, RerunSourceDriftEntry } from '@/lib/types';
 
 // ── Data shapes (mirror POST /api/rerun response) ────────────────────────────
 
-export interface RerunSide {
-  messageId: string;
-  content: string;
-  modelId: string | null;
-  cost: number | null;
-  outputTokens: number | null;
-  createdAt?: string;
-}
-
-export interface SourceDriftEntry {
-  name: string;
-  type: string;
-  changed: boolean;
-  status: 'unchanged' | 'changed' | 'added' | 'removed' | 'unhashed';
-}
-
-export interface RerunComparisonData {
-  original: RerunSide;
-  rerun: RerunSide;
-  sourceDrift: SourceDriftEntry[];
-  sourceDriftAvailable: boolean;
-  sourceDriftDetected: boolean;
-  warning?: string;
-}
+export type { RerunSide };
+export type SourceDriftEntry = RerunSourceDriftEntry;
+/** The comparison renders the rerun response as-is; `mode` decides which banner shows. */
+export type RerunComparisonData = RerunResponse;
 
 // ── Paragraph LCS diff ───────────────────────────────────────────────────────
 
@@ -184,6 +168,30 @@ function ParagraphColumn({ paras, changed, highlightClass }: { paras: string[]; 
   );
 }
 
+/** One row of the replay equality strip: what was compared, and whether it matched. */
+function EqualityRow({ label, equal, detail, sameText, differentText }: {
+  label: string;
+  equal: boolean;
+  detail?: string;
+  sameText: string;
+  differentText: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm" role="listitem">
+      {equal
+        ? <Equal className="h-3.5 w-3.5 shrink-0 text-adv-green" aria-hidden="true" />
+        : <Shuffle className="h-3.5 w-3.5 shrink-0 text-adv-gold" aria-hidden="true" />}
+      <span className="font-medium text-adv-off-white">{label}</span>
+      <span className={equal ? 'text-adv-green' : 'text-adv-gold'}>{equal ? sameText : differentText}</span>
+      {detail && <span className="truncate font-mono text-xs text-adv-gray" title={detail}>{detail}</span>}
+    </div>
+  );
+}
+
+function shortSha(sha: string | null | undefined): string | undefined {
+  return sha ? `sha256 ${sha.slice(0, 12)}…` : undefined;
+}
+
 export default function RerunComparison({ data, onClose }: { data: RerunComparisonData; onClose: () => void }) {
   const diff = useMemo(
     () => computeParagraphDiff(data.original.content, data.rerun.content),
@@ -192,18 +200,19 @@ export default function RerunComparison({ data, onClose }: { data: RerunComparis
   const originalQuality = useQualityScore(data.original.messageId);
   const rerunQuality = useQualityScore(data.rerun.messageId);
 
-  const changedSources = data.sourceDrift.filter((d) => d.changed);
+  const isReplay = data.mode === 'replay';
+  const changedSources = (data.sourceDrift ?? []).filter((d) => d.changed);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Rerun comparison">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={isReplay ? 'Verbatim replay comparison' : 'Rerun comparison'}>
       <div className="flex h-full max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-adv-dark shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border bg-adv-card px-4 py-3">
           <div className="flex items-center gap-2">
             <GitCompare className="h-4 w-4 text-adv-teal" />
-            <span className="text-sm font-semibold text-adv-off-white">Model comparison</span>
+            <span className="text-sm font-semibold text-adv-off-white">{isReplay ? 'Verbatim replay' : 'Model comparison'}</span>
             <span className="rounded-full bg-adv-teal/10 px-2 py-0.5 text-[11px] font-medium text-adv-teal">
-              Rerun of {data.original.modelId ?? 'original'} output
+              {isReplay ? `Replay of ${data.original.modelId ?? 'original'} output` : `Rerun of ${data.original.modelId ?? 'original'} output`}
             </span>
           </div>
           <button
@@ -215,8 +224,62 @@ export default function RerunComparison({ data, onClose }: { data: RerunComparis
           </button>
         </div>
 
-        {/* Source-drift banner */}
-        {data.sourceDriftAvailable && changedSources.length > 0 && (
+        {/* Replay equality strip (Wave 5): model, prompt, output — and why an output can still differ */}
+        {isReplay && data.model && data.prompt && data.output && (
+          <div className="border-b border-border bg-adv-card/60 px-4 py-3" role="list" aria-label="Replay equality">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-adv-teal">
+              <Fingerprint className="h-3.5 w-3.5" aria-hidden="true" />
+              What matched
+            </div>
+            <div className="grid grid-cols-1 gap-1.5 md:grid-cols-3">
+              <EqualityRow
+                label="Model"
+                equal={data.model.equalsOriginal}
+                detail={data.model.served}
+                sameText="same model served"
+                differentText={`different — ${data.model.served}`}
+              />
+              <EqualityRow
+                label="Prompt"
+                equal={data.prompt.equalsOriginal}
+                detail={shortSha(data.prompt.sha256)}
+                sameText="identical, sent byte-for-byte"
+                differentText="differs"
+              />
+              <EqualityRow
+                label="Output"
+                equal={data.output.equalsOriginal}
+                detail={shortSha(data.output.sha256)}
+                sameText="identical hash"
+                differentText={`differs (${data.output.chars.toLocaleString()} vs ${data.output.originalChars.toLocaleString()} chars)`}
+              />
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-adv-gray">
+              {data.note ?? 'Same prompt, same history, same model — an identical output is still not guaranteed: sampling can differ even with identical inputs.'}
+            </p>
+          </div>
+        )}
+
+        {/* Recompose: output hash in one line (the drift view below explains the rest) */}
+        {!isReplay && data.output && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-adv-card/50 px-4 py-2 text-sm" aria-label="Output equality">
+            {data.output.equalsOriginal
+              ? <Equal className="h-3.5 w-3.5 text-adv-green" aria-hidden="true" />
+              : <Shuffle className="h-3.5 w-3.5 text-adv-gold" aria-hidden="true" />}
+            <span className="font-medium text-adv-off-white">Output</span>
+            <span className={data.output.equalsOriginal ? 'text-adv-green' : 'text-adv-gold'}>
+              {data.output.equalsOriginal ? 'identical hash' : 'differs'}
+            </span>
+            {data.prompt && (
+              <span className="text-adv-gray">
+                · prompt {data.prompt.equalsOriginal ? 'identical' : 'recomposed — knowledge and composer may have moved on'}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Source-drift banner (recompose only — a replay reuses the pinned sources by construction) */}
+        {!isReplay && data.sourceDriftAvailable && changedSources.length > 0 && (
           <div className="flex items-start gap-2 border-b border-adv-gold/30 bg-adv-gold/10 px-4 py-2.5">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-adv-gold" />
             <p className="text-xs leading-relaxed text-adv-gold">
@@ -227,7 +290,7 @@ export default function RerunComparison({ data, onClose }: { data: RerunComparis
             </p>
           </div>
         )}
-        {!data.sourceDriftAvailable && (
+        {!isReplay && !data.sourceDriftAvailable && (
           <div className="border-b border-border bg-adv-card/50 px-4 py-2">
             <p className="text-[11px] text-adv-gray">Source-drift check unavailable — the original run predates pinned source manifests.</p>
           </div>
@@ -251,7 +314,7 @@ export default function RerunComparison({ data, onClose }: { data: RerunComparis
             <ParagraphColumn paras={diff.a} changed={diff.aChanged} highlightClass="bg-adv-gold/10 ring-1 ring-adv-gold/30" />
           </div>
           <div className="min-h-0 overflow-y-auto">
-            <SideHeader label="Rerun" side={data.rerun} quality={rerunQuality.score} qualityLoading={rerunQuality.loading} accent="teal" />
+            <SideHeader label={isReplay ? 'Replay' : 'Rerun'} side={data.rerun} quality={rerunQuality.score} qualityLoading={rerunQuality.loading} accent="teal" />
             <ParagraphColumn paras={diff.b} changed={diff.bChanged} highlightClass="bg-adv-teal/10 ring-1 ring-adv-teal/30" />
           </div>
         </div>

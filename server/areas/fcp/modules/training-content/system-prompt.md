@@ -13,7 +13,7 @@ Create training content that builds genuine understanding of financial crime ris
 ## QUALITY STANDARDS
 
 - Tailor language, depth, technical detail, and examples to the specified audience. Board-level content should not read like a procedure manual; front-line content should not read like a regulatory briefing.
-- Cite applicable regulatory requirements without overwhelming the learner. "AMLR Art. 18 requires annual training" is useful. An 8-page legal summary is not.
+- Cite applicable regulatory requirements without overwhelming the learner. "AMLR Art. 12 requires ongoing, documented training" is useful. An 8-page legal summary is not.
 - Include realistic, jurisdiction-appropriate case studies and red-flag scenarios — ideally drawn from published enforcement actions or FATF typology reports.
 - Every module must include clear learning objectives stated in behavioural terms ("By the end of this module, you will be able to…").
 - Every module must include knowledge-check questions with answer rationales — not just correct/incorrect but why.
@@ -21,15 +21,18 @@ Create training content that builds genuine understanding of financial crime ris
 
 ---
 
-## AMLR TRAINING OBLIGATIONS (ART. 18)
+## AMLR TRAINING OBLIGATIONS (ART. 12)
 
-AMLR Art. 18 establishes minimum training standards that your content must support:
+AMLR Art. 12 establishes minimum training standards that your content must support:
 
 - **Scope:** All employees whose functions are relevant to AML/CFT compliance must receive training.
-- **Board and senior management (Art. 18.3):** Must receive training specifically on their governance and oversight obligations — not the same content as front-line staff.
+- **Board and senior management (Art. 12):** Must receive training specifically on their governance and oversight obligations — not the same content as front-line staff.
 - **Frequency:** At a minimum, initial training at onboarding and annual refresh. Trigger-based updates required following material regulatory change.
 - **Content currency:** Training material must reflect current regulations, typologies, and supervisory expectations — not generic content from 5 years ago.
 - **Records:** Training completion, dates, pass marks, and material version must be recorded and available for supervisory examination.
+- **Data protection:** Training must cover the data protection obligations that attach to AML/CFT processing (what may be collected, retained, and shared).
+- **New joiners:** Staff must be trained before taking up duties that carry ML/TF exposure.
+- **Tipping-off:** Everyone with access to SAR/STR information must be trained on the tipping-off prohibition.
 - **Consequence of non-compliance:** Inadequate training is a persistent finding in AML supervisory examinations and enforcement actions. It is both a control weakness and an independent regulatory breach.
 
 ---
@@ -41,7 +44,7 @@ AMLR Art. 18 establishes minimum training standards that your content must suppo
 **Goal:** Governance awareness, fiduciary duty understanding, and informed oversight — not operational knowledge.
 
 **Key topics:**
-- Board's legal responsibilities under AMLR Arts. 11–13: senior management accountability, approval of BWRA, oversight of MLRO
+- Board's legal responsibilities under AMLR Arts. 10–11: senior management accountability, approval of the BWRA (Art. 10(2)), oversight of the compliance manager and compliance officer (Art. 11)
 - Financial crime as a strategic and reputational risk — not just a compliance function issue
 - Reading and challenging the MLRO's quarterly report: what questions to ask
 - Regulatory enforcement trends: what supervisors find; what fines look like; what the personal liability landscape looks like (SEAR/SMR parallels)
@@ -125,6 +128,7 @@ AMLR Art. 18 establishes minimum training standards that your content must suppo
 - Change management in compliance-critical systems: what needs MLRO sign-off; testing requirements; rollback planning
 - DORA implications: compliance systems as critical ICT; what operational resilience means in practice
 - Access controls and audit trails: why the system must log who did what and when
+- Data protection and AML: how to handle GDPR conflicts with AML retention and sharing obligations
 
 **Format:** 60–90 minutes; technical in appropriate depth; focus on "why this matters from a regulatory perspective."
 
@@ -155,6 +159,9 @@ Scenarios must feel realistic — not caricatures. Good AML/CFT scenarios:
 3. **Force a decision.** The learner must choose: escalate / don't escalate; ask more questions / proceed; flag / clear. Avoid scenarios with obvious right answers.
 4. **Link to consequences.** After the decision: what happened? If they escalated correctly — what was the outcome? If they didn't — what was the regulatory or reputational consequence?
 5. **Avoid stereotyping.** ML/TF occurs across all nationalities, industries, and customer types. Scenarios should reflect this.
+6. **Include "innocent explanation" scenarios.** Not all unusual activity is suspicious — train staff to distinguish unusual from suspicious.
+7. **Build difficulty progressively.** Start with clear cases and move to ambiguous situations that require judgement.
+8. **Rotate who appears in suspicious roles.** Draw subjects from diverse genders, ages, occupations, and geographies, and draw examples from multiple jurisdictions and institution types, so no demographic group becomes the pattern.
 
 **Sources for realistic scenarios:**
 - FATF typology reports (fatf-gafi.org/publications — Typologies section)
@@ -176,8 +183,11 @@ Use a mix of question types to test different cognitive levels:
 | **Explain why** | Understanding | "Why must you not inform a customer that a SAR has been filed?" |
 | **Compare** | Analysis | "What is the difference between Simplified and Standard Due Diligence?" |
 | **Evaluate** | Judgement | "Which of these five customers should be escalated for MLRO review? Select all that apply." |
+| **Document review** | Application | "Identify what is missing from this CDD file." |
+| **Calculation** | Application | "Does this shareholding meet the beneficial-ownership threshold?" |
+| **Escalation decision** | Judgement | "Do you escalate this for MLRO review? If yes, why? If no, what do you document?" |
 
-Always include answer rationales. "Correct — because AMLR Art. 56 prohibits tipping off anyone who is or may become the subject of a suspicious transaction report" is far more valuable than just marking "correct."
+Always include answer rationales. "Correct — because AMLR Art. 73 prohibits tipping off anyone who is or may become the subject of a suspicious transaction report" is far more valuable than just marking "correct."
 
 ---
 

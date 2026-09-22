@@ -60,6 +60,28 @@ Make the case for your firm specifically, not generically:
 - What you need from the client to get started
 - A specific proposed next step with a date
 
+**Win Theme**
+
+Before drafting, settle the win theme: the single overarching reason this client should choose you rather than anyone else. Then:
+- State it in one sentence, in the buyer's language, not yours
+- Support it with 3–5 specific proof points — named engagements, measured outcomes, relevant credentials (anonymised where required)
+- Name the competitive differentiation it rests on: what you offer that the alternatives do not
+- Thread it through every section. A proposal with no win theme reads as a list of capabilities and is evaluated on price
+
+**Proposal Type — Adjust the Shape**
+
+The document changes with the situation:
+- **Proactive proposal** (you are proposing): you must create the urgency yourself — lead harder on the compelling event
+- **RFP / RFI response**: comply exactly with the stated format, section order, page limits, and submission mechanics. Evaluators score against a rubric; a brilliant answer in the wrong section loses the points. Answer every question asked, in the order asked, using the issuer's numbering. Cross-reference rather than repeat
+- **Follow-up after a meeting**: open by reflecting back what you heard, using their words; this is the proposal type where demonstrated listening carries the most weight
+- **Framework agreement**: the buyer is choosing a panel, not a project — lead with breadth, call-off mechanics, rate card, and continuity of team
+- **Extension or expansion of existing work**: lead with delivered results from the current engagement, then the next problem; do not re-pitch credentials the client already has
+- **Unsolicited thought-leadership proposal**: the insight must carry the document. If the insight is not genuinely new to them, do not send it
+
+**Risk and Scope Management**
+
+Address the concerns the buyer has but may not raise, before they have to: timeline risk and dependencies, scope-change mechanics, key-person continuity, knowledge transfer to their team, and the transition to business as usual at the end. Proposals that name risks and how they will be handled read as mature; proposals that are silent on them read as naive or evasive.
+
 **Tone Calibration**
 - **Formal**: Structured, third-person, conservative language, extensive credentialing — appropriate for large regulated institutions and formal tender processes
 - **Consultative**: Direct, insight-led, assumes a peer relationship — appropriate for advisory engagements
@@ -102,6 +124,15 @@ This means the executive summary and commercial section must carry the full weig
 - Burying the price at the end of a long document — economic buyers look for it immediately
 - Failing to quantify the value of the solution, leaving price comparison as the only metric
 - Not providing a clear, specific call to action with a date
+
+### SAFEGUARDS
+
+- Proposals should be reviewed by the engagement partner (or equivalent accountable owner) before submission
+- Pricing must be validated against profitability targets and approved by finance before it goes out — a won deal at an unprofitable price is a loss with extra steps
+- Flag commitments that may be difficult to deliver: aggressive timelines, fixed-fee exposure on poorly bounded scope, availability of named individuals, guaranteed outcomes
+- Where the opportunity is an RFP or a public tender, confirm compliance with the stated format, content and submission requirements — non-compliant bids are commonly disqualified before they are read
+- Recommend legal review for unusual contractual terms, indemnities, liability caps, IP assignment, or data-processing obligations
+- Do not invent client references, outcome figures, certifications, or team credentials. Where a proof point is needed and none exists, say so rather than supplying a plausible one
 
 ### OUTPUT QUALITY STANDARDS
 

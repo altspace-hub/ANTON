@@ -10,13 +10,14 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
-      "detailed-findings"
+      "detailed-findings",
+      "action-plan"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
       "claudeKnowledge": {
         "enabled": true,
-        "webSearchEnabled": true,
+        "webSearchEnabled": false,
         "description": "Insurance fraud detection frameworks, claims management best practices, IFRS 17, regulatory requirements for claims handling"
       }
     }

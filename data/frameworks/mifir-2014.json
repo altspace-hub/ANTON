@@ -3,36 +3,458 @@
   "name": "MiFIR — Markets in Financial Instruments Regulation",
   "shortName": "MiFIR",
   "reference": "Regulation (EU) No 600/2014",
+  "coverage": "transcribed",
   "applicationDate": "2018-01-03",
-  "articleCount": 4,
+  "articleCount": 55,
   "themes": [
     "Reporting",
     "Transparency"
   ],
   "articles": [
     {
+      "id": "Art.1",
+      "title": "Subject matter and scope",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "This Regulation establishes uniform requirements in relation to the following: (a) disclosure of trade data to the public; (b) reporting of transactions to the competent authorities; (c) trading of derivatives on organised venues; (d) non-discriminatory access to clearing and non-discriminatory access to trading in…"
+    },
+    {
+      "id": "Art.2",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "Subject matter, scope and definitions",
+      "requirement": "For the purposes of this Regulation, the following definitions apply: (1) ‘investment firm' means an investment firm as defined in Article 4(1)(1) of Directive 2014/65/EU; (2) ‘investment services and activities' means investment services and activities defined in Article 4(1)(2) of Directive 2014/65/EU; (3)…"
+    },
+    {
       "id": "Art.3",
-      "title": "Pre-Trade Transparency for Trading Venues",
+      "title": "Pre-trade transparency requirements for trading venues in respect of shares, depositary receipts, ETFs, certificates and other similar financial instruments",
+      "chapter": "II",
       "theme": "Transparency",
       "requirement": "Market operators and investment firms operating a trading venue must make public current bid and offer prices and the depth of trading interest at those prices, continuously during normal trading hours."
     },
     {
+      "id": "Art.4",
+      "title": "Waivers for equity instruments",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Competent authorities shall be able to waive the obligation for market operators and investment firms operating a trading venue to make public the information referred to in Article 3(1) for: (a) systems matching orders based on a trading methodology by which the price of the financial instrument referred to in…"
+    },
+    {
+      "id": "Art.5",
+      "title": "Volume Cap Mechanism",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "In order to ensure that the use of the waivers provided for in Article 4(1)(a) and 4(1)(b)(i) does not unduly harm price formation, trading under those waivers is restricted as follows: (a) the percentage of trading in a financial instrument carried out on a trading venue under those waivers shall be limited to 4 % of…"
+    },
+    {
+      "id": "Art.6",
+      "title": "Post-trade transparency requirements for trading venues in respect of shares, depositary receipts, ETFs, certificates and other similar financial instruments",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Market operators and investment firms operating a trading venue shall make public the price, volume and time of the transactions executed in respect of shares, depositary receipts, ETFs, certificates and other similar financial instruments traded on that trading venue."
+    },
+    {
+      "id": "Art.7",
+      "title": "Authorisation of deferred publication",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Competent authorities shall be able to authorise market operators and investment firms operating a trading venue to provide for deferred publication of the details of transactions based on their type or size."
+    },
+    {
+      "id": "Art.8",
+      "title": "Pre-trade transparency requirements for trading venues in respect of bonds, structured finance products, emission allowances and derivatives",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Market operators and investment firms operating a trading venue shall make public current bid and offer prices and the depth of trading interests at those prices which are advertised through their systems for bonds, and structured finance products, emission allowances and derivatives traded on a trading venue."
+    },
+    {
+      "id": "Art.9",
+      "title": "Waivers for non-equity instruments",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Competent authorities shall be able to waive the obligation for market operators and investment firms operating a trading venue to make public the information referred to in Article 8(1) for: (a) orders that are large in scale compared with normal market size and orders held in an order management facility of the…"
+    },
+    {
+      "id": "Art.10",
+      "title": "Post-trade transparency requirements for trading venues in respect of bonds, structured finance products, emission allowances and derivatives",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Market operators and investment firms operating a trading venue shall make public the price, volume and time of the transactions executed in respect of bonds, structured finance products, emission allowances and derivatives traded on a trading venue."
+    },
+    {
+      "id": "Art.11",
+      "title": "Authorisation of deferred publication",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Competent authorities shall be able to authorise market operators and investment firms operating a trading venue to provide for deferred publication of the details of transactions based on the size or type of the transaction."
+    },
+    {
+      "id": "Art.12",
+      "title": "Obligation to make pre-trade and post-trade data available separately",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Market operators and investment firms operating a trading venue shall make the information published in accordance with Articles 3, 4 and 6 to 11 available to the public by offering pre-trade and post-trade transparency data separately."
+    },
+    {
+      "id": "Art.13",
+      "title": "Obligation to make pre-trade and post-trade data available on a reasonable commercial basis",
+      "chapter": "II",
+      "theme": "Transparency for trading venues",
+      "requirement": "Market operators and investment firms operating a trading venue shall make the information published in accordance with Articles 3, 4 and 6 to 11 available to the public on a reasonable commercial basis and ensure non-discriminatory access to the information."
+    },
+    {
+      "id": "Art.14",
+      "title": "Obligation for systematic internalisers to make public firm quotes in respect of shares, depositary receipts, ETFs, certificates and other similar financial instruments",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Investment firms shall make public firm quotes in respect of those shares, depositary receipts, ETFs, certificates and other similar financial instruments traded on a trading venue for which they are systematic internalisers and for which there is a liquid market."
+    },
+    {
+      "id": "Art.15",
+      "title": "Execution of client orders",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Systematic internalisers shall make public their quotes on a regular and continuous basis during normal trading hours. They may update their quotes at any time."
+    },
+    {
+      "id": "Art.16",
+      "title": "Obligations of competent authorities",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "The competent authorities shall check the following: (a) that investment firms regularly update bid and offer prices published in accordance with Article 14 and maintain prices which reflect the prevailing market conditions; (b) that investment firms comply with the conditions for price improvement laid down in…"
+    },
+    {
+      "id": "Art.17",
+      "title": "Access to quotes",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Systematic internalisers shall be allowed to decide, on the basis of their commercial policy and in an objective non-discriminatory way, the clients to whom they give access to their quotes."
+    },
+    {
+      "id": "Art.18",
+      "title": "Obligation for systematic internalisers to make public firm quotes in respect of bonds, structured finance products, emission allowances and derivatives",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Investment firms shall make public firm quotes in respect of bonds, structured finance products, emission allowances and derivatives traded on a trading venue for which they are systematic internalisers and for which there is a liquid market when the following conditions are fulfilled: (a) they are prompted for a…"
+    },
+    {
+      "id": "Art.19",
+      "title": "Monitoring by ESMA",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Competent authorities and ESMA shall monitor the application of Article 18 regarding the sizes at which quotes are made available to clients of the investment firm and to other market participants relative to other trading activity of the firm, and the degree to which the quotes reflect prevailing market conditions in…"
+    },
+    {
+      "id": "Art.20",
+      "title": "Post-trade disclosure by investment firms, including systematic internalisers, in respect of shares, depositary receipts, ETFs, certificates and other similar financial instruments",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Investment firms which, either on own account or on behalf of clients, conclude transactions in shares, depositary receipts, ETFs, certificates and other similar financial instruments traded on a trading venue, shall make public the volume and price of those transactions and the time at which they were concluded."
+    },
+    {
+      "id": "Art.21",
+      "title": "Post-trade disclosure by investment firms, including systematic internalisers, in respect of bonds, structured finance products, emission allowances and derivatives",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "Investment firms which, either on own account or on behalf of clients, conclude transactions in bonds, structured finance products, emission allowances and derivatives traded on a trading venue shall make public the volume and price of those transactions and the time at which they were concluded."
+    },
+    {
+      "id": "Art.22",
+      "title": "Providing information for the purposes of transparency and other calculations",
+      "chapter": "III",
+      "theme": "Transparency for systematic internalisers and investment firms trading otc",
+      "requirement": "In order to carry out calculations for determining the requirements for the pre-trade and post-trade transparency and the trading obligation regimes imposed by Articles 3 to 11, Articles 14 to 21 and Article 32, which are applicable to financial instruments and for determining whether an investment firm is a…"
+    },
+    {
       "id": "Art.23",
-      "title": "Trading Obligation for Shares",
+      "title": "Trading obligation for investment firms",
+      "chapter": "III",
       "theme": "Transparency",
       "requirement": "Investment firms must ensure trades in shares admitted to trading on a regulated market take place on a regulated market, MTF, systematic internaliser or equivalent third-country venue."
     },
     {
+      "id": "Art.24",
+      "title": "Obligation to uphold integrity of markets",
+      "chapter": "IV",
+      "theme": "Transaction reporting",
+      "requirement": "Without prejudice to the allocation of responsibilities for enforcing Regulation (EU) No 596/2014, competent authorities coordinated by ESMA in accordance with Article 31 of Regulation (EU) No 1095/2010 shall monitor the activities of investment firms to ensure that they act honestly, fairly and professionally and in…"
+    },
+    {
+      "id": "Art.25",
+      "title": "Obligation to maintain records",
+      "chapter": "IV",
+      "theme": "Transaction reporting",
+      "requirement": "Investment firms shall keep at the disposal of the competent authority, for five years, the relevant data relating to all orders and all transactions in financial instruments which they have carried out, whether on own account or on behalf of a client."
+    },
+    {
       "id": "Art.26",
-      "title": "Transaction Reporting",
+      "title": "Obligation to report transactions",
+      "chapter": "IV",
       "theme": "Reporting",
       "requirement": "Investment firms executing transactions in financial instruments must report complete and accurate details to the competent authority as quickly as possible, and no later than the close of the following working day."
     },
     {
+      "id": "Art.27",
+      "title": "Obligation to supply financial instrument reference data",
+      "chapter": "IV",
+      "theme": "Transaction reporting",
+      "requirement": "With regard to financial instruments admitted to trading on regulated markets or traded on MTFs or OTFs, trading venues shall provide competent authorities with identifying reference data for the purposes of transaction reporting under Article 26."
+    },
+    {
+      "id": "Art.28",
+      "title": "Obligation to trade on regulated markets, MTFs or OTFs",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "Financial counterparties as defined in Article 2(8) of Regulation (EU) No 648/2012 and non-financial counterparties that meet the conditions referred to in Article 10(1)(b) thereof shall conclude transactions which are neither intragroup transactions as defined in Article 3 of that Regulation nor transactions covered…"
+    },
+    {
+      "id": "Art.29",
+      "title": "Clearing obligation for derivatives traded on regulated markets and timing of acceptance for clearing",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "The operator of a regulated market shall ensure that all transactions in derivatives that are concluded on that regulated market are cleared by a CCP."
+    },
+    {
+      "id": "Art.30",
+      "title": "Indirect Clearing Arrangements",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "Indirect clearing arrangements with regard to exchange-traded derivatives are permissible provided that those arrangements do not increase counterparty risk and ensure that the assets and positions of the counterparty benefit from protection with equivalent effect to that referred to in Articles 39 and 48 of…"
+    },
+    {
+      "id": "Art.31",
+      "title": "Portfolio Compression",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "When providing portfolio compression, investment firms and market operators shall not be subject to the best execution obligation in Article 27 of Directive 2014/65/EU, the transparency obligations in Articles 8, 10, 18 and 21 of this Regulation and the obligation in Article 1(6) of Directive 2014/65/EU. The…"
+    },
+    {
+      "id": "Art.32",
+      "title": "Trading obligation procedure",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "ESMA shall develop draft regulatory technical standards to specify the following: (a) which of the class of derivatives declared subject to the clearing obligation in accordance with Article 5(2) and (4) of Regulation (EU) No 648/2012 or a relevant subset thereof shall be traded on the venues referred to in Article…"
+    },
+    {
+      "id": "Art.33",
+      "title": "Mechanism to avoid duplicative or conflicting rules",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "The Commission shall be assisted by ESMA in monitoring and preparing reports, at least on an annual basis, to the European Parliament and to the Council on the international application of principles laid down in Articles 28 and 29, in particular with regard to potential duplicative or conflicting requirements on…"
+    },
+    {
+      "id": "Art.34",
+      "title": "Register of derivatives subject to the trading obligation",
+      "chapter": "V",
+      "theme": "Derivatives",
+      "requirement": "ESMA shall publish and maintain on its website a register specifying, in an exhaustive and unequivocal manner, the derivatives that are subject to the obligation to trade on the venues referred to in Article 28(1), the venues where they are admitted to trading or traded, and the dates from which the obligation takes…"
+    },
+    {
       "id": "Art.35",
-      "title": "Non-Discriminatory Access to a CCP",
+      "title": "Non-discriminatory access to a CCP",
+      "chapter": "VI",
       "theme": "Transparency",
       "requirement": "CCPs must accept to clear financial instruments on a non-discriminatory and transparent basis, including as to collateral requirements and fees, regardless of the venue on which the transaction is executed."
+    },
+    {
+      "id": "Art.36",
+      "title": "Non-discriminatory access to a trading venue",
+      "chapter": "VI",
+      "theme": "Non-discriminatory clearing access for financial instruments",
+      "requirement": "Without prejudice to Article 8 of Regulation (EU) No 648/2012, a trading venue shall provide trade feeds on a non-discriminatory and transparent basis, including as regards fees related to access, upon request to any CCP authorised or recognised by Regulation (EU) No 648/2012 that wishes to clear transactions in…"
+    },
+    {
+      "id": "Art.37",
+      "title": "Non-discriminatory access to and obligation to licence benchmarks",
+      "chapter": "VI",
+      "theme": "Non-discriminatory clearing access for financial instruments",
+      "requirement": "Where the value of any financial instrument is calculated by reference to a benchmark, a person with proprietary rights to the benchmark shall ensure that CCPs and trading venues are permitted, for the purposes of trading and clearing, non-discriminatory access to: (a) relevant price and data feeds and information on…"
+    },
+    {
+      "id": "Art.38",
+      "title": "Access for third-country CCPs and trading venues",
+      "chapter": "VI",
+      "theme": "Non-discriminatory clearing access for financial instruments",
+      "requirement": "A trading venue established in a third country may request access to a CCP established in the Union only if the Commission has adopted a decision in accordance with Article 28(4) relating to that third country."
+    },
+    {
+      "id": "Art.39",
+      "title": "Market monitoring",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "In accordance with Article 9(2) of Regulation (EU) No 1095/2010, ESMA shall monitor the market for financial instruments which are marketed, distributed or sold in the Union."
+    },
+    {
+      "id": "Art.40",
+      "title": "ESMA temporary intervention powers",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "In accordance with Article 9(5) of Regulation (EU) No 1095/2010, ESMA may, where the conditions in paragraphs 2 and 3 are fulfilled, temporarily prohibit or restrict in the Union: (a) the marketing, distribution or sale of certain financial instruments or financial instruments with certain specified features; or (b) a…"
+    },
+    {
+      "id": "Art.41",
+      "title": "EBA temporary intervention powers",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "In accordance with Article 9(5) of Regulation (EU) No 1093/2010, EBA may where the conditions in paragraphs 2 and 3 are fulfilled, temporarily prohibit or restrict in the Union: (a) the marketing, distribution or sale of certain structured deposits or structured deposits with certain specified features; or (b) a type…"
+    },
+    {
+      "id": "Art.42",
+      "title": "Product intervention by competent authorities",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "A competent authority may prohibit or restrict the following in or from that Member State: (a) the marketing, distribution or sale of certain financial instruments or structured deposits or financial instruments or structured deposits with certain specified features; or (b) a type of financial activity or practice."
+    },
+    {
+      "id": "Art.43",
+      "title": "Coordination by ESMA and EBA",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "ESMA or, for structured deposits, EBA shall perform a facilitation and coordination role in relation to action taken by competent authorities under Article 42."
+    },
+    {
+      "id": "Art.44",
+      "title": "Coordination of national position management measures and position limits by ESMA",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "ESMA shall perform a facilitation and coordination role in relation to measures taken by competent authorities pursuant to Article 69(2)(o) and (p) of Directive 2014/65/EU. In particular, ESMA shall ensure that a consistent approach is taken by competent authorities with regard to when those powers are exercised, the…"
+    },
+    {
+      "id": "Art.45",
+      "title": "Position management powers of ESMA",
+      "chapter": "VII",
+      "theme": "Supervisory measures on product intervention and positions",
+      "requirement": "In accordance with Article 9(5) of Regulation (EU) No 1095/2010, ESMA shall, where both conditions in paragraph 2 are satisfied, take one or more of the following measures: (a) request from any person all relevant information regarding the size and purpose of a position or exposure entered into via a derivative; (b)…"
+    },
+    {
+      "id": "Art.46",
+      "title": "General provisions",
+      "chapter": "VIII",
+      "theme": "Provision of services and performance of activities by third-country firms following an equivalence decision with or without a branch",
+      "requirement": "A third-country firm may provide investment services or perform investment activities with or without any ancillary services to eligible counterparties and to professional clients within the meaning of Section I of Annex II to Directive 2014/65/EU established throughout the Union without the establishment of a branch…"
+    },
+    {
+      "id": "Art.47",
+      "title": "Equivalence decision",
+      "chapter": "VIII",
+      "theme": "Provision of services and performance of activities by third-country firms following an equivalence decision with or without a branch",
+      "requirement": "The Commission may adopt a decision in accordance with the examination procedure referred to in Article 51(2) in relation to a third country stating that the legal and supervisory arrangements of that third country ensure that firms authorised in that third country comply with legally binding prudential and business…"
+    },
+    {
+      "id": "Art.48",
+      "title": "Register",
+      "chapter": "VIII",
+      "theme": "Provision of services and performance of activities by third-country firms following an equivalence decision with or without a branch",
+      "requirement": "ESMA shall keep a register of the third-country firms allowed to provide investment services or perform investment activities in the Union in accordance with Article 46."
+    },
+    {
+      "id": "Art.49",
+      "title": "Withdrawal of registration",
+      "chapter": "VIII",
+      "theme": "Provision of services and performance of activities by third-country firms following an equivalence decision with or without a branch",
+      "requirement": "ESMA shall withdraw the registration of a third-country firm in the register established in accordance with Article 48 where: (a) ESMA has well-founded reasons based on documented evidence to believe that, in the provision of investment services and activities in the Union, the third-country firm is acting in a manner…"
+    },
+    {
+      "id": "Art.50",
+      "title": "Exercise of the delegation",
+      "chapter": "IX",
+      "theme": "Delegated and implementing acts",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article."
+    },
+    {
+      "id": "Art.51",
+      "title": "Committee procedure",
+      "chapter": "IX",
+      "theme": "Delegated and implementing acts",
+      "requirement": "The Commission shall be assisted by the European Securities Committee established by Commission Decision 2001/528/EC ( 30 ) . That committee shall be a committee within the meaning of Regulation (EU) No 182/2011."
+    },
+    {
+      "id": "Art.52",
+      "title": "Reports and review",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "By 3 March 2019, the Commission shall, after consulting ESMA, submit a report to the European Parliament and to the Council on the impact in practice of the transparency obligations established pursuant to Articles 3 to 13, in particular on the impact of the volume cap mechanism described in Article 5, including on…"
+    },
+    {
+      "id": "Art.53",
+      "title": "Amendment of Regulation (EU) No 648/2012",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "Regulation (EU) No 648/2012 is amended as follows: (1) in Article 5(2), the following subparagraph is added: ‘In the developing of the draft regulatory technical standards under this paragraph ESMA shall not prejudice the transitional provision relating to C6 energy derivative contracts as laid down in Article 95 of…"
+    },
+    {
+      "id": "Art.54",
+      "title": "Transitional provisions",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "Third-country firms shall be able to continue to provide services and activities in Member States, in accordance with national regimes until three years after the adoption by the Commission of a decision in relation to the relevant third country in accordance with Article 47."
+    },
+    {
+      "id": "Art.55",
+      "title": "Entry into force and application",
+      "chapter": "X",
+      "theme": "Final provisions",
+      "requirement": "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union . This Regulation shall apply from 3 January 2017."
     }
-  ]
+  ],
+  "eurLex": "CELEX:32014R0600",
+  "divisionKind": "Title",
+  "chapters": [
+    {
+      "number": "I",
+      "title": "Subject matter, scope and definitions",
+      "articles": "1-2"
+    },
+    {
+      "number": "II",
+      "title": "Transparency for trading venues",
+      "articles": "3-13"
+    },
+    {
+      "number": "III",
+      "title": "Transparency for systematic internalisers and investment firms trading otc",
+      "articles": "14-23"
+    },
+    {
+      "number": "IV",
+      "title": "Transaction reporting",
+      "articles": "24-27"
+    },
+    {
+      "number": "V",
+      "title": "Derivatives",
+      "articles": "28-34"
+    },
+    {
+      "number": "VI",
+      "title": "Non-discriminatory clearing access for financial instruments",
+      "articles": "35-38"
+    },
+    {
+      "number": "VII",
+      "title": "Supervisory measures on product intervention and positions",
+      "articles": "39-45"
+    },
+    {
+      "number": "VIII",
+      "title": "Provision of services and performance of activities by third-country firms following an equivalence decision with or without a branch",
+      "articles": "46-49"
+    },
+    {
+      "number": "IX",
+      "title": "Delegated and implementing acts",
+      "articles": "50-51"
+    },
+    {
+      "number": "X",
+      "title": "Final provisions",
+      "articles": "52-55"
+    }
+  ],
+  "articleSource": {
+    "celex": "CELEX:32014R0600",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  }
 }

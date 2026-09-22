@@ -3,18 +3,56 @@
   "name": "MiCA — Markets in Crypto-Assets Regulation",
   "shortName": "MiCA",
   "reference": "Regulation (EU) 2023/1114",
+  "coverage": "transcribed",
   "eurLex": "CELEX:32023R1114",
   "applicationDate": "2024-12-30",
-  "articleCount": 39,
+  "articleCount": 149,
   "chapters": [
-    {"number": "I", "title": "Subject Matter, Scope and Definitions", "articles": "1-3"},
-    {"number": "II", "title": "Crypto-Assets Other Than ARTs or EMTs", "articles": "4-15"},
-    {"number": "III", "title": "Asset-Referenced Tokens", "articles": "16-47"},
-    {"number": "IV", "title": "E-Money Tokens", "articles": "48-58"},
-    {"number": "V", "title": "Authorisation and Operating Conditions for CASPs", "articles": "59-85"},
-    {"number": "VI", "title": "Prevention and Prohibition of Market Abuse", "articles": "86-92"},
-    {"number": "VII", "title": "Competent Authorities, EBA and ESMA", "articles": "93-138"},
-    {"number": "IX", "title": "Transitional and Final Provisions", "articles": "140-149"}
+    {
+      "number": "I",
+      "title": "Subject matter, scope and definitions",
+      "articles": "1-3"
+    },
+    {
+      "number": "II",
+      "title": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "articles": "4-15"
+    },
+    {
+      "number": "III",
+      "title": "Asset-referenced tokens",
+      "articles": "16-47"
+    },
+    {
+      "number": "IV",
+      "title": "E-money tokens",
+      "articles": "48-58"
+    },
+    {
+      "number": "V",
+      "title": "Authorisation and operating conditions for crypto-asset service providers",
+      "articles": "59-85"
+    },
+    {
+      "number": "VI",
+      "title": "Prevention and prohibition of market abuse involving crypto-assets",
+      "articles": "86-92"
+    },
+    {
+      "number": "VII",
+      "title": "Competent authorities, eba and esma",
+      "articles": "93-138"
+    },
+    {
+      "number": "VIII",
+      "title": "Delegated acts",
+      "articles": "139"
+    },
+    {
+      "number": "IX",
+      "title": "Transitional and final provisions",
+      "articles": "140-149"
+    }
   ],
   "themes": [
     "General Provisions",
@@ -26,44 +64,1055 @@
     "Governance & Prudential"
   ],
   "articles": [
-    {"id":"Art.1","title":"Subject matter","chapter":"I","theme":"General Provisions","requirement":"Lays down uniform rules for transparency and disclosure, authorisation and supervision of CASPs, and issuance of asset-referenced tokens and e-money tokens"},
-    {"id":"Art.2","title":"Scope","chapter":"I","theme":"General Provisions","requirement":"Applies to persons engaged in issuance, offer to the public, and admission to trading of crypto-assets, and to CASPs in the Union; exclusions for financial instruments, deposits, etc."},
-    {"id":"Art.3","title":"Definitions","chapter":"I","theme":"General Provisions","requirement":"Defines crypto-asset, asset-referenced token, e-money token, CASP, distributed ledger technology, crypto-asset service, utility token, and other key terms"},
-    {"id":"Art.4","title":"Offers to the public of crypto-assets other than asset-referenced tokens or e-money tokens","chapter":"II","theme":"White Paper & Offers","requirement":"No person shall offer crypto-assets to the public unless a white paper has been drafted, notified to the competent authority, and published; exemptions for small offers and qualified investors"},
-    {"id":"Art.6","title":"Content and form of the crypto-asset white paper","chapter":"II","theme":"White Paper & Offers","requirement":"White paper must contain information about the issuer, project, rights and obligations, underlying technology, risks; must be fair, clear, and not misleading; Annex I specifies format"},
-    {"id":"Art.7","title":"Marketing communications","chapter":"II","theme":"White Paper & Offers","requirement":"Marketing communications must be clearly identifiable, fair, clear, not misleading, and consistent with the crypto-asset white paper"},
-    {"id":"Art.8","title":"Notification of the crypto-asset white paper and of the marketing communications","chapter":"II","theme":"White Paper & Offers","requirement":"White paper and marketing communications must be notified to the competent authority of the home Member State at least 20 working days before publication"},
-    {"id":"Art.9","title":"Publication of the crypto-asset white paper and of the marketing communications","chapter":"II","theme":"White Paper & Offers","requirement":"White paper must be published on the issuer's website in machine-readable format and remain available for as long as the crypto-asset is held by the public"},
-    {"id":"Art.13","title":"Right of withdrawal","chapter":"II","theme":"White Paper & Offers","requirement":"Consumers have a right of withdrawal within 14 calendar days of their agreement to purchase crypto-assets directly from the issuer, without incurring any cost"},
-    {"id":"Art.16","title":"Authorisation","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"No person shall offer ARTs to the public or seek admission to trading unless authorised by the competent authority; credit institutions exempt from separate authorisation but must notify"},
-    {"id":"Art.18","title":"Application for authorisation","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"Application must include programme of operations, governance arrangements, reserve of assets details, custody arrangements, complaint handling, white paper, and wind-down plan"},
-    {"id":"Art.19","title":"Content and form of the crypto-asset white paper for asset-referenced tokens","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"ART white paper must contain specific information per Annex II: detailed description of issuer, stabilisation mechanism, rights of holders, reserve composition, and redemption procedures"},
-    {"id":"Art.27","title":"Obligation to act honestly, fairly and professionally in the best interest of the holders of asset-referenced tokens","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"ART issuers must act honestly, fairly, and professionally in the best interest of token holders and treat all holders equally unless the white paper provides for preferential treatment"},
-    {"id":"Art.34","title":"Governance arrangements","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"ART issuers must have robust governance including clear organisational structure, well-defined lines of responsibility, effective risk management, internal control mechanisms, and fit and proper management"},
-    {"id":"Art.35","title":"Own funds requirements","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"ART issuers must maintain own funds equal to the higher of EUR 350,000, 2% of the average reserve assets, or a quarter of fixed overheads of the preceding year"},
-    {"id":"Art.36","title":"Obligation to have a reserve of assets, and composition and management","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"ART issuers must constitute and maintain a reserve of assets backing the token, invested in secure low-risk assets, segregated from the issuer's own assets"},
-    {"id":"Art.37","title":"Custody of reserve assets","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"Reserve assets must be held in custody by credit institutions or authorised crypto-asset custodians ensuring segregation and availability for timely redemption"},
-    {"id":"Art.40","title":"Prohibition of granting interest","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"Issuers of ARTs and CASPs shall not grant interest or any other benefit related to the length of time during which a holder holds asset-referenced tokens"},
-    {"id":"Art.43","title":"Classification of asset-referenced tokens as significant asset-referenced tokens","chapter":"III","theme":"Asset-Referenced Tokens","requirement":"EBA classifies ARTs as significant based on customer base size, value of issued tokens, number and value of transactions, cross-border activity, and interconnectedness with financial system"},
-    {"id":"Art.48","title":"Requirements for offers to the public and admission to trading of e-money tokens","chapter":"IV","theme":"E-Money Tokens","requirement":"Only credit institutions or electronic money institutions authorised under Directive 2009/110/EC may issue e-money tokens to the public in the Union"},
-    {"id":"Art.49","title":"Issuance and redeemability of e-money tokens","chapter":"IV","theme":"E-Money Tokens","requirement":"EMT issuers must issue at par value on receipt of funds and redeem at par value at any time at the holder's request, without charge beyond the cost necessary for the transaction"},
-    {"id":"Art.50","title":"Prohibition of granting interest","chapter":"IV","theme":"E-Money Tokens","requirement":"Issuers of EMTs and CASPs shall not grant interest or any other benefit related to the length of time during which a holder holds e-money tokens"},
-    {"id":"Art.51","title":"Content and form of the crypto-asset white paper for e-money tokens","chapter":"IV","theme":"E-Money Tokens","requirement":"EMT issuers must draw up and publish a white paper containing information specified in Annex III before offering EMTs to the public"},
-    {"id":"Art.56","title":"Classification of e-money tokens as significant e-money tokens","chapter":"IV","theme":"E-Money Tokens","requirement":"EBA classifies EMTs as significant based on same criteria as significant ARTs; significant EMT issuers subject to additional requirements and direct EBA oversight"},
-    {"id":"Art.59","title":"Authorisation of crypto-asset service providers","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"Only legal persons with registered office in a Member State may apply for CASP authorisation; must meet fit and proper, governance, prudential, and operational requirements"},
-    {"id":"Art.62","title":"Application for authorisation","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"Application must include programme of operations, proof of own funds, governance arrangements, internal control mechanisms, ICT security policies, business continuity, and complaint handling"},
-    {"id":"Art.66","title":"Obligation to act honestly, fairly and professionally in the best interests of clients","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs must act honestly, fairly, and professionally in the best interests of clients and provide fair, clear, and not misleading information"},
-    {"id":"Art.67","title":"Prudential requirements","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs must maintain permanent minimum capital (EUR 50,000 to EUR 150,000 depending on services) or a quarter of fixed overheads of the preceding year, whichever is higher"},
-    {"id":"Art.68","title":"Governance arrangements","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs must have robust governance including clear organisational structure, effective risk management, adequate internal control, and fit and proper management body members"},
-    {"id":"Art.75","title":"Providing custody and administration of crypto-assets on behalf of clients","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs providing custody must establish custody policy, segregate client assets from own assets, ensure clients' assets are not used for own account, and return assets without undue delay"},
-    {"id":"Art.76","title":"Operation of a trading platform for crypto-assets","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs operating trading platforms must establish operating rules, admission criteria, transparent fee structures, and real-time publication of prices, volumes, and completed transactions"},
-    {"id":"Art.77","title":"Exchange of crypto-assets for funds or other crypto-assets","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs providing exchange services must establish a non-discriminatory commercial policy, publish firm prices or methodology for determining prices, and execute orders at quoted prices"},
-    {"id":"Art.81","title":"Providing advice on crypto-assets and providing portfolio management of crypto-assets","chapter":"V","theme":"CASP Authorisation & Obligations","requirement":"CASPs providing advice or portfolio management must assess suitability, act in the client's best interest, provide periodic statements, and disclose conflicts of interest"},
-    {"id":"Art.86","title":"Scope of the rules on market abuse","chapter":"VI","theme":"Market Abuse","requirement":"Market abuse rules apply to any transaction, order, or behaviour concerning crypto-assets admitted to trading or for which admission has been sought, regardless of where conducted"},
-    {"id":"Art.89","title":"Prohibition of insider dealing","chapter":"VI","theme":"Market Abuse","requirement":"No person in possession of inside information shall use that information to acquire or dispose of crypto-assets, or recommend or induce another person to do so"},
-    {"id":"Art.91","title":"Prohibition of market manipulation","chapter":"VI","theme":"Market Abuse","requirement":"No person shall engage in market manipulation including wash trading, spoofing, layering, dissemination of false or misleading information, or any other artifice to distort prices"},
-    {"id":"Art.92","title":"Prevention and detection of market abuse","chapter":"VI","theme":"Market Abuse","requirement":"CASPs operating trading platforms must establish and maintain effective systems and procedures for prevention and detection of market abuse; report suspected abuse to competent authority"},
-    {"id":"Art.111","title":"Administrative penalties and other administrative measures","chapter":"VII","theme":"Governance & Prudential","requirement":"Member States must provide for effective, proportionate, and dissuasive administrative penalties and measures for MiCA breaches; minimum powers for competent authorities"},
-    {"id":"Art.149","title":"Entry into force and application","chapter":"IX","theme":"General Provisions","requirement":"Entered into force 29 June 2023. Title III and IV (ARTs and EMTs) apply from 30 June 2024. Remainder applies from 30 December 2024"}
-  ]
+    {
+      "id": "Art.1",
+      "title": "Subject matter",
+      "chapter": "I",
+      "theme": "General Provisions",
+      "requirement": "Lays down uniform rules for transparency and disclosure, authorisation and supervision of CASPs, and issuance of asset-referenced tokens and e-money tokens"
+    },
+    {
+      "id": "Art.2",
+      "title": "Scope",
+      "chapter": "I",
+      "theme": "General Provisions",
+      "requirement": "Applies to persons engaged in issuance, offer to the public, and admission to trading of crypto-assets, and to CASPs in the Union; exclusions for financial instruments, deposits, etc."
+    },
+    {
+      "id": "Art.3",
+      "title": "Definitions",
+      "chapter": "I",
+      "theme": "General Provisions",
+      "requirement": "Defines crypto-asset, asset-referenced token, e-money token, CASP, distributed ledger technology, crypto-asset service, utility token, and other key terms"
+    },
+    {
+      "id": "Art.4",
+      "title": "Offers to the public of crypto-assets other than asset-referenced tokens or e-money tokens",
+      "chapter": "II",
+      "theme": "White Paper & Offers",
+      "requirement": "No person shall offer crypto-assets to the public unless a white paper has been drafted, notified to the competent authority, and published; exemptions for small offers and qualified investors"
+    },
+    {
+      "id": "Art.5",
+      "title": "Admission to trading of crypto-assets other than asset-referenced tokens or e-money tokens",
+      "chapter": "II",
+      "theme": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "requirement": "A person shall not seek admission to trading of a crypto-asset other than an asset-referenced token or e-money token within the Union unless that person: (a) is a legal person; (b) has drawn up a crypto-asset white paper in respect of that crypto-asset in accordance with Article 6; (c) has notified the crypto-asset…"
+    },
+    {
+      "id": "Art.6",
+      "title": "Content and form of the crypto-asset white paper",
+      "chapter": "II",
+      "theme": "White Paper & Offers",
+      "requirement": "White paper must contain information about the issuer, project, rights and obligations, underlying technology, risks; must be fair, clear, and not misleading; Annex I specifies format"
+    },
+    {
+      "id": "Art.7",
+      "title": "Marketing communications",
+      "chapter": "II",
+      "theme": "White Paper & Offers",
+      "requirement": "Marketing communications must be clearly identifiable, fair, clear, not misleading, and consistent with the crypto-asset white paper"
+    },
+    {
+      "id": "Art.8",
+      "title": "Notification of the crypto-asset white paper and of the marketing communications",
+      "chapter": "II",
+      "theme": "White Paper & Offers",
+      "requirement": "White paper and marketing communications must be notified to the competent authority of the home Member State at least 20 working days before publication"
+    },
+    {
+      "id": "Art.9",
+      "title": "Publication of the crypto-asset white paper and of the marketing communications",
+      "chapter": "II",
+      "theme": "White Paper & Offers",
+      "requirement": "White paper must be published on the issuer's website in machine-readable format and remain available for as long as the crypto-asset is held by the public"
+    },
+    {
+      "id": "Art.10",
+      "title": "Result of the offer to the public and safeguarding arrangements",
+      "chapter": "II",
+      "theme": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "requirement": "Offerors of crypto-assets other than asset-referenced tokens or e-money tokens that set a time limit on their offer to the public of those crypto-assets shall publish on their website the result of the offer to the public within 20 working days of the end of the subscription period."
+    },
+    {
+      "id": "Art.11",
+      "title": "Rights of offerors and persons seeking admission to trading of crypto-assets other than asset-referenced tokens or e-money tokens",
+      "chapter": "II",
+      "theme": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "requirement": "After publication of the crypto-asset white paper in accordance with Article 9 and, where applicable, of the modified crypto-asset white paper in accordance with Article 12, offerors may offer crypto-assets other than asset-referenced tokens or e-money tokens throughout the Union and such crypto-assets may be admitted…"
+    },
+    {
+      "id": "Art.12",
+      "title": "Modification of published crypto-asset white papers and of published marketing communications",
+      "chapter": "II",
+      "theme": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "requirement": "Offerors, persons seeking admission to trading or operators of a trading platform for crypto-assets other than asset-referenced tokens or e-money tokens shall modify their published crypto-asset white papers and, where applicable, their published marketing communications, whenever there is a significant new factor,…"
+    },
+    {
+      "id": "Art.13",
+      "title": "Right of withdrawal",
+      "chapter": "II",
+      "theme": "White Paper & Offers",
+      "requirement": "Consumers have a right of withdrawal within 14 calendar days of their agreement to purchase crypto-assets directly from the issuer, without incurring any cost"
+    },
+    {
+      "id": "Art.14",
+      "title": "Obligations of offerors and persons seeking admission to trading of crypto-assets other than asset-referenced tokens or e-money tokens",
+      "chapter": "II",
+      "theme": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "requirement": "Offerors and persons seeking admission to trading of crypto-assets other than asset-referenced tokens or e-money tokens shall: (a) act honestly, fairly and professionally; (b) communicate with holders and prospective holders of the crypto-assets in a fair, clear and not misleading manner; (c) identify, prevent, manage…"
+    },
+    {
+      "id": "Art.15",
+      "title": "Liability for the information given in a crypto-asset white paper",
+      "chapter": "II",
+      "theme": "Crypto-assets other than asset-referenced tokens or e-money tokens",
+      "requirement": "Where an offeror, person seeking admission to trading or operator of a trading platform, has infringed Article 6 by providing in its crypto-asset white paper or in a modified crypto-asset white paper information that is not complete, fair or clear or that is misleading, that offeror, person seeking admission to…"
+    },
+    {
+      "id": "Art.16",
+      "title": "Authorisation",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "No person shall offer ARTs to the public or seek admission to trading unless authorised by the competent authority; credit institutions exempt from separate authorisation but must notify"
+    },
+    {
+      "id": "Art.17",
+      "title": "Requirements for credit institutions",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "An asset-referenced token issued by a credit institution may be offered to the public or admitted to trading if the credit institution: (a) draws up a crypto-asset white paper as referred to in Article 19 for the asset-referenced token, submits that crypto-asset white paper for approval by the competent authority of…"
+    },
+    {
+      "id": "Art.18",
+      "title": "Application for authorisation",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "Application must include programme of operations, governance arrangements, reserve of assets details, custody arrangements, complaint handling, white paper, and wind-down plan"
+    },
+    {
+      "id": "Art.19",
+      "title": "Content and form of the crypto-asset white paper for asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "ART white paper must contain specific information per Annex II: detailed description of issuer, stabilisation mechanism, rights of holders, reserve composition, and redemption procedures"
+    },
+    {
+      "id": "Art.20",
+      "title": "Assessment of the application for authorisation",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Competent authorities receiving an application for authorisation as referred to in Article 18 shall, within 25 working days of receipt of such application, assess whether that application, including the crypto-asset white paper referred to in Article 19, comprises all of the required information."
+    },
+    {
+      "id": "Art.21",
+      "title": "Grant or refusal of the authorisation",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Competent authorities shall, within 25 working days of receipt of the opinions referred to in Article 20(5), take a fully reasoned decision granting or refusing authorisation to the applicant issuer and, within five working days of taking that decision, notify it to the applicant issuer."
+    },
+    {
+      "id": "Art.22",
+      "title": "Reporting on asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "For each asset-referenced token with an issue value that is higher than EUR 100 000 000, the issuer shall report on a quarterly basis to the competent authority the following information: (a) the number of holders; (b) the value of the asset-referenced token issued and the size of the reserve of assets; (c) the…"
+    },
+    {
+      "id": "Art.23",
+      "title": "Restrictions on the issuance of asset-referenced tokens used widely as a means of exchange",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Where, for an asset-referenced token, the estimated quarterly average number and average aggregate value of transactions per day associated to its uses as a means of exchange within a single currency area is higher than 1 million transactions and EUR 200 000 000, respectively, the issuer shall: (a) stop issuing that…"
+    },
+    {
+      "id": "Art.24",
+      "title": "Withdrawal of the authorisation",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Competent authorities shall withdraw the authorisation of an issuer of an asset-referenced token in any of the following situations: (a) the issuer has ceased to engage in business for six consecutive months, or has not used its authorisation for 12 consecutive months; (b) the issuer has obtained its authorisation by…"
+    },
+    {
+      "id": "Art.25",
+      "title": "Modification of published crypto-asset white papers for asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of asset-referenced tokens shall notify the competent authority of their home Member State of any intended change of their business model likely to have a significant influence on the purchase decision of any holders or prospective holders of asset-referenced tokens, which occurs after the authorisation…"
+    },
+    {
+      "id": "Art.26",
+      "title": "Liability of issuers of asset-referenced tokens for the information given in a crypto-asset white paper",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Where an issuer has infringed Article 19 by providing in its crypto-asset white paper or in a modified crypto-asset white paper information that is not complete, fair or clear, or that is misleading, that issuer and the members of its administrative, management or supervisory body shall be liable to a holder of such…"
+    },
+    {
+      "id": "Art.27",
+      "title": "Obligation to act honestly, fairly and professionally in the best interest of the holders of asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "ART issuers must act honestly, fairly, and professionally in the best interest of token holders and treat all holders equally unless the white paper provides for preferential treatment"
+    },
+    {
+      "id": "Art.28",
+      "title": "Publication of the crypto-asset white paper",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "An issuer of an asset-referenced token shall publish on its website the approved crypto-asset white paper referred to in Article 17(1) or Article 21(1) and, where applicable, the modified crypto-asset white paper referred to in Article 25."
+    },
+    {
+      "id": "Art.29",
+      "title": "Marketing communications",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Any marketing communications relating to an offer to the public of an asset-referenced token, or to the admission to trading of such asset-referenced token, shall comply with all of the following requirements: (a) the marketing communications are clearly identifiable as such; (b) the information in the marketing…"
+    },
+    {
+      "id": "Art.30",
+      "title": "Ongoing information to holders of asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of asset-referenced tokens shall in a clear, accurate and transparent manner disclose, in a publicly and easily accessible place on their website, the amount of asset-referenced tokens in circulation, and the value and composition of the reserve of assets referred to in Article 36."
+    },
+    {
+      "id": "Art.31",
+      "title": "Complaints-handling procedures",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of asset-referenced tokens shall establish and maintain effective and transparent procedures for the prompt, fair and consistent handling of complaints received from holders of asset-referenced tokens and other interested parties, including consumer associations that represent holders of asset-referenced…"
+    },
+    {
+      "id": "Art.32",
+      "title": "Identification, prevention, management and disclosure of conflicts of interest",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of asset-referenced tokens shall implement and maintain effective policies and procedures to identify, prevent, manage and disclose conflicts of interest between themselves and: (a) their shareholders or members; (b) any shareholder or member, whether direct or indirect, that has a qualifying holding in the…"
+    },
+    {
+      "id": "Art.33",
+      "title": "Notification of changes to management body",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of asset-referenced tokens shall notify immediately their competent authority of any changes to their management body, and shall provide their competent authority with all of the necessary information to assess compliance with Article 34(2)."
+    },
+    {
+      "id": "Art.34",
+      "title": "Governance arrangements",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "ART issuers must have robust governance including clear organisational structure, well-defined lines of responsibility, effective risk management, internal control mechanisms, and fit and proper management"
+    },
+    {
+      "id": "Art.35",
+      "title": "Own funds requirements",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "ART issuers must maintain own funds equal to the higher of EUR 350,000, 2% of the average reserve assets, or a quarter of fixed overheads of the preceding year"
+    },
+    {
+      "id": "Art.36",
+      "title": "Obligation to have a reserve of assets, and composition and management of such reserve of assets",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "ART issuers must constitute and maintain a reserve of assets backing the token, invested in secure low-risk assets, segregated from the issuer's own assets"
+    },
+    {
+      "id": "Art.37",
+      "title": "Custody of reserve assets",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "Reserve assets must be held in custody by credit institutions or authorised crypto-asset custodians ensuring segregation and availability for timely redemption"
+    },
+    {
+      "id": "Art.38",
+      "title": "Investment of the reserve of assets",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of asset-referenced tokens that invest a part of the reserve of assets shall only invest those assets in highly liquid financial instruments with minimal market risk, credit risk and concentration risk."
+    },
+    {
+      "id": "Art.39",
+      "title": "Right of redemption",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Holders of asset-referenced tokens shall have a right of redemption at all times against the issuers of the asset-referenced tokens, and in respect of the reserve assets when issuers are not able to meet their obligations as referred to in Chapter 6 of this Title."
+    },
+    {
+      "id": "Art.40",
+      "title": "Prohibition of granting interest",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "Issuers of ARTs and CASPs shall not grant interest or any other benefit related to the length of time during which a holder holds asset-referenced tokens"
+    },
+    {
+      "id": "Art.41",
+      "title": "Assessment of proposed acquisitions of issuers of asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Any natural or legal persons or such persons acting in concert who intend to acquire, directly or indirectly (the ‘proposed acquirer'), a qualifying holding in an issuer of an asset-referenced token or to increase, directly or indirectly, such a qualifying holding so that the proportion of the voting rights or of the…"
+    },
+    {
+      "id": "Art.42",
+      "title": "Content of the assessment of proposed acquisitions of issuers of asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "When performing the assessment referred to in Article 41(4), the competent authority shall appraise the suitability of the proposed acquirer and the financial soundness of the proposed acquisition referred to in Article 41(1) against all of the following criteria: (a) the reputation of the proposed acquirer; (b) the…"
+    },
+    {
+      "id": "Art.43",
+      "title": "Classification of asset-referenced tokens as significant asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-Referenced Tokens",
+      "requirement": "EBA classifies ARTs as significant based on customer base size, value of issued tokens, number and value of transactions, cross-border activity, and interconnectedness with financial system"
+    },
+    {
+      "id": "Art.44",
+      "title": "Voluntary classification of asset-referenced tokens as significant asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Applicant issuers of asset-referenced tokens may indicate in their application for authorisation pursuant to Article 18, or in their notification pursuant to Article 17, that they wish for their asset-referenced tokens to be classified as significant asset-referenced tokens."
+    },
+    {
+      "id": "Art.45",
+      "title": "Specific additional obligations for issuers of significant asset-referenced tokens",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "Issuers of significant asset-referenced tokens shall adopt, implement and maintain a remuneration policy that promotes the sound and effective risk management of such issuers and that does not create incentives to relax risk standards."
+    },
+    {
+      "id": "Art.46",
+      "title": "Recovery plan",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "An issuer of an asset-referenced token shall draw up and maintain a recovery plan providing for measures to be taken by the issuer to restore compliance with the requirements applicable to the reserve of assets in cases where the issuer fails to comply with those requirements."
+    },
+    {
+      "id": "Art.47",
+      "title": "Redemption plan",
+      "chapter": "III",
+      "theme": "Asset-referenced tokens",
+      "requirement": "An issuer of an asset-referenced token shall draw up and maintain an operational plan to support the orderly redemption of each asset-referenced token, which is to be implemented upon a decision by the competent authority that the issuer is unable or likely to be unable to fulfil its obligations, including in the case…"
+    },
+    {
+      "id": "Art.48",
+      "title": "Requirements for the offer to the public or admission to trading of e-money tokens",
+      "chapter": "IV",
+      "theme": "E-Money Tokens",
+      "requirement": "Only credit institutions or electronic money institutions authorised under Directive 2009/110/EC may issue e-money tokens to the public in the Union"
+    },
+    {
+      "id": "Art.49",
+      "title": "Issuance and redeemability of e-money tokens",
+      "chapter": "IV",
+      "theme": "E-Money Tokens",
+      "requirement": "EMT issuers must issue at par value on receipt of funds and redeem at par value at any time at the holder's request, without charge beyond the cost necessary for the transaction"
+    },
+    {
+      "id": "Art.50",
+      "title": "Prohibition of granting interest",
+      "chapter": "IV",
+      "theme": "E-Money Tokens",
+      "requirement": "Issuers of EMTs and CASPs shall not grant interest or any other benefit related to the length of time during which a holder holds e-money tokens"
+    },
+    {
+      "id": "Art.51",
+      "title": "Content and form of the crypto-asset white paper for e-money tokens",
+      "chapter": "IV",
+      "theme": "E-Money Tokens",
+      "requirement": "EMT issuers must draw up and publish a white paper containing information specified in Annex III before offering EMTs to the public"
+    },
+    {
+      "id": "Art.52",
+      "title": "Liability of issuers of e-money tokens for the information given in a crypto-asset white paper",
+      "chapter": "IV",
+      "theme": "E-money tokens",
+      "requirement": "Where an issuer of an e-money token has infringed Article 51, by providing in its crypto-asset white paper or in a modified crypto-asset white paper, information that is not complete, fair or clear, or that is misleading, that issuer and the members of its administrative, management or supervisory body shall be liable…"
+    },
+    {
+      "id": "Art.53",
+      "title": "Marketing communications",
+      "chapter": "IV",
+      "theme": "E-money tokens",
+      "requirement": "Marketing communications relating to an offer to the public of an e-money token, or to the admission to trading of such e-money token, shall comply with all the following requirements: (a) the marketing communications are clearly identifiable as such; (b) the information in the marketing communications is fair, clear…"
+    },
+    {
+      "id": "Art.54",
+      "title": "Investment of funds received in exchange for e-money tokens",
+      "chapter": "IV",
+      "theme": "E-money tokens",
+      "requirement": "Funds received by issuers of e-money tokens in exchange for e-money tokens and safeguarded in accordance with Article 7(1) of Directive 2009/110/EC shall comply with the following: (a) at least 30 % of the funds received is always deposited in separate accounts in credit institutions; (b) the remaining funds received…"
+    },
+    {
+      "id": "Art.55",
+      "title": "Recovery and redemption plans",
+      "chapter": "IV",
+      "theme": "E-money tokens",
+      "requirement": "Title III, Chapter 6 shall apply mutatis mutandis to issuers of e-money tokens."
+    },
+    {
+      "id": "Art.56",
+      "title": "Classification of e-money tokens as significant e-money tokens",
+      "chapter": "IV",
+      "theme": "E-Money Tokens",
+      "requirement": "EBA classifies EMTs as significant based on same criteria as significant ARTs; significant EMT issuers subject to additional requirements and direct EBA oversight"
+    },
+    {
+      "id": "Art.57",
+      "title": "Voluntary classification of e-money tokens as significant e-money tokens",
+      "chapter": "IV",
+      "theme": "E-money tokens",
+      "requirement": "An issuer of an e-money token, authorised as a credit institution or as an electronic money institution, or applying for such authorisation, may indicate that it wishes for its e-money token to be classified as a significant e-money token."
+    },
+    {
+      "id": "Art.58",
+      "title": "Specific additional obligations for issuers of e-money tokens",
+      "chapter": "IV",
+      "theme": "E-money tokens",
+      "requirement": "Electronic money institutions issuing significant e-money tokens shall be subject to: (a) the requirements referred to in Articles 36, 37, 38 and Article 45, (1) to (4) of this Regulation, instead of Article 7 of Directive 2009/110/EC; (b) the requirements referred to in Article 35(2), (3) and (5) and Article 45(5) of…"
+    },
+    {
+      "id": "Art.59",
+      "title": "Authorisation",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "Only legal persons with registered office in a Member State may apply for CASP authorisation; must meet fit and proper, governance, prudential, and operational requirements"
+    },
+    {
+      "id": "Art.60",
+      "title": "Provision of crypto-asset services by certain financial entities",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "A credit institution may provide crypto-asset services if it notifies the information referred to in paragraph 7 to the competent authority of its home Member State at least 40 working days before providing those services for the first time."
+    },
+    {
+      "id": "Art.61",
+      "title": "Provision of crypto-asset services at the exclusive initiative of the client",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Where a client established or situated in the Union initiates at its own exclusive initiative the provision of a crypto-asset service or activity by a third‐country firm, the requirement for authorisation under Article 59 shall not apply to the provision of that crypto-asset service or activity by the third‐country…"
+    },
+    {
+      "id": "Art.62",
+      "title": "Application for authorisation as a crypto-asset service provider",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "Application must include programme of operations, proof of own funds, governance arrangements, internal control mechanisms, ICT security policies, business continuity, and complaint handling"
+    },
+    {
+      "id": "Art.63",
+      "title": "Assessment of the application for authorisation and grant or refusal of authorisation",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Competent authorities shall promptly, and in any event within five working days of receipt of an application under Article 62(1), acknowledge receipt thereof in writing to the applicant crypto-asset service provider."
+    },
+    {
+      "id": "Art.64",
+      "title": "Withdrawal of authorisation of a crypto-asset service provider",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Competent authorities shall withdraw the authorisation of a crypto-asset service provider if the crypto-asset service provider does any of the following: (a) has not used its authorisation within 12 months of the date of the authorisation; (b) has expressly renounced its authorisation; (c) has not provided…"
+    },
+    {
+      "id": "Art.65",
+      "title": "Cross-border provision of crypto-asset services",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "A crypto-asset service provider that intends to provide crypto-asset services in more than one Member State shall submit the following information to the competent authority of the home Member State: (a) a list of the Member States in which the crypto-asset service provider intends to provide crypto-asset services;…"
+    },
+    {
+      "id": "Art.66",
+      "title": "Obligation to act honestly, fairly and professionally in the best interests of clients",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs must act honestly, fairly, and professionally in the best interests of clients and provide fair, clear, and not misleading information"
+    },
+    {
+      "id": "Art.67",
+      "title": "Prudential requirements",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs must maintain permanent minimum capital (EUR 50,000 to EUR 150,000 depending on services) or a quarter of fixed overheads of the preceding year, whichever is higher"
+    },
+    {
+      "id": "Art.68",
+      "title": "Governance arrangements",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs must have robust governance including clear organisational structure, effective risk management, adequate internal control, and fit and proper management body members"
+    },
+    {
+      "id": "Art.69",
+      "title": "Information to competent authorities",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers shall notify their competent authority without delay of any changes to their management body, prior to the exercise of activities by any new members, and shall provide their competent authority with all of the necessary information to assess compliance with Article 68."
+    },
+    {
+      "id": "Art.70",
+      "title": "Safekeeping of clients' crypto-assets and funds",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers that hold crypto-assets belonging to clients or the means of access to such crypto-assets shall make adequate arrangements to safeguard the ownership rights of clients, especially in the event of the crypto-asset service provider's insolvency, and to prevent the use of clients'…"
+    },
+    {
+      "id": "Art.71",
+      "title": "Complaints-handling procedures",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers shall establish and maintain effective and transparent procedures for the prompt, fair and consistent handling of complaints received from clients and shall publish descriptions of those procedures."
+    },
+    {
+      "id": "Art.72",
+      "title": "Identification, prevention, management and disclosure of conflicts of interest",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers shall implement and maintain effective policies and procedures, taking into account the scale, the nature and range of crypto-asset services provided, to identify, prevent, manage and disclose conflicts of interest between: (a) themselves and: (i) their shareholders or members; (ii) any…"
+    },
+    {
+      "id": "Art.73",
+      "title": "Outsourcing",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers that outsource services or activities to third parties for the performance of operational functions shall take all reasonable steps to avoid additional operational risk."
+    },
+    {
+      "id": "Art.74",
+      "title": "Orderly wind-down of crypto-asset service providers",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers that provide the services referred to in Articles 75 to 79 shall have in place a plan that is appropriate to support an orderly wind-down of their activities under applicable national law, including the continuity or recovery of any critical activities performed by those service…"
+    },
+    {
+      "id": "Art.75",
+      "title": "Providing custody and administration of crypto-assets on behalf of clients",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs providing custody must establish custody policy, segregate client assets from own assets, ensure clients' assets are not used for own account, and return assets without undue delay"
+    },
+    {
+      "id": "Art.76",
+      "title": "Operation of a trading platform for crypto-assets",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs operating trading platforms must establish operating rules, admission criteria, transparent fee structures, and real-time publication of prices, volumes, and completed transactions"
+    },
+    {
+      "id": "Art.77",
+      "title": "Exchange of crypto-assets for funds or other crypto-assets",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs providing exchange services must establish a non-discriminatory commercial policy, publish firm prices or methodology for determining prices, and execute orders at quoted prices"
+    },
+    {
+      "id": "Art.78",
+      "title": "Execution of orders for crypto-assets on behalf of clients",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers executing orders for crypto-assets on behalf of clients shall take all necessary steps to obtain, while executing orders, the best possible result for their clients taking into account factors of price, costs, speed, likelihood of execution and settlement, size, nature, conditions of…"
+    },
+    {
+      "id": "Art.79",
+      "title": "Placing of crypto-assets",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers placing crypto-assets shall communicate the following information to the offeror, to the person seeking admission to trading, or to any third party acting on their behalf, before entering into an agreement with them: (a) the type of placement under consideration, including whether a…"
+    },
+    {
+      "id": "Art.80",
+      "title": "Reception and transmission of orders for crypto-assets on behalf of clients",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers receiving and transmitting orders for crypto-assets on behalf of clients shall establish and implement procedures and arrangements that provide for the prompt and proper transmission of client orders for execution on a trading platform for crypto-assets or to another crypto-asset service…"
+    },
+    {
+      "id": "Art.81",
+      "title": "Providing advice on crypto-assets and providing portfolio management of crypto-assets",
+      "chapter": "V",
+      "theme": "CASP Authorisation & Obligations",
+      "requirement": "CASPs providing advice or portfolio management must assess suitability, act in the client's best interest, provide periodic statements, and disclose conflicts of interest"
+    },
+    {
+      "id": "Art.82",
+      "title": "Providing transfer services for crypto-assets on behalf of clients",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Crypto-asset service providers providing transfer services for crypto-assets on behalf of clients shall conclude an agreement with their clients to specify their duties and their responsibilities."
+    },
+    {
+      "id": "Art.83",
+      "title": "Assessment of proposed acquisitions of crypto-asset service providers",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "Any natural or legal person or such persons acting in concert who have taken a decision either to acquire, directly or indirectly, (the ‘ proposed acquirer') a qualifying holding in a crypto-asset service provider or to increase, directly or indirectly, such a qualifying holding so that the proportion of the voting…"
+    },
+    {
+      "id": "Art.84",
+      "title": "Content of the assessment of proposed acquisitions of crypto-asset service providers",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "When performing the assessment referred to in Article 83(4), the competent authority shall appraise the suitability of the proposed acquirer and the financial soundness of the proposed acquisition referred to in Article 83(1) against all of the following criteria: (a) the reputation of the proposed acquirer; (b) the…"
+    },
+    {
+      "id": "Art.85",
+      "title": "Identification of significant crypto-asset service providers",
+      "chapter": "V",
+      "theme": "Authorisation and operating conditions for crypto-asset service providers",
+      "requirement": "A crypto-asset service provider shall be deemed significant if it has in the Union at least 15 million active users, on average, in one calendar year, where the average is calculated as the average of the daily number of active users throughout the previous calendar year."
+    },
+    {
+      "id": "Art.86",
+      "title": "Scope of the rules on market abuse",
+      "chapter": "VI",
+      "theme": "Market Abuse",
+      "requirement": "Market abuse rules apply to any transaction, order, or behaviour concerning crypto-assets admitted to trading or for which admission has been sought, regardless of where conducted"
+    },
+    {
+      "id": "Art.87",
+      "title": "Inside information",
+      "chapter": "VI",
+      "theme": "Prevention and prohibition of market abuse involving crypto-assets",
+      "requirement": "For the purposes of this Regulation, inside information shall comprise the following types of information: (a) information of a precise nature, which has not been made public, relating, directly or indirectly, to one or more issuers, offerors or persons seeking admission to trading, or to one or more crypto-assets,…"
+    },
+    {
+      "id": "Art.88",
+      "title": "Public disclosure of inside information",
+      "chapter": "VI",
+      "theme": "Prevention and prohibition of market abuse involving crypto-assets",
+      "requirement": "Issuers, offerors and persons seeking admission to trading shall inform the public as soon as possible of inside information referred to in Article 87 that directly concerns them, in a manner that enables fast access as well as complete, correct and timely assessment of the information by the public."
+    },
+    {
+      "id": "Art.89",
+      "title": "Prohibition of insider dealing",
+      "chapter": "VI",
+      "theme": "Market Abuse",
+      "requirement": "No person in possession of inside information shall use that information to acquire or dispose of crypto-assets, or recommend or induce another person to do so"
+    },
+    {
+      "id": "Art.90",
+      "title": "Prohibition of unlawful disclosure of inside information",
+      "chapter": "VI",
+      "theme": "Prevention and prohibition of market abuse involving crypto-assets",
+      "requirement": "No person in possession of inside information shall unlawfully disclose inside information to any other person, except where such disclosure is made in the normal exercise of an employment, a profession or duties."
+    },
+    {
+      "id": "Art.91",
+      "title": "Prohibition of market manipulation",
+      "chapter": "VI",
+      "theme": "Market Abuse",
+      "requirement": "No person shall engage in market manipulation including wash trading, spoofing, layering, dissemination of false or misleading information, or any other artifice to distort prices"
+    },
+    {
+      "id": "Art.92",
+      "title": "Prevention and detection of market abuse",
+      "chapter": "VI",
+      "theme": "Market Abuse",
+      "requirement": "CASPs operating trading platforms must establish and maintain effective systems and procedures for prevention and detection of market abuse; report suspected abuse to competent authority"
+    },
+    {
+      "id": "Art.93",
+      "title": "Competent authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Member States shall designate the competent authorities responsible for carrying out the functions and duties provided for in this Regulation. Member States shall notify those competent authorities to EBA and ESMA."
+    },
+    {
+      "id": "Art.94",
+      "title": "Powers of competent authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In order to perform their duties under Titles II to VI of this Regulation, competent authorities shall have, in accordance with national law, at least the following supervisory and investigative powers: (a) to require any person to provide information and documents which the competent authorities consider could be…"
+    },
+    {
+      "id": "Art.95",
+      "title": "Cooperation between competent authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Competent authorities shall cooperate with each other for the purposes of this Regulation."
+    },
+    {
+      "id": "Art.96",
+      "title": "Cooperation with EBA and ESMA",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "For the purposes of this Regulation, the competent authorities shall cooperate closely with ESMA in accordance with Regulation (EU) No 1095/2010 and with EBA in accordance with Regulation (EU) No 1093/2010."
+    },
+    {
+      "id": "Art.97",
+      "title": "Promotion of convergence on the classification of crypto-assets",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "By 30 December 2024, the ESAs shall jointly issue guidelines in accordance with Article 16 of Regulation (EU) No 1093/2010, Article 16 of Regulation (EU) No 1094/2010 and Article 16 of Regulation (EU) No 1095/2010 to specify the content and form of the explanation accompanying the crypto-asset white paper referred to…"
+    },
+    {
+      "id": "Art.98",
+      "title": "Cooperation with other authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where an offeror, person seeking admission to trading, an issuer of an asset-referenced token or e-money token or a crypto-asset service provider engages in activities other than those covered by this Regulation, the competent authorities shall cooperate with the authorities responsible for the supervision or…"
+    },
+    {
+      "id": "Art.99",
+      "title": "Duty of notification",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Member States shall notify the laws, regulations and administrative provisions implementing this Title, including any relevant criminal law provisions, to the Commission, EBA and ESMA by 30 June 2025."
+    },
+    {
+      "id": "Art.100",
+      "title": "Professional secrecy",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "All information exchanged between the competent authorities under this Regulation that concerns business or operational conditions and other economic or personal affairs shall be considered confidential and shall be subject to the requirements of professional secrecy, except where the competent authority states at the…"
+    },
+    {
+      "id": "Art.101",
+      "title": "Data protection",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "With regard to the processing of personal data within the framework of this Regulation, competent authorities shall carry out their tasks for the purposes of this Regulation in accordance with Regulation (EU) 2016/679."
+    },
+    {
+      "id": "Art.102",
+      "title": "Precautionary measures",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where the competent authority of a host Member State has clear and demonstrable grounds for suspecting that there are irregularities in the activities of an offeror or person seeking admission to trading of crypto-assets, an issuer of an asset-referenced token or e-money token, or a crypto-asset service provider, it…"
+    },
+    {
+      "id": "Art.103",
+      "title": "ESMA temporary intervention powers",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In accordance with Article 9(5) of Regulation (EU) No 1095/2010, ESMA may, where the conditions in paragraphs 2 and 3 of this Article are fulfilled, temporarily prohibit or restrict: (a) the marketing, distribution or sale of certain crypto-assets other than asset-referenced tokens or e-money tokens or crypto-assets…"
+    },
+    {
+      "id": "Art.104",
+      "title": "EBA temporary intervention powers",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In accordance with Article 9(5) of Regulation (EU) No 1093/2010, EBA may, where the conditions in paragraphs 2 and 3 of this Article are fulfilled, temporarily prohibit or restrict: (a) the marketing, distribution or sale of certain asset-referenced tokens or e-money tokens or asset-referenced tokens or e-money tokens…"
+    },
+    {
+      "id": "Art.105",
+      "title": "Product intervention by competent authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "A competent authority may prohibit or restrict the following in or from its Member State: (a) the marketing, distribution or sale of certain crypto-assets or crypto-assets with certain specified features; or (b) a type of activity or practice related to crypto-assets."
+    },
+    {
+      "id": "Art.106",
+      "title": "Coordination with ESMA or EBA",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "ESMA or, for asset-referenced tokens and e-money tokens, EBA, shall perform a facilitating and coordinating role in relation to measures taken by competent authorities pursuant to Article 105."
+    },
+    {
+      "id": "Art.107",
+      "title": "Cooperation with third countries",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "The competent authorities of Member States shall, where necessary, conclude cooperation arrangements with supervisory authorities of third countries concerning the exchange of information with those supervisory authorities of third countries and the enforcement of obligations under this Regulation in those third…"
+    },
+    {
+      "id": "Art.108",
+      "title": "Complaints-handling by competent authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Competent authorities shall set up procedures that allow clients and other interested parties, including consumer associations, to submit complaints to them with regard to alleged infringements of this Regulation by offerors, persons seeking admission to trading, issuers of asset-referenced tokens or e-money tokens,…"
+    },
+    {
+      "id": "Art.109",
+      "title": "Register of crypto-asset white papers, of issuers of asset-referenced tokens and e-money tokens, and of crypto-asset service providers",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "ESMA shall establish a register of: (a) crypto-asset white papers for crypto-assets other than asset-referenced tokens and e-money tokens; (b) issuers of asset-referenced tokens; (c) issuers of e-money tokens; and (d) crypto-asset service providers."
+    },
+    {
+      "id": "Art.110",
+      "title": "Register of non-compliant entities providing crypto-asset services",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "ESMA shall establish a non-exhaustive register of entities that provide crypto-asset services in violation of Article 59 or 61. The register shall contain at least the commercial name or the website of a non-compliant entity and the name of the competent authority that submitted the information."
+    },
+    {
+      "id": "Art.111",
+      "title": "Administrative penalties and other administrative measures",
+      "chapter": "VII",
+      "theme": "Governance & Prudential",
+      "requirement": "Member States must provide for effective, proportionate, and dissuasive administrative penalties and measures for MiCA breaches; minimum powers for competent authorities"
+    },
+    {
+      "id": "Art.112",
+      "title": "Exercise of supervisory powers and powers to impose penalties",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Competent authorities, when determining the type and level of an administrative penalty or other administrative measure to be imposed in accordance with Article 111, shall take into account all relevant circumstances, including, where appropriate: (a) the gravity and the duration of the infringement; (b) whether the…"
+    },
+    {
+      "id": "Art.113",
+      "title": "Right of appeal",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Member States shall ensure that decisions taken by competent authorities under this Regulation are properly reasoned and subject to the right of appeal before a court."
+    },
+    {
+      "id": "Art.114",
+      "title": "Publication of decisions",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "A decision imposing administrative penalties and other administrative measures for an infringement of this Regulation in accordance with Article 111 shall be published by competent authorities on their official websites without undue delay after the natural or legal person subject to that decision has been informed of…"
+    },
+    {
+      "id": "Art.115",
+      "title": "Reporting of administrative penalties and other administrative measures to ESMA and EBA",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "The competent authority shall, on an annual basis, provide ESMA and EBA with aggregate information regarding all administrative penalties and other administrative measures imposed in accordance with Article 111."
+    },
+    {
+      "id": "Art.116",
+      "title": "Reporting of infringements and protection of reporting persons",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Directive (EU) 2019/1937 shall apply to the reporting of infringements of this Regulation and the protection of persons reporting such infringements."
+    },
+    {
+      "id": "Art.117",
+      "title": "Supervisory responsibilities of EBA with respect to issuers of significant asset-referenced tokens and issuers of significant e-money tokens",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where an asset-referenced token has been classified as significant in accordance with Article 43 or 44, the issuer of such asset-referenced token shall carry out its activities under the supervision of EBA. Without prejudice to the powers of national competent authorities under paragraph 2 of this Article, EBA shall…"
+    },
+    {
+      "id": "Art.118",
+      "title": "EBA crypto-asset committee",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "EBA shall create a permanent internal committee pursuant to Article 41 of Regulation (EU) No 1093/2010 for the purposes of preparing EBA's decisions to be taken in accordance with Article 44 thereof, including decisions relating to the supervisory tasks that have been conferred on EBA by this Regulation."
+    },
+    {
+      "id": "Art.119",
+      "title": "Colleges for issuers of significant asset-referenced tokens and significant e-money tokens",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Within 30 calendar days of a decision to classify an asset-referenced token or e-money token as significant pursuant to Article 43, 44, 56 or 57, as applicable, EBA shall establish, manage and chair a consultative supervisory college for each issuer of a significant asset-referenced token or of a significant e-money…"
+    },
+    {
+      "id": "Art.120",
+      "title": "Non-binding opinions of the colleges for issuers of significant asset-referenced tokens and significant e-money tokens",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "A college referred to in Article 119(1) may issue a non-binding opinion on the following: (a) the supervisory reassessment as referred to in Article 117(3); (b) any decision to require an issuer of a significant asset-referenced token or a significant e-money token to hold a higher amount of own funds in accordance…"
+    },
+    {
+      "id": "Art.121",
+      "title": "Legal privilege",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "The powers conferred on EBA by Articles 122 to 125, or on any official or other person authorised by EBA, shall not be used to require the disclosure of information which is subject to legal privilege."
+    },
+    {
+      "id": "Art.122",
+      "title": "Request for information",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In order to carry out its supervisory responsibilities under Article 117, EBA may by simple request or by decision require the following persons to provide all information necessary to enable EBA to carry out its duties under this Regulation: (a) an issuer of a significant asset-referenced token or a person…"
+    },
+    {
+      "id": "Art.123",
+      "title": "General investigative powers",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In order to carry out its supervisory responsibilities under Article 117, EBA may conduct investigations into issuers of significant asset-referenced tokens and issuers of significant e-money tokens."
+    },
+    {
+      "id": "Art.124",
+      "title": "On-site inspections",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In order to carry out its supervisory responsibilities under Article 117, EBA may conduct all necessary on-site inspections at any business premises of the issuers of significant asset-referenced tokens and issuers of significant e-money tokens."
+    },
+    {
+      "id": "Art.125",
+      "title": "Exchange of information",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In order to carry out EBA's supervisory responsibilities under Article 117 and without prejudice to Article 96, EBA and the competent authorities shall provide each other with the information required for the purposes of carrying out their duties under this Regulation without undue delay."
+    },
+    {
+      "id": "Art.126",
+      "title": "Administrative agreements on the exchange of information between EBA and third countries",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "In order to carry out its supervisory responsibilities under Article 117, EBA may conclude administrative agreements on the exchange of information with the supervisory authorities of third countries only if the information disclosed is subject to guarantees of professional secrecy which are at least equivalent to…"
+    },
+    {
+      "id": "Art.127",
+      "title": "Disclosure of information from third countries",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "EBA may disclose information received from supervisory authorities of third countries only where EBA or the competent authority that provided the information to EBA has obtained the express agreement of the supervisory authority of a third country that has transmitted the information and, where applicable, the…"
+    },
+    {
+      "id": "Art.128",
+      "title": "Cooperation with other authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where an issuer of a significant asset-referenced token or an issuer of a significant e-money token engages in activities other than those covered by this Regulation, EBA shall cooperate with the authorities responsible for the supervision of such other activities as provided for in the relevant Union or national law,…"
+    },
+    {
+      "id": "Art.129",
+      "title": "Professional secrecy",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "The obligation of professional secrecy shall apply to EBA and all persons who work or who have worked for EBA as well as for any other person to whom EBA has delegated tasks, including auditors and experts contracted by EBA."
+    },
+    {
+      "id": "Art.130",
+      "title": "Supervisory measures by EBA",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where EBA finds that an issuer of a significant asset-referenced token has committed an infringement as listed in Annex V, it may take one or more of the following measures: (a) adopt a decision requiring the issuer of the significant asset-referenced token to cease the conduct constituting the infringement; (b) adopt…"
+    },
+    {
+      "id": "Art.131",
+      "title": "Fines",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "EBA shall adopt a decision imposing a fine in accordance with paragraph 3 or 4 of this Article where, in accordance with Article 134(8), it finds that: (a) an issuer of a significant asset-referenced token or a member of its management body has, intentionally or negligently, committed an infringement as listed in…"
+    },
+    {
+      "id": "Art.132",
+      "title": "Periodic penalty payments",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "EBA shall adopt a decision imposing periodic penalty payments in order to compel: (a) a person to cease the conduct constituting an infringement in accordance with a decision taken pursuant to Article 130; (b) a person referred to in Article 122(1): (i) to provide complete information which has been requested by a…"
+    },
+    {
+      "id": "Art.133",
+      "title": "Disclosure, nature, enforcement and allocation of fines and periodic penalty payments",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "EBA shall disclose to the public every fine and periodic penalty payment that has been imposed pursuant to Articles 131 and 132, unless such disclosure to the public would seriously jeopardise financial stability or cause disproportionate damage to the parties involved."
+    },
+    {
+      "id": "Art.134",
+      "title": "Procedural rules for taking supervisory measures and imposing fines",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where, in carrying out its supervisory responsibilities under Article 117, there are clear and demonstrable grounds to suspect that there has been or will be an infringement as listed in Annex V or VI, EBA shall appoint an independent investigation officer within EBA to investigate the matter."
+    },
+    {
+      "id": "Art.135",
+      "title": "Hearing of the persons concerned",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Before taking any decision pursuant to Article 130, 131 or 132, EBA shall give the persons subject to an investigation the opportunity to be heard on its findings."
+    },
+    {
+      "id": "Art.136",
+      "title": "Review by the Court of Justice",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "The Court of Justice shall have unlimited jurisdiction to review decisions whereby EBA has imposed a fine, a periodic penalty payment or any administrative penalty or other administrative measure in accordance with this Regulation."
+    },
+    {
+      "id": "Art.137",
+      "title": "Supervisory fees",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "EBA shall charge fees to issuers of significant asset-referenced tokens and issuers of significant e-money tokens."
+    },
+    {
+      "id": "Art.138",
+      "title": "Delegation of tasks by EBA to competent authorities",
+      "chapter": "VII",
+      "theme": "Competent authorities, eba and esma",
+      "requirement": "Where necessary for the proper performance of a supervisory task in respect of issuers of significant asset-referenced tokens or issuers of significant e-money tokens, EBA may delegate specific supervisory tasks to a competent authority."
+    },
+    {
+      "id": "Art.139",
+      "title": "Exercise of the delegation",
+      "chapter": "VIII",
+      "theme": "Delegated acts",
+      "requirement": "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article. The power to adopt delegated acts referred to in Articles 3(2), 43(11), 103(8), 104(8), 105(7), 134(10) and 137(3) shall be conferred on the Commission for a period of 36 months from 29 June 2023."
+    },
+    {
+      "id": "Art.140",
+      "title": "Reports on the application of this Regulation",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "By 30 June 2027, having consulted EBA and ESMA, the Commission shall present a report to the European Parliament and the Council on the application of this Regulation accompanied, where appropriate, by a legislative proposal."
+    },
+    {
+      "id": "Art.141",
+      "title": "ESMA annual report on market developments",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "By 31 December 2025 and every year thereafter, ESMA, in close cooperation with EBA, shall submit a report to the European Parliament and to the Council on the application of this Regulation and developments in markets in crypto-assets."
+    },
+    {
+      "id": "Art.142",
+      "title": "Report on latest developments in crypto-assets",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "By 30 December 2024 and after consulting EBA and ESMA, the Commission shall present a report to the European Parliament and the Council on the latest developments with respect to crypto-assets, in particular on matters that are not addressed in this Regulation, accompanied, where appropriate, by a legislative proposal."
+    },
+    {
+      "id": "Art.143",
+      "title": "Transitional measures",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "Articles 4 to 15 shall not apply to offers to the public of crypto-assets that ended before 30 December 2024."
+    },
+    {
+      "id": "Art.144",
+      "title": "Amendment to Regulation (EU) No 1093/2010",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "In Article 1(2) of Regulation (EU) No 1093/2010, the first subparagraph is replaced by the following: ‘The Authority shall act within the powers conferred by this Regulation and within the scope of Directive 2002/87/EC, Directive 2008/48/EC ( *1 ) , Directive 2009/110/EC, Regulation (EU) No 575/2013 ( *2 ) , Directive…"
+    },
+    {
+      "id": "Art.145",
+      "title": "Amendment to Regulation (EU) No 1095/2010",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "In Article 1(2) of Regulation (EU) No 1095/2010, the first subparagraph is replaced by the following: ‘The Authority shall act within the powers conferred by this Regulation and within the scope of Directives 97/9/EC, 98/26/EC, 2001/34/EC, 2002/47/EC, 2004/109/EC, 2009/65/EC, Directive 2011/61/EU of the European…"
+    },
+    {
+      "id": "Art.146",
+      "title": "Amendment to Directive 2013/36/EU",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "In Annex I to Directive 2013/36/EU, point 15 is replaced by the following: ‘15. Issuing electronic money including electronic-money tokens as defined in Article 3(1), point (7), of Regulation (EU) 2023/1114 of the European Parliament and of the Council ( *13 ) ."
+    },
+    {
+      "id": "Art.147",
+      "title": "Amendment to Directive (EU) 2019/1937",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "In Part I.B of the Annex to Directive (EU) 2019/1937, the following point is added: ‘(xxii) Regulation (EU) 2023/1114 of the European Parliament and of the Council of 31 May 2023 on markets in crypto-assets, and amending Regulations (EU) No 1093/2010 and (EU) No 1095/2010 and Directives 2013/36/EU and (EU) 2019/1937 (…"
+    },
+    {
+      "id": "Art.148",
+      "title": "Transposition of amendments to Directives 2013/36/EU and (EU) 2019/1937",
+      "chapter": "IX",
+      "theme": "Transitional and final provisions",
+      "requirement": "Member States shall adopt and publish, by 30 December 2024, the laws, regulations and administrative provisions necessary to comply with Articles 146 and 147."
+    },
+    {
+      "id": "Art.149",
+      "title": "Entry into force and application",
+      "chapter": "IX",
+      "theme": "General Provisions",
+      "requirement": "Entered into force 29 June 2023. Title III and IV (ARTs and EMTs) apply from 30 June 2024. Remainder applies from 30 December 2024"
+    }
+  ],
+  "divisionKind": "Title",
+  "articleSource": {
+    "celex": "CELEX:32023R1114",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "Headings verbatim. A requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  }
 }

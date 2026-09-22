@@ -65,6 +65,89 @@
       ]
     },
     {
+      "id": "received_date",
+      "type": "text",
+      "label": "Date the request was received",
+      "description": "The response deadline runs from receipt of a valid request, not from the day you start work on it.",
+      "placeholder": "e.g. 3 September 2026"
+    },
+    {
+      "id": "data_subject_type",
+      "type": "select",
+      "label": "Who is the data subject?",
+      "description": "Changes which systems must be searched and which exemptions can apply.",
+      "options": [
+        {
+          "value": "current_customer",
+          "label": "Current customer"
+        },
+        {
+          "value": "former_customer",
+          "label": "Former customer"
+        },
+        {
+          "value": "employee",
+          "label": "Employee / former employee"
+        },
+        {
+          "value": "prospect_declined",
+          "label": "Prospect / declined application"
+        },
+        {
+          "value": "third_party",
+          "label": "Third party (guarantor, UBO, joint account holder)"
+        },
+        {
+          "value": "unverified",
+          "label": "Unknown / identity not yet verified"
+        }
+      ]
+    },
+    {
+      "id": "potential_exemptions",
+      "type": "multi-select",
+      "label": "Potential exemptions or restrictions in play",
+      "description": "Flag anything that may apply. An AML or sanctions flag escalates to the MLRO and Legal before any disclosure.",
+      "options": [
+        {
+          "value": "aml_tipping_off",
+          "label": "AML / tipping-off restriction (STR/SAR or FIU disclosure in scope)"
+        },
+        {
+          "value": "sanctions",
+          "label": "Sanctions match, freeze or licence application"
+        },
+        {
+          "value": "ongoing_investigation",
+          "label": "Ongoing regulatory or law-enforcement investigation"
+        },
+        {
+          "value": "crime_prevention",
+          "label": "Crime prevention / detection (national derogation)"
+        },
+        {
+          "value": "legal_privilege",
+          "label": "Legal professional privilege"
+        },
+        {
+          "value": "third_party_data",
+          "label": "Third-party personal data requiring redaction"
+        },
+        {
+          "value": "retention_obligation",
+          "label": "Statutory retention obligation blocking erasure"
+        },
+        {
+          "value": "manifestly_excessive",
+          "label": "Manifestly unfounded or excessive"
+        },
+        {
+          "value": "none_known",
+          "label": "None known"
+        }
+      ]
+    },
+    {
       "id": "complexity",
       "type": "select",
       "label": "Request complexity",

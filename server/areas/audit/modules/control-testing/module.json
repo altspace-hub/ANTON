@@ -138,6 +138,9 @@
   "recommendedPersonas": [
     "auditor"
   ],
+  "recommendedSkills": [
+    "regulatory-examiner"
+  ],
   "tags": [
     "audit",
     "control-testing",

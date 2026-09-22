@@ -100,7 +100,11 @@ export const BLOCKCHAIN_MODULES: ModuleDefinition[] = [
       creativity: 'balanced',
       outputFormats: ['maturity-assessment', 'detailed-findings'],
       knowledgeSources: {
-        claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'FATF VA guidance, EBA crypto ML/TF risk factors, ACAMS crypto risk frameworks, VASP due diligence standards' },
+        // Web search on (2026-09-18): the prompt's own jurisdiction table says
+        // the FATF grey list is "updated regularly — check latest FATF plenary
+        // outcomes", and FATF status carries 20% of the module's risk score.
+        // Nine of the eleven blockchain modules already search.
+        claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'FATF VA guidance, EBA crypto ML/TF risk factors, ACAMS crypto risk frameworks, VASP due diligence standards' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },
       },
     },

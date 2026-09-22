@@ -634,8 +634,12 @@ export const SURFACED_INSURANCE_MODULES: ModuleDefinition[] = [
       transparencyLevel: 1,
       knowledgeSources: {
         claudeKnowledge: {
+          // Web search on (2026-09-18): the prompt carries an explicit
+          // "_As of: 2026-09 — verify dates against primary sources_" stamp and
+          // says "regulatory requirements change; verify current rules with the
+          // applicable regulator before finalising any compliance assessment".
           enabled: true,
-          webSearchEnabled: false,
+          webSearchEnabled: true,
           description: 'IFSB-8 Takaful governance standards, AAOIFI FAS 12 and governance standards, SAMA Cooperative Insurance Law, BNM Takaful Operational Framework',
         },
         localFolder: { enabled: true, folderPaths: [], recursive: true },

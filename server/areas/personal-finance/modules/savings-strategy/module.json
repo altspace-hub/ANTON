@@ -101,7 +101,7 @@
     {
       "id": "savings-goals",
       "label": "Savings Goals",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "emergency-fund",

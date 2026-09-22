@@ -107,6 +107,17 @@ export async function assemblePack(db: DatabaseAdapter, input: AssembleInput): P
   // type itself for stability.
   const ordered = orderItems(deduped);
 
+  // A finalised pack is locked: its item rows and signed manifest hash are
+  // never rewritten. Re-assembly then only serves exporters, which need the
+  // canonical bodies (they are not persisted). If the recomputed hash
+  // differs, the source rows changed after signing — the bundle carries the
+  // recomputed hash with the old signature, so an offline verifier reports
+  // it; the stored hash stays what was signed.
+  const state = await db.get<{ status: string; hash_manifest: string | null }>(
+    `SELECT status, hash_manifest FROM evidence_packs WHERE id = ?`, input.packId,
+  );
+  const locked = !!state && state.status !== 'draft';
+
   // 3. Write evidence_pack_items rows in one transaction. Preserve existing
   // redaction state across re-assembly (Phase 4): if the same (item_type,
   // item_id) appears again, re-apply its prior redaction so re-collecting
@@ -121,7 +132,7 @@ export async function assemblePack(db: DatabaseAdapter, input: AssembleInput): P
   for (const r of priorRedactions) {
     redactionMap.set(`${r.item_type}:${r.item_id}`, { status: r.redaction_status, reason: r.redaction_reason });
   }
-  await db.transaction(async (tx) => {
+  if (!locked) await db.transaction(async (tx) => {
     await tx.run(`DELETE FROM evidence_pack_items WHERE pack_id = ?`, input.packId);
     for (let i = 0; i < ordered.length; i++) {
       const item = ordered[i];
@@ -177,14 +188,23 @@ export async function assemblePack(db: DatabaseAdapter, input: AssembleInput): P
 
   // 5. Update the pack row with item_count + hash_manifest. retention_until
   // computed here so admins can see it on the cover page even before finalise.
-  const retentionDays = input.retentionDays ?? 183; // ~6 months, EU AI Act Art 26
-  const retentionIso = new Date(Date.now() + retentionDays * 86400000).toISOString();
-  await db.run(
-    `UPDATE evidence_packs
-       SET item_count = ?, hash_manifest = ?, retention_until = ?
-     WHERE id = ?`,
-    ordered.length, manifestHash, retentionIso, input.packId,
-  );
+  if (locked) {
+    if (state && state.hash_manifest && state.hash_manifest !== manifestHash) {
+      log.warn({
+        packId: input.packId, status: state.status,
+        signedHash: state.hash_manifest, recomputedHash: manifestHash,
+      }, 'pack_manifest_drift_after_finalise');
+    }
+  } else {
+    const retentionDays = input.retentionDays ?? 183; // ~6 months, EU AI Act Art 26
+    const retentionIso = new Date(Date.now() + retentionDays * 86400000).toISOString();
+    await db.run(
+      `UPDATE evidence_packs
+         SET item_count = ?, hash_manifest = ?, retention_until = ?
+       WHERE id = ?`,
+      ordered.length, manifestHash, retentionIso, input.packId,
+    );
+  }
 
   // Re-read the pack row so callers get the persisted shape.
   const pack = await readPackRow(db, input.packId);
@@ -280,10 +300,18 @@ function dedupe(items: CollectedItem[]): CollectedItem[] {
 }
 
 function orderItems(items: CollectedItem[]): CollectedItem[] {
-  // type order: project → session → message → audit_log → output_version → other
+  // type order: project → session → message → audit_log → output_version →
+  // the per-run records → the scope roots of the other walkers → other.
+  // Only relative order matters for the manifest hash; the first five keep
+  // their April positions so packs assembled before the new types still
+  // produce the same manifest.
   const TYPE_ORDER = new Map([
     ['project', 0], ['session', 1], ['message', 2],
     ['audit_log', 3], ['output_version', 4],
+    ['run_artifact', 5], ['quality_score', 6], ['oversight_review', 7], ['session_export', 8],
+    ['gap_assessment', 10], ['gap_finding', 11], ['gap_finding_opinion', 12], ['gap_iteration', 13],
+    ['engagement', 20], ['engagement_workstream', 21], ['engagement_iteration', 22],
+    ['task', 30], ['task_execution_result', 31],
   ]);
   return [...items].sort((a, b) => {
     const at = TYPE_ORDER.get(a.itemType) ?? 99;

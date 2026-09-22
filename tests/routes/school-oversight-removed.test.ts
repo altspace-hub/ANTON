@@ -75,6 +75,7 @@ describe('the unrelated EU AI Act oversight feature is untouched', () => {
 
   it('still calls the /api/oversight review endpoints', () => {
     const gate = readFileSync(join(process.cwd(), 'src/components/shared/HumanOversightGate.tsx'), 'utf8');
-    expect(gate).toContain('/api/oversight/reviews');
+    // Wave 3 moved the gate onto fetchWithAuth + API_BASE; the path is the same endpoint.
+    expect(gate).toMatch(/(\/api|\$\{API_BASE\})\/oversight\/reviews/);
   });
 });

@@ -32,7 +32,14 @@ const COLOR_VAR: Record<PinnedModule['color'], string> = {
   green: 'var(--color-green)',
 };
 
-const INTENT_CHIPS = [
+/**
+ * Last-resort chips. The org's own set arrives with the module list
+ * (`ModuleList.chips`, resolved by server/services/app-module-pins.ts from the
+ * org's intent categories and org_type); these four — a compliance
+ * consultant's vocabulary — are only what an instance older than 2026-09-18,
+ * or one with nothing configured, ends up showing.
+ */
+const FALLBACK_INTENT_CHIPS = [
   'Draft something',
   'Review a contract',
   'Explain a regulation',
@@ -69,6 +76,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
   }
   const [pinned,  setPinned]  = useState<PinnedModule[]>([]);
   const [browse,  setBrowse]  = useState<BrowseModule[]>([]);
+  const [chips,   setChips]   = useState<string[]>(FALLBACK_INTENT_CHIPS);
   const [draft,   setDraft]   = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -80,6 +88,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
         if (!cancelled) {
           setPinned(list.pinned);
           setBrowse(list.browse);
+          if (list.chips && list.chips.length > 0) setChips(list.chips);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -179,7 +188,7 @@ export default function WorkModulesScreen({ orgId, onNavigate, onAskWith, onSele
             </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {INTENT_CHIPS.map(chip => (
+            {chips.map(chip => (
               <button
                 key={chip}
                 onClick={() => handleAsk(chip)}

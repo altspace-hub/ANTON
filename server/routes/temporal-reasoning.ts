@@ -1,7 +1,11 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { createTemporalReasoningService } from '../services/temporal-reasoning.js';
+import { createTemporalReasoningService, GOALS_APPLIES_TO, isGoalsAppliesTo } from '../services/temporal-reasoning.js';
 import { safeError } from '../lib/error-response.js';
+
+function userIdOf(req: Request): string {
+  return (req as unknown as { user?: { id?: string } }).user?.id || 'default';
+}
 
 export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -11,9 +15,14 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/goals-profile', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const profile = await service.getGoalsProfile(userId);
-      res.json(profile ?? { user_id: userId, today_focus: [], this_week_goals: [], this_month_goals: [], this_year_goals: [], this_decade_vision: '' });
+      res.json(profile ?? {
+        user_id: userId,
+        today_focus: [], this_week_goals: [], this_month_goals: [], this_year_goals: [],
+        this_decade_vision: '',
+        applies_to: 'markets',
+      });
     } catch (err) {
       const message = safeError(err);
       res.status(500).json({ error: message });
@@ -22,8 +31,16 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.put('/goals-profile', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
-      await service.upsertGoalsProfile(userId, req.body);
+      const userId = userIdOf(req);
+      const body: unknown = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return res.status(400).json({ error: 'body must be a JSON object' });
+      }
+      const { applies_to } = body as { applies_to?: unknown };
+      if (applies_to !== undefined && !isGoalsAppliesTo(applies_to)) {
+        return res.status(400).json({ error: `applies_to must be one of ${GOALS_APPLIES_TO.join(', ')}` });
+      }
+      await service.upsertGoalsProfile(userId, body as Parameters<typeof service.upsertGoalsProfile>[1]);
       const profile = await service.getGoalsProfile(userId);
       res.json(profile);
     } catch (err) {
@@ -36,7 +53,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/domain-strategies', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const strategies = await service.listStrategies(userId);
       res.json(strategies);
     } catch (err) {
@@ -47,7 +64,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.post('/domain-strategies', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const { domain, strategyType, strategyLabel, parameters, atomWeights } = req.body;
       if (!domain || !strategyType) return res.status(400).json({ error: 'domain and strategyType required' });
       const id = await service.createStrategy(userId, { domain, strategyType, strategyLabel, parameters, atomWeights });
@@ -62,7 +79,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/values-constraints', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const scope = (req.query.scope as string) || 'all';
       const constraints = await service.getValuesConstraints(userId, scope);
       res.json(constraints);
@@ -74,7 +91,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.post('/values-constraints', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const { name, description, constraintType, scope, value, enforcement } = req.body;
       if (!name || !constraintType || !value) return res.status(400).json({ error: 'name, constraintType, and value required' });
       const id = await service.createValuesConstraint(userId, { name, description, constraintType, scope, value, enforcement });
@@ -99,7 +116,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/conflict-rules', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const rules = await service.getConflictRules(userId);
       res.json(rules);
     } catch (err) {
@@ -124,7 +141,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.post('/temporal-check', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const { action, context, domain } = req.body;
       if (!action) return res.status(400).json({ error: 'action required' });
       const result = await service.checkTemporalConsequences(action, context ?? '', userId, domain ?? 'finance');
@@ -139,7 +156,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/temporal-log', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
       const logs = await db.all(
         'SELECT * FROM temporal_consequence_log WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
@@ -156,7 +173,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/decision-context', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const domain = (req.query.domain as string) || 'finance';
       const ctx = await service.getDecisionContext(userId, domain);
       res.json(ctx);
@@ -170,7 +187,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/pending-conflicts', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const conflicts = await service.getPendingConflicts(userId);
       res.json(conflicts);
     } catch (err) {
@@ -181,7 +198,7 @@ export async function createTemporalReasoningRoutes(db: DatabaseAdapter): Promis
 
   router.get('/pending-conflicts/count', async (req, res) => {
     try {
-      const userId = (req as any).user?.id || 'default';
+      const userId = userIdOf(req);
       const count = await service.getPendingConflictCount(userId);
       res.json({ count });
     } catch (err) {

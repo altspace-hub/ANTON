@@ -112,6 +112,9 @@
   "recommendedPersonas": [
     "startup-advisor"
   ],
+  "recommendedSkills": [
+    "startup-mode"
+  ],
   "tags": [
     "startup",
     "business-plan",

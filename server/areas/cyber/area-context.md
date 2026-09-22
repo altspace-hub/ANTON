@@ -72,3 +72,5 @@ The central regulation for financial sector cyber resilience. Applies from Janua
 ## Proportionality
 
 DORA applies proportionally. "Simplified ICT risk management" framework available for smaller institutions (microenterprises, small/non-interconnected investment firms, small payment institutions). However, the basic obligations (incident reporting, third-party contracts, basic testing) apply to virtually all entities.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

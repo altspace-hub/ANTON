@@ -3,6 +3,16 @@
   "name": "Swiss Financial Services Act (FinSA) + Financial Institutions Act (FinIA)",
   "shortName": "FinSA / FinIA",
   "reference": "SR 950.1 (FinSA) + SR 954.1 (FinIA)",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
+  "referenceAliases": [
+    "FinSA (Swiss Financial Services Act)",
+    "FinSA",
+    "FIDLEG",
+    "LSFin",
+    "FinIA",
+    "FINIG"
+  ],
   "finsaUrl": "https://www.fedlex.admin.ch/eli/cc/2019/758/en",
   "finiaUrl": "https://www.fedlex.admin.ch/eli/cc/2018/801/en",
   "inForce": "2020-01-01",
@@ -10,13 +20,41 @@
   "supervisor": "FINMA + Supervisory Organisations (SOs)",
   "articleCount": 14,
   "chapters": [
-    {"number": "1", "title": "FinSA — Client classification (Art. 4-5)", "articles": "FinSA 4-5"},
-    {"number": "2", "title": "FinSA — Information duties (Art. 8-9)", "articles": "FinSA 8-9"},
-    {"number": "3", "title": "FinSA — Suitability + appropriateness (Art. 10-14)", "articles": "FinSA 10-14"},
-    {"number": "4", "title": "FinSA — Conflicts of interest (Art. 24-26)", "articles": "FinSA 24-26"},
-    {"number": "5", "title": "FinSA — Prospectus regime (Art. 35-58)", "articles": "FinSA 35-58"},
-    {"number": "6", "title": "FinIA — Authorisation categories (Art. 2 + Title 2)", "articles": "FinIA 2 + Title 2"},
-    {"number": "7", "title": "FinIA — Organisational + capital requirements (Art. 9-15)", "articles": "FinIA 9-15"}
+    {
+      "number": "1",
+      "title": "FinSA — Client classification (Art. 4-5)",
+      "articles": "FinSA 4-5"
+    },
+    {
+      "number": "2",
+      "title": "FinSA — Information duties (Art. 8-9)",
+      "articles": "FinSA 8-9"
+    },
+    {
+      "number": "3",
+      "title": "FinSA — Suitability + appropriateness (Art. 10-14)",
+      "articles": "FinSA 10-14"
+    },
+    {
+      "number": "4",
+      "title": "FinSA — Conflicts of interest (Art. 24-26)",
+      "articles": "FinSA 24-26"
+    },
+    {
+      "number": "5",
+      "title": "FinSA — Prospectus regime (Art. 35-58)",
+      "articles": "FinSA 35-58"
+    },
+    {
+      "number": "6",
+      "title": "FinIA — Authorisation categories (Art. 2 + Title 2)",
+      "articles": "FinIA 2 + Title 2"
+    },
+    {
+      "number": "7",
+      "title": "FinIA — Organisational + capital requirements (Art. 9-15)",
+      "articles": "FinIA 9-15"
+    }
   ],
   "themes": [
     "Client classification",

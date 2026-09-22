@@ -42,7 +42,7 @@ After immediate emergency is addressed, register for longer-term programs.
 
 ## If Your Application Was Rejected
 
-You always have the right to appeal. Steps:
+Most programmes have an appeal or review process, and many rejections are fixed simply by supplying a missing document. Ask the office what the process is and what the deadline is — appeal deadlines are often short. Steps:
 1. Ask for the rejection in writing with the reason stated
 2. Fix the problem (missing document, eligibility issue) if possible
 3. Submit a written appeal to the same office — addressed to the supervisor
@@ -50,3 +50,5 @@ You always have the right to appeal. Steps:
 5. Seek help from a social worker or legal aid if you believe the rejection is wrong
 
 If you face an emergency — no food, no money — go to your nearest ward or village government office TODAY. Emergency assistance programs exist. Do not wait.
+
+_As of: 2026-09 — verify dates against primary sources before relying on them._

@@ -10,7 +10,8 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
-      "gap-scoring-matrix"
+      "gap-scoring-matrix",
+      "action-plan"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {
@@ -93,7 +94,7 @@
     {
       "id": "product-scope",
       "label": "Product Scope",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "non-life-products",
@@ -121,7 +122,7 @@
     {
       "id": "focus-areas",
       "label": "Focus Areas",
-      "type": "multiselect",
+      "type": "multi-select",
       "options": [
         {
           "value": "demands-and-needs",

@@ -88,14 +88,17 @@ const ANNEX_IV: FrameworkDef = {
     {
       id: '1',
       label: '1. General description of the AI system',
-      description: 'Intended purpose, deployer/provider, model versions, system identification.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'session' || i.itemType === 'project'),
+      description: 'Intended purpose, deployer/provider, model versions, system identification. Sessions, projects and the root record of a gap assessment, engagement or task state what the system was used for.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'session' || i.itemType === 'project'
+        || i.itemType === 'gap_assessment' || i.itemType === 'engagement' || i.itemType === 'task',
+      ),
     },
     {
       id: '2',
       label: '2. Detailed description of system elements + development',
-      description: 'Methods + steps for development, design specifications, key design choices including rationale.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log'),
+      description: 'Methods + steps for development, design specifications, key design choices including rationale. The run record (composed prompt pinned by hash, prompt layers, resolved knowledge sources, prompt versions) is the design specification of each run.',
+      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log' || i.itemType === 'run_artifact'),
     },
     {
       id: '3',
@@ -115,8 +118,10 @@ const ANNEX_IV: FrameworkDef = {
     {
       id: '5',
       label: '5. Changes through lifecycle',
-      description: 'Substantial modifications + their justifications. Output versions + version history surface this.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'output_version'),
+      description: 'Substantial modifications + their justifications. Output versions, gap-assessment iterations and engagement iterations surface this.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'output_version' || i.itemType === 'gap_iteration' || i.itemType === 'engagement_iteration',
+      ),
     },
     {
       id: '6',
@@ -135,8 +140,10 @@ const ANNEX_IV: FrameworkDef = {
     {
       id: '8',
       label: '8. Post-market monitoring plan',
-      description: 'How the system\'s real-world performance is monitored after deployment.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log'),  // every AI call is monitored
+      description: 'How the system\'s real-world performance is monitored after deployment. Every AI call is audited; quality scores measure the output, human oversight reviews record the reviewer\'s verdict on it.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'audit_log' || i.itemType === 'quality_score' || i.itemType === 'oversight_review',
+      ),
     },
     {
       id: '9',
@@ -150,14 +157,14 @@ const ANNEX_IV: FrameworkDef = {
 
 const AMLR: FrameworkDef = {
   id: 'amlr',
-  label: 'AMLR — Auditability + Article 21 Record-keeping',
+  label: 'AMLR — Auditability + Article 77 Record retention',
   citation: 'Regulation (EU) 2024/1624 — AML data quality + record-keeping',
   points: [
     {
       id: 'dim.completeness',
       label: 'Dimension 1 — Completeness',
-      description: 'All in-scope events captured (no silent drops). Audit log entries per AI call; every override recorded.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log'),
+      description: 'All in-scope events captured (no silent drops). Audit log entries per AI call, a run record per assistant message; every override recorded.',
+      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log' || i.itemType === 'run_artifact'),
     },
     {
       id: 'dim.accuracy',
@@ -168,8 +175,11 @@ const AMLR: FrameworkDef = {
     {
       id: 'dim.timeliness',
       label: 'Dimension 3 — Timeliness',
-      description: 'Events recorded close to when they happened. Every audit_log entry has a timestamp; every message a created_at.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log' || i.itemType === 'message'),
+      description: 'Events recorded close to when they happened. Every audit_log entry has a timestamp; every message a created_at; the run record is written in the same completion path as the message; a review is stamped when the reviewer signs.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'audit_log' || i.itemType === 'message'
+        || i.itemType === 'run_artifact' || i.itemType === 'oversight_review',
+      ),
     },
     {
       id: 'dim.consistency',
@@ -206,8 +216,11 @@ const GDPR: FrameworkDef = {
     {
       id: 'art_30',
       label: 'Article 30 — Records of processing activities',
-      description: 'For each processing activity: purposes, categories of data subjects + personal data, recipients, retention periods. The pack manifest + audit_log entries provide provenance.',
-      isEvidenced: (items) => items.filter((i) => i.itemType === 'audit_log' || i.itemType === 'session'),
+      description: 'For each processing activity: purposes, categories of data subjects + personal data, recipients, retention periods. The pack manifest + audit_log entries provide provenance; the root record of a session, gap assessment, engagement or task states the purpose.',
+      isEvidenced: (items) => items.filter((i) =>
+        i.itemType === 'audit_log' || i.itemType === 'session'
+        || i.itemType === 'gap_assessment' || i.itemType === 'engagement' || i.itemType === 'task',
+      ),
     },
     {
       id: 'art_5_1c',

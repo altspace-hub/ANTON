@@ -3,17 +3,39 @@
   "name": "FSMA Part 9 — Digital Token Service Provider (DTSP) framework",
   "shortName": "FSMA Part 9 DTSP",
   "reference": "Financial Services and Markets Act 2022 (FSMA), Part 9",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.mas.gov.sg/regulation/acts/fsma",
   "fsmaInForce": "2024-04-28",
   "part9InForce": "2025-06-30",
   "supervisor": "MAS",
   "articleCount": 11,
   "chapters": [
-    {"number": "1", "title": "Scope + DTSP definition", "articles": "Part 9 Division 1"},
-    {"number": "2", "title": "Licensing requirements", "articles": "Part 9 Division 2"},
-    {"number": "3", "title": "AML/CFT obligations (cross-ref MAS notices)", "articles": "Part 9 + MAS Notice PSN01-equivalent"},
-    {"number": "4", "title": "Technology + operational risk + custody", "articles": "Part 9 + MAS TRM"},
-    {"number": "5", "title": "Enforcement", "articles": "Part 9 Division 4"}
+    {
+      "number": "1",
+      "title": "Scope + DTSP definition",
+      "articles": "Part 9 Division 1"
+    },
+    {
+      "number": "2",
+      "title": "Licensing requirements",
+      "articles": "Part 9 Division 2"
+    },
+    {
+      "number": "3",
+      "title": "AML/CFT obligations (cross-ref MAS notices)",
+      "articles": "Part 9 + MAS Notice PSN01-equivalent"
+    },
+    {
+      "number": "4",
+      "title": "Technology + operational risk + custody",
+      "articles": "Part 9 + MAS TRM"
+    },
+    {
+      "number": "5",
+      "title": "Enforcement",
+      "articles": "Part 9 Division 4"
+    }
   ],
   "themes": [
     "Scope — outbound-only DTSP",

@@ -9,6 +9,9 @@ import MarketDisclaimer from '../../components/shared/MarketDisclaimer';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+/** Where the time horizons are injected: Markets runs only, or every run in ANTON. */
+type GoalsAppliesTo = 'markets' | 'all';
+
 interface GoalsProfile {
   user_id: string;
   today_focus: string[];
@@ -16,7 +19,13 @@ interface GoalsProfile {
   this_month_goals: string[];
   this_year_goals: string[];
   this_decade_vision: string;
+  applies_to?: GoalsAppliesTo;
 }
+
+const APPLIES_TO_OPTIONS: Array<{ value: GoalsAppliesTo; label: string; hint: string }> = [
+  { value: 'markets', label: 'Markets only', hint: 'Only Markets decisions see these goals. Work runs are unaffected.' },
+  { value: 'all', label: 'All of ANTON', hint: 'Every run — legal, compliance, HR, Markets — sees these goals as active time horizons.' },
+];
 
 interface DomainStrategy {
   id: string;
@@ -112,6 +121,7 @@ export default function MarketGoalsProfilePage() {
   const [monthText, setMonthText] = useState('');
   const [yearText, setYearText] = useState('');
   const [decadeText, setDecadeText] = useState('');
+  const [appliesTo, setAppliesTo] = useState<GoalsAppliesTo>('markets');
 
   // Domain Strategy state
   const [strategies, setStrategies] = useState<DomainStrategy[]>([]);
@@ -158,6 +168,7 @@ export default function MarketGoalsProfilePage() {
         setMonthText((p.this_month_goals || []).join('\n'));
         setYearText((p.this_year_goals || []).join('\n'));
         setDecadeText(p.this_decade_vision || '');
+        setAppliesTo(p.applies_to === 'all' ? 'all' : 'markets');
       }
 
       if (strategiesRes.ok) {
@@ -220,6 +231,32 @@ export default function MarketGoalsProfilePage() {
       }
     }, 800);
   }, []);
+
+  // ── Save horizon scope (immediate — a one-click choice, not typing) ─────
+
+  const saveAppliesTo = async (value: GoalsAppliesTo) => {
+    const previous = appliesTo;
+    setAppliesTo(value);
+    setSaving(true);
+    try {
+      const res = await fetchWithAuth('/api/goals-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applies_to: value }),
+      });
+      if (res.ok) {
+        const p = await res.json() as GoalsProfile;
+        setAppliesTo(p.applies_to === 'all' ? 'all' : 'markets');
+      } else {
+        setAppliesTo(previous);
+      }
+    } catch (err) {
+      console.error('[GoalsProfile] Scope save error:', err);
+      setAppliesTo(previous);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ── Save Strategy ───────────────────────────────────────────────────────
 
@@ -397,6 +434,29 @@ export default function MarketGoalsProfilePage() {
         <p className="text-xs text-adv-gray">
           Set goals for each time horizon. Every market decision will be evaluated against these. One goal per line.
         </p>
+
+        {/* Horizon scope — the profile is per user, so without this one edit here
+            would put Markets horizons into every Work run. */}
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-adv-dark bg-adv-dark-2 px-4 py-3">
+          <label htmlFor="horizons-applies-to" className="text-sm font-medium text-adv-off-white">
+            These horizons apply to:
+          </label>
+          <select
+            id="horizons-applies-to"
+            value={appliesTo}
+            onChange={(e) => saveAppliesTo(e.target.value === 'all' ? 'all' : 'markets')}
+            disabled={saving}
+            aria-describedby="horizons-applies-to-hint"
+            className="rounded-lg border border-adv-dark bg-adv-dark px-3 py-2 text-sm text-adv-off-white focus:outline-none focus:border-adv-teal disabled:opacity-50"
+          >
+            {APPLIES_TO_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <span id="horizons-applies-to-hint" className="text-sm text-adv-gray">
+            {APPLIES_TO_OPTIONS.find((opt) => opt.value === appliesTo)?.hint}
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>

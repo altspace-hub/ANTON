@@ -169,6 +169,9 @@
   "recommendedPersonas": [
     "auditor"
   ],
+  "recommendedSkills": [
+    "regulatory-examiner"
+  ],
   "tags": [
     "regulatory",
     "examination",

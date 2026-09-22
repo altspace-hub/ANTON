@@ -1,25 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Search, X, ChevronDown, ChevronRight, BookOpen, Globe, BarChart3, MessageSquare, Code, Plus, Check, Users, Brain, Loader2, ExternalLink, Package } from 'lucide-react';
-import { fetchSkills, fetchCommunitySkills, submitCommunitySkill } from '@/lib/api';
+import { Zap, Search, X, ChevronDown, ChevronRight, BookOpen, Globe, BarChart3, MessageSquare, Code, Plus, Check, Users, Brain, Loader2, ExternalLink, Package, Landmark, Wrench, Layers } from 'lucide-react';
+import { fetchSkills, fetchSkill, fetchCommunitySkills, submitCommunitySkill } from '@/lib/api';
+import type { SkillSummary } from '@/lib/types';
 
-interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  author: string;
-  category: string;
-  tags: string[];
-  prompt?: string;
-}
+/** A catalogue entry; `prompt` arrives from GET /api/skills/:id when a card is expanded. */
+type Skill = SkillSummary & { prompt?: string };
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  language:      { label: 'Language',      icon: Globe,          color: 'text-adv-blue' },
-  communication: { label: 'Communication', icon: MessageSquare,  color: 'text-adv-green' },
-  methodology:   { label: 'Methodology',   icon: BarChart3,      color: 'text-adv-gold' },
-  domain:        { label: 'Domain',        icon: BookOpen,       color: 'text-adv-teal' },
-  style:         { label: 'Style',         icon: Code,           color: 'text-adv-blue' },
+  language:      { label: 'Language',            icon: Globe,          color: 'text-adv-blue' },
+  communication: { label: 'Communication',       icon: MessageSquare,  color: 'text-adv-green' },
+  methodology:   { label: 'Methodology',         icon: BarChart3,      color: 'text-adv-gold' },
+  domain:        { label: 'Domain',              icon: BookOpen,       color: 'text-adv-teal' },
+  style:         { label: 'Style',               icon: Code,           color: 'text-adv-blue' },
+  jurisdiction:  { label: 'Jurisdiction',        icon: Landmark,       color: 'text-adv-gold' },
+  technical:     { label: 'Technical standards', icon: Wrench,         color: 'text-adv-teal' },
+  thematic:      { label: 'Thematic knowledge',  icon: Layers,         color: 'text-adv-green' },
 };
 
 interface CommunitySkill {
@@ -224,6 +220,22 @@ export default function SkillsLibrary() {
     loadCommunitySkills();
   }, []);
 
+  // The list endpoint carries no prompt bodies (the disk packs alone are ~330 KB);
+  // fetch one skill's prompt the first time its card is expanded.
+  useEffect(() => {
+    if (!expandedId) return;
+    const current = skills.find((s) => s.id === expandedId);
+    if (!current || current.prompt !== undefined) return;
+    let cancelled = false;
+    fetchSkill(expandedId)
+      .then((full) => {
+        if (cancelled || !full) return;
+        setSkills((prev) => prev.map((s) => (s.id === expandedId ? { ...s, prompt: full.prompt } : s)));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [expandedId, skills]);
+
   const filtered = skills.filter((s) => {
     const matchesQuery = !query || s.name.toLowerCase().includes(query.toLowerCase()) || s.description.toLowerCase().includes(query.toLowerCase()) || s.tags?.some((t) => t.toLowerCase().includes(query.toLowerCase()));
     const matchesCat = !activeCategory || s.category === activeCategory;
@@ -370,7 +382,10 @@ export default function SkillsLibrary() {
                           : <ChevronRight className="h-3.5 w-3.5 text-adv-gray shrink-0" />}
                       </button>
 
-                      {/* Expanded: prompt preview */}
+                      {/* Expanded: prompt preview (fetched on first expand) */}
+                      {isExpanded && skill.prompt === undefined && (
+                        <div className="border-t border-border px-4 py-3 bg-adv-dark-2 text-xs text-adv-gray">Loading prompt…</div>
+                      )}
                       {isExpanded && skill.prompt && (
                         <div className="border-t border-border px-4 py-4 bg-adv-dark-2">
                           <div className="text-xs font-medium uppercase tracking-wider text-adv-gray mb-2">

@@ -4,6 +4,8 @@ import fs from 'fs-extra';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { buildProvenanceAppendix } from '../services/export-provenance.js';
+import { getOversightStatus } from '../services/oversight-status.js';
 
 // PERF-04: Heavy export libraries (docx, exceljs, puppeteer) are loaded lazily on first use
 // to improve server startup time. Dynamic imports are cached by Node's module system after first call.
@@ -91,15 +93,18 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       const title     = (metadata?.title     as string) || basename;
       const author    = (metadata?.author    as string) || 'ANTON by openEXPERT';
       // GOV-04 + ATTR-02: provenance fields passed through to export footers
-      const model           = (metadata?.model           as string | undefined);
-      const thinking        = (metadata?.thinking        as string | undefined);
-      const moduleId        = (metadata?.moduleId        as string | undefined);
-      const sessionId       = (metadata?.sessionId       as string | undefined);
-      const creativity      = (metadata?.creativity      as string | undefined);
-      const documentsLoaded = (metadata?.documentsLoaded as string[] | undefined);
+      let model           = (metadata?.model           as string | undefined);
+      let thinking        = (metadata?.thinking        as string | undefined);
+      let moduleId        = (metadata?.moduleId        as string | undefined);
+      const sessionId     = (metadata?.sessionId       as string | undefined);
+      const messageId     = (metadata?.messageId       as string | undefined);
+      const creativity    = (metadata?.creativity      as string | undefined);
+      let documentsLoaded = (metadata?.documentsLoaded as string[] | undefined);
 
       // EXPORT-03: Track exports per session and inject a change log section
       let exportedContent = content;
+      let exportVersion: number | null = null;
+      let exportContentHash: string | null = null;
       if (sessionId && format !== 'pptx') {
         try {
           const contentHash = crypto.createHash('sha256').update(content).digest('hex').slice(0, 16);
@@ -124,6 +129,8 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
           await db.run(
             `INSERT INTO session_exports (session_id, module_id, format, version, content_hash) VALUES (?, ?, ?, ?, ?)`
           , sessionId, moduleId ?? null, format, newVersion, contentHash);
+          exportVersion = newVersion;
+          exportContentHash = contentHash;
 
           // Inject change log table into exported content
           const versionLabel = `v${newVersion}.0`;
@@ -137,6 +144,52 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
 
           exportedContent = content + changeLog;
         } catch { /* non-fatal — export continues without change log */ }
+      }
+
+      // Wave 3: the provenance appendix. The facts come from the run record on
+      // the server — run id, engine, served model, prompt and output hashes,
+      // every source with its hash, what was skipped, quality score, human
+      // sign-off — and are preferred over the browser's metadata. A missing
+      // record shortens the appendix; it never fails the export.
+      let provenanceMarkdown = '';
+      if (sessionId) {
+        try {
+          const prov = await buildProvenanceAppendix(db, { sessionId, messageId, exportedContent: content, exportVersion, exportContentHash });
+          if (prov) {
+            provenanceMarkdown = prov.markdown;
+            model = prov.facts.modelRequested ?? model;
+            thinking = prov.facts.thinking ?? thinking;
+            moduleId = prov.facts.moduleId ?? moduleId;
+            // The footer's "Sources & scope" line names the documents; the
+            // appendix table carries everything else (pack entries, articles).
+            const DOC_TYPES = new Set(['uploaded_file', 'local_file', 'url', 'web_fetch']);
+            const hashedNames = prov.facts.sources.filter((s) => s.contentHashed && s.sha256 && DOC_TYPES.has(s.type)).map((s) => s.name);
+            if (hashedNames.length > 0) documentsLoaded = hashedNames;
+          }
+        } catch (err) {
+          console.warn('[export] provenance appendix unavailable:', safeError(err));
+        }
+      }
+      exportedContent = exportedContent + provenanceMarkdown;
+
+      // Wave 3: a gated module (gap analysis, sanctions advisory, investigation
+      // support) may require a human sign-off bound to this run before the
+      // file leaves. Off by default (app_settings 'oversight_blocks_export');
+      // when on, the export is refused with the reason rather than silently
+      // producing an unsigned deliverable.
+      if (sessionId && moduleId) {
+        try {
+          const oversight = await getOversightStatus(db, sessionId, moduleId, messageId);
+          if (oversight.blocksExport) {
+            res.status(403).json({
+              error: 'Export blocked: this module requires a human sign-off bound to the answer being exported. Record the sign-off on the output page, then export again.',
+              oversight: { required: oversight.required, signed: oversight.signed },
+            });
+            return;
+          }
+        } catch (err) {
+          console.warn('[export] oversight status unavailable (export continues):', safeError(err));
+        }
       }
 
       // Load brand config from the user profile.
@@ -206,7 +259,8 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
         case 'pptx': {
           const filename = `${basename}.pptx`;
           const fn = await getExporter('pptx') as typeof import('../services/export-pptx.js').generatePptx;
-          const buffer = await fn(content, { title, author });
+          // Wave 3: the provenance appendix becomes the deck's closing slides.
+          const buffer = await fn(content + provenanceMarkdown, { title, author });
           await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

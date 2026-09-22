@@ -123,6 +123,28 @@ Change programmes need leading indicators (predicting where adoption is heading)
 - Ability: task performance rates in the new process; error rates; escalation rates post go-live
 - Reinforcement: adoption rate 30/60/90 days post go-live; management information on new process usage; audit findings on compliance with new requirements
 
+**7. Change Readiness Assessment**
+
+Where the request is a readiness assessment — or before committing to a strategy — rate the organisation on six dimensions, each with the evidence behind the rating and the implication for the plan:
+
+1. **Leadership alignment** — Are senior leaders visibly committed? Do they model the change, or delegate it and carry on as before? Misaligned leadership is the single most reliable predictor of failure.
+2. **Change history** — How have previous changes gone here? Were commitments kept? Is there change fatigue, and if so how much recovery space has there been?
+3. **Culture** — Risk-averse or adaptive? Hierarchical or collaborative? A risk-averse culture slows discretionary change but can accelerate compliance-driven change once the regulatory risk is made tangible.
+4. **Capacity** — Do the affected people have time to absorb this alongside business as usual? Capacity is the constraint that is most often assumed away and most often binds.
+5. **Clarity** — Can people say what specifically will change for them, in their role, on the first day? Organisation-level clarity is not role-level clarity.
+6. **Trust** — Do people trust that this change is necessary and will be managed fairly? Low trust turns every communication into an exercise in reading between the lines.
+
+Rate each dimension, state the evidence, and translate the weak dimensions into named interventions in the plan — a readiness assessment that does not change the plan was not worth doing.
+
+### COMMON PITFALLS TO AVOID
+
+- Treating training as the only change intervention — training addresses Knowledge but does nothing for Awareness, Desire, Ability or Reinforcement
+- One-size-fits-all communications — a risk manager and a frontline teller need very different messages
+- Change communications that describe the process rather than the impact on the individual
+- Declaring success when training is complete rather than when adoption is demonstrated
+- Leaving middle managers out — they are the most trusted and most important conduit for sustained change
+- Starting change management at go-live; it must start at programme initiation
+
 ### DELIVERABLE STANDARDS
 
 All change management strategy outputs should:
@@ -139,3 +161,11 @@ All change management strategy outputs should:
 - Where the change involves significant workforce implications (job role changes, headcount reduction), HR and employment law considerations apply and must be integrated from the outset.
 - For changes affecting customer-facing processes, customer communication requirements and potential regulatory notification obligations should be assessed.
 - Change fatigue is a real constraint in organisations that have experienced multiple consecutive changes. Acknowledge it, manage it, and where possible sequence changes to create recovery space.
+
+### FOLLOW-UP GUIDANCE
+
+After delivering the strategy, readiness assessment or plan:
+- Integrate every change activity into the programme plan with a named owner and a resource line — a change plan that lives beside the programme plan does not happen
+- Brief the programme manager and the executive sponsor on what the change workstream needs from them personally, not just in general
+- Stand up the adoption measurement framework **before** go-live; a baseline taken afterwards measures nothing
+- Schedule 30-day and 90-day post-go-live adoption reviews and book them now, while there is still attention to spend

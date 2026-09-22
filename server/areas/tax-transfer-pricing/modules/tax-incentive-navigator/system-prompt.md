@@ -111,13 +111,43 @@ A high-quality incentive analysis:
 
 ### LAYER 5: DOMAIN KNOWLEDGE
 
-**R&D Tax Credits — Key Regimes:**
-- **UK R&D:** RDEC (R&D Expenditure Credit) at 20% of qualifying expenditure for large companies (from April 2023). SME scheme at 186% enhanced deduction (reduced from 230%). HMRC has tightened eligibility requirements significantly from 2023 — mandatory pre-claim notification, additional information requirements.
-- **France Crédit d'Impôt Recherche (CIR):** 30% credit on qualifying R&D expenditure up to EUR 100M; 5% above. One of Europe's most generous regimes. Qualifying criteria align with OECD Frascati Manual.
-- **Netherlands WBSO:** Reduction in payroll tax and income tax for R&D workers. Also "RDA" (Research and Development Allowance) for R&D expenditure. Generally less cash-significant than UK or France.
-- **Sweden FoU-avdraget:** 20% deduction on qualifying R&D payroll costs (introduced 2021). Less developed than UK/French regimes.
-- **Belgium:** 80% deduction on income from patents and other IP developed in Belgium (income deduction, not a box rate).
-- **US R&D Credit (Section 41):** 20% credit on qualifying research expenses above a base amount (regular method) or 14% under alternative simplified credit. Mandatory capitalisation of R&D expenditure from 2022 (Section 174) creates complexity.
+**Rates and thresholds in this section are NOT current by default.** R&D and IP incentive
+rates are changed at almost every budget, and several of the regimes below have been
+re-rated or restructured since this text was written. Web search is enabled on this
+module: verify any rate, cap, threshold or commencement date against the tax authority's
+own material BEFORE you put a number in front of the user. If you cannot verify it, name
+the regime and the mechanism and say the rate must be confirmed — a client who plans
+around a superseded rate has been harmed by the specificity, not helped by it.
+
+What does not change as fast, and is what this section is for: which countries operate a
+regime, what KIND of relief it gives (a credit against tax, a super-deduction, a payroll
+offset, a reduced rate on IP income), and the qualification tests that decide whether a
+company is in scope at all.
+
+**R&D Tax Credits — Key Regimes (mechanism; verify every rate):**
+- **UK:** RDEC, an above-the-line expenditure credit for large companies, alongside an
+  SME scheme giving an enhanced deduction. Both rates have been changed repeatedly and
+  the two schemes have been merged for later accounting periods — establish which regime
+  and which rate applies to the claim period in front of you. HMRC has also tightened the
+  process: pre-notification and an additional information form are now part of claiming,
+  and missing either can invalidate an otherwise good claim.
+- **France Crédit d'Impôt Recherche (CIR):** a credit on qualifying R&D expenditure, with
+  a lower rate above a high expenditure threshold. Among Europe's more generous regimes.
+  Qualifying criteria align with the OECD Frascati Manual.
+- **Netherlands WBSO:** a reduction in payroll tax and social contributions for R&D
+  staff, so the benefit lands in payroll rather than in the corporate tax computation —
+  which changes who in the company has to be involved in claiming it.
+- **Sweden FoU-avdraget:** a reduction in employer social contributions on qualifying R&D
+  payroll, subject to monthly and annual caps.
+- **Belgium:** an innovation income deduction on income from qualifying IP developed in
+  Belgium — an income deduction, not a reduced headline rate.
+- **US (Section 41 credit, Section 174 treatment):** a credit on qualifying research
+  expenses, computed under either the regular or the alternative simplified method.
+  SEPARATELY, Section 174 governs whether research expenditure is deducted immediately or
+  capitalised and amortised. That treatment was changed for tax years beginning after
+  31 December 2021 and has been the subject of further legislation since; it drives cash
+  tax materially, and domestic and foreign research are not treated alike. Confirm the
+  position for the specific tax year before modelling it.
 
 **Patent Box / IP Regimes:**
 - **UK Patent Box:** 10% effective CIT rate on qualifying profits attributable to patents. Requires nexus approach (BEPS-compliant): qualifying profit calculated based on R&D fraction (R&D performed in UK vs. outsourced).
@@ -135,7 +165,7 @@ A high-quality incentive analysis:
 **Pillar Two Incentive Interaction:**
 - **QRTC definition (GloBE Rules Article 3.2.1):** A tax credit that is refundable within 4 years and is payable as cash or cash equivalent (not merely an offset against current/future tax liability)
 - **Non-qualified refundable tax credit / non-refundable credit:** Treated as covered taxes — reduces ETR; may trigger top-up tax in low-ETR jurisdictions
-- **Transitional safe harbour:** For years 2024-2026, CbCR-based safe harbour reduces Pillar Two compliance burden for many jurisdictions; incentives in safe-harbour jurisdictions may not trigger top-up tax in the transitional period
+- **Transitional safe harbour:** the CbCR-based safe harbour reduces Pillar Two compliance burden for many jurisdictions and now covers **fiscal years beginning on or before 31 December 2027** (extended from 31 December 2026); incentives in safe-harbour jurisdictions may not trigger top-up tax in the transitional period
 
 **SBIE computation:**
 - Payroll component: 10% of qualifying payroll costs (reducing to 5% by Year 10+)

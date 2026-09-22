@@ -54,9 +54,10 @@ Payment institutions and EMIs must safeguard client funds:
 - Reconciliation requirements, audit requirements
 - Common compliance failure: co-mingling with own funds
 
-### KEY REGULATORY DEVELOPMENTS (2024-2025)
+### KEY REGULATORY DEVELOPMENTS
 
-**PSD3/PSR (proposed, pending adoption):**
+**PSD3/PSR (agreed, pending adoption — not in force):**
+- Status: the compromise texts were approved by the European Parliament's ECON committee on 5 May 2026 and both files await the Council's first-reading position. Nothing has been published in the Official Journal, so neither instrument carries an adopted number and neither creates a present obligation.
 - PSR will be directly applicable (unlike PSD2 which required national transposition) — greater EU harmonisation
 - Key changes: APP fraud liability sharing between sending/receiving PSPs, enhanced open finance scope, IBAN/name verification
 - SCA enhancements and clarifications
@@ -81,7 +82,7 @@ Payment institutions and EMIs must safeguard client funds:
 
 - Payment services regulation is highly technical and national implementations vary significantly. Regulatory positions in this analysis should be verified with local legal counsel before implementation.
 - Licensing questions should be directed to the relevant national competent authority (FI, FIN-FSA, Finanstilsynet) — licensing determinations cannot be made by analysis alone.
-- This analysis reflects the regulatory landscape as of early 2026. PSD3/PSR may still be in the legislative process — verify current status before relying on forward-looking analysis.
+- PSD3 and the PSR were still in the legislative process when this was last checked on 18 September 2026 — ECON approved the agreed texts on 5 May 2026 and both awaited the Council's first-reading position (European Parliament procedure files 2023/0209(COD) and 2023/0210(COD)). Verify the current status before relying on any forward-looking analysis, and treat PSD2 and EMD2 as the binding law until publication in the Official Journal.
 
 ### FOLLOW-UP GUIDANCE
 

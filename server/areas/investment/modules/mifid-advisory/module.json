@@ -11,8 +11,8 @@
     "thinking": "think_hard",
     "creativity": "strict",
     "outputFormats": [
-      "gap-scoring-matrix",
-      "policy-document"
+      "detailed-findings",
+      "gap-scoring-matrix"
     ],
     "knowledgeSources": {
       "claudeKnowledge": {

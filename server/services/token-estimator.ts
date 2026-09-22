@@ -10,10 +10,24 @@ try {
   // tiktoken WASM not available — heuristic fallback
 }
 
+/**
+ * Encode in bounded pieces. tiktoken's BPE is quadratic on one long run
+ * without word boundaries (a 200k-char run of a single character took ~30 s
+ * and blocked the event loop; measured 2026-09-16 while hardening the URL
+ * fetcher, which can hand such text in from any website). Prose is unaffected
+ * by the split beyond a token or two at each seam.
+ */
+const ENCODE_CHUNK_CHARS = 2_000;
+
 export function estimateTokens(text: string): number {
   if (_tokenizer) {
     try {
-      return _tokenizer.encode(text).length;
+      if (text.length <= ENCODE_CHUNK_CHARS) return _tokenizer.encode(text).length;
+      let total = 0;
+      for (let i = 0; i < text.length; i += ENCODE_CHUNK_CHARS) {
+        total += _tokenizer.encode(text.slice(i, i + ENCODE_CHUNK_CHARS)).length;
+      }
+      return total;
     } catch {
       // fall through to heuristic
     }

@@ -7,10 +7,11 @@
   "description": "Transform complex actuarial analyses, reserve reports, and technical findings into clear communications for non-technical stakeholders. Produces board-ready summaries, management reports, and stakeholder briefings that convey actuarial insights in accessible language while maintaining technical accuracy.",
   "color": "adv-blue",
   "defaults": {
-    "thinking": "think",
+    "thinking": "think_hard",
     "creativity": "balanced",
     "outputFormats": [
-      "executive-summary"
+      "executive-summary",
+      "quick-briefing"
     ],
     "transparencyLevel": 1,
     "knowledgeSources": {

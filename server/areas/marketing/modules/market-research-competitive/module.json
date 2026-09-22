@@ -110,7 +110,7 @@
       "type": "textarea",
       "label": "Decision this research must inform",
       "description": "What business decision or question will this research answer? This sharpens the analysis.",
-      "placeholder": "e.g., Should we enter the UK market in 2025 or focus on deepening Nordic presence? Which competitor's positioning is most vulnerable to our differentiation?"
+      "placeholder": "e.g., Should we enter the UK market next year or focus on deepening Nordic presence? Which competitor's positioning is most vulnerable to our differentiation?"
     }
   ],
   "recommendedPersonas": [

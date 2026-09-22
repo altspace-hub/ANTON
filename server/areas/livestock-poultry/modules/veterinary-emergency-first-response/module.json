@@ -16,7 +16,7 @@
     "thinking": "think",
     "creativity": "strict",
     "outputFormats": [
-      "quick-briefing"
+      "field-guide"
     ],
     "transparencyLevel": 0,
     "knowledgeSources": {
@@ -160,6 +160,9 @@
   "recommendedPersonas": [
     "agricultural-extension-worker",
     "veteran-farmer"
+  ],
+  "recommendedSkills": [
+    "skill-livestock-diseases"
   ],
   "tags": [
     "emergency",

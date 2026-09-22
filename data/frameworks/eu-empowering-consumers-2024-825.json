@@ -1,0 +1,62 @@
+{
+  "id": "eu-empowering-consumers-2024-825",
+  "name": "Empowering Consumers for the Green Transition Directive",
+  "shortName": "Directive (EU) 2024/825",
+  "reference": "Directive (EU) 2024/825",
+  "coverage": "transcribed",
+  "referenceAliases": [
+    "Empowering Consumers Directive",
+    "Directive (EU) 2024/825 (Empowering Consumers)"
+  ],
+  "applicationDate": "2026-09-27",
+  "supervisor": "National consumer protection authorities (CPC network)",
+  "themes": [],
+  "eurLex": "CELEX:32024L0825",
+  "articleCount": 6,
+  "divisionKind": "Chapter",
+  "chapters": [],
+  "articleSource": {
+    "celex": "CELEX:32024L0825",
+    "retrieved": "2026-09-18",
+    "via": "publications.europa.eu/resource/celex/<CELEX> (XHTML)",
+    "note": "The act as published in the Official Journal, not a consolidation. Headings verbatim; a requirement with no curated text is cut from the article's own operative words, not paraphrased."
+  },
+  "articles": [
+    {
+      "id": "Art.1",
+      "title": "Amendments to Directive 2005/29/EC",
+      "theme": "",
+      "requirement": "Directive 2005/29/EC is amended as follows: (1) in Article 2, the first paragraph is amended as follows: (a) the following point is inserted: ‘(ca) “goods” means goods as defined in Article 2, point (5), of Directive (EU) 2019/771 of the European Parliament and of the Council ( *1 ) ; (b) the following points are…"
+    },
+    {
+      "id": "Art.2",
+      "title": "Amendments to Directive 2011/83/EU",
+      "theme": "",
+      "requirement": "Directive 2011/83/EU is amended as follows: (1) in Article 2, the following points are inserted: ‘(14a) “commercial guarantee of durability” means a producer's commercial guarantee of durability as referred to in Article 17 of Directive (EU) 2019/771, under which the producer is directly liable to the consumer during…"
+    },
+    {
+      "id": "Art.3",
+      "title": "Reporting by the Commission and review",
+      "theme": "",
+      "requirement": "By 27 September 2031, the Commission shall submit a report on the application of this Directive to the European Parliament and to the Council."
+    },
+    {
+      "id": "Art.4",
+      "title": "Transposition",
+      "theme": "",
+      "requirement": "By 27 March 2026, Member States shall adopt and publish the measures necessary to comply with this Directive. They shall immediately inform the Commission thereof."
+    },
+    {
+      "id": "Art.5",
+      "title": "Entry into force",
+      "theme": "",
+      "requirement": "This Directive shall enter into force on the twentieth day following its publication in the Official Journal of the European Union ."
+    },
+    {
+      "id": "Art.6",
+      "title": "Addressees",
+      "theme": "",
+      "requirement": "This Directive is addressed to the Member States. Done at Strasbourg, 28 February 2024. Annex I to Directive 2005/29/EC is amended as follows: (1) the following point is inserted: ‘2a."
+    }
+  ]
+}

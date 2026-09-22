@@ -3,21 +3,55 @@
   "name": "23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services Companies (as amended by Second Amendment, Nov 2023)",
   "shortName": "NYDFS Part 500",
   "reference": "23 NYCRR Part 500",
+  "coverage": "selection",
+  "coverageNote": "A curated selection of the provisions ANTON works with, not the full instrument. No structured public source has been transcribed for it.",
   "url": "https://www.dfs.ny.gov/industry-guidance/cybersecurity-resource-center",
   "originalInForce": "2017-03-01",
   "secondAmendmentInForce": "2023-11-01",
   "finalControlsInForce": "2025-11-01",
   "supervisor": "NYDFS — Cybersecurity Division",
-  "articleCount": 22,
+  "articleCount": 23,
   "chapters": [
-    {"number": "Defs", "title": "§500.1 Definitions", "articles": "§500.1"},
-    {"number": "Core", "title": "Core cybersecurity obligations (§§500.2–500.10)", "articles": "§500.2-§500.10"},
-    {"number": "TPSP", "title": "§500.11 Third Party Service Provider Security Policy", "articles": "§500.11"},
-    {"number": "Tech", "title": "Technology controls (§§500.12–500.15)", "articles": "§500.12-§500.15"},
-    {"number": "IR", "title": "§500.16 Incident Response + BCDR", "articles": "§500.16"},
-    {"number": "Notices", "title": "§500.17 Notices + Annual Certification", "articles": "§500.17"},
-    {"number": "Class A", "title": "Class A enhanced obligations", "articles": "Class A overlay"},
-    {"number": "Admin", "title": "Exemptions + Enforcement + Effective Dates", "articles": "§500.18-§500.23"}
+    {
+      "number": "Defs",
+      "title": "§500.1 Definitions",
+      "articles": "§500.1"
+    },
+    {
+      "number": "Core",
+      "title": "Core cybersecurity obligations (§§500.2–500.10)",
+      "articles": "§500.2-§500.10"
+    },
+    {
+      "number": "TPSP",
+      "title": "§500.11 Third Party Service Provider Security Policy",
+      "articles": "§500.11"
+    },
+    {
+      "number": "Tech",
+      "title": "Technology controls (§§500.12–500.15)",
+      "articles": "§500.12-§500.15"
+    },
+    {
+      "number": "IR",
+      "title": "§500.16 Incident Response + BCDR",
+      "articles": "§500.16"
+    },
+    {
+      "number": "Notices",
+      "title": "§500.17 Notices + Annual Certification",
+      "articles": "§500.17"
+    },
+    {
+      "number": "Class A",
+      "title": "Class A enhanced obligations",
+      "articles": "Class A overlay"
+    },
+    {
+      "number": "Admin",
+      "title": "Exemptions + Enforcement + Effective Dates",
+      "articles": "§500.18-§500.23"
+    }
   ],
   "themes": [
     "Definitions + scope",

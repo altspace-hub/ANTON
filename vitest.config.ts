@@ -11,6 +11,10 @@ export default defineConfig({
     threads: true,
     include: ['tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist', 'build'],
+    // Decides what DATABASE_URL means for the run before any test file loads:
+    // a dedicated ANTON_TEST_DATABASE_URL, CI's service database, or nothing
+    // (the live database is never a default). See tests/setup/db-guard.ts.
+    globalSetup: ['./tests/setup/db-guard.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

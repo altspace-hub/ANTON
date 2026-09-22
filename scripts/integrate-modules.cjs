@@ -17,9 +17,20 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO = path.resolve(__dirname, '..');
-const VALID_FORMATS = new Set(['action-plan','audit-report','board-pack','budget-resource-estimate','compliance-calendar','data-readiness-scorecard','decision-memo','detailed-findings','executive-summary','gap-scoring-matrix','impact-assessment','maturity-assessment','mitigation-plan','monitoring-plan','policy-brief','policy-document','privacy-impact-assessment','quick-briefing','raci-matrix','regulatory-comparison','risk-appetite-statement','stakeholder-presentation','training-material']);
+// Read the format ids from the ONE source of truth rather than a hand-kept copy.
+// The previous hard-coded list held 23 of the repo's 46 formats and `cleanFormats`
+// SILENTLY dropped anything missing from it — `step-by-step-guide`, `field-guide`,
+// `plain-language-guide`, `screenplay` and 19 others. A module authored with this
+// script would have lost its output format without a word. (2026-09-18)
+const VALID_FORMATS = (() => {
+  const src = fs.readFileSync(path.join(REPO, 'src/lib/output-format-definitions.ts'), 'utf8');
+  const ids = new Set();
+  for (const m of src.matchAll(/^\s{4}id: '([a-z0-9-]+)'/gm)) ids.add(m[1]);
+  if (ids.size < 30) throw new Error(`integrate-modules: only parsed ${ids.size} output formats — the parser has drifted from output-format-definitions.ts`);
+  return ids;
+})();
 const VALID_CONTENT = new Set(['gap_analysis','risk_register','process_map','policy_document','analytic_report','plan_document','entity_register','scorecard']);
-const VALID_THINKING = new Set(['quick','think','think_hard','investigate','plan_first']);
+const VALID_THINKING = new Set(['quick','think','think_hard','investigate','plan_first','deep_investigate']);
 const VALID_CREATIVITY = new Set(['strict','balanced','creative']);
 const VALID_COLORS = new Set(['adv-teal','adv-blue','adv-gold','adv-red','adv-green']);
 
@@ -35,9 +46,15 @@ function loadSpecs(p) {
   throw new Error('could not find specs array in ' + p);
 }
 
-function cleanFormats(fmts) {
-  const ok = (fmts || []).filter((f) => VALID_FORMATS.has(f));
-  return ok.length ? Array.from(new Set(ok)) : ['executive-summary', 'action-plan'];
+function cleanFormats(fmts, id) {
+  const given = fmts || [];
+  const bad = given.filter((f) => !VALID_FORMATS.has(f));
+  // Fail loudly. Silently discarding a format the author chose is how a module ends up
+  // emitting a consultant briefing when its author asked for a field guide.
+  if (bad.length) {
+    throw new Error(`integrate-modules: module '${id}' names output format(s) that do not exist: ${bad.join(', ')}`);
+  }
+  return given.length ? Array.from(new Set(given)) : ['executive-summary', 'action-plan'];
 }
 
 function buildModuleJson(s) {
@@ -52,7 +69,7 @@ function buildModuleJson(s) {
     defaults: {
       thinking: thinkOf(s),
       creativity: creatOf(s),
-      outputFormats: cleanFormats(s.outputFormats),
+      outputFormats: cleanFormats(s.outputFormats, s.id),
       transparencyLevel: 1,
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: s.knowledgeDescription || '' },
@@ -80,7 +97,7 @@ function buildPatchEntry(s) {
     defaults: {
       thinking: thinkOf(s),
       creativity: creatOf(s),
-      outputFormats: cleanFormats(s.outputFormats),
+      outputFormats: cleanFormats(s.outputFormats, s.id),
       knowledgeSources: {
         claudeKnowledge: { enabled: true, webSearchEnabled: true, description: '' },
         localFolder: { enabled: true, folderPaths: [], recursive: true },

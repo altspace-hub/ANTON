@@ -10,6 +10,11 @@
  *   • legacy flat-dialect bundles (old antonExport.ts output already in the
  *     wild) are accepted via compatibility mapping — never bricked
  *   • legacy flat non-module types get a friendly "older ANTON version" error
+ *   • Wave 6 fidelity: EVERY applied config field (model, thinking, creativity,
+ *     outputFormats, personas, skills, guidedInputs, referenceOutput,
+ *     defaultKnowledgeLibraryIds, transparencyLevel, knowledgeSources,
+ *     writingTone) survives export → import; built-in `defaults.{…}` is
+ *     flattened; unknown keys are kept; malformed configs are refused
  *
  * Uses an in-memory fake DatabaseAdapter (same pattern as
  * default-model-store.test.ts) so no Postgres is needed.
@@ -24,6 +29,15 @@ import {
 } from '../../server/services/anton-bundler.js';
 import { validateAntonFile } from '../../server/services/anton-validator.js';
 import { importAntonFile } from '../../server/services/anton-importer.js';
+import crypto from 'crypto';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import {
+  APPLIED_CONFIG_KEYS,
+  computeModuleChecksum,
+  serialiseBundleJson,
+} from '../../server/services/anton-module-config.js';
+import { makeFakeBundleDb, customModuleRow } from '../helpers/anton-bundle-fake-db.js';
 
 // A built-in module that has shipped for many versions — stable test anchor.
 const BUILTIN_MODULE_ID = 'gap-analysis';
@@ -168,6 +182,231 @@ describe('custom module export round-trip', () => {
     const result = await importAntonFile(buffer, importDb.db);
     expect(result.success).toBe(true);
     expect(importDb.inserts.length).toBe(1);
+    // Wave 6: not just "an INSERT happened" — the model and guided inputs arrived.
+    const installed = JSON.parse(importDb.inserts[0].params[7] as string) as Record<string, unknown>;
+    expect(installed.model).toBe('claude-opus-4-8');
+    expect(installed.guidedInputs).toEqual([{ id: 'q1', type: 'text', label: 'Question' }]);
+  });
+});
+
+// ── Wave 6: fidelity — every applied field survives export → import ─────────
+
+/** A custom module config that sets EVERY applied field, plus keys no schema knows. */
+const FULL_CONFIG: Record<string, unknown> = {
+  author: 'Fidelity Tester',
+  version: '3.2.1',
+  tags: ['fidelity', 'wave6'],
+  color: '#AB34CD',
+  model: 'sdk:claude-opus-5',
+  thinking: 'investigate',
+  creativity: 'strict',
+  outputFormats: ['executive-summary', 'gap-scoring-matrix', 'action-plan'],
+  personas: ['fcp-expert'],
+  skills: ['board-communication'],
+  guidedInputs: [
+    { id: 'entity_type', type: 'select', label: 'Institution type', required: true, options: [{ value: 'bank', label: 'Bank' }], helpLink: 'kept-unknown-key' },
+    { id: 'scope', type: 'textarea', label: 'Scope', placeholder: 'What is in scope?' },
+  ],
+  referenceOutput: '## Executive summary\n\n| Gap | Rating |\n|---|---|\n| CDD | Amber |',
+  defaultKnowledgeLibraryIds: ['lib-amlr', 'lib-eba-guidelines'],
+  transparencyLevel: 2,
+  knowledgeSources: {
+    modes: {
+      claudeKnowledge: { enabled: true, webSearchEnabled: false, description: 'Built-in knowledge only' },
+      onlineReference: { enabled: true, urls: ['https://eur-lex.europa.eu/eli/reg/2024/1624/oj'], fetchDepth: 'full' },
+      localFolder: { enabled: true, folderPaths: ['C:/Engagements/Acme/AMLR'], recursive: true },
+    },
+    priority: 'local-first',
+  },
+  writingTone: 'formal',
+  futureFeature: { enabled: true, level: 7 },
+};
+
+describe('Wave 6 fidelity — every applied field survives export → import', () => {
+  it('APPLIED_CONFIG_KEYS is the full contract (model, transparencyLevel, knowledgeSources, writingTone included)', () => {
+    expect([...APPLIED_CONFIG_KEYS].sort()).toEqual([
+      'creativity', 'defaultKnowledgeLibraryIds', 'guidedInputs', 'knowledgeSources', 'model',
+      'outputFormats', 'personas', 'referenceOutput', 'skills', 'thinking', 'transparencyLevel', 'writingTone',
+    ]);
+  });
+
+  it('custom module: each applied field is identical after the round trip', async () => {
+    const exporter = makeFakeBundleDb({ modules: [customModuleRow(FULL_CONFIG)] });
+    const buffer = await bundleModuleToAnton(exporter.db, 'custom-ab12cd34');
+    const target = makeFakeBundleDb();
+
+    const result = await importAntonFile(buffer, target.db);
+
+    expect(result.success).toBe(true);
+    const installed = target.configOf(result.moduleId!);
+    for (const key of APPLIED_CONFIG_KEYS) {
+      expect(installed[key], `applied field "${key}" did not survive`).toEqual(FULL_CONFIG[key]);
+    }
+    // Metadata + unknown keys ride along too
+    expect(installed.author).toBe('Fidelity Tester');
+    expect(installed.version).toBe('3.2.1');
+    expect(installed.tags).toEqual(['fidelity', 'wave6']);
+    expect(installed.color).toBe('#AB34CD');
+    expect(installed.futureFeature).toEqual({ enabled: true, level: 7 });
+    // The prompt, icon and name too
+    const row = target.modules.get(result.moduleId!)!;
+    expect(row.system_prompt).toBe(customModuleRow(FULL_CONFIG).system_prompt);
+    expect(row.icon).toBe('🦊');
+    expect(row.name).toBe('Shared Module Fixture');
+  });
+
+  it('a second hop (import → re-export → import) still carries every field, and never the first hop\'s bookkeeping', async () => {
+    const exporter = makeFakeBundleDb({ modules: [customModuleRow(FULL_CONFIG)] });
+    const hop1 = makeFakeBundleDb();
+    const first = await importAntonFile(await bundleModuleToAnton(exporter.db, 'custom-ab12cd34'), hop1.db);
+    expect(hop1.configOf(first.moduleId!).bundleProvenance).toBeDefined();
+
+    const reexport = await bundleModuleToAnton(hop1.db, first.moduleId!);
+    const shipped = JSON.parse(new AdmZip(reexport).getEntry('default-config.json')!.getData().toString('utf-8'));
+    expect(shipped.bundleProvenance).toBeUndefined();
+
+    const hop2 = makeFakeBundleDb();
+    const second = await importAntonFile(reexport, hop2.db);
+    expect(second.success).toBe(true);
+    const installed = hop2.configOf(second.moduleId!);
+    for (const key of APPLIED_CONFIG_KEYS) {
+      expect(installed[key], `applied field "${key}" lost on the second hop`).toEqual(FULL_CONFIG[key]);
+    }
+  });
+
+  it('built-in module: defaults.{…} is flattened — thinking, creativity, outputFormats, transparencyLevel, knowledgeSources and personas arrive', async () => {
+    const moduleJson = JSON.parse(
+      readFileSync(join(process.cwd(), 'server', 'areas', 'fcp', 'modules', BUILTIN_MODULE_ID, 'module.json'), 'utf-8'),
+    ) as { defaults: Record<string, unknown>; guidedInputs: unknown[]; recommendedPersonas?: string[] };
+    const buffer = await bundleBuiltinModuleToAnton(BUILTIN_MODULE_ID);
+
+    // The bundle itself is already flat
+    const shipped = JSON.parse(new AdmZip(buffer).getEntry('default-config.json')!.getData().toString('utf-8'));
+    expect(shipped.defaults).toBeUndefined();
+    expect(shipped.thinking).toBe(moduleJson.defaults.thinking);
+
+    const target = makeFakeBundleDb();
+    const result = await importAntonFile(buffer, target.db);
+    expect(result.success).toBe(true);
+    const installed = target.configOf(result.moduleId!);
+
+    expect(installed.defaults).toBeUndefined();
+    for (const key of ['thinking', 'creativity', 'outputFormats', 'transparencyLevel', 'knowledgeSources'] as const) {
+      expect(installed[key], `built-in default "${key}" did not survive`).toEqual(moduleJson.defaults[key]);
+    }
+    expect(installed.guidedInputs).toEqual(moduleJson.guidedInputs);
+    expect(installed.personas).toEqual(moduleJson.recommendedPersonas);
+  });
+
+  it('an older bundle that still nests defaults.{…} is flattened on import, explicit top-level values winning', async () => {
+    const prompt = 'You are a legacy-nested fixture.';
+    const guided = serialiseBundleJson([]);
+    const config = serialiseBundleJson({
+      label: 'Nested defaults fixture',
+      writingTone: 'casual',
+      defaults: { thinking: 'think_hard', model: 'claude-opus-4-8', writingTone: 'formal', transparencyLevel: 0 },
+    });
+    const zip = new AdmZip();
+    zip.addFile('system-prompt.md', Buffer.from(prompt, 'utf-8'));
+    zip.addFile('guided-inputs.json', Buffer.from(guided, 'utf-8'));
+    zip.addFile('default-config.json', Buffer.from(config, 'utf-8'));
+    zip.addFile('manifest.json', Buffer.from(JSON.stringify({
+      bundle_type: 'module',
+      version: '1.0.0',
+      meta: { id: 'nested-fixture', name: 'Nested Fixture', version: '1.0.0', author: 'Old ANTON', tags: [], category: 'custom', description: '' },
+      dependencies: { requiredSkills: [], requiredPersonas: [], minAntonVersion: '1.0.0' },
+      security: { checksum: `sha256:${computeModuleChecksum(prompt, guided, config)}` },
+    }), 'utf-8'));
+    const target = makeFakeBundleDb();
+
+    const result = await importAntonFile(zip.toBuffer(), target.db);
+
+    expect(result.success).toBe(true);
+    const installed = target.configOf(result.moduleId!);
+    expect(installed.defaults).toBeUndefined();
+    expect(installed.thinking).toBe('think_hard');
+    expect(installed.model).toBe('claude-opus-4-8');
+    expect(installed.transparencyLevel).toBe(0);
+    expect(installed.writingTone).toBe('casual'); // top level wins over the nested value
+  });
+
+  it('legacy flat bundle: toggleDefaults.defaultWritingTone and config.json defaults arrive', async () => {
+    const buffer = buildLegacyFlatBundle();
+    const target = makeFakeBundleDb();
+
+    const result = await importAntonFile(buffer, target.db);
+
+    expect(result.success).toBe(true);
+    const installed = target.configOf(result.moduleId!);
+    expect(installed.writingTone).toBe('professional');
+    expect(installed.thinking).toBe('investigate');
+  });
+
+  it('refuses a default-config.json whose known keys have the wrong type (zod), naming the field', async () => {
+    const exporter = makeFakeBundleDb({ modules: [customModuleRow({ thinking: 'turbo', transparencyLevel: 5 })] });
+    const buffer = await bundleModuleToAnton(exporter.db, 'custom-ab12cd34');
+    const target = makeFakeBundleDb();
+
+    const result = await importAntonFile(buffer, target.db);
+
+    expect(result.success).toBe(false);
+    const error = result.validation.errors.find((e) => e.message === 'default-config.json failed schema validation');
+    expect(error?.details).toContain('thinking');
+    expect(error?.details).toContain('transparencyLevel');
+    expect(target.modules.size).toBe(0);
+  });
+
+  it('refuses a guided input without an id', async () => {
+    const exporter = makeFakeBundleDb({ modules: [customModuleRow({ guidedInputs: [{ type: 'text', label: 'No id' }] })] });
+    const buffer = await bundleModuleToAnton(exporter.db, 'custom-ab12cd34');
+
+    const result = await importAntonFile(buffer, makeFakeBundleDb().db);
+
+    expect(result.success).toBe(false);
+    // The config blob carries a copy of guidedInputs, so whichever file is
+    // checked first refuses it — what matters is the field is named.
+    const error = result.validation.errors.find((e) => /^(guided-inputs|default-config)\.json failed schema validation$/.test(e.message));
+    expect(error?.details).toMatch(/\bid\b/);
+  });
+
+  it('refuses guided-inputs.json that is not an array even when the config copy is fine', async () => {
+    const prompt = 'You are a fixture.';
+    const guided = serialiseBundleJson({ id: 'not-an-array' });
+    const config = serialiseBundleJson({ thinking: 'think' });
+    const zip = new AdmZip();
+    zip.addFile('system-prompt.md', Buffer.from(prompt, 'utf-8'));
+    zip.addFile('guided-inputs.json', Buffer.from(guided, 'utf-8'));
+    zip.addFile('default-config.json', Buffer.from(config, 'utf-8'));
+    zip.addFile('manifest.json', Buffer.from(JSON.stringify({
+      bundle_type: 'module',
+      version: '1.0.0',
+      meta: { id: 'guided-fixture', name: 'Guided Fixture', version: '1.0.0', author: 'x', tags: [], category: 'custom', description: '' },
+      security: { checksum: `sha256:${computeModuleChecksum(prompt, guided, config)}` },
+    }), 'utf-8'));
+
+    const result = await importAntonFile(zip.toBuffer(), makeFakeBundleDb().db);
+
+    expect(result.success).toBe(false);
+    expect(result.validation.errors.some((e) => e.message === 'guided-inputs.json failed schema validation')).toBe(true);
+  });
+
+  it('the bundle records its per-file hashes, and the import stores the fingerprint with the module', async () => {
+    const exporter = makeFakeBundleDb({ modules: [customModuleRow(FULL_CONFIG)] });
+    const buffer = await bundleModuleToAnton(exporter.db, 'custom-ab12cd34');
+    const zip = new AdmZip(buffer);
+    const manifest = JSON.parse(zip.getEntry('manifest.json')!.getData().toString('utf-8'));
+    const sha = (name: string) => crypto.createHash('sha256').update(zip.getEntry(name)!.getData()).digest('hex');
+
+    expect(manifest.security.prompt_sha256).toBe(sha('system-prompt.md'));
+    expect(manifest.security.config_sha256).toBe(sha('default-config.json'));
+    expect(manifest.security.guided_inputs_sha256).toBe(sha('guided-inputs.json'));
+
+    const target = makeFakeBundleDb();
+    const result = await importAntonFile(buffer, target.db);
+    const provenance = target.configOf(result.moduleId!).bundleProvenance as Record<string, unknown>;
+    expect(provenance.checksum).toBe(manifest.security.checksum);
+    expect(provenance.promptSha256).toBe(manifest.security.prompt_sha256);
+    expect(provenance.signed).toBe(false);
   });
 });
 

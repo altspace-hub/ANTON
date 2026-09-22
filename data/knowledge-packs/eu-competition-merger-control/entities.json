@@ -222,7 +222,12 @@
     "metadata": {
       "topic": "dominance-assessment",
       "akzo_presumption": "50% market share",
-      "factors": ["market share", "barriers to entry", "buyer power", "economies of scale"]
+      "factors": [
+        "market share",
+        "barriers to entry",
+        "buyer power",
+        "economies of scale"
+      ]
     }
   },
   {
@@ -245,8 +250,14 @@
     "description": "A lasting change in control arising from: (a) a merger of two or more previously independent undertakings; (b) acquisition of sole or joint control over the whole or parts of one or more undertakings (by purchase of shares/assets, contract, or other means); or (c) creation of a full-function joint venture. Only concentrations with an EU dimension (meeting turnover thresholds) must be notified to the Commission under the EUMR.",
     "metadata": {
       "topic": "concentration-definition",
-      "article": "EUMR Art.3",
-      "types": ["merger", "acquisition of control", "full-function JV"]
+      "article": "3",
+      "types": [
+        "merger",
+        "acquisition of control",
+        "full-function JV"
+      ],
+      "instrument": "Council Regulation (EC) No 139/2004",
+      "article_ref": "EUMR Art.3"
     }
   },
   {
@@ -272,7 +283,12 @@
     "metadata": {
       "topic": "efficiencies",
       "guideline": "Horizontal Merger Guidelines paras 76-88",
-      "conditions": ["verifiable", "merger-specific", "consumer benefit", "timely"]
+      "conditions": [
+        "verifiable",
+        "merger-specific",
+        "consumer benefit",
+        "timely"
+      ]
     }
   },
   {
@@ -284,7 +300,11 @@
     "metadata": {
       "topic": "failing-firm",
       "guideline": "Horizontal Merger Guidelines paras 89-91",
-      "conditions": ["imminent exit", "no alternative purchaser", "assets would exit"]
+      "conditions": [
+        "imminent exit",
+        "no alternative purchaser",
+        "assets would exit"
+      ]
     }
   },
   {
@@ -295,8 +315,17 @@
     "description": "Competition restrictions considered so serious that they are presumed to infringe Art.101(1) and are very unlikely to satisfy Art.101(3). In vertical agreements: resale price maintenance (RPM), absolute territorial protection, restrictions on online sales. In horizontal agreements: price-fixing, output limitation, market allocation, bid rigging. Presence of a hardcore restriction removes the entire agreement from block exemption protection.",
     "metadata": {
       "topic": "hardcore-restrictions",
-      "vertical_examples": ["RPM", "absolute territorial protection", "online sales ban"],
-      "horizontal_examples": ["price-fixing", "output limitation", "market sharing", "bid rigging"]
+      "vertical_examples": [
+        "RPM",
+        "absolute territorial protection",
+        "online sales ban"
+      ],
+      "horizontal_examples": [
+        "price-fixing",
+        "output limitation",
+        "market sharing",
+        "bid rigging"
+      ]
     }
   },
   {
@@ -308,7 +337,11 @@
     "metadata": {
       "topic": "object-vs-effect",
       "key_case": "Cartes Bancaires (C-67/13 P)",
-      "by_object_examples": ["price-fixing", "market allocation", "bid rigging"]
+      "by_object_examples": [
+        "price-fixing",
+        "market allocation",
+        "bid rigging"
+      ]
     }
   },
   {
@@ -346,9 +379,19 @@
     "description": "Services listed in DMA Art.2(2) that can be designated for gatekeeper obligations. Includes: online intermediation services, online search engines, online social networking, video-sharing platform services, number-independent interpersonal communication services, operating systems, web browsers, virtual assistants, cloud computing services, and online advertising services. Each designated gatekeeper receives obligations specific to its designated core platform services.",
     "metadata": {
       "topic": "core-platform-services",
-      "article": "DMA Art.2(2)",
+      "article": "2",
       "count": 10,
-      "examples": ["app stores", "search engines", "social networks", "OS", "browsers", "cloud"]
+      "examples": [
+        "app stores",
+        "search engines",
+        "social networks",
+        "OS",
+        "browsers",
+        "cloud"
+      ],
+      "instrument": "Regulation (EU) 2022/1925",
+      "article_ref": "DMA Art.2(2)",
+      "chapter": "I"
     }
   },
   {
@@ -360,7 +403,13 @@
     "metadata": {
       "topic": "eu-competition-authority",
       "head": "Commissioner for Competition",
-      "powers": ["fines", "commitments", "structural remedies", "dawn raids", "sector inquiries"]
+      "powers": [
+        "fines",
+        "commitments",
+        "structural remedies",
+        "dawn raids",
+        "sector inquiries"
+      ]
     }
   },
   {
@@ -383,7 +432,13 @@
     "description": "Each EU Member State has one or more national competition authorities empowered to apply Articles 101 and 102 TFEU alongside national competition law. Under Regulation 1/2003, NCAs have full power to apply the prohibition and exemption provisions. The ECN+ Directive ensures NCAs have independence, adequate resources, and effective enforcement tools including the power to impose deterrent fines and operate leniency programmes.",
     "metadata": {
       "topic": "national-enforcement",
-      "examples": ["Bundeskartellamt (DE)", "Autorité de la concurrence (FR)", "CMA (post-Brexit observer)", "AGCM (IT)", "CNMC (ES)"],
+      "examples": [
+        "Bundeskartellamt (DE)",
+        "Autorité de la concurrence (FR)",
+        "CMA (post-Brexit observer)",
+        "AGCM (IT)",
+        "CNMC (ES)"
+      ],
       "ecn_plus": true
     }
   },
@@ -408,7 +463,12 @@
     "metadata": {
       "topic": "supreme-competition-court",
       "jurisdiction": "EU",
-      "key_cases": ["Intel", "Cartes Bancaires", "Google Shopping", "Coty"]
+      "key_cases": [
+        "Intel",
+        "Cartes Bancaires",
+        "Google Shopping",
+        "Coty"
+      ]
     }
   },
   {
@@ -434,7 +494,11 @@
     "metadata": {
       "topic": "phase1-review",
       "duration": "25 working days (35 with commitments)",
-      "outcomes": ["unconditional clearance", "clearance with commitments", "Phase II opening"]
+      "outcomes": [
+        "unconditional clearance",
+        "clearance with commitments",
+        "Phase II opening"
+      ]
     }
   },
   {
@@ -446,7 +510,11 @@
     "metadata": {
       "topic": "phase2-review",
       "duration": "90 working days (105/125 extended)",
-      "outcomes": ["unconditional clearance", "clearance with commitments", "prohibition"],
+      "outcomes": [
+        "unconditional clearance",
+        "clearance with commitments",
+        "prohibition"
+      ],
       "statement_of_objections": true
     }
   },
@@ -460,7 +528,12 @@
       "topic": "inspections",
       "legal_basis": "Regulation 1/2003 Art.20-21",
       "obstruction_fine": "up to 1% turnover",
-      "powers": ["enter premises", "examine records", "seal premises", "copy data"]
+      "powers": [
+        "enter premises",
+        "examine records",
+        "seal premises",
+        "copy data"
+      ]
     }
   },
   {
@@ -512,7 +585,11 @@
     "metadata": {
       "topic": "structural-remedies",
       "preference": "preferred by Commission in mergers",
-      "types": ["full business divestiture", "carve-out divestiture", "mix-and-match"],
+      "types": [
+        "full business divestiture",
+        "carve-out divestiture",
+        "mix-and-match"
+      ],
       "monitoring": "trustee-supervised"
     }
   },
@@ -524,7 +601,13 @@
     "description": "Remedies requiring the merged entity to act or refrain from acting in a specified manner, without altering market structure. Examples include access commitments (granting competitors access to key infrastructure, technology, or data), non-discrimination obligations, licensing of IP, interoperability requirements, and firewalls/ring-fencing. Generally considered less effective than structural remedies in merger cases due to monitoring costs and risks of circumvention, but more common in Art.102 cases.",
     "metadata": {
       "topic": "behavioural-remedies",
-      "examples": ["access commitments", "licensing", "non-discrimination", "interoperability", "firewalls"],
+      "examples": [
+        "access commitments",
+        "licensing",
+        "non-discrimination",
+        "interoperability",
+        "firewalls"
+      ],
       "monitoring": "ongoing compliance required"
     }
   },
@@ -538,7 +621,11 @@
       "topic": "gun-jumping",
       "legal_basis": "EUMR Art.7 and Art.14(2)",
       "max_fine": "10% worldwide turnover",
-      "notable_fines": ["Altice €124.5M", "Marine Harvest €20M", "Electrabel €20M"]
+      "notable_fines": [
+        "Altice €124.5M",
+        "Marine Harvest €20M",
+        "Electrabel €20M"
+      ]
     }
   },
   {
@@ -551,7 +638,11 @@
       "topic": "article22-referral",
       "purpose": "catch below-threshold acquisitions",
       "key_case": "Illumina/GRAIL",
-      "sectors": ["digital", "pharma", "biotech"]
+      "sectors": [
+        "digital",
+        "pharma",
+        "biotech"
+      ]
     }
   },
   {
@@ -562,9 +653,18 @@
     "description": "A secret agreement between two or more competing undertakings to restrict competition, typically involving price-fixing, output restriction, market sharing, or bid rigging. Cartels are considered the most serious infringement of competition law and are treated as restrictions by object under Art.101(1). The Commission imposes substantial fines (up to 10% of worldwide turnover) and cartel participants may face criminal prosecution in certain Member States. Detection relies heavily on the leniency programme and dawn raids.",
     "metadata": {
       "topic": "cartel-enforcement",
-      "types": ["price-fixing", "output limitation", "market sharing", "bid rigging"],
+      "types": [
+        "price-fixing",
+        "output limitation",
+        "market sharing",
+        "bid rigging"
+      ],
       "max_fine": "10% worldwide turnover",
-      "detection": ["leniency", "dawn raids", "whistleblowers"]
+      "detection": [
+        "leniency",
+        "dawn raids",
+        "whistleblowers"
+      ]
     }
   },
   {
@@ -576,7 +676,11 @@
     "metadata": {
       "topic": "concerted-practice",
       "key_case": "ICI/Dyestuffs (48/69)",
-      "elements": ["contact", "disclosure of intentions", "subsequent market conduct"]
+      "elements": [
+        "contact",
+        "disclosure of intentions",
+        "subsequent market conduct"
+      ]
     }
   },
   {
@@ -600,7 +704,14 @@
     "metadata": {
       "topic": "information-exchange",
       "guideline": "2023 Horizontal Cooperation Guidelines Ch.6",
-      "risk_factors": ["strategic data", "individualised", "recent", "frequent", "private", "concentrated market"]
+      "risk_factors": [
+        "strategic data",
+        "individualised",
+        "recent",
+        "frequent",
+        "private",
+        "concentrated market"
+      ]
     }
   },
   {
@@ -611,7 +722,14 @@
     "description": "Restrictions in agreements between undertakings at different levels of the supply chain (e.g., manufacturer-distributor). Common types include exclusive distribution, selective distribution, exclusive supply, single branding (non-compete), resale price maintenance (RPM — hardcore restriction), and online sales restrictions. Assessed under the VBER safe harbour (if market shares below 30% and no hardcore restrictions) or individually under Art.101(1) and (3).",
     "metadata": {
       "topic": "vertical-restraints",
-      "types": ["exclusive distribution", "selective distribution", "exclusive supply", "single branding", "RPM", "online restrictions"],
+      "types": [
+        "exclusive distribution",
+        "selective distribution",
+        "exclusive supply",
+        "single branding",
+        "RPM",
+        "online restrictions"
+      ],
       "safe_harbour": "VBER below 30% market share"
     }
   },
@@ -624,7 +742,10 @@
     "metadata": {
       "topic": "resale-price-maintenance",
       "classification": "hardcore restriction / by object",
-      "permissible_alternatives": ["maximum prices", "recommended prices (if genuine)"],
+      "permissible_alternatives": [
+        "maximum prices",
+        "recommended prices (if genuine)"
+      ],
       "vber_status": "excluded from block exemption"
     }
   },
@@ -636,8 +757,14 @@
     "description": "A distribution system where the supplier selects resellers based on specified qualitative or quantitative criteria and resellers agree not to sell to non-authorised distributors. Qualitative selective distribution (based on objective quality criteria applied uniformly) generally falls outside Art.101(1) under the Metro criteria. Quantitative selective distribution (limiting the number of resellers) requires exemption under the VBER or Art.101(3). Online marketplace bans in selective distribution assessed under Coty (C-230/16).",
     "metadata": {
       "topic": "selective-distribution",
-      "key_cases": ["Metro", "Coty (C-230/16)"],
-      "types": ["qualitative (usually lawful)", "quantitative (needs exemption)"]
+      "key_cases": [
+        "Metro",
+        "Coty (C-230/16)"
+      ],
+      "types": [
+        "qualitative (usually lawful)",
+        "quantitative (needs exemption)"
+      ]
     }
   },
   {
@@ -649,7 +776,10 @@
     "metadata": {
       "topic": "self-preferencing",
       "key_case": "Google Shopping (AT.39740)",
-      "dma_articles": ["Art.6(5) ranking", "Art.6(2) data use"],
+      "dma_articles": [
+        "Art.6(5) ranking",
+        "Art.6(2) data use"
+      ],
       "applies_to": "dominant platforms / gatekeepers"
     }
   },
@@ -662,8 +792,16 @@
     "metadata": {
       "topic": "tying-bundling",
       "legal_basis": "Art.102(d) TFEU",
-      "key_cases": ["Microsoft (T-201/04)", "Google Android (AT.40099)"],
-      "elements": ["dominance", "distinct products", "coercion", "foreclosure"]
+      "key_cases": [
+        "Microsoft (T-201/04)",
+        "Google Android (AT.40099)"
+      ],
+      "elements": [
+        "dominance",
+        "distinct products",
+        "coercion",
+        "foreclosure"
+      ]
     }
   },
   {
@@ -675,7 +813,11 @@
     "metadata": {
       "topic": "predatory-pricing",
       "test": "AKZO two-tier cost test",
-      "key_cases": ["AKZO (C-62/86)", "France Télécom", "Post Danmark"],
+      "key_cases": [
+        "AKZO (C-62/86)",
+        "France Télécom",
+        "Post Danmark"
+      ],
       "recoupment_required": false
     }
   },
@@ -688,7 +830,10 @@
     "metadata": {
       "topic": "margin-squeeze",
       "test": "as-efficient competitor test",
-      "key_cases": ["Deutsche Telekom (C-280/08P)", "TeliaSonera (C-52/09)"],
+      "key_cases": [
+        "Deutsche Telekom (C-280/08P)",
+        "TeliaSonera (C-52/09)"
+      ],
       "requires": "vertical integration + dominance upstream"
     }
   },
@@ -741,7 +886,14 @@
       "full_title": "Commission Regulation (EU) No 651/2014",
       "short_name": "GBER",
       "latest_amendment": "2023",
-      "categories": ["regional", "SME", "R&D&I", "training", "environmental", "energy"]
+      "categories": [
+        "regional",
+        "SME",
+        "R&D&I",
+        "training",
+        "environmental",
+        "energy"
+      ]
     }
   },
   {
@@ -753,7 +905,10 @@
     "metadata": {
       "topic": "state-aid-recovery",
       "legal_basis": "Regulation 2015/1589 Art.16",
-      "key_cases": ["Apple/Ireland (€13B)", "Fiat/Luxembourg"],
+      "key_cases": [
+        "Apple/Ireland (€13B)",
+        "Fiat/Luxembourg"
+      ],
       "interest": "compound interest from grant date"
     }
   },
@@ -793,7 +948,12 @@
       "regulation": "DMA",
       "article_number": 6,
       "topic": "specification-obligations",
-      "key_provisions": ["sideloading", "ranking neutrality", "data portability", "interoperability"]
+      "key_provisions": [
+        "sideloading",
+        "ranking neutrality",
+        "data portability",
+        "interoperability"
+      ]
     }
   },
   {

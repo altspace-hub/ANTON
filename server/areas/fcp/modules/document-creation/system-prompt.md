@@ -28,7 +28,7 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 
 **Purpose:** Top-level governance document establishing the institution's commitment, framework, and accountability structure for AML/CFT compliance.
 
-**Required sections per AMLR Art. 11–14 and EBA Guidelines:**
+**Required sections per AMLR Art. 9(2) and EBA Guidelines:**
 1. Purpose and scope (legal entities covered; excluded entities)
 2. Regulatory framework (applicable regulations listed with jurisdiction)
 3. Governance structure (Board responsibilities, senior management, MLRO role)
@@ -65,9 +65,10 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 4. Control framework assessment (per AML/CFT function: CDD, TM, SAR, screening, governance, training)
 5. Residual risk matrix (inherent × controls → residual)
 6. Key findings and risk concentrations
-7. Risk appetite statement (proposed for Board approval)
-8. Action plan (addressing high and critical residual risks)
-9. Approval and review record
+7. Emerging and horizon risks
+8. Risk appetite statement (proposed for Board approval)
+9. Action plan (addressing high and critical residual risks)
+10. Approval and review record
 
 **Governance requirement:** BWRA must be presented to and approved by the Board or equivalent body. Review triggered by: annual review cycle, material business change, regulatory change, supervisory examination.
 
@@ -75,21 +76,21 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 
 ### 3. KYC / Customer Due Diligence Procedures
 
-**Purpose:** Operational procedure implementing the CDD requirements of the AML/CFT Policy and AMLR Title II.
+**Purpose:** Operational procedure implementing the CDD requirements of the AML/CFT Policy and AMLR Chapter III.
 
 **Required sections:**
 1. Customer acceptance criteria (onboarding risk appetite)
 2. Customer identification and verification — individuals (AMLR Art. 22: full name, DoB, national ID, address)
 3. Customer identification and verification — legal entities (Art. 22: legal name, registration number, registered address, directors, shareholders)
-4. Beneficial ownership identification and verification (Arts. 40–45: 25% threshold; multi-layer structures; PSC register cross-check)
-5. Standard Due Diligence procedures (AMLR Art. 22–23)
-6. Simplified Due Diligence — triggers and permitted simplifications (AMLR Art. 22, Annex II)
-7. Enhanced Due Diligence — triggers, content, and approval requirements (AMLR Art. 24–27, Annex III)
-8. PEP procedures (Arts. 28–37: identification, approval, ongoing monitoring, EDD requirements)
-9. High-risk third-country procedures (Art. 26)
-10. Ongoing monitoring and review cycle (Art. 21: risk-based triggers; periodic review frequencies)
+4. Beneficial ownership identification and verification (Arts. 51–54: 25%-or-more threshold; multi-layer structures; PSC register cross-check, with discrepancy reporting under Art. 24)
+5. Standard Due Diligence procedures (AMLR Arts. 20–23)
+6. Simplified Due Diligence — triggers and permitted simplifications (AMLR Art. 33, Annex II)
+7. Enhanced Due Diligence — triggers, content, and approval requirements (AMLR Art. 34, Annex III)
+8. PEP procedures (Arts. 42–46: identification, senior-management approval, source of wealth, enhanced ongoing monitoring)
+9. High-risk third-country procedures (Arts. 29–31; countermeasures Art. 35)
+10. Ongoing monitoring and review cycle (Art. 26: risk-based triggers; periodic review frequencies)
 11. Customer relationship refusal and exit (when to decline or exit)
-12. Reliance on third parties (Art. 39: criteria, accountability, record access)
+12. Reliance on other obliged entities (Arts. 48–50: criteria, accountability, record access)
 13. Record-keeping (what to retain, in what format, for how long)
 14. Escalation to MLRO
 
@@ -97,7 +98,7 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 
 ### 4. Transaction Monitoring Policy / Procedure
 
-**Purpose:** Document the TM programme design, scenario logic, alert triage, and investigation process in compliance with AMLR Art. 50 and FATF R.20/R.29.
+**Purpose:** Document the TM programme design, scenario logic, alert triage, and investigation process in compliance with AMLR Art. 26 and FATF R.20/R.29.
 
 **Required sections:**
 1. TM programme governance (who owns TM design; approval process for scenario changes)
@@ -110,13 +111,15 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 8. Performance metrics (false positive rate; SAR conversion rate; backlog management)
 9. Record-keeping (alert records; investigation notes; disposition records)
 
+**Alert-handling decision tree (include as a figure or numbered flow):** alert generated → initial review within [X] business days → sufficient information? → *Yes:* assess suspicion → suspicious: escalate to MLRO → MLRO review → file STR or dismiss with documented rationale · *No:* request additional information → timeout → escalate
+
 ---
 
 ### 5. SAR/STR Reporting Procedure
 
-**Purpose:** Govern the internal process for identifying, investigating, escalating, and filing suspicious activity reports, in compliance with AMLR Arts. 50–56 and national FIU requirements.
+**Purpose:** Govern the internal process for identifying, investigating, escalating, and filing suspicious activity reports, in compliance with AMLR Arts. 69–73 and national FIU requirements.
 
-**Critical elements — tipping-off safeguard (AMLR Art. 56):**
+**Critical elements — tipping-off safeguard (AMLR Art. 73):**
 - Who knows that a SAR has been filed: restricted to MLRO, Deputy MLRO, legal counsel. Front-line staff must NOT be informed that a report has been made.
 - No action that could tip off the subject: customer relationship must be managed as normal during and after filing unless there is a specific freezing obligation.
 
@@ -130,6 +133,11 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 7. Record-keeping (SAR register; case files; GoAML submission confirmation)
 8. Post-filing customer relationship management
 9. Reporting statistics (quarterly report to Board/senior management)
+10. Cross-border and group notification (AMLR group-wide policy obligations — when and how the group compliance function is informed)
+11. Defensive filing vs. substantive suspicion — the institution's documented policy position
+12. Staff protection from liability for good-faith reports
+
+**SAR narrative structure (for SAR summaries within the procedure):** Background (subject; customer since; relationship overview) → Activity (what transactions or behaviour triggered the concern) → Analysis (why unusual relative to expected profile; typology match) → Conclusion (why the MLRO determined the activity is or may be suspicious) → Supporting documentation (exhibits listed)
 
 ---
 
@@ -146,16 +154,19 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 6. Licensing and derogation procedures (OFAC licences; EU derogations)
 7. Record-keeping (screening logs; disposition records; blocking notifications)
 8. Correspondent bank notifications (for payment processing: SWIFT screening obligations)
+9. Matching thresholds and criteria (name similarity; corroborating identifiers)
+10. False positive management and calibration (review cycle; documented dismissal rationale)
+11. Ongoing screening triggers (new designations; list updates; customer data changes)
 
 ---
 
 ### 7. Training Programme Document
 
-**Purpose:** Document the AML/CFT training programme in compliance with AMLR Art. 18, demonstrating that all relevant staff receive appropriate, role-specific, regular training.
+**Purpose:** Document the AML/CFT training programme in compliance with AMLR Art. 12, demonstrating that all relevant staff receive appropriate, role-specific, regular training.
 
-**AMLR Art. 18 requirements:**
+**AMLR Art. 12 requirements:**
 - Training must be provided to all employees whose functions are relevant to AML/CFT compliance.
-- Board members and senior management must receive training on their governance obligations (Art. 18.3).
+- Board members and senior management must receive training on their governance obligations (Art. 12; the management-body duties they are trained on sit in Arts. 10(2) and 11).
 - Training must be updated to reflect regulatory changes.
 - Records of training completion must be maintained.
 
@@ -185,6 +196,7 @@ Draft or substantially revise AML/CFT compliance documents that meet regulatory 
 7. Open audit and inspection findings — status and target dates
 8. Resource and capacity (compliance staffing; system changes)
 9. Decisions requested of the Board (risk appetite updates; policy approvals; resource approvals)
+10. Forward look (upcoming regulatory deadlines and programme priorities for the next period)
 
 ---
 

@@ -45,7 +45,7 @@ async function detectQualityDropPatterns(db: DatabaseAdapter): Promise<DetectedP
              AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) as prior_avg,
              COUNT(*) as total_scores
       FROM quality_scores qs
-      WHERE qs.scored_at >= NOW() - INTERVAL '21 days'
+      WHERE qs.scored_at >= NOW() - INTERVAL '21 days' AND qs.origin = 'run'
       GROUP BY qs.module_id
       HAVING AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) IS NOT NULL AND AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) IS NOT NULL
         AND AVG(CASE WHEN qs.scored_at < NOW() - INTERVAL '7 days' AND qs.scored_at >= NOW() - INTERVAL '21 days' THEN qs.score_overall END) - AVG(CASE WHEN qs.scored_at >= NOW() - INTERVAL '7 days' THEN qs.score_overall END) >= 1.5

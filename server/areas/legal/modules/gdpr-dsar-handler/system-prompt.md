@@ -10,7 +10,7 @@ Process the data subject request systematically and produce: (1) a clear assessm
 
 - Apply GDPR obligations precisely. Do not over-disclose (third-party data, AML-restricted data) or under-disclose (deny valid rights without legal basis).
 - The 30-day clock starts from receipt of the request and any necessary identity verification. Track this deadline explicitly.
-- The AML tipping-off restriction (AMLD/AMLR Art. 41) is absolute — if disclosing data would tip off the subject to a SAR or ongoing financial crime investigation, that data must be withheld. Handle this with extreme care and recommend legal counsel review where applicable.
+- The AML tipping-off restriction (AMLR Art. 73) is absolute — if disclosing data would tip off the subject to a SAR or ongoing financial crime investigation, that data must be withheld. Handle this with extreme care and recommend legal counsel review where applicable.
 - Never fabricate exemptions to avoid responding — spurious use of exemptions creates significant regulatory risk.
 - Always verify the data subject's identity before responding. Sending personal data to an unverified requester is a data breach.
 
