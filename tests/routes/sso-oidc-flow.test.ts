@@ -21,7 +21,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import express from 'express';
-import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createHash, generateKeyPairSync, sign as rsaSign, randomUUID } from 'node:crypto';
@@ -147,7 +147,18 @@ d('single sign-on (OIDC) end to end', () => {
     const { createAuthRoutes } = await import('../../server/routes/auth.js');
     const { createAuthMiddleware } = await import('../../server/middleware/auth.js');
     const { createAdminRoutes } = await import('../../server/routes/admin.js');
-    expressApp.use(cookieParser());
+    // The production server's limiters and CSRF gate are not what this file tests;
+    // a generous limiter and a plain cookie reader stand in for them.
+    expressApp.use(rateLimit({ windowMs: 60_000, limit: 100_000 }));
+    expressApp.use((req, _res, next) => {
+      const cookies: Record<string, string> = {};
+      for (const part of (req.headers.cookie ?? '').split(';')) {
+        const eq = part.indexOf('=');
+        if (eq > 0) cookies[part.slice(0, eq).trim()] = decodeURIComponent(part.slice(eq + 1).trim());
+      }
+      (req as { cookies?: Record<string, string> }).cookies = cookies;
+      next();
+    });
     expressApp.use(express.json());
     expressApp.use('/api', await createAuthRoutes(db));
     expressApp.use('/api', await createAuthMiddleware(db));

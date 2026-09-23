@@ -464,7 +464,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       });
       const googleUser = await userRes.json() as { email: string; name: string; picture?: string };
 
-      const token = await findOrCreateOAuthUser(db, googleUser.email, googleUser.name, 'google');
+      const token = await sessionForProviderAccount(db, googleUser.email, googleUser.name, 'google');
       res.redirect(`${redirectBase}${createExchangeCode(res, token, isSecureCookie())}`);
     } catch (err) {
       console.error('[auth] Google OAuth error:', err);
@@ -534,7 +534,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      const token = await findOrCreateOAuthUser(db, email, ghUser.name || ghUser.login, 'github');
+      const token = await sessionForProviderAccount(db, email, ghUser.name || ghUser.login, 'github');
       res.redirect(`/?auth_code=${createExchangeCode(res, token, isSecureCookie())}`);
     } catch (err) {
       console.error('[auth] GitHub OAuth error:', err);
@@ -996,7 +996,7 @@ async function acceptPendingInvitations(db: DatabaseAdapter, userId: string, ema
  * directory owns (an OIDC identity) or one that is switched off: a personal
  * Google account with a colleague's address must not become that colleague.
  */
-async function findOrCreateOAuthUser(db: DatabaseAdapter, email: string, name: string, _provider: string): Promise<string> {
+async function sessionForProviderAccount(db: DatabaseAdapter, email: string, name: string, _provider: string): Promise<string> {
   let user = await db.get('SELECT * FROM users WHERE email = ?', email) as Record<string, unknown> | undefined;
 
   if (user && (user.disabled_at || await hasSsoIdentity(db, user.id as string))) {
