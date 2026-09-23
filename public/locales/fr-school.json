@@ -141,7 +141,12 @@
     "stuckPrompt": "Dites-moi exactement ce qui vous bloque. Qu'essayiez-vous de faire ?",
     "progress": "Phase {{current}} sur {{total}}",
     "resolved": "Excellent travail ! Vous avez résolu le problème.",
-    "continue": "Continuer avec le problème initial"
+    "continue": "Continuer avec le problème initial",
+    "stuckQuestion": "Où êtes-vous bloqué ?",
+    "stuckDescription": "Décrivez précisément le point où vous vous êtes perdu. Plus c'est précis, mieux je peux vous aider.",
+    "stuckPlaceholder": "p. ex. « Je comprends comment multiplier, mais quand j'additionne des nombres négatifs, je m'embrouille... »",
+    "startSession": "Travaillons-y ensemble",
+    "iUnderstandNow": "J'ai compris — je retourne à mon travail !"
   },
   "assessment": {
     "multipleChoice": "Choix multiple",

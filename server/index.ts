@@ -194,6 +194,7 @@ import { ensureWorkspacesRoot } from './services/workspace.js';
 import { createServer as createHttpServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { logger } from './lib/logger.js';
+import { lifecycleLog, errorFields, startLifecycleHeartbeat, exitOnListenError } from './lib/lifecycle-log.js';
 import { createMetricsRouter, incrementRequests, incrementErrors } from './routes/metrics.js';
 import { initAuditQueue, flushAuditQueue } from './services/audit-queue.js';
 import { getTotalActiveStreams } from './services/stream-limiter.js';
@@ -1224,8 +1225,11 @@ const BIND_ADDR = lanIntent ? '0.0.0.0' : '127.0.0.1';
 if (!lanIntent) {
   logger.info('[bind] Listening on 127.0.0.1 only — set ANTON_LAN_BIND=true (or configure the app gateway) for LAN phone pairing');
 }
+exitOnListenError(httpServer, PORT);
 httpServer.listen(Number(PORT), BIND_ADDR, async () => {
   logger.info({ port: PORT, apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY }, 'ANTON by openEXPERT server started');
+  lifecycleLog('listening', { port: PORT });
+  startLifecycleHeartbeat();
 
   // mDNS advertising for companion app LAN discovery
   if (APP_GATEWAY_ENABLED) {
@@ -1274,6 +1278,15 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     console.error('[mesh] Failed to start dialer:', err);
   }
 
+  // MARKETS_SCHEDULE_DISABLED=true stops every scheduled Markets job — the
+  // free deterministic loops (NAV, verifier, calibration, sweeps, leaderboards,
+  // triggers, the boot/resume catch-up) as well as the fetching and AI phases
+  // that MARKETS_AUTOMATION already gates — and the nightly refresh of the
+  // Markets materialized views. Nothing is deleted: the Markets pages read
+  // what is stored, and what a person starts in the UI still runs. (2026-09-23)
+  const marketsScheduleDisabled =
+    String(process.env.MARKETS_SCHEDULE_DISABLED || '').toLowerCase() === 'true';
+
   // ── PG-specific: NOTIFY/LISTEN, partitions, materialized views ────────
   if (db.dialect === 'postgresql') {
     try {
@@ -1306,8 +1319,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       console.error('[pg-partitions] Failed to initialize:', err);
     }
 
-    // Daily materialized view refresh at 4 AM
-    if (cron.validate('0 4 * * *')) {
+    // Daily materialized view refresh at 4 AM (the Markets views)
+    if (!marketsScheduleDisabled && cron.validate('0 4 * * *')) {
       cron.schedule('0 4 * * *', async () => {
         console.log('[markets-cron] Refreshing materialized views...');
         try {
@@ -1324,7 +1337,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
   }
 
   // ── Markets Pillar: CET-aligned Trading Day Schedule ─────────────────────
-  try {
+  // The whole schedule below is skipped when MARKETS_SCHEDULE_DISABLED=true.
+  if (marketsScheduleDisabled) {
+    console.log('[markets-schedule] MARKETS_SCHEDULE_DISABLED=true — no Markets job is scheduled (no fetches, no AI phases, no free loops, no catch-up)');
+    lifecycleLog('markets-schedule-disabled');
+  } else try {
     const marketDataService = await createMarketDataService(db);
     const marketAtomService = await createMarketAtomService(db, anthropic);
     const eventTriggerService = await createMarketEventTriggerService(db);
@@ -2686,6 +2703,7 @@ const DRAIN_TIMEOUT_MS = 30_000;
 
 function shutdown(signal: string): void {
   logger.info({ signal }, 'Graceful shutdown initiated');
+  lifecycleLog('shutdown', { signal });
 
   // Tell the SDK engine we are going down, so an in-flight run that aborts
   // reports "the server restarted" rather than guessing at a timeout. Under
@@ -2736,12 +2754,16 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('unhandledRejection', (reason, promise) => {
   logger.error({ err: reason }, 'Unhandled promise rejection (server kept running)');
   console.error('[unhandledRejection]', reason);
+  lifecycleLog('unhandled-rejection', errorFields(reason));
 });
 
 process.on('uncaughtException', (err) => {
   logger.error({ err }, 'Uncaught exception (server kept running)');
   console.error('[uncaughtException]', err);
+  lifecycleLog('uncaught-exception', errorFields(err));
   // Note: after an uncaught exception the process state may be inconsistent.
   // We log but do NOT call process.exit() so the server stays up for the user.
   // In production you may want to trigger a graceful restart instead.
 });
+
+process.on('exit', (code) => lifecycleLog('exit', { code }));

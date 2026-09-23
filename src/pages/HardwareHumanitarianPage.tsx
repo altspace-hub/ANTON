@@ -327,7 +327,7 @@ export default function HardwareHumanitarianPage() {
           </aside>
 
           {/* Active artefact editor */}
-          <main className="lg:col-span-2">
+          <section className="lg:col-span-2">
             {!active ? (
               <div className="p-6 rounded border border-dashed border-adv-gray/30 text-center text-sm text-adv-gray">
                 Select an artefact from the list, or click Generate to create the skeleton in {project.working_language}.
@@ -352,7 +352,7 @@ export default function HardwareHumanitarianPage() {
                 onRegenerate={() => generate(active.kind)}
               />
             )}
-          </main>
+          </section>
         </div>
 
         {showDeploymentEdit && id && (

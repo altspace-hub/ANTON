@@ -82,7 +82,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 space-y-2 max-w-3xl mx-auto w-full">
+      <section className="flex-1 overflow-y-auto print:overflow-visible p-4 space-y-2 max-w-3xl mx-auto w-full">
         {messages.length === 0 && (
           <div className="text-center text-adv-gray text-sm py-12">
             Nothing here yet. Say hi.
@@ -104,7 +104,7 @@ export default function ChatPage() {
           </div>
         ))}
         <div ref={endRef} />
-      </main>
+      </section>
 
       <footer className="border-t border-border bg-adv-card p-3">
         <div className="max-w-3xl mx-auto flex items-end gap-2">

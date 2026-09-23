@@ -62,8 +62,8 @@ export default function RiskAtlasAboutPage() {
             <strong className="text-adv-off-white"> deterministic engine</strong>: you record the paths,
             controls and evidence; fixed rules compute every score. Every score is reproducible across runs;
             every claim is backed by a five-character minimum evidence string. Audit-defensible by construction.
-            For the written assessment, Generate BWRA writes the narrative around the Atlas's own tables and
-            never re-scores them.
+            For the written documents — the BWRA and the company-wide appetite statement — AI writes the
+            narrative around the Atlas's own tables and never re-scores them.
           </p>
         </section>
 
@@ -123,7 +123,7 @@ export default function RiskAtlasAboutPage() {
             <li>• Inherent score = <code className="text-adv-off-white">max(E, T, V)</code> — never an LLM call.</li>
             <li>• Control reduction rolled up worst-of (Strong / Adequate / Weak).</li>
             <li>• Residual = inherent − reduction, clamped to [1, 5].</li>
-            <li>• Scores are never AI-determined. AI writes only the narrative of a generated BWRA, around tables taken from the Atlas, and every score it states is checked.</li>
+            <li>• Scores are never AI-determined. AI can suggest additions, changes and removals — each applied only when a person accepts it, and a change or removal one at a time — and it writes only the narrative of a generated BWRA or company-wide appetite statement, around tables taken from the Atlas, with every score it states checked.</li>
             <li>• Six built-in integrity rules (ATLAS-INT-001..006) flag anything inconsistent.</li>
           </ul>
         </section>
@@ -133,6 +133,7 @@ export default function RiskAtlasAboutPage() {
           <h2 className="text-lg font-semibold mb-3">What you can take out</h2>
           <ul className="space-y-2 text-sm text-adv-gray">
             <li>• Board-ready DOCX pack — Stage 1–7 + Stage 7b + named threat-path narrative.</li>
+            <li>• Company-wide Risk Appetite Statement (Stage 7b) as DOCX — the worst-of rollup, every outside path by name, and a sign-off block.</li>
             <li>• Per-threat-path PDF for control owners.</li>
             <li>• 5×5 heatmap SVG — drop into a board deck.</li>
             <li>

@@ -84,6 +84,7 @@ import { seedAtlasFromProposal } from '../services/risk-atlas/atlas-pack-seeder.
 import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
 import { createAtlasBwra, BwraInputError } from '../services/risk-atlas/atlas-bwra.js';
 import { createAtlasProposals, ProposalInputError, isProposalStage, STAGES } from '../services/risk-atlas/atlas-proposals.js';
+import { createAtlasCompanyAppetite, CompanyAppetiteInputError, REVIEW_CADENCES } from '../services/risk-atlas/atlas-company-appetite.js';
 import { startStepJob, getStepJobSummary } from '../services/step-job-registry.js';
 import { generateDocx } from '../services/export-docx.js';
 import { createAtlasIntegrityRunner, listIntegrityRules } from '../services/risk-atlas/atlas-integrity-rules.js';
@@ -119,6 +120,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
   const atlasExport = createAtlasExport(db);
   const bwra = createAtlasBwra(db);
   const proposals_ = createAtlasProposals(db);
+  const companyAppetite = createAtlasCompanyAppetite(db);
   const integrity = createAtlasIntegrityRunner(db);
   const fcp = createAtlasFcpScopeService(db);
   // Quality ratchet — lazily resolved on first request to avoid blocking
@@ -871,8 +873,9 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
     }
   });
 
-  // Accept a selection in one request; each is applied on its own, and one
-  // failure never stops the rest (the failed one keeps its error).
+  // Accept a selection of ADDITIONS in one request; each is applied on its
+  // own, and one failure never stops the rest (the failed one keeps its error).
+  // A change or removal is refused here — it is decided one at a time.
   router.post('/atlas/:id/proposals/accept', async (req, res) => {
     try {
       const id = String(req.params.id);
@@ -883,13 +886,94 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       const results: Array<{ id: string; status: string; error?: string }> = [];
       for (const pid of ids.data) {
         try {
-          const result = await proposals_.accept(id, pid, userId);
+          const result = await proposals_.accept(id, pid, userId, { bulk: true });
           results.push(result.ok ? { id: pid, status: result.proposal.status } : { id: pid, status: 'refused', error: result.reason });
         } catch (err) {
           results.push({ id: pid, status: 'failed', error: safeError(err) });
         }
       }
       res.json({ results });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  // ── Stage 7b — company-wide Risk Appetite Statement (2026-09-23) ───────
+  // Code renders every position and count from the worst-of rollup; the
+  // model writes only the narrative (atlas-company-appetite.ts). A job keyed
+  // per Atlas, like the BWRA: a reload re-attaches, a second click waits.
+  const appetiteJobKey = (atlasId: string) => `atlas-company-appetite:${atlasId}`;
+  const appetiteOptionsSchema = z.object({
+    approver_name: z.string().trim().max(200).optional(),
+    approver_role: z.string().trim().max(200).optional(),
+    review_cadence: z.enum(REVIEW_CADENCES).optional(),
+  });
+
+  router.post('/atlas/:id/company-appetite/statements', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const parsed = appetiteOptionsSchema.safeParse(req.body ?? {});
+      if (!parsed.success) { res.status(400).json({ error: 'approver_name / approver_role are text; review_cadence is annual, semi-annual or quarterly' }); return; }
+      const userId = (req as AuthedRequest).user!.id;
+      const opts = { approverName: parsed.data.approver_name, approverRole: parsed.data.approver_role, reviewCadence: parsed.data.review_cadence };
+      const meta: Record<string, unknown> = { atlasId: id, status: 'Starting' };
+      const { job, started } = startStepJob(appetiteJobKey(id), meta, async (sink) => {
+        try {
+          const doc = await companyAppetite.generate(id, userId, opts, (status) => {
+            meta.status = status;
+            sink.write(`data: ${JSON.stringify({ type: 'status', message: status })}\n\n`);
+          });
+          meta.docId = doc.id;
+          meta.consistencyIssues = doc.consistency_issues.length;
+          meta.status = 'Done';
+        } catch (err) {
+          throw new Error(err instanceof CompanyAppetiteInputError ? err.message : safeError(err));
+        }
+      });
+      res.status(started ? 202 : 200).json({ started, job: getStepJobSummary(job.key) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/company-appetite/statements/job', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      res.json({ job: getStepJobSummary(appetiteJobKey(id)) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/company-appetite/statements', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      res.json({ documents: await companyAppetite.list(id) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/company-appetite/statements/:docId', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const doc = await companyAppetite.get(id, String(req.params.docId));
+      if (!doc) { res.status(404).json({ error: 'Document not found' }); return; }
+      res.json({ document: doc });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/company-appetite/statements/:docId/docx', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const doc = await companyAppetite.get(id, String(req.params.docId));
+      if (!doc) { res.status(404).json({ error: 'Document not found' }); return; }
+      const buf = await generateDocx(doc.markdown, {
+        title: doc.markdown.split('\n')[0].replace(/^#\s*/, ''),
+        moduleId: 'atlas-company-appetite-consolidator',
+        sessionId: id,
+        author: 'ANTON Risk Atlas',
+      });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="risk-appetite-${encodeURIComponent(id)}-${doc.created_at.slice(0, 10)}.docx"`);
+      res.send(buf);
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 

@@ -32,8 +32,9 @@ const snap: AtlasExportSnapshot = {
       controls: [{ id: 'c1', atlas_id: 'a1', control_code: 'C-1', name: 'Chain analytics', description: null, type: 'detect', strength: 'adequate', evidence: 'Vendor SLA + monthly QA', owner_role: 'MLRO', source_pack_control_id: null, created_at: '', updated_at: '' }],
       residual: { id: 'r1', threat_path_id: 'p-TP-1', residual_score: 4, control_quality_rollup: 'adequate', open_vulnerability_notes: null, calculated_at: '' },
       appetite: { id: 'ap1', atlas_id: 'a1', threat_path_id: 'p-TP-1', appetite_position: 'outside', required_action: 'Whitelist wallets',
-        // node-postgres returns a DATE column as a Date object (a live run crashed on .slice)
-        target_date: new Date('2027-03-31T00:00:00Z') as unknown as string, budget_eur: null, approved_by: null, approved_at: null, created_at: '', updated_at: '' },
+        // node-postgres returns a DATE column as a Date object at LOCAL midnight
+        // (a live run crashed on .slice; another showed the day before east of UTC)
+        target_date: new Date(2027, 2, 31) as unknown as string, budget_eur: null, approved_by: null, approved_at: null, created_at: '', updated_at: '' },
     }),
     path('TP-2', {
       inherent: { id: 'i2', threat_path_id: 'p-TP-2', exposure_score: 3, threat_score: 2, vulnerability_score: 3, inherent_score: 3 } as ThreatPathFull['inherent'],
@@ -52,7 +53,24 @@ vi.mock('../../../server/services/risk-atlas/atlas-export.js', async (orig) => {
 });
 
 const bwraMod = await import('../../../server/services/risk-atlas/atlas-bwra.js');
-const { renderStageTables, parseNarrative, checkConsistency, assembleDocument, createAtlasBwra, BwraInputError, outsideCount } = bwraMod;
+const { renderStageTables, parseNarrative, checkConsistency, assembleDocument, createAtlasBwra, BwraInputError, outsideCount, isoDay } = bwraMod;
+
+describe('isoDay — a DATE column keeps its day in every time zone', () => {
+  // node-postgres parses DATE '2027-03-31' as new Date(2027, 2, 31): local
+  // midnight. Read in UTC that is 2027-03-30T22:00Z east of Greenwich — the
+  // live 2026-09-23 run showed a 2027-03-31 target as 2027-03-30.
+  it.each(['Europe/Stockholm', 'Asia/Tokyo', 'America/New_York', 'UTC'])('%s', (tz) => {
+    const saved = process.env.TZ;
+    process.env.TZ = tz;
+    try {
+      expect(isoDay(new Date(2027, 2, 31))).toBe('2027-03-31');
+      expect(isoDay('2026-12-31')).toBe('2026-12-31');
+      expect(isoDay(new Date(Number.NaN))).toBeNull();
+    } finally {
+      if (saved === undefined) delete process.env.TZ; else process.env.TZ = saved;
+    }
+  });
+});
 
 describe('renderStageTables — the numbers come from the Atlas', () => {
   const t = renderStageTables(snap);

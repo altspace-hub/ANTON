@@ -197,7 +197,7 @@ export default function HardwareReviewQueuePage() {
             ))}
           </ul>
 
-          <main className="lg:col-span-2">
+          <section className="lg:col-span-2">
             {!active ? (
               <div className="p-6 rounded border border-dashed border-adv-gray/30 text-center text-sm text-adv-gray">
                 Select a submission to review or withdraw.
@@ -216,7 +216,7 @@ export default function HardwareReviewQueuePage() {
                 onWithdraw={() => setWithdrawTargetId(active.id)}
               />
             )}
-          </main>
+          </section>
         </div>
 
         <ConfirmModal

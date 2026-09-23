@@ -27,7 +27,9 @@ export type AtlasEventType =
   | 'cross_domain_bundle_created' | 'cross_domain_bundle_member_added'
   | 'cross_domain_bundle_member_removed' | 'cross_domain_bundle_deleted'
   // 2026-09-22 — a BWRA document generated from this Atlas (atlas-bwra.ts)
-  | 'bwra_generated';
+  | 'bwra_generated'
+  // 2026-09-23 — a Stage 7b company-wide appetite statement (atlas-company-appetite.ts)
+  | 'company_appetite_generated';
 
 export interface LogEventInput {
   atlasId: string;

@@ -194,7 +194,7 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
     return bundles.map(b => ({ ...b, members: rows.filter(r => r.bundle_id === b.id) }));
   }
 
-  async function createBundle(atlasId: string, input: { bundle_code: string; name: string; description?: string; primary_domain?: FcpDomain; member_path_ids?: string[] }, actorUserId: string): Promise<BundleWithMembers> {
+  async function createBundle(atlasId: string, input: { bundle_code: string; name: string; description?: string; primary_domain?: FcpDomain; member_path_ids?: string[] }, actorUserId: string, context?: Record<string, unknown>): Promise<BundleWithMembers> {
     const created = await db.get<AtlasCrossDomainBundleRow>(
       `INSERT INTO atlas_cross_domain_path_bundles
          (atlas_id, bundle_code, name, description, primary_domain, created_by)
@@ -217,7 +217,7 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
         created.id, atlasId, ...input.member_path_ids,
       );
     }
-    void events.logEvent({ atlasId, event: 'cross_domain_bundle_created', userId: actorUserId, subResourceId: String(created.id), details: { bundle_code: created.bundle_code } });
+    void events.logEvent({ atlasId, event: 'cross_domain_bundle_created', userId: actorUserId, subResourceId: String(created.id), details: { bundle_code: created.bundle_code, ...(context ?? {}) } });
     // Hydrate this bundle directly — no listBundles round-trip
     const members = await fetchBundleMembers([created.id]);
     return { ...created, members };
@@ -283,7 +283,7 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
               a.appetite_position AS declared_position
          FROM atlas_threat_paths tp
          LEFT JOIN atlas_residual_scores      r ON r.threat_path_id = tp.id
-         LEFT JOIN atlas_appetite_statements  a ON a.threat_path_id = tp.id
+         LEFT JOIN atlas_appetite_statements  a ON a.threat_path_id = tp.id AND a.atlas_id = tp.atlas_id
          WHERE tp.atlas_id = ?`,
       atlasId,
     );

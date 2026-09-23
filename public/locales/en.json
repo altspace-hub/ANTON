@@ -414,7 +414,7 @@
     "knowledgeLibraryDesc": "Register named document corpora for use across all modules. Index them once, reuse everywhere.",
     "customModels": "Custom Models",
     "customModelsDesc": "Add up to 2 custom models. They appear in the model selector across all modules. Use any model ID from a supported provider.",
-    "customModelSlot": "Custom Model {slot}",
+    "customModelSlot": "Custom Model {{slot}}",
     "customModelEnabled": "Enabled",
     "customModelDisplayName": "Display Name",
     "customModelId": "Model ID",
