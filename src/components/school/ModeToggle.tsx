@@ -17,7 +17,11 @@ const PORTALS_ROUTES = ['/portals'];
 const MISSIONS_ROUTES = ['/missions'];
 
 export default function ModeToggle({ className = '' }: ModeToggleProps) {
-  const { t } = useTranslation('school');
+  // The pillar labels live in the main locale files (modeToggle.*), which all
+  // 30 languages carry. The School namespace has files for six languages only
+  // and falls back to English, so reading from it left the toggle English in
+  // German, Japanese, … (found 2026-09-23).
+  const { t } = useTranslation();
   const { appMode, setAppMode } = useSettingsStore();
   const navigate = useNavigate();
   const { pathname } = useLocation();

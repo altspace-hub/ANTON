@@ -155,7 +155,12 @@
     "stuckPrompt": "Tell me exactly what you're stuck on. What were you trying to do?",
     "progress": "Phase {{current}} of {{total}}",
     "resolved": "Great work! You solved it.",
-    "continue": "Continue to original problem"
+    "continue": "Continue to original problem",
+    "stuckQuestion": "Where are you stuck?",
+    "stuckDescription": "Describe the exact point where you got confused. The more specific, the better I can help.",
+    "stuckPlaceholder": "e.g. \"I understand how to multiply, but when I add negative numbers I get confused...\"",
+    "startSession": "Let's work through it",
+    "iUnderstandNow": "I understand now — back to my work!"
   },
   "assessment": {
     "multipleChoice": "Multiple Choice",

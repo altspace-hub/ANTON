@@ -133,7 +133,12 @@
     "stuckPrompt": "Berätta exakt vad du fastnat på. Vad försökte du göra?",
     "progress": "Fas {{current}} av {{total}}",
     "resolved": "Bra jobbat! Du löste det.",
-    "continue": "Fortsätt med originaluppgiften"
+    "continue": "Fortsätt med originaluppgiften",
+    "stuckQuestion": "Var har du fastnat?",
+    "stuckDescription": "Beskriv exakt var det blev oklart. Ju mer precist du beskriver det, desto bättre kan jag hjälpa dig.",
+    "stuckPlaceholder": "t.ex. \"Jag förstår hur man multiplicerar, men när jag adderar negativa tal blir jag förvirrad...\"",
+    "startSession": "Låt oss gå igenom det",
+    "iUnderstandNow": "Nu förstår jag — tillbaka till uppgiften!"
   },
   "assessment": {
     "multipleChoice": "Flervalsfrågor",
