@@ -353,7 +353,7 @@ export default function PortalBuilderPage() {
           </nav>
 
           {/* Phase form */}
-          <main className="rounded-xl border border-border bg-adv-card p-6">
+          <section className="rounded-xl border border-border bg-adv-card p-6">
             {error && (
               <div className="mb-4 flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/10 p-3 text-sm">
                 <AlertCircle className="h-4 w-4 text-adv-red flex-shrink-0 mt-0.5" />{error}
@@ -426,7 +426,7 @@ export default function PortalBuilderPage() {
                 )}
               </div>
             </div>
-          </main>
+          </section>
         </div>
       </div>
     </div>

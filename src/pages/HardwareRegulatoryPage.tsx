@@ -317,7 +317,7 @@ export default function HardwareRegulatoryPage() {
           </aside>
 
           {/* Active artefact editor */}
-          <main className="lg:col-span-2">
+          <section className="lg:col-span-2">
             {!activeArtefact ? (
               <div className="p-6 rounded border border-dashed border-adv-gray/30 text-center text-sm text-adv-gray">
                 <FileText className="w-10 h-10 mx-auto mb-2 text-adv-gray" />
@@ -429,7 +429,7 @@ export default function HardwareRegulatoryPage() {
                 </div>
               </section>
             )}
-          </main>
+          </section>
         </div>
 
         <ConfirmModal

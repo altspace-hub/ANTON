@@ -106,7 +106,7 @@ export default function PortalVisitorPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
         {/* Page content */}
-        <main className="p-6 md:p-8 max-w-3xl mx-auto w-full">
+        <section className="p-6 md:p-8 max-w-3xl mx-auto w-full">
           {/* Page nav — only render if there's more than one visible page. */}
           {navPages.length > 1 && (
             <nav
@@ -195,7 +195,7 @@ export default function PortalVisitorPage() {
               className="w-full min-h-[60vh] rounded-xl border border-border bg-adv-card"
             />
           )}
-        </main>
+        </section>
 
         {/* Capabilities side panel */}
         <aside className="border-l border-border bg-adv-card p-4 lg:min-h-screen">

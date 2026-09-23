@@ -393,7 +393,7 @@ export default function CommunityMessagesPage() {
       </aside>
 
       {/* Right: conversation */}
-      <main className="flex flex-1 flex-col overflow-hidden bg-adv-dark">
+      <section className="flex flex-1 flex-col overflow-hidden bg-adv-dark">
         {!activeContact ? (
           // No conversation selected
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
@@ -497,7 +497,7 @@ export default function CommunityMessagesPage() {
             </div>
           </>
         )}
-      </main>
+      </section>
     </div>
   );
 }
