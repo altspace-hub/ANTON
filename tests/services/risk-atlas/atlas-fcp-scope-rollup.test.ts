@@ -18,6 +18,7 @@ interface RollupRow {
   fcp_domain: FcpDomain | null;
   residual_score: number | null;
   declared_position: AppetitePosition | null;
+  declared_approved?: boolean;
 }
 
 function buildService(rows: RollupRow[]) {
@@ -102,12 +103,22 @@ describe('computeCompanyAppetite — worst-of-rule rollup', () => {
     expect(r.overall_position).toBe('unacceptable');
   });
 
-  it('declared appetite overrides calculated', async () => {
-    const { svc } = buildService([
-      { fcp_domain: 'fraud', residual_score: 5, declared_position: 'outside' },
-    ]);
-    const r = await svc.computeCompanyAppetite('atlas1');
-    expect(r.overall_position).toBe('outside');
+  it('a declaration more lenient than the residual counts only once approved (owner decision 2026-09-23)', async () => {
+    const unapproved = buildService([{ fcp_domain: 'fraud', residual_score: 5, declared_position: 'outside', declared_approved: false }]);
+    expect((await unapproved.svc.computeCompanyAppetite('atlas1')).overall_position).toBe('unacceptable');
+    const approved = buildService([{ fcp_domain: 'fraud', residual_score: 5, declared_position: 'outside', declared_approved: true }]);
+    expect((await approved.svc.computeCompanyAppetite('atlas1')).overall_position).toBe('outside');
+  });
+
+  it('a stricter declaration counts without approval', async () => {
+    const { svc } = buildService([{ fcp_domain: 'fraud', residual_score: 2, declared_position: 'outside' }]);
+    expect((await svc.computeCompanyAppetite('atlas1')).overall_position).toBe('outside');
+  });
+
+  it('reads the approval in the same single query', async () => {
+    const { svc, db } = buildService([]);
+    await svc.computeCompanyAppetite('atlas1');
+    expect(String((db.all.mock.calls[0] as unknown[])[0])).toContain('(a.approved_at IS NOT NULL) AS declared_approved');
   });
 
   it('runs as a single SQL query — no N+1', async () => {

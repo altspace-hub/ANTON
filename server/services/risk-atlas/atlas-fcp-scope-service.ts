@@ -12,10 +12,10 @@
 // in the atlas-company-appetite-consolidator module.
 
 import type { DatabaseAdapter } from '../../db/database.js';
-import { appetitePositionFor } from './atlas-residual-calculator.js';
+import { countedPosition } from './atlas-appetite-position.js';
 import { createAtlasEventLogger } from './atlas-event-logger.js';
 import type {
-  AppetitePosition, FcpDomain, Score1to5,
+  AppetitePosition, FcpDomain,
 } from './types.js';
 
 export type FcpScopeFlagKey =
@@ -276,11 +276,13 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
       fcp_domain: FcpDomain | null;
       residual_score: number | null;
       declared_position: AppetitePosition | null;
+      declared_approved: boolean | null;
     };
     const rows = await db.all<RollupRow>(
       `SELECT tp.fcp_domain,
               r.residual_score,
-              a.appetite_position AS declared_position
+              a.appetite_position AS declared_position,
+              (a.approved_at IS NOT NULL) AS declared_approved
          FROM atlas_threat_paths tp
          LEFT JOIN atlas_residual_scores      r ON r.threat_path_id = tp.id
          LEFT JOIN atlas_appetite_statements  a ON a.threat_path_id = tp.id AND a.atlas_id = tp.atlas_id
@@ -294,11 +296,9 @@ export function createAtlasFcpScopeService(db: DatabaseAdapter) {
     let outside = 0, boundary = 0, within = 0, unscored = 0;
 
     for (const row of rows) {
-      // Prefer declared appetite, fall back to calculated
-      let pos: AppetitePosition | null = row.declared_position ?? null;
-      if (!pos && row.residual_score) {
-        pos = appetitePositionFor(row.residual_score as Score1to5);
-      }
+      // The declared appetite, else the band of the residual — and a declaration
+      // more lenient than the band counts only once approved (atlas-appetite-position.ts).
+      const pos = countedPosition(row.declared_position, !!row.declared_approved, row.residual_score);
       if (!pos) { unscored++; continue; }
       if (pos === 'outside' || pos === 'unacceptable') outside++;
       else if (pos === 'boundary') boundary++;

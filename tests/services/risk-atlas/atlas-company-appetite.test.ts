@@ -108,6 +108,17 @@ describe('a path declared more leniently than its residual is shown, not hidden'
     expect(remediation).toContain('| TP-5 | Stale acceptance |');
   });
 
+  it('until someone approves it, a lenient declaration counts at the band — and so is in the remediation programme', () => {
+    // Owner decision 2026-09-23: accepting a risk above appetite is a signed decision.
+    const unapprovedSnap: AtlasExportSnapshot = { ...snap, paths: [...snap.paths, mkPath('TP-6', 'Unsigned tolerance', 'fraud', 5, { appetite_position: 'within', approved_at: null })] };
+    const u = renderAppetiteTables(unapprovedSnap, rollup, scope, triggers);
+    expect(u.remediation).toContain('| TP-6 | Unsigned tolerance | 5 | Unacceptable |');
+    expect(u.exceptions).toContain('| TP-6 | Unsigned tolerance | 5 | Unacceptable | Within appetite | no | band — awaiting approval |');
+    expect(u.overall).toContain('0 approved and counted at the declared position, 1 awaiting approval and counted at the band of their residual');
+    // The approved one (TP-5 above) counts as declared.
+    expect(t.exceptions).toContain('| yes | declared (approved) |');
+  });
+
   it('an Atlas without such a path says that too', () => {
     expect(renderAppetiteTables(snap, rollup, scope, triggers).exceptions).toBe('_No path is declared more leniently than its residual._');
   });

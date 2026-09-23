@@ -23,6 +23,7 @@ import { createAtlasService } from './atlas-service.js';
 import { createAtlasEventLogger } from './atlas-event-logger.js';
 import { createAtlasFcpScopeService, type AtlasFcpScopeRow, type CompanyAppetiteRollup } from './atlas-fcp-scope-service.js';
 import { appetitePositionFor } from './atlas-residual-calculator.js';
+import { countedPosition, isMoreLenient } from './atlas-appetite-position.js';
 import { checkConsistency, isoDay, snapshotSha256 } from './atlas-bwra.js';
 import type { AppetitePosition, AtlasEscalationTriggerRow, FcpDomain, Score1to5, ThreatPathFull } from './types.js';
 import { getModuleSystemPrompt } from '../module-loader.js';
@@ -97,13 +98,11 @@ const table = (head: string[], rows: string[][], empty: string): string =>
     : [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((r) => `| ${r.map(cell).join(' | ')} |`)].join('\n');
 
 /**
- * A path's position as the rollup counts it: the declared appetite, else the
- * band its residual falls in (computeCompanyAppetite does the same).
+ * A path's position as the rollup counts it — the one rule in
+ * atlas-appetite-position.ts, which computeCompanyAppetite uses too.
  */
 export function positionOf(p: ThreatPathFull): AppetitePosition | null {
-  if (p.appetite?.appetite_position) return p.appetite.appetite_position;
-  const r = p.residual?.residual_score as Score1to5 | undefined;
-  return r ? appetitePositionFor(r) : null;
+  return countedPosition(p.appetite?.appetite_position, !!p.appetite?.approved_at, p.residual?.residual_score);
 }
 
 const byCode = (a: ThreatPathFull, b: ThreatPathFull) => a.path.path_code.localeCompare(b.path.path_code, undefined, { numeric: true });
@@ -131,23 +130,17 @@ export interface AppetiteTables {
   triggers: string;
 }
 
-const POSITION_RANK: Record<AppetitePosition, number> = { within: 0, boundary: 1, outside: 2, unacceptable: 3 };
-
 /**
  * Paths whose declared appetite is more lenient than the band of their residual.
  *
- * The rollup counts a path at its declared position — a board may accept a
- * risk — so such a path can leave the remediation programme and pull the
- * overall position down. The consolidator's own rule is that a tolerated path
- * is flagged as an explicit exception, never hidden; and a declaration made
- * when the residual was lower looks exactly the same. Both are listed.
+ * Such a declaration counts only once a person has approved it — the board
+ * accepting a risk above appetite (owner decision 2026-09-23); until then the
+ * path counts at its band. Approved or not, it is listed: the consolidator's
+ * rule is that a tolerated path is an explicit exception, never hidden, and a
+ * declaration made when the residual was lower looks exactly the same.
  */
 export function leniencyExceptions(snap: AtlasExportSnapshot): ThreatPathFull[] {
-  return snap.paths.filter((p) => {
-    const declared = p.appetite?.appetite_position;
-    const r = p.residual?.residual_score as Score1to5 | undefined;
-    return !!declared && !!r && POSITION_RANK[declared] < POSITION_RANK[appetitePositionFor(r)];
-  }).sort(byCode);
+  return snap.paths.filter((p) => isMoreLenient(p.appetite?.appetite_position, p.residual?.residual_score)).sort(byCode);
 }
 
 export function renderAppetiteTables(
@@ -180,14 +173,16 @@ export function renderAppetiteTables(
   ]);
 
   const lenient = leniencyExceptions(snap);
-  const exceptions = table(['Path', 'Threat path', 'Residual', 'Band of the residual', 'Declared position', 'Declaration approved'],
+  const exceptions = table(['Path', 'Threat path', 'Residual', 'Band of the residual', 'Declared position', 'Declaration approved', 'Counted as'],
     lenient.map((p) => [
       p.path.path_code, p.path.name, String(p.residual?.residual_score),
       POSITION_LABEL[appetitePositionFor(p.residual!.residual_score as Score1to5)],
       POSITION_LABEL[p.appetite!.appetite_position], p.appetite?.approved_at ? 'yes' : 'no',
+      p.appetite?.approved_at ? 'declared (approved)' : 'band — awaiting approval',
     ]), 'No path is declared more leniently than its residual.');
+  const approvedCount = lenient.filter((p) => p.appetite?.approved_at).length;
   const flag = lenient.length
-    ? `\n\n**${lenient.length} threat path(s) are declared more leniently than their residual** (${lenient.map((p) => p.path.path_code).join(', ')}) — counted here at the declared position; listed under "Accepted exceptions" in the remediation programme.`
+    ? `\n\n**${lenient.length} threat path(s) are declared more leniently than their residual** (${lenient.map((p) => p.path.path_code).join(', ')}) — ${approvedCount} approved and counted at the declared position, ${lenient.length - approvedCount} awaiting approval and counted at the band of their residual; listed under "Accepted exceptions" in the remediation programme.`
     : '';
 
   return {
@@ -277,7 +272,7 @@ export function parseAppetiteNarrative(text: string): Partial<Record<AppetiteSec
   return out;
 }
 
-const METHODOLOGY = 'Each threat path\'s position is its declared appetite statement or, where none is declared, the band its residual falls in (residual 1-2 within, 3 boundary, 4 outside, 5 unacceptable). A domain\'s position is the worst position of any path tagged with that domain; the overall position is the worst across all paths. This is more conservative than averaging, and it is the defensible position for a board or a regulator: one material risk out of control is enough to put the company outside its appetite.';
+const METHODOLOGY = 'Each threat path\'s position is its declared appetite statement or, where none is declared, the band its residual falls in (residual 1-2 within, 3 boundary, 4 outside, 5 unacceptable). A declaration more lenient than that band counts only once a person has approved it; until then the path counts at its band. A domain\'s position is the worst position of any path tagged with that domain; the overall position is the worst across all paths. This is more conservative than averaging, and it is the defensible position for a board or a regulator: one material risk out of control is enough to put the company outside its appetite.';
 
 export function assembleAppetiteDocument(
   snap: AtlasExportSnapshot, rollup: CompanyAppetiteRollup, narrative: Partial<Record<AppetiteSectionKey, string>>,
