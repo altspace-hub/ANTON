@@ -22,12 +22,17 @@
     "myProfile": "ملفي الشخصي",
     "backToWork": "العودة إلى وضع العمل",
     "close": "إغلاق",
+    "review": "المراجعة",
+    "parentView": "عرض ولي الأمر",
     "role": {
       "student": "طالب",
       "guardian": "ولي أمر",
       "teacher": "معلم",
       "school_admin": "مسؤول المدرسة"
-    }
+    },
+    "ucas": "بيان UCAS",
+    "studyRooms": "غرف الدراسة",
+    "lessonLibrary": "مكتبة الدروس"
   },
   "dashboard": {
     "welcome": "مرحباً بعودتك، {{name}}!",
@@ -48,24 +53,59 @@
   },
   "subject": {
     "mathematics": "الرياضيات",
+    "algebra": "الجبر",
+    "geometry": "الهندسة",
     "svenska": "السويدية",
     "english": "الإنجليزية",
     "science": "العلوم",
     "social-studies": "الدراسات الاجتماعية",
+    "socialStudies": "الدراسات الاجتماعية (SO)",
     "computationalThinking": "التفكير الحاسوبي",
     "technology": "التكنولوجيا والمهارات الرقمية",
     "lifeSkills": "مهارات الحياة",
+    "life-skills": "مهارات الحياة",
     "studySkills": "مهارات الدراسة",
+    "study-skills": "مهارات الدراسة",
     "advancedMathematics": "رياضيات متقدمة",
+    "advanced-mathematics": "رياضيات متقدمة",
     "physics": "الفيزياء",
     "chemistry": "الكيمياء",
     "biology": "الأحياء",
     "swedishAdvanced": "السويدية المتقدمة",
+    "swedish-advanced": "السويدية المتقدمة",
     "philosophy": "الفلسفة",
     "idrottHalsa": "الرياضة والصحة",
+    "idrott-halsa": "الرياضة والصحة",
+    "data-science": "علم البيانات",
     "statistics": "الإحصاء وعلم البيانات",
+    "functions": "الدوال",
+    "numberTheory": "نظرية الأعداد",
     "modersmal": "اللغة الأم",
-    "sfiBridge": "السويدية للوافدين الجدد"
+    "sfiBridge": "السويدية للوافدين الجدد",
+    "sfi-bridge": "السويدية للوافدين الجدد (جسر SFI)",
+    "uni-mathematics": "الرياضيات العليا / التفاضل والتكامل",
+    "uni-physics": "الفيزياء الجامعية",
+    "uni-economics": "الاقتصاد الجزئي والكلي",
+    "uni-computer-science": "علوم الحاسوب والخوارزميات",
+    "uni-law": "مدخل إلى القانون",
+    "uni-psychology": "علم النفس والعلوم السلوكية",
+    "uni-biology": "بيولوجيا الخلية وعلم الوراثة",
+    "uni-chemistry": "الكيمياء العضوية والفيزيائية",
+    "uni-philosophy": "الفلسفة والأخلاق",
+    "uni-statistics": "الإحصاء التطبيقي وتحليل البيانات",
+    "primary-mathematics": "رياضيات المرحلة الابتدائية",
+    "primary-reading": "القراءة",
+    "primary-writing": "الكتابة",
+    "primary-science": "العلوم",
+    "primary-english": "الإنجليزية",
+    "primary-art": "الفن والإبداع",
+    "gymnasiet-economics": "الاقتصاد والأعمال",
+    "gymnasiet-technology": "التكنولوجيا والهندسة",
+    "uni-industriell-ekonomi": "الاقتصاد الصناعي",
+    "uni-datateknik": "علوم وهندسة الحاسوب",
+    "uni-kemiteknik": "الهندسة الكيميائية",
+    "uni-maskinteknik": "الهندسة الميكانيكية",
+    "uni-elektroteknik": "الهندسة الكهربائية"
   },
   "chat": {
     "greeting": "مرحباً! أنا {{persona}}. بماذا تريد أن تبدأ اليوم؟",
@@ -75,13 +115,79 @@
       "practice": "تمارين وممارسة",
       "quick_question": "سؤال سريع"
     },
+    "assistanceLevel": {
+      "L1": "إرشاد كامل",
+      "L2": "مساعدة متوسطة",
+      "L3": "وضع التمرين",
+      "L4": "وضع المرجع",
+      "label": "مستوى المساعدة"
+    },
     "placeholder": "اكتب سؤالك هنا...",
     "send": "إرسال",
-    "thinking": "{{persona}} يفكر...",
+    "thinking": "Alma تفكّر...",
+    "uploadsAllowed": "يمكنك رفع ملفات أو صور لعملك",
+    "laxhjalpMode": "عالق؟ لنحلّها معاً",
+    "endSession": "إنهاء الجلسة",
     "newSession": "بدء محادثة جديدة",
     "attachFile": "إرفاق مستند",
     "fileAttached": "تم إرفاق المستند: {{filename}}",
-    "removeAttachment": "إزالة المرفق"
+    "removeAttachment": "إزالة المرفق",
+    "actions": {
+      "practice": "مسائل تدريبية",
+      "practiceMsg": "أعطني 3 مسائل تدريبية حول ما كنا نناقشه. لا تعرض الإجابات بعد.",
+      "quiz": "اختبرني",
+      "quizMsg": "اختبرني بسؤال واحد حول هذا الموضوع. انتظر إجابتي قبل أن تخبرني إن كانت صحيحة.",
+      "hint": "أعطني تلميحاً",
+      "hintMsg": "أنا عالق قليلاً. هل يمكنك أن تعطيني تلميحاً دون أن تكشف الإجابة كاملة؟",
+      "summarise": "تلخيص الجلسة",
+      "summariseMsg": "هل يمكنك تلخيص أهم ما تناولناه في هذه الجلسة؟"
+    }
+  },
+  "laxhjalp": {
+    "title": "نقطة التعثّر — لنكتشف الحل معاً",
+    "subtitle": "ستساعدك Alma على إيجاد الفجوة وبناء جسر لتجاوزها",
+    "phase": {
+      "identify": "ما الذي تعثّرت فيه؟",
+      "traceBack": "البحث عن أرضية ثابتة",
+      "bridge": "بناء الفهم",
+      "practice": "التمرين",
+      "return": "العودة إلى مسألتك",
+      "verify": "تحقّق من فهمك"
+    },
+    "stuckPrompt": "أخبرني بالضبط أين تعثّرت. ماذا كنت تحاول أن تفعل؟",
+    "progress": "المرحلة {{current}} من {{total}}",
+    "resolved": "عمل رائع! لقد حللتها.",
+    "continue": "المتابعة إلى المسألة الأصلية",
+    "stuckQuestion": "أين تعثّرت؟",
+    "stuckDescription": "صِف بالضبط النقطة التي اختلط عليك فيها الأمر. كلما كان وصفك أدق، كان بإمكاني مساعدتك أكثر.",
+    "stuckPlaceholder": "مثال: \"أفهم كيف أضرب، لكن عندما أجمع أعداداً سالبة يختلط عليّ الأمر...\"",
+    "startSession": "لنحلّها معاً",
+    "iUnderstandNow": "فهمت الآن — أعود إلى عملي!"
+  },
+  "assessment": {
+    "multipleChoice": "اختيار من متعدد",
+    "shortAnswer": "إجابة قصيرة",
+    "calculation": "مسألة حسابية",
+    "checkAnswer": "تحقّق من إجابتي",
+    "nextQuestion": "السؤال التالي",
+    "submit": "إرسال",
+    "score": "{{score}}%",
+    "correct": "صحيح!",
+    "incorrect": "ليست صحيحة تماماً — لنراجعها معاً",
+    "explanation": "الشرح",
+    "timeRemaining": "الوقت المتبقي: {{minutes}} د",
+    "completed": "اكتمل التقييم",
+    "resultsSummary": "حصلت على {{score}}% في {{topic}}",
+    "socraticExam": "الاختبار السقراطي",
+    "endExam": "إنهاء الاختبار",
+    "endExamConfirm": "هل تريد إنهاء الاختبار؟",
+    "endExamNote": "سيقيّم الذكاء الاصطناعي المحادثة ويُعدّ تقريرك. لا يمكن التراجع عن ذلك.",
+    "examinerThinking": "الممتحن يفكر...",
+    "socraticPlaceholder": "اكتب إجابتك... (Enter للإرسال، Shift+Enter لسطر جديد)",
+    "evaluationReport": "تقرير الاختبار",
+    "generating": "جارٍ إعداد التقييم...",
+    "backToAssignments": "العودة إلى الواجبات",
+    "startSocratic": "بدء الاختبار"
   },
   "onboarding": {
     "student": {
@@ -89,13 +195,30 @@
       "subtitle": "دعنا نضبط تجربتك التعليمية",
       "step1": {
         "title": "ما مستواك الدراسي؟",
+        "subtitle": "لنجهّز حسابك.",
+        "selectTier": "في أي سنة دراسية أنت؟",
         "tierT1": "الصفوف 1-3 (سنوات أولى)",
         "tierT2": "الصفوف 7-9 (مرحلة متوسطة)",
         "tierT3": "الصفوف 10-12 (الثانوية)",
         "tierT4": "الجامعة"
       },
       "step2": {
-        "title": "اختر مادتك الأولى"
+        "title": "اختر مادتك الأولى",
+        "selectCountry": "اختر بلدك",
+        "sweden": "السويد (Lgr22)",
+        "norway": "النرويج (LK20)",
+        "uk": "المملكة المتحدة",
+        "france": "فرنسا (Baccalauréat)",
+        "india": "الهند (CBSE)",
+        "nigeria": "نيجيريا (WAEC)",
+        "other": "أخرى"
+      },
+      "step2b": {
+        "gymnasietTitle": "في أي برنامج تدرس؟",
+        "universityTitle": "ماذا تدرس؟",
+        "gymnasietSubtitle": "برنامجك في المرحلة الثانوية (Gymnasiet – linje)",
+        "universitySubtitle": "برنامجك الجامعي",
+        "skip": "تخطي — سأحدده لاحقاً"
       },
       "step3": {
         "title": "هل لديك رمز صف؟",
@@ -103,6 +226,29 @@
         "codePlaceholder": "مثال: MATH-9B-2026",
         "join": "انضم",
         "skip": "تخطي"
+      },
+      "step4": {
+        "title": "فحص سريع في الرياضيات",
+        "subtitle": "5 أسئلة تساعد Alma على معرفة مستواك. هذا الفحص لا يُقيَّم بدرجة.",
+        "start": "ابدأ الفحص",
+        "skip": "تخطي الآن"
+      },
+      "complete": {
+        "title": "كل شيء جاهز!",
+        "subtitle": "لوحة التحكم الخاصة بك جاهزة.",
+        "goToDashboard": "اذهب إلى لوحة التحكم"
+      }
+    },
+    "teacher": {
+      "step1": {
+        "title": "أهلاً بك أيها المعلم!",
+        "subtitle": "لننشئ صفك الأول.",
+        "createClass": "إنشاء صف"
+      },
+      "complete": {
+        "title": "صفك جاهز!",
+        "classCode": "شارك هذا الرمز مع طلابك:",
+        "goToDashboard": "اذهب إلى لوحة التحكم"
       }
     },
     "complete": "اكتمل الإعداد!"
@@ -124,8 +270,151 @@
       "myClasses": "صفوفي",
       "recentActivity": "النشاط الأخير",
       "createClass": "إنشاء صف جديد",
+      "classCode": "رمز الصف",
+      "copyCode": "نسخ",
+      "codeCopied": "تم النسخ!",
+      "studentsEnrolled": "{{count}} طالب",
+      "viewProgress": "عرض التقدم",
+      "createAssignment": "إنشاء واجب",
       "noClasses": "لم تنشئ أي صفوف بعد",
+      "setupFirst": "أنشئ صفك الأول للبدء.",
+      "templates": "قوالب الواجبات",
+      "useTemplate": "استخدام القالب",
       "studentsCount": "{{count}} طالب"
+    },
+    "classConfig": {
+      "title": "إعدادات الصف",
+      "className": "اسم الصف",
+      "subject": "المادة",
+      "tier": "المرحلة الدراسية",
+      "assistanceLevels": "مستويات المساعدة",
+      "homeworkLevel": "الواجب المنزلي",
+      "selfStudyLevel": "الدراسة الذاتية",
+      "examPracticeLevel": "التدرّب على الامتحانات",
+      "referenceLevel": "المرجع",
+      "defaultPersona": "المعلم الافتراضي",
+      "curriculum": "المنهج",
+      "webSearch": "السماح بالبحث على الويب",
+      "leaderboard": "عرض لوحة صدارة الصف (أفضل 10 حسب نقاط الخبرة، دون أسماء)",
+      "save": "حفظ الإعدادات",
+      "saved": "تم الحفظ",
+      "uploadCurriculum": "رفع وثيقة المنهج",
+      "uploadHelp": "ارفع منهج مدرستك أو خطتها السنوية (PDF، DOCX). ستُعدّ Alma خطة دراسية أسبوعاً بأسبوع.",
+      "studyPlan": "الخطة الدراسية",
+      "generatePlan": "إعداد الخطة الدراسية",
+      "generating": "جارٍ إعداد الخطة..."
+    },
+    "lesson": {
+      "libraryTitle": "مكتبة الدروس",
+      "newLesson": "درس جديد",
+      "newTitle": "بناء درس",
+      "editTitle": "تعديل الدرس",
+      "titleLabel": "عنوان الدرس",
+      "titlePlaceholder": "مثال: مدخل إلى المعادلات التربيعية",
+      "objectives": "أهداف التعلّم",
+      "objectivesHelp": "ما الذي ينبغي أن يعرفه الطلاب أو يقدروا على فعله في النهاية؟",
+      "objectivePlaceholder": "مثال: حل المعادلات التربيعية باستخدام القانون العام",
+      "addObjective": "إضافة هدف",
+      "contentBlocks": "محتوى الدرس",
+      "contentBlocksHelp": "نظّم درسك في أقسام. ستقدّمها Alma بهذا الترتيب.",
+      "blockType": "النوع",
+      "duration": "المدة (دقيقة)",
+      "blockContent": "المحتوى / التعليمات",
+      "explanationPlaceholder": "اشرح المفهوم أو القانون أو النظرية...",
+      "activityPlaceholder": "صِف التمرين أو المسألة المطلوب حلها...",
+      "discussionPlaceholder": "اكتب سؤال النقاش أو موضوعه...",
+      "addBlock": "إضافة قسم محتوى",
+      "assignTo": "إسناد إلى صف",
+      "optional": "اختياري",
+      "noClass": "غير مُسند إلى صف",
+      "save": "حفظ الدرس",
+      "saving": "جارٍ الحفظ…",
+      "edit": "تعديل",
+      "assignToClass": "إسناد إلى صف",
+      "assign": "إسناد",
+      "cancel": "إلغاء",
+      "assigned": "تم الإسناد!",
+      "selectClass": "اختر صفاً…",
+      "blocks": "أقسام",
+      "obj": "الأهداف:",
+      "assignedClass": "مُسند",
+      "noLessons": "لم تُنشئ أي دروس بعد.",
+      "noLessonsHelp": "أنشئ دروساً منظّمة تقدّمها Alma لطلابك بأسلوب حواري.",
+      "buildFirst": "أنشئ درسك الأول"
+    },
+    "assignment": {
+      "title": "إنشاء واجب",
+      "assignmentTitle": "العنوان",
+      "titlePlaceholder": "مثال: المعادلات التربيعية — الأسبوع 38",
+      "instructions": "التعليمات",
+      "instructionsPlaceholder": "ما المطلوب من الطلاب؟",
+      "type": "النوع",
+      "typeHomework": "واجب منزلي",
+      "typeExam": "امتحان",
+      "typePractice": "تمرين",
+      "typeSocratic": "اختبار سقراطي",
+      "socraticObjectives": "أهداف التعلّم",
+      "socraticObjectivesPlaceholder": "اذكر أهداف التعلّم التي يجب أن يقيّمها ممتحن الذكاء الاصطناعي. هدف واحد في كل سطر.",
+      "socraticHelp": "سيُجري ممتحن الذكاء الاصطناعي حواراً على نمط الامتحان الشفهي لتقييم هذه الأهداف. لا حاجة إلى قائمة أسئلة.",
+      "addQuestion": "إضافة سؤال",
+      "questionContent": "السؤال",
+      "questionType": "النوع",
+      "questionMarks": "الدرجات",
+      "removeQuestion": "إزالة",
+      "assistanceLevel": "مستوى المساعدة",
+      "dueDate": "تاريخ التسليم",
+      "timeLimit": "الحد الزمني",
+      "timeLimitUnlimited": "بلا حد",
+      "retakes": "المحاولات الإضافية المسموحة",
+      "retakesNone": "لا محاولات إضافية",
+      "export": "تصدير بصيغة ‎.anton",
+      "save": "حفظ",
+      "saveAsTemplate": "حفظ كقالب (قابل لإعادة الاستخدام في صفوف أخرى)",
+      "rubricsSection": "معايير التصحيح",
+      "addRubricCriteria": "إضافة معيار"
+    }
+  },
+  "guardian": {
+    "parent": {
+      "title": "عرض ولي الأمر",
+      "sessionsThisWeek": "الجلسات هذا الأسبوع",
+      "streak": "أيام متتالية",
+      "stage": "المرحلة",
+      "subjectsStudied": "المواد التي دُرست هذا الأسبوع",
+      "cardsDue": "بطاقات مراجعة مستحقة اليوم"
+    },
+    "dashboard": {
+      "title": "تعلّم {{name}}",
+      "overallProgress": "التقدم العام",
+      "recentActivity": "النشاط الأخير",
+      "upcomingDeadlines": "المواعيد النهائية القادمة",
+      "subjects": "المواد",
+      "timeThisWeek": "وقت الدراسة هذا الأسبوع",
+      "noData": "لا يوجد نشاط بعد هذا الأسبوع.",
+      "linkPrompt": "اربط حساب طالب لمتابعة تقدّمه."
+    },
+    "link": {
+      "title": "الربط بحساب طالب",
+      "enterCode": "أدخل رمز الدعوة من ابنك/ابنتك أو من المعلم",
+      "codePlaceholder": "مثال: MATH-9B-ANNA",
+      "link": "ربط الحساب",
+      "success": "تم الربط بحساب {{name}} بنجاح!",
+      "error": "رمز غير صالح. يُرجى التحقق منه مع المعلم.",
+      "privacyNote": "سترى ملخصات التقدم. أما المحادثات الفردية فتبقى خاصة بابنك/ابنتك."
+    },
+    "digest": {
+      "title": "الملخص الأسبوعي",
+      "period": "آخر 7 أيام",
+      "sessionsCount": "{{count}} جلسة دراسية",
+      "xpEarned": "{{xp}} نقطة خبرة مكتسبة",
+      "streakDays": "{{count}} أيام متتالية",
+      "stage": "مرحلة التعلّم: {{stage}}",
+      "assignmentsSubmitted": "{{count}} واجبات مُسلّمة",
+      "sendEmail": "إرسال الملخص إلى البريد الإلكتروني",
+      "sending": "جارٍ الإرسال...",
+      "sent": "تم الإرسال!",
+      "nextSend": "الملخص التلقائي التالي: الاثنين 08:00",
+      "lastSent": "آخر إرسال: {{date}}"
     }
   },
   "growth": {
@@ -141,6 +430,10 @@
     "achievements": "الإنجازات"
   },
   "settings": {
+    "programmeSection": "البرنامج / Linje",
+    "gymnasietProgramme": "برنامج المرحلة الثانوية (Gymnasiet)",
+    "universityProgramme": "البرنامج الجامعي",
+    "changeProgramme": "تغيير البرنامج",
     "title": "إعدادات المدرسة",
     "language": "اللغة",
     "appLanguage": "لغة التطبيق",
@@ -150,11 +443,237 @@
     "save": "حفظ الإعدادات",
     "saved": "تم الحفظ!"
   },
+  "login": {
+    "title": "ANTON للمدارس",
+    "subtitle": "سجّل الدخول بحسابك المدرسي",
+    "googleBtn": "المتابعة باستخدام Google",
+    "microsoftBtn": "المتابعة باستخدام Microsoft",
+    "orLocal": "أو سجّل الدخول باسم المستخدم",
+    "username": "اسم المستخدم",
+    "usernamePlaceholder": "أدخل اسم المستخدم",
+    "password": "كلمة المرور",
+    "passwordPlaceholder": "أدخل كلمة المرور",
+    "signIn": "تسجيل الدخول",
+    "failed": "فشل تسجيل الدخول",
+    "oauthFailed": "فشل تسجيل الدخول",
+    "oauthError": "فشل تسجيل الدخول — تعذّر التحقق من رمز المصادقة.",
+    "backToWork": "العودة إلى وضع العمل",
+    "privacy": "محادثاتك خاصة ومحفوظة محلياً على هذا الجهاز."
+  },
   "coding": {
+    "title": "التفكير الحاسوبي",
+    "subtitle": "تعلّم البرمجة بإرشاد Alma",
+    "explainerTitle": "شارح الكود",
+    "explainerDesc": "الصق الكود وافهمه خطوة بخطوة",
+    "explainerExample": "مثال: \"ماذا تفعل حلقة Python هذه؟\"",
+    "mentorTitle": "مرشد البرمجة",
+    "mentorDesc": "صِف ما تريد بناءه وسترشدك Alma",
+    "mentorExample": "مثال: \"ساعدني في بناء لعبة تخمين الأرقام\"",
+    "debugTitle": "دليل تصحيح الأخطاء",
+    "debugDesc": "اعرض الكود الذي لا يعمل ولنجد الحل معاً",
+    "debugExample": "مثال: \"يظهر لي خطأ TypeError في السطر 5 — لماذا؟\"",
+    "language": "لغة البرمجة",
+    "python": "Python",
+    "javascript": "JavaScript",
+    "scratch": "Scratch",
+    "codePlaceholder": "الصق الكود هنا...",
+    "goalPlaceholder": "ماذا تريد أن تبني؟",
+    "errorPlaceholder": "الصق الكود ورسالة الخطأ...",
     "sandbox": "بيئة التجربة",
     "run": "تشغيل",
     "copy": "نسخ",
     "copied": "تم النسخ!",
-    "clickRun": "اضغط تشغيل للمعاينة"
+    "clickRun": "اضغط تشغيل للمعاينة",
+    "runPython": "تشغيل Python",
+    "runningPython": "جارٍ التشغيل...",
+    "loadingPyodide": "جارٍ تحميل بيئة Python (التشغيل الأول)...",
+    "pythonOutput": "المخرجات",
+    "pythonError": "خطأ"
+  },
+  "persona": {
+    "alma": {
+      "name": "Alma",
+      "subject": "الرياضيات",
+      "description": "معلمة رياضيات صبورة ومنهجية ترشدك خطوة بخطوة"
+    },
+    "saga": {
+      "name": "Saga",
+      "subject": "السويدية والإنجليزية",
+      "description": "معلمة لغة دافئة محبة للأدب تساعدك على إيجاد صوتك"
+    },
+    "viktor": {
+      "name": "Viktor",
+      "subject": "العلوم",
+      "description": "معلم علوم متحمس يبدأ كل درس بلغز"
+    },
+    "erik": {
+      "name": "Erik",
+      "subject": "التاريخ والدراسات الاجتماعية",
+      "description": "معلم متأنٍّ وتحليلي يعلّمك نقد المصادر"
+    },
+    "leo": {
+      "name": "Leo",
+      "subject": "التكنولوجيا والمهارات الرقمية",
+      "description": "معلم تكنولوجيا متحمس يبسّط لك العالم الرقمي"
+    },
+    "freja": {
+      "name": "Freja",
+      "subject": "الفن والموسيقى",
+      "description": "معلمة فنون مبدعة تهتم بمراحل العمل الإبداعي أكثر من المنتج النهائي"
+    },
+    "mia": {
+      "name": "Mia",
+      "subject": "مهارات الحياة وأساليب الدراسة",
+      "description": "مدرّبة عملية في مهارات الحياة المستقلة وعادات الدراسة القائمة على الأدلة"
+    },
+    "oscar": {
+      "name": "Oscar",
+      "subject": "الرياضة والصحة",
+      "description": "مدرّب رياضي مفعم بالطاقة يربط النشاط البدني بالعلم والصحة النفسية والجسدية"
+    },
+    "nora": {
+      "name": "Nora",
+      "subject": "الإحصاء وعلم البيانات",
+      "description": "معلمة تحليلية في علم البيانات تبدأ دائماً ببيانات حقيقية وتمثيلها المرئي"
+    },
+    "professor-lindstrom": {
+      "name": "Professor Lindström",
+      "subject": "البحث الأكاديمي الجامعي",
+      "description": "أكاديمي مخضرم لطلاب الجامعة يعتمد أسلوب الحلقة النقاشية السقراطية"
+    }
+  },
+  "journey": {
+    "title": "رحلتي التعليمية",
+    "subtitle": "تابع تقدّمك في كل مادة",
+    "bloomsTitle": "أبعاد التعلّم"
+  },
+  "radar": {
+    "title": "راداري",
+    "subtitle": "اكتشف كيف يرتبط عالم اليوم بدراستك",
+    "loading": "جارٍ البحث عن الروابط...",
+    "refresh": "تحديث",
+    "exploreWith": "استكشف مع {{persona}}",
+    "noItems": "لم يُعثر على روابط. جرّب التحديث أو اختر مادة أخرى."
+  },
+  "progress": {
+    "mastery": {
+      "beginning": "مبتدئ",
+      "developing": "في طور النمو",
+      "proficient": "متمكّن",
+      "advanced": "متقدّم"
+    },
+    "blooms": {
+      "knowledge": "المعرفة",
+      "application": "التطبيق",
+      "analysis": "التحليل",
+      "evaluation": "التقويم",
+      "creation": "الإبداع",
+      "metacognition": "ما وراء المعرفة"
+    }
+  },
+  "quest": {
+    "dailyQuests": "المهام اليومية",
+    "chatTurns": "اطرح {{target}} أسئلة على Alma",
+    "completeAssignment": "سلّم واجباً",
+    "reviewCard": "راجع {{target}} بطاقات تعليمية",
+    "streakProtect": "سجّل الدخول اليوم",
+    "xpReward": "+{{xp}} XP",
+    "completed": "اكتملت!"
+  },
+  "curriculum": {
+    "frBac": "البكالوريا الفرنسية (Baccalauréat)",
+    "cbse": "CBSE (الهند)",
+    "waec": "WAEC/JAMB (نيجيريا)"
+  },
+  "review": {
+    "title": "بطاقات المراجعة",
+    "noCards": "لا توجد بطاقات مستحقة اليوم",
+    "noCardsHint": "تُنشأ البطاقات تلقائياً أثناء محادثتك مع Alma.",
+    "done": "انتهيت لهذا اليوم!",
+    "cardsReviewed": "بطاقات تمت مراجعتها",
+    "answer": "الإجابة",
+    "tapToFlip": "انقر لإظهار الإجابة",
+    "blackout": "نسيتها تماماً",
+    "hard": "صعبة",
+    "good": "جيدة",
+    "easy": "سهلة"
+  },
+  "ucas": {
+    "title": "البيان الشخصي لـ UCAS",
+    "subtitle": "مسودة أولى بالذكاء الاصطناعي لطلبات الالتحاق بجامعات المملكة المتحدة",
+    "disclaimer": "هذه المسودة نقطة انطلاق فقط. أضفِ عليها لمستك الشخصية إلى حد كبير — فمسؤولو القبول يقرؤون آلاف البيانات. صوتك الفريد وتفاصيلك المحددة هي ما يصنع الفرق.",
+    "formTitle": "أخبرنا عن نفسك",
+    "courseTitle": "التخصص الذي تتقدّم إليه",
+    "coursePlaceholder": "مثال: Computer Science BSc، Medicine MBBS...",
+    "universities": "الجامعات المستهدفة (اختياري)",
+    "universitiesPlaceholder": "مثال: Imperial، UCL، Edinburgh، Bristol، Manchester",
+    "subjects": "مواد A-Level",
+    "subjectsPlaceholder": "مثال: الرياضيات A*، الفيزياء A، الكيمياء A",
+    "whySubject": "لماذا هذا التخصص؟ ما الذي أثار اهتمامك؟",
+    "whyPlaceholder": "صِف ما جذبك إلى هذا التخصص — كتاب، مشروع، تجربة، لحظة إدراك...",
+    "moreDetails": "أضف مزيداً من التفاصيل (موصى به)",
+    "workExperience": "الخبرة العملية / التطوع",
+    "workPlaceholder": "تدريب، مرافقة مهنية، عمل جزئي، تطوع...",
+    "extracurriculars": "الأنشطة اللاصفية",
+    "extrasPlaceholder": "رياضة، موسيقى، نوادٍ، مسابقات، إنجازات...",
+    "futureGoals": "الأهداف المهنية / الخطط المستقبلية",
+    "goalsPlaceholder": "أين ترى نفسك بعد الجامعة؟",
+    "draftLength": "طول المسودة",
+    "length": {
+      "short": "قصيرة",
+      "standard": "عادية",
+      "long": "طويلة"
+    },
+    "errorRequired": "عنوان التخصص والدافع مطلوبان.",
+    "generating": "جارٍ كتابة مسودتك...",
+    "generate": "إنشاء المسودة",
+    "regenerate": "إعادة إنشاء المسودة",
+    "draft": "مسودتك",
+    "emptyState": "املأ النموذج واضغط «إنشاء المسودة» لترى مسودة بيانك الشخصي هنا.",
+    "copy": "نسخ",
+    "copied": "تم النسخ!",
+    "nextSteps": "الخطوات التالية:",
+    "nextStepsText": "عدّل المسودة لتضيف أمثلتك المحددة وصوتك الخاص. احذف كل ما لا يشبهك. اعرضها على مستشار UCAS في مدرستك قبل التقديم."
+  },
+  "avatar": {
+    "title": "خصّص صورتك الرمزية",
+    "chooseEmoji": "اختر الرمز التعبيري",
+    "chooseColor": "نظام الألوان",
+    "chooseFrame": "الإطار",
+    "titleLabel": "اللقب المعروض (اختياري)",
+    "titlePlaceholder": "مثال: ساحر الرياضيات، عاشق التاريخ..."
+  },
+  "leaderboard": {
+    "title": "لوحة الصدارة",
+    "weekly": "هذا الأسبوع",
+    "allTime": "كل الأوقات",
+    "noWeeklyData": "لا يوجد نشاط بعد هذا الأسبوع. ابدأ الدراسة لتظهر هنا!"
+  },
+  "season": {
+    "daysLeft": "المتبقي: {n} يوم",
+    "multiplier": "{n}× XP"
+  },
+  "studyRooms": {
+    "title": "غرف الدراسة",
+    "subtitle": "ادرس مع زملائك في الوقت الفعلي",
+    "create": "إنشاء غرفة",
+    "newRoom": "غرفة دراسة جديدة",
+    "roomNamePlaceholder": "مثال: التحضير لامتحان الرياضيات — الصف 11",
+    "codePlaceholder": "أدخل الرمز المكوّن من 6 أحرف...",
+    "join": "انضم",
+    "createBtn": "إنشاء",
+    "cancel": "إلغاء",
+    "noRooms": "لا توجد غرف دراسة نشطة. أنشئ واحدة للبدء!",
+    "invalidCode": "الغرفة غير موجودة أو انتهت صلاحيتها.",
+    "joinError": "تعذّر الانضمام إلى الغرفة."
+  },
+  "studyRoom": {
+    "connected": "مباشر",
+    "disconnected": "غير متصل",
+    "participants": "في الغرفة",
+    "leave": "مغادرة",
+    "empty": "لا توجد رسائل بعد. ألقِ التحية!",
+    "placeholder": "اكتب رسالة...",
+    "connectingPlaceholder": "جارٍ الاتصال..."
   }
 }
