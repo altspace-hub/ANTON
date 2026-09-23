@@ -1278,6 +1278,15 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
     console.error('[mesh] Failed to start dialer:', err);
   }
 
+  // MARKETS_SCHEDULE_DISABLED=true stops every scheduled Markets job — the
+  // free deterministic loops (NAV, verifier, calibration, sweeps, leaderboards,
+  // triggers, the boot/resume catch-up) as well as the fetching and AI phases
+  // that MARKETS_AUTOMATION already gates — and the nightly refresh of the
+  // Markets materialized views. Nothing is deleted: the Markets pages read
+  // what is stored, and what a person starts in the UI still runs. (2026-09-23)
+  const marketsScheduleDisabled =
+    String(process.env.MARKETS_SCHEDULE_DISABLED || '').toLowerCase() === 'true';
+
   // ── PG-specific: NOTIFY/LISTEN, partitions, materialized views ────────
   if (db.dialect === 'postgresql') {
     try {
@@ -1310,8 +1319,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
       console.error('[pg-partitions] Failed to initialize:', err);
     }
 
-    // Daily materialized view refresh at 4 AM
-    if (cron.validate('0 4 * * *')) {
+    // Daily materialized view refresh at 4 AM (the Markets views)
+    if (!marketsScheduleDisabled && cron.validate('0 4 * * *')) {
       cron.schedule('0 4 * * *', async () => {
         console.log('[markets-cron] Refreshing materialized views...');
         try {
@@ -1328,7 +1337,11 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
   }
 
   // ── Markets Pillar: CET-aligned Trading Day Schedule ─────────────────────
-  try {
+  // The whole schedule below is skipped when MARKETS_SCHEDULE_DISABLED=true.
+  if (marketsScheduleDisabled) {
+    console.log('[markets-schedule] MARKETS_SCHEDULE_DISABLED=true — no Markets job is scheduled (no fetches, no AI phases, no free loops, no catch-up)');
+    lifecycleLog('markets-schedule-disabled');
+  } else try {
     const marketDataService = await createMarketDataService(db);
     const marketAtomService = await createMarketAtomService(db, anthropic);
     const eventTriggerService = await createMarketEventTriggerService(db);
