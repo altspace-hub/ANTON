@@ -15,6 +15,7 @@ import ControlsTab from '../../components/risk-atlas/ControlsTab';
 import MaintenanceTab from '../../components/risk-atlas/MaintenanceTab';
 import CrossDomainBundlesSection from '../../components/risk-atlas/CrossDomainBundlesSection';
 import GenerateBwraSection from '../../components/risk-atlas/GenerateBwraSection';
+import AtlasProposalsSection from '../../components/risk-atlas/AtlasProposalsSection';
 
 type TabKey = 'dashboard' | 'paths' | 'controls' | 'events' | 'maintenance';
 type AppetitePosition = 'within' | 'boundary' | 'outside' | 'unacceptable';
@@ -158,7 +159,7 @@ export default function RiskAtlasWorkspacePage() {
         })}
       </div>
 
-      {tab === 'dashboard'  && <DashboardTab dashboard={dashboard} />}
+      {tab === 'dashboard'  && <DashboardTab dashboard={dashboard} onRefresh={() => { void load(); }} />}
       {tab === 'paths'      && id && <ThreatPathsTab atlasId={id} />}
       {tab === 'controls'   && id && <ControlsTab atlasId={id} />}
       {tab === 'events'     && id && <EventsTab atlasId={id} />}
@@ -167,7 +168,7 @@ export default function RiskAtlasWorkspacePage() {
   );
 }
 
-function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
+function DashboardTab({ dashboard, onRefresh }: { dashboard: DashboardData; onRefresh: () => void }) {
   const a = dashboard.paths_by_appetite;
   const atlasId = dashboard.atlas.id;
   return (
@@ -184,6 +185,8 @@ function DashboardTab({ dashboard }: { dashboard: DashboardData }) {
       <CrossDomainBundlesSection atlasId={atlasId} />
 
       <ExportRow atlasId={atlasId} />
+
+      <AtlasProposalsSection atlasId={atlasId} onApplied={onRefresh} />
 
       <GenerateBwraSection atlasId={atlasId} />
 

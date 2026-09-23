@@ -45,6 +45,13 @@
 //     GET    /api/atlas/:id/triggers
 //     POST   /api/atlas/:id/triggers
 //
+//   AI suggestions (atlas-proposals.ts)
+//     POST   /api/atlas/:id/proposals            { stage } — starts a job
+//     GET    /api/atlas/:id/proposals/job
+//     GET    /api/atlas/:id/proposals[?status=]
+//     POST   /api/atlas/:id/proposals/:proposalId/accept | /reject
+//     POST   /api/atlas/:id/proposals/accept      { ids: [] }
+//
 //   Business-wide risk assessment (atlas-bwra.ts)
 //     POST   /api/atlas/:id/bwra                 (start a job; re-attaches if running)
 //     GET    /api/atlas/:id/bwra/job
@@ -76,6 +83,7 @@ import { createAtlasPackLoader } from '../services/risk-atlas/atlas-pack-loader.
 import { seedAtlasFromProposal } from '../services/risk-atlas/atlas-pack-seeder.js';
 import { createAtlasExport, renderBoardPackMarkdown } from '../services/risk-atlas/atlas-export.js';
 import { createAtlasBwra, BwraInputError } from '../services/risk-atlas/atlas-bwra.js';
+import { createAtlasProposals, ProposalInputError, isProposalStage, STAGES } from '../services/risk-atlas/atlas-proposals.js';
 import { startStepJob, getStepJobSummary } from '../services/step-job-registry.js';
 import { generateDocx } from '../services/export-docx.js';
 import { createAtlasIntegrityRunner, listIntegrityRules } from '../services/risk-atlas/atlas-integrity-rules.js';
@@ -110,6 +118,7 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
   const packs = createAtlasPackLoader(db);
   const atlasExport = createAtlasExport(db);
   const bwra = createAtlasBwra(db);
+  const proposals_ = createAtlasProposals(db);
   const integrity = createAtlasIntegrityRunner(db);
   const fcp = createAtlasFcpScopeService(db);
   // Quality ratchet — lazily resolved on first request to avoid blocking
@@ -785,6 +794,102 @@ export function createAtlasRoutes(db: DatabaseAdapter, anthropic?: any): Router 
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="bwra-${encodeURIComponent(id)}-${doc.created_at.slice(0, 10)}.docx"`);
       res.send(buf);
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  // ── AI suggestions for the Atlas (2026-09-22) ──────────────────────────
+  // The atlas-* stage prompts propose additions; a person accepts or rejects
+  // each, and acceptance applies it through atlas-service (atlas-proposals.ts).
+  const proposalJobKey = (atlasId: string) => `atlas-proposals:${atlasId}`;
+
+  router.post('/atlas/:id/proposals', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const stage = (req.body ?? {}).stage as unknown;
+      if (!isProposalStage(stage)) { res.status(400).json({ error: `stage must be one of: ${Object.keys(STAGES).join(', ')}` }); return; }
+      const userId = (req as AuthedRequest).user!.id;
+      const meta: Record<string, unknown> = { atlasId: id, stage, status: 'Starting' };
+      const { job, started } = startStepJob(proposalJobKey(id), meta, async (sink) => {
+        try {
+          const { setId, proposals } = await proposals_.generate(id, stage, userId, (status) => {
+            meta.status = status;
+            sink.write(`data: ${JSON.stringify({ type: 'status', message: status })}\n\n`);
+          });
+          meta.setId = setId;
+          meta.pending = proposals.filter((p) => p.status === 'pending').length;
+          meta.status = 'Done';
+        } catch (err) {
+          throw new Error(err instanceof ProposalInputError ? err.message : safeError(err));
+        }
+      });
+      res.status(started ? 202 : 200).json({ started, job: getStepJobSummary(job.key) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/proposals/job', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      res.json({ job: getStepJobSummary(proposalJobKey(id)) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.get('/atlas/:id/proposals', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const statusRaw = typeof req.query.status === 'string' ? req.query.status : undefined;
+      const statusSchema = z.enum(['pending', 'accepted', 'rejected', 'skipped', 'unresolved', 'failed']).optional();
+      const parsed = statusSchema.safeParse(statusRaw);
+      if (!parsed.success) { res.status(400).json({ error: 'Invalid status filter' }); return; }
+      res.json({ proposals: await proposals_.list(id, { status: parsed.data }) });
+    } catch (err) { res.status(500).json({ error: safeError(err) }); }
+  });
+
+  router.post('/atlas/:id/proposals/:proposalId/accept', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const result = await proposals_.accept(id, String(req.params.proposalId), (req as AuthedRequest).user!.id);
+      if (!result.ok) { res.status(400).json({ error: result.reason }); return; }
+      res.json({ proposal: result.proposal });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  router.post('/atlas/:id/proposals/:proposalId/reject', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const result = await proposals_.reject(id, String(req.params.proposalId), (req as AuthedRequest).user!.id);
+      if (!result.ok) { res.status(400).json({ error: result.reason }); return; }
+      res.json({ proposal: result.proposal });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // Accept a selection in one request; each is applied on its own, and one
+  // failure never stops the rest (the failed one keeps its error).
+  router.post('/atlas/:id/proposals/accept', async (req, res) => {
+    try {
+      const id = String(req.params.id);
+      if (!(await ensureAtlasAccess(db, req as AuthedRequest, id, res))) return;
+      const ids = z.array(z.string()).max(100).safeParse((req.body ?? {}).ids);
+      if (!ids.success) { res.status(400).json({ error: 'ids (array of suggestion ids) is required' }); return; }
+      const userId = (req as AuthedRequest).user!.id;
+      const results: Array<{ id: string; status: string; error?: string }> = [];
+      for (const pid of ids.data) {
+        try {
+          const result = await proposals_.accept(id, pid, userId);
+          results.push(result.ok ? { id: pid, status: result.proposal.status } : { id: pid, status: 'refused', error: result.reason });
+        } catch (err) {
+          results.push({ id: pid, status: 'failed', error: safeError(err) });
+        }
+      }
+      res.json({ results });
     } catch (err) { res.status(500).json({ error: safeError(err) }); }
   });
 
