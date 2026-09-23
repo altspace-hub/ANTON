@@ -178,10 +178,9 @@ export interface CreateReviewCycleInput {
 
 /**
  * An appetite statement's target_date as the day it is (YYYY-MM-DD).
- * node-postgres hands a DATE back as a Date at local midnight, which JSON then
- * prints as the previous day east of UTC ("2027-03-30T22:00:00.000Z" for
- * 2027-03-31) — the workspace showed that, and the path card's date field
- * saved it back one day earlier each time (found 2026-09-23).
+ * The PostgreSQL adapter now returns every DATE as that text; this stays so the
+ * service does not depend on it (a Date at local midnight printed as the
+ * previous day east of UTC, and the path card saved it back a day early).
  */
 function withDay<T extends { target_date: string | null } | null | undefined>(row: T): T {
   if (row && row.target_date !== null && row.target_date !== undefined) {

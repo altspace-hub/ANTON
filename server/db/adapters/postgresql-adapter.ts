@@ -7,6 +7,18 @@ import type { DatabaseAdapter, RunResult } from '../database.js';
 
 const { Pool } = pg;
 
+// A DATE column (OID 1082) comes back as the 'YYYY-MM-DD' text it is — the
+// type every row interface here already declares. node-postgres's default
+// builds a Date at LOCAL midnight instead, and that broke three ways (found
+// 2026-09-23): `state.last_daily_reset !== today` was always true, so the
+// FutureChain daily spend and transaction limits reset on every check and
+// never blocked; JSON printed the date as the previous day east of UTC
+// ("2027-03-30T22:00:00.000Z" for 2027-03-31); and a date <input> given that
+// timestamp showed empty. Process-wide: every pool and client in this process
+// shares pg's type parsers. TIMESTAMP/TIMESTAMPTZ are unaffected.
+const PG_DATE_OID = 1082;
+pg.types.setTypeParser(PG_DATE_OID, (value: string) => value);
+
 // ── SQL Translation Pipeline ─────────────────────────────────────────────────
 
 /**

@@ -32,6 +32,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { formatDay, parseDay } from '@/lib/dates';
 
 /* ---------- Types ---------- */
 
@@ -1064,13 +1065,13 @@ function ContractPhase({ contracts }: ContractPhaseProps) {
                 {contract.start_date && (
                   <div>
                     <label className="text-xs text-adv-gray">Start</label>
-                    <p className="text-adv-off-white">{new Date(contract.start_date).toLocaleDateString()}</p>
+                    <p className="text-adv-off-white">{formatDay(contract.start_date)}</p>
                   </div>
                 )}
                 {contract.end_date && (
                   <div>
                     <label className="text-xs text-adv-gray">End</label>
-                    <p className="text-adv-off-white">{new Date(contract.end_date).toLocaleDateString()}</p>
+                    <p className="text-adv-off-white">{formatDay(contract.end_date)}</p>
                   </div>
                 )}
               </div>
@@ -1119,7 +1120,7 @@ function ManagePhase({ contracts, vendors }: ManagePhaseProps) {
   const activeContracts = contracts.filter(c => c.status === 'active' || c.status === 'signed');
   const expiringContracts = contracts.filter(c => {
     if (!c.end_date) return false;
-    const daysUntilEnd = (new Date(c.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    const daysUntilEnd = ((parseDay(c.end_date)?.getTime() ?? 0) - Date.now()) / (1000 * 60 * 60 * 24);
     return daysUntilEnd > 0 && daysUntilEnd <= 90;
   });
 
@@ -1139,7 +1140,7 @@ function ManagePhase({ contracts, vendors }: ManagePhaseProps) {
           </div>
           <div className="space-y-2">
             {expiringContracts.map(c => {
-              const daysLeft = Math.ceil((new Date(c.end_date!).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              const daysLeft = Math.ceil(((parseDay(c.end_date)?.getTime() ?? 0) - Date.now()) / (1000 * 60 * 60 * 24));
               return (
                 <div key={c.id} className="flex items-center justify-between rounded-lg bg-adv-card/50 px-3 py-2 text-sm">
                   <span className="text-adv-off-white">{c.title} ({c.vendor_name})</span>
@@ -1182,7 +1183,7 @@ function ManagePhase({ contracts, vendors }: ManagePhaseProps) {
                   {c.end_date && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Ends {new Date(c.end_date).toLocaleDateString()}
+                      Ends {formatDay(c.end_date)}
                     </span>
                   )}
                 </div>

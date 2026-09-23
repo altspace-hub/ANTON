@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Landmark, Plus, AlertCircle, Clock, ChevronRight, Loader2 } from 'lucide-react';
 import { getAuthHeader, fetchWithAuth } from '@/lib/api';
+import { formatDay } from '@/lib/dates';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -64,11 +65,8 @@ function timeAgo(dateStr: string): string {
 }
 
 function formatDeadlineDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  // A bare YYYY-MM-DD is a calendar day: read it in local time (src/lib/dates.ts).
+  return formatDay(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // ── Component ────────────────────────────────────────────────────────
