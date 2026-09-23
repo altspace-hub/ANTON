@@ -19,8 +19,9 @@
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { randomUUID } from 'crypto';
-import { createAtlasEventLogger, type AtlasEventLogger } from './atlas-event-logger.js';
+import { createAtlasEventLogger, type AtlasEventLogger, type AtlasEventType } from './atlas-event-logger.js';
 import { createAtlasKnowledgeBridge, type AtlasKnowledgeBridge } from './atlas-knowledge-bridge.js';
+import { isoDay } from './atlas-dates.js';
 import {
   calculatePathScores,
   calculateInherent,
@@ -112,6 +113,46 @@ export interface CreateControlInput {
   vulnerability_links?: Array<{ vulnerability_id: string; type: ControlType; notes?: string }>;
 }
 
+// Field changes to an existing row (2026-09-23). Codes (TP-1, V-2, C-3) are
+// identifiers other rows and documents refer to, so they are not editable here;
+// neither are links or scores — scores belong to the calculator.
+export interface UpdateExposureInput {
+  name?: string;
+  description?: string | null;
+  category?: ExposureCategory | string | null;
+}
+
+export interface UpdateThreatPathInput {
+  name?: string;
+  description?: string | null;
+  fcp_domain?: FcpDomain | null;
+}
+
+export interface UpdateVulnerabilityInput {
+  name?: string;
+  description?: string | null;
+  severity?: Score1to5;
+}
+
+export interface UpdateControlInput {
+  name?: string;
+  description?: string | null;
+  type?: ControlType;
+  strength?: ControlStrength;
+  evidence?: string | null;
+  owner_role?: string | null;
+}
+
+/** Extra audit detail recorded with a change or removal — e.g. the AI suggestion it came from. */
+export type ChangeContext = Record<string, unknown>;
+
+export const EDITABLE_FIELDS = {
+  exposure: ['name', 'description', 'category'],
+  threat_path: ['name', 'description', 'fcp_domain'],
+  vulnerability: ['name', 'description', 'severity'],
+  control: ['name', 'description', 'type', 'strength', 'evidence', 'owner_role'],
+} as const;
+
 export interface UpsertAppetiteInput {
   threat_path_id?: string | null;     // null = company-wide (Stage 7b)
   appetite_position: AppetitePosition;
@@ -135,6 +176,20 @@ export interface CreateReviewCycleInput {
   deadline_id?: string;
 }
 
+/**
+ * An appetite statement's target_date as the day it is (YYYY-MM-DD).
+ * node-postgres hands a DATE back as a Date at local midnight, which JSON then
+ * prints as the previous day east of UTC ("2027-03-30T22:00:00.000Z" for
+ * 2027-03-31) — the workspace showed that, and the path card's date field
+ * saved it back one day earlier each time (found 2026-09-23).
+ */
+function withDay<T extends { target_date: string | null } | null | undefined>(row: T): T {
+  if (row && row.target_date !== null && row.target_date !== undefined) {
+    (row as { target_date: string | null }).target_date = isoDay(row.target_date);
+  }
+  return row;
+}
+
 // ── Service factory ─────────────────────────────────────────────────
 
 export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?: AtlasEventLogger; knowledgeBridge?: AtlasKnowledgeBridge }) {
@@ -151,6 +206,44 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       packId,
     );
     if (!row) throw new Error(`Industry pack not found or disabled: ${packId}`);
+  }
+
+  /**
+   * Change the given fields of one row in this Atlas and log each change with
+   * its old and new value. Fields outside `allowed` are ignored; a field set to
+   * the value it already has is not a change. The table and column names come
+   * from the constants below, never from input.
+   */
+  async function updateFields<Row extends { id: string }>(
+    spec: { table: string; label: string; event: AtlasEventType; allowed: readonly string[] },
+    atlasId: string, rowId: string, changes: Record<string, unknown>, actorUserId: string, context?: ChangeContext,
+  ): Promise<{ row: Row; changed: string[] }> {
+    const before = await db.get<Row>(`SELECT * FROM ${spec.table} WHERE id = ? AND atlas_id = ?`, rowId, atlasId);
+    if (!before) throw new Error(`${spec.label} not found in this atlas`);
+    const sets: string[] = [];
+    const vals: unknown[] = [];
+    const diff: Record<string, { from: unknown; to: unknown }> = {};
+    for (const key of spec.allowed) {
+      if (changes[key] === undefined) continue;
+      const to = changes[key];
+      const from = (before as Record<string, unknown>)[key] ?? null;
+      if (from === (to ?? null)) continue;
+      sets.push(`${key} = ?`);
+      vals.push(to);
+      diff[key] = { from, to: to ?? null };
+    }
+    if (sets.length === 0) return { row: before, changed: [] };
+    await db.run(
+      `UPDATE ${spec.table} SET ${sets.join(', ')}, updated_at = NOW() WHERE id = ? AND atlas_id = ?`,
+      ...vals, rowId, atlasId,
+    );
+    await events.logEvent({
+      atlasId, event: spec.event, userId: actorUserId, subResourceId: rowId,
+      details: { changes: diff, ...(context ?? {}) },
+    });
+    const row = await db.get<Row>(`SELECT * FROM ${spec.table} WHERE id = ? AND atlas_id = ?`, rowId, atlasId);
+    if (!row) throw new Error(`${spec.label} missing after update`);
+    return { row, changed: Object.keys(diff) };
   }
 
   // ── Atlas CRUD ──────────────────────────────────────────────────
@@ -244,7 +337,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Stage 1 — exposure points ───────────────────────────────────
 
-  async function addExposure(atlasId: string, input: CreateExposureInput, actorUserId: string): Promise<AtlasExposurePointRow> {
+  async function addExposure(atlasId: string, input: CreateExposureInput, actorUserId: string, context?: ChangeContext): Promise<AtlasExposurePointRow> {
     const id = `ex_${randomUUID().slice(0, 12)}`;
     await db.run(
       `INSERT INTO atlas_exposure_points (id, atlas_id, name, description, category, source_pack_exposure_id)
@@ -254,7 +347,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     );
     await events.logEvent({
       atlasId, event: 'exposure_added', userId: actorUserId, subResourceId: id,
-      details: { name: input.name, category: input.category },
+      details: { name: input.name, category: input.category, ...(context ?? {}) },
     });
     const row = await db.get<AtlasExposurePointRow>(`SELECT * FROM atlas_exposure_points WHERE id = ?`, id);
     if (!row) throw new Error('Exposure missing after insert');
@@ -268,14 +361,24 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     );
   }
 
-  async function removeExposure(atlasId: string, exposureId: string, actorUserId: string): Promise<void> {
+  async function updateExposure(atlasId: string, exposureId: string, input: UpdateExposureInput, actorUserId: string, context?: ChangeContext): Promise<AtlasExposurePointRow> {
+    return (await updateFields<AtlasExposurePointRow>(
+      { table: 'atlas_exposure_points', label: 'Exposure', event: 'exposure_updated', allowed: EDITABLE_FIELDS.exposure },
+      atlasId, exposureId, input as Record<string, unknown>, actorUserId, context,
+    )).row;
+  }
+
+  async function removeExposure(atlasId: string, exposureId: string, actorUserId: string, context?: ChangeContext): Promise<void> {
+    await assertInAtlas('atlas_exposure_points', 'Exposure', atlasId, [exposureId]);
     await db.run(`DELETE FROM atlas_exposure_points WHERE id = ? AND atlas_id = ?`, exposureId, atlasId);
-    await events.logEvent({ atlasId, event: 'exposure_removed', userId: actorUserId, subResourceId: exposureId });
+    await events.logEvent({ atlasId, event: 'exposure_removed', userId: actorUserId, subResourceId: exposureId, details: context });
   }
 
   // ── Stage 2 — threat paths + exposure links ────────────────────
 
-  async function addThreatPath(atlasId: string, input: CreateThreatPathInput, actorUserId: string): Promise<AtlasThreatPathRow> {
+  async function addThreatPath(atlasId: string, input: CreateThreatPathInput, actorUserId: string, context?: ChangeContext): Promise<AtlasThreatPathRow> {
+    // Links only to this Atlas's exposures — checked before anything is written.
+    await assertInAtlas('atlas_exposure_points', 'Exposure', atlasId, input.exposure_ids ?? []);
     const id = `tp_${randomUUID().slice(0, 12)}`;
     await db.run(
       `INSERT INTO atlas_threat_paths (id, atlas_id, path_code, name, description, source_pack_path_id, fcp_domain)
@@ -295,7 +398,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     }
     await events.logEvent({
       atlasId, event: 'path_added', userId: actorUserId, subResourceId: id,
-      details: { code: input.path_code, name: input.name, fcp_domain: input.fcp_domain ?? null },
+      details: { code: input.path_code, name: input.name, fcp_domain: input.fcp_domain ?? null, ...(context ?? {}) },
     });
     const row = await db.get<AtlasThreatPathRow>(`SELECT * FROM atlas_threat_paths WHERE id = ?`, id);
     if (!row) throw new Error('Threat path missing after insert');
@@ -312,14 +415,24 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     );
   }
 
-  async function removeThreatPath(atlasId: string, threatPathId: string, actorUserId: string): Promise<void> {
+  async function updateThreatPath(atlasId: string, threatPathId: string, input: UpdateThreatPathInput, actorUserId: string, context?: ChangeContext): Promise<AtlasThreatPathRow> {
+    return (await updateFields<AtlasThreatPathRow>(
+      { table: 'atlas_threat_paths', label: 'Threat path', event: 'path_updated', allowed: EDITABLE_FIELDS.threat_path },
+      atlasId, threatPathId, input as Record<string, unknown>, actorUserId, context,
+    )).row;
+  }
+
+  async function removeThreatPath(atlasId: string, threatPathId: string, actorUserId: string, context?: ChangeContext): Promise<void> {
+    await assertInAtlas('atlas_threat_paths', 'Threat path', atlasId, [threatPathId]);
     await db.run(`DELETE FROM atlas_threat_paths WHERE id = ? AND atlas_id = ?`, threatPathId, atlasId);
-    await events.logEvent({ atlasId, event: 'path_removed', userId: actorUserId, subResourceId: threatPathId });
+    await events.logEvent({ atlasId, event: 'path_removed', userId: actorUserId, subResourceId: threatPathId, details: context });
   }
 
   // ── Stage 3 — vulnerabilities + threat-path links ──────────────
 
-  async function addVulnerability(atlasId: string, input: CreateVulnerabilityInput, actorUserId: string): Promise<AtlasVulnerabilityRow> {
+  async function addVulnerability(atlasId: string, input: CreateVulnerabilityInput, actorUserId: string, context?: ChangeContext): Promise<AtlasVulnerabilityRow> {
+    // Links only to this Atlas's threat paths — checked before anything is written.
+    await assertInAtlas('atlas_threat_paths', 'Threat path', atlasId, input.threat_path_ids ?? []);
     const id = `v_${randomUUID().slice(0, 12)}`;
     await db.run(
       `INSERT INTO atlas_vulnerabilities (id, atlas_id, vuln_code, name, description, severity, source_pack_vuln_id)
@@ -338,7 +451,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     }
     await events.logEvent({
       atlasId, event: 'vulnerability_added', userId: actorUserId, subResourceId: id,
-      details: { code: input.vuln_code, severity: input.severity },
+      details: { code: input.vuln_code, severity: input.severity, ...(context ?? {}) },
     });
     const row = await db.get<AtlasVulnerabilityRow>(`SELECT * FROM atlas_vulnerabilities WHERE id = ?`, id);
     if (!row) throw new Error('Vulnerability missing after insert');
@@ -354,9 +467,24 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     );
   }
 
-  async function removeVulnerability(atlasId: string, vulnId: string, actorUserId: string): Promise<void> {
+  async function updateVulnerability(atlasId: string, vulnId: string, input: UpdateVulnerabilityInput, actorUserId: string, context?: ChangeContext): Promise<AtlasVulnerabilityRow> {
+    // Severity describes the weakness; it does not feed the calculator (the
+    // Stage 4 vulnerability score is set per path), so no residual changes here.
+    return (await updateFields<AtlasVulnerabilityRow>(
+      { table: 'atlas_vulnerabilities', label: 'Vulnerability', event: 'vulnerability_updated', allowed: EDITABLE_FIELDS.vulnerability },
+      atlasId, vulnId, input as Record<string, unknown>, actorUserId, context,
+    )).row;
+  }
+
+  async function removeVulnerability(atlasId: string, vulnId: string, actorUserId: string, context?: ChangeContext): Promise<void> {
+    // Removing a vulnerability also removes the control links on it (cascade),
+    // so the paths it sat on can lose control cover: their residuals are
+    // recalculated, as removeControl does. Collected before the delete.
+    await assertInAtlas('atlas_vulnerabilities', 'Vulnerability', atlasId, [vulnId]);
+    const tpIds = await affectedPathsForVulns([vulnId]);
     await db.run(`DELETE FROM atlas_vulnerabilities WHERE id = ? AND atlas_id = ?`, vulnId, atlasId);
-    await events.logEvent({ atlasId, event: 'vulnerability_removed', userId: actorUserId, subResourceId: vulnId });
+    await events.logEvent({ atlasId, event: 'vulnerability_removed', userId: actorUserId, subResourceId: vulnId, details: context });
+    for (const tpId of tpIds) await recalculateResidualForPath(tpId, actorUserId);
   }
 
   // ── Stage 4 — inherent scoring (deterministic) ─────────────────
@@ -366,6 +494,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     threatPathId: string,
     scores: { exposure: Score1to5; threat: Score1to5; vulnerability: Score1to5; rationale?: string },
     actorUserId: string,
+    context?: ChangeContext,
   ): Promise<{ inherent: AtlasInherentScoreRow; residual: AtlasResidualScoreRow | null }> {
     // Tenancy scoping (2026-07-17): the route verifies access to atlasId, so the
     // threat path MUST belong to that atlas — otherwise any authenticated caller
@@ -374,6 +503,9 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       `SELECT id FROM atlas_threat_paths WHERE id = ? AND atlas_id = ?`, threatPathId, atlasId,
     );
     if (!owned) throw new Error('Threat path not found in this atlas');
+    const previous = await db.get<{ exposure_score: number; threat_score: number; vulnerability_score: number; inherent_score: number }>(
+      `SELECT exposure_score, threat_score, vulnerability_score, inherent_score FROM atlas_inherent_scores WHERE threat_path_id = ?`, threatPathId,
+    );
     const inherent = calculateInherent(scores.exposure, scores.threat, scores.vulnerability);
     const id = `is_${randomUUID().slice(0, 12)}`;
     await db.run(
@@ -395,7 +527,12 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     if (path) {
       await events.logEvent({
         atlasId: path.atlas_id, event: 'inherent_scored', userId: actorUserId, subResourceId: threatPathId,
-        details: { exposure: scores.exposure, threat: scores.threat, vulnerability: scores.vulnerability, inherent },
+        details: {
+          exposure: scores.exposure, threat: scores.threat, vulnerability: scores.vulnerability, inherent,
+          // A rescore replaces audited scores: the ledger keeps what they were.
+          ...(previous ? { previous } : {}),
+          ...(context ?? {}),
+        },
       });
     }
     const inherentRow = await db.get<AtlasInherentScoreRow>(
@@ -408,10 +545,14 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Stage 5 — controls + control-vulnerability matrix ─────────
 
-  async function addControl(atlasId: string, input: CreateControlInput, actorUserId: string): Promise<AtlasControlRow> {
+  async function addControl(atlasId: string, input: CreateControlInput, actorUserId: string, context?: ChangeContext): Promise<AtlasControlRow> {
     if (input.strength === 'strong' && (!input.evidence || input.evidence.trim().length < 5)) {
       throw new Error('Cannot mark control "strong" without specific evidence (min 5 chars)');
     }
+    // Covers only this Atlas's vulnerabilities — checked before anything is
+    // written. A link to another Atlas's vulnerability would let this control
+    // change that Atlas's residuals.
+    await assertInAtlas('atlas_vulnerabilities', 'Vulnerability', atlasId, (input.vulnerability_links ?? []).map((l) => l.vulnerability_id));
     const id = `c_${randomUUID().slice(0, 12)}`;
     await db.run(
       `INSERT INTO atlas_controls
@@ -432,7 +573,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     }
     await events.logEvent({
       atlasId, event: 'control_added', userId: actorUserId, subResourceId: id,
-      details: { code: input.control_code, type: input.type, strength: input.strength },
+      details: { code: input.control_code, type: input.type, strength: input.strength, ...(context ?? {}) },
     });
     if (input.vulnerability_links?.length) {
       const tpIds = await affectedPathsForVulns(input.vulnerability_links.map(l => l.vulnerability_id));
@@ -452,14 +593,42 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     );
   }
 
-  async function removeControl(atlasId: string, controlId: string, actorUserId: string): Promise<void> {
+  async function updateControl(atlasId: string, controlId: string, input: UpdateControlInput, actorUserId: string, context?: ChangeContext): Promise<AtlasControlRow> {
+    const current = await db.get<AtlasControlRow>(`SELECT * FROM atlas_controls WHERE id = ? AND atlas_id = ?`, controlId, atlasId);
+    if (!current) throw new Error('Control not found in this atlas');
+    // The same rule as addControl, applied to the row as it would be after the change.
+    const strength = input.strength ?? current.strength;
+    const evidence = input.evidence !== undefined ? input.evidence : current.evidence;
+    if (strength === 'strong' && (!evidence || evidence.trim().length < 5)) {
+      throw new Error('Cannot mark control "strong" without specific evidence (min 5 chars)');
+    }
+    const { row, changed } = await updateFields<AtlasControlRow>(
+      { table: 'atlas_controls', label: 'Control', event: 'control_updated', allowed: EDITABLE_FIELDS.control },
+      atlasId, controlId, input as Record<string, unknown>, actorUserId, context,
+    );
+    // Strength feeds the worst-of rollup, so every path the control covers is
+    // rescored by the calculator.
+    if (changed.includes('strength')) {
+      const links = await db.all<{ vulnerability_id: string }>(
+        `SELECT DISTINCT vulnerability_id FROM atlas_control_vulnerability_map WHERE control_id = ?`,
+        controlId,
+      );
+      for (const tpId of await affectedPathsForVulns(links.map(l => l.vulnerability_id))) {
+        await recalculateResidualForPath(tpId, actorUserId);
+      }
+    }
+    return row;
+  }
+
+  async function removeControl(atlasId: string, controlId: string, actorUserId: string, context?: ChangeContext): Promise<void> {
+    await assertInAtlas('atlas_controls', 'Control', atlasId, [controlId]);
     const links = await db.all<{ vulnerability_id: string }>(
       `SELECT DISTINCT vulnerability_id FROM atlas_control_vulnerability_map WHERE control_id = ?`,
       controlId,
     );
     const tpIds = await affectedPathsForVulns(links.map(l => l.vulnerability_id));
     await db.run(`DELETE FROM atlas_controls WHERE id = ? AND atlas_id = ?`, controlId, atlasId);
-    await events.logEvent({ atlasId, event: 'control_removed', userId: actorUserId, subResourceId: controlId });
+    await events.logEvent({ atlasId, event: 'control_removed', userId: actorUserId, subResourceId: controlId, details: context });
     for (const tpId of tpIds) await recalculateResidualForPath(tpId, actorUserId);
   }
 
@@ -479,11 +648,14 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       threatPathId,
     );
     if (!inherent) return null;
+    // Only controls of the path's own Atlas count (links are checked on the way
+    // in; this keeps a stray cross-Atlas link from moving a score).
     const controlStrengths = await db.all<{ strength: ControlStrength }>(
       `SELECT DISTINCT c.strength
        FROM atlas_threat_path_vulnerabilities tpv
+       JOIN atlas_threat_paths tp ON tp.id = tpv.threat_path_id
        JOIN atlas_control_vulnerability_map cvm ON cvm.vulnerability_id = tpv.vulnerability_id
-       JOIN atlas_controls c ON c.id = cvm.control_id
+       JOIN atlas_controls c ON c.id = cvm.control_id AND c.atlas_id = tp.atlas_id
        WHERE tpv.threat_path_id = ?`,
       threatPathId,
     );
@@ -515,11 +687,21 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Stage 7 — appetite + escalation triggers ──────────────────
 
-  async function upsertAppetite(atlasId: string, input: UpsertAppetiteInput, actorUserId: string): Promise<AtlasAppetiteStatementRow> {
+  async function upsertAppetite(atlasId: string, input: UpsertAppetiteInput, actorUserId: string, context?: ChangeContext): Promise<AtlasAppetiteStatementRow> {
     const id = `app_${randomUUID().slice(0, 12)}`;
+    let previous: AtlasAppetiteStatementRow | undefined;
     if (input.threat_path_id) {
+      // A statement is on a path of this Atlas. Without the check, one Atlas could
+      // attach a statement to another's path, and that Atlas's rollup (which reads
+      // statements by path) would count it.
+      await assertInAtlas('atlas_threat_paths', 'Threat path', atlasId, [input.threat_path_id]);
+      previous = withDay(await db.get<AtlasAppetiteStatementRow>(
+        `SELECT * FROM atlas_appetite_statements WHERE atlas_id = ? AND threat_path_id = ?`, atlasId, input.threat_path_id,
+      ));
       // Per-path: rely on the partial unique index uq_atlas_appetite_path
       // (added in migration 126). ON CONFLICT serialises concurrent upserts.
+      // An approval covers what was approved: when the position, action, date
+      // or budget changes, the statement is no longer approved (2026-09-23).
       await db.run(
         `INSERT INTO atlas_appetite_statements
           (id, atlas_id, threat_path_id, appetite_position, required_action, target_date, budget_eur)
@@ -529,6 +711,18 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
            required_action = EXCLUDED.required_action,
            target_date = EXCLUDED.target_date,
            budget_eur = EXCLUDED.budget_eur,
+           approved_by = CASE
+             WHEN (atlas_appetite_statements.appetite_position, atlas_appetite_statements.required_action,
+                   atlas_appetite_statements.target_date, atlas_appetite_statements.budget_eur)
+                  IS NOT DISTINCT FROM
+                  (EXCLUDED.appetite_position, EXCLUDED.required_action, EXCLUDED.target_date, EXCLUDED.budget_eur)
+             THEN atlas_appetite_statements.approved_by ELSE NULL END,
+           approved_at = CASE
+             WHEN (atlas_appetite_statements.appetite_position, atlas_appetite_statements.required_action,
+                   atlas_appetite_statements.target_date, atlas_appetite_statements.budget_eur)
+                  IS NOT DISTINCT FROM
+                  (EXCLUDED.appetite_position, EXCLUDED.required_action, EXCLUDED.target_date, EXCLUDED.budget_eur)
+             THEN atlas_appetite_statements.approved_at ELSE NULL END,
            updated_at = NOW()`,
         id, atlasId, input.threat_path_id,
         input.appetite_position, input.required_action ?? null,
@@ -545,18 +739,30 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
         input.target_date ?? null, input.budget_eur ?? null,
       );
     }
-    await events.logEvent({
-      atlasId, event: 'appetite_changed', userId: actorUserId,
-      subResourceId: input.threat_path_id ?? undefined,
-      details: { appetite: input.appetite_position },
-    });
-    const row = await db.get<AtlasAppetiteStatementRow>(
+    const row = withDay(await db.get<AtlasAppetiteStatementRow>(
       input.threat_path_id
         ? `SELECT * FROM atlas_appetite_statements WHERE atlas_id = ? AND threat_path_id = ?`
         : `SELECT * FROM atlas_appetite_statements WHERE id = ?`,
       ...(input.threat_path_id ? [atlasId, input.threat_path_id] : [id]),
-    );
+    ));
     if (!row) throw new Error('Appetite row missing after upsert');
+    // The ledger keeps what a statement said before, and says when a change
+    // withdrew an approval — the approval itself is gone from the row.
+    await events.logEvent({
+      atlasId, event: 'appetite_changed', userId: actorUserId,
+      subResourceId: input.threat_path_id ?? undefined,
+      details: {
+        appetite: input.appetite_position,
+        ...(previous ? {
+          previous: {
+            appetite_position: previous.appetite_position, required_action: previous.required_action,
+            target_date: previous.target_date, budget_eur: previous.budget_eur,
+          },
+          ...(previous.approved_at && !row.approved_at ? { approval_withdrawn: { approved_by: previous.approved_by, approved_at: previous.approved_at } } : {}),
+        } : {}),
+        ...(context ?? {}),
+      },
+    });
     const atlas = await getAtlas(atlasId);
     if (atlas) await bridge.pushAppetiteRecommendation(atlas, row);
     return row;
@@ -568,9 +774,9 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
       `UPDATE atlas_appetite_statements SET approved_by = ?, approved_at = NOW(), updated_at = NOW() WHERE id = ? AND atlas_id = ?`,
       actorUserId, appetiteId, atlasId,
     );
-    const row = await db.get<AtlasAppetiteStatementRow>(
+    const row = withDay(await db.get<AtlasAppetiteStatementRow>(
       `SELECT * FROM atlas_appetite_statements WHERE id = ? AND atlas_id = ?`, appetiteId, atlasId,
-    );
+    ));
     if (!row) throw new Error('Appetite not found in this atlas');
     await events.logEvent({
       atlasId: row.atlas_id, event: 'appetite_approved', userId: actorUserId, subResourceId: appetiteId,
@@ -579,13 +785,13 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
   }
 
   async function listAppetite(atlasId: string): Promise<AtlasAppetiteStatementRow[]> {
-    return db.all<AtlasAppetiteStatementRow>(
+    return (await db.all<AtlasAppetiteStatementRow>(
       `SELECT * FROM atlas_appetite_statements WHERE atlas_id = ? ORDER BY threat_path_id NULLS FIRST`,
       atlasId,
-    );
+    )).map(withDay);
   }
 
-  async function addTrigger(atlasId: string, input: CreateTriggerInput, actorUserId: string): Promise<AtlasEscalationTriggerRow> {
+  async function addTrigger(atlasId: string, input: CreateTriggerInput, actorUserId: string, context?: ChangeContext): Promise<AtlasEscalationTriggerRow> {
     const id = `trg_${randomUUID().slice(0, 12)}`;
     await db.run(
       `INSERT INTO atlas_escalation_triggers (id, atlas_id, trigger_event, required_action, timeline, source)
@@ -595,7 +801,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     );
     await events.logEvent({
       atlasId, event: 'trigger_added', userId: actorUserId, subResourceId: id,
-      details: { event: input.trigger_event },
+      details: { event: input.trigger_event, ...(context ?? {}) },
     });
     const row = await db.get<AtlasEscalationTriggerRow>(`SELECT * FROM atlas_escalation_triggers WHERE id = ?`, id);
     if (!row) throw new Error('Trigger missing after insert');
@@ -669,7 +875,7 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     const residual = (await db.get<AtlasResidualScoreRow>(
       `SELECT * FROM atlas_residual_scores WHERE threat_path_id = ?`, threatPathId,
     )) ?? null;
-    const appetite = (await db.get<AtlasAppetiteStatementRow>(
+    const appetite = withDay(await db.get<AtlasAppetiteStatementRow>(
       `SELECT * FROM atlas_appetite_statements WHERE threat_path_id = ?`, threatPathId,
     )) ?? null;
     return { path, exposures, vulnerabilities, inherent, controls, residual, appetite };
@@ -719,6 +925,21 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
 
   // ── Helpers ────────────────────────────────────────────────────
 
+  /**
+   * Every id must be a row of this Atlas in `table` (a constant, never input).
+   * Checked before a write, so a link or removal can never reach another
+   * Atlas's rows and nothing is half-written when an id is wrong.
+   */
+  async function assertInAtlas(table: string, label: string, atlasId: string, ids: string[]): Promise<void> {
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) return;
+    const placeholders = unique.map(() => '?').join(',');
+    const found = await db.all<{ id: string }>(
+      `SELECT id FROM ${table} WHERE atlas_id = ? AND id IN (${placeholders})`, atlasId, ...unique,
+    );
+    if (found.length !== unique.length) throw new Error(`${label} not found in this atlas`);
+  }
+
   async function affectedPathsForVulns(vulnerabilityIds: string[]): Promise<string[]> {
     if (vulnerabilityIds.length === 0) return [];
     const placeholders = vulnerabilityIds.map(() => '?').join(',');
@@ -733,15 +954,15 @@ export function createAtlasService(db: DatabaseAdapter, options?: { eventLogger?
     // Atlas
     createAtlas, getAtlas, listAtlases, updateAtlas, archiveAtlas,
     // Stage 1
-    addExposure, listExposures, removeExposure,
+    addExposure, listExposures, updateExposure, removeExposure,
     // Stage 2
-    addThreatPath, listThreatPaths, removeThreatPath,
+    addThreatPath, listThreatPaths, updateThreatPath, removeThreatPath,
     // Stage 3
-    addVulnerability, listVulnerabilities, removeVulnerability,
+    addVulnerability, listVulnerabilities, updateVulnerability, removeVulnerability,
     // Stage 4
     scoreInherent,
     // Stage 5
-    addControl, listControls, removeControl,
+    addControl, listControls, updateControl, removeControl,
     // Stage 6
     recalculateResidualForPath,
     // Stage 7

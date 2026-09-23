@@ -16,6 +16,7 @@ import MaintenanceTab from '../../components/risk-atlas/MaintenanceTab';
 import CrossDomainBundlesSection from '../../components/risk-atlas/CrossDomainBundlesSection';
 import GenerateBwraSection from '../../components/risk-atlas/GenerateBwraSection';
 import AtlasProposalsSection from '../../components/risk-atlas/AtlasProposalsSection';
+import CompanyAppetiteSection from '../../components/risk-atlas/CompanyAppetiteSection';
 
 type TabKey = 'dashboard' | 'paths' | 'controls' | 'events' | 'maintenance';
 type AppetitePosition = 'within' | 'boundary' | 'outside' | 'unacceptable';
@@ -189,6 +190,8 @@ function DashboardTab({ dashboard, onRefresh }: { dashboard: DashboardData; onRe
       <AtlasProposalsSection atlasId={atlasId} onApplied={onRefresh} />
 
       <GenerateBwraSection atlasId={atlasId} />
+
+      <CompanyAppetiteSection atlasId={atlasId} refreshKey={dashboard.last_event_at ?? null} />
 
       <QualityScoreCard atlasId={atlasId} />
 

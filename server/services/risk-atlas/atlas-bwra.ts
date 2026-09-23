@@ -21,6 +21,9 @@ import { appetitePositionFor } from './atlas-residual-calculator.js';
 import { RESIDUAL_REDUCTION, type AppetitePosition, type Score1to5, type ThreatPathFull } from './types.js';
 import { getModuleSystemPrompt } from '../module-loader.js';
 import { callChat, type ChatResult, type StreamChatConfig } from '../provider-router.js';
+// isoDay lives in atlas-dates.ts (atlas-service needs it too); re-exported for existing callers.
+import { isoDay } from './atlas-dates.js';
+export { isoDay };
 
 export const BWRA_MODULE_ID = 'business-wide-risk-assessment';
 
@@ -75,12 +78,6 @@ const table = (head: string[], rows: string[][]): string =>
     ? '_None recorded in the Atlas yet._'
     : [`| ${head.join(' | ')} |`, `| ${head.map(() => '---').join(' | ')} |`, ...rows.map((r) => `| ${r.map(cell).join(' | ')} |`)].join('\n');
 
-/** A DATE/TIMESTAMPTZ column as YYYY-MM-DD — node-postgres returns a Date object, not a string. */
-export function isoDay(v: unknown): string | null {
-  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v.toISOString().slice(0, 10);
-  if (typeof v === 'string' && v.trim()) return v.slice(0, 10);
-  return null;
-}
 
 function uniqueBy<T>(items: T[], key: (t: T) => string): T[] {
   const seen = new Map<string, T>();
