@@ -1,22 +1,30 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { StreamSink } from './stream-sink.js';
-import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
+import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens, claudeGeneration } from './thinking-map.js';
+import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 
 // ── Types ──────────────────────────────────────────────────
 
-type ModelId = 'claude-fable-5-1' | 'claude-fable-5' | 'claude-opus-5' | 'claude-sonnet-5' | 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+type ModelId = 'claude-fable-5-1' | 'claude-fable-5' | 'claude-opus-5-5' | 'claude-opus-5' | 'claude-sonnet-5' | 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 type ThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate' | 'plan_first' | 'deep_investigate';
 
 // Models that support prompt caching via cache_control: { type: "ephemeral" }
-const CACHE_SUPPORTED_MODELS: ReadonlySet<ModelId> = new Set([
-  'claude-fable-5-1',
-  'claude-fable-5',
-  'claude-opus-5',
-  'claude-sonnet-5',
+// The 4.x models listed; every Claude 5 model (Opus 5.5 now, Sonnet 5.5 /
+// Haiku 5.5 when they ship) caches without an entry — see isCacheSupportedModel.
+const CACHE_SUPPORTED_MODELS: ReadonlySet<string> = new Set([
   'claude-opus-4-8',
   'claude-sonnet-4-6',
   'claude-sonnet-4-5-20250929',
 ]);
+
+/** Whether the model takes the split (cache_control) system prompt. The chat
+ *  route asks this too — it kept its own list, which missed Fable 5.1, so a
+ *  Fable 5.1 run went out without the cached static block. */
+export function isCacheSupportedModel(model: string): boolean {
+  if (CACHE_SUPPORTED_MODELS.has(model)) return true;
+  const generation = claudeGeneration(model);
+  return generation !== null && generation >= 5;
+}
 
 interface StreamConfig {
   model: ModelId;
@@ -131,6 +139,7 @@ async function withRetry<T>(factory: () => Promise<T>): Promise<T> {
 const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
   'claude-fable-5-1':            128_000,
   'claude-fable-5':              128_000,
+  'claude-opus-5-5':             128_000,
   'claude-opus-5':               128_000,
   'claude-sonnet-5':             128_000,
   'claude-opus-4-8':             128_000,
@@ -139,7 +148,9 @@ const MODEL_MAX_OUTPUT: Partial<Record<string, number>> = {
   'claude-haiku-4-5-20251001':     8_192,   // Haiku's real API ceiling — 32k is rejected with a 400
 };
 function getOutputCeiling(model: string): number {
-  return MODEL_MAX_OUTPUT[model] ?? 32_000;
+  // The capability table covers ids this list does not (Opus 4.7 was capped
+  // at the 32k fallback despite its 128k ceiling).
+  return MODEL_MAX_OUTPUT[model] ?? MODEL_CAPABILITIES[model]?.maxOutputTokens ?? 32_000;
 }
 
 function getThinkingConfig(level: ThinkingLevel, model: ModelId) {
@@ -257,7 +268,7 @@ export async function streamToResponse(
     //   - Haiku and unknown models: single block without cache_control (no caching).
     //   - Fallback: if staticSystemPrompt is not provided, the full system string is sent
     //               as a single cached block (original behaviour, backwards-compatible).
-    const supportsCache = CACHE_SUPPORTED_MODELS.has(config.model);
+    const supportsCache = isCacheSupportedModel(config.model);
 
     let systemBlocks: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }>;
 
@@ -528,7 +539,7 @@ export async function callSync(config: SyncCallConfig): Promise<StreamCompletion
   const anthropic = getClient();
   const thinkingConfig = getThinkingConfig(config.thinking, config.model);
 
-  const supportsCache = CACHE_SUPPORTED_MODELS.has(config.model);
+  const supportsCache = isCacheSupportedModel(config.model);
   const systemBlocks: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> = supportsCache
     ? [{ type: 'text' as const, text: config.system, cache_control: { type: 'ephemeral' as const } }]
     : [{ type: 'text' as const, text: config.system }];

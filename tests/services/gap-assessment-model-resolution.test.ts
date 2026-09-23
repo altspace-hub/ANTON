@@ -26,7 +26,7 @@ describe('gap assessment — model tier resolution', () => {
 
     it('resolves the opus alias to a concrete model at full reasoning', () => {
       const c = __getModelConfig('opus');
-      expect(c.model).toBe('claude-opus-4-8');
+      expect(c.model).toBe('claude-opus-5-5'); // the lineup's large tier since 2026-09-23
       expect(c.thinkingLevel).toBe('investigate');
       expect(c.maxTokensSynthesis).toBe(128_000);
     });

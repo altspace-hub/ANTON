@@ -48,7 +48,15 @@ interface TestResult {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
+// Newest first. o4-mini's 2025-04-16 snapshot retires 2026-10-23 and o3's on
+// 2026-12-11 (OpenAI deprecations page, checked 2026-09-23).
 const MODEL_NAME_OPTIONS = [
+  'gpt-6-sol',
+  'gpt-6-luna',
+  'gpt-6-astra',
+  'gpt-5.6-sol',
+  'gpt-5.6-terra',
+  'gpt-5.6-luna',
   'gpt-5.4',
   'gpt-4o',
   'gpt-4o-mini',
@@ -56,6 +64,11 @@ const MODEL_NAME_OPTIONS = [
   'o3',
   'o4-mini',
 ] as const;
+
+/** GPT-5.x, GPT-6 and the o-series take reasoning_effort, not temperature. */
+function isReasoningModelName(name: string): boolean {
+  return /^(o\d|gpt-5\.|gpt-6)/.test(name);
+}
 
 const DEFAULT_API_VERSION = '2024-10-21';
 
@@ -79,7 +92,7 @@ export default function AzureOpenAISettingsPage() {
   const [newDeploymentName, setNewDeploymentName] = useState('');
   const [newModelName, setNewModelName] = useState<string>(MODEL_NAME_OPTIONS[0]);
   const [newDisplayName, setNewDisplayName] = useState('');
-  const [newIsReasoningModel, setNewIsReasoningModel] = useState(false);
+  const [newIsReasoningModel, setNewIsReasoningModel] = useState(isReasoningModelName(MODEL_NAME_OPTIONS[0]));
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -211,7 +224,7 @@ export default function AzureOpenAISettingsPage() {
         setNewDeploymentName('');
         setNewModelName(MODEL_NAME_OPTIONS[0]);
         setNewDisplayName('');
-        setNewIsReasoningModel(false);
+        setNewIsReasoningModel(isReasoningModelName(MODEL_NAME_OPTIONS[0]));
         setShowAddForm(false);
         await fetchDeployments();
       }
@@ -521,7 +534,12 @@ export default function AzureOpenAISettingsPage() {
                 </label>
                 <select
                   value={newModelName}
-                  onChange={(e) => setNewModelName(e.target.value)}
+                  onChange={(e) => {
+                    setNewModelName(e.target.value);
+                    // GPT-5.x, GPT-6 and the o-series are reasoning models — tick the box
+                    // so the deployment gets reasoning_effort instead of temperature.
+                    setNewIsReasoningModel(isReasoningModelName(e.target.value));
+                  }}
                   className="w-full rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none"
                 >
                   {MODEL_NAME_OPTIONS.map((m) => (
@@ -581,7 +599,7 @@ export default function AzureOpenAISettingsPage() {
                   setNewDeploymentName('');
                   setNewModelName(MODEL_NAME_OPTIONS[0]);
                   setNewDisplayName('');
-                  setNewIsReasoningModel(false);
+                  setNewIsReasoningModel(isReasoningModelName(MODEL_NAME_OPTIONS[0]));
                 }}
                 className="rounded-lg border border-border bg-adv-dark px-4 py-2.5 text-sm font-medium text-adv-off-white hover:border-adv-gray-med"
               >

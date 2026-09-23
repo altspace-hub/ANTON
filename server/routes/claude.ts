@@ -3,7 +3,7 @@ import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { streamToResponse, isApiKeyConfigured, callSync, getClient } from '../services/claude-client.js';
+import { streamToResponse, isApiKeyConfigured, callSync, getClient, isCacheSupportedModel } from '../services/claude-client.js';
 import { runIterativeReasoning, getRevelationChain, ireSupportedProvider } from '../services/iterative-reasoning.js';
 import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-engine.js';
 import { createOutputStore } from '../services/output-store.js';
@@ -46,6 +46,7 @@ import { getAreaDefaultModelSync } from '../services/area-default-model-store.js
 import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
 import { capabilityModelId } from '../services/engine-model-id.js';
 import { mapModelToProvider, callChat } from '../services/provider-router.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
@@ -239,7 +240,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         (model as string) ||
         getAreaDefaultModelSync(areaId as string | null | undefined) ||
         getEffectiveDefaultModel() ||
-        'claude-opus-5';
+        CLAUDE_LARGE;
       if (moduleId) {
         try {
           // enforce_model override (server-side); enforce_thinking/creativity served to client via GET /api/compliance-policy/:moduleId
@@ -949,12 +950,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       } as const;
 
       // Use the split composer for Anthropic models (supports caching); plain for others.
-      const isCachingModel =
-        provider === 'anthropic' &&
-        (selectedModel === 'claude-opus-5' || selectedModel === 'claude-sonnet-5'
-          || selectedModel === 'claude-fable-5'
-          || selectedModel === 'claude-opus-4-8' || selectedModel === 'claude-sonnet-4-6'
-          || selectedModel === 'claude-sonnet-4-5-20250929');
+      // The same test claude-client applies — a second list here missed Fable 5.1.
+      const isCachingModel = provider === 'anthropic' && isCacheSupportedModel(selectedModel);
 
       // Wave 1: one composition for every engine (same block order on the API
       // and the subscription engine); the parts list feeds the per-layer
@@ -1790,7 +1787,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       await streamToResponse(
           {
-            model: selectedModel as 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
+            model: selectedModel as 'claude-opus-5-5' | 'claude-opus-4-8' | 'claude-sonnet-4-6' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001',
             thinking: thinking || 'think_hard',
             system: composedPrompt,
             staticSystemPrompt,
@@ -2162,7 +2159,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // never drift from the SoT again (it previously listed stale Haiku $0.80/$4).
   router.get('/claude/models', async (_req, res) => {
     const curated: Array<{ id: string; description: string; recommended?: boolean }> = [
-      { id: 'claude-opus-4-8', description: 'Most capable. Best for complex analysis, large documents, nuanced reasoning.', recommended: true },
+      { id: 'claude-opus-5-5', description: 'Newest Opus. Best for complex analysis, large documents, nuanced reasoning — at a lower price than Opus 5.', recommended: true },
+      { id: 'claude-sonnet-5', description: 'Claude 5 workhorse. Near-Opus quality on most work at a fraction of the cost.' },
+      { id: 'claude-opus-4-8', description: 'Previous Opus. Complex analysis, large documents, nuanced reasoning.' },
       { id: 'claude-sonnet-4-6', description: 'Fast and highly capable. Excellent for drafting, coding, and structured analysis.' },
       { id: 'claude-sonnet-4-5-20250929', description: 'Balanced speed and quality. Good for drafting, summarising, and routine analysis.' },
       { id: 'claude-haiku-4-5-20251001', description: 'Fastest and most affordable. Best for simple questions and quick lookups.' },
@@ -2273,7 +2272,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Only Anthropic models are supported in sync mode
       const selectedModel = (model as string) || 'claude-sonnet-4-5-20250929';
-      const validModels = ['claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'] as const;
+      const validModels = ['claude-opus-5-5', 'claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'] as const;
       type SyncModel = typeof validModels[number];
       const syncModel: SyncModel = (validModels as readonly string[]).includes(selectedModel)
         ? (selectedModel as SyncModel)
@@ -2380,10 +2379,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // Use Sonnet by default — fast and cost-effective for rewriting tasks
       const selectedModel = (
-        ['claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
+        ['claude-opus-5-5', 'claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
           ? model
           : 'claude-sonnet-4-5-20250929'
-      ) as 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
+      ) as 'claude-opus-5-5' | 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 
       await streamToResponse(
         {

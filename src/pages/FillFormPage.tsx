@@ -61,7 +61,7 @@ export default function FillFormPage() {
     try {
       const stream = streamMessage(
         {
-          model: 'claude-opus-4-8',
+          model: 'claude-opus-5-5',
           thinking: 'think_hard',
           creativity: 'strict',
           systemPrompt: FILL_FORM_SYSTEM_PROMPT,

@@ -70,24 +70,9 @@ export const ALLOW_LIST: AllowEntry[] = [
     reason: 'Pupil-facing chat/marking calls with literal Sonnet ids (streamToResponse and streamChat) — not yet ported to tiers.',
   },
   {
-    file: 'server/routes/batch.ts',
-    rules: ['literal-model'],
-    reason: 'Request-body default model id; the first route maps it through mapModelToProvider at dispatch, the second does not yet.',
-  },
-  {
     file: 'server/mcp/openexpert-mcp.ts',
     rules: ['literal-model'],
     reason: 'MCP stdio server default model (Sonnet 4.5) — separate process, not yet resolved from Settings tiers.',
-  },
-  {
-    file: 'server/services/deliberation-engine.ts',
-    rules: ['literal-model'],
-    reason: 'Panel tier configuration (Opus / Sonnet / Haiku roles), mapped through mapModelToProvider at dispatch.',
-  },
-  {
-    file: 'server/services/multi-agent-orchestrator.ts',
-    rules: ['literal-model'],
-    reason: 'Agent tier configuration (Haiku roles), mapped through mapModelToProvider at dispatch.',
   },
   {
     file: 'server/services/token-estimator.ts',

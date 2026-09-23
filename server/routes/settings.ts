@@ -28,6 +28,7 @@ import {
   isValidVerifierModelId,
 } from '../services/verifier-model.js';
 import { getParseStats } from '../services/parse-telemetry.js';
+import { MODEL_REGISTRY } from '../types/modelAdapter.js';
 import { initSdkEngineStore, isSdkEngineEnabled, setSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { initMarketsModelStore, getMarketsModelSetting, setMarketsModel, isValidMarketsModelId } from '../services/markets-model-store.js';
 import { testSdkEngine, SDK_ENGINE_MODELS } from '../services/claude-sdk-client.js';
@@ -325,6 +326,9 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
       model,
       isDefault: model === DEFAULT_VERIFIER_MODEL,
       default: DEFAULT_VERIFIER_MODEL,
+      // The page labels its default chip from this, so the chip follows the
+      // lineup (Haiku 4.5 today, Haiku 5.5 once claude-lineup.ts moves).
+      defaultLabel: MODEL_REGISTRY[DEFAULT_VERIFIER_MODEL]?.displayName ?? DEFAULT_VERIFIER_MODEL,
     });
   });
 

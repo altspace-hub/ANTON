@@ -27,7 +27,7 @@ import { assertSafeLanEgressUrl } from '../../lib/ssrf-guard.js';
 import { validateAgainstSchema } from '../capability-descriptor/validator.js';
 import { createSellerQuoter, type SellerQuoter } from './seller-quoter.js';
 import { makeQuoterDbDeps } from './auto-quote-config-service.js';
-import { createCallChatQuoteLLM } from './seller-quoter-llm.js';
+import { createCallChatQuoteLLM, DEFAULT_QUOTE_MODEL } from './seller-quoter-llm.js';
 import { createCallChatQuoteReviewer } from './seller-quoter-review.js';
 import { isDoubleCheckEnabledSync, getRoutedVerifierModelSync } from '../verifier-model.js';
 import { createAppCheckpointService } from '../app-checkpoint-service.js';
@@ -403,7 +403,7 @@ export function createPortalHandler(
   const settingModel = isDoubleCheckEnabledSync() ? getRoutedVerifierModelSync() : '';
   const reviewModel = settingModel || (process.env.ANTON_AUTOQUOTE_REVIEW_MODEL || '').trim();
   const reviewPolicy = (process.env.ANTON_AUTOQUOTE_REVIEW_POLICY || '').trim();
-  if (reviewModel && reviewModel === (process.env.ANTON_AUTOQUOTE_MODEL || 'claude-haiku-4-5-20251001').trim()) {
+  if (reviewModel && reviewModel === (process.env.ANTON_AUTOQUOTE_MODEL || DEFAULT_QUOTE_MODEL).trim()) {
     log.warn({ model: reviewModel },
       'four-eyes reviewer uses the SAME model as the primary quoter — it cannot independently catch its own errors; '
       + 'set ANTON_AUTOQUOTE_REVIEW_MODEL to a different model/provider');

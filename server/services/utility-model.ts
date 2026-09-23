@@ -2,7 +2,7 @@
  * utility-model.ts — one utility-model setting consumed everywhere
  * (Core Experience Review 2026-06, Wave 3 item 3.8).
  *
- * ~38 server files used to hardcode 'claude-haiku-4-5-20251001' for
+ * ~38 server files used to hardcode the Haiku 4.5 id for
  * background utility calls (extraction, scoring, naming, classification,
  * summarisation). This module is the single source of truth for that
  * model id: the Settings "Utility model" choice is persisted in
@@ -12,7 +12,7 @@
  *
  * Precedence:
  *   1. The persisted Settings choice (app_settings 'utility_model').
- *   2. DEFAULT_UTILITY_MODEL ('claude-haiku-4-5-20251001') — exactly the
+ *   2. DEFAULT_UTILITY_MODEL (the small tier of claude-lineup.ts) — exactly the
  *      previous hardcoded behaviour when unset.
  *
  * Composition with 3.1 (provider routing): `getRoutedUtilityModel` /
@@ -39,8 +39,11 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { mapModelToProvider } from './provider-router.js';
 import { MODEL_REGISTRY } from '../types/modelAdapter.js';
+import { CLAUDE_SMALL } from '../config/claude-lineup.js';
 
-export const DEFAULT_UTILITY_MODEL = 'claude-haiku-4-5-20251001';
+// The small tier of the Claude lineup — Haiku 4.5 today, Haiku 5.5 once
+// claude-lineup.ts moves; the Double-check verifier default follows it.
+export const DEFAULT_UTILITY_MODEL: string = CLAUDE_SMALL;
 const SETTING_KEY = 'utility_model';
 const CACHE_TTL_MS = 60_000;
 

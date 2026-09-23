@@ -16,7 +16,7 @@ import type { ModelId } from '@/lib/types';
 import type { EngagementData } from '@/pages/EngagementWorkspacePage';
 
 // Shown when switching Auto → Specific before a model is picked.
-const FALLBACK_MODEL: ModelId = 'claude-opus-4-8';
+const FALLBACK_MODEL: ModelId = 'claude-opus-5-5';
 
 interface Props {
   engagement: EngagementData;
@@ -57,14 +57,14 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     label: 'Think Hard',
     description: 'Extended reasoning mode. Best for complex regulatory analysis.',
     icon: Brain,
-    model: 'Opus 4.8',
+    model: 'Opus 5.5',
   },
   {
     id: 'investigate',
     label: 'Investigate',
     description: 'Maximum reasoning depth. Use for high-stakes deliverables and difficult gap analyses.',
     icon: Microscope,
-    model: 'Opus 4.8',
+    model: 'Opus 5.5',
     badge: 'Recommended',
   },
   {
@@ -72,14 +72,14 @@ const THINKING_OPTIONS: ThinkingOption[] = [
     label: 'Plan First',
     description: 'Creates an explicit plan before execution. Best when structure and approach matter.',
     icon: ListChecks,
-    model: 'Opus 4.8',
+    model: 'Opus 5.5',
   },
   {
     id: 'deep_investigate',
     label: 'Deep',
     description: 'Iterative reasoning engine. Maximum depth with explicit reasoning trail for audit.',
     icon: Flame,
-    model: 'Opus 4.8',
+    model: 'Opus 5.5',
     badge: '6 steps',
   },
 ];

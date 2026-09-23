@@ -17,6 +17,7 @@ import AnthropicSDK from '@anthropic-ai/sdk';
 import { buildOrgContextLayer } from '../services/prompt-builder.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { createCitationLedger, VERIFICATION_DISCLAIMER, type CitationInput } from '../services/citation-ledger.js';
@@ -504,7 +505,7 @@ export async function createLegalResearchRoutes(db: DatabaseAdapter, sharedAnthr
       // id ignored the model the user chose and, without a funded key, only
       // worked because the router happened to fall back to the engine.
       await streamChat({
-        model: mapModelToProvider(getEffectiveDefaultModel() ?? 'claude-opus-4-8'),
+        model: mapModelToProvider(getEffectiveDefaultModel() ?? CLAUDE_LARGE),
         system: systemPrompt,
         messages: messages as Array<{ role: string; content: string }>,
         maxTokens: 16000,
@@ -602,7 +603,7 @@ HOW TO TAKE INSTRUCTIONS
       let text = '';
       try {
         const result = await streamChat({
-          model: mapModelToProvider(getEffectiveDefaultModel() ?? 'claude-opus-4-8'),
+          model: mapModelToProvider(getEffectiveDefaultModel() ?? CLAUDE_LARGE),
           system: systemPrompt,
           messages,
           maxTokens: 3000,

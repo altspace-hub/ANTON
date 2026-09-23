@@ -11,7 +11,7 @@ Instructions for Claude Code, Claude in Cursor, and any AI coding assistant that
 **Purpose:** AI-powered expert workspace for 55+ professional domains. Local-first web application that enables consultants, lawyers, compliance officers, analysts, and domain experts to leverage frontier LLMs through a structured, guided interface — no command-line knowledge required.
 **Primary users:** Domain professionals aged 35-65 who need reliable, structured AI output.
 **Deployment:** Local-first. Runs on `localhost`. Documents stay on the machine. Only LLM API calls leave the network.
-**Primary AI:** Anthropic Claude. The default model is the Settings pick (`app_settings.default_model`); this instance runs `sdk:claude-opus-5` on the subscription SDK engine (`server/services/claude-sdk-client.ts` — the machine's Claude Code login, no API key). With an API key and no Settings pick the tier default is `claude-opus-4-8`. Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
+**Primary AI:** Anthropic Claude. The default model is the Settings pick (`app_settings.default_model`); this instance runs `sdk:claude-opus-5-5` on the subscription SDK engine (`server/services/claude-sdk-client.ts` — the machine's Claude Code login, no API key). With an API key and no Settings pick the large tier is `claude-opus-5-5` (`CLAUDE_LARGE` in `server/config/claude-lineup.ts`; Opus 5.5 is the default since 2026-09-23). Multi-LLM support for OpenAI, Azure OpenAI, Gemini, Mistral, and Ollama.
 **Companion App:** PWA + Capacitor Android wrapper at `src/app/` — separate Vite build (`dist/app/`) for end-users on phones.
 **Design philosophy:** "Start with the problem, not the solution." Every module begins with a clear problem statement and pre-configured AI behaviour. Users can override everything, but the defaults should produce excellent results for someone who just clicks "Run."
 
@@ -96,7 +96,7 @@ pnpm run build && pnpm run start
 | Router | React Router | v6 |
 | Backend | Express + Node.js | 4 / 22 |
 | Database | PostgreSQL | 16+ |
-| Primary AI | Anthropic Claude | Settings default — `sdk:claude-opus-5` here (subscription engine); `claude-opus-4-8` is the API tier default |
+| Primary AI | Anthropic Claude | Settings default — `sdk:claude-opus-5-5` here (subscription engine); `claude-opus-5-5` is the API large tier |
 | Multi-LLM | OpenAI, Azure OpenAI, Gemini, Mistral, Ollama | — |
 | File processing | mammoth (docx), pdf-parse, xlsx | — |
 | Export | docx, exceljs, pdfkit, pptxgenjs, fountain | — |
@@ -184,9 +184,9 @@ Claude is the default and most deeply integrated. Other providers work through a
 
 | Provider | Env Variable | Default Model | Adapter File |
 |---|---|---|---|
-| Anthropic (subscription engine) | none — Claude Code login; enable in Settings → Execution engines (`SDK_ENGINE_ENABLED`) | `sdk:claude-opus-5` | `server/services/claude-sdk-client.ts` |
-| Anthropic (API) | `ANTHROPIC_API_KEY` | `claude-opus-4-8` | Built-in (`claude-client.ts`) |
-| OpenAI | `OPENAI_API_KEY` | `gpt-4o` | `server/services/model-adapter.ts` |
+| Anthropic (subscription engine) | none — Claude Code login; enable in Settings → Execution engines (`SDK_ENGINE_ENABLED`) | `sdk:claude-opus-5-5` | `server/services/claude-sdk-client.ts` |
+| Anthropic (API) | `ANTHROPIC_API_KEY` | `claude-opus-5-5` | Built-in (`claude-client.ts`) |
+| OpenAI | `OPENAI_API_KEY` | `gpt-4o` (tier default); GPT-6 `gpt-6-astra` / `gpt-6-sol` / `gpt-6-luna` selectable | `server/services/model-adapter.ts` |
 | Azure OpenAI | `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` | (per deployment) | `server/services/adapters/azureOpenaiAdapter.ts` |
 | Google | `GOOGLE_API_KEY` | `gemini-2.0-flash` | `server/services/model-adapter.ts` |
 | Mistral | `MISTRAL_API_KEY` | `mistral-large-latest` | `server/services/model-adapter.ts` |
@@ -196,13 +196,13 @@ Azure OpenAI supports reasoning models (o3, o4-mini) with effort mapping, multi-
 
 Set the API key in `.env` to enable each provider. Users switch models in the UI per session.
 
-**Every LLM call site follows the Settings default.** `server/services/provider-router.ts` (`getConfiguredProvider` / `resolveModel` / `mapModelToProvider`) resolves hardcoded `claude-*` ids and `large` / `medium` / `small` tiers to the configured engine — under an `sdk:` default, large-tier work runs the default model and medium/small run `sdk:claude-sonnet-5` so utility calls are not promoted to Opus. Never construct an Anthropic client in a new route: go through `streamChat` / `callChat`, which carry the SDK engine's branches (including streaming, via a forwarding sink). Capability lookups (context budget, 1M checks, output ceilings) must strip the engine prefix with `capabilityModelId()` from `server/services/engine-model-id.ts`; an id that will be dispatched must keep it. The SDK engine is a text engine — the one opt-in exception is ANTON's `web_search` tool, which grants exactly `WebSearch` + `WebFetch` for that run.
+**Every LLM call site follows the Settings default.** `server/services/provider-router.ts` (`getConfiguredProvider` / `resolveModel` / `mapModelToProvider`) resolves hardcoded `claude-*` ids and `large` / `medium` / `small` tiers to the configured engine — large-tier work runs the Settings default (under an `sdk:` default, or a Claude default on the API), and medium/small run `sdk:claude-sonnet-5` on the subscription engine so utility calls are not promoted to Opus. A Claude 5 API call that names no thinking level gets effort `low` and room for thinking in max_tokens (`anthropicThinkingParams`): Opus 5.5 cannot switch thinking off. Never construct an Anthropic client in a new route: go through `streamChat` / `callChat`, which carry the SDK engine's branches (including streaming, via a forwarding sink). Capability lookups (context budget, 1M checks, output ceilings) must strip the engine prefix with `capabilityModelId()` from `server/services/engine-model-id.ts`; an id that will be dispatched must keep it. The SDK engine is a text engine — the one opt-in exception is ANTON's `web_search` tool, which grants exactly `WebSearch` + `WebFetch` for that run.
 
 **There are two routers, not one — and two callers that use neither.** `provider-router.ts` (`callChat` / `streamChat`) serves the gap assessor, specialised agents, Pathfinder, missions and School mode. `server/services/unified-llm-client.ts` (`streamToResponse` / `sendRequest` / `streamToHandler`) is a second dispatch layer with its own provider branches, serving the Civic, Grow and Procure pillars, the companion app, the intent router and smart actions. `sdk-agentic-runner.ts` drives the Agent SDK directly (it needs MCP tools) and `photo-id-service.ts` makes a direct vision call. Anything that must reach *every* model call has to be applied at the entry points of both routers and in those two callers — `server/lib/current-date.ts` is the pattern: one helper, applied at each entry, deferring when the text is already present so a request that passes through both routers is not doubled. It exists because no prompt carried today's date: on the SDK engine a plain `systemPrompt` string replaces Claude Code's default prompt, including the block that normally states the date, so a model trained to mid-2026 answered date-dependent questions from the wrong side of the line. Replay (`POST /api/rerun`, `mode: 'replay'`) opts out with `currentDate: false`, because it resends a stored prompt byte-for-byte. Tests that inspect what the model actually receives use `setSdkQueryImplForTests`, `setSdkAgentImplForTests` and a mocked `@anthropic-ai/sdk` (see `tests/services/current-date-reaches-model.test.ts`).
 
 ### Thinking Levels
 
-| Level | Description | Adaptive Claude (Fable 5.x, Opus 5, Sonnet 5, Opus 4.8, Sonnet 4.6) | Budget models (Sonnet 4.5, Haiku 4.5) |
+| Level | Description | Adaptive Claude (every Claude 5 id — Fable 5.x, Opus 5.5, Opus 5, Sonnet 5 — plus Opus 4.8 / 4.7, Sonnet 4.6) | Budget models (Sonnet 4.5, Haiku 4.5, Opus 4.6) |
 |---|---|---|---|
 | `quick` | No deep reasoning | `effort: 'low'` | thinking disabled |
 | `think` | Standard reasoning | `effort: 'medium'` | `budget_tokens: 4096` |
@@ -211,7 +211,9 @@ Set the API key in `.env` to enable each provider. Users switch models in the UI
 | `plan_first` | Plan then execute | `effort: 'xhigh'` (same clamp) | `budget_tokens: 32768` |
 | `deep_investigate` | Maximum reasoning | `effort: 'max'` | `budget_tokens: 32768` |
 
-For adaptive models, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for them — Fable 5.x rejects it with a 400. The ladder lives in exactly one place, `server/services/thinking-map.ts`: `anthropicEffort(level, model)` clamps `xhigh` to `max` on models that predate it, and `model-capabilities.ts` derives its per-model config from it rather than keeping a second table.
+For adaptive models, always use `thinking: { type: 'adaptive' }` with `output_config: { effort }` as a **separate** top-level parameter. Never put `effort` inside `thinking`. Never set `budget_tokens` for them — the Claude 5 generation rejects it with a 400, and Opus 5.5 also rejects `thinking: { type: 'disabled' }` (effort is its only control). The ladder lives in exactly one place, `server/services/thinking-map.ts`: `anthropicEffort(level, model)` clamps `xhigh` to `max` on models that predate it, and `model-capabilities.ts` derives its per-model config from it rather than keeping a second table. `claudeGeneration()` there classes any Claude 5+ id as adaptive without an entry, so Sonnet 5.5 / Haiku 5.5 work the day they ship. Never send a non-default `temperature` beside thinking (the API rejects it). OpenAI reasoning models (o-series, `gpt-5.x`, every `gpt-6-*`) take `reasoning_effort` + `max_completion_tokens` and no `temperature` — `isOpenAIReasoningModel()` in the same file, used by all three OpenAI paths.
+
+**The Claude lineup.** `server/config/claude-lineup.ts` names the model each API tier runs (`CLAUDE_LARGE` / `CLAUDE_MEDIUM` / `CLAUDE_SMALL`); the tier map, the utility model default, the Double-check (second-opinion) default, mission tiers and the portal depth map read it. Moving a tier — Haiku 5.5 replacing Haiku 4.5 as the small tier — is: add the model to `MODEL_CAPABILITIES` and `REGISTRY_SUPPLEMENT`, then change the one constant. `tests/config/claude-lineup.test.ts` fails when a server file names the small-tier id itself. The subscription engine runs the bundled Claude Code of `@anthropic-ai/claude-agent-sdk`; a new model can need a newer SDK (Opus 5.5 needed 0.3.280 / Claude Code 2.1.280).
 
 ### Export Pipeline
 

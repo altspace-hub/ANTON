@@ -476,7 +476,7 @@ function GapAssessmentWizardInner() {
 
   /** Human label for a stored modelTier — legacy aliases plus real model ids. */
   const modelTierLabel = (tier: string): string => {
-    if (tier === 'opus') return 'Opus 4.8 (deep reasoning)';
+    if (tier === 'opus') return 'Opus 5.5 (deep reasoning)';
     if (tier === 'sonnet') return 'Sonnet 4.6 (standard)';
     return tier;
   };
@@ -907,7 +907,7 @@ function GapAssessmentWizardInner() {
     if (currentStep === 5 && !soTier) {
       const primary = String(contextConfig.modelTier);
       const primaryIsOpus = primary === 'opus' || /opus/i.test(primary);
-      setSoTier(primaryIsOpus ? 'claude-sonnet-4-6' : 'claude-opus-4-8');
+      setSoTier(primaryIsOpus ? 'claude-sonnet-4-6' : 'claude-opus-5-5');
     }
   }, [currentStep, contextConfig.modelTier, soTier]);
 

@@ -42,7 +42,7 @@ const THINKING_LEVELS = ['quick', 'think', 'think_hard', 'investigate', 'plan_fi
 const ESCALATION_POLICIES = ['notify', 'redirect', 'human_only', 'queue'] as const;
 const CONNECTOR_TYPES = ['rest_api', 'webhook', 'database', 'email', 'calendar', 'crm', 'erp'] as const;
 
-const FALLBACK_MODEL: ModelId = 'claude-opus-4-8';
+const FALLBACK_MODEL: ModelId = 'claude-opus-5-5';
 
 type Tab = 'chat' | 'settings' | 'connectors';
 

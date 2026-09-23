@@ -24,7 +24,7 @@ import { Mistral } from '@mistralai/mistralai';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import type { ModelProvider, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
-import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens } from './thinking-map.js';
+import { anthropicUsesAdaptive, anthropicEffort, anthropicBudgetTokens, isOpenAIReasoningModel, openaiReasoningEffort } from './thinking-map.js';
 import type { CustomModelConfig } from '../routes/settings.js';
 import { AzureOpenAIAdapter, type AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
@@ -107,42 +107,57 @@ class AnthropicAdapter extends BaseAdapter {
     this.client = new Anthropic({ apiKey });
   }
 
-  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
-    const thinking = req.thinking || 'think';
-    const creativity = req.creativity || 'balanced';
+  /**
+   * Default output ceiling — the model's own, from the capability table. The
+   * old substring test gave Opus 128k, Sonnet 4.6 64k and everything else 8k,
+   * so Sonnet 5 and Fable ran adaptive thinking inside an 8k budget.
+   */
+  private defaultMaxTokens(model: string): number {
+    return MODEL_CAPABILITIES[model]?.maxOutputTokens ?? 8192;
+  }
 
-    // Default to model ceiling: Opus 128k, Sonnet 4.6 64k, others 8k
-    const isOpus = req.model.includes('opus');
-    const isSonnet46 = req.model.includes('sonnet-4-6');
-    const defaultMax = isOpus ? 128000 : (isSonnet46 ? 64000 : 8192);
-    const params: Anthropic.MessageCreateParamsNonStreaming = {
+  /**
+   * Thinking (single-source thinking-map.ts) plus sampling. Adaptive effort for
+   * adaptive models; budget_tokens (capped below max_tokens) for the rest.
+   * temperature is sent only on a thinking-off request: with thinking on the
+   * API rejects any non-default temperature, and Opus 4.7+ / Claude 5 reject a
+   * non-default one outright — the 0.5 'balanced' maps to failed every
+   * thinking run on this router's Anthropic API path.
+   */
+  private applyThinking(params: Record<string, unknown>, req: UnifiedLLMRequest, maxTokens: number): void {
+    const thinking = req.thinking || 'think';
+    if (anthropicUsesAdaptive(req.model)) {
+      params.thinking = { type: 'adaptive' };
+      params.output_config = { effort: anthropicEffort(thinking, req.model) };
+      return;
+    }
+    const budget = this.mapThinkingBudget(thinking);
+    const capped = budget > 0 ? Math.min(budget, maxTokens - 4096) : 0;
+    if (capped >= 1024) {
+      params.thinking = { type: 'enabled', budget_tokens: capped };
+      return;
+    }
+    params.temperature = this.mapTemperature(req.creativity || 'balanced', 1.0);
+  }
+
+  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
+    const maxTokens = req.maxTokens || this.defaultMaxTokens(req.model);
+    const params: Record<string, unknown> = {
       model: req.model,
-      max_tokens: req.maxTokens || defaultMax,
+      max_tokens: maxTokens,
       system: req.systemPrompt,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
-      temperature: this.mapTemperature(creativity, 1.0),
     };
-
-    // Anthropic thinking (single-source thinking-map.ts): adaptive effort for
-    // Fable 5 / Opus 4.8 / Sonnet 4.6; budget_tokens (capped below max_tokens) for
-    // all other Claude models (Sonnet 4.5, Haiku, Opus 4.6/4.7).
-    if (anthropicUsesAdaptive(req.model)) {
-      (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
-      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking, req.model) };
-    } else {
-      const budget = this.mapThinkingBudget(thinking);
-      if (budget > 0) {
-        const capped = Math.min(budget, params.max_tokens - 4096);
-        if (capped >= 1024) params.thinking = { type: 'enabled', budget_tokens: capped };
-      }
-    }
+    this.applyThinking(params, req, maxTokens);
 
     // Add tools if provided (e.g., web search)
     if (req.tools && req.tools.length > 0) {
       params.tools = req.tools;
     }
 
-    const response = await this.client.messages.create(params);
+    // Streamed internally and collected: the SDK refuses a non-streaming
+    // request whose max_tokens could run past ten minutes (every 128k ceiling).
+    const response = await this.client.messages.stream(params as unknown as Anthropic.MessageStreamParams).finalMessage();
 
     let content = '';
     let thinkingContent = '';
@@ -164,38 +179,21 @@ class AnthropicAdapter extends BaseAdapter {
   }
 
   async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
-    const thinking = req.thinking || 'think';
-    const creativity = req.creativity || 'balanced';
-
-    const isOpusStream = req.model.includes('opus');
-    const isSonnet46Stream = req.model.includes('sonnet-4-6');
-    const defaultMaxStream = isOpusStream ? 128000 : (isSonnet46Stream ? 64000 : 8192);
-    const params: Anthropic.MessageStreamParams = {
+    const maxTokens = req.maxTokens || this.defaultMaxTokens(req.model);
+    const params: Record<string, unknown> = {
       model: req.model,
-      max_tokens: req.maxTokens || defaultMaxStream,
+      max_tokens: maxTokens,
       system: req.systemPrompt,
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
-      temperature: this.mapTemperature(creativity, 1.0),
       stream: true,
     };
-
-    // Anthropic thinking (single-source thinking-map.ts) — see sendRequest above.
-    if (anthropicUsesAdaptive(req.model)) {
-      (params as unknown as Record<string, unknown>).thinking = { type: 'adaptive' };
-      (params as unknown as Record<string, unknown>).output_config = { effort: anthropicEffort(thinking, req.model) };
-    } else {
-      const budget = this.mapThinkingBudget(thinking);
-      if (budget > 0) {
-        const capped = Math.min(budget, params.max_tokens - 4096);
-        if (capped >= 1024) params.thinking = { type: 'enabled', budget_tokens: capped };
-      }
-    }
+    this.applyThinking(params, req, maxTokens);
 
     if (req.tools && req.tools.length > 0) {
       params.tools = req.tools;
     }
 
-    const stream = this.client.messages.stream(params);
+    const stream = this.client.messages.stream(params as unknown as Anthropic.MessageStreamParams);
 
     for await (const event of stream) {
       if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
@@ -215,21 +213,39 @@ class OpenAIAdapter extends BaseAdapter {
     this.client = new OpenAI({ apiKey });
   }
 
-  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
-    const creativity = req.creativity || 'balanced';
+  /**
+   * Length and sampling for a request. Reasoning models (o-series, GPT-5.x,
+   * GPT-6) take reasoning_effort + max_completion_tokens and reject
+   * temperature — the streaming adapter (adapters/openaiAdapter.ts) already
+   * sent that shape, but this class, which serves the unified-llm-client
+   * router, sent temperature + max_tokens to every model, so GPT-5.6 and
+   * GPT-6 failed here with a 400.
+   */
+  private sizing(req: UnifiedLLMRequest): Record<string, unknown> {
+    if (isOpenAIReasoningModel(req.model)) {
+      return {
+        reasoning_effort: openaiReasoningEffort(req.thinking || 'think', req.model),
+        max_completion_tokens: req.maxTokens || 16384,
+      };
+    }
+    return {
+      max_tokens: req.maxTokens || 16384,
+      temperature: this.mapTemperature(req.creativity || 'balanced', 2.0), // GPT uses 0-2 range
+    };
+  }
 
+  async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
     // Convert system prompt to OpenAI format (role: system in messages array)
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: req.systemPrompt },
       ...req.messages.map((m) => ({ role: m.role, content: m.content })),
     ];
 
-    const params: OpenAI.ChatCompletionCreateParamsNonStreaming = {
+    const params = {
       model: req.model,
       messages,
-      max_tokens: req.maxTokens || 16384,
-      temperature: this.mapTemperature(creativity, 2.0), // GPT uses 0-2 range
-    };
+      ...this.sizing(req),
+    } as OpenAI.ChatCompletionCreateParamsNonStreaming;
 
     // GPT supports seed for reproducibility
     if (req.seed !== undefined) {
@@ -267,20 +283,17 @@ class OpenAIAdapter extends BaseAdapter {
   }
 
   async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
-    const creativity = req.creativity || 'balanced';
-
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       { role: 'system', content: req.systemPrompt },
       ...req.messages.map((m) => ({ role: m.role, content: m.content })),
     ];
 
-    const params: OpenAI.ChatCompletionCreateParamsStreaming = {
+    const params = {
       model: req.model,
       messages,
-      max_tokens: req.maxTokens || 16384,
-      temperature: this.mapTemperature(creativity, 2.0),
+      ...this.sizing(req),
       stream: true,
-    };
+    } as OpenAI.ChatCompletionCreateParamsStreaming;
 
     if (req.seed !== undefined) {
       params.seed = req.seed;

@@ -57,6 +57,7 @@ const CHIP_ACTIVE = 'border-adv-teal bg-adv-teal-dim text-adv-teal';
 const CHIP_INACTIVE = 'border-border bg-adv-dark text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white';
 
 const MODEL_OPTIONS: { value: ModelId; label: string }[] = [
+  { value: 'claude-opus-5-5', label: 'Opus 5.5' },
   { value: 'claude-opus-5', label: 'Opus 5' },
   { value: 'claude-sonnet-5', label: 'Sonnet 5' },
   { value: 'claude-fable-5-1', label: 'Fable 5.1' },
@@ -449,6 +450,9 @@ export default function Settings() {
   // Double-check (four-eyes) — optional second-model review. Off by default.
   const [doubleCheckEnabled, setDoubleCheckEnabled] = useState<boolean>(false);
   const [verifierModel, setVerifierModel] = useState<string>('claude-haiku-4-5-20251001');
+  // The server's default verifier (the small tier of its Claude lineup) — the
+  // first chip. Starts at Haiku 4.5 until the settings load.
+  const [verifierDefault, setVerifierDefault] = useState<{ id: string; label: string }>({ id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' });
   // Wave 4b: memory & governance — the injection gate, sign-off before export,
   // automatic structured extraction. null until the first load answers.
   const [memoryGovernance, setMemoryGovernance] = useState<MemoryGovernance | null>(null);
@@ -730,9 +734,10 @@ export default function Settings() {
     try {
       const res = await fetchWithAuth('/api/settings/double-check');
       if (res.ok) {
-        const data = await res.json() as { enabled?: boolean; model?: string };
+        const data = await res.json() as { enabled?: boolean; model?: string; default?: string; defaultLabel?: string };
         setDoubleCheckEnabled(!!data.enabled);
         if (data.model) setVerifierModel(data.model);
+        if (data.default) setVerifierDefault({ id: data.default, label: data.defaultLabel || data.default });
       }
     } catch { /* defaults (off, Haiku) stand */ }
   }
@@ -2210,7 +2215,7 @@ export default function Settings() {
             {doubleCheckEnabled && (
               <div className="flex flex-wrap gap-2">
                 {([
-                  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', disabled: false },
+                  { value: verifierDefault.id, label: verifierDefault.label, disabled: false },
                   { value: 'gpt-4o-mini', label: 'GPT-4o Mini', disabled: !providerStatus.OPENAI_API_KEY },
                   { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', disabled: !providerStatus.GOOGLE_API_KEY },
                   { value: 'mistral-small-latest', label: 'Mistral Small 4', disabled: !providerStatus.MISTRAL_API_KEY },
@@ -2473,7 +2478,7 @@ export default function Settings() {
         </div>
         <p className="mt-1 text-xs text-adv-gray">
           Automatically summarise earlier context when approaching the token limit, enabling longer sessions.
-          Only works with Claude Opus 4.8 and Sonnet 4.6.
+          Works with the Claude 5 models, Opus 4.8 and Sonnet 4.6 on the API.
         </p>
 
         <div className="mt-4 space-y-3">
@@ -3622,7 +3627,7 @@ function CompliancePolicyTab() {
               </div>
             </div>
           ) : (
-            <button onClick={() => { setEditing('__new__'); setForm({ moduleId: '', enforce_model: 'claude-opus-4-8', enforce_thinking: 'investigate', enforce_creativity: 'strict', note: '' }); }} className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors w-full">
+            <button onClick={() => { setEditing('__new__'); setForm({ moduleId: '', enforce_model: 'claude-opus-5-5', enforce_thinking: 'investigate', enforce_creativity: 'strict', note: '' }); }} className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-adv-gray hover:border-adv-teal hover:text-adv-teal transition-colors w-full">
               <Plus className="h-4 w-4" />
               Add module policy
             </button>

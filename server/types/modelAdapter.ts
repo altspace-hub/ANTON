@@ -51,7 +51,8 @@ interface RegistrySupplement {
 }
 
 const REGISTRY_SUPPLEMENT: Record<string, RegistrySupplement> = {
-  'claude-opus-5':              { displayName: 'Claude Opus 5',     costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-opus-5-5':            { displayName: 'Claude Opus 5.5',   costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
+  'claude-opus-5':             { displayName: 'Claude Opus 5',     costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-sonnet-5':            { displayName: 'Claude Sonnet 5',   costTier: 2, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-fable-5-1':           { displayName: 'Claude Fable 5.1',  costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-fable-5':             { displayName: 'Claude Fable 5',    costTier: 3, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
@@ -61,6 +62,9 @@ const REGISTRY_SUPPLEMENT: Record<string, RegistrySupplement> = {
   'claude-sonnet-4-6':          { displayName: 'Claude Sonnet 4.6', costTier: 2, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-sonnet-4-5-20250929': { displayName: 'Claude Sonnet 4.5', costTier: 2, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: true  },
   'claude-haiku-4-5-20251001':  { displayName: 'Claude Haiku 4.5',  costTier: 1, supportsThinking: true,  supportsJsonMode: false, supportsSeed: false, supportsNativeReasoning: false },
+  'gpt-6-astra':                { displayName: 'GPT-6 Astra',       costTier: 3, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: false, supportsNativeReasoning: true  },
+  'gpt-6-sol':                  { displayName: 'GPT-6 Sol',         costTier: 2, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: false, supportsNativeReasoning: true  },
+  'gpt-6-luna':                 { displayName: 'GPT-6 Luna',        costTier: 1, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: false, supportsNativeReasoning: true  },
   'gpt-5.6-sol':                { displayName: 'GPT-5.6 Sol',       costTier: 3, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: true  },
   'gpt-5.6-terra':              { displayName: 'GPT-5.6 Terra',     costTier: 2, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: true  },
   'gpt-5.6-luna':               { displayName: 'GPT-5.6 Luna',      costTier: 1, supportsThinking: true,  supportsJsonMode: true,  supportsSeed: true,  supportsNativeReasoning: true  },

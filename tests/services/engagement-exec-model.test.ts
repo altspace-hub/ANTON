@@ -31,7 +31,7 @@ describe('resolveEngagementModelChoice (4.4)', () => {
 
   it('preserves the legacy thinking-level mapping when nothing is configured', () => {
     expect(resolveEngagementModelChoice(null, 'quick', null)).toBe('claude-haiku-4-5-20251001');
-    expect(resolveEngagementModelChoice(null, 'think_hard', undefined)).toBe('claude-opus-4-8');
-    expect(resolveEngagementModelChoice('', 'plan_first', '')).toBe('claude-opus-4-8');
+    expect(resolveEngagementModelChoice(null, 'think_hard', undefined)).toBe('claude-opus-5-5');
+    expect(resolveEngagementModelChoice('', 'plan_first', '')).toBe('claude-opus-5-5');
   });
 });

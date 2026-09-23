@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
 import { streamChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { REVIEW_MODES } from '../services/review-engine.js';
 import { createReviewOrchestrator, type ReviewContext } from '../services/review-orchestrator.js';
 import { safeError } from '../lib/error-response.js';
@@ -42,7 +43,7 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
     }
 
     try {
-      const resolvedModel = mapModelToProvider((model as string) || 'claude-opus-4-8');
+      const resolvedModel = mapModelToProvider((model as string) || CLAUDE_LARGE);
 
       setSSEHeaders(res);
 

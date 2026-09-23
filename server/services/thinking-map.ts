@@ -5,7 +5,8 @@
  * Before this module the mapping was duplicated: claude-client.ts and
  * model-adapter.ts each carried their own Anthropic map and DISAGREED on
  * think_hard (10000 vs 16384), and model-adapter treated every `opus` as an
- * adaptive-thinking model (wrong for Opus 4.6/4.7, which use budget_tokens).
+ * adaptive-thinking model (wrong for Opus 4.6, which uses budget_tokens here;
+ * Opus 4.7 is adaptive-only and 400s on budget_tokens).
  * Azure and Mistral each carried their own copies too. Centralising the maps
  * here kills the drift; each adapter still builds its own request object and
  * applies its own token capping, so provider-specific shaping stays local.
@@ -20,28 +21,44 @@ import type { ThinkingLevel } from '../../src/lib/types.js';
 
 export type AnthropicEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
+/**
+ * The Claude generation of an id — 5 for claude-opus-5-5, claude-sonnet-5,
+ * claude-haiku-5-5 or a dated claude-opus-5-20260601 — or null when the id is
+ * not a Claude family id. Every Claude 5 model accepts adaptive thinking with
+ * the full effort ladder, and none accepts budget_tokens (a 400), so an id of
+ * generation 5 or later that is not yet listed below is treated as adaptive:
+ * when Sonnet 5.5 or Haiku 5.5 ships, sending budget_tokens (or, on the
+ * subscription engine, thinking disabled) would fail every request, while
+ * adaptive is what the whole generation takes.
+ */
+export function claudeGeneration(model: string): number | null {
+  const m = /^claude-(?:opus|sonnet|haiku|fable|mythos)-(\d+)(?:-\d{1,2})?(?:-\d{8})?$/.exec(model);
+  return m ? Number(m[1]) : null;
+}
+
+function isClaude5OrLater(model: string): boolean {
+  const generation = claudeGeneration(model);
+  return generation !== null && generation >= 5;
+}
+
 /** Adaptive-effort models (thinking:{type:'adaptive'} + output_config.effort).
  *  Everything else uses the budget_tokens mechanism below. Keep in sync with the
- *  Anthropic model catalogue — budget_tokens is deprecated on these, and Fable
- *  5.x REJECTS it (400), so a model missing from this list is not "slightly
- *  worse", it fails every request. */
+ *  Anthropic model catalogue — budget_tokens is deprecated on these, and the
+ *  Claude 5 generation REJECTS it (400), so a model missing from this list is
+ *  not "slightly worse", it fails every request. Claude 5 and later need no
+ *  entry (claudeGeneration above); the list is for the 4.x models that moved. */
 export function anthropicUsesAdaptive(model: string): boolean {
-  return model === 'claude-fable-5-1'
-    || model === 'claude-fable-5'
-    || model === 'claude-opus-5'
-    || model === 'claude-sonnet-5'
+  return isClaude5OrLater(model)
     || model === 'claude-opus-4-8'
+    || model === 'claude-opus-4-7'   // adaptive is its only thinking mode — budget_tokens 400s
     || model === 'claude-sonnet-4-6';
 }
 
-/** Models that accept effort 'xhigh' — Opus 4.7 and later, Sonnet 5, the Fable
- *  tier. Sonnet 4.6 and the 4.5 generation stop at 'max'. Same catalogue
- *  discipline as anthropicUsesAdaptive. */
+/** Models that accept effort 'xhigh' — Opus 4.7 and later and the whole Claude
+ *  5 generation. Sonnet 4.6 and the 4.5 generation stop at 'max'. Same
+ *  catalogue discipline as anthropicUsesAdaptive. */
 export function anthropicSupportsXhigh(model: string): boolean {
-  return model === 'claude-fable-5-1'
-    || model === 'claude-fable-5'
-    || model === 'claude-opus-5'
-    || model === 'claude-sonnet-5'
+  return isClaude5OrLater(model)
     || model === 'claude-opus-4-8'
     || model === 'claude-opus-4-7';
 }
@@ -139,9 +156,18 @@ const OPENAI_EFFORT_O_SERIES: Record<ThinkingLevel, 'low' | 'medium' | 'high'> =
   deep_investigate: 'high',
 };
 
-/** True for GPT-5.x, which support the extended xhigh/max efforts. */
+/** True for GPT-6 and later (gpt-6-astra, gpt-6-sol, gpt-6-luna …): every
+ *  model of the generation is an always-reasoning model. The hyphenated ids
+ *  never matched the gpt-5.x test below, so GPT-6 went out as a plain chat
+ *  call — temperature + max_tokens, which a reasoning model rejects. */
+function isGpt6OrLater(model: string): boolean {
+  const m = /^gpt-(\d+)(?=[.-]|$)/i.exec(model);
+  return m !== null && Number(m[1]) >= 6;
+}
+
+/** True for GPT-5.x and GPT-6+, which support the extended xhigh/max efforts. */
 export function openaiSupportsExtendedEffort(model: string): boolean {
-  return /^gpt-5\./i.test(model);
+  return /^gpt-5\./i.test(model) || isGpt6OrLater(model);
 }
 
 /** reasoning_effort for an OpenAI reasoning model, clamped to what it accepts.
@@ -165,7 +191,7 @@ export function openaiReasoningEffort(level: ThinkingLevel, model?: string): Ope
  * rejected one). gpt-4o and friends take none of these parameters.
  */
 export function isOpenAIReasoningModel(model: string): boolean {
-  return /^o[1-9]/i.test(model) || /^gpt-5\./i.test(model);
+  return /^o[1-9]/i.test(model) || /^gpt-5\./i.test(model) || isGpt6OrLater(model);
 }
 
 // ── Codex (the ChatGPT-subscription SDK engine) ──────────────────────────────

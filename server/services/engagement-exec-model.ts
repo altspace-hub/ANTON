@@ -19,8 +19,10 @@
  * the standard multi-provider seam.
  */
 
-const LEGACY_QUICK_MODEL = 'claude-haiku-4-5-20251001';
-const LEGACY_DEEP_MODEL = 'claude-opus-4-8';
+import { CLAUDE_LARGE, CLAUDE_SMALL } from '../config/claude-lineup.js';
+
+const LEGACY_QUICK_MODEL = CLAUDE_SMALL;
+const LEGACY_DEEP_MODEL = CLAUDE_LARGE;
 
 /**
  * Pure resolution of the pre-provider-routing model id.

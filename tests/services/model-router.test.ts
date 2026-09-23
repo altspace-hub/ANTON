@@ -39,7 +39,7 @@ describe('recommendModel — provider derivation (registry-driven)', () => {
   it('Claude default → Haiku / Sonnet / Opus per tier', () => {
     const large = recommendModel({ thinkingLevel: 'investigate', defaultModel: 'claude-opus-4-8' });
     expect(large.provider).toBe('anthropic');
-    expect(large.recommended).toBe('claude-opus-4-8');
+    expect(large.recommended).toBe('claude-opus-5-5'); // the lineup's large tier, 2026-09-23
 
     const small = recommendModel({ thinkingLevel: 'quick', defaultModel: 'claude-opus-4-8' });
     expect(small.recommended).toBe('claude-haiku-4-5-20251001');
@@ -48,7 +48,7 @@ describe('recommendModel — provider derivation (registry-driven)', () => {
     expect(medium.recommended).toBe('claude-sonnet-4-6');
     // Alternatives cover the other two tiers
     expect(medium.alternatives.map((a) => a.model).sort()).toEqual(
-      ['claude-haiku-4-5-20251001', 'claude-opus-4-8'].sort()
+      ['claude-haiku-4-5-20251001', 'claude-opus-5-5'].sort()
     );
   });
 
