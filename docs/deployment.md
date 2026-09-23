@@ -167,7 +167,7 @@ On first launch in team mode, openEXPERT runs a setup wizard at `http://your-ser
 
 1. Set the admin username and password
 2. Configure the instance name (shown in the UI header)
-3. Optionally configure LDAP/SSO (future feature — currently manual user creation only)
+3. Optionally connect single sign-on — Microsoft Entra ID or any OpenID Connect provider: see [entra-id-sso.md](deployment/entra-id-sso.md)
 
 After setup, navigate to Settings → Users to create accounts for your team.
 
@@ -225,7 +225,7 @@ Reload nginx: `sudo nginx -s reload`
 | Role | Permissions |
 |---|---|
 | `admin` | All modules, all sessions (own + others), audit log, user management, settings |
-| `consultant` | All modules, own sessions only, export |
+| `analyst` | All modules, own sessions only, export |
 | `viewer` | Read-only: view sessions shared with them, no run or export |
 
 ---

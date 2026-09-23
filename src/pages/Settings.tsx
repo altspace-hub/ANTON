@@ -41,6 +41,11 @@ interface TeamUser {
   monthly_token_budget: number;
   last_login: string | null;
   tokens_this_month: number;
+  /** Set when an administrator switched the account off. */
+  disabled_at?: string | null;
+  /** The account signs in through single sign-on. */
+  sso?: boolean;
+  email?: string | null;
 }
 
 interface UsageRow {
@@ -254,13 +259,19 @@ export default function Settings() {
 
   // SSO status state
   const [oidcEnabled, setOidcEnabled] = useState(false);
+  // Configured but not yet active: the OIDC_* settings are present on a solo
+  // instance being prepared for team mode.
+  const [oidcConfigured, setOidcConfigured] = useState(false);
   const [ssoTestStatus, setSsoTestStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
-  const [ssoTestResult, setSsoTestResult] = useState<{ ok: boolean; issuer?: string; error?: string } | null>(null);
+  const [ssoTestResult, setSsoTestResult] = useState<{ ok: boolean; issuer?: string; error?: string; redirectUri?: string; tenantRestriction?: string; roleMapping?: string; defaultRole?: string; errors?: string[]; warnings?: string[] } | null>(null);
 
   useEffect(() => {
     fetch('/api/config')
       .then((r) => r.json())
-      .then((d: { oidcEnabled?: boolean }) => setOidcEnabled(!!d.oidcEnabled))
+      .then((d: { oidcEnabled?: boolean; oidcConfigured?: boolean }) => {
+        setOidcEnabled(!!d.oidcEnabled);
+        setOidcConfigured(!!d.oidcConfigured);
+      })
       .catch(() => {});
   }, []);
 
@@ -269,7 +280,7 @@ export default function Settings() {
     setSsoTestResult(null);
     try {
       const res = await fetch('/api/auth/oidc/test');
-      const data = await res.json() as { ok: boolean; issuer?: string; error?: string };
+      const data = await res.json() as NonNullable<typeof ssoTestResult>;
       setSsoTestResult(data);
       setSsoTestStatus(data.ok ? 'ok' : 'error');
     } catch {
@@ -366,6 +377,32 @@ export default function Settings() {
   async function handleDeleteUser(id: string) {
     if (!confirm('Delete this user?')) return;
     await fetchWithAuth(`/api/admin/users/${id}`, { method: 'DELETE' });
+    await loadTeamData();
+  }
+
+  async function handleSetDisabled(id: string, disabled: boolean) {
+    if (disabled && !confirm(t('settings.confirmSwitchOff', 'Switch this account off? Its sessions end now and it cannot sign in until it is switched on again. Nothing is deleted.'))) return;
+    await fetchWithAuth(`/api/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disabled }),
+    });
+    await loadTeamData();
+  }
+
+  async function handleSetEmail(id: string, current: string) {
+    const next = prompt(t('settings.editEmailPrompt', 'Email address for this account (empty to clear):'), current);
+    if (next === null) return;
+    const res = await fetchWithAuth(`/api/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: next.trim() || null }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({})) as { error?: string };
+      setTeamError(e.error || t('settings.editEmailFailed', 'Could not change the email address'));
+      return;
+    }
     await loadTeamData();
   }
 
@@ -1099,7 +1136,12 @@ export default function Settings() {
                       const isNearLimit = u.monthly_token_budget > 0 && pct >= 80;
                       return (
                         <tr key={u.id}>
-                          <td className="py-2.5 text-adv-off-white font-mono">{u.username}</td>
+                          <td className="py-2.5 text-adv-off-white font-mono">
+                            {u.username}
+                            {u.sso && <span className="ml-1.5 rounded bg-adv-blue/15 px-1.5 py-0.5 font-sans text-[11px] text-adv-blue" title={t('settings.ssoBadgeTitle', 'Signs in with single sign-on')}>{t('settings.ssoBadge', 'SSO')}</span>}
+                            {u.disabled_at && <span className="ml-1.5 rounded bg-adv-red/15 px-1.5 py-0.5 font-sans text-[11px] text-adv-red" title={`${t('settings.switchedOffOn', 'Switched off')} ${new Date(u.disabled_at).toLocaleDateString()}`}>{t('settings.offBadge', 'Off')}</span>}
+                            {u.email && <div className="mt-0.5 font-sans text-[11px] text-adv-gray">{u.email}</div>}
+                          </td>
                           <td className="py-2.5 text-adv-off-white">{u.display_name || '—'}</td>
                           <td className="py-2.5">
                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${u.role === 'admin' ? 'bg-adv-blue/20 text-adv-blue' : u.role === 'analyst' ? 'bg-adv-teal/20 text-adv-teal' : 'bg-adv-gray-med/20 text-adv-gray'}`}>
@@ -1158,9 +1200,31 @@ export default function Settings() {
                                 </>
                               ) : (
                                 <>
-                                  <button onClick={() => setEditingUser(u.id)} className="rounded p-1 text-adv-gray hover:text-adv-off-white transition-colors" title={t('settings.resetPassword')}>
-                                    <Edit2 className="h-3 w-3" />
-                                  </button>
+                                  {!u.sso && (
+                                    <button onClick={() => setEditingUser(u.id)} className="rounded p-1 text-adv-gray hover:text-adv-off-white transition-colors" title={t('settings.resetPassword')}>
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                  {u.id !== authUser?.id && (
+                                    <button
+                                      onClick={() => handleSetDisabled(u.id, !u.disabled_at)}
+                                      className={`rounded px-1.5 py-0.5 text-[11px] transition-colors ${u.disabled_at ? 'text-adv-teal hover:bg-adv-teal/10' : 'text-adv-gray hover:text-adv-gold'}`}
+                                      title={u.disabled_at ? t('settings.switchOnTitle', 'Switch this account on again') : t('settings.switchOffTitle', 'Switch this account off (keeps its data)')}
+                                      aria-label={`${u.disabled_at ? t('settings.switchOn', 'Switch on') : t('settings.switchOff', 'Switch off')}: ${u.username}`}
+                                    >
+                                      {u.disabled_at ? t('settings.switchOn', 'Switch on') : t('settings.switchOff', 'Switch off')}
+                                    </button>
+                                  )}
+                                  {u.id !== authUser?.id && (
+                                    <button
+                                      onClick={() => handleSetEmail(u.id, u.email ?? '')}
+                                      className="rounded px-1.5 py-0.5 text-[11px] text-adv-gray hover:text-adv-off-white transition-colors"
+                                      title={t('settings.editEmailTitle', 'Change the email address single sign-on and invitations use')}
+                                      aria-label={`${t('settings.editEmail', 'Email')}: ${u.username}`}
+                                    >
+                                      {t('settings.editEmail', 'Email')}
+                                    </button>
+                                  )}
                                   {u.id !== authUser?.id && (
                                     <button onClick={() => handleDeleteUser(u.id)} className="rounded p-1 text-adv-gray hover:text-adv-red transition-colors" title={t('settings.deleteUser')}>
                                       <Trash2 className="h-3 w-3" />
@@ -2903,8 +2967,9 @@ SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
           <h2 className="text-sm font-semibold text-adv-white">Single Sign-On (Enterprise SSO)</h2>
         </div>
         <p className="text-xs text-adv-gray mb-4">
-          OIDC-based SSO supports Azure AD, Okta, Auth0, and any OpenID Connect-compliant identity provider.
-          Configure via environment variables and restart the server to enable the "Enterprise SSO" button on the login page.
+          Single sign-on with Microsoft Entra ID (or any OpenID Connect provider). Each person who signs in gets their own
+          account, found again by their directory id. Set it up with the variables below (team mode), restart, and test here.
+          The full guide for IT is docs/deployment/entra-id-sso.md.
         </p>
 
         {/* Status row */}
@@ -2913,7 +2978,11 @@ SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
           <div className="flex items-center gap-2">
             <Circle className={`h-2 w-2 ${oidcEnabled ? 'fill-adv-green text-adv-green' : 'fill-adv-gray-med text-adv-gray'}`} />
             <span className="text-xs text-adv-gray">
-              {oidcEnabled ? 'Configured' : 'Not configured'}
+              {oidcEnabled
+                ? t('settings.ssoActive', 'Configured')
+                : oidcConfigured
+                  ? t('settings.ssoPending', 'Configured — activates in team mode')
+                  : t('settings.ssoNotConfigured', 'Not configured')}
             </span>
           </div>
         </div>
@@ -2922,10 +2991,13 @@ SMTP_FROM_EMAIL=you@domain.com # optional, defaults to SMTP_USER`}</pre>
         <div className="rounded-lg bg-adv-dark/50 p-3 text-xs text-adv-gray mb-4">
           <p className="mb-2 font-semibold text-adv-off-white">Required environment variables:</p>
           <pre className="text-adv-gray leading-relaxed whitespace-pre-wrap">
-{`OIDC_ISSUER_URL=https://login.microsoftonline.com/{tenant}/v2.0
-OIDC_CLIENT_ID=your-client-id
+{`DEPLOYMENT_MODE=team
+OIDC_ISSUER_URL=https://login.microsoftonline.com/{tenant-id}/v2.0
+OIDC_CLIENT_ID=your-application-client-id
 OIDC_CLIENT_SECRET=your-client-secret
-OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
+OIDC_REDIRECT_URI=https://anton.example.com/api/auth/oidc/callback
+APP_PUBLIC_URL=https://anton.example.com
+# optional: OIDC_ROLE_MAP=Anton.Admin=admin,Anton.Analyst=analyst,Anton.Viewer=viewer`}
           </pre>
           <p className="mt-2 text-adv-gray">
             Add these to your <code className="rounded bg-adv-dark px-1">.env</code> file and restart the server.
@@ -2947,10 +3019,18 @@ OIDC_REDIRECT_URI=http://localhost:3001/api/auth/oidc/callback`}
             <span className={`text-xs ${ssoTestResult.ok ? 'text-adv-green' : 'text-adv-red'}`}>
               {ssoTestResult.ok
                 ? `Connected — Issuer: ${ssoTestResult.issuer}`
-                : `Failed: ${ssoTestResult.error}`}
+                : `Failed: ${ssoTestResult.error ?? (ssoTestResult.errors ?? []).join('; ')}`}
             </span>
           )}
         </div>
+        {ssoTestResult && (ssoTestResult.redirectUri || (ssoTestResult.warnings ?? []).length > 0) && (
+          <div className="mt-3 space-y-1 text-xs text-adv-gray">
+            {ssoTestResult.redirectUri && <p>Redirect URI: <code className="rounded bg-adv-dark px-1">{ssoTestResult.redirectUri}</code></p>}
+            {ssoTestResult.tenantRestriction && <p>Tenants: {ssoTestResult.tenantRestriction} · Roles: {ssoTestResult.roleMapping} · New accounts: {ssoTestResult.defaultRole}</p>}
+            {(ssoTestResult.errors ?? []).map((e) => <p key={e} className="text-adv-red">{e}</p>)}
+            {(ssoTestResult.warnings ?? []).map((w) => <p key={w} className="text-adv-gold">{w}</p>)}
+          </div>
+        )}
       </div>
 
       {/* UX-05: Show Onboarding Again */}

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { randomUUID, randomBytes } from 'crypto';
+import { randomUUID, randomBytes, createHash } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { generateToken } from '../middleware/auth.js';
+import { generateToken, sessionTtlMs, type AuthUser } from '../middleware/auth.js';
 import { sendPasswordResetEmail } from '../services/email.js';
 import { logSecurityEvent } from '../services/security-logger.js';
 import * as oidcClient from 'openid-client';
@@ -11,35 +11,93 @@ import { getUserBudgetStatus } from '../services/budget-manager.js';
 import { safeError } from '../lib/error-response.js';
 import { validate } from '../lib/validate.js';
 import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } from '../lib/schemas.js';
+import {
+  readOidcSettings, oidcSettingsProblems, identityFromClaims, tenantAllowed,
+  provisionOidcUser, hasSsoIdentity, SsoRefusedError, type OidcSettings,
+} from '../services/oidc-sso.js';
+import type { Response } from 'express';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
-const OIDC_ISSUER_URL = process.env.OIDC_ISSUER_URL;
-const OIDC_CLIENT_ID = process.env.OIDC_CLIENT_ID;
-const OIDC_CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET;
-const OIDC_REDIRECT_URI = process.env.OIDC_REDIRECT_URI || 'http://localhost:3001/api/auth/oidc/callback';
+// ── Sessions ──────────────────────────────────────────────────────────────────
 
-// Cache OIDC configuration to avoid re-discovering on every request
-let oidcConfig: oidcClient.Configuration | null = null;
+const isSecureCookie = (): boolean => process.env.NODE_ENV === 'production' || process.env.HTTPS === 'true';
 
-async function getOidcConfig(): Promise<oidcClient.Configuration> {
-  if (oidcConfig) return oidcConfig;
-  if (!OIDC_ISSUER_URL || !OIDC_CLIENT_ID) {
-    throw new Error('OIDC not configured — set OIDC_ISSUER_URL and OIDC_CLIENT_ID');
-  }
-  const issuerUrl = new URL(OIDC_ISSUER_URL);
-  const clientAuth = OIDC_CLIENT_SECRET
-    ? oidcClient.ClientSecretPost(OIDC_CLIENT_SECRET)
-    : oidcClient.None();
-  oidcConfig = await oidcClient.discovery(issuerUrl, OIDC_CLIENT_ID, {}, clientAuth);
-  return oidcConfig;
+/** A signed-in session: the JWT, its user_sessions row (which logout and a
+ *  disabled account end) and the last-login stamp. One lifetime for both,
+ *  from JWT_EXPIRY. */
+async function issueSession(db: DatabaseAdapter, user: AuthUser): Promise<string> {
+  const token = generateToken(user);
+  const expiresAt = new Date(Date.now() + sessionTtlMs()).toISOString();
+  await db.run('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', token, user.id, expiresAt);
+  await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', user.id);
+  return token;
 }
 
-// In-memory nonce/state store (short-lived — good enough for local single-process deployment)
-const oidcStateStore = new Map<string, { nonce: string; createdAt: number }>();
+/** SEC-05: the session also rides in an httpOnly cookie — downloads, EventSource
+ *  and plain links cannot send the Authorization header. */
+function setSessionCookie(res: Response, token: string): void {
+  res.cookie('openexpert_session', token, {
+    httpOnly: true,
+    secure: isSecureCookie(),
+    sameSite: 'strict',
+    maxAge: sessionTtlMs(),
+    path: '/',
+  });
+}
+
+/** Where a link in an email, or the browser after single sign-on, should go:
+ *  APP_PUBLIC_URL (then BASE_URL) when set — never the request's Host header,
+ *  which the sender controls. The request is the fallback on a dev machine. */
+function publicBaseUrl(req: { protocol: string; get(name: string): string | undefined }): string {
+  const configured = (process.env.APP_PUBLIC_URL || process.env.BASE_URL || '').trim().replace(/\/+$/, '');
+  return configured || `${req.protocol}://${req.get('host')}`;
+}
+
+// ── Enterprise SSO (OpenID Connect) ───────────────────────────────────────────
+
+// Discovery is cached per issuer + client, so a changed .env takes effect.
+let oidcConfigCache: { key: string; config: oidcClient.Configuration } | null = null;
+
+async function getOidcConfig(settings: OidcSettings, refresh = false): Promise<oidcClient.Configuration> {
+  const key = `${settings.issuerUrl}|${settings.clientId}|${settings.clientSecret ? 'secret' : 'public'}`;
+  if (!refresh && oidcConfigCache?.key === key) return oidcConfigCache.config;
+  const issuerUrl = new URL(settings.issuerUrl);
+  const clientAuth = settings.clientSecret
+    ? oidcClient.ClientSecretPost(settings.clientSecret)
+    : oidcClient.None();
+  // Plain http is refused by openid-client, rightly; allowed for a loopback
+  // issuer only, which is a test or a local identity provider, never Entra.
+  const loopback = issuerUrl.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(issuerUrl.hostname);
+  const config = await oidcClient.discovery(
+    issuerUrl, settings.clientId, {}, clientAuth,
+    loopback ? { execute: [oidcClient.allowInsecureRequests] } : undefined,
+  );
+  oidcConfigCache = { key, config };
+  return config;
+}
+
+/** The Entra error code in an OAuth error description (" AADSTS50105"), or
+ *  ''. The description itself can carry directory detail and is not logged. */
+function aadstsCode(description: string | undefined): string {
+  const m = description ? /AADSTS\d{4,}/.exec(description) : null;
+  return m ? ` ${m[0]}` : '';
+}
+
+/** The browser's half of the flow: the state it started with, checked on the
+ *  way back, so a callback link cannot sign somebody into another person's
+ *  account (login CSRF). SameSite=Lax — the callback is a top-level GET
+ *  navigation from the identity provider, which Lax cookies accompany. */
+const OIDC_STATE_COOKIE = 'anton_oidc_state';
+const OIDC_COOKIE_PATH = '/api/auth/oidc';
+
+// In-memory state store — one process. A restart during a sign-in answers
+// invalid_state and the person signs in again.
+const oidcStateStore = new Map<string, { nonce: string; codeVerifier: string; fromSchool: boolean; createdAt: number }>();
+const OIDC_STATE_CAP = 5_000;
 
 // Clean up stale state entries older than 10 minutes
 function pruneOidcStates() {
@@ -52,16 +110,29 @@ function pruneOidcStates() {
 // Short-lived one-time exchange codes for OAuth redirects (C2 fix).
 // JWT is never placed in the redirect URL — we store it here and the client
 // exchanges the opaque code for the token via GET /api/auth/exchange/:code.
-const authCodeStore = new Map<string, { token: string; expiresAt: number }>();
+//
+// The code is also bound to the browser that finished the sign-in: a random
+// binder goes into an httpOnly cookie on that browser and its hash is stored
+// with the code. Without it the code was a bearer value for 60 seconds, and a
+// colleague lured to /api/auth/exchange/<code> was signed into the account
+// that produced it (login CSRF) — the exchange also sets the session cookie.
+const authCodeStore = new Map<string, { token: string; expiresAt: number; binderHash: string }>();
+const EXCHANGE_BINDER_COOKIE = 'anton_auth_binder';
+const EXCHANGE_COOKIE_PATH = '/api/auth/exchange';
+const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
-function createExchangeCode(token: string): string {
+function createExchangeCode(res: Response, token: string, secure: boolean): string {
   // Prune expired codes first
   const now = Date.now();
   for (const [key, val] of authCodeStore.entries()) {
     if (val.expiresAt < now) authCodeStore.delete(key);
   }
   const code = randomBytes(32).toString('hex');
-  authCodeStore.set(code, { token, expiresAt: now + 60_000 }); // 60-second TTL
+  const binder = randomBytes(32).toString('hex');
+  authCodeStore.set(code, { token, expiresAt: now + 60_000, binderHash: sha256(binder) }); // 60-second TTL
+  res.cookie(EXCHANGE_BINDER_COOKIE, binder, {
+    httpOnly: true, secure, sameSite: 'lax', maxAge: 60_000, path: EXCHANGE_COOKIE_PATH,
+  });
   return code;
 }
 
@@ -111,7 +182,13 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       return;
     }
 
-    const valid = await bcrypt.compare(password, user.password_hash as string);
+    // An SSO-provisioned account has no password (''), which bcrypt never
+    // matches — it signs in through the directory or not at all.
+    // And an account with an SSO identity has no password even if one was set
+    // before it was linked or through the API: the directory is its only way in.
+    const valid = typeof user.password_hash === 'string' && user.password_hash !== ''
+      && !(await hasSsoIdentity(db, user.id as string))
+      && await bcrypt.compare(password, user.password_hash);
 
     if (!valid) {
       // Record failed attempt
@@ -172,6 +249,17 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       }
     }
 
+    // A switched-off account: the right password is not enough. Checked after the
+    // password, so the answer does not tell a guesser which accounts exist.
+    if (user.disabled_at) {
+      logSecurityEvent(db, {
+        eventType: 'unauthorized_access', userId: user.id as string, ipAddress,
+        details: 'Sign-in refused: account disabled', severity: 'medium',
+      });
+      res.status(403).json({ error: 'This account has been switched off. Ask an administrator.' });
+      return;
+    }
+
     // Record successful attempt
     await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
 
@@ -181,25 +269,12 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       role: user.role as 'admin' | 'analyst' | 'viewer',
       display_name: user.display_name as string | undefined,
     };
-    const token = generateToken(authUser);
-
-    // Store session
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    await db.run('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', token, user.id as string, expiresAt);
-    await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', user.id as string);
+    const token = await issueSession(db, authUser);
 
     // Auto-accept any pending project invitations for this email
-    acceptPendingInvitations(db, user.id as string, user.email as string);
+    if (typeof user.email === 'string' && user.email) void acceptPendingInvitations(db, user.id as string, user.email);
 
-    // SEC-05: Set token in httpOnly, Secure, SameSite=Strict cookie (7 days)
-    const isSecure = process.env.NODE_ENV === 'production' || process.env.HTTPS === 'true';
-    res.cookie('openexpert_session', token, {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-      path: '/',
-    });
+    setSessionCookie(res, token);
 
     // Also return token in body for backward compatibility with existing clients
     res.json({ user: authUser, token });
@@ -214,13 +289,18 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     try {
       // Look up user by email field
       const user = await db.get('SELECT * FROM users WHERE email = ?', email) as Record<string, unknown> | undefined;
-      if (user) {
+      // No reset link for an account that signs in through SSO or is switched
+      // off: a password would be a second way in that skips the directory's
+      // MFA and survives offboarding. Same answer either way (no enumeration).
+      if (user && !user.disabled_at && !(await hasSsoIdentity(db, user.id as string))) {
         const token = randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
         await db.run('INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)'
         , user.id as string, token, expiresAt);
 
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        // The link's host comes from configuration, not the request: a forged
+        // Host header would otherwise mail a victim a link to another server.
+        const baseUrl = publicBaseUrl(req);
         try {
           await sendPasswordResetEmail(email, token, baseUrl);
         } catch (emailErr) {
@@ -245,6 +325,13 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       res.status(400).json({ error: 'Invalid or expired reset token' });
       return;
     }
+    // A token issued before the account was linked to SSO (or switched off)
+    // must not set a password after it.
+    const target = await db.get<{ disabled_at: unknown }>('SELECT disabled_at FROM users WHERE id = ?', record.user_id as string);
+    if (!target || target.disabled_at || await hasSsoIdentity(db, record.user_id as string)) {
+      res.status(400).json({ error: 'This account signs in with single sign-on — it has no password to reset' });
+      return;
+    }
 
     try {
       const hash = await bcrypt.hash(newPassword, 10);
@@ -266,7 +353,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     const token = cookieToken || bearerToken;
     if (token) await db.run('DELETE FROM user_sessions WHERE token = ?', token);
     // SEC-05: Clear the session cookie
-    res.clearCookie('openexpert_session', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'strict', path: '/' });
+    res.clearCookie('openexpert_session', { httpOnly: true, secure: isSecureCookie(), sameSite: 'strict', path: '/' });
     res.json({ success: true });
   });
 
@@ -378,7 +465,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const googleUser = await userRes.json() as { email: string; name: string; picture?: string };
 
       const token = await findOrCreateOAuthUser(db, googleUser.email, googleUser.name, 'google');
-      res.redirect(`${redirectBase}${createExchangeCode(token)}`);
+      res.redirect(`${redirectBase}${createExchangeCode(res, token, isSecureCookie())}`);
     } catch (err) {
       console.error('[auth] Google OAuth error:', err);
       res.redirect('/?auth_error=oauth_failed');
@@ -448,122 +535,247 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       }
 
       const token = await findOrCreateOAuthUser(db, email, ghUser.name || ghUser.login, 'github');
-      res.redirect(`/?auth_code=${createExchangeCode(token)}`);
+      res.redirect(`/?auth_code=${createExchangeCode(res, token, isSecureCookie())}`);
     } catch (err) {
       console.error('[auth] GitHub OAuth error:', err);
       res.redirect('/?auth_error=oauth_failed');
     }
   });
 
-  // ─── Enterprise OIDC SSO ───────────────────────────────────────────────────
-  // Supports Azure AD, Okta, Auth0, and any OIDC-compliant identity provider.
-  // Configure via: OIDC_ISSUER_URL, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_REDIRECT_URI
+  // ─── Enterprise SSO (OpenID Connect) ───────────────────────────────────────
+  // Built and tested for Microsoft Entra ID; any compliant provider works. The
+  // decisions (identity, tenant, role, provisioning) live in
+  // services/oidc-sso.ts; these routes carry the redirect flow. Team mode only:
+  // solo mode has one user and no sign-in, and an SSO flow there would only
+  // create rows nobody can use. Set-up for IT: docs/deployment/entra-id-sso.md.
 
-  // GET /api/auth/oidc/test — discover OIDC config and return status (no auth required)
-  router.get('/auth/oidc/test', async (_req, res) => {
-    if (!OIDC_ISSUER_URL || !OIDC_CLIENT_ID) {
+  /** The settings, or an answer already sent: 404 in solo mode, 501 unset. */
+  function oidcSettingsOr404(res: Response): OidcSettings | null {
+    if (!IS_TEAM_MODE) {
+      res.status(404).json({ error: 'Single sign-on is available in team mode (DEPLOYMENT_MODE=team)' });
+      return null;
+    }
+    const settings = readOidcSettings();
+    if (!settings) {
+      res.status(501).json({ error: 'Single sign-on is not configured — set OIDC_ISSUER_URL and OIDC_CLIENT_ID' });
+      return null;
+    }
+    return settings;
+  }
+
+  /** Back to the app with a reason the login page can show. */
+  function ssoFailure(res: Response, settings: OidcSettings | null, reason: string): void {
+    res.redirect(`${settings?.appBaseUrl ?? ''}/?auth_error=${encodeURIComponent(reason)}`);
+  }
+
+  /** Whether the caller is an administrator. This router is mounted before
+   *  the auth middleware (sign-in must work without a session), so the session
+   *  is read here. Solo mode's one user is the administrator. */
+  async function callerIsAdmin(req: { headers: { authorization?: string }; cookies?: Record<string, string> }): Promise<boolean> {
+    if (!IS_TEAM_MODE) return true;
+    const bearer = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
+    const token = req.cookies?.['openexpert_session'] || bearer;
+    if (!token) return false;
+    const row = await db.get<{ role: string }>(
+      `SELECT u.role FROM user_sessions s JOIN users u ON u.id = s.user_id
+        WHERE s.token = ? AND s.expires_at > NOW() AND u.disabled_at IS NULL`,
+      token,
+    ).catch(() => undefined);
+    return row?.role === 'admin';
+  }
+
+  // GET /api/auth/oidc/test — for whoever sets SSO up: does discovery work, and
+  // what is wrong with the settings. No secret is ever returned. Anyone may ask
+  // whether discovery works; the settings summary and ?refresh=1 (a fresh
+  // discovery request) are for an administrator — or solo mode, so a
+  // configuration can be checked before the instance switches to team mode.
+  router.get('/auth/oidc/test', async (req, res) => {
+    const settings = readOidcSettings();
+    if (!settings) {
       res.status(501).json({ ok: false, error: 'OIDC not configured — set OIDC_ISSUER_URL and OIDC_CLIENT_ID in .env' });
       return;
     }
+    const detailed = await callerIsAdmin(req as { headers: { authorization?: string }; cookies?: Record<string, string> });
+    if (!detailed) {
+      try {
+        const config = await getOidcConfig(settings);
+        res.json({ ok: oidcSettingsProblems(settings).errors.length === 0, issuer: config.serverMetadata().issuer });
+      } catch {
+        res.status(502).json({ ok: false, error: 'OIDC discovery failed' });
+      }
+      return;
+    }
+    const { errors, warnings } = oidcSettingsProblems(settings);
+    const summary = {
+      redirectUri: settings.redirectUri,
+      tenantRestriction: settings.allowedTenantIds.length > 0 ? `allow-list (${settings.allowedTenantIds.length})` : 'issuer',
+      roleMapping: settings.roleMap.size > 0 ? `${settings.roleMap.size} role(s) from the "${settings.roleClaim}" claim` : 'off',
+      defaultRole: settings.defaultRole,
+      teamMode: IS_TEAM_MODE,
+      errors,
+      warnings: IS_TEAM_MODE ? warnings : [...warnings, 'DEPLOYMENT_MODE is not team — the sign-in button stays hidden until it is'],
+    };
     try {
-      // Reset cached config so we always do a fresh check on the test endpoint
-      oidcConfig = null;
-      const config = await getOidcConfig();
-      const serverMetadata = config.serverMetadata();
-      res.json({ ok: true, issuer: serverMetadata.issuer });
+      const config = await getOidcConfig(settings, (req.query as { refresh?: string }).refresh === '1');
+      res.json({ ok: errors.length === 0, issuer: config.serverMetadata().issuer, ...summary });
     } catch (err) {
-      res.status(500).json({ ok: false, error: `OIDC discovery failed: ${safeError(err)}` });
+      res.status(502).json({ ok: false, error: `OIDC discovery failed: ${safeError(err)}`, ...summary });
     }
   });
 
-  // GET /api/auth/oidc/start — redirect user to the identity provider login page
-  // Optional: ?from=school — encodes 'from' in OIDC state so callback can redirect back
+  // GET /api/auth/oidc/start — to the identity provider's sign-in page.
+  // ?from=school returns to School mode afterwards.
   router.get('/auth/oidc/start', async (req, res) => {
-    if (!OIDC_ISSUER_URL || !OIDC_CLIENT_ID) {
-      res.status(501).json({ error: 'Enterprise SSO not configured' });
+    const settings = oidcSettingsOr404(res);
+    if (!settings) return;
+    const { errors } = oidcSettingsProblems(settings);
+    if (errors.length > 0) {
+      console.error(`[auth] SSO refused to start — configuration: ${errors.join(' | ')}`);
+      ssoFailure(res, settings, 'sso_misconfigured');
+      return;
+    }
+    // The state cookie belongs to the host that sets it, and the provider
+    // returns the browser to the redirect URI's host. Started on another name
+    // for the same server (the intranet short name, the IP) the callback would
+    // never see the cookie, so the sign-in starts over on the registered host.
+    const callbackOrigin = new URL(settings.redirectUri);
+    if (req.get('host') && req.get('host') !== callbackOrigin.host) {
+      const from = (req.query as { from?: string }).from === 'school' ? '?from=school' : '';
+      res.redirect(`${callbackOrigin.origin}/api/auth/oidc/start${from}`);
       return;
     }
     try {
       pruneOidcStates();
-      const config = await getOidcConfig();
-      const fromParam = (req.query as { from?: string }).from || '';
-      const stateRandom = oidcClient.randomState();
-      // Encode 'from' context in state using a separator that survives URL round-trips
-      const state = fromParam === 'school' ? `school:${stateRandom}` : stateRandom;
+      const config = await getOidcConfig(settings);
+      const state = oidcClient.randomState();
       const nonce = oidcClient.randomNonce();
-      oidcStateStore.set(state, { nonce, createdAt: Date.now() });
-
-      const authUrl = oidcClient.buildAuthorizationUrl(config, {
-        redirect_uri: OIDC_REDIRECT_URI,
-        scope: 'openid email profile',
-        state,
-        nonce,
+      // PKCE, which Microsoft recommends for every client, confidential ones
+      // included: the code is useless to anyone without this verifier.
+      const codeVerifier = oidcClient.randomPKCECodeVerifier();
+      const codeChallenge = await oidcClient.calculatePKCECodeChallenge(codeVerifier);
+      // Bounded: /start is unauthenticated, and each entry lives ten minutes.
+      // Past the cap the oldest sign-in in progress is dropped (it answers
+      // invalid_state and is started again) rather than growing without end.
+      while (oidcStateStore.size >= OIDC_STATE_CAP) {
+        const oldest = oidcStateStore.keys().next().value;
+        if (oldest === undefined) break;
+        oidcStateStore.delete(oldest);
+      }
+      oidcStateStore.set(state, {
+        nonce, codeVerifier, fromSchool: (req.query as { from?: string }).from === 'school', createdAt: Date.now(),
+      });
+      res.cookie(OIDC_STATE_COOKIE, state, {
+        httpOnly: true, secure: callbackOrigin.protocol === 'https:', sameSite: 'lax', maxAge: 10 * 60 * 1000, path: OIDC_COOKIE_PATH,
       });
 
+      const authUrl = oidcClient.buildAuthorizationUrl(config, {
+        redirect_uri: settings.redirectUri,
+        scope: 'openid profile email',
+        state,
+        nonce,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+      });
       res.redirect(authUrl.href);
     } catch (err) {
-      console.error('[auth] OIDC start error:', err);
-      res.redirect('/?auth_error=oidc_start_failed');
+      console.error(`[auth] SSO start failed: ${err instanceof Error ? err.message : 'error'}`);
+      ssoFailure(res, settings, 'oidc_start_failed');
     }
   });
 
-  // GET /api/auth/oidc/callback — handle the identity provider callback
+  // GET /api/auth/oidc/callback — back from the identity provider.
   router.get('/auth/oidc/callback', async (req, res) => {
-    if (!OIDC_ISSUER_URL || !OIDC_CLIENT_ID) {
-      res.redirect('/?auth_error=not_configured');
+    const settings = oidcSettingsOr404(res);
+    if (!settings) return;
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+    const refuse = (reason: string, details: string, userId?: string) => {
+      // Codes and ids only — never a claim value or a token.
+      console.warn(`[auth] SSO sign-in refused (${reason}): ${details}`);
+      logSecurityEvent(db, {
+        eventType: 'unauthorized_access', userId, ipAddress,
+        details: `SSO sign-in refused (${reason}): ${details}`, severity: 'medium',
+      });
+      ssoFailure(res, settings, reason);
+    };
+
+    const query = req.query as { state?: string; error?: string; error_description?: string };
+    const state = typeof query.state === 'string' ? query.state : '';
+    // The state must be the one this browser started with (cookie) and one this
+    // server issued (store). Either missing means the callback link did not come
+    // from a sign-in started here.
+    const cookieState = (req as { cookies?: Record<string, string> }).cookies?.[OIDC_STATE_COOKIE];
+    res.clearCookie(OIDC_STATE_COOKIE, { path: OIDC_COOKIE_PATH });
+    const stateEntry = state ? oidcStateStore.get(state) : undefined;
+    if (state) oidcStateStore.delete(state);
+    if (!state || !stateEntry || cookieState !== state) {
+      refuse('invalid_state', !state ? 'no state' : !stateEntry ? 'unknown or expired state' : 'state not issued to this browser');
       return;
     }
+    if (typeof query.error === 'string') {
+      // e.g. access_denied — Entra's "not assigned to this application" (AADSTS50105).
+      // The error code only; the description can carry directory detail.
+      refuse('sso_denied', `identity provider answered ${query.error.slice(0, 60)}${aadstsCode(query.error_description)}`);
+      return;
+    }
+
     try {
-      const config = await getOidcConfig();
+      const config = await getOidcConfig(settings);
+      // The token request must carry exactly the redirect_uri the authorisation
+      // used (RFC 6749 §4.1.3). Rebuilt from the request it came out without
+      // /api (the router is mounted under it) and as http behind a TLS proxy, so
+      // Entra refused every code.
+      const callbackUrl = new URL(settings.redirectUri);
+      callbackUrl.search = new URL(req.originalUrl, 'http://callback.invalid').search;
 
-      // Reconstruct the full callback URL from the incoming request
-      const callbackUrl = new URL(
-        req.url,
-        `${req.protocol}://${req.get('host')}`
-      );
-
-      // Retrieve and validate state
-      const state = callbackUrl.searchParams.get('state');
-      if (!state) {
-        res.redirect('/?auth_error=missing_state');
-        return;
-      }
-      const stateEntry = oidcStateStore.get(state);
-      if (!stateEntry) {
-        res.redirect('/?auth_error=invalid_state');
-        return;
-      }
-      oidcStateStore.delete(state);
-
-      // Exchange authorization code for tokens and validate ID token
       const tokens = await oidcClient.authorizationCodeGrant(config, callbackUrl, {
-        pkceCodeVerifier: undefined,
+        pkceCodeVerifier: stateEntry.codeVerifier,
         expectedState: state,
         expectedNonce: stateEntry.nonce,
         idTokenExpected: true,
       });
-
-      // Extract user identity from ID token claims
       const claims = tokens.claims();
-      if (!claims) {
-        res.redirect('/?auth_error=no_claims');
+      if (!claims) { refuse('no_claims', 'no ID token claims'); return; }
+
+      let identity;
+      try {
+        identity = identityFromClaims(claims as Record<string, unknown>, settings);
+      } catch (err) {
+        if (err instanceof SsoRefusedError) { refuse(err.reason, err.message); return; }
+        throw err;
+      }
+      if (!tenantAllowed(identity, settings)) {
+        refuse('tenant_not_allowed', `directory ${identity.tenantId ?? 'unknown'} is not on OIDC_ALLOWED_TENANT_IDS`);
         return;
       }
 
-      const email = (claims.email as string | undefined) || '';
-      if (!email) {
-        res.redirect('/?auth_error=no_email');
-        return;
+      let provisioned;
+      try {
+        provisioned = await provisionOidcUser(db, identity, settings);
+      } catch (err) {
+        if (err instanceof SsoRefusedError) { refuse(err.reason, err.message); return; }
+        throw err;
       }
-      const name = (claims.name as string | undefined) || (claims.preferred_username as string | undefined) || email.split('@')[0];
+      const { user, outcome, roleChangedFrom } = provisioned;
+      if (outcome !== 'returning') console.log(`[auth] SSO account ${outcome}: user ${user.id}`);
+      if (roleChangedFrom !== undefined) console.log(`[auth] SSO role for user ${user.id}: ${roleChangedFrom} → ${user.role} (from the directory)`);
 
-      const isFromSchool = state?.startsWith('school:') === true;
-      const token = await findOrCreateOAuthUser(db, email, name, 'oidc');
-      const redirectBase = isFromSchool ? '/?from=school&auth_code=' : '/?auth_code=';
-      res.redirect(`${redirectBase}${createExchangeCode(token)}`);
+      await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', user.username, ipAddress);
+      const token = await issueSession(db, {
+        id: user.id, username: user.username, role: user.role, display_name: user.display_name,
+      });
+      // Invitations are addressed by email, so only a verified address accepts them.
+      if (identity.email && identity.emailVerified) void acceptPendingInvitations(db, user.id, identity.email);
+
+      const landing = stateEntry.fromSchool ? '/?from=school&auth_code=' : '/?auth_code=';
+      res.redirect(`${settings.appBaseUrl}${landing}${createExchangeCode(res, token, new URL(settings.redirectUri).protocol === 'https:')}`);
     } catch (err) {
-      console.error('[auth] OIDC callback error:', err);
-      res.redirect('/?auth_error=oidc_callback_failed');
+      // openid-client's messages can quote token claims, so not the message:
+      // the error kind, the OAuth error code and the AADSTS code, which IT can
+      // look up (AADSTS7000215 = wrong client secret, and so on).
+      const body = err as { name?: string; error?: unknown; error_description?: unknown };
+      const oauthError = typeof body.error === 'string' ? ` ${body.error.slice(0, 60)}` : '';
+      const detail = `${body.name ?? 'error'}${oauthError}${aadstsCode(typeof body.error_description === 'string' ? body.error_description : undefined)}`;
+      refuse('oidc_callback_failed', detail);
     }
   });
 
@@ -571,12 +783,18 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
   // The code is placed in the redirect URL after OAuth; the JWT never touches the URL.
   router.get('/auth/exchange/:code', async (req, res) => {
     const entry = authCodeStore.get(req.params.code);
-    if (!entry || entry.expiresAt < Date.now()) {
+    const binder = (req as { cookies?: Record<string, string> }).cookies?.[EXCHANGE_BINDER_COOKIE];
+    res.clearCookie(EXCHANGE_BINDER_COOKIE, { path: EXCHANGE_COOKIE_PATH });
+    if (!entry || entry.expiresAt < Date.now() || !binder || sha256(binder) !== entry.binderHash) {
       authCodeStore.delete(req.params.code);
       res.status(400).json({ error: 'Invalid or expired auth code' });
       return;
     }
     authCodeStore.delete(req.params.code); // one-time use
+    // The cookie as well as the body: without it an SSO user's downloads,
+    // EventSource streams and plain links answered 401 — password login set it,
+    // this path did not.
+    setSessionCookie(res, entry.token);
     res.json({ token: entry.token });
   });
 
@@ -741,10 +959,13 @@ export function createAuthMfaRoutes(db: DatabaseAdapter): Router {
 
 async function acceptPendingInvitations(db: DatabaseAdapter, userId: string, email: string) {
   try {
-    const pending = await db.get(`
+    // db.all: this was db.get, whose single row (or undefined) the loop below
+    // could not iterate — the throw was caught, and no invitation was ever
+    // accepted at sign-in.
+    const pending = await db.all<{ id: string; project_id: string; role: string; invited_by: string }>(`
       SELECT * FROM project_invitations
-      WHERE email = ? AND status = 'pending' AND expires_at > NOW()
-    `, email) as Array<{ id: string; project_id: string; role: string; invited_by: string }>;
+      WHERE LOWER(email) = LOWER(?) AND status = 'pending' AND expires_at > NOW()
+    `, email);
 
     for (const inv of pending) {
       const memberId = randomUUID();
@@ -760,19 +981,29 @@ async function acceptPendingInvitations(db: DatabaseAdapter, userId: string, ema
     }
 
     if (pending.length > 0) {
-      console.log(`[auth] Auto-accepted ${pending.length} project invitation(s) for ${email}`);
+      console.log(`[auth] Auto-accepted ${pending.length} project invitation(s) for user ${userId}`);
     }
   } catch (err) {
-    console.error('[auth] Error accepting pending invitations:', err);
+    console.error(`[auth] Error accepting pending invitations for user ${userId}: ${err instanceof Error ? err.message : 'error'}`);
   }
 }
 
+/**
+ * Google / GitHub sign-in. These match accounts by email and accept any
+ * account on the internet, so they are for a personal instance — a work
+ * server leaves GOOGLE_* / GITHUB_* unset and uses single sign-on
+ * (docs/deployment/entra-id-sso.md). Even so they never enter an account the
+ * directory owns (an OIDC identity) or one that is switched off: a personal
+ * Google account with a colleague's address must not become that colleague.
+ */
 async function findOrCreateOAuthUser(db: DatabaseAdapter, email: string, name: string, _provider: string): Promise<string> {
   let user = await db.get('SELECT * FROM users WHERE email = ?', email) as Record<string, unknown> | undefined;
-  let isNewUser = false;
+
+  if (user && (user.disabled_at || await hasSsoIdentity(db, user.id as string))) {
+    throw new Error('OAuth sign-in refused: the account is switched off or signs in with single sign-on');
+  }
 
   if (!user) {
-    isNewUser = true;
     // Derive a username from the email local part; make it unique
     const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_');
     let username = baseUsername;
@@ -789,21 +1020,12 @@ async function findOrCreateOAuthUser(db: DatabaseAdapter, email: string, name: s
   }
 
   // Auto-accept pending project invitations for this email
-  acceptPendingInvitations(db, user.id as string, email);
+  void acceptPendingInvitations(db, user.id as string, email);
 
-  const authUser = {
+  return issueSession(db, {
     id: user.id as string,
     username: user.username as string,
     role: user.role as 'admin' | 'analyst' | 'viewer',
     display_name: user.display_name as string | undefined,
-  };
-
-  const token = generateToken(authUser);
-
-  // Store session in DB (consistent with existing login route)
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  await db.run('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', token, authUser.id, expiresAt);
-  await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', authUser.id);
-
-  return token;
+  });
 }
