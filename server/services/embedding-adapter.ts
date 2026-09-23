@@ -75,6 +75,34 @@ class OpenAIEmbedder implements EmbeddingAdapter {
 
 // ── Ollama adapter ─────────────────────────────────────────────────────────
 
+/** Native output width of the Ollama embedding models ANTON recommends. Keys
+ *  are the library name, or name:size where the width depends on the size. */
+const OLLAMA_EMBEDDING_WIDTHS: Readonly<Record<string, number>> = {
+  'nomic-embed-text': 768,
+  'mxbai-embed-large': 1024,
+  'bge-m3': 1024,
+  'embeddinggemma': 768,
+  'all-minilm': 384,
+  'qwen3-embedding:0.6b': 1024,
+  'qwen3-embedding:4b': 2560,
+  'qwen3-embedding:8b': 4096,
+};
+
+/**
+ * The width an Ollama embedding model produces. Every model but
+ * mxbai-embed-large used to be declared 768-d — bge-m3 (1024) or
+ * qwen3-embedding (up to 4096) then pinned the wrong width, and the pin is
+ * what decides whether stored vectors are comparable. An explicit
+ * OLLAMA_EMBEDDING_DIMENSIONS wins; an unknown model falls back to 768 and
+ * the first embedding warns if that is wrong.
+ */
+export function ollamaEmbeddingDimensions(model: string, override?: string): number {
+  const explicit = Number(override);
+  if (override && Number.isInteger(explicit) && explicit > 0) return explicit;
+  const name = model.replace(/:latest$/, '');
+  return OLLAMA_EMBEDDING_WIDTHS[name] ?? OLLAMA_EMBEDDING_WIDTHS[name.split(':')[0]] ?? 768;
+}
+
 class OllamaEmbedder implements EmbeddingAdapter {
   readonly provider: EmbeddingProvider = 'ollama';
   readonly model: string;
@@ -82,11 +110,12 @@ class OllamaEmbedder implements EmbeddingAdapter {
 
   private baseUrl: string;
 
+  private warnedLength = false;
+
   constructor() {
     this.baseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
     this.model = process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text';
-    // nomic-embed-text = 768 dims; mxbai-embed-large = 1024 dims
-    this.dimensions = this.model === 'mxbai-embed-large' ? 1024 : 768;
+    this.dimensions = ollamaEmbeddingDimensions(this.model, process.env.OLLAMA_EMBEDDING_DIMENSIONS);
   }
 
   async embed(text: string): Promise<number[]> {
@@ -99,6 +128,12 @@ class OllamaEmbedder implements EmbeddingAdapter {
       });
       if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
       const json = await res.json() as { embedding: number[] };
+      if (!this.warnedLength && Array.isArray(json.embedding) && json.embedding.length !== this.dimensions) {
+        // The pin and the vector column trust the declared width; say so loudly
+        // rather than store vectors of a width nobody declared.
+        this.warnedLength = true;
+        console.warn(`[embedding-adapter] ${this.model} returned ${json.embedding.length}-d vectors but ${this.dimensions}-d is declared — set OLLAMA_EMBEDDING_DIMENSIONS=${json.embedding.length}.`);
+      }
       return json.embedding;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
