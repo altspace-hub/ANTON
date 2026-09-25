@@ -15,7 +15,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { hybridSearch, findSimilar, INSTANCE_WIDE_SEARCH, searchScopeForRequest } from '../services/hybrid-search.js';
+import { hybridSearch, findSimilar, filterOwnedByScope, searchScopeForRequest, atomOwnerSql } from '../services/hybrid-search.js';
 import { getEmbeddingAdapter, isZeroVector } from '../services/embedding-adapter.js';
 import { resetVectorStore, getVectorStore } from '../services/vector-store-adapter.js';
 import { backfillKnowledgeAtoms, backfillCheckpoints, embedModuleDescriptions } from '../services/embedding-pipeline.js';
@@ -28,6 +28,7 @@ import {
   repinToActive,
 } from '../services/embedding-pin.js';
 import { requireAdminOrSolo } from '../middleware/role-guards.js';
+import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import { safeError } from '../lib/error-response.js';
 
 /** Rows one reembed-mismatched call may touch, and the hard ceiling a caller can ask for. */
@@ -36,10 +37,28 @@ export const REEMBED_MAX_LIMIT = 1000;
 const REEMBED_DEFAULT_BATCH = 25;
 const REEMBED_MAX_BATCH = 100;
 
+/** Ceiling for a search's topK from the request body. The scoped searches
+ *  over-fetch a multiple of it, so an unbounded value was an unbounded scan. */
+const MAX_TOP_K = 100;
+
 function clampInt(v: unknown, fallback: number, max: number): number {
   const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
   if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.min(Math.floor(n), max);
+}
+
+/**
+ * retrieval_feedback rows belong to the session they were injected into, and a
+ * session to its user (sessions.user_id). This is a WHERE fragment limiting those
+ * rows to the caller's own sessions — the rule routes/sessions.ts applies to the
+ * session itself. It is empty for solo and admins (ownerFilter's rule), so their
+ * statements are exactly what they were; with no identity it matches nothing.
+ * `sessionColumn` must be a literal at the call site.
+ */
+function ownSessionRowsSql(req: OwnedRequest, sessionColumn: string): { sql: string; params: string[] } {
+  const scope = ownerFilter(req, 's.user_id');
+  if (!scope.sql) return scope;
+  return { sql: ` AND EXISTS (SELECT 1 FROM sessions s WHERE s.id = ${sessionColumn}${scope.sql})`, params: scope.params };
 }
 
 export async function createEmbeddingRoutes(db: DatabaseAdapter) {
@@ -49,37 +68,45 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
 
   router.post('/search/atoms', async (req, res) => {
     try {
-      const { query, areaId, moduleId, topK = 20, minConfidence = 0, atomTypes } = req.body as {
+      const { query, areaId, moduleId, topK: rawTopK, minConfidence = 0, atomTypes } = req.body as {
         query: string;
         areaId?: string;
         moduleId?: string;
-        topK?: number;
+        topK?: unknown;
         minConfidence?: number;
         atomTypes?: string[];
       };
 
       if (!query) return res.status(400).json({ error: 'query is required' });
+      const topK = clampInt(rawTopK, 20, MAX_TOP_K);
 
+      // Atoms have an owner (knowledge_atoms.owner_user_id, migration 275): in team
+      // mode a non-admin finds their own atoms and the shared ones, the rule the
+      // prompt layer injects by. Request-derived scope, not INSTANCE_WIDE_SEARCH —
+      // this route used to hand every user's atoms to anyone with a keyword.
+      const scope = searchScopeForRequest(req);
       const results = await hybridSearch(db, {
         query,
         contentTypes: ['knowledge_atom'],
         topK: topK * 2, // Over-fetch for post-filtering
         minSimilarity: 0.2,
-        // Atoms carry no owner column — institutional memory is shared by design.
-        scope: INSTANCE_WIDE_SEARCH,
+        scope,
       });
 
       // Enrich with authoritative DB metadata
       const atomIds = results.map(r => r.content_id);
       if (atomIds.length === 0) return res.json({ results: [], total: 0 });
 
+      // The owner rule again on the enrichment read: the enrichment is what supplies
+      // the content returned below, so it must not depend on hybridSearch alone.
+      const owner = atomOwnerSql(scope, 'owner_user_id');
       const placeholders = atomIds.map(() => '?').join(',');
       const atomRows = await db.all(`
         SELECT id, content, atom_type, category, confidence, source_area_id,
                source_module_id, created_at, superseded_by, tags
         FROM knowledge_atoms
-        WHERE id IN (${placeholders}) AND is_active = 1
-      `, ...atomIds) as Array<{
+        WHERE id IN (${placeholders}) AND is_active = 1${owner.sql}
+      `, ...atomIds, ...owner.params) as Array<{
         id: string; content: string; atom_type: string; category: string;
         confidence: number; source_area_id: string | null; source_module_id: string | null;
         created_at: string; superseded_by: string | null; tags: string | null;
@@ -153,17 +180,27 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
 
   router.post('/search/decisions', async (req, res) => {
     try {
-      const { query, topK = 10 } = req.body as { query: string; topK?: number };
+      const { query, topK: rawTopK } = req.body as { query: string; topK?: unknown };
+      const topK = clampInt(rawTopK, 10, MAX_TOP_K);
       if (!query) return res.status(400).json({ error: 'query is required' });
 
-      const results = await hybridSearch(db, {
+      // Checkpoint decisions are strictly their decider's (checkpoint_decisions.
+      // decided_by — hybrid-search's strictOwnerSql): on a team server a non-admin
+      // finds only their own. The search is scoped by the request, over-fetched
+      // when scoped so the filter can still fill topK, and the route applies the
+      // same rule once more to exactly what it returns (filterOwnedByScope), so
+      // its answer never rests on the search service alone. Solo and admins get
+      // exactly the old search (instance scope: both steps are no-ops).
+      const scope = searchScopeForRequest(req);
+      const scoped = scope.kind !== 'instance';
+      const hits = await hybridSearch(db, {
         query,
         contentTypes: ['checkpoint'],
-        topK,
+        topK: scoped ? topK * 3 : topK,
         minSimilarity: 0.3,
-        // checkpoint_decisions carries no owner column either.
-        scope: INSTANCE_WIDE_SEARCH,
+        scope,
       });
+      const results = scoped ? (await filterOwnedByScope(db, hits, scope)).slice(0, topK) : hits;
 
       res.json({
         results: results.map(r => ({
@@ -184,7 +221,7 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
 
   // ── POST /reindex — Trigger on-demand re-embedding ───────────────────────
 
-  router.post('/reindex', async (_req, res) => {
+  router.post('/reindex', requireAdminOrSolo, async (_req, res) => {
     try {
       const adapter = getEmbeddingAdapter();
 
@@ -229,7 +266,7 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
   // embeddings into the vector column (a cheap copy — no OpenAI re-spend). Safe to
   // re-run; this is the path to enable pgvector if it was installed AFTER migration
   // 218 ran (when the extension was still absent).
-  router.post('/backfill-vec', async (_req, res) => {
+  router.post('/backfill-vec', requireAdminOrSolo, async (_req, res) => {
     try {
       if (db.dialect !== 'postgresql') {
         return res.status(400).json({ error: 'pgvector backfill requires a PostgreSQL connection' });
@@ -508,8 +545,12 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
       // was one object and total was undefined; with no rows, db.get → undefined and
       // `rows.length` threw → 500. db.all returns the array the UI (OutputToolbar /
       // InjectedAtomsPanel) iterates, and [] for an empty session (no 500).
-      const where = messageId ? 'WHERE rf.session_id = ? AND rf.message_id = ?' : 'WHERE rf.session_id = ?';
-      const params = messageId ? [sessionId, messageId] : [sessionId];
+      // Team mode: only the caller's own session. Another user's session answers
+      // exactly like one nobody injected into — an empty list — so the id is no
+      // oracle. It used to return that session's injected atoms, content included.
+      const own = ownSessionRowsSql(req, 'rf.session_id');
+      const where = (messageId ? 'WHERE rf.session_id = ? AND rf.message_id = ?' : 'WHERE rf.session_id = ?') + own.sql;
+      const params = [...(messageId ? [sessionId, messageId] : [sessionId]), ...own.params];
       const rows = await db.all(`SELECT rf.atom_id, rf.retrieval_method, rf.retrieval_score, rf.injected_at, rf.was_relevant, rf.message_id,
                 ka.content, ka.atom_type, ka.category, ka.confidence
          FROM retrieval_feedback rf
@@ -542,9 +583,13 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'atomId, sessionId, and wasRelevant (boolean) are required' });
       }
 
+      // Ratings steer what every later run injects (the atom gate, the stale rule),
+      // so only the session's owner may rate its atoms. Someone else's session is
+      // the same 404 as a row that does not exist.
+      const own = ownSessionRowsSql(req, 'retrieval_feedback.session_id');
       const result = await db.run(
-        'UPDATE retrieval_feedback SET was_relevant = ? WHERE atom_id = ? AND session_id = ?',
-        wasRelevant ? 1 : 0, atomId, sessionId
+        `UPDATE retrieval_feedback SET was_relevant = ? WHERE atom_id = ? AND session_id = ?${own.sql}`,
+        wasRelevant ? 1 : 0, atomId, sessionId, ...own.params
       );
 
       if (result.changes === 0) {
@@ -575,9 +620,12 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'sessionId and wasRelevant (boolean) are required' });
       }
 
+      // Same owner rule as POST /feedback: another user's session updates nothing,
+      // exactly like a session with no injected atoms.
+      const own = ownSessionRowsSql(req, 'retrieval_feedback.session_id');
       const result = await db.run(
-        'UPDATE retrieval_feedback SET was_relevant = ? WHERE session_id = ?',
-        wasRelevant ? 1 : 0, sessionId
+        `UPDATE retrieval_feedback SET was_relevant = ? WHERE session_id = ?${own.sql}`,
+        wasRelevant ? 1 : 0, sessionId, ...own.params
       );
 
       res.json({ success: true, updated: result.changes ?? 0 });
@@ -590,18 +638,27 @@ export async function createEmbeddingRoutes(db: DatabaseAdapter) {
 
   router.post('/similar', async (req, res) => {
     try {
-      const { contentType, contentId, topK = 5 } = req.body as {
-        contentType: string; contentId: string; topK?: number;
+      const { contentType, contentId, topK: rawTopK } = req.body as {
+        contentType: string; contentId: string; topK?: unknown;
       };
       if (!contentType || !contentId) return res.status(400).json({ error: 'contentType and contentId required' });
+      const topK = clampInt(rawTopK, 5, MAX_TOP_K);
 
-      // contentType comes from the request body, so unlike the two searches above this
-      // one CAN name an owned type. Request-derived scope, not INSTANCE_WIDE_SEARCH:
-      // findSimilar scopes the SEED as well as the results, which is what stops a caller
-      // pointing at someone else's session output and mining its neighbours.
-      const results = await findSimilar(db, {
-        contentType, contentId, topK, scope: searchScopeForRequest(req),
-      });
+      // contentType comes from the request body, so this one can name any owned type
+      // (session_output, knowledge_atom, rag_chunk, checkpoint). Request-derived scope,
+      // not INSTANCE_WIDE_SEARCH: findSimilar scopes the SEED as well as the results
+      // (and over-fetches when scoped), which is what stops a caller pointing at someone
+      // else's output, document chunk or decision and mining its neighbours — and any
+      // seed at all (a module id, one's own atom) returning a colleague's uploaded
+      // document text as a neighbour. The route makes both checks once more on exactly
+      // what it answers with, so a foreign seed is the same empty answer as an unknown
+      // id whatever the service does. Solo and admins: instance scope, no-ops.
+      const scope = searchScopeForRequest(req);
+      const seed = [{ content_type: contentType, content_id: contentId }];
+      if ((await filterOwnedByScope(db, seed, scope)).length === 0) {
+        return res.json({ results: [], total: 0 });
+      }
+      const results = await filterOwnedByScope(db, await findSimilar(db, { contentType, contentId, topK, scope }), scope);
 
       res.json({
         results: results.map(r => ({

@@ -10,6 +10,7 @@ import type { Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { callChat, streamChat } from './provider-router.js';
 import { createAgentService } from './agent-service.js';
+import { atomOwnerSql, strictOwnerSql, NO_OWNED_CONTENT } from './hybrid-search.js';
 
 export async function createAgentProcessor(db: DatabaseAdapter) {
   const agentService = await createAgentService(db);
@@ -17,6 +18,20 @@ export async function createAgentProcessor(db: DatabaseAdapter) {
   const connectorExec = await createConnectorExecutor(db);
 
   type AgentRow = NonNullable<Awaited<ReturnType<typeof agentService.getAgent>>>;
+
+  /**
+   * The conversation a caller-supplied id may continue: this agent's, started by
+   * this requester. The id comes from the request body on every route (desktop,
+   * companion app, /agents/public/query, p2p), and continuing one injects its
+   * whole history into the prompt and appends the new turn to it — so a known
+   * id used to read and write another agent's (another user's) conversation.
+   * Null for a foreign id exactly as for a missing one; the caller then starts
+   * a new conversation, so nothing tells the two apart. The requester matched
+   * is the one createConversation records (undefined → NULL).
+   */
+  async function loadContinuedConversation(agentId: string, conversationId: string, requesterHash: string | undefined) {
+    return agentService.getConversation(conversationId, { agentId, requesterHash: requesterHash ?? null });
+  }
 
   /**
    * Build the LLM context for an agent turn — RAG + knowledge atoms + the
@@ -42,13 +57,24 @@ export async function createAgentProcessor(db: DatabaseAdapter) {
           ? JSON.parse(agent.knowledge_collection_ids) : agent.knowledge_collection_ids;
         if (Array.isArray(collectionIds) && collectionIds.length > 0) {
           const placeholders = collectionIds.map(() => '?').join(',');
+          // Whose documents: the AGENT OWNER's own on a team server. Collections
+          // are shared, but every document in one belongs to its uploader
+          // (rag_documents.uploaded_by) — the rule the collection search applies —
+          // and any user may link any collection id to their own agent, so without
+          // this a colleague's uploads reached the prompt as RELEVANT DOCUMENTS and
+          // came back when asked for. An agent with no owner reads none. Solo is
+          // unfiltered (strictOwnerSql), as before.
+          const docOwner = strictOwnerSql(
+            agent.created_by ? { kind: 'user', userId: agent.created_by } : NO_OWNED_CONTENT,
+            'rd.uploaded_by',
+          );
           const chunks = await db.all<{ content: string; metadata: string }>(
             `SELECT rc.content, rc.metadata FROM rag_chunks rc
              JOIN rag_documents rd ON rc.document_id = rd.id
-             WHERE rd.collection_id IN (${placeholders})
+             WHERE rd.collection_id IN (${placeholders})${docOwner.sql}
              AND rc.content ILIKE ?
              ORDER BY LENGTH(rc.content) DESC LIMIT 5`,
-            ...collectionIds, `%${userMessage.split(/\s+/).slice(0, 3).join('%')}%`
+            ...collectionIds, ...docOwner.params, `%${userMessage.split(/\s+/).slice(0, 3).join('%')}%`
           );
           if (chunks.length > 0) {
             knowledgeContext += '\n\nRELEVANT DOCUMENTS:\n' +
@@ -62,8 +88,21 @@ export async function createAgentProcessor(db: DatabaseAdapter) {
     try {
       const scopes = typeof agent.knowledge_atom_scopes === 'string'
         ? JSON.parse(agent.knowledge_atom_scopes) : agent.knowledge_atom_scopes;
-      let atomQuery = `SELECT content, atom_type, confidence FROM knowledge_atoms WHERE confidence >= 0.5`;
-      const atomArgs: unknown[] = [];
+      // Whose atoms: the AGENT OWNER's own and the shared ones (owner NULL) on a
+      // team server — the rule prompt-builder injects a person's runs by — never
+      // the caller's, because /agents/public/query lets anyone reach an active
+      // agent by slug. This used to read every user's atoms, so asking any agent
+      // to repeat its KNOWLEDGE BASE section read colleagues' atoms back. An
+      // agent with no owner gets the shared ones only. Solo is unfiltered
+      // (atomOwnerSql). Retired atoms are never injected, and a Coding Studio
+      // project's lessons belong to that project's runs only (passesStaticRules).
+      const owner = atomOwnerSql(
+        agent.created_by ? { kind: 'user', userId: agent.created_by } : NO_OWNED_CONTENT,
+        'owner_user_id',
+      );
+      let atomQuery = `SELECT content, atom_type, confidence FROM knowledge_atoms
+        WHERE confidence >= 0.5 AND is_active = 1 AND coding_project_id IS NULL${owner.sql}`;
+      const atomArgs: unknown[] = [...owner.params];
       if (Array.isArray(scopes) && scopes.length > 0) {
         atomQuery += ` AND category IN (${scopes.map(() => '?').join(',')})`;
         atomArgs.push(...scopes);
@@ -129,8 +168,10 @@ ${toolDescriptions}`;
     let conversationHistory: Array<{ role: string; content: string }> = [];
 
     if (conversationId) {
-      const conv = await agentService.getConversation(conversationId);
-      if (conv) {
+      const conv = await loadContinuedConversation(agentId, conversationId, options?.requesterHash);
+      if (!conv) {
+        conversationId = undefined;   // foreign or unknown id: start afresh (below)
+      } else {
         conversationHistory = conv.messages
           .filter(m => (m as { role: string }).role !== 'system')
           .map(m => ({ role: (m as { role: string }).role, content: (m as { content: string }).content }));
@@ -274,8 +315,10 @@ ${toolDescriptions}`;
       let conversationId = options?.conversationId;
       let conversationHistory: Array<{ role: string; content: string }> = [];
       if (conversationId) {
-        const conv = await agentService.getConversation(conversationId);
-        if (conv) {
+        const conv = await loadContinuedConversation(agentId, conversationId, options?.requesterHash);
+        if (!conv) {
+          conversationId = undefined;   // foreign or unknown id: start afresh (below)
+        } else {
           conversationHistory = conv.messages
             .filter(m => (m as { role: string }).role !== 'system')
             .map(m => ({ role: (m as { role: string }).role, content: (m as { content: string }).content }));

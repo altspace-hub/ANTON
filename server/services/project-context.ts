@@ -23,7 +23,9 @@
  *                                    its last answer, marked as such
  *
  * In team mode the caller's access is verified before a single byte is read;
- * a denied call returns nothing and says so. One query per table, everything
+ * a denied call returns nothing and says so. Team mode also reads only the
+ * rows whose owner is still in the project (ownerStillInProject), so a person
+ * who was removed stops shaping its prompts. One query per table, everything
  * parameterised, and the builder never throws — the project layer is
  * enrichment, and a broken enrichment must not cost the run.
  */
@@ -68,15 +70,47 @@ const BRIEF_CAP = 1200;
 const FALLBACK_WORDS = 60;
 const DECISIONS_SHOWN = 3;
 
+/**
+ * Team mode: a row filed in the project counts as the project's only while the
+ * person who owns it could open the project — the rule memberOrSoleOwner
+ * applies to readers: a current member, or the recorded owner of a project
+ * with no member list. Unowned rows (no user_id) are kept, as is the caller's
+ * own row. One bound parameter: the caller's id.
+ *
+ * Why (round-2 gap "verify2:projects-2"): a person removed from a project
+ * keeps their sessions, engagement and matter filed there, and keeps writing
+ * them — a session title, a continued chat that rewrites sessions.summary, an
+ * engagement or matter brief they own. Read by project_id alone, all of it
+ * landed in the remaining members' prompts. Removal therefore leaves those
+ * rows where they are — their owner's history stays intact, nothing is
+ * rewritten, and they count again if the person is re-added — and this
+ * predicate stops reading them. It also covers removals made before it
+ * existed, and rows filed by someone who was never a member.
+ */
+function ownerStillInProject(alias: string): string {
+  return `(${alias}.user_id IS NULL OR ${alias}.user_id = ?
+    OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = ${alias}.project_id AND pm.user_id = ${alias}.user_id)
+    OR (NOT EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = ${alias}.project_id)
+        AND ${alias}.user_id = (SELECT p.user_id FROM projects p WHERE p.id = ${alias}.project_id)))`;
+}
+
 /** Exported so a fake adapter can answer by exact statement (see tests). */
 export const PROJECT_CONTEXT_SQL = {
   project: 'SELECT id, name, description, project_goal, user_id FROM projects WHERE id = ?',
   membership: 'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?',
+  /** Whether the project has a membership list at all (see memberOrSoleOwner). */
+  anyMember: 'SELECT 1 FROM project_members WHERE project_id = ? LIMIT 1',
   userRole: 'SELECT role FROM users WHERE id = ?',
   matter: 'SELECT id, title, matter_brief, updated_at FROM legal_research_sessions WHERE project_id = ? ORDER BY updated_at DESC LIMIT 1',
   engagement: 'SELECT id, title, client_name, engagement_type, status, engagement_brief, updated_at FROM engagements WHERE project_id = ? ORDER BY updated_at DESC LIMIT 1',
   siblings: `SELECT id, title, module_id, summary, updated_at FROM sessions WHERE project_id = ? ORDER BY updated_at DESC LIMIT ${SIBLING_LIMIT}`,
   siblingsExcluding: `SELECT id, title, module_id, summary, updated_at FROM sessions WHERE project_id = ? AND id <> ? ORDER BY updated_at DESC LIMIT ${SIBLING_LIMIT}`,
+  /** Team-mode twins of the four above (see ownerStillInProject). Params as
+   *  the solo statement, then the caller's id. */
+  matterTeam: `SELECT l.id, l.title, l.matter_brief, l.updated_at FROM legal_research_sessions l WHERE l.project_id = ? AND ${ownerStillInProject('l')} ORDER BY l.updated_at DESC LIMIT 1`,
+  engagementTeam: `SELECT e.id, e.title, e.client_name, e.engagement_type, e.status, e.engagement_brief, e.updated_at FROM engagements e WHERE e.project_id = ? AND ${ownerStillInProject('e')} ORDER BY e.updated_at DESC LIMIT 1`,
+  siblingsTeam: `SELECT s.id, s.title, s.module_id, s.summary, s.updated_at FROM sessions s WHERE s.project_id = ? AND ${ownerStillInProject('s')} ORDER BY s.updated_at DESC LIMIT ${SIBLING_LIMIT}`,
+  siblingsExcludingTeam: `SELECT s.id, s.title, s.module_id, s.summary, s.updated_at FROM sessions s WHERE s.project_id = ? AND s.id <> ? AND ${ownerStillInProject('s')} ORDER BY s.updated_at DESC LIMIT ${SIBLING_LIMIT}`,
   /** Latest snapshot per session; `IN (…)` is filled with one placeholder per id. */
   latestSnapshots: 'SELECT DISTINCT ON (session_id) session_id, key_decisions FROM session_snapshots WHERE session_id IN (%IN%) ORDER BY session_id, created_at DESC',
   /** Last assistant message per session; `IN (…)` as above. */
@@ -97,9 +131,28 @@ function inList(sql: string, n: number): string {
 const EMPTY: Omit<ProjectContextResult, 'denied'> = { text: '', chars: 0, sessions: 0, hasMatter: false, hasEngagement: false };
 
 /**
+ * Team mode, non-admin: may this person see the project?
+ *
+ * Membership (project_members) decides. projects.user_id counts only for a
+ * project that has no membership list at all — Code Studio and workshop
+ * projects, which are created without one. It used to count everywhere, so
+ * once projects.ts began recording the creator there (H7), a creator whom the
+ * other owners had removed kept reading the project's files, colleagues'
+ * answers and briefs through every route that asks this function
+ * (round-1 verifier gap, 2026-09-23). project-collaboration.ts also hands
+ * projects.user_id to a remaining owner at removal; this rule is the backstop.
+ */
+async function memberOrSoleOwner(db: DatabaseAdapter, project: ProjectRow, userId: string): Promise<boolean> {
+  if (await db.get(PROJECT_CONTEXT_SQL.membership, project.id, userId)) return true;
+  if (!project.user_id || project.user_id !== userId) return false;
+  return !(await db.get(PROJECT_CONTEXT_SQL.anyMember, project.id));
+}
+
+/**
  * Who may read a project. Mirrors routes/projects.ts: in team mode a
- * non-admin must be a member (project_members) or the project's owner
- * (projects.user_id); solo mode only asks that the project exists.
+ * non-admin must be a member (project_members), or the owner recorded in
+ * projects.user_id of a project that has no members; solo mode only asks
+ * that the project exists.
  */
 export async function resolveProjectAccess(db: DatabaseAdapter, input: ProjectAccessInput): Promise<ProjectAccess> {
   const project = await db.get<ProjectRow>(PROJECT_CONTEXT_SQL.project, input.projectId);
@@ -111,9 +164,7 @@ export async function resolveProjectAccess(db: DatabaseAdapter, input: ProjectAc
     role = row?.role ?? null;
   }
   if (role === 'admin') return 'ok';
-  if (project.user_id && project.user_id === input.userId) return 'ok';
-  const member = await db.get(PROJECT_CONTEXT_SQL.membership, input.projectId, input.userId);
-  return member ? 'ok' : 'forbidden';
+  return (await memberOrSoleOwner(db, project, input.userId)) ? 'ok' : 'forbidden';
 }
 
 function asDateLabel(value: unknown): string {
@@ -230,19 +281,34 @@ export async function buildProjectContext(db: DatabaseAdapter, input: ProjectCon
         const row = await db.get<{ role: string | null }>(PROJECT_CONTEXT_SQL.userRole, input.userId);
         role = row?.role ?? null;
       }
-      const owner = !!project.user_id && project.user_id === input.userId;
-      if (role !== 'admin' && !owner) {
-        const member = await db.get(PROJECT_CONTEXT_SQL.membership, projectId, input.userId);
-        if (!member) return { ...EMPTY, denied: true };
+      // The same rule as resolveProjectAccess — a removed creator is denied.
+      if (role !== 'admin' && !(await memberOrSoleOwner(db, project, input.userId))) {
+        return { ...EMPTY, denied: true };
       }
     }
 
-    const matter = await db.get<MatterRow>(PROJECT_CONTEXT_SQL.matter, projectId);
-    const engagement = await db.get<EngagementRow>(PROJECT_CONTEXT_SQL.engagement, projectId);
+    // Team mode reads only rows whose owner is still in the project (see
+    // ownerStillInProject) — for every caller, admins included: it decides what
+    // the project IS, not what the caller may see, and a removed member must not
+    // write into anyone's prompt. The caller's own rows always count. Solo runs
+    // the statements it always ran.
     const current = input.currentSessionId?.trim() || null;
-    const siblings = current
-      ? await db.all<SiblingRow>(PROJECT_CONTEXT_SQL.siblingsExcluding, projectId, current)
-      : await db.all<SiblingRow>(PROJECT_CONTEXT_SQL.siblings, projectId);
+    let matter: MatterRow | undefined;
+    let engagement: EngagementRow | undefined;
+    let siblings: SiblingRow[];
+    if (input.teamMode) {
+      matter = await db.get<MatterRow>(PROJECT_CONTEXT_SQL.matterTeam, projectId, input.userId);
+      engagement = await db.get<EngagementRow>(PROJECT_CONTEXT_SQL.engagementTeam, projectId, input.userId);
+      siblings = current
+        ? await db.all<SiblingRow>(PROJECT_CONTEXT_SQL.siblingsExcludingTeam, projectId, current, input.userId)
+        : await db.all<SiblingRow>(PROJECT_CONTEXT_SQL.siblingsTeam, projectId, input.userId);
+    } else {
+      matter = await db.get<MatterRow>(PROJECT_CONTEXT_SQL.matter, projectId);
+      engagement = await db.get<EngagementRow>(PROJECT_CONTEXT_SQL.engagement, projectId);
+      siblings = current
+        ? await db.all<SiblingRow>(PROJECT_CONTEXT_SQL.siblingsExcluding, projectId, current)
+        : await db.all<SiblingRow>(PROJECT_CONTEXT_SQL.siblings, projectId);
+    }
 
     const snapshots = new Map<string, SnapshotRow>();
     const answers = new Map<string, AnswerRow>();

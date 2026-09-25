@@ -31,9 +31,15 @@
 
 import { execFile as nodeExecFile, type ExecFileException } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile, copyFile, stat, realpath } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, copyFile, stat, lstat, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { computeDiff, computeStats, type DiffChunk, type DiffStats } from './version-diff.js';
+import {
+  TEAM_STORAGE_REFUSAL,
+  isPathSameOrInside,
+  overlapsTeamStorage,
+  realPathOrSelf,
+} from '../lib/folder-guard.js';
 
 // ── Format contract ─────────────────────────────────────────────────────────
 
@@ -252,9 +258,18 @@ export function resolveTargetPath(workspaceAbs: string, normalizedRel: string): 
  * root, then require the realpathed ancestor to stay within the realpathed
  * workspace. Returns true when the write is safe.
  *
+ * Team mode adds two rules (teamTargetAllowed + the forbidden-dir check in the
+ * walk); solo mode is exactly the walk it always was. See teamTargetAllowed for
+ * why they are team-only.
+ *
  * Exported for tests.
  */
-export async function isWriteWithinWorkspaceReal(workspaceAbs: string, targetAbs: string): Promise<boolean> {
+export async function isWriteWithinWorkspaceReal(
+  workspaceAbs: string,
+  targetAbs: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<boolean> {
+  const team = env.DEPLOYMENT_MODE === 'team';
   let realBase: string;
   try {
     realBase = await realpath(workspaceAbs);
@@ -263,6 +278,7 @@ export async function isWriteWithinWorkspaceReal(workspaceAbs: string, targetAbs
     // exists, so a failure here is an unexpected race; fail closed.
     return false;
   }
+  if (team && !(await teamTargetAllowed(realBase, targetAbs))) return false;
 
   // Walk up from the target's parent to the nearest existing ancestor.
   let probe = path.dirname(targetAbs);
@@ -278,7 +294,8 @@ export async function isWriteWithinWorkspaceReal(workspaceAbs: string, targetAbs
         // but recompute defensively against realProbe.
         const rel = path.relative(probe, targetAbs);
         const realTarget = path.resolve(realProbe, rel);
-        return realTarget === realBase || realTarget.startsWith(realBase + path.sep);
+        const inside = realTarget === realBase || realTarget.startsWith(realBase + path.sep);
+        return inside && !(team && landsInForbiddenTopDir(realBase, realTarget));
       }
       return false;
     } catch (err) {
@@ -292,6 +309,54 @@ export async function isWriteWithinWorkspaceReal(workspaceAbs: string, targetAbs
     }
   }
   return false;
+}
+
+/**
+ * Team mode: the one hop the ancestor walk cannot see — the target ITSELF.
+ *
+ * The walk starts at the target's parent, so a link `ws/notes.md -> <another
+ * user's upload>` passed it, and readFile/writeFile then followed the link: the
+ * apply preview returned that file as the diff's old side, and approve wrote
+ * over it. A link is followed only when it resolves INSIDE the workspace and not
+ * into its .git or backup folder (a link to .git/config would plant
+ * core.fsmonitor for the next git an admin runs there). A dangling or looping
+ * link is refused: writeFile would create the file wherever it points.
+ *
+ * Why team only. Solo mode followed every link, and still does: a repo's own
+ * in-workspace link (README.md -> docs/README.md) must keep working, and the
+ * machine's one user owns everything a link can reach. On a shared server the
+ * workspace is one user's while the disk is everyone's, and links do arrive in
+ * it — a cloned repo, an `npm install`, or a postinstall script run by an
+ * admin-approved command can create one — so without this rule a planted link
+ * turns the apply preview into a read of any file the server can open.
+ */
+async function teamTargetAllowed(realBase: string, targetAbs: string): Promise<boolean> {
+  let isLink: boolean;
+  try {
+    isLink = (await lstat(targetAbs)).isSymbolicLink();
+  } catch (err) {
+    // Absent is the normal case for a new file; anything else fails closed.
+    return (err as NodeJS.ErrnoException).code === 'ENOENT';
+  }
+  if (!isLink) return true;
+  let realTarget: string;
+  try {
+    realTarget = await realpath(targetAbs);
+  } catch {
+    return false;
+  }
+  return realTarget.startsWith(realBase + path.sep) && !landsInForbiddenTopDir(realBase, realTarget);
+}
+
+/**
+ * The write REALLY lands in the workspace's .git/ or backup folder.
+ * validateRelativePath refuses those names lexically; this catches the aliases
+ * it cannot see — a link, or an NTFS 8.3 short name (`GIT~1/config`), both of
+ * which realpath resolves to the long name. Team mode only (see teamTargetAllowed).
+ */
+function landsInForbiddenTopDir(realBase: string, realTarget: string): boolean {
+  const top = path.relative(realBase, realTarget).split(path.sep)[0] ?? '';
+  return FORBIDDEN_TOP_DIRS.has(top.toLowerCase());
 }
 
 // ── Workspace (ALLOWED_FOLDER_PATHS) validation ─────────────────────────────
@@ -326,23 +391,133 @@ export function getCodingStudioRoot(env: NodeJS.ProcessEnv = process.env): strin
  * NO default for the user's own paths — an unset ALLOWED_FOLDER_PATHS still
  * means none of the user's directories are writable. The Studio root is the
  * only base we add unconditionally because ANTON owns it.
+ *
+ * Team mode: minus every entry that overlaps ANTON's per-user storage, by the
+ * SAME rule folder-guard.getAllowedFolderBases applies (overlapsTeamStorage).
+ * This list used to read the variable on its own, so the shipped
+ * `./uploads,./outputs` whitelist still let any user bind every user's uploads
+ * as a Studio workspace after the folder guard had stopped allowing them. Not
+ * getAllowedFolderBases() itself: its unset-variable fallback (./uploads +
+ * ./outputs) is a folder-browsing default Code Studio has never had.
  */
 export function getAllowedBases(env: NodeJS.ProcessEnv = process.env): string[] {
   const raw = env.ALLOWED_FOLDER_PATHS ?? '';
-  const userBases = raw.split(',').map((p) => p.trim()).filter(Boolean).map((p) => path.resolve(p));
+  const userBases = raw.split(',').map((p) => p.trim()).filter(Boolean).map((p) => path.resolve(p))
+    .filter((b) => !overlapsTeamStorage(b, env));
   const studioRoot = getCodingStudioRoot(env);
   // De-dupe in case the operator also listed the studio root explicitly.
   return userBases.includes(studioRoot) ? userBases : [...userBases, studioRoot];
 }
 
 /**
+ * Which coding project a workspace is (or is about to be) bound to — lets team
+ * mode tell the project's own Studio folder from a colleague's.
+ */
+export interface WorkspaceScope {
+  /**
+   * The project's Studio slug (coding-studio-provisioner.deriveProjectSlug), or
+   * null when its id yields none. In team mode a workspace inside the Studio
+   * root must then be coding-studio/<slug>/ or below it.
+   */
+  studioSlug: string | null;
+  /**
+   * The caller is scoped to their own rows (team mode, not an admin —
+   * ownership.scopesToOwner). Such a caller may bind and write ONLY inside the
+   * project's own coding-studio/<slug>/: the ALLOWED_FOLDER_PATHS bases are
+   * shared folders, and a non-admin who could bind one could read and overwrite
+   * whatever a colleague keeps there — including a colleague's bound workspace —
+   * through the apply preview and approve. Admins keep the whitelisted bases.
+   */
+  studioOnly?: boolean;
+}
+
+/** A team non-admin's workspace outside the project's own Studio folder. */
+export const STUDIO_ONLY_REFUSAL =
+  "In team mode only an admin may use a folder outside this project's own Code Studio folder (coding-studio/<slug>/) — ALLOWED_FOLDER_PATHS folders are shared";
+
+/** The Studio root itself, or a folder around it, spans every project's workspace. */
+export const STUDIO_ROOT_REFUSAL =
+  "Workspace is the Code Studio root (or a folder around it), which holds every project's workspace — not usable as one project's workspace in team mode";
+
+/** Another project's coding-studio/<slug>/ folder. */
+export const STUDIO_SIBLING_REFUSAL =
+  "Workspace is another project's Code Studio folder — in team mode a project may use only its own coding-studio/<slug>/ folder";
+
+/**
+ * Team mode: why this (already allowlisted) workspace must still be refused,
+ * or null. Checked lexically AND through links, like folder-guard.
+ *
+ *   1. ANTON's per-user storage (uploads, outputs, …) — never a workspace.
+ *      The Studio root is excluded here and handled by rule 2.
+ *   2. The Studio root holds every project's folder side by side, so the root
+ *      itself (or anything containing it) is refused, and — when the caller
+ *      names the project — so is any folder but that project's own.
+ *   3. scope.studioOnly (a non-admin caller): nothing but the project's own
+ *      Studio folder, lexically AND for real — a link planted in
+ *      coding-studio/<slug>/ does not carry the workspace out of it.
+ *
+ * Rules 1-2 apply to admins too, as folder-guard's storage rule does: this
+ * function has no caller identity at several call sites (git, preview, the
+ * bundler), and a project has no legitimate reason to use a sibling project's
+ * folder. Rule 3 needs the caller, so only request handlers can set it.
+ */
+function teamWorkspaceRefusal(
+  resolved: string,
+  env: NodeJS.ProcessEnv,
+  scope: WorkspaceScope | undefined,
+): string | null {
+  if (env.DEPLOYMENT_MODE !== 'team') return null;
+  const studioRoot = getCodingStudioRoot(env);
+  if (overlapsTeamStorage(resolved, env, [studioRoot])) return TEAM_STORAGE_REFUSAL;
+
+  const roots = [...new Set([studioRoot, realPathOrSelf(studioRoot)])];
+  const candidates = [...new Set([resolved, realPathOrSelf(resolved)])];
+  for (const candidate of candidates) {
+    for (const root of roots) {
+      if (isPathSameOrInside(root, candidate)) return STUDIO_ROOT_REFUSAL;
+      if (!scope || !isPathSameOrInside(candidate, root)) continue;
+      const own = scope.studioSlug ? path.join(root, scope.studioSlug) : null;
+      if (!own || !isPathSameOrInside(candidate, own)) return STUDIO_SIBLING_REFUSAL;
+    }
+  }
+  if (scope?.studioOnly) {
+    const slug = scope.studioSlug;
+    const owns = slug ? roots.map((root) => path.join(root, slug)) : [];
+    // EVERY candidate — the given path and its real location — must be in the
+    // project's own folder; a slug-less project has no folder, so none passes.
+    // isPathSameOrInside folds case on Windows/macOS, which is safe as an ALLOW
+    // here: slugs are lowercase hex, so a differently-cased folder is never a
+    // sibling project's, and the real location is compared as well.
+    if (!candidates.every((c) => owns.some((own) => isPathSameOrInside(c, own)))) return STUDIO_ONLY_REFUSAL;
+  }
+  return null;
+}
+
+/**
+ * Two workspace folders overlap: the same folder, or one inside the other,
+ * lexically or through a link. Binding one reaches the other's files, which is
+ * why team mode lets two projects share a folder only when one person owns
+ * both (coding-large.ts). Refusal checks only (case-folded like folder-guard).
+ */
+export function workspacesOverlap(a: string, b: string): boolean {
+  const as = [...new Set([path.resolve(a), realPathOrSelf(a)])];
+  const bs = [...new Set([path.resolve(b), realPathOrSelf(b)])];
+  return as.some((x) => bs.some((y) => isPathSameOrInside(x, y) || isPathSameOrInside(y, x)));
+}
+
+/**
  * Validate a candidate workspace directory: absolute, inside an allowed
  * base (resolve + prefix check — the CLAUDE.md pattern), and an existing
  * directory. Called at bind time AND on every use.
+ *
+ * In team mode also refuses ANTON's per-user storage and the Studio root
+ * (teamWorkspaceRefusal); pass `scope` wherever the project is known so a
+ * sibling project's Studio folder is refused as well.
  */
 export async function validateWorkspacePath(
   dirPath: string | null | undefined,
   env: NodeJS.ProcessEnv = process.env,
+  scope?: WorkspaceScope,
 ): Promise<WorkspaceValidation> {
   const allowedBases = getAllowedBases(env);
   if (!dirPath || !String(dirPath).trim()) {
@@ -362,6 +537,10 @@ export async function validateWorkspacePath(
   const inside = allowedBases.some((base) => resolved === base || resolved.startsWith(base + path.sep));
   if (!inside) {
     return { ok: false, error: 'Workspace is outside ALLOWED_FOLDER_PATHS.', allowedBases, resolved };
+  }
+  const refusal = teamWorkspaceRefusal(resolved, env, scope);
+  if (refusal) {
+    return { ok: false, error: refusal, allowedBases, resolved };
   }
   try {
     const st = await stat(resolved);

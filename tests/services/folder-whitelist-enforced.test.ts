@@ -211,6 +211,15 @@ describe('routes reject out-of-whitelist folders', () => {
 
     const app = express();
     app.use(express.json());
+    // Stamp the identity the real authMiddleware gives every solo request
+    // (SOLO_USER_ID, role admin). Without it the routes' own guards — e.g.
+    // knowledge-library's requireAdminOrSolo — answer 401 before the folder
+    // check these tests are about ever runs.
+    app.use((req, _res, next) => {
+      (req as express.Request & { user?: { id: string; username: string; role: string } }).user =
+        { id: 'solo', username: 'solo', role: 'admin' };
+      next();
+    });
     app.use('/api', await createKnowledgeLibraryRoutes(stubDb));
     app.use('/api', await createRagRoutes(stubDb));
 

@@ -4,7 +4,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { callChat } from './provider-router.js';
 import { getRoutedUtilityModel } from './utility-model.js';
 import { recordParseOutcome } from './parse-telemetry.js';
-import { embedAndStore } from './hybrid-search.js';
+import { embedAndStore, atomOwnerSql, type SearchScope } from './hybrid-search.js';
 
 // ── Taxonomy ────────────────────────────────────────────────────────────────
 //
@@ -544,19 +544,28 @@ Rules:
   }
 
   // ── Search atoms ──────────────────────────────────────────────────────────
+  //
+  // Every read below takes a REQUIRED SearchScope (searchScopeForRequest(req) on a
+  // request path) and applies atomOwnerSql in SQL: in team mode a non-admin reads
+  // their own atoms and the shared ones, the rule the prompt layer injects by. It
+  // is required, not defaulted, for the reason hybrid-search.ts gives: a default
+  // would be an unscoped default, and these reads served every user's atoms to
+  // anybody until the 2026-09 team-mode audit (B6).
 
   async function searchAtoms(
     query: string,
-    filters?: {
+    filters: {
       areaId?: string;
       atomType?: string;
       entityType?: string;
       entityId?: string;
       since?: Date;
+      scope: SearchScope;
     }
   ): Promise<Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }>> {
     const conditions: string[] = ['a.is_active = 1'];
     const params: (string | number)[] = [];
+    const owner = atomOwnerSql(filters.scope, 'a.owner_user_id');
 
     if (query && query.trim()) {
       conditions.push("a.content LIKE ?");
@@ -596,7 +605,7 @@ Rules:
         SELECT DISTINCT a.*
         FROM knowledge_atoms a
         JOIN knowledge_entity_refs er ON er.atom_id = a.id
-        WHERE ${[...conditions, ...entityConds].join(' AND ')}
+        WHERE ${[...conditions, ...entityConds].join(' AND ')}${owner.sql}
         ORDER BY a.created_at DESC
         LIMIT 200
       `;
@@ -604,13 +613,14 @@ Rules:
       sql = `
         SELECT a.*
         FROM knowledge_atoms a
-        WHERE ${conditions.join(' AND ')}
+        WHERE ${conditions.join(' AND ')}${owner.sql}
         ORDER BY a.created_at DESC
         LIMIT 200
       `;
     }
 
-    const atoms = await db.all(sql, ...params) as KnowledgeAtomRow[];
+    // The owner fragment closes both WHERE clauses, so its params go last.
+    const atoms = await db.all(sql, ...params, ...owner.params) as KnowledgeAtomRow[];
 
     const results: Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }> = [];
     for (const atom of atoms) {
@@ -624,15 +634,17 @@ Rules:
 
   async function getAtomsByEntity(
     entityType: string,
-    entityId: string
+    entityId: string,
+    scope: SearchScope,
   ): Promise<Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }>> {
+    const owner = atomOwnerSql(scope, 'a.owner_user_id');
     const atoms = await db.all(`
       SELECT DISTINCT a.*
       FROM knowledge_atoms a
       JOIN knowledge_entity_refs er ON er.atom_id = a.id
-      WHERE er.entity_type = ? AND er.entity_id = ? AND a.is_active = 1
+      WHERE er.entity_type = ? AND er.entity_id = ? AND a.is_active = 1${owner.sql}
       ORDER BY a.created_at DESC
-    `, entityType, entityId) as KnowledgeAtomRow[];
+    `, entityType, entityId, ...owner.params) as KnowledgeAtomRow[];
 
     const results: Array<KnowledgeAtomRow & { entity_refs: EntityRefRow[] }> = [];
     for (const atom of atoms) {
@@ -646,21 +658,32 @@ Rules:
 
   async function getEntityConnections(
     entityType: string,
-    entityId: string
+    entityId: string,
+    scope: SearchScope,
   ): Promise<Array<{ entity_type: string; entity_id: string; entity_name: string | null; shared_atom_count: number }>> {
-    // Find all atoms that mention our entity
+    // Find all atoms that mention our entity — only those the reader may see. The
+    // neighbours are read off these atoms, so an unscoped seed would list the
+    // people and clients named in a colleague's atoms. Unscoped readers keep the
+    // plain statement: an EXISTS there would also drop refs whose atom row is
+    // gone, which solo has always counted.
+    const owner = atomOwnerSql(scope, 'a.owner_user_id');
+    const visibleAtom = owner.sql
+      ? ` AND EXISTS (SELECT 1 FROM knowledge_atoms a WHERE a.id = er.atom_id${owner.sql})`
+      : '';
     const atomIdRows = await db.all(`
-      SELECT atom_id FROM knowledge_entity_refs
-      WHERE entity_type = ? AND entity_id = ?
-    `, entityType, entityId) as Array<{ atom_id: string }>;
+      SELECT er.atom_id FROM knowledge_entity_refs er
+      WHERE er.entity_type = ? AND er.entity_id = ?${visibleAtom}
+    `, entityType, entityId, ...owner.params) as Array<{ atom_id: string }>;
     const atomIds = atomIdRows.map((r) => r.atom_id);
 
     if (atomIds.length === 0) return [];
 
     // Find other entities that appear in those same atoms
     const placeholders = atomIds.map(() => '?').join(', ');
+    // MAX(entity_name): PostgreSQL refuses an ungrouped column (SQLite took any
+    // row's), so this statement failed with 42803 whenever an entity had a neighbour.
     const neighbors = await db.all(`
-      SELECT entity_type, entity_id, entity_name,
+      SELECT entity_type, entity_id, MAX(entity_name) AS entity_name,
              COUNT(DISTINCT atom_id) AS shared_atom_count
       FROM knowledge_entity_refs
       WHERE atom_id IN (${placeholders})
@@ -681,9 +704,15 @@ Rules:
   // ── Get single atom with entity refs ─────────────────────────────────────
 
   async function getAtomDetail(
-    atomId: string
+    atomId: string,
+    scope: SearchScope,
   ): Promise<(KnowledgeAtomRow & { entity_refs: EntityRefRow[] }) | null> {
-    const atom = await db.get('SELECT * FROM knowledge_atoms WHERE id = ?', atomId) as KnowledgeAtomRow | undefined;
+    // Ownership in the WHERE clause: an atom the reader may not see is never
+    // loaded, and comes back null exactly like a missing one (the route's 404).
+    const owner = atomOwnerSql(scope, 'a.owner_user_id');
+    const atom = await db.get(
+      `SELECT a.* FROM knowledge_atoms a WHERE a.id = ?${owner.sql}`, atomId, ...owner.params,
+    ) as KnowledgeAtomRow | undefined;
     if (!atom) return null;
     const entity_refs = await db.all('SELECT * FROM knowledge_entity_refs WHERE atom_id = ?', atomId) as EntityRefRow[];
     return {

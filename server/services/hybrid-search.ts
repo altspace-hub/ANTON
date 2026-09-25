@@ -14,6 +14,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 
 import { getEmbeddingAdapter, isZeroVector } from './embedding-adapter.js';
 import { getVectorStore, type VectorSearchResult } from './vector-store-adapter.js';
@@ -46,16 +47,30 @@ import { checkEmbeddingPin, ensureEmbeddingPin } from './embedding-pin.js';
 // unscoped default — the very thing being fixed — and TypeScript then lets a new
 // call site ship without anyone deciding whose material it may read.
 //
-// WHAT IS SCOPED, AND WHAT DELIBERATELY IS NOT. Only `session_output` maps to a
-// row with an owner: embeddings.content_id is a messages.id, and messages join
-// sessions, which has user_id. The other embedded content types have no owner
-// dimension in the schema at all — knowledge_atoms, checkpoint_decisions and
-// knowledge_pack_entity rows carry none, and document_chunks are keyed by
-// folder_path from the instance-wide indexed_folders list. They are shared
-// reference material by design (that is what "institutional memory" means here),
-// so this file cannot and does not pretend to isolate them. Do not read a scoped
-// hybridSearch as "fully tenant-isolated" — it means "no other user's verbatim
-// session output".
+// WHAT IS SCOPED, AND WHAT DELIBERATELY IS NOT. Four embedded content types map
+// to a row with an owner:
+//   - `session_output`: embeddings.content_id is a messages.id, and messages join
+//     sessions, which has user_id. Strictly the caller's own.
+//   - `knowledge_atom`: knowledge_atoms.owner_user_id (migration 275). An atom can
+//     also be SHARED — owner NULL marks pre-275 rows and instance-wide knowledge —
+//     so the rule is "own + shared", the one the prompt layer already applies when
+//     it injects atoms (see atomOwnerSql below). Before this, a keyword was enough
+//     to read a colleague's atoms, which are distilled from their session output.
+//   - `rag_chunk`: content_id is a rag_chunks.id and content_text the chunk's text;
+//     the chunk's document belongs to its uploader (rag_documents.uploaded_by), the
+//     rule the collection search applies. Strictly the caller's own.
+//   - `checkpoint`: content_id is a checkpoint_decisions.id, whose decided_by is the
+//     deciding user (output-store, institutional-memory). Strictly the caller's own —
+//     a decision's reasoning and context are that person's, never shared.
+// Those last two used to pass as unowned, so any seed on /api/embeddings/similar,
+// a Pathfinder query or the companion app's ask could return a colleague's
+// uploaded documents and decisions (2026-09-23 round-2 verification).
+// The other embedded content types have no owner dimension in the schema at all —
+// knowledge_pack_entity and module rows carry none, and document_chunks are keyed
+// by folder_path from the instance-wide indexed_folders list. They are shared
+// reference material by design, so this file cannot and does not pretend to
+// isolate them. Do not read a scoped hybridSearch as "fully tenant-isolated" — it
+// means "no other user's session output, atoms, documents or decisions".
 
 /**
  * Whose material one search may read.
@@ -63,8 +78,12 @@ import { checkEmbeddingPin, ensureEmbeddingPin } from './embedding-pin.js';
  *   'instance' — no filtering. Solo mode (one human, and rows written before
  *                ownership existed carry a NULL user_id), an admin, or an
  *                internal caller that only ever asks for unowned content types.
- *   'user'     — team-mode principal: only outputs from their own sessions.
- *   'none'     — team mode with no identity. Matches nothing; fail closed.
+ *   'user'     — team-mode principal: only outputs from their own sessions,
+ *                chunks of their own documents and their own decisions, and
+ *                only their own and shared atoms.
+ *   'none'     — team mode with no identity. Matches no owned row — no session
+ *                output, document chunk, decision or anyone's own atom; fail
+ *                closed. Shared atoms still pass.
  */
 export type SearchScope =
   | { kind: 'instance' }
@@ -85,7 +104,9 @@ export const INSTANCE_WIDE_SEARCH: SearchScope = { kind: 'instance' };
  * claim on the instance's shared reference material and no claim at all on anyone's
  * verbatim session output, which is exactly what `'none'` yields: unowned content
  * types pass, `session_output` is dropped on the vector path and never queried on
- * the keyword one.
+ * the keyword one, and in team mode only shared atoms (owner NULL) come back — a
+ * colleague's atoms are distilled from their session output (see atomOwnerSql) —
+ * and no uploaded document's chunks or checkpoint decisions (strictOwnerSql).
  *
  * Named for the same reason as INSTANCE_WIDE_SEARCH — so the decision is greppable,
  * and so nobody reaches for `{ kind: 'user', userId: appUser.id }`, which happens to
@@ -104,44 +125,158 @@ export function searchScopeForRequest(req: OwnedRequest): SearchScope {
   return userId ? { kind: 'user', userId } : { kind: 'none' };
 }
 
-/** Embedded content types whose rows belong to exactly one user. See the note above. */
-const OWNED_CONTENT_TYPES = new Set(['session_output']);
+/**
+ * The read rule for knowledge atoms under a scope, as a WHERE fragment on
+ * `column` (a literal at every call site, e.g. 'ka.owner_user_id' — never input).
+ * The fragment starts with ` AND ` or is empty, like ownerFilter's.
+ *
+ *   'instance' — every atom.
+ *   'user'     — the caller's own atoms and the shared ones (owner NULL).
+ *   'none'     — the shared ones only: no identity in this namespace means no
+ *                claim on anybody's own atoms, but shared knowledge is exactly
+ *                the "instance's reference material" NO_OWNED_CONTENT keeps.
+ *
+ * "Own + shared" is deliberately the rule prompt-builder applies when it injects
+ * atoms into a team-mode run (passesStaticRules, buildAtomLayerFallback): what a
+ * person can list and search is what can reach their prompts, and the reverse.
+ * The one difference is intended — an admin's listing is unscoped (support and
+ * audit access, as everywhere in ownership.ts), while an admin's OWN prompts
+ * still receive only their atoms and the shared ones.
+ *
+ * Solo is never filtered. There is one human, whose atoms carry their id, and the
+ * companion app's NO_OWNED_CONTENT search has always read them as the instance's
+ * knowledge base; filtering there would empty the phone's sources on a laptop
+ * install. Ownership of atoms is a team-mode concept, like every other scope here.
+ */
+export function atomOwnerSql(scope: SearchScope, column: string): { sql: string; params: string[] } {
+  if (scope.kind === 'instance' || !isTeamMode()) return { sql: '', params: [] };
+  if (scope.kind === 'none') return { sql: ` AND ${column} IS NULL`, params: [] };
+  return { sql: ` AND (${column} IS NULL OR ${column} = ?)`, params: [scope.userId] };
+}
 
 /**
- * Drop rows of an owned content type that the scope may not read.
+ * The read rule for rows that belong to exactly one person and have no shared arm
+ * (a document chunk, a checkpoint decision, a Specialised agent's documents), as a
+ * WHERE fragment on `column` — a literal at every call site, never input. Starts
+ * with ` AND ` or is empty, like ownerFilter's.
  *
- * Applied to vector-store hits, which come back from the `embeddings` table with
- * no join to `sessions`. The keyword path pushes the same predicate into its SQL
- * instead — a row the caller may not see is better never loaded — but the vector
- * store is a shared adapter with its own backends, so post-filtering is the
- * narrow fix here rather than threading ownership through two vector stores.
+ *   'instance' — every row.
+ *   'user'     — the named person's rows only.
+ *   'none'     — no row (`AND 1=0`): no identity in this namespace, no claim.
+ *
+ * Team mode only, like atomOwnerSql: solo has one human, and the companion app's
+ * NO_OWNED_CONTENT search has always read these types there — filtering in solo
+ * would take the operator's own decisions out of their phone's sources.
  */
-async function filterOwnedByScope<T extends { content_type: string; content_id: string }>(
-  db: DatabaseAdapter,
-  rows: T[],
-  scope: SearchScope,
-): Promise<T[]> {
-  if (scope.kind === 'instance') return rows;
-  const owned = rows.filter((r) => OWNED_CONTENT_TYPES.has(r.content_type));
-  if (owned.length === 0) return rows;
-  const unowned = rows.filter((r) => !OWNED_CONTENT_TYPES.has(r.content_type));
-  if (scope.kind === 'none') return unowned;
+export function strictOwnerSql(scope: SearchScope, column: string): { sql: string; params: string[] } {
+  if (scope.kind === 'instance' || !isTeamMode()) return { sql: '', params: [] };
+  if (scope.kind === 'none') return { sql: ' AND 1=0', params: [] };
+  return { sql: ` AND ${column} = ?`, params: [scope.userId] };
+}
 
-  const ids = [...new Set(owned.map((r) => r.content_id))];
+/**
+ * Embedded content types whose rows can belong to a user, each with the SQL that
+ * lists which of a set of `content_id`s the scope may read. The prefix ends in
+ * `WHERE <id column> IN`; the id list and the owner fragment are appended.
+ * session_output keeps its own function (its 'none' rule applies in solo too).
+ */
+const STRICTLY_OWNED_TYPES: ReadonlyArray<{ type: string; idsInSql: string; ownerColumn: string }> = [
+  {
+    type: 'rag_chunk',
+    idsInSql: 'SELECT c.id FROM rag_chunks c JOIN rag_documents d ON d.id = c.document_id WHERE c.id IN',
+    ownerColumn: 'd.uploaded_by',
+  },
+  { type: 'checkpoint', idsInSql: 'SELECT id FROM checkpoint_decisions WHERE id IN', ownerColumn: 'decided_by' },
+];
+
+/** Embedded content types whose rows can belong to a user. See the note above; each has its own rule below. */
+const OWNED_CONTENT_TYPES = new Set(['session_output', 'knowledge_atom', ...STRICTLY_OWNED_TYPES.map((t) => t.type)]);
+
+/** Of these message ids, the session outputs the scope may read. */
+async function visibleSessionOutputIds(db: DatabaseAdapter, ids: string[], scope: SearchScope): Promise<Set<string>> {
+  if (scope.kind === 'instance') return new Set(ids);
+  if (ids.length === 0 || scope.kind === 'none') return new Set();
   const placeholders = ids.map(() => '?').join(',');
   // INNER JOIN, not LEFT: a message whose session row is gone, or whose session
   // has a NULL user_id (written before ownership was enforced), is not
   // attributable to this caller and stays hidden in team mode — the same
   // fail-closed choice ownership.ts documents for unattributed rows.
-  const visibleRows = await db.all<{ id: string }>(
+  const rows = await db.all<{ id: string }>(
     `SELECT m.id
        FROM messages m
        JOIN sessions s ON s.id = m.session_id
       WHERE m.id IN (${placeholders}) AND s.user_id = ?`,
     ...ids, scope.userId,
   );
-  const visible = new Set(visibleRows.map((r) => r.id));
-  return rows.filter((r) => !OWNED_CONTENT_TYPES.has(r.content_type) || visible.has(r.content_id));
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Of these atom ids, the ones the scope may read. Checked against knowledge_atoms,
+ * not the embedding's metadata: that copy of owner_user_id is written once at embed
+ * time and is absent on rows embedded before migration 275. An embedding whose atom
+ * row is gone is hidden from a scoped caller — nothing attributes it to anyone.
+ */
+async function visibleAtomIds(db: DatabaseAdapter, ids: string[], scope: SearchScope): Promise<Set<string>> {
+  const owner = atomOwnerSql(scope, 'owner_user_id');
+  if (!owner.sql) return new Set(ids);
+  if (ids.length === 0) return new Set();
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = await db.all<{ id: string }>(
+    `SELECT id FROM knowledge_atoms WHERE id IN (${placeholders})${owner.sql}`,
+    ...ids, ...owner.params,
+  );
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Of these ids of one strictly-owned type, the ones the scope may read. Decided in
+ * SQL against the owning row, so an embedding whose chunk or decision row is gone
+ * is hidden from a scoped caller — nothing attributes it to anyone.
+ */
+async function visibleStrictlyOwnedIds(
+  db: DatabaseAdapter,
+  kind: { idsInSql: string; ownerColumn: string },
+  ids: string[],
+  scope: SearchScope,
+): Promise<Set<string>> {
+  const owner = strictOwnerSql(scope, kind.ownerColumn);
+  if (!owner.sql) return new Set(ids);
+  if (ids.length === 0) return new Set();
+  const rows = await db.all<{ id: string }>(
+    `${kind.idsInSql} (${ids.map(() => '?').join(',')})${owner.sql}`,
+    ...ids, ...owner.params,
+  );
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * Drop rows of an owned content type that the scope may not read.
+ *
+ * Applied to vector-store hits, which come back from the `embeddings` table with
+ * no join to the owning tables. The keyword paths push the same predicates into
+ * their SQL instead — a row the caller may not see is better never loaded — but
+ * the vector store is a shared adapter with its own backends, so post-filtering
+ * is the narrow fix here rather than threading ownership through two vector
+ * stores. Exported so a route that returns these rows can apply the same rule to
+ * exactly what it sends, rather than keeping a second copy of it.
+ */
+export async function filterOwnedByScope<T extends { content_type: string; content_id: string }>(
+  db: DatabaseAdapter,
+  rows: T[],
+  scope: SearchScope,
+): Promise<T[]> {
+  if (scope.kind === 'instance') return rows;
+  const idsOf = (type: string): string[] =>
+    [...new Set(rows.filter((r) => r.content_type === type).map((r) => r.content_id))];
+  const visible = new Map<string, Set<string>>([
+    ['session_output', await visibleSessionOutputIds(db, idsOf('session_output'), scope)],
+    ['knowledge_atom', await visibleAtomIds(db, idsOf('knowledge_atom'), scope)],
+  ]);
+  for (const kind of STRICTLY_OWNED_TYPES) {
+    visible.set(kind.type, await visibleStrictlyOwnedIds(db, kind, idsOf(kind.type), scope));
+  }
+  return rows.filter((r) => !OWNED_CONTENT_TYPES.has(r.content_type) || (visible.get(r.content_type)?.has(r.content_id) ?? false));
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -215,7 +350,8 @@ export async function hybridSearch(
   // belong to whoever uploaded the document, so a caller that asks for "all
   // types" (Pathfinder, the Companion gateway) must not receive them; only a
   // caller that names the type — the collection search, which scopes by
-  // collection — gets them.
+  // collection — gets them, and on a team server only its own documents'
+  // chunks (filterOwnedByScope).
   const excludeRagChunks = !contentTypes;
   // Pin check (warns once on a provider change); a zero query vector means the
   // embed itself failed — nothing can be scored against it, so the vector leg
@@ -234,7 +370,7 @@ export async function hybridSearch(
     .filter((r) => !excludeRagChunks || r.content_type !== 'rag_chunk');
 
   // ── BM25 keyword search on knowledge_atoms (SQL LIKE fallback) ───────────
-  const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes);
+  const keywordAtoms = await searchKnowledgeAtomsKeyword(db, query, topK * 2, contentTypes, scope);
 
   // ── Keyword search on session outputs (messages table) ───────────────────
   // Wave 3.2: searches assistant messages DIRECTLY so past work is findable
@@ -425,9 +561,13 @@ export async function findSimilar(
   await checkEmbeddingPin(db, embeddingAdapter);
   if (isZeroVector(queryVector)) return [];
 
+  // A scoped caller loses the neighbours it may not read AFTER the store ranks
+  // them, so it asks for more than it keeps; instance-wide (solo, admin) is
+  // exactly the old fetch.
+  const wanted = (params.topK ?? 10) + 1; // +1 to exclude self
   const results = await filterOwnedByScope(db, await vectorStore.search({
     queryVector,
-    topK: (params.topK ?? 10) + 1, // +1 to exclude self
+    topK: params.scope.kind === 'instance' ? wanted : wanted * 3,
     contentTypes,
     model: embeddingAdapter.model,
     minSimilarity: 0.4,
@@ -492,13 +632,18 @@ async function searchKnowledgeAtomsKeyword(
   db: DatabaseAdapter,
   query: string,
   limit: number,
-  contentTypes?: string[],
+  contentTypes: string[] | undefined,
+  scope: SearchScope,
 ): Promise<Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>> {
   // Only search knowledge_atoms if that content type is included (or no filter)
   if (contentTypes && !contentTypes.includes('knowledge_atom')) return [];
 
   const q = query.trim();
   if (!q) return [];
+
+  // The owner predicate goes into every variant's SQL, as on the session-output
+  // path: another user's atom is never loaded, ranked or snippeted.
+  const owner = atomOwnerSql(scope, 'ka.owner_user_id');
 
   // KG-03: Use FTS5/tsvector BM25 scoring; fall back to LIKE if FTS not available
   try {
@@ -511,10 +656,10 @@ async function searchKnowledgeAtomsKeyword(
       return await db.all(
         `SELECT ka.id, ka.content, ka.category, ka.atom_type, COALESCE(ka.tags, '[]') as tags
          FROM knowledge_atoms ka
-         WHERE ka.search_vector @@ plainto_tsquery('english', ?) AND ka.is_active = 1
+         WHERE ka.search_vector @@ plainto_tsquery('english', ?) AND ka.is_active = 1${owner.sql}
          ORDER BY ts_rank(ka.search_vector, plainto_tsquery('english', ?)) DESC
          LIMIT ?`,
-        tsQuery, tsQuery, limit,
+        tsQuery, ...owner.params, tsQuery, limit,
       ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
     }
 
@@ -524,10 +669,10 @@ async function searchKnowledgeAtomsKeyword(
       `SELECT ka.id, ka.content, ka.category, ka.atom_type, COALESCE(ka.tags, '[]') as tags
        FROM knowledge_atoms ka
        JOIN knowledge_atoms_fts ON knowledge_atoms_fts.rowid = ka.rowid
-       WHERE knowledge_atoms_fts MATCH ? AND ka.is_active = 1
+       WHERE knowledge_atoms_fts MATCH ? AND ka.is_active = 1${owner.sql}
        ORDER BY rank
        LIMIT ?`,
-      ftsQuery, limit,
+      ftsQuery, ...owner.params, limit,
     ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
   } catch {
     // FTS not available yet — fall back to LIKE substring search
@@ -536,11 +681,11 @@ async function searchKnowledgeAtomsKeyword(
     const pattern = `%${words.slice(0, 3).join('%')}%`;
     try {
       return await db.all(
-        `SELECT id, content, category, atom_type, COALESCE(tags, '[]') as tags
-         FROM knowledge_atoms
-         WHERE is_active = 1 AND LOWER(content) LIKE ?
-         ORDER BY created_at DESC LIMIT ?`,
-        pattern, limit,
+        `SELECT ka.id, ka.content, ka.category, ka.atom_type, COALESCE(ka.tags, '[]') as tags
+         FROM knowledge_atoms ka
+         WHERE ka.is_active = 1 AND LOWER(ka.content) LIKE ?${owner.sql}
+         ORDER BY ka.created_at DESC LIMIT ?`,
+        pattern, ...owner.params, limit,
       ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
     } catch {
       return [];

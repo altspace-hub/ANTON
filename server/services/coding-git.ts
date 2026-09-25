@@ -131,6 +131,15 @@ export class GitError extends Error {
  * Validate that workspaceAbs is bound, absolute, and inside the SAME allowed
  * bases coding-workspace enforces (ALLOWED_FOLDER_PATHS + the Studio root).
  * Returns the resolved absolute dir or throws GitError — fail closed.
+ *
+ * Team mode — why this call carries no project scope, and why that is safe.
+ * It is a RE-validation: every caller hands in a directory it has already
+ * validated, and there is no request here to say who is asking. The callers
+ * are the git routes (routes/coding-git.ts) and the autonomous orchestrator,
+ * and in team mode both are admin-only (requireAdminOrSolo after the ownership
+ * 404) — so the per-caller rule (scope.studioOnly) has no non-admin to apply
+ * to, and admins are not scoped. The rules that need no caller, ANTON's
+ * per-user storage and the Studio root, still apply here without a scope.
  */
 async function ensureAllowedWorkspace(workspaceAbs: string | null | undefined): Promise<string> {
   const v = await validateWorkspacePath(workspaceAbs);

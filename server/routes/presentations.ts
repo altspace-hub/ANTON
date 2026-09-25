@@ -7,9 +7,26 @@ import { fileURLToPath } from 'url';
 import { callChat, streamChat, setSSEHeaders } from '../services/provider-router.js';
 import { generatePptx, resolveBrand, type PresentationBrand } from '../services/export-pptx.js';
 import { safeError } from '../lib/error-response.js';
+import { assertOwned, ownerFilter, scopesToOwner } from '../middleware/ownership.js';
+import { loadLayer0Profile, INSTANCE_PROFILE_ID } from './profile.js';
+
+// ── Ownership (H9, team-server readiness 2026-09-23) ────────────────────────
+// A presentation had no owner at all: the list returned every person's decks
+// with their file names, a file name was all the download route asked for, and
+// PATCH / DELETE / generate worked on any id. Migration 285 adds
+// presentations.user_id; new rows record the creator and every route below is
+// scoped with ownership.ts — solo mode and admins see everything, a team-mode
+// user sees their own rows, and a row they may not see answers 404 like a
+// missing one. Rows written before 285 have no owner: admins only in team mode.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || './outputs');
+
+/** True when `p` resolves to a file inside OUTPUT_DIR (not the directory itself). */
+function isInsideOutputDir(p: string): boolean {
+  const rel = path.relative(OUTPUT_DIR, path.resolve(p));
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
 
 function loadExpertPrompt(): string {
   try {
@@ -64,15 +81,17 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
     }
   });
 
-  // GET /api/presentations — list all presentations (most recent first)
-  router.get('/presentations', async (_req, res) => {
+  // GET /api/presentations — the caller's presentations (most recent first)
+  router.get('/presentations', async (req, res) => {
     try {
+      const scope = ownerFilter(req, 'user_id');
       const rows = await db.all(
           `SELECT id, title, purpose, audience, style, slide_count, status, filename, created_at
            FROM presentations
+           WHERE 1=1${scope.sql}
            ORDER BY created_at DESC
            LIMIT 50`
-        );
+        , ...scope.params);
       res.json(rows);
     } catch {
       res.json([]);
@@ -94,9 +113,10 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
     const id = randomUUID();
     try {
       await db.run(
-        `INSERT INTO presentations (id, title, purpose, audience, style, slide_count, brief, conversation, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW(), NOW())`
+        `INSERT INTO presentations (id, user_id, title, purpose, audience, style, slide_count, brief, conversation, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW(), NOW())`
       , id,
+        req.user?.id ?? null,
         title || 'Untitled Presentation',
         purpose || '',
         audience || '',
@@ -129,6 +149,14 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
       };
 
     try {
+      if (!(await assertOwned(db, req, res, { table: 'presentations', ownerColumn: 'user_id', id }))) return;
+      // The deck's file is named by /generate, not by the client. A team-mode user
+      // who could write `filename` could point their own row at someone else's deck
+      // and download it through their own row; `filePath` names what DELETE removes.
+      if (scopesToOwner(req) && (filePath !== undefined || filename !== undefined)) {
+        res.status(400).json({ error: 'filePath and filename are set by generation' });
+        return;
+      }
       await db.run(`UPDATE presentations SET
            title        = COALESCE(?, title),
            purpose      = COALESCE(?, purpose),
@@ -167,9 +195,12 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
   router.delete('/presentations/:id', async (req, res) => {
     const { id } = req.params;
     try {
+      if (!(await assertOwned(db, req, res, { table: 'presentations', ownerColumn: 'user_id', id }))) return;
       const row = await db.get('SELECT file_path FROM presentations WHERE id = ?', id) as { file_path?: string } | undefined;
 
-      if (row?.file_path) {
+      // Only ever a file inside OUTPUT_DIR: file_path is client-writable through
+      // PATCH (for solo and admins), and removeSync would otherwise delete any path.
+      if (row?.file_path && isInsideOutputDir(row.file_path)) {
         try { fs.removeSync(row.file_path); } catch { /* non-fatal */ }
       }
 
@@ -205,9 +236,22 @@ export async function createPresentationsRoutes(db: DatabaseAdapter): Promise<Ro
     }
 
     if (id) {
+      // The row this deck is filed under must be the caller's — generation writes
+      // its status, file_path and filename.
+      try {
+        if (!(await assertOwned(db, req, res, { table: 'presentations', ownerColumn: 'user_id', id }))) return;
+      } catch (error) {
+        res.status(500).json({ error: safeError(error) });
+        return;
+      }
       try {
         await db.run(`UPDATE presentations SET status = 'generating', updated_at = NOW() WHERE id = ?`, id);
       } catch { /* non-fatal */ }
+    } else if (scopesToOwner(req)) {
+      // A team-mode download is reached through the caller's own row (below), so a
+      // deck generated without one could never be downloaded. Save it first.
+      res.status(400).json({ error: 'id is required — save the presentation first' });
+      return;
     }
 
     try {
@@ -348,12 +392,19 @@ FORMATTING RULES:
         db,
       });
 
-      // Read brand settings from the user profile (graceful fallback to defaults)
-      const profileRow = await db.get('SELECT organisation, brand_config FROM user_profiles WHERE id = ?', 'default') as { organisation: string | null; brand_config: string | null } | undefined;
+      // Read brand settings (graceful fallback to defaults). The brand is the house
+      // style on the instance row. The organisation named on the deck is the
+      // person's own (loadLayer0Profile — the same 'default' row in solo), because
+      // in team mode the instance row is no longer anyone's profile; someone who has
+      // not set one gets the instance organisation, which travels with the brand
+      // an admin sets (PUT /api/profile?scope=instance) and names whose deck it is.
+      const profileRow = await db.get('SELECT organisation, brand_config FROM user_profiles WHERE id = ?', INSTANCE_PROFILE_ID) as { organisation: string | null; brand_config: string | null } | undefined;
+      const ownOrganisation = (await loadLayer0Profile(db, req))?.organisation?.trim();
 
       const brandOverride: Partial<PresentationBrand> = {};
-      if (profileRow?.organisation?.trim()) {
-        brandOverride.companyName = profileRow.organisation.trim();
+      const organisation = ownOrganisation || profileRow?.organisation?.trim();
+      if (organisation) {
+        brandOverride.companyName = organisation;
       }
       if (profileRow?.brand_config) {
         try {
@@ -407,12 +458,30 @@ FORMATTING RULES:
       res.status(400).json({ error: 'Invalid filename' });
       return;
     }
-    const filePath = path.join(OUTPUT_DIR, filename);
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ error: 'File not found' });
-      return;
+    try {
+      // In team mode the name must belong to a presentation row the caller owns,
+      // checked before the disk is touched, so another person's deck answers
+      // exactly like a file that does not exist. Solo and admins keep the plain
+      // by-name download, as before.
+      if (scopesToOwner(req)) {
+        const scope = ownerFilter(req, 'user_id');
+        const owned = await db.get(
+          `SELECT 1 AS ok FROM presentations WHERE filename = ?${scope.sql}`, filename, ...scope.params,
+        );
+        if (!owned) {
+          res.status(404).json({ error: 'File not found' });
+          return;
+        }
+      }
+      const filePath = path.join(OUTPUT_DIR, filename);
+      if (!fs.existsSync(filePath)) {
+        res.status(404).json({ error: 'File not found' });
+        return;
+      }
+      res.download(filePath, filename);
+    } catch (error) {
+      res.status(500).json({ error: safeError(error) });
     }
-    res.download(filePath, filename);
   });
 
   return router;

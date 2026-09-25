@@ -5,7 +5,8 @@ import { createAtomExtractor } from '../services/atom-extractor.js';
 import { createOutputStore } from '../services/output-store.js';
 import { safeError } from '../lib/error-response.js';
 import { requireAuth } from '../middleware/role-guards.js';
-import { scopesToOwner } from '../middleware/ownership.js';
+import { scopesToOwner, ownerFilter } from '../middleware/ownership.js';
+import { atomOwnerSql, searchScopeForRequest } from '../services/hybrid-search.js';
 
 // ── Atom lifecycle (Wave 4, 2026-09-17) ─────────────────────────────────────
 //
@@ -59,6 +60,8 @@ export const ATOM_LIFECYCLE_SQL = {
     `SELECT a.id ${ATOM_LIFECYCLE_SQL.subjectWhere(scope)} ORDER BY a.created_at DESC`,
   /** The fragment subjectScope() appends for a non-admin in team mode. Params: user id. */
   ownerScope: ' AND (a.owner_user_id IS NULL OR a.owner_user_id = ?)',
+  /** The fragment subjectMutationScope() appends for a non-admin in team mode: own atoms only. Params: user id. */
+  ownerMutationScope: ' AND a.owner_user_id = ?',
 } as const;
 
 interface AtomOwnerRow { id: string; owner_user_id: string | null; is_active: number }
@@ -69,15 +72,29 @@ function likePattern(q: string): string {
 }
 
 /**
- * In team mode a non-admin only sees and touches atoms that are theirs or
- * unowned (pre-275 rows have no owner). Solo and admins are unscoped — the
- * same rule as middleware/ownership.ts.
+ * In team mode a non-admin only sees atoms that are theirs or unowned
+ * (pre-275 rows have no owner); what they may delete is narrower — see
+ * subjectMutationScope. Solo and admins are unscoped — the same rule as
+ * middleware/ownership.ts.
  */
 function subjectScope(req: Request): { sql: string; params: string[] } {
   if (!scopesToOwner(req)) return { sql: '', params: [] };
   const userId = req.user?.id;
   if (!userId) return { sql: ' AND 1=0', params: [] };
   return { sql: ATOM_LIFECYCLE_SQL.ownerScope, params: [userId] };
+}
+
+/**
+ * The erasure counterpart of subjectScope: a non-admin in team mode deletes only
+ * their OWN atoms. Shared atoms (owner NULL) are instance-wide knowledge that
+ * reaches every user's prompts, so removing them is an admin decision — the same
+ * rule H10 applied to knowledge packs. Solo and admins are unscoped.
+ */
+function subjectMutationScope(req: Request): { sql: string; params: string[] } {
+  if (!scopesToOwner(req)) return { sql: '', params: [] };
+  const userId = req.user?.id;
+  if (!userId) return { sql: ' AND 1=0', params: [] };
+  return { sql: ATOM_LIFECYCLE_SQL.ownerMutationScope, params: [userId] };
 }
 
 function subjectQuery(v: unknown): string | null {
@@ -110,16 +127,28 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
    */
   /**
    * True when this request may not see the atom: in team mode a non-admin reaches
-   * only their own atoms and unowned ones. Every atom a mutation touches goes through
-   * this — the one being changed AND any atom it is linked to.
+   * only their own atoms and unowned ones. The atom a mutation LINKS to (a
+   * successor) goes through this; the atom being changed goes through the
+   * stricter mayMutateAtom below.
    */
   function isForeignAtom(req: Request, atom: AtomOwnerRow): boolean {
     return scopesToOwner(req) && atom.owner_user_id !== null && atom.owner_user_id !== req.user?.id;
   }
 
+  /**
+   * True when this request may CHANGE the atom: in team mode a non-admin changes
+   * only their own. A shared atom (owner NULL) is readable by everyone but reaches
+   * every user's prompts, so retiring, restoring, superseding or deleting it is an
+   * admin decision (the H10 rule for knowledge packs). Answered like a foreign
+   * atom — 404 — so the mutation routes are no oracle either.
+   */
+  function mayMutateAtom(req: Request, atom: AtomOwnerRow): boolean {
+    return !scopesToOwner(req) || (atom.owner_user_id !== null && atom.owner_user_id === req.user?.id);
+  }
+
   async function loadMutableAtom(req: Request, res: Response, id: string): Promise<AtomOwnerRow | null> {
     const atom = await db.get<AtomOwnerRow>(ATOM_LIFECYCLE_SQL.ownerRow, id);
-    const foreign = atom !== undefined && isForeignAtom(req, atom);
+    const foreign = atom !== undefined && !mayMutateAtom(req, atom);
     if (!atom || foreign) {
       res.status(404).json({ error: 'Atom not found' });
       return null;
@@ -139,6 +168,9 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
 
   // ── GET /api/knowledge/atoms ─────────────────────────────────────────────
   // Query params: q, area, type, entity_type, entity_id, since
+  // Team mode: a non-admin lists their own atoms and the shared (unowned) ones —
+  // the same rule that decides which atoms reach their prompts. Solo and admins
+  // see every atom, as before.
   router.get('/knowledge/atoms', async (req, res) => {
     try {
       const q = typeof req.query.q === 'string' ? req.query.q : '';
@@ -156,6 +188,7 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
         entityType,
         entityId,
         since,
+        scope: searchScopeForRequest(req),
       });
 
       res.json({ atoms, total: atoms.length });
@@ -170,7 +203,12 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   // finding into the knowledge memory. Follows the synthetic-source pattern
   // from atlas-knowledge-bridge (source_workflow_id is NOT NULL but manual
   // atoms have no workflow, so the origin surface is used as the identifier).
-  router.post('/knowledge/atoms', async (req, res) => {
+  //
+  // The atom is attributed to the caller. It used to be saved with no owner, and an
+  // unowned atom is SHARED knowledge — listed to and injected into every user's
+  // runs on a team server. requireAuth because an anonymous save could only be
+  // shared again (solo always carries its synthetic user, so nothing changes there).
+  router.post('/knowledge/atoms', requireAuth, async (req, res) => {
     try {
       const { content, title, sourceUrl, query, searchId } = req.body as {
         content?: string; title?: string; sourceUrl?: string; query?: string; searchId?: string;
@@ -194,12 +232,13 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
       await db.run(
         `INSERT INTO knowledge_atoms
           (id, source_workflow_id, source_execution_id, source_module_id,
-           content, atom_type, confidence, category, tags, created_at)
-         VALUES (?, 'pathfinder', ?, 'pathfinder', ?, 'observation.finding', 0.8, 'observation', ?, NOW())`,
+           content, atom_type, confidence, category, tags, owner_user_id, created_at)
+         VALUES (?, 'pathfinder', ?, 'pathfinder', ?, 'observation.finding', 0.8, 'observation', ?, ?, NOW())`,
         id,
         typeof searchId === 'string' && searchId ? searchId : 'manual',
         text.slice(0, 2000),
         tags,
+        req.user?.id ?? null,
       );
 
       res.status(201).json({ id });
@@ -248,7 +287,9 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
       }
       const dryRun = body.dryRun !== false;
       const pattern = likePattern(q);
-      const scope = subjectScope(req);
+      // Own atoms only for a non-admin (subjectMutationScope) — the dry run shows
+      // exactly the set the real run would delete.
+      const scope = subjectMutationScope(req);
       const rows = await db.all<{ id: string }>(ATOM_LIFECYCLE_SQL.subjectIds(scope.sql), pattern, pattern, ...scope.params);
       const ids = rows.map((r) => r.id);
 
@@ -269,9 +310,10 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   });
 
   // ── GET /api/knowledge/atoms/:id ─────────────────────────────────────────
+  // Another user's atom is a 404, exactly like a missing one (ownership.ts, property 1).
   router.get('/knowledge/atoms/:id', async (req, res) => {
     try {
-      const atom = await (await getExtractor()).getAtomDetail(req.params.id);
+      const atom = await (await getExtractor()).getAtomDetail(req.params.id, searchScopeForRequest(req));
       if (!atom) {
         res.status(404).json({ error: 'Atom not found' });
         return;
@@ -377,9 +419,23 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   });
 
   // ── GET /api/knowledge/atoms/:id/relationships ─────────────────────────
+  // Scoped at both ends: the relationship detector links a new atom to recent
+  // atoms of the same area whoever owns them, so the RELATED atom's content needs
+  // the owner rule as much as the seed does. A seed the caller may not see answers
+  // exactly like an unknown id — an empty list.
   router.get('/knowledge/atoms/:id/relationships', async (req, res) => {
     try {
       const atomId = req.params.id;
+      const scope = searchScopeForRequest(req);
+      const seedOwner = atomOwnerSql(scope, 'a.owner_user_id');
+      if (seedOwner.sql) {
+        const seed = await db.get(`SELECT 1 AS ok FROM knowledge_atoms a WHERE a.id = ?${seedOwner.sql}`, atomId, ...seedOwner.params);
+        if (!seed) {
+          res.json({ atomId, relationships: [], total: 0 });
+          return;
+        }
+      }
+      const owner = atomOwnerSql(scope, 'ka.owner_user_id');
       const rows = await db.all(`
         SELECT ar.relationship_type, ar.strength, ar.created_at,
                CASE WHEN ar.from_atom_id = ? THEN ar.to_atom_id ELSE ar.from_atom_id END as related_atom_id,
@@ -387,9 +443,9 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
                ka.content, ka.atom_type, ka.category, ka.confidence
         FROM atom_relationships ar
         JOIN knowledge_atoms ka ON ka.id = CASE WHEN ar.from_atom_id = ? THEN ar.to_atom_id ELSE ar.from_atom_id END
-        WHERE (ar.from_atom_id = ? OR ar.to_atom_id = ?) AND ka.is_active = 1
+        WHERE (ar.from_atom_id = ? OR ar.to_atom_id = ?) AND ka.is_active = 1${owner.sql}
         ORDER BY ar.strength DESC
-      `, atomId, atomId, atomId, atomId, atomId) as Array<{
+      `, atomId, atomId, atomId, atomId, atomId, ...owner.params) as Array<{
         relationship_type: string; strength: number; created_at: string;
         related_atom_id: string; direction: string;
         content: string; atom_type: string; category: string; confidence: number;
@@ -403,12 +459,14 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   });
 
   // ── GET /api/knowledge/entities/:type/:id ────────────────────────────────
-  // Returns all atoms for an entity + its graph connections
+  // Returns all atoms for an entity + its graph connections — both drawn only
+  // from the atoms this caller may read (own + shared in team mode).
   router.get('/knowledge/entities/:type/:id', async (req, res) => {
     try {
       const { type, id } = req.params;
-      const atoms = await (await getExtractor()).getAtomsByEntity(type, id);
-      const connections = await (await getExtractor()).getEntityConnections(type, id);
+      const scope = searchScopeForRequest(req);
+      const atoms = await (await getExtractor()).getAtomsByEntity(type, id, scope);
+      const connections = await (await getExtractor()).getEntityConnections(type, id, scope);
       res.json({ entity_type: type, entity_id: id, atoms, connections });
     } catch (err) {
       console.error('[knowledge/entities GET]', err);
@@ -417,13 +475,18 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
   });
 
   // ── GET /api/knowledge/decisions/:workflowId ─────────────────────────────
+  // Team mode: only the decisions the caller made (decided_by is the deciding
+  // user's id). Module workflows are 'module:<id>', shared by every user, so the
+  // workflow id alone used to return colleagues' reasoning and context snapshots.
   router.get('/knowledge/decisions/:workflowId', async (req, res) => {
     try {
       const limit = Math.min(
         Math.max(parseInt(String(req.query.limit ?? '100'), 10) || 100, 1),
         500
       );
-      const decisions = await (await getOutputStore()).getDecisionsForWorkflow(req.params.workflowId, limit);
+      const decisions = await (await getOutputStore()).getDecisionsForWorkflow(
+        req.params.workflowId, ownerFilter(req, 'decided_by'), limit,
+      );
       res.json({ decisions, total: decisions.length });
     } catch (err) {
       console.error('[knowledge/decisions GET]', err);
@@ -439,7 +502,10 @@ export async function createKnowledgeRoutes(db: DatabaseAdapter) {
         res.status(400).json({ error: 'Invalid stepIndex' });
         return;
       }
-      const distribution = await (await getOutputStore()).getDecisionDistribution(req.params.workflowId, stepIndex);
+      // Same owner rule as the list above: the caller's own decisions only.
+      const distribution = await (await getOutputStore()).getDecisionDistribution(
+        req.params.workflowId, stepIndex, ownerFilter(req, 'decided_by'),
+      );
       res.json({ workflow_id: req.params.workflowId, step_index: stepIndex, distribution });
     } catch (err) {
       console.error('[knowledge/decisions/distribution GET]', err);

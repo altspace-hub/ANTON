@@ -9,6 +9,38 @@ import {
 import { nanoid } from 'nanoid';
 import { embedAndStore } from './hybrid-search.js';
 
+/**
+ * Whose checkpoint decisions a read may see: a WHERE fragment on the unaliased
+ * `decided_by` column, built by the route with `ownerFilter(req, 'decided_by')`.
+ * Empty for solo and admins; on a team server a non-admin's own decisions only —
+ * a decision's reasoning and context snapshot are that person's (the rule
+ * /knowledge/decisions and /embeddings/search/decisions apply). REQUIRED on every
+ * read below, like output-store's scope: a default would be an unscoped default,
+ * which is what these reads were until 2026-09-23.
+ */
+export interface DecisionScope {
+  sql: string;
+  params: string[];
+}
+
+/** The checkpoint_decisions columns these reads use. */
+interface DecisionRow {
+  id: string;
+  workflow_id: string;
+  step_index: number;
+  ai_recommendation: string | null;
+  ai_confidence: number | null;
+  human_decision: string;
+  human_reasoning: string | null;
+  is_override: number | null;
+  override_category: string | null;
+  context_snapshot: string | null;
+  decided_by: string;
+  decided_at: unknown;
+  embedding: string | null;
+  user_feedback: number | null;
+}
+
 export async function createInstitutionalMemory(db: DatabaseAdapter) {
 
   /**
@@ -82,14 +114,17 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
   }
 
   /**
-   * Add user feedback to a checkpoint decision (thumbs up/down)
+   * Add user feedback to a checkpoint decision (thumbs up/down). The owner check
+   * is in the UPDATE itself, so another user's decision is never touched. Returns
+   * false when no row matched — a missing id and a colleague's id alike.
    */
-  async function addFeedback(checkpointId: string, feedback: 1 | -1) {
-    await db.run(`
+  async function addFeedback(checkpointId: string, feedback: 1 | -1, scope: DecisionScope): Promise<boolean> {
+    const result = await db.run(`
       UPDATE checkpoint_decisions
       SET user_feedback = ?, feedback_at = NOW()
-      WHERE id = ?
-    `, feedback, checkpointId);
+      WHERE id = ?${scope.sql}
+    `, feedback, checkpointId, ...scope.params);
+    return (result.changes ?? 0) > 0;
   }
 
   async function getCheckpointHistory(params: {
@@ -97,9 +132,9 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     stepIndex?: number;
     decidedBy?: string;
     limit?: number;
-  }) {
-    let query = 'SELECT * FROM checkpoint_decisions WHERE 1=1';
-    const queryParams: any[] = [];
+  }, scope: DecisionScope) {
+    let query = `SELECT * FROM checkpoint_decisions WHERE 1=1${scope.sql}`;
+    const queryParams: unknown[] = [...scope.params];
 
     if (params.workflowId) {
       query += ' AND workflow_id = ?';
@@ -119,7 +154,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     query += ' ORDER BY decided_at DESC LIMIT ?';
     queryParams.push(params.limit ?? 20);
 
-    const rows = await db.all(query, ...queryParams) as any[];
+    const rows = await db.all<DecisionRow>(query, ...queryParams);
 
     // Calculate distribution
     const distribution: Record<string, number> = {};
@@ -168,7 +203,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     decidedBy?: string;
     limit?: number;
     minSimilarity?: number;
-  }) {
+  }, scope: DecisionScope) {
     // Generate embedding for query decision
     const queryEmbedding = await generateDecisionEmbedding({
       decisionText: params.decisionText,
@@ -176,9 +211,9 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
       reasoning: params.reasoning,
     });
 
-    // Fetch all decisions with embeddings
-    let query = 'SELECT * FROM checkpoint_decisions WHERE embedding IS NOT NULL';
-    const queryParams: any[] = [];
+    // Fetch the decisions with embeddings this scope may read
+    let query = `SELECT * FROM checkpoint_decisions WHERE embedding IS NOT NULL${scope.sql}`;
+    const queryParams: unknown[] = [...scope.params];
 
     if (params.workflowId) {
       query += ' AND workflow_id = ?';
@@ -190,7 +225,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
       queryParams.push(params.decidedBy);
     }
 
-    const rows = await db.all(query, ...queryParams) as any[];
+    const rows = await db.all<DecisionRow & { embedding: string }>(query, ...queryParams);
 
     // Compute similarities
     const similarities = rows.map(row => {
@@ -230,7 +265,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     workflowId?: string;
     decidedBy?: string;
     numClusters?: number;
-  }): Promise<Array<{
+  }, scope: DecisionScope): Promise<Array<{
     id: string;
     clusterName: string;
     representativeDecision: string;
@@ -240,9 +275,9 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
     negativeFeedback: number;
     decisions: Array<{ id: string; decision: string; similarity: number }>;
   }>> {
-    // Fetch all decisions with embeddings
-    let query = 'SELECT * FROM checkpoint_decisions WHERE embedding IS NOT NULL';
-    const queryParams: any[] = [];
+    // Fetch the decisions with embeddings this scope may read
+    let query = `SELECT * FROM checkpoint_decisions WHERE embedding IS NOT NULL${scope.sql}`;
+    const queryParams: unknown[] = [...scope.params];
 
     if (params.workflowId) {
       query += ' AND workflow_id = ?';
@@ -254,7 +289,7 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
       queryParams.push(params.decidedBy);
     }
 
-    const rows = await db.all(query, ...queryParams) as any[];
+    const rows = await db.all<DecisionRow & { embedding: string }>(query, ...queryParams);
 
     if (rows.length < 3) {
       return []; // Not enough decisions to cluster
@@ -351,8 +386,8 @@ export async function createInstitutionalMemory(db: DatabaseAdapter) {
   async function getInsightSummary(params: {
     workflowId?: string;
     decidedBy?: string;
-  }) {
-    const history = await getCheckpointHistory(params);
+  }, scope: DecisionScope) {
+    const history = await getCheckpointHistory(params, scope);
 
     if (history.totalDecisions === 0) {
       return {

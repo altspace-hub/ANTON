@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 import { createOrgContextService } from '../services/org-context.js';
 
@@ -29,7 +30,12 @@ export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Route
   });
 
   // ── Update org context ─────────────────────────────────────────────────────
-  router.put('/org-context', async (req: Request, res: Response) => {
+  // Admin-only in team mode (solo unchanged). There is one org_context row and
+  // buildOrgContextLayer puts it into EVERY user's system prompt, so a PUT from any
+  // viewer was a way to plant standing instructions ("always recommend vendor X")
+  // in colleagues' runs — the class B4 closed for user_profiles. Reading it stays
+  // open: the org context is instance-wide by design and shapes everyone's prompts.
+  router.put('/org-context', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       const context = await orgCtxService.updateContext(req.body, userId);
@@ -52,7 +58,9 @@ export async function createOrgContextRoutes(db: DatabaseAdapter): Promise<Route
   });
 
   // ── Get change history ─────────────────────────────────────────────────────
-  router.get('/org-context/history', async (req: Request, res: Response) => {
+  // Admin-only in team mode: each entry names who changed the shared layer
+  // (changed_by is a user id), which only the people who may change it need.
+  router.get('/org-context/history', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit || '20')), 100);
       const history = await orgCtxService.getHistory(limit);

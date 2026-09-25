@@ -208,6 +208,12 @@ export function buildDockerRunArgv(params: DockerRunParams): string[] {
 
   // Re-validate the mount source against the allowlist (defense in depth — the
   // route validated already, but the builder must never mount an unallowed dir).
+  // A lexical base check, not validateWorkspacePath with a project scope: this
+  // builder is pure and synchronous. Its callers hand it an already-validated
+  // workspace — coding-large.ts commands/:kind/run and tests/run (validated
+  // with the project's scope) and the Studio orchestrator (via runProjectTests)
+  // — and in team mode every one of those runs is admin-only, so the non-admin
+  // rule (WorkspaceScope.studioOnly) has no one to apply to here.
   const resolved = path.resolve(workspaceAbs);
   const allowedBases = getAllowedBases(params.env ?? process.env);
   const inside = allowedBases.some((base) => resolved === base || resolved.startsWith(base + path.sep));

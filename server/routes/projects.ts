@@ -1,9 +1,12 @@
 import { Router } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { createProjectWorkspace, deleteProjectWorkspace } from '../services/workspace.js';
 import { safeError } from '../lib/error-response.js';
 import { resolveProjectAccess } from '../services/project-context.js';
+import { scopesToOwner, assertOwned } from '../middleware/ownership.js';
 
 export async function createProjectRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -16,6 +19,36 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
   function getUserRole(req: unknown): string {
     return (req as { user?: { role?: string } }).user?.role ?? 'admin';
   }
+
+  /** The caller's role in the project ('owner' | 'admin' | 'member' | 'viewer'), or null. */
+  async function projectRoleOf(projectId: string, userId: string): Promise<string | null> {
+    const row = await db.get<{ role: string }>(
+      'SELECT role FROM project_members WHERE project_id = ? AND user_id = ?', projectId, userId,
+    );
+    return row?.role ?? null;
+  }
+
+  // ── Team-mode membership gate ──────────────────────────────────────────────
+  // H7 (team-server readiness, 2026-09-23): PATCH and DELETE /projects/:id acted
+  // on any project id for any caller — a rename, a soft delete through `status`,
+  // or the project removed together with its folder on disk. Every /projects/:id
+  // route now needs membership first, as project-files.ts does. A project the
+  // caller is not in answers 404, exactly like one that does not exist: a 403
+  // would confirm the id (see ownership.ts). Solo mode and admins pass.
+  // (The session route below names its parameter :sessionId so this gate never
+  // mistakes a session id for a project id.)
+  router.param('id', async (req: Request, res: Response, next: NextFunction, id: string) => {
+    try {
+      if (!scopesToOwner(req)) return next();
+      if (!(await projectRoleOf(String(id), getUserId(req)))) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // GET /api/projects
   router.get('/projects', async (req, res) => {
@@ -57,7 +90,9 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
   // POST /api/projects
   router.post('/projects', async (req, res) => {
     try {
-      console.log('[projects] Creating project:', req.body);
+      // No request body in the log: a project name or description is client data,
+      // and on a shared server the log is read by people who are not in the project.
+      console.log('[projects] Creating project');
       const { name, description, template_id } = req.body as { name: string; description?: string; template_id?: string };
 
       if (!name?.trim()) {
@@ -73,13 +108,15 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       console.log('[projects] Creating workspace for project:', id);
       const workspace = await createProjectWorkspace(id);
 
-      // Insert into database with workspace_path
+      // Insert into database with workspace_path. user_id records the creator —
+      // it was left at the column default 'default', although resolveProjectAccess
+      // and the coding routes read projects.user_id as the owner.
+      const creatorId = getUserId(req);
       await db.run(
-        'INSERT INTO projects (id, name, description, template_id, workspace_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      , id, name.trim(), description || null, template_id || null, workspace.root, now, now);
+        'INSERT INTO projects (id, name, description, template_id, workspace_path, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      , id, name.trim(), description || null, template_id || null, workspace.root, creatorId, now, now);
 
       // Auto-add creator as project owner
-      const creatorId = getUserId(req);
       try {
         await db.run(
           'INSERT INTO project_members (id, project_id, user_id, role, added_by) VALUES (?, ?, ?, ?, ?)'
@@ -173,10 +210,31 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // PATCH /api/projects/:id
+  // PATCH /api/projects/:id — membership is already checked by the gate above.
   router.patch('/projects/:id', async (req, res) => {
     try {
-      const { name, description, status } = req.body as { name?: string; description?: string; status?: string };
+      const body = req.body as { name?: unknown; description?: string; status?: string };
+      const { description, status } = body;
+      // A non-string name used to reach name.trim() and 500.
+      if (body.name !== undefined && typeof body.name !== 'string') {
+        res.status(400).json({ error: 'name must be a string' });
+        return;
+      }
+      const name = body.name as string | undefined;
+      if (scopesToOwner(req)) {
+        const role = await projectRoleOf(String(req.params.id), getUserId(req));
+        // A viewer reads the project; a rename changes it for every member.
+        if (role === 'viewer') {
+          res.status(403).json({ error: 'Viewers cannot edit this project' });
+          return;
+        }
+        // `status` is how a project is archived or soft-deleted ('deleted' drops it
+        // from every member's list), so it is the owner's decision, like DELETE.
+        if (status !== undefined && role !== 'owner') {
+          res.status(403).json({ error: 'Only the project owner can change its status' });
+          return;
+        }
+      }
       const now = new Date().toISOString();
       if (name !== undefined) {
         await db.run('UPDATE projects SET name = ?, updated_at = ? WHERE id = ?', name.trim(), now, req.params.id);
@@ -193,19 +251,37 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
     }
   });
 
-  // DELETE /api/projects/:id
+  // DELETE /api/projects/:id — the owner's call; membership is checked by the gate above.
   router.delete('/projects/:id', async (req, res) => {
     try {
-      console.log('[projects] Deleting project:', req.params.id);
+      const projectId = String(req.params.id);
+      // Read the row first, in every mode. The id becomes a directory name below and
+      // Express decodes the path segment, so DELETE /projects/%2E%2E handed '..' to
+      // deleteProjectWorkspace — which removes <workspaces>/.. recursively. Only the
+      // id of a real project (always server-generated) reaches the disk now.
+      const project = await db.get<{ id: string }>('SELECT id FROM projects WHERE id = ?', projectId);
+      if (!project) {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      if (scopesToOwner(req) && (await projectRoleOf(projectId, getUserId(req))) !== 'owner') {
+        res.status(403).json({ error: 'Only the project owner can delete this project' });
+        return;
+      }
 
-      // Delete workspace folder
-      await deleteProjectWorkspace(req.params.id);
+      console.log('[projects] Deleting project:', projectId);
+
+      // Delete workspace folder — belt and braces: never for an id that is not a
+      // plain directory name, even though every insert path generates the id.
+      if (projectId === path.basename(projectId) && projectId !== '.' && projectId !== '..') {
+        await deleteProjectWorkspace(projectId);
+      }
 
       // Unlink sessions before deleting
-      await db.run('UPDATE sessions SET project_id = NULL WHERE project_id = ?', req.params.id);
-      await db.run('DELETE FROM projects WHERE id = ?', req.params.id);
+      await db.run('UPDATE sessions SET project_id = NULL WHERE project_id = ?', projectId);
+      await db.run('DELETE FROM projects WHERE id = ?', projectId);
 
-      console.log('[projects] ✅ Project deleted successfully:', req.params.id);
+      console.log('[projects] ✅ Project deleted successfully:', projectId);
       res.json({ ok: true });
     } catch (error) {
       console.error('[projects] ❌ Project deletion failed:', error);
@@ -218,7 +294,8 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
   // accepted any project id for any session — no existence check, no
   // membership check, no session ownership — so a team-mode caller could
   // pull a stranger's session into a project they were not part of.
-  router.patch('/sessions/:id/project', async (req, res) => {
+  // :sessionId, not :id — the router.param('id') gate above is for project ids.
+  router.patch('/sessions/:sessionId/project', async (req, res) => {
     try {
       const raw = (req.body as { projectId?: unknown }).projectId;
       if (raw !== null && raw !== undefined && typeof raw !== 'string') {
@@ -227,16 +304,15 @@ export async function createProjectRoutes(db: DatabaseAdapter) {
       const projectId = typeof raw === 'string' && raw.trim() ? raw.trim() : null;
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      const sessionId = String(req.params.id);
-      const session = await db.get('SELECT id, user_id FROM sessions WHERE id = ?', sessionId) as { id: string; user_id: string | null } | undefined;
-      if (!session) return res.status(404).json({ error: 'Session not found' });
-      if (IS_TEAM_MODE && userRole !== 'admin' && session.user_id && session.user_id !== userId) {
-        return res.status(403).json({ error: 'Not your session' });
-      }
+      const sessionId = String(req.params.sessionId);
+      // Ownership in SQL, 404 for "not yours" exactly as for "missing" — the 403s
+      // here confirmed that a session or project id existed. An unowned (legacy,
+      // user_id NULL) session is admin-only in team mode, as ownership.ts says;
+      // any member could claim one into their project before.
+      if (!(await assertOwned(db, req, res, { table: 'sessions', ownerColumn: 'user_id', id: sessionId, notFoundMessage: 'Session not found' }))) return;
       if (projectId) {
         const access = await resolveProjectAccess(db, { projectId, userId, userRole, teamMode: IS_TEAM_MODE });
-        if (access === 'not_found') return res.status(404).json({ error: 'Project not found' });
-        if (access === 'forbidden') return res.status(403).json({ error: 'Not a member of this project' });
+        if (access !== 'ok') return res.status(404).json({ error: 'Project not found' });
       }
       await db.run('UPDATE sessions SET project_id = ?, updated_at = ? WHERE id = ?', projectId, new Date().toISOString(), sessionId);
       res.json({ ok: true, projectId });

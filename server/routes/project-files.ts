@@ -5,23 +5,26 @@ import path from 'path';
 import fs from 'fs-extra';
 import { randomUUID } from 'crypto';
 import { getProjectWorkspace } from '../services/workspace.js';
+import { scopesToOwner } from '../middleware/ownership.js';
 
 export async function createProjectFilesRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const IS_TEAM_MODE = process.env.DEPLOYMENT_MODE === 'team';
 
   // ── Team-mode membership gate ──────────────────────────────────────────────────
   // Project files are addressed by :id (the project). Require membership here so
   // files can't be listed / uploaded / downloaded / deleted cross-tenant by UUID
   // (round-2 finding #21). No-op in solo mode / for admins.
+  // A non-member gets 404, like a project that does not exist: the 403 this
+  // answered confirmed the id, which projects.ts and project-collaboration.ts
+  // no longer do (see ownership.ts).
   router.param('id', async (req: Request, res: Response, next: NextFunction, id: string) => {
     try {
+      if (!scopesToOwner(req)) return next();
       const user = (req as { user?: { id?: string; role?: string } }).user;
-      if (!IS_TEAM_MODE || user?.role === 'admin') return next();
       const member = await db.get(
         'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', String(id), user?.id ?? 'solo',
       );
-      if (!member) { res.status(403).json({ error: 'Forbidden' }); return; }
+      if (!member) { res.status(404).json({ error: 'Project not found' }); return; }
       next();
     } catch (err) {
       next(err);

@@ -5,7 +5,15 @@ import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
 import { checkFolderPath } from '../lib/folder-guard.js';
 import { safeError } from '../lib/error-response.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
+/**
+ * Team mode: the library is INSTANCE-WIDE — one list every user reads, whose
+ * folders are indexed into the shared document_chunks store. Creating, editing,
+ * deleting or re-indexing an entry therefore changes what everyone sees, so those
+ * are admin actions (requireAdminOrSolo — a no-op in solo mode). Reading the list
+ * and an entry's status stay open.
+ */
 export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   const router = Router();
 
@@ -24,7 +32,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/knowledge-library — create entry
-  router.post('/knowledge-library', async (req, res) => {
+  router.post('/knowledge-library', requireAdminOrSolo, async (req, res) => {
     try {
       const { label, path: entryPath, category, recursive, file_filter, description } = req.body as {
         label: string;
@@ -66,7 +74,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   });
 
   // PATCH /api/knowledge-library/:id — update metadata
-  router.patch('/knowledge-library/:id', async (req, res) => {
+  router.patch('/knowledge-library/:id', requireAdminOrSolo, async (req, res) => {
     try {
       const existing = await db.get(`SELECT * FROM knowledge_library WHERE id = ?`, req.params.id);
       if (!existing) return res.status(404).json({ error: 'Not found' });
@@ -97,7 +105,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   });
 
   // DELETE /api/knowledge-library/:id — hard delete
-  router.delete('/knowledge-library/:id', async (req, res) => {
+  router.delete('/knowledge-library/:id', requireAdminOrSolo, async (req, res) => {
     try {
       const result = await db.run(`DELETE FROM knowledge_library WHERE id = ?`, req.params.id);
       if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
@@ -108,7 +116,7 @@ export async function createKnowledgeLibraryRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/knowledge-library/:id/index — trigger BM25 indexing
-  router.post('/knowledge-library/:id/index', async (req, res) => {
+  router.post('/knowledge-library/:id/index', requireAdminOrSolo, async (req, res) => {
     try {
       const entry = await db.get(`SELECT * FROM knowledge_library WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
       if (!entry) return res.status(404).json({ error: 'Not found' });

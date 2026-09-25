@@ -10,6 +10,18 @@ import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 import { createKnowledgePackService } from '../services/knowledge-pack-service.js';
 import { safeError } from '../lib/error-response.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
+
+// ── Who may change packs (H10, team-server readiness 2026-09-23) ─────────────
+// Active packs are one instance-wide prompt layer: prompt-builder puts every
+// active pack into every user's runs. Any user could import, install, activate,
+// deactivate or delete one — including 'system' packs — so on a shared server
+// one person could plant text in everyone's prompts or switch the org's
+// regulatory context off. Every mutation below is requireAdminOrSolo: a no-op
+// on a laptop (the solo user is the admin), admin-only in team mode. Reading
+// packs stays open to every user. The per-pack owner check the mutations used
+// to carry is gone: only an admin reaches them now, and an admin manages the
+// instance's packs whoever imported them.
 
 // Rate limit bundle imports to 10 per 15 minutes per IP.
 // Importing a pack parses a ZIP, validates thousands of entities, and runs
@@ -107,7 +119,7 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
   });
 
   // ── Install a bundled pack ─────────────────────────────────────────────────
-  router.post('/knowledge-packs/bundled/:slug/install', importRateLimit, async (req: Request, res: Response) => {
+  router.post('/knowledge-packs/bundled/:slug/install', requireAdminOrSolo, importRateLimit, async (req: Request, res: Response) => {
     try {
       const slug = String(req.params.slug).replace(/[^a-z0-9-]/gi, ''); // sanitise
       const userId = getUserId(req);
@@ -132,7 +144,8 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
   });
 
   // ── Import pack from .anton bundle ─────────────────────────────────────────
-  router.post('/knowledge-packs/import', importRateLimit, upload.single('bundle'), async (req: Request, res: Response) => {
+  // The guard runs before the upload is parsed, so a refused caller costs no ZIP work.
+  router.post('/knowledge-packs/import', requireAdminOrSolo, importRateLimit, upload.single('bundle'), async (req: Request, res: Response) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'No bundle file uploaded (field: bundle)' });
       const userId = getUserId(req);
@@ -146,14 +159,10 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
   });
 
   // ── Activate pack ──────────────────────────────────────────────────────────
-  router.patch('/knowledge-packs/:id/activate', async (req: Request, res: Response) => {
+  router.patch('/knowledge-packs/:id/activate', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
-      const userId = getUserId(req);
-      if (pack.user_id !== userId && userId !== 'default' && pack.user_id !== 'system') {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
       await svc.activatePack(String(req.params.id));
       res.json({ status: 'active' });
     } catch (err) {
@@ -163,14 +172,10 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
   });
 
   // ── Deactivate pack ────────────────────────────────────────────────────────
-  router.patch('/knowledge-packs/:id/deactivate', async (req: Request, res: Response) => {
+  router.patch('/knowledge-packs/:id/deactivate', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
-      const userId = getUserId(req);
-      if (pack.user_id !== userId && userId !== 'default' && pack.user_id !== 'system') {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
       await svc.deactivatePack(String(req.params.id));
       res.json({ status: 'deactivated' });
     } catch (err) {
@@ -180,14 +185,10 @@ export async function createKnowledgePacksRoutes(db: DatabaseAdapter): Promise<R
   });
 
   // ── Delete pack ────────────────────────────────────────────────────────────
-  router.delete('/knowledge-packs/:id', async (req: Request, res: Response) => {
+  router.delete('/knowledge-packs/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const pack = await svc.getPack(String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
-      const userId = getUserId(req);
-      if (pack.user_id !== userId && userId !== 'default' && pack.user_id !== 'system') {
-        return res.status(403).json({ error: 'Forbidden' });
-      }
       await svc.deletePack(String(req.params.id));
       res.json({ deleted: true });
     } catch (err) {

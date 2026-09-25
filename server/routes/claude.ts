@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -12,8 +12,8 @@ import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-ve
 import { getModule } from '../services/module-loader.js';
 import { estimateTokens } from '../services/token-estimator.js';
 import { buildOutputInstruction } from '../../src/lib/output-format-definitions.js';
-import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayer, buildAtomLayerDetailed } from '../services/prompt-builder.js';
-import { buildProjectContext } from '../services/project-context.js';
+import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayerDetailed } from '../services/prompt-builder.js';
+import { buildProjectContext, resolveProjectAccess } from '../services/project-context.js';
 import { buildResumeContextIfDue } from '../services/session-resume.js';
 import { writeSessionConclusion } from '../services/session-conclusion.js';
 import { retrieveGroundingText, type GroundingResult } from '../services/framework-text-retrieval.js';
@@ -65,6 +65,8 @@ import { runComplianceOnCompletion } from '../services/compliance-on-completion.
 import { isModuleAllowed } from '../services/module-access.js';
 import { resolveModuleAreaId } from './module-access.js';
 import { isTeamMode } from '../middleware/role-guards.js';
+import { scopesToOwner, assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { loadLayer0Profile } from './profile.js';
 import { embedSessionOutput } from '../services/session-output-embedder.js';
 import { getAnthropicUtilityModel, getRoutedUtilityModel } from '../services/utility-model.js';
 import { validateModuleMatches } from '../services/module-recommendation.js';
@@ -182,6 +184,51 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     }
   }
 
+  /**
+   * Team isolation (B2): a caller may only run in, read from or write to a
+   * session they own. Every sessionId-keyed step of a run trusts this one check
+   * — the user and assistant message rows, the session's config and conclusion,
+   * its resume snapshot, its project's documents and context, its atom feedback
+   * — so each route calls it before any of them. A session that is not theirs
+   * answers 404 exactly like a missing one (ownership.ts).
+   *
+   * Solo mode and admins are not scoped, and unlike a bare assertOwned they are
+   * not existence-checked either: a stale sessionId has always run the turn
+   * unpersisted there, and a single-user machine must behave exactly as before.
+   * Returns true to continue; on false the response has already been sent.
+   */
+  async function ensureOwnSession(req: OwnedRequest, res: Response, sessionId: unknown): Promise<boolean> {
+    if (sessionId === undefined || sessionId === null || sessionId === '') return true;
+    if (!scopesToOwner(req)) return true;
+    return assertOwned(db, req, res, {
+      table: 'sessions', ownerColumn: 'user_id', id: String(sessionId),
+      notFoundMessage: 'Session not found',
+    });
+  }
+
+  /**
+   * Team isolation (B5, attachments): uploadedFileIds name files in UPLOAD_DIR
+   * by their upload id. In team mode a non-admin may attach only files whose
+   * file_uploads row names them as the uploader — the rule GET /api/files/:id
+   * applies. Anything else (another user's upload, an unattributed file from
+   * before migration 253, a path such as rag-documents/…) is dropped the way a
+   * missing file always was: the turn runs without it, so the response never
+   * reveals whose it was. Solo mode and admins keep the list exactly as sent.
+   */
+  async function ownedUploadIds(req: OwnedRequest, requested: string[]): Promise<string[]> {
+    if (!scopesToOwner(req)) return requested;
+    const userId = req.user?.id;
+    const candidates = (Array.isArray(requested) ? requested : [])
+      .filter((id): id is string => typeof id === 'string' && id.length > 0 && path.basename(id) === id);
+    if (!userId || candidates.length === 0) return [];
+    const rows = await db.all<{ id: string }>(
+      `SELECT id FROM file_uploads WHERE uploaded_by = ? AND id IN (${candidates.map(() => '?').join(', ')})`,
+      userId, ...candidates,
+    );
+    const owned = new Set(rows.map((r) => r.id));
+    return candidates.filter((id) => owned.has(id));
+  }
+
   router.post('/claude/message', validate(ClaudeMessageSchema), checkBudget, async (req, res) => {
     try {
       const {
@@ -225,6 +272,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       } = req.body;
 
       if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
+      if (!(await ensureOwnSession(req, res, sessionId))) return;
 
       // MGOV-01/02: Apply compliance_policy + model allowlist checks
       //
@@ -448,7 +496,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
       // Resolve uploaded file IDs → absolute paths in the uploads directory
       // The client sends file IDs (filenames) from the /api/files/upload response.
-      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      const uploadedFileIds: string[] = await ownedUploadIds(req, (req.body.uploadedFileIds as string[]) || []);
       const IMAGE_EXTENSIONS_SERVER = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
       const IMAGE_MEDIA_TYPES_SERVER: Record<string, string> = {
         '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
@@ -489,8 +537,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         messages.push({ role: 'user', content: finalUserMessage });
       }
 
-      // WP-11: Load user profile for Layer 0 prompt personalisation
-      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
+      // WP-11: Load user profile for Layer 0 prompt personalisation — the
+      // caller's own in team mode (B4), the single 'default' row in solo.
+      const userProfile = await loadLayer0Profile(db, req);
 
       const uploadedFilePaths = documentFileIds
         .map((id) => path.join(UPLOAD_DIR, id))
@@ -514,6 +563,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             'SELECT p.id, p.name FROM sessions s JOIN projects p ON p.id = s.project_id WHERE s.id = ?',
             String(sessionId),
           ) as { id: string; name: string } | undefined) ?? null;
+          // The session is the caller's (ensureOwnSession), but its project may
+          // no longer be: someone removed from a matter keeps their old sessions
+          // and must not keep reading its files. Same rule as the project layer.
+          if (projectRow && scopesToOwner(req)) {
+            const access = await resolveProjectAccess(db, {
+              projectId: projectRow.id,
+              userId: req.user?.id ?? '',
+              userRole: req.user?.role ?? null,
+              teamMode: true,
+            });
+            if (access !== 'ok') projectRow = null;
+          }
           if (projectRow) {
             const rows = await db.all(
               'SELECT file_path, original_name, extension FROM project_files WHERE project_id = ? ORDER BY created_at DESC LIMIT 10',
@@ -592,6 +653,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             collections,
             topK: topK || 10,
             rerank: rerank ?? true,
+            // Collections are shared, documents are not: in team mode only the
+            // sender's own uploads reach their prompt (solo/admin: all).
+            owner: req as OwnedRequest,
           });
 
           ragChunks = results;
@@ -2034,11 +2098,16 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         knowledgeSources,
       } = req.body;
 
-      // WP-11: Load user profile
-      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
+      // The preview reads the session's resume snapshot, project and atom
+      // feedback exactly as a run does, so it takes the same ownership gate (B2).
+      const sessionIdForPreview = typeof req.body.sessionId === 'string' && req.body.sessionId ? req.body.sessionId : undefined;
+      if (!(await ensureOwnSession(req, res, sessionIdForPreview))) return;
 
-      // Resolve uploaded file IDs
-      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      // WP-11: Load user profile (the caller's own in team mode — B4)
+      const userProfile = await loadLayer0Profile(db, req);
+
+      // Resolve uploaded file IDs (only the caller's own uploads in team mode — B5)
+      const uploadedFileIds: string[] = await ownedUploadIds(req, (req.body.uploadedFileIds as string[]) || []);
       const uploadedFilePaths = uploadedFileIds
         .map((id: string) => path.join(UPLOAD_DIR, id))
         .filter((p: string) => p.startsWith(UPLOAD_DIR));
@@ -2054,7 +2123,6 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // contract — so "what will be sent" is what is sent. The previous preview
       // omitted seven of those layers. The atom A/B arm is not drawn here: a
       // preview is not a run.
-      const sessionIdForPreview = typeof req.body.sessionId === 'string' && req.body.sessionId ? req.body.sessionId : undefined;
       const userMessageForPreview =
         typeof req.body.userMessage === 'string' ? req.body.userMessage
         : typeof req.body.message === 'string' ? req.body.message
@@ -2066,8 +2134,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         temporalReasoning.buildGoalsValuesLayer(previewUserId, areaId || 'general'),
         sessionIdForPreview ? buildResumeContextLayer(db, sessionIdForPreview) : Promise.resolve(''),
       ]);
+      // Owner-scoped like the run's atom layer: the preview returns the prompt
+      // text, so an unscoped layer showed other users' atoms in team mode.
       const atomLayerPrompt = req.body.atomInjectionEnabled !== false
-        ? await buildAtomLayer(db, areaId, moduleId, userMessageForPreview, sessionIdForPreview ?? null)
+        ? (await buildAtomLayerDetailed(db, {
+            areaId,
+            moduleId,
+            userMessage: userMessageForPreview,
+            sessionId: sessionIdForPreview ?? null,
+            ownerUserId: req.user?.id ?? null,
+            teamMode: isTeamMode(),
+          })).text
         : '';
       let projectContextPrompt = '';
       if (sessionIdForPreview) {
@@ -2283,8 +2360,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         ? await resolveKnowledgeSources(knowledgeSources, [])
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
-      // WP-11: Load user profile for prompt personalisation
-      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
+      // WP-11: Load user profile for prompt personalisation (the caller's own in team mode — B4)
+      const userProfile = await loadLayer0Profile(db, req);
 
       // Compose system prompt (non-streaming path uses plain composer — no cache split needed)
       const composedPrompt = await composeSystemPrompt({
@@ -2424,14 +2501,16 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       } = req.body;
 
       if (await refuseForbiddenModule(req, res, moduleId, areaId)) return;
+      // The synthesis is written into this session below (B2).
+      if (!(await ensureOwnSession(req, res, sessionId))) return;
 
       if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim()) {
         res.status(400).json({ error: 'userMessage is required' });
         return;
       }
 
-      // Resolve knowledge sources (same as regular message route)
-      const uploadedFileIds: string[] = (req.body.uploadedFileIds as string[]) || [];
+      // Resolve knowledge sources (same as regular message route; own uploads only in team mode — B5)
+      const uploadedFileIds: string[] = await ownedUploadIds(req, (req.body.uploadedFileIds as string[]) || []);
       const uploadedFilePaths = uploadedFileIds
         .map((id: string) => path.join(path.resolve(process.env.UPLOAD_DIR || './uploads'), id))
         .filter((p: string) => p.startsWith(path.resolve(process.env.UPLOAD_DIR || './uploads')));
@@ -2440,8 +2519,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
-      // User profile for personalisation
-      const userProfile = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default') as Record<string, string | null> | undefined;
+      // User profile for personalisation (the caller's own in team mode — B4)
+      const userProfile = await loadLayer0Profile(db, req);
 
       // Compose system prompt (full, non-cached — all 3 panelists share same base)
       const composedPrompt = await composeSystemPrompt({
@@ -2686,12 +2765,33 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       res.status(400).json({ error: 'chainId required' });
       return;
     }
-    const chain = await getRevelationChain(db, chainId);
-    if (!chain) {
-      res.status(404).json({ error: 'Revelation chain not found' });
-      return;
+    try {
+      // Team isolation (B3): a chain carries every phase's thinking and output.
+      // It has no owner column of its own, so it belongs to the owner of its
+      // session; checked in SQL before the chain is loaded, and a chain that is
+      // not the caller's answers the same 404 as a missing one. A chain with no
+      // session (Markets consul runs) is therefore admin-only in team mode.
+      if (scopesToOwner(req)) {
+        const visible = await db.get(
+          `SELECT 1 AS ok FROM revelation_chains c
+             JOIN sessions s ON s.id = c.session_id
+            WHERE c.id = ? AND s.user_id = ?`,
+          chainId, req.user?.id ?? '',
+        );
+        if (!visible) {
+          res.status(404).json({ error: 'Revelation chain not found' });
+          return;
+        }
+      }
+      const chain = await getRevelationChain(db, chainId);
+      if (!chain) {
+        res.status(404).json({ error: 'Revelation chain not found' });
+        return;
+      }
+      res.json(chain);
+    } catch (error) {
+      res.status(500).json({ error: safeError(error) });
     }
-    res.json(chain);
   });
 
   return router;

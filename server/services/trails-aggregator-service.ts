@@ -20,9 +20,13 @@
  *   - The aggregator returns a UNIFIED shape (TrailEntry) so the frontend
  *     doesn't need per-kind branching.
  *   - Pagination is enforced server-side (default 50, max 200).
+ *   - Every public entry point takes a TrailScope (see below). On a team server
+ *     the feed hands out session ids and IRE chain ids that other routes accept,
+ *     so an unscoped feed is an index of everyone else's work.
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 // ── Unified trail shape ────────────────────────────────────────────────
 
@@ -77,13 +81,101 @@ export interface TrailListResult {
   hasMore: boolean;
 }
 
+// ── Who may see which trails ───────────────────────────────────────────
+
+/**
+ * Whose trails a caller may see (team-server audit 2026-09-23, B3).
+ *
+ *   - `all`   — solo mode or an admin: every row, as before.
+ *   - `owner` — a non-admin on a team server: only rows attributable to them.
+ *   - `none`  — team mode with no identity on the request: nothing.
+ *
+ * A required argument rather than an optional filter, so a new caller cannot get
+ * the whole instance's feed by forgetting it.
+ */
+export type TrailScope =
+  | { kind: 'all' }
+  | { kind: 'owner'; userId: string }
+  | { kind: 'none' };
+
+/**
+ * Derive the scope from an authenticated request. Delegates to `scopesToOwner`
+ * (middleware/ownership.ts) so the solo/admin rule has one definition.
+ */
+export function trailScopeForRequest(req: OwnedRequest): TrailScope {
+  if (!scopesToOwner(req)) return { kind: 'all' };
+  const userId = req.user?.id;
+  return userId ? { kind: 'owner', userId } : { kind: 'none' };
+}
+
+/**
+ * The owner predicate per kind, given the placeholder bound to the caller's user id.
+ * Exported so a DB-backed test can run them against the real schema.
+ *
+ *   - IRE chains carry no user column; they belong to whoever owns the session.
+ *     A chain with no session (e.g. a Markets consul deliberation) is instance
+ *     work, so a non-admin does not see it — the fail-closed rule for unattributed
+ *     rows in middleware/ownership.ts.
+ *   - Rendered artifacts: the caller rendered it, or it renders the caller's own
+ *     session. The second arm covers rows written with no created_by. The
+ *     placeholder appears twice and binds the same single value.
+ *   - Signed delivery has no per-user owner at all: the entries are signed by the
+ *     instance's one community identity for the instance's delegated tasks. `null`
+ *     means a scoped caller sees none of them.
+ */
+export const TRAIL_OWNER_SQL: Record<TrailKind, ((p: string) => string) | null> = {
+  ire_revelation:    (p) => `session_id IN (SELECT id FROM sessions WHERE user_id = ${p})`,
+  workflow_run:      (p) => `user_id = ${p}`,
+  signed_delivery:   null,
+  evidence_pack:     (p) => `created_by = ${p}`,
+  renderer_artifact: (p) => `(created_by = ${p} OR session_id IN (SELECT id FROM sessions WHERE user_id = ${p}))`,
+};
+
+/**
+ * The scope's contribution to one kind's WHERE clause: null when unscoped, the
+ * predicate and its one bound value when scoped, or 'deny' when this scope may see
+ * no row of the kind — the caller then returns [] without querying.
+ */
+function scopeCondition(
+  kind: TrailKind,
+  scope: TrailScope,
+  placeholder: string,
+): { sql: string; param: string } | null | 'deny' {
+  if (scope.kind === 'all') return null;
+  const predicate = TRAIL_OWNER_SQL[kind];
+  if (scope.kind === 'none' || !predicate) return 'deny';
+  return { sql: predicate(placeholder), param: scope.userId };
+}
+
+/** Per-kind query options. `rowId` is set only by getTrail, to fetch one row. */
+interface KindQuery extends TrailListOptions {
+  rowId?: string;
+}
+
 // ── Per-kind queries ───────────────────────────────────────────────────
 // Each pulls into the unified shape. Kept separate for readability.
 
-async function listIreRevelations(db: DatabaseAdapter, opts: TrailListOptions): Promise<TrailEntry[]> {
+/** revelation_chains SQL, exported for the owner-scope DB test. */
+export const IRE_REVELATION_SQL = {
+  /** `where` is either '' or a full `WHERE …` clause using $n placeholders. */
+  chains: (where: string): string =>
+    `SELECT id, session_id, thinking_level, phase_count,
+            total_input_tokens, total_output_tokens, total_duration_ms,
+            synthesis_quality_score, created_at
+       FROM revelation_chains
+       ${where}
+       ORDER BY created_at DESC
+       LIMIT 200`,
+} as const;
+
+async function listIreRevelations(db: DatabaseAdapter, scope: TrailScope, opts: KindQuery): Promise<TrailEntry[]> {
   const conds: string[] = [];
   const args: unknown[] = [];
   let i = 1;
+  const owned = scopeCondition('ire_revelation', scope, `$${i}`);
+  if (owned === 'deny') return [];
+  if (owned) { conds.push(owned.sql); args.push(owned.param); i++; }
+  if (opts.rowId)     { conds.push(`id = $${i++}`); args.push(opts.rowId); }
   if (opts.sessionId) { conds.push(`session_id = $${i++}`); args.push(opts.sessionId); }
   if (opts.from)      { conds.push(`created_at >= $${i++}`); args.push(opts.from); }
   if (opts.to)        { conds.push(`created_at <= $${i++}`); args.push(opts.to); }
@@ -99,16 +191,7 @@ async function listIreRevelations(db: DatabaseAdapter, opts: TrailListOptions): 
     total_duration_ms: number;
     synthesis_quality_score: number | null;
     created_at: string;
-  }>(
-    `SELECT id, session_id, thinking_level, phase_count,
-            total_input_tokens, total_output_tokens, total_duration_ms,
-            synthesis_quality_score, created_at
-       FROM revelation_chains
-       ${where}
-       ORDER BY created_at DESC
-       LIMIT 200`,
-    ...args
-  );
+  }>(IRE_REVELATION_SQL.chains(where), ...args);
 
   return rows.map(r => ({
     id: `ire:${r.id}`,
@@ -146,10 +229,16 @@ export const WORKFLOW_RUN_SQL = {
        LIMIT 200`,
 } as const;
 
-async function listWorkflowRuns(db: DatabaseAdapter, opts: TrailListOptions): Promise<TrailEntry[]> {
+async function listWorkflowRuns(db: DatabaseAdapter, scope: TrailScope, opts: KindQuery): Promise<TrailEntry[]> {
   const conds: string[] = [];
   const args: unknown[] = [];
   let i = 1;
+  // Runs started by the scheduler / Markets orchestrator carry user_id
+  // 'scheduler' / 'system', so they fall outside every non-admin's scope.
+  const owned = scopeCondition('workflow_run', scope, `$${i}`);
+  if (owned === 'deny') return [];
+  if (owned) { conds.push(owned.sql); args.push(owned.param); i++; }
+  if (opts.rowId)  { conds.push(`id = $${i++}`); args.push(opts.rowId); }
   if (opts.userId) { conds.push(`user_id = $${i++}`); args.push(opts.userId); }
   if (opts.from)   { conds.push(`started_at >= $${i++}`); args.push(opts.from); }
   if (opts.to)     { conds.push(`started_at <= $${i++}`); args.push(opts.to); }
@@ -228,10 +317,15 @@ interface SignedTrailEntryRow {
   created_at: string;
 }
 
-async function listSignedDeliveries(db: DatabaseAdapter, opts: TrailListOptions): Promise<TrailEntry[]> {
+async function listSignedDeliveries(db: DatabaseAdapter, scope: TrailScope, opts: KindQuery): Promise<TrailEntry[]> {
   const conds: string[] = [];
   const args: unknown[] = [];
   let i = 1;
+  // No owner column (see TRAIL_OWNER_SQL): admins and solo only.
+  const owned = scopeCondition('signed_delivery', scope, `$${i}`);
+  if (owned === 'deny') return [];
+  if (owned) { conds.push(owned.sql); args.push(owned.param); i++; }
+  if (opts.rowId) { conds.push(`id = $${i++}`); args.push(opts.rowId); }
   if (opts.from) { conds.push(`created_at >= $${i++}`); args.push(opts.from); }
   if (opts.to)   { conds.push(`created_at <= $${i++}`); args.push(opts.to); }
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
@@ -326,10 +420,14 @@ function parseFrameworks(raw: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 }
 
-async function listEvidencePacks(db: DatabaseAdapter, opts: TrailListOptions): Promise<TrailEntry[]> {
+async function listEvidencePacks(db: DatabaseAdapter, scope: TrailScope, opts: KindQuery): Promise<TrailEntry[]> {
   const conds: string[] = [];
   const args: unknown[] = [];
   let i = 1;
+  const owned = scopeCondition('evidence_pack', scope, `$${i}`);
+  if (owned === 'deny') return [];
+  if (owned) { conds.push(owned.sql); args.push(owned.param); i++; }
+  if (opts.rowId)  { conds.push(`id = $${i++}`); args.push(opts.rowId); }
   if (opts.userId) { conds.push(`created_by = $${i++}`); args.push(opts.userId); }
   if (opts.from)   { conds.push(`created_at >= $${i++}`); args.push(opts.from); }
   if (opts.to)     { conds.push(`created_at <= $${i++}`); args.push(opts.to); }
@@ -387,10 +485,14 @@ export const RENDERER_ARTIFACT_SQL = {
        LIMIT 200`,
 } as const;
 
-async function listRendererArtifacts(db: DatabaseAdapter, opts: TrailListOptions): Promise<TrailEntry[]> {
+async function listRendererArtifacts(db: DatabaseAdapter, scope: TrailScope, opts: KindQuery): Promise<TrailEntry[]> {
   const conds: string[] = [];
   const args: unknown[] = [];
   let i = 1;
+  const owned = scopeCondition('renderer_artifact', scope, `$${i}`);
+  if (owned === 'deny') return [];
+  if (owned) { conds.push(owned.sql); args.push(owned.param); i++; }
+  if (opts.rowId)     { conds.push(`id = $${i++}`); args.push(opts.rowId); }
   if (opts.sessionId) { conds.push(`session_id = $${i++}`); args.push(opts.sessionId); }
   if (opts.userId)    { conds.push(`created_by = $${i++}`); args.push(opts.userId); }
   if (opts.from)      { conds.push(`created_at >= $${i++}`); args.push(opts.from); }
@@ -436,9 +538,12 @@ async function listRendererArtifacts(db: DatabaseAdapter, opts: TrailListOptions
 /**
  * Aggregate trails across kinds with filters + pagination.
  * Trail-kind selection is via opts.kinds; when absent, all kinds are queried.
+ * `scope` is applied inside each kind's SQL, before its LIMIT 200 — filtering after
+ * the fetch would let other users' newer rows crowd a caller's own out of the page.
  */
 export async function listTrails(
   db: DatabaseAdapter,
+  scope: TrailScope,
   opts: TrailListOptions = {}
 ): Promise<TrailListResult> {
   const limit = Math.min(opts.limit ?? 50, 200);
@@ -447,11 +552,11 @@ export async function listTrails(
 
   // Run per-kind queries in parallel — each is bounded to 200 rows.
   const buckets = await Promise.all([
-    kinds.includes('ire_revelation')   ? listIreRevelations(db, opts)  : Promise.resolve([] as TrailEntry[]),
-    kinds.includes('workflow_run')     ? listWorkflowRuns(db, opts)    : Promise.resolve([] as TrailEntry[]),
-    kinds.includes('signed_delivery')  ? listSignedDeliveries(db, opts): Promise.resolve([] as TrailEntry[]),
-    kinds.includes('evidence_pack')    ? listEvidencePacks(db, opts)   : Promise.resolve([] as TrailEntry[]),
-    kinds.includes('renderer_artifact')? listRendererArtifacts(db, opts): Promise.resolve([] as TrailEntry[]),
+    kinds.includes('ire_revelation')   ? listIreRevelations(db, scope, opts)  : Promise.resolve([] as TrailEntry[]),
+    kinds.includes('workflow_run')     ? listWorkflowRuns(db, scope, opts)    : Promise.resolve([] as TrailEntry[]),
+    kinds.includes('signed_delivery')  ? listSignedDeliveries(db, scope, opts): Promise.resolve([] as TrailEntry[]),
+    kinds.includes('evidence_pack')    ? listEvidencePacks(db, scope, opts)   : Promise.resolve([] as TrailEntry[]),
+    kinds.includes('renderer_artifact')? listRendererArtifacts(db, scope, opts): Promise.resolve([] as TrailEntry[]),
   ]);
 
   let merged = buckets.flat();
@@ -478,12 +583,35 @@ export async function listTrails(
   return { entries, total, hasMore: offset + entries.length < total };
 }
 
-/** Return one trail by composite id (returned in TrailEntry.id, e.g. `ire:<chainId>`). */
-export async function getTrail(db: DatabaseAdapter, compositeId: string): Promise<TrailEntry | null> {
-  const [kind, raw] = compositeId.split(':');
-  if (!kind || !raw) return null;
-  const single = (await listTrails(db, {})).entries.find(e => e.id === compositeId);
-  // Note: O(n) over the merged list; acceptable for first-pass detail surface.
-  // A future optimisation would dispatch per-kind (see open question in 23-reasoning-trails.md).
-  return single ?? null;
+type KindLister = (db: DatabaseAdapter, scope: TrailScope, opts: KindQuery) => Promise<TrailEntry[]>;
+
+/** Composite-id prefix → the kind's lister. A Map, so `__proto__` and friends miss. */
+const LISTER_BY_ID_PREFIX = new Map<string, KindLister>([
+  ['ire', listIreRevelations],
+  ['wf', listWorkflowRuns],
+  ['signed', listSignedDeliveries],
+  ['ep', listEvidencePacks],
+  ['rend', listRendererArtifacts],
+]);
+
+/**
+ * Return one trail by composite id (returned in TrailEntry.id, e.g. `ire:<chainId>`),
+ * or null when it does not exist OR `scope` may not see it — the route answers both
+ * with the same 404.
+ *
+ * Dispatches to the one kind and looks the row up by id with the owner predicate in
+ * the same WHERE. It used to scan the unscoped merged feed, which both leaked every
+ * user's trails and missed anything older than the newest 50.
+ */
+export async function getTrail(db: DatabaseAdapter, scope: TrailScope, compositeId: string): Promise<TrailEntry | null> {
+  const sep = compositeId.indexOf(':');
+  if (sep <= 0) return null;
+  const prefix = compositeId.slice(0, sep);
+  const rowId = compositeId.slice(sep + 1);
+  const lister = LISTER_BY_ID_PREFIX.get(prefix);
+  if (!lister || !rowId) return null;
+  // rendered_artifacts.id is BIGINT; a non-numeric id would only make PG throw.
+  if (prefix === 'rend' && !/^\d+$/.test(rowId)) return null;
+  const rows = await lister(db, scope, { rowId });
+  return rows.find(e => e.id === compositeId) ?? null;
 }

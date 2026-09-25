@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { randomUUID } from 'crypto';
 import { createCodingEngine } from '../services/coding-engine.js';
 import { ownerFilter } from '../middleware/ownership.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -88,7 +89,12 @@ export async function createCodingScriptsRoutes(db: DatabaseAdapter): Promise<Ro
   // "ran against sample data ✓ / failed ✗" UI. See SANDBOX_LIMITS in the
   // response for the documented limits (network is NOT blocked — local
   // process, not a container).
-  router.post('/coding/script-lite/preview', async (req, res) => {
+  //
+  // Team mode: ADMIN-only. The script comes straight from the request body and
+  // runs on the host as the server's user; the temp-dir cwd confines nothing, so
+  // on a shared server any user could read every user's uploads (and .env)
+  // through it. Solo mode is unchanged (requireAdminOrSolo is a no-op there).
+  router.post('/coding/script-lite/preview', requireAdminOrSolo, async (req, res) => {
     try {
       const { script, data_sample, language } = req.body as { script?: string; data_sample?: string; language?: string };
       if (!script || typeof script !== 'string') return res.status(400).json({ error: 'script is required' });

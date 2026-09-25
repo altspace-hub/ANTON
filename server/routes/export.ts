@@ -6,6 +6,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
 import { buildProvenanceAppendix } from '../services/export-provenance.js';
 import { getOversightStatus } from '../services/oversight-status.js';
+import { scopesToOwner, assertOwned, type OwnedRequest } from '../middleware/ownership.js';
 
 // PERF-04: Heavy export libraries (docx, exceljs, puppeteer) are loaded lazily on first use
 // to improve server startup time. Dynamic imports are cached by Node's module system after first call.
@@ -54,6 +55,24 @@ function getUserId(req: unknown): string {
 export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
+  /**
+   * Team isolation: the session an export may tie itself to. metadata.sessionId
+   * comes from the browser; with it the export read the session's run record
+   * (sources, model, reviewer, quality score) into the provenance appendix, read
+   * its oversight status and wrote a session_exports row into it — for any id.
+   * A session that is not the caller's is treated as absent, the way an
+   * export with no session has always worked, so the file is still produced and
+   * nothing says whether the id exists. Checked in SQL before anything keyed on
+   * it. Solo mode and admins keep the id as sent.
+   */
+  async function ownSessionOrAbsent(req: OwnedRequest, sessionId: string | undefined): Promise<string | undefined> {
+    if (!sessionId || !scopesToOwner(req)) return sessionId;
+    const userId = req.user?.id;
+    if (!userId) return undefined;
+    const row = await db.get('SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?', String(sessionId), userId);
+    return row ? sessionId : undefined;
+  }
+
   // POST /api/export — generate file for download
   router.post('/export', validate(ExportSchema), async (req, res) => {
     try {
@@ -96,8 +115,9 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       let model           = (metadata?.model           as string | undefined);
       let thinking        = (metadata?.thinking        as string | undefined);
       let moduleId        = (metadata?.moduleId        as string | undefined);
-      const sessionId     = (metadata?.sessionId       as string | undefined);
-      const messageId     = (metadata?.messageId       as string | undefined);
+      const sessionId     = await ownSessionOrAbsent(req, metadata?.sessionId as string | undefined);
+      // A message id means nothing without its session (every read below pairs the two).
+      const messageId     = sessionId ? (metadata?.messageId as string | undefined) : undefined;
       const creativity    = (metadata?.creativity      as string | undefined);
       let documentsLoaded = (metadata?.documentsLoaded as string[] | undefined);
 
@@ -310,6 +330,13 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       };
 
       // templateId, content, format validated by ExportWithTemplateSchema
+
+      // Team isolation (templates.ts rule): a brand template is its uploader's.
+      // Checked in SQL before the read; a colleague's template answers the same
+      // 404 as a missing one. Solo mode and admins are not scoped.
+      if (scopesToOwner(req) && !(await assertOwned(db, req, res, {
+        table: 'brand_templates', ownerColumn: 'user_id', id: templateId, notFoundMessage: 'Template not found',
+      }))) return;
 
       // Look up the template record from the shared db
       const tpl = await db.get('SELECT * FROM brand_templates WHERE id = ?', templateId) as

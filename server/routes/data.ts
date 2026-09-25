@@ -29,6 +29,17 @@ import {
 } from '../services/data-merger.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import path from 'path';
+import { isTeamMode, requireAdminOrSolo } from '../middleware/role-guards.js';
+
+/**
+ * On a team server, reading a file from the server's disk, writing one there,
+ * and exporting into ANTON's own database are instance-wide acts: an admin's.
+ * The importer also confines every path to ALLOWED_FOLDER_PATHS and every
+ * database export to DATA_EXPORT_TABLES, for everyone. Solo is unchanged.
+ */
+function hostDataRefused(req: Request): boolean {
+  return isTeamMode() && req.user?.role !== 'admin';
+}
 
 // In-memory cache for datasets during workflow execution
 // Key: dataset ID, Value: Dataset
@@ -46,6 +57,9 @@ export async function createDataRoutes(db: DatabaseAdapter) {
 router.post('/import', async (req: Request, res: Response) => {
   try {
     const config: ImportConfig = req.body;
+    if (config?.source === 'file' && hostDataRefused(req)) {
+      return res.status(403).json({ error: 'Only an administrator can import a file from the server' });
+    }
 
     // If database source, hand the importer ANTON's DB handle so it can LOOK UP the
     // configured connection. It is not the query target: importFromDatabase runs the
@@ -203,6 +217,10 @@ router.post('/export', async (req: Request, res: Response) => {
       config: ExportConfig;
     };
 
+    if ((config?.destination === 'file' || config?.destination === 'database') && hostDataRefused(req)) {
+      return res.status(403).json({ error: 'Only an administrator can export to a server file or to the database' });
+    }
+
     const dataset = datasetCache.get(datasetId);
     if (!dataset) {
       return res.status(404).json({ error: 'Dataset not found', datasetId });
@@ -328,10 +346,28 @@ router.delete('/cache/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /api/data/cache
- * Clear entire dataset cache
+ * GET /api/data/cache/:id/download
+ * The whole cached dataset as a JSON file download — what the Datasets page's
+ * Download button needs, without writing anything on the server.
  */
-router.delete('/cache', async (_req: Request, res: Response) => {
+router.get('/cache/:id/download', async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const dataset = datasetCache.get(id);
+  if (!dataset) {
+    return res.status(404).json({ error: 'Dataset not found', id });
+  }
+  const name = String(req.query.name ?? 'dataset').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 80) || 'dataset';
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${name}.json"`);
+  res.send(JSON.stringify(dataset.rows, null, 2));
+});
+
+/**
+ * DELETE /api/data/cache
+ * Clear the whole dataset cache — every user's datasets, so an admin action on
+ * a team server.
+ */
+router.delete('/cache', requireAdminOrSolo, async (_req: Request, res: Response) => {
   const size = datasetCache.size;
   datasetCache.clear();
 

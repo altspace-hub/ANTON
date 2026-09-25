@@ -27,7 +27,11 @@ function listFiles(folderPath: string): string[] {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) scan(full);
-        else if (SUPPORTED.includes(path.extname(entry.name).toLowerCase())) {
+        // isFile(), not "anything with a document extension": a symlink named
+        // x.pdf inside a whitelisted folder would otherwise be read through,
+        // indexing a file the folder guard never approved (e.g. someone's
+        // upload). Dirent.isFile() is false for a link, as isDirectory() is.
+        else if (entry.isFile() && SUPPORTED.includes(path.extname(entry.name).toLowerCase())) {
           files.push(full);
         }
       }

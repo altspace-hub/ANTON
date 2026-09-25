@@ -260,10 +260,37 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     }
   }
 
-  async function getModuleQualityTrend(moduleId: string, limit = 20) {
-    const scores = await db.all(`
-      SELECT * FROM quality_scores WHERE module_id = ? AND origin = 'run' ORDER BY scored_at DESC LIMIT ?
-    `, moduleId, limit) as any[];
+  /**
+   * Latest run scores for a module, plus its baseline.
+   *
+   * `ownerUserId` (team mode, non-admin callers) limits the score rows to that
+   * user's own sessions — or own Risk Atlases, whose board-pack scores carry the
+   * atlas id in session_id (atlas.ts quality-score) — checked in SQL. Each row
+   * carries score_reasoning (the strengths, weaknesses and improvement suggestion
+   * describing the scored output), session_id and notes, and module ids are the
+   * public catalogue, so an unscoped list handed every colleague's reasoning to
+   * anyone. Omitted = not scoped (solo, admins, internal callers); a scoped call
+   * with no identity gets no rows. A score with no owner behind it is visible
+   * unscoped only. The baseline is an instance-wide aggregate and stays unscoped.
+   */
+  async function getModuleQualityTrend(moduleId: string, opts: { limit?: number; ownerUserId?: string | null } = {}) {
+    const limit = opts.limit ?? 20;
+    let scores: Array<Record<string, unknown>>;
+    if (opts.ownerUserId === undefined) {
+      scores = await db.all(`
+        SELECT * FROM quality_scores WHERE module_id = ? AND origin = 'run' ORDER BY scored_at DESC LIMIT ?
+      `, moduleId, limit) as Array<Record<string, unknown>>;
+    } else if (!opts.ownerUserId) {
+      scores = [];
+    } else {
+      scores = await db.all(`
+        SELECT q.* FROM quality_scores q
+         WHERE q.module_id = ? AND q.origin = 'run'
+           AND (EXISTS (SELECT 1 FROM sessions s WHERE s.id = q.session_id AND s.user_id = ?)
+             OR EXISTS (SELECT 1 FROM risk_atlases r WHERE r.id = q.session_id AND r.owner_user_id = ?))
+         ORDER BY q.scored_at DESC LIMIT ?
+      `, moduleId, opts.ownerUserId, opts.ownerUserId, limit) as Array<Record<string, unknown>>;
+    }
     const baseline = await db.get('SELECT * FROM quality_baselines WHERE module_id = ?', moduleId) as any;
     return { scores: scores.reverse(), baseline };
   }
@@ -334,7 +361,14 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     return { id, newBaseline: baseline?.baseline_score };
   }
 
-  async function getFeedbackStats(moduleId: string): Promise<{
+  /**
+   * Star-rating stats for a module. The counts, average and distribution are
+   * instance-wide aggregates. `commentsOfUserId` (team mode, non-admin callers)
+   * limits recentComments to that user's own ratings, selected in SQL: the
+   * comments are free text written about a colleague's output. Omitted = not
+   * scoped; a scoped call with no identity gets no comments.
+   */
+  async function getFeedbackStats(moduleId: string, opts: { commentsOfUserId?: string | null } = {}): Promise<{
     count: number;
     avgRating: number;
     distribution: Record<number, number>;
@@ -362,7 +396,18 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
       totalRating += row.rating;
     }
 
-    const recentComments = rows
+    let commentRows = rows;
+    if (opts.commentsOfUserId !== undefined) {
+      commentRows = opts.commentsOfUserId
+        ? await db.all(
+            `SELECT rating, comment, created_at FROM output_feedback
+              WHERE module_id = ? AND rating IS NOT NULL AND user_id = ? AND comment IS NOT NULL
+              ORDER BY created_at DESC LIMIT 100`,
+            moduleId, opts.commentsOfUserId,
+          ) as Array<{ rating: number; comment: string | null; created_at: string }>
+        : [];
+    }
+    const recentComments = commentRows
       .filter((r) => r.comment && r.comment.trim())
       .slice(0, 5)
       .map((r) => ({ rating: r.rating, comment: r.comment as string, created_at: r.created_at }));

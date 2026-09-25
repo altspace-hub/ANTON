@@ -185,8 +185,27 @@ export async function createAgentService(db: DatabaseAdapter) {
     return id;
   }
 
-  async function getConversation(id: string): Promise<{ conversation: Record<string, unknown>; messages: Array<Record<string, unknown>> } | null> {
-    const conversation = await db.get('SELECT * FROM agent_conversations WHERE id = ?', id);
+  /**
+   * One conversation with its messages. With `continuing`, only a conversation of
+   * that agent AND that requester is returned — the check a caller-supplied id
+   * needs before its history goes into a prompt and a new turn is appended to it
+   * (agent-processor). agent_conversations has no user column; requester_hash is
+   * what createConversation recorded for whoever started it (NULL for the desktop
+   * and companion-app routes, a contact hash for peers). A foreign id is simply
+   * not found, like a missing one. Without `continuing` (GET
+   * /agents/conversations/:id, which checks the owning agent itself) the lookup
+   * is by id alone, as before.
+   */
+  async function getConversation(
+    id: string,
+    continuing?: { agentId: string; requesterHash: string | null },
+  ): Promise<{ conversation: Record<string, unknown>; messages: Array<Record<string, unknown>> } | null> {
+    const conversation = continuing
+      ? await db.get(
+        'SELECT * FROM agent_conversations WHERE id = ? AND agent_id = ? AND requester_hash IS NOT DISTINCT FROM ?',
+        id, continuing.agentId, continuing.requesterHash,
+      )
+      : await db.get('SELECT * FROM agent_conversations WHERE id = ?', id);
     if (!conversation) return null;
     const messages = await db.all('SELECT * FROM agent_messages WHERE conversation_id = ? ORDER BY created_at ASC', id);
     return { conversation, messages };

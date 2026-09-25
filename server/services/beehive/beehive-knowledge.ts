@@ -16,6 +16,7 @@
 // 4 will add cross-instance ingestion via AAP.
 
 import type { DatabaseAdapter } from '../../db/database.js';
+import { atomOwnerSql, NO_OWNED_CONTENT } from '../hybrid-search.js';
 import type { DisclosurePolicy, SharedAtom } from './types.js';
 
 interface AtomRow {
@@ -123,12 +124,28 @@ export function createBeehiveKnowledge(db: DatabaseAdapter) {
    * In Phase 2 local mode this is read directly from `knowledge_atoms`. In
    * Phase 4 the same shape will be sent over AAP and persisted into the
    * recipient's `beehive_shared_atoms` table.
+   *
+   * Whose atoms: the INSTANCE's shared knowledge. A hive participant is this
+   * instance's community identity (community_identity, one per instance — the
+   * Queen and every local participant are that contact hash), not a desktop
+   * user, so on a team server there is no person whose own atoms it may speak
+   * for: disclosure is the atoms with no owner (atomOwnerSql(NO_OWNED_CONTENT)),
+   * the rule /p2p/knowledge-query answers peers by. It used to select across
+   * every user's atoms for all three atom levels, and GET
+   * /beehive/hives/:id/disclosable-atoms previewed them, content included, to any
+   * logged-in user. Solo has one human and is not owner-filtered, as before.
+   * Code Studio atoms (coding_project_id set) are never disclosed, in solo too:
+   * they describe a private codebase (test failures, CVEs, panel flags), and
+   * /p2p/knowledge-query keeps them out of peer answers by the same rule.
    */
   async function selectAtomsForDisclosure({ hiveQuestion, policy, scopeAreas }: SelectAtomsParams): Promise<SharedAtom[]> {
     if (policy.level === 'reasoning_only') return [];
 
     const limit = Math.max(0, Math.min(policy.max_atoms_shared ?? 50, 500));
     if (limit === 0) return [];
+
+    // Appended to every level's WHERE below (see "Whose atoms" above).
+    const shared = atomOwnerSql(NO_OWNED_CONTENT, 'owner_user_id');
 
     let rows: AtomRow[];
 
@@ -137,12 +154,12 @@ export function createBeehiveKnowledge(db: DatabaseAdapter) {
       rows = await db.all<AtomRow>(
         `SELECT id, content, atom_type, confidence, category, subcategory, tags, entities, created_at
          FROM knowledge_atoms
-         WHERE is_active = 1
+         WHERE is_active = 1 AND coding_project_id IS NULL${shared.sql}
            AND tags IS NOT NULL
            AND (tags LIKE '%"shareable"%' OR tags LIKE '%"beehive"%')
          ORDER BY confidence DESC, created_at DESC
          LIMIT ?`,
-        Math.min(limit * 4, 500),
+        ...shared.params, Math.min(limit * 4, 500),
       );
     } else if (policy.level === 'atoms_domain') {
       const keywords = extractKeywords(hiveQuestion);
@@ -164,33 +181,31 @@ export function createBeehiveKnowledge(db: DatabaseAdapter) {
           conditions.push(`source_area_id IN (${placeholders})`);
           args.push(...scopeAreas);
         }
-        args.push(Math.min(limit * 4, 500));
         rows = await db.all<AtomRow>(
           `SELECT id, content, atom_type, confidence, category, subcategory, tags, entities, created_at
            FROM knowledge_atoms
-           WHERE is_active = 1 AND (${conditions.join(' AND ')})
+           WHERE is_active = 1 AND coding_project_id IS NULL AND (${conditions.join(' AND ')})${shared.sql}
            ORDER BY confidence DESC, created_at DESC
            LIMIT ?`,
-          ...args,
+          ...args, ...shared.params, Math.min(limit * 4, 500),
         );
       }
     } else {
       // full_context — most recent + highest confidence, scoped if requested
-      const conditions: string[] = ['is_active = 1'];
+      const conditions: string[] = ['is_active = 1', 'coding_project_id IS NULL'];
       const args: unknown[] = [];
       if (scopeAreas && scopeAreas.length > 0) {
         const placeholders = scopeAreas.map(() => '?').join(', ');
         conditions.push(`source_area_id IN (${placeholders})`);
         args.push(...scopeAreas);
       }
-      args.push(Math.min(limit * 4, 500));
       rows = await db.all<AtomRow>(
         `SELECT id, content, atom_type, confidence, category, subcategory, tags, entities, created_at
          FROM knowledge_atoms
-         WHERE ${conditions.join(' AND ')}
+         WHERE ${conditions.join(' AND ')}${shared.sql}
          ORDER BY confidence DESC, created_at DESC
          LIMIT ?`,
-        ...args,
+        ...args, ...shared.params, Math.min(limit * 4, 500),
       );
     }
 

@@ -31,7 +31,9 @@ interface FakeState {
 }
 
 function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
-  const state: FakeState = { inserts: [], calls: [], members: new Set(['bob']) };
+  // Alice created the project (projects.user_id) and, as projects.ts does, is a
+  // member of it: projects.user_id alone no longer counts once a project has members.
+  const state: FakeState = { inserts: [], calls: [], members: new Set(['alice', 'bob']) };
   const db = {
     dialect: 'postgresql',
     async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
@@ -40,6 +42,7 @@ function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
         return (params[0] === PROJECT ? { id: PROJECT, name: 'Orion acquisition', description: null, project_goal: null, user_id: 'alice' } : undefined) as T | undefined;
       }
       if (sql === PROJECT_CONTEXT_SQL.membership) return (params[0] === PROJECT && state.members.has(String(params[1])) ? { '?column?': 1 } : undefined) as T | undefined;
+      if (sql === PROJECT_CONTEXT_SQL.anyMember) return (params[0] === PROJECT && state.members.size > 0 ? { '?column?': 1 } : undefined) as T | undefined;
       throw new Error(`fake db: unexpected get(): ${sql.slice(0, 80)}`);
     },
     async all<T>(): Promise<T[]> { return []; },

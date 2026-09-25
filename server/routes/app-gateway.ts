@@ -404,9 +404,15 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'message required' });
       }
+      // requesterHash binds the conversation to this phone user: a continued
+      // conversationId only loads when its requester_hash matches
+      // (agent-service getConversation). Without it the lookup matched every
+      // NULL-requester conversation, so a known conversation id loaded
+      // someone else's history with that agent.
       const result = await agentProcessor.processQuery(String(req.params.id), message, {
         conversationId,
         source: 'app_gateway',
+        requesterHash: `app:${req.appUser!.id}`,
       });
       res.json({ success: true, ...result });
     } catch (err) {
@@ -428,8 +434,9 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       'X-Accel-Buffering': 'no',
     });
     try {
+      // requesterHash: the same binding as the sync route above.
       await agentProcessor.processQueryStream(String(req.params.id), message, {
-        conversationId, source: 'app_gateway',
+        conversationId, source: 'app_gateway', requesterHash: `app:${req.appUser!.id}`,
       }, res);
     } catch {
       // processQueryStream handles its own errors + res.end(); this only fires

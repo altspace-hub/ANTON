@@ -34,6 +34,7 @@
  */
 
 import type { DatabaseAdapter } from '../db/database.js';
+import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import {
   cosineSimilarity,
   deserializeVector,
@@ -73,6 +74,25 @@ export interface SearchQuery {
   rerank?: boolean;
   /** Floor for the vector side (default 0.3, same as hybrid-search.ts). */
   minSimilarity?: number;
+  /**
+   * Who is searching — pass the request. Collections are shared (regulations,
+   * client-docs …) but every document in one belongs to its uploader
+   * (rag_documents.uploaded_by), and search used to return every uploader's
+   * chunks to anyone who named the collection. In team mode a non-admin now
+   * reads only their own documents; solo and admins read all (ownerFilter).
+   * OMITTED in team mode means no identity and matches nothing — fail closed,
+   * never "everyone's".
+   */
+  owner?: OwnedRequest;
+}
+
+/**
+ * The document-owner predicate for every query in this file, on `d.uploaded_by`
+ * (rag_documents is aliased `d` throughout). Checked in SQL so another user's
+ * chunk is never loaded, scored or counted.
+ */
+function documentOwnerScope(owner: OwnedRequest | undefined): { sql: string; params: string[] } {
+  return ownerFilter(owner ?? {}, 'd.uploaded_by');
 }
 
 export interface ChunkMetadata {
@@ -226,8 +246,11 @@ export async function searchCollections(
   if (collections.length === 0) return emptySet('keyword', 'no collections selected');
   if (!query.query || !query.query.trim()) return emptySet('keyword', 'empty query');
 
-  // Chunk text + citation data for the selected collections (indexed only).
-  const chunks = applyMetadataFilters(await loadCollectionChunks(db, collections), query.filters);
+  const scope = documentOwnerScope(query.owner);
+
+  // Chunk text + citation data for the selected collections (indexed only),
+  // limited to the documents this caller may read.
+  const chunks = applyMetadataFilters(await loadCollectionChunks(db, collections, scope), query.filters);
   diagnostics.chunksConsidered = chunks.length;
   if (chunks.length === 0) return emptySet('keyword', 'no indexed chunks in the selected collection(s)');
   const chunkById = new Map(chunks.map((c) => [c.chunk_id, c]));
@@ -254,8 +277,8 @@ export async function searchCollections(
           AND e.embedding_model = ?
           AND e.embedding_dimension = ?
           AND d.index_status = 'indexed'
-          AND d.collection_id IN (${placeholders})`,
-      RAG_CHUNK_CONTENT_TYPE, adapter.model, adapter.dimensions, ...collections,
+          AND d.collection_id IN (${placeholders})${scope.sql}`,
+      RAG_CHUNK_CONTENT_TYPE, adapter.model, adapter.dimensions, ...collections, ...scope.params,
     );
     diagnostics.embeddedChunks = rows.length;
 
@@ -268,8 +291,8 @@ export async function searchCollections(
            JOIN rag_documents d ON d.id = c.document_id
           WHERE e.content_type = ?
             AND e.embedding_model <> ?
-            AND d.collection_id IN (${placeholders})`,
-        RAG_CHUNK_CONTENT_TYPE, adapter.model, ...collections,
+            AND d.collection_id IN (${placeholders})${scope.sql}`,
+        RAG_CHUNK_CONTENT_TYPE, adapter.model, ...collections, ...scope.params,
       );
       diagnostics.staleVectorChunks = Number(stale?.n ?? 0);
       diagnostics.reason = diagnostics.staleVectorChunks > 0
@@ -357,10 +380,12 @@ export async function keywordSearch(
   query: string,
   collectionIds: string[],
   limit: number = 10,
+  /** Who is searching — same contract as SearchQuery.owner (omitted in team mode = nothing). */
+  owner?: OwnedRequest,
 ): Promise<SearchResult[]> {
   const collections = [...new Set((collectionIds ?? []).filter((c) => typeof c === 'string' && c.length > 0))];
   if (collections.length === 0 || !query?.trim()) return [];
-  const chunks = await loadCollectionChunks(db, collections);
+  const chunks = await loadCollectionChunks(db, collections, documentOwnerScope(owner));
   const chunkById = new Map(chunks.map((c) => [c.chunk_id, c]));
   return rankByKeywordDensity(query, chunks)
     .slice(0, Math.max(1, limit))
@@ -387,15 +412,27 @@ export type ContextChunk = Omit<SearchResult, 'score' | 'scoreKind' | 'method' |
 /**
  * Chunks before and after a given chunk in the same document. Accepts the
  * rag_chunks.id (what results now report) or the legacy chroma_id.
+ *
+ * `owner` scopes the SEED lookup: a chunk of a document the caller may not read
+ * answers [] exactly like an unknown id, so ids seen elsewhere (an old search
+ * response, a shared transcript) do not open another user's document. The
+ * neighbours share the seed's document, so they inherit the check.
  */
 export async function getChunkContext(
   db: DatabaseAdapter,
   chunkId: string,
   contextSize: number = 2,
+  /** Who is asking — same contract as SearchQuery.owner (omitted in team mode = nothing). */
+  owner?: OwnedRequest,
 ): Promise<ContextChunk[]> {
+  const scope = documentOwnerScope(owner);
   const chunk = await db.get<{ document_id: string; chunk_index: number }>(
-    'SELECT document_id, chunk_index FROM rag_chunks WHERE id = ? OR chroma_id = ? LIMIT 1',
-    chunkId, chunkId,
+    `SELECT c.document_id, c.chunk_index
+       FROM rag_chunks c
+       JOIN rag_documents d ON d.id = c.document_id
+      WHERE (c.id = ? OR c.chroma_id = ?)${scope.sql}
+      LIMIT 1`,
+    chunkId, chunkId, ...scope.params,
   );
   if (!chunk) return [];
 
@@ -432,7 +469,11 @@ export async function getChunkContext(
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-async function loadCollectionChunks(db: DatabaseAdapter, collections: string[]): Promise<ChunkRow[]> {
+async function loadCollectionChunks(
+  db: DatabaseAdapter,
+  collections: string[],
+  scope: { sql: string; params: string[] },
+): Promise<ChunkRow[]> {
   const placeholders = collections.map(() => '?').join(',');
   return db.all<ChunkRow>(
     `SELECT c.id AS chunk_id, c.document_id, c.content, c.chunk_index, c.metadata,
@@ -441,8 +482,8 @@ async function loadCollectionChunks(db: DatabaseAdapter, collections: string[]):
        JOIN rag_documents d ON d.id = c.document_id
        JOIN knowledge_collections col ON col.id = d.collection_id
       WHERE d.collection_id IN (${placeholders})
-        AND d.index_status = 'indexed'`,
-    ...collections,
+        AND d.index_status = 'indexed'${scope.sql}`,
+    ...collections, ...scope.params,
   );
 }
 

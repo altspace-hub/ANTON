@@ -20,11 +20,20 @@
 // Ownership mirrors core-team.ts: a coding_project belongs to a `projects` row;
 // admins see everything, everyone else only their own. The orchestrator + the
 // bundler + signing are INJECTABLE so tests run with no live LLM / exec / DB-create.
+//
+// Team mode: /run and /run/approve-plan are ADMIN-only (after the ownership
+// 404). Advancing the loop writes model-generated code into the workspace, runs
+// the project's test command and host-side git there — code execution as the
+// server's user, which on a shared server reads every user's files. status,
+// stop and export run nothing and stay owner-scoped. Solo mode is unchanged.
 
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { scopesToOwner } from '../middleware/ownership.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import {
   createStudioOrchestrator,
   clampReviseCap,
@@ -73,11 +82,23 @@ async function loadOwnedCodingProject(
     projectId,
   );
   if (!row) { res.status(404).json({ error: 'Coding project not found' }); return null; }
-  if (userRole !== 'admin' && row.owner_user_id && row.owner_user_id !== userId) {
+  // scopesToOwner, not "role !== admin && owner set": a project with no owner
+  // must not be every team user's (ownership.ts fails closed on unattributed rows).
+  if (scopesToOwner({ user: { id: userId, role: userRole ?? '' } }) && row.owner_user_id !== userId) {
     res.status(404).json({ error: 'Coding project not found' });
     return null;
   }
   return row;
+}
+
+/**
+ * requireAdminOrSolo, called inline AFTER the ownership check so a foreign id
+ * still gets the plain 404 first. Returns false once it has replied 403.
+ */
+function passesAdminOrSolo(req: Request, res: Response): boolean {
+  let allowed = false;
+  requireAdminOrSolo(req, res, () => { allowed = true; });
+  return allowed;
 }
 
 function runView(run: StudioRun) {
@@ -117,6 +138,7 @@ export function createCodingStudioRoutes(db: DatabaseAdapter, deps: CodingStudio
     try {
       const project = await loadOwnedCodingProject(db, req as AuthedRequest, params.data.projectId, res);
       if (!project) return;
+      if (!passesAdminOrSolo(req, res)) return;
 
       const orch = makeOrchestrator(db);
       await orch.startOrResume({
@@ -145,6 +167,7 @@ export function createCodingStudioRoutes(db: DatabaseAdapter, deps: CodingStudio
     try {
       const project = await loadOwnedCodingProject(db, req as AuthedRequest, params.data.projectId, res);
       if (!project) return;
+      if (!passesAdminOrSolo(req, res)) return;
       const orch = makeOrchestrator(db);
       const existing = await orch.getRun(params.data.projectId);
       if (!existing) { res.status(404).json({ error: 'No studio run — start one first' }); return; }

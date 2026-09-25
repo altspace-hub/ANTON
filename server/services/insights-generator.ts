@@ -10,6 +10,7 @@
 
 import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat } from './provider-router.js';
+import { atomOwnerSql, type SearchScope } from './hybrid-search.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 interface InsightParams {
@@ -17,6 +18,14 @@ interface InsightParams {
   category?: string;
   areaId?: string;
   limit?: number;
+  /**
+   * Whose atoms are read — REQUIRED, like hybridSearch's scope, so a new caller
+   * has to decide. On a team server a non-admin's scope is their own atoms and
+   * the shared ones (atomOwnerSql); the routes build it with searchScopeForRequest.
+   * These atoms are quoted to the model and their ids returned with the insights,
+   * so an unscoped read handed every user's atoms to whoever asked.
+   */
+  scope: SearchScope;
 }
 
 interface Insight {
@@ -40,10 +49,11 @@ export async function createInsightsGenerator(db: DatabaseAdapter) {
   /**
    * Generate insights from recent knowledge atoms using Claude
    */
-  async function generateInsights(params: InsightParams = {}): Promise<Insight[]> {
+  async function generateInsights(params: InsightParams): Promise<Insight[]> {
     // Build query to fetch recent atoms
-    let query = 'SELECT * FROM knowledge_atoms WHERE is_active = 1';
-    const queryParams: any[] = [];
+    const owner = atomOwnerSql(params.scope, 'owner_user_id');
+    let query = `SELECT * FROM knowledge_atoms WHERE is_active = 1${owner.sql}`;
+    const queryParams: any[] = [...owner.params];
 
     if (params.timeRange) {
       const timeMap = {
@@ -164,9 +174,10 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get atom distribution by category
    */
-  async function getAtomDistribution(params: InsightParams = {}): Promise<Record<string, number>> {
-    let query = 'SELECT category, COUNT(*) as count FROM knowledge_atoms WHERE is_active = 1';
-    const queryParams: any[] = [];
+  async function getAtomDistribution(params: InsightParams): Promise<Record<string, number>> {
+    const owner = atomOwnerSql(params.scope, 'owner_user_id');
+    let query = `SELECT category, COUNT(*) as count FROM knowledge_atoms WHERE is_active = 1${owner.sql}`;
+    const queryParams: any[] = [...owner.params];
 
     if (params.timeRange) {
       const timeMap = {
@@ -191,31 +202,37 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   /**
    * Get top entities by interaction count
    */
-  async function getTopEntities(limit: number = 10): Promise<Array<{
+  async function getTopEntities(limit: number, scope: SearchScope): Promise<Array<{
     entity_type: string;
     entity_id: string;
     entity_name: string | null;
     atom_count: number;
   }>> {
+    // Entity names and counts come from the refs of the atoms this scope may
+    // read — the names are the clients and people in colleagues' atoms otherwise.
+    // Unscoped (solo, admin) it is the original statement, joining nothing.
+    const owner = atomOwnerSql(scope, 'ka.owner_user_id');
     const query = `
       SELECT
         entity_type,
         entity_id,
         MAX(entity_name) as entity_name,
         COUNT(DISTINCT atom_id) as atom_count
-      FROM knowledge_entity_refs
+      FROM knowledge_entity_refs${owner.sql ? `
+      JOIN knowledge_atoms ka ON ka.id = knowledge_entity_refs.atom_id
+      WHERE 1=1${owner.sql}` : ''}
       GROUP BY entity_type, entity_id
       ORDER BY atom_count DESC
       LIMIT ?
     `;
 
-    return await db.all(query, limit) as any[];
+    return await db.all(query, ...owner.params, limit) as any[];
   }
 
   /**
    * Get sentiment trend over time
    */
-  async function getSentimentTrend(days: number = 30): Promise<Array<{
+  async function getSentimentTrend(days: number, scope: SearchScope): Promise<Array<{
     date: string;
     positive: number;
     negative: number;
@@ -223,6 +240,7 @@ Return ONLY the JSON array, no markdown, no explanation.`;
     critical: number;
   }>> {
     const since = new Date(Date.now() - days * 86400000).toISOString();
+    const owner = atomOwnerSql(scope, 'owner_user_id');
     const query = `
       SELECT
         DATE(created_at) as date,
@@ -232,12 +250,12 @@ Return ONLY the JSON array, no markdown, no explanation.`;
         SUM(CASE WHEN sentiment = 'critical' THEN 1 ELSE 0 END) as critical
       FROM knowledge_atoms
       WHERE is_active = 1
-        AND created_at >= ?
+        AND created_at >= ?${owner.sql}
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `;
 
-    return await db.all(query, since) as any[];
+    return await db.all(query, since, ...owner.params) as any[];
   }
 
   return {

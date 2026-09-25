@@ -583,6 +583,19 @@ pnpm run test:e2e       # Playwright E2E tests
    - **Tokens:** every JWT carries a unique `jti`, and its lifetime is `JWT_EXPIRY`.
    - **Sign-in binding:** the one-time exchange code is bound to the browser by the `anton_auth_binder` cookie, and the flow uses PKCE plus a browser-bound `anton_oidc_state` cookie.
    - **Tests:** `tests/services/oidc-sso.test.ts`, plus `tests/routes/sso-oidc-flow.test.ts` (a fake Entra-shaped IdP, on a test database).
+8. **One person's data stays theirs (team mode).** On a shared server every route that reads or changes a user's rows checks the owner. The helpers are in `server/middleware/ownership.ts` (`scopesToOwner`, `ownerFilter`, `assertOwned`) and, for embedded content, `server/services/hybrid-search.ts` (`searchScopeForRequest`, `atomOwnerSql`, `strictOwnerSql`, `filterOwnedByScope`).
+   - **Who is scoped:** solo mode and team admins are never scoped; every other team user is.
+   - **Where the check runs:** in SQL, before the row is loaded. A row the caller may not see answers the same 404 as a missing one, never a 403.
+   - **Ids from the client:** a `sessionId`, `conversationId` or `projectId` in a request body is checked like one in the path. A session that is not the caller's is treated as absent.
+   - **Knowledge atoms:** a user reads their own atoms plus shared ones (`owner_user_id` NULL); only admins change shared atoms. Every atom writer sets the owner.
+   - **What never leaves the instance:** hives, peers and delegated tasks get shared atoms only, and never a Code Studio atom (`coding_project_id` set), in solo mode too.
+   - **Instance-wide actions are admin-only:** anything with no per-user owner, or that runs code on the host, uses `requireAdminOrSolo`. That covers brand and org context, the budget cap, knowledge packs, the orchestrator, embeddings maintenance, and Code Studio and hardware tool runs.
+   - **The server's disk and ANTON's own database:** a path from a request goes through `checkFolderPath` (`server/lib/folder-guard.ts`), in every mode. On a team server, only admins can read or write server files or export into the database, whether through `/api/data` or a workflow data step. Such an export writes only into tables listed in `DATA_EXPORT_TABLES`. An agent `database` connector with no connection string reads ANTON's database, so it:
+     - never reads account, credential or settings tables (`forbiddenLocalTable` in `server/services/agent-connector-executor.ts`);
+     - runs read-only, with a 5-second statement timeout;
+     - on a team server, runs only for an admin's agent.
+   - **Projects:** membership (`project_members`) decides access. An invitation is valid only while its sender may still give the role, and that is re-checked when it is accepted, including at sign-in.
+   - **Tests:** a new owned surface gets a team-mode test with a negative control (the owner, an admin and solo still see the row). See `tests/routes/team-isolation-round*.test.ts` and `tests/db/*owner-scope*.db.test.ts`.
 
 ---
 

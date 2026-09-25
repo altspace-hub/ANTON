@@ -16,6 +16,8 @@ import path from 'path';
 import fs from 'fs-extra';
 import { indexFolder } from '../services/rag/indexer.js';
 import { retrieveChunks } from '../services/rag/retriever.js';
+import { checkFolderPath } from '../lib/folder-guard.js';
+import { scopesToOwner } from '../middleware/ownership.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
 import { getEffectiveDefaultModel } from '../services/default-model-store.js';
@@ -1088,7 +1090,12 @@ ${deliveryTeam.map(m => {
       // on the engagement scope as query. These supplement (not replace) direct uploads.
       let ragDirectoryContext = '';
       const ragDirPath = (engagement as Record<string, unknown>).rag_directory_path as string | null;
-      if (ragDirPath) {
+      // The stored path was checked when it was set, not since: an engagement
+      // pointed at ./uploads before the team storage rule would keep pulling
+      // that (shared, owner-less) folder index — every user's uploads — into
+      // its runs. Re-check it for scoped callers; POST /:id/rag-directory
+      // already refuses new ones through indexFolder.
+      if (ragDirPath && (!scopesToOwner(req) || checkFolderPath(ragDirPath).ok)) {
         try {
           const scopeQuery = scope_items.slice(0, 5).map(si => si.title).join(' ');
           const ragChunks = await retrieveChunks(db, scopeQuery || String(engagement.engagement_brief || ''), [ragDirPath], 15, 0.05);

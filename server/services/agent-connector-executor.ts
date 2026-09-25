@@ -43,6 +43,7 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import { decryptConfig } from './credential-vault.js';
 import { assertSafeEgressUrl } from '../lib/ssrf-guard.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 
 export interface ConnectorConfig {
   id: string;
@@ -187,6 +188,30 @@ export interface SqlGuardResult { ok: boolean; error?: string }
  * unrecognised. The cost is that a literal containing ';' or '--' is rejected;
  * that is the right trade for model-authored SQL.
  */
+/**
+ * Tables of ANTON's OWN database that no connector may read, whatever its
+ * config.tables says: accounts, sessions and sign-in state, identities, stored
+ * credentials and keys, settings, and the connectors themselves. The allowlist
+ * is chosen by whoever configures the connector, so it cannot be what protects
+ * these — and an agent can be steered by anyone who talks to it (a public
+ * agent answers anonymous callers), so even an admin's connector must not be
+ * able to hand them out. Applied to the local branch only: an external
+ * database is the operator's own, and its `users` table is legitimately theirs.
+ */
+const LOCAL_FORBIDDEN_TABLE =
+  /^(users|user_[a-z0-9_]*|[a-z0-9_]*sessions?|[a-z0-9_]*tokens?|[a-z0-9_]*identit(y|ies)|[a-z0-9_]*credentials?|[a-z0-9_]*secrets?|[a-z0-9_]*passwords?|[a-z0-9_]*api_?keys?|[a-z0-9_]*vault[a-z0-9_]*|mfa[a-z0-9_]*|oauth[a-z0-9_]*|app_settings|settings|custom_model_endpoints|agent_connectors|connections|login_attempts|security_events|audit_events|pg_[a-z0-9_]*|information_schema)$/i;
+
+/** The first table `query` reads that no connector may read from ANTON's own database, if any. */
+export function forbiddenLocalTable(rawQuery: string): string | null {
+  for (const t of referencedTables(String(rawQuery ?? ''))) {
+    const parts = t.split('.');
+    // A schema-qualified name is judged by both halves: pg_catalog.x and
+    // information_schema.x are refused by their schema, public.users by its table.
+    if (parts.some((part) => LOCAL_FORBIDDEN_TABLE.test(part))) return t;
+  }
+  return null;
+}
+
 export function guardLocalSelect(rawQuery: string, allowedTables: string[]): SqlGuardResult {
   const query = String(rawQuery ?? '').trim();
   if (!query) return { ok: false, error: 'Empty query' };
@@ -423,10 +448,44 @@ export async function createConnectorExecutor(db: DatabaseAdapter) {
             await client.end();
           }
         } else {
-          // Local database — ANTON's OWN db, full privileges. guardLocalSelect
-          // above has already required SELECT-only, no separators, no comments,
-          // and a non-empty table allowlist that every FROM/JOIN target satisfies.
-          const rows = await db.all(query);
+          // Local database — ANTON's OWN db. guardLocalSelect above has already
+          // required SELECT-only, no separators, no comments, and a non-empty table
+          // allowlist that every FROM/JOIN target satisfies. That allowlist is the
+          // configuring user's own choice, so on its own it protects nothing:
+          //  - some tables are never readable here (forbiddenLocalTable);
+          //  - on a team server the agent must belong to an admin, because reading
+          //    ANTON's database is an instance-wide act (connectors of type
+          //    'database' can only be created by an admin there; this also stops
+          //    any made before that rule);
+          //  - the query runs read-only with a statement timeout, so a SELECT that
+          //    calls a data-changing function (nextval, …) fails, and a heavy one
+          //    cannot hold the database.
+          const forbidden = forbiddenLocalTable(query);
+          if (forbidden) {
+            return {
+              success: false, connectorName: connector.name, data: null,
+              error: `Table "${forbidden}" cannot be read through a connector`,
+              durationMs: Date.now() - startTime,
+            };
+          }
+          if (isTeamMode()) {
+            const owner = await db.get<{ role: string | null }>(
+              `SELECT u.role FROM agent_profiles a LEFT JOIN users u ON u.id = a.created_by WHERE a.id = ?`,
+              agentId,
+            );
+            if (owner?.role !== 'admin') {
+              return {
+                success: false, connectorName: connector.name, data: null,
+                error: "On a team server only an administrator's agent can read ANTON's database",
+                durationMs: Date.now() - startTime,
+              };
+            }
+          }
+          const rows = await db.transaction(async (tx) => {
+            await tx.run('SET TRANSACTION READ ONLY');
+            await tx.run("SET LOCAL statement_timeout = '5s'");
+            return tx.all(query);
+          });
           result = { rows: (rows as unknown[]).slice(0, 100), rowCount: (rows as unknown[]).length };
         }
       }

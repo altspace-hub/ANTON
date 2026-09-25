@@ -1393,7 +1393,19 @@ export async function bundleCodingStudioProject(
     }
   }
 
-  const validation = await validateWorkspacePath(project.directory_path as string | null | undefined);
+  // The project's own Studio slug, so team mode refuses a workspace that is a
+  // SIBLING project's coding-studio/<slug>/ (another user's code) — a binding
+  // made before that rule existed would otherwise still be read into the export.
+  // No studioOnly (WorkspaceScope): this function has no caller identity. The
+  // export route's ownership 404 decides who may export, and the only paths
+  // read are those this project's own applications wrote. Already loaded by
+  // the orchestrator import above, so this import adds no load-time work.
+  const { deriveProjectSlug } = await import('./coding-studio-provisioner.js');
+  let studioSlug: string | null = null;
+  try { studioSlug = deriveProjectSlug(projectId); } catch { /* no slug → no Studio folder is its own */ }
+  const validation = await validateWorkspacePath(
+    project.directory_path as string | null | undefined, process.env, { studioSlug },
+  );
   const codeManifest: Array<Record<string, unknown>> = [];
   const codeFiles: Array<{ path: string; content: string }> = [];
   for (const [relPath, meta] of latestByPath) {

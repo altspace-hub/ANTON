@@ -8,6 +8,7 @@ import { getEmbeddingAdapter } from '../services/embedding-adapter.js';
 import { countEmbeddedChunks, deleteCollectionChunkEmbeddings } from '../services/rag/chunk-embedder.js';
 import { reembedCollection, reindexStuck } from '../services/rag/collection-maintenance.js';
 import { requireAdminOrSolo } from '../middleware/role-guards.js';
+import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 
 interface CollectionUpdate {
   display_name?: string;
@@ -174,11 +175,16 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
   });
 
   /**
-   * Get documents in a collection
+   * Get documents in a collection. The collection is shared; its documents are
+   * not — each belongs to its uploader, so a team-mode non-admin sees only their
+   * own (filename, server path, size and metadata of everyone else's otherwise).
+   * Same scope as the sibling GET in documents.ts.
    */
   router.get('/collections/:id/documents', async (req, res) => {
     try {
-      const documents = await collectionManager.getCollectionDocuments(db, req.params.id);
+      const documents = await collectionManager.getCollectionDocuments(
+        db, req.params.id, ownerFilter(req as OwnedRequest, 'uploaded_by'),
+      );
       const enriched = (documents || []).map(doc => ({
         ...doc,
         metadata: parseJson(doc.metadata, {}),
@@ -211,6 +217,8 @@ export async function createCollectionsRoutes(db: DatabaseAdapter) {
         topK: limit,
         filters: filter,
         minSimilarity,
+        // Only the caller's own documents in team mode (solo/admin: all).
+        owner: req as OwnedRequest,
       });
 
       res.json({
