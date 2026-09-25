@@ -461,7 +461,7 @@ function compatHeaders(params: OpenAICompatibleStreamParams): Record<string, str
 /**
  * POST the chat request. One retry without response_format on a 400/422 that
  * names it; one retry after Retry-After on OpenRouter's in-flight budget 402;
- * up to two after Retry-After on a 429 (rate-limited upstream).
+ * up to three after Retry-After, doubling, on a 429 (rate-limited upstream).
  * Any other failure throws with a message the caller can show.
  */
 async function postCompatChat(
@@ -492,9 +492,10 @@ async function postCompatChat(
       await sleep(err.retryAfterMs);
       continue;
     }
-    if (err.code === 'COMPAT_RATE_LIMITED' && rateLimitRetries < 2 && !params.signal?.aborted) {
+    if (err.code === 'COMPAT_RATE_LIMITED' && rateLimitRetries < 3 && !params.signal?.aborted) {
       rateLimitRetries++;
-      await sleep(err.retryAfterMs * rateLimitRetries);
+      // 2 s, 4 s, 8 s by default: "retry shortly" upstream, measured live.
+      await sleep(err.retryAfterMs * 2 ** (rateLimitRetries - 1));
       continue;
     }
     throw err;

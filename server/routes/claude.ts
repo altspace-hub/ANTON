@@ -43,7 +43,7 @@ import {
 } from '../services/adapters/openaiCompatibleAdapter.js';
 import { resolveCompatModel, CompatEndpointError, modelAcceptsImages, type ResolvedCompatModel } from '../services/compat-endpoint.js';
 import { assertSpendAllowed, isSpendCapError, type SpendCostSource } from '../services/llm-spend.js';
-import { isDemoMode, demoOfferedModels } from '../middleware/demo-mode.js';
+import { isDemoMode, demoOfferedModels, demoPostAnswerCalls } from '../middleware/demo-mode.js';
 import { compatReasoningParam } from '../services/thinking-map.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
@@ -1651,8 +1651,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // (B2 fix: nothing ever wrote quality_avg, so promotion past 'guided'
             // was arithmetically impossible). Resolves to null when scoring is
             // skipped (short output) or failed — null means "do not fold".
+            // Public demo: after-answer calls are limited (DEMO_POST_ANSWER_CALLS).
+            const postAnswer = demoPostAnswerCalls();
             const qualityScorePromise: Promise<number | null> =
-              data.text && data.text.length > 200
+              postAnswer === 'all' && data.text && data.text.length > 200
                 ? ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
                     .then((r) => (typeof r?.score?.overall === 'number' && Number.isFinite(r.score.overall) ? r.score.overall : null))
                     .catch(() => null)
@@ -1662,7 +1664,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // doesn't spawn N parallel Haiku calls. Deduplicates per-session.
             // Missing moduleId falls back to analytic_report (most permissive);
             // threshold lowered to 100 chars to cover short policy outputs.
-            if (sessionId && data.text && data.text.length > 100) {
+            if (postAnswer === 'all' && sessionId && data.text && data.text.length > 100) {
               void enqueueExtraction({
                 sessionId,
                 markdown: data.text,
@@ -1748,7 +1750,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // layer and the resume block read it. Same privacy gate as atoms.
             // Fire-and-forget: it never rejects, and it runs after the engine
             // slot is released (the SDK client releases before onComplete).
-            if (atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
+            if (postAnswer !== 'none' && atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
               void writeSessionConclusion(db, {
                 sessionId: String(sessionId),
                 messageId: assistantMessageId,

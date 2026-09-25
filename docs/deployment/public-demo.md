@@ -278,6 +278,23 @@ Then:
 3. **Leave Double-check off.** The "independent" second opinion would be the same model checking itself. If you want it, name a second, different cheap model as the verifier.
 4. **Test.** In a private window, sign up with the invite code, run a short module and export the answer. Then check the spend (section 8).
 
+### Rate limits: the price of the EU pin
+
+The EU pin allows exactly two providers, Inceptron and NextBit, with no fallback. In a live test on 2026-09-25 that worked, but it was fragile:
+
+- **429s were common.** A single run was usually fine. But one call in four got `429 temporarily rate-limited upstream` while other calls ran on the same key. Every call that fired together with others was refused. OpenRouter's message suggests adding your own provider key.
+- **ANTON softens it.** A 429 is retried three times (2, 4, then 8 s), and a visitor who still gets one sees "busy, try again in a moment". On the demo, an answer is followed by at most the session conclusion (`DEMO_POST_ANSWER_CALLS`), not three calls at once.
+- **Answers are slow on the pin:** 45 s to 3.5 min for a full module answer. Visitors see the text arrive as it is written.
+
+If several visitors at once still get refused, you have three options:
+
+1. **Keep EU compute first, with a fallback.** Keep zero data retention, but let OpenRouter fall back to other providers. Their compute may be outside the EU, so the privacy notice has to say so:
+   ```json
+   {"provider":{"order":["inceptron","nextbit"],"allow_fallbacks":true,"zdr":true,"data_collection":"deny"}}
+   ```
+2. **Bring your own key:** add your own Inceptron or NextBit key in OpenRouter (Settings → Integrations). Your own rate limits then apply.
+3. **Let fewer people in at once:** a smaller `DEMO_MAX_SIGNUPS_PER_DAY`, or hand out invite codes in batches.
+
 ## 6. What visitors can reach
 
 - **Non-admins** reach only what the Work page needs:

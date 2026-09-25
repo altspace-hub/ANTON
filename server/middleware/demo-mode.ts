@@ -125,6 +125,23 @@ function unknownPillarNames(env: Env): string[] {
 }
 
 /** DEMO_OFFERED_MODELS: the full model ids the picker offers visitors. */
+/**
+ * The model calls a demo makes after each answer, besides the answer itself:
+ * 'all' (quality score, structured extraction, session conclusion — what every
+ * other install does), 'conclusion' (the default: only the session conclusion,
+ * which the page shows) or 'none'. A live run on 2026-09-25 showed why: the
+ * three calls fire together right after the answer, each can cost more than the
+ * answer, and on a provider pin with no fallback all three were refused 429.
+ * The Transform panel the extraction feeds is not open to visitors anyway.
+ * Outside demo mode this is always 'all'.
+ */
+export type DemoPostAnswerCalls = 'all' | 'conclusion' | 'none';
+export function demoPostAnswerCalls(env: Env = process.env): DemoPostAnswerCalls {
+  if (!isDemoMode(env)) return 'all';
+  const v = String(env.DEMO_POST_ANSWER_CALLS ?? '').trim().toLowerCase();
+  return v === 'all' || v === 'none' ? v : 'conclusion';
+}
+
 export function demoOfferedModels(env: Env = process.env): string[] {
   return [...new Set(listEnv(env.DEMO_OFFERED_MODELS))];
 }
