@@ -46,6 +46,8 @@ function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelP
   const update = (path: string, value: unknown) => {
     const newConfig = JSON.parse(JSON.stringify(config)) as KnowledgeSourceConfig;
     const parts = path.split('.');
+    // The paths are this component's own, but a key that reaches the prototype is never followed.
+    if (parts.some((p) => p === '__proto__' || p === 'constructor' || p === 'prototype')) return;
     let obj: Record<string, unknown> = newConfig as unknown as Record<string, unknown>;
     for (let i = 0; i < parts.length - 1; i++) {
       obj = obj[parts[i]] as Record<string, unknown>;
