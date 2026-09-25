@@ -3,12 +3,27 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import * as cron from 'node-cron';
 import { createRegulatoryRadar } from '../services/regulatory-radar.js';
-import type { createRadarFetcher } from '../services/radar-fetcher.js';
+import {
+  type createRadarFetcher,
+  isRadarAutomationDisabled,
+  clampAutoScanIntervalHours,
+  radarCronIsAtMostHourly,
+  MIN_AUTO_SCAN_INTERVAL_HOURS,
+  MAX_AUTO_SCAN_INTERVAL_HOURS,
+} from '../services/radar-fetcher.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 type RadarFetcher = Awaited<ReturnType<typeof createRadarFetcher>>;
 
+/**
+ * The radar is one per instance: its sources, items and schedule are shared by
+ * every user. Reading it is open to everyone; anything that changes it or makes
+ * it spend (sources, manual items, AI scoring, scans, the auto-scan settings)
+ * is admin-only in team mode (requireAdminOrSolo). Triage of an item's status
+ * stays open to every user.
+ */
 export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetcher) {
   const router = Router();
   const radar = await createRegulatoryRadar(db);
@@ -38,7 +53,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   });
 
   // POST /api/radar/sources — create source
-  router.post('/radar/sources', async (req, res) => {
+  router.post('/radar/sources', requireAdminOrSolo, async (req, res) => {
     try {
       const { displayName, url, sourceType, fetchIntervalHours, areas, keywords, category } = req.body;
       if (!displayName || !url || !sourceType) {
@@ -53,10 +68,10 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   });
 
   // PUT /api/radar/sources/:id — update source
-  router.put('/radar/sources/:id', async (req, res) => {
+  router.put('/radar/sources/:id', requireAdminOrSolo, async (req, res) => {
     try {
       const { displayName, url, sourceType, areas, keywords, category, isActive } = req.body;
-      await radar.updateSource(req.params.id, { displayName, url, sourceType, areas, keywords, category, isActive });
+      await radar.updateSource(String(req.params.id), { displayName, url, sourceType, areas, keywords, category, isActive });
       res.json({ ok: true });
     } catch (err) {
       console.error('[radar] source update error:', err);
@@ -65,9 +80,9 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   });
 
   // DELETE /api/radar/sources/:id — delete source
-  router.delete('/radar/sources/:id', async (req, res) => {
+  router.delete('/radar/sources/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      await radar.deleteSource(req.params.id);
+      await radar.deleteSource(String(req.params.id));
       res.json({ ok: true });
     } catch (err) {
       console.error('[radar] source delete error:', err);
@@ -95,7 +110,7 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   });
 
   // POST /api/radar/items — manually ingest item
-  router.post('/radar/items', async (req, res) => {
+  router.post('/radar/items', requireAdminOrSolo, async (req, res) => {
     try {
       const { sourceId, title, summary, url, itemType, publishedAt } = req.body;
       if (!sourceId || !title || !summary) {
@@ -127,9 +142,9 @@ export async function createRadarRoutes(db: DatabaseAdapter, fetcher?: RadarFetc
   });
 
   // POST /api/radar/items/:id/score — AI score item
-  router.post('/radar/items/:id/score', async (req, res) => {
+  router.post('/radar/items/:id/score', requireAdminOrSolo, async (req, res) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
       const { userAreas = [], userKeywords = [] } = req.body;
 
       // Fetch the item
@@ -183,7 +198,7 @@ Return ONLY valid JSON (no markdown, no extra text):
   // ── Scan endpoints ────────────────────────────────────────────
 
   // POST /api/radar/scan — scan active sources; optional body { category } limits to that category
-  router.post('/radar/scan', async (req, res) => {
+  router.post('/radar/scan', requireAdminOrSolo, async (req, res) => {
     if (!fetcher) {
       return res.status(503).json({ error: 'Radar fetcher not initialized (missing API key?)' });
     }
@@ -201,7 +216,7 @@ Return ONLY valid JSON (no markdown, no extra text):
   });
 
   // POST /api/radar/stop — stop a running scan
-  router.post('/radar/stop', async (_req, res) => {
+  router.post('/radar/stop', requireAdminOrSolo, async (_req, res) => {
     if (!fetcher) {
       return res.status(503).json({ error: 'Radar fetcher not initialized' });
     }
@@ -210,12 +225,12 @@ Return ONLY valid JSON (no markdown, no extra text):
   });
 
   // POST /api/radar/scan/:sourceId — scan a single source
-  router.post('/radar/scan/:sourceId', async (req, res) => {
+  router.post('/radar/scan/:sourceId', requireAdminOrSolo, async (req, res) => {
     if (!fetcher) {
       return res.status(503).json({ error: 'Radar fetcher not initialized (missing API key?)' });
     }
     try {
-      const result = await fetcher.scanSource(req.params.sourceId);
+      const result = await fetcher.scanSource(String(req.params.sourceId));
       res.json(result);
     } catch (err) {
       console.error('[radar] single-source scan error:', err);
@@ -241,9 +256,13 @@ Return ONLY valid JSON (no markdown, no extra text):
       for (const row of rows) settings[row.key] = row.value;
       res.json({
         autoScanEnabled: settings['auto_scan_enabled'] === '1',
-        autoScanIntervalHours: parseInt(settings['auto_scan_interval_hours'] || '24', 10),
+        // Clamped as the timer clamps it, so a form that sends the value back
+        // is never refused for a figure stored before the bounds existed.
+        autoScanIntervalHours: clampAutoScanIntervalHours(parseInt(settings['auto_scan_interval_hours'] || '24', 10)),
         autoScanCron: settings['auto_scan_cron'] || '',
         pevcScoringCriteria: settings['pevc_scoring_criteria'] || '',
+        // True while RADAR_AUTOMATION_DISABLED or DEMO_MODE keeps every scheduled scan off.
+        automationDisabled: isRadarAutomationDisabled(),
       });
     } catch (err) {
       console.error('[radar] settings read error:', err);
@@ -252,10 +271,28 @@ Return ONLY valid JSON (no markdown, no extra text):
   });
 
   // PUT /api/radar/settings — update auto-scan settings
-  router.put('/radar/settings', async (req, res) => {
+  router.put('/radar/settings', requireAdminOrSolo, async (req, res) => {
     try {
       const { autoScanEnabled, autoScanIntervalHours, autoScanCron, pevcScoringCriteria } = req.body as { autoScanEnabled?: boolean; autoScanIntervalHours?: number; autoScanCron?: string; pevcScoringCriteria?: string };
 
+      // Validate everything before writing anything. A scheduled scan calls the
+      // model for every new item with nobody watching: at most once an hour.
+      if (autoScanIntervalHours !== undefined) {
+        const h = Number(autoScanIntervalHours);
+        if (!Number.isFinite(h) || h < MIN_AUTO_SCAN_INTERVAL_HOURS || h > MAX_AUTO_SCAN_INTERVAL_HOURS) {
+          return res.status(400).json({
+            error: `autoScanIntervalHours must be between ${MIN_AUTO_SCAN_INTERVAL_HOURS} and ${MAX_AUTO_SCAN_INTERVAL_HOURS}`,
+          });
+        }
+      }
+      if (autoScanCron) {
+        if (!cron.validate(autoScanCron)) {
+          return res.status(400).json({ error: 'Invalid cron expression' });
+        }
+        if (!radarCronIsAtMostHourly(autoScanCron)) {
+          return res.status(400).json({ error: 'The radar cron schedule may run at most once an hour (use a fixed minute, e.g. "0 */6 * * *")' });
+        }
+      }
 
       if (autoScanEnabled !== undefined) {
         await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'auto_scan_enabled', autoScanEnabled ? '1' : '0');
@@ -264,28 +301,29 @@ Return ONLY valid JSON (no markdown, no extra text):
         await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'auto_scan_interval_hours', String(autoScanIntervalHours));
       }
       if (autoScanCron !== undefined) {
-        if (autoScanCron && !cron.validate(autoScanCron)) {
-          return res.status(400).json({ error: 'Invalid cron expression' });
-        }
         await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'auto_scan_cron', autoScanCron || '');
       }
       if (pevcScoringCriteria !== undefined) {
         await db.run('INSERT INTO radar_settings (key, value, updated_at) VALUES (?, ?, NOW()) ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()', 'pevc_scoring_criteria', pevcScoringCriteria.trim());
       }
 
-      // Apply schedule changes to the fetcher
+      // Apply schedule changes to the fetcher. startAutoScan refuses while
+      // RADAR_AUTOMATION_DISABLED or DEMO_MODE is set, and says so.
+      let autoScanActive = false;
       if (fetcher) {
         const enabled = autoScanEnabled ?? (await db.get("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'") as { value: string } | undefined)?.value === '1';
-        const hours = autoScanIntervalHours ?? parseInt((await db.get("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'") as { value: string } | undefined)?.value || '24', 10);
+        const hours = autoScanIntervalHours !== undefined
+          ? Number(autoScanIntervalHours)
+          : parseInt((await db.get("SELECT value FROM radar_settings WHERE key = 'auto_scan_interval_hours'") as { value: string } | undefined)?.value || '24', 10);
 
         if (enabled) {
-          fetcher.startAutoScan(hours);
+          autoScanActive = fetcher.startAutoScan(hours);
         } else {
           fetcher.stopAutoScan();
         }
       }
 
-      res.json({ ok: true });
+      res.json({ ok: true, autoScanActive, automationDisabled: isRadarAutomationDisabled() });
     } catch (err) {
       console.error('[radar] settings update error:', err);
       res.status(500).json({ error: 'Failed to update settings' });

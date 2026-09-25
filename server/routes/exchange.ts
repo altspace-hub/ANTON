@@ -4,6 +4,8 @@ import multer from 'multer';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
 import { isTeamMode, requireRole } from '../middleware/role-guards.js';
+import { canReadCustomModule } from './custom-modules.js';
+import type { OwnedRequest } from '../middleware/ownership.js';
 import { inspectModuleBundle } from '../services/anton-importer.js';
 import { preloadInstalledSkills } from '../services/skills-manager.js';
 import {
@@ -127,6 +129,12 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
       };
 
       if (type === 'custom') {
+        // A custom module has an owner (migration 290): export only one the caller
+        // may read, with the same 404 as a missing module.
+        if (!(await canReadCustomModule(db, req as unknown as OwnedRequest, String(moduleId)))) {
+          res.status(404).json({ error: 'Module not found' });
+          return;
+        }
         // Export custom module from database (works in both solo and authenticated mode)
         buffer = await bundleModuleToAnton(db, moduleId, { governance });
       } else {
@@ -159,6 +167,10 @@ export async function createExchangeRoutes(db: DatabaseAdapter) {
   // 404 for anything that is not a custom module (built-ins have no bundle).
   router.get('/exchange/modules/:id/fingerprint', async (req, res) => {
     try {
+      if (!(await canReadCustomModule(db, req as unknown as OwnedRequest, String(req.params.id)))) {
+        res.status(404).json({ error: 'Not a custom module' });
+        return;
+      }
       const fingerprint = await computeModuleFingerprint(db, req.params.id);
       if (!fingerprint) {
         res.status(404).json({ error: 'Not a custom module' });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -49,10 +49,14 @@ import {
   Plus,
   // Visitor Layer sidebar
   Video as VideoIcon,
+  // Public demo: sign out
+  LogOut,
 } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted, demoHiddenNavItems } from '@/lib/demo-config';
 import { fetchSessions, fetchProfile, fetchSessionStats, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import type { Session } from '@/lib/types';
 import AreaDashboard from './AreaDashboard';
@@ -390,7 +394,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
     return () => mq.removeEventListener('change', handler);
   }, []);
   const mini = sidebarCollapsed || isForcedMini;
-  const { user: authUser, isTeamMode } = useAuthStore();
+  const { user: authUser, isTeamMode, logout } = useAuthStore();
   const isAdmin = authUser?.role === 'admin' || !isTeamMode;
   // Track which areas are expanded — FCP open by default
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set(['fcp']));
@@ -412,7 +416,16 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       return new Set(DEFAULT_FAVORITE_NAV_ITEMS);
     }
   });
-  const [hiddenNavItems] = useState<Set<string>>(loadHiddenNavItems);
+  const [userHiddenNavItems] = useState<Set<string>>(loadHiddenNavItems);
+  // Public demo (DEMO_MODE=true): a visitor keeps the Work home, the module
+  // catalogue and the enabled pillars; the rest answers 404 on the server, so
+  // it is not offered here. Admins keep everything.
+  const demoConfig = useDemoStore((s) => s.config);
+  const demoLimited = demoRestricted(demoConfig, authUser?.role);
+  const hiddenNavItems = useMemo(() => new Set([
+    ...userHiddenNavItems,
+    ...demoHiddenNavItems(demoConfig, authUser?.role, ALL_NAV_ITEMS.map((item) => item.id)),
+  ]), [userHiddenNavItems, demoConfig, authUser?.role]);
 
   const toggleNavFavorite = (navId: string) => {
     setFavoriteNavItems((prev) => {
@@ -2046,7 +2059,8 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </>)}
 
         {/* ── Tools & Features section (collapsed by default) ──── */}
-        {!sidebarCollapsed && (
+        {/* Not on a public demo: none of these is a Work route the server lets a visitor reach. */}
+        {!sidebarCollapsed && !demoLimited && (
           <button
             onClick={() => toggleSection('tools')}
             aria-expanded={!!sectionsExpanded.tools}
@@ -2058,7 +2072,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </button>
         )}
 
-        {(sidebarCollapsed || sectionsExpanded.tools) && (<>
+        {!demoLimited && (sidebarCollapsed || sectionsExpanded.tools) && (<>
 
         <NavLinkWithStar
           to="/workflows"
@@ -2751,7 +2765,31 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         </>)}
       </nav>
 
+      {/* Public demo visitor: who is signed in, the privacy notice, and a way
+          out — the profile below leads to Settings, which a visitor cannot use. */}
+      {demoLimited && (
+        <div className="border-t border-border px-2 py-2">
+          {!sidebarCollapsed && authUser && (
+            <div className="truncate px-3 pb-1 text-sm text-adv-off-white" title={authUser.username}>{authUser.username}</div>
+          )}
+          <div className={`flex ${sidebarCollapsed ? 'flex-col items-center gap-1' : 'items-center justify-between px-3'} text-sm`}>
+            <a href={demoConfig.privacyPath} className="text-adv-gray hover:text-adv-teal transition-colors">
+              {sidebarCollapsed ? <Shield className="h-4 w-4" aria-label="Privacy notice" /> : 'Privacy notice'}
+            </a>
+            <button
+              type="button"
+              onClick={() => { void logout().then(() => navigate('/')); }}
+              className="text-adv-gray hover:text-adv-teal transition-colors"
+              title="Sign out"
+            >
+              {sidebarCollapsed ? <LogOut className="h-4 w-4" aria-label="Sign out" /> : 'Sign out'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Profile mini-summary */}
+      {!demoLimited && (
       <div className="border-t border-border px-2 py-2">
         {sidebarCollapsed ? (
           <button
@@ -2794,6 +2832,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           </button>
         )}
       </div>
+      )}
 
       {/* Toggle + Footer */}
       <div className="border-t border-border">

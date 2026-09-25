@@ -11,6 +11,8 @@ import PrivacyIndicator from '@/components/shared/PrivacyIndicator';
 import { NotificationDropdown } from '@/components/shared/NotificationDropdown';
 import { InsightsBell } from '@/components/shared/InsightsBell';
 import ModeToggle from '@/components/school/ModeToggle';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -31,6 +33,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
     return () => window.clearInterval(timer);
   }, [checkHealth]);
   const { user: authUser, isTeamMode } = useAuthStore();
+  // Public demo: a visitor reaches only the Work routes, so the insights,
+  // notifications and Settings would only show errors. Admins keep them.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), authUser?.role);
 
   // Build breadcrumb
   const parts: Array<{ label: string; path: string }> = [{ label: t('header.appName'), path: '/' }];
@@ -151,8 +156,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </button>
 
         {/* Notification Bell */}
-        <InsightsBell />
-        <NotificationDropdown />
+        {!demoLimited && <InsightsBell />}
+        {!demoLimited && <NotificationDropdown />}
 
         {/* Theme Toggle */}
         <button
@@ -164,12 +169,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : theme === 'light' ? <Building2 className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>
 
-        <Link
-          to="/settings"
-          className="rounded-lg p-2 text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
-        >
-          <Settings className="h-4 w-4" />
-        </Link>
+        {!demoLimited && (
+          <Link
+            to="/settings"
+            className="rounded-lg p-2 text-adv-gray hover:bg-adv-card hover:text-adv-off-white transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
+        )}
       </div>
     </header>
   );

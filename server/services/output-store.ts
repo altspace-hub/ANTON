@@ -2,6 +2,7 @@ import { getRoutedUtilityModel } from './utility-model.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { callChat } from './provider-router.js';
 import type { ExtractAtomsResult } from './atom-extractor.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -100,6 +101,8 @@ export const MIN_LEARNABLE_CHARS = 200;
 export const LEARNING_ERROR_MAX_CHARS = 500;
 /** How much of an output the summariser sees. */
 const SUMMARY_INPUT_CHARS = 4000;
+/** learning_error of an output stored while DEMO_MODE=true. */
+export const DEMO_MODE_SKIP_REASON = 'demo mode: no learning from visitors';
 
 /**
  * The statements, exported so a test can answer them by identity and
@@ -175,6 +178,13 @@ export async function runLearningForOutput(db: DatabaseAdapter, outputId: string
   const row = await db.get<LearningRow>(LEARNING_SQL.load, outputId);
   if (!row) return { outputId, status: 'missing', error: 'output not found' };
   if (row.learning_status === 'learned') return { outputId, status: 'learned', alreadyLearned: true };
+
+  // A public demo does not learn from its visitors: no summary call, no atoms.
+  // The row is marked, so the sweep never picks it up either.
+  if (isDemoMode()) {
+    await db.run(LEARNING_SQL.markSkipped, DEMO_MODE_SKIP_REASON, outputId);
+    return { outputId, status: 'skipped', error: DEMO_MODE_SKIP_REASON };
+  }
 
   await db.run(LEARNING_SQL.bumpAttempts, outputId);
 

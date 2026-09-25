@@ -118,9 +118,14 @@ export default function AlignmentReviewerPage() {
       const createResp = await fetch('/api/coding/alignment-reviews', {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ project_name: projectName }),
+        // The folder goes with the create, so a folder outside ALLOWED_FOLDER_PATHS
+        // is refused before any review exists; the server says why.
+        body: JSON.stringify({ project_name: projectName, path: directoryPath }),
       });
-      if (!createResp.ok) throw new Error('Failed to create review');
+      if (!createResp.ok) {
+        const body = (await createResp.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'Failed to create review');
+      }
       const rev = await createResp.json();
 
       // Ingest project
@@ -129,7 +134,10 @@ export default function AlignmentReviewerPage() {
         headers: getHeaders(),
         body: JSON.stringify({ source_type: 'local-directory', path: directoryPath }),
       });
-      if (!ingestResp.ok) throw new Error('Failed to ingest project');
+      if (!ingestResp.ok) {
+        const body = (await ingestResp.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'Failed to ingest project');
+      }
 
       setReview(rev);
       setPageState('goals');

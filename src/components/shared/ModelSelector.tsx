@@ -1,6 +1,16 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { MODELS } from '@/lib/constants';
 import type { ModelId, ModelInfo } from '@/lib/types';
+import {
+  compatModelNotAllowed,
+  compatPickerOptions,
+  demoModelCorrection,
+  loadPublicModelConfig,
+  offeredPickerOptions,
+  pickerRestrictedToOffered,
+  type PickerCompatEndpoint,
+  type PublicModelConfig,
+} from '@/lib/compat-model-policy';
 import { Star, HardDrive, ChevronDown, Check, Sparkles, AlertTriangle, Cloud, Zap } from 'lucide-react';
 
 // MGOV-03: Compute days until a model's EOL date (negative = already past)
@@ -52,14 +62,9 @@ interface AzureDeployment {
   isActive: boolean;
 }
 
-/** A user-configured OpenAI-compatible endpoint (OpenRouter / Together / Groq / DeepSeek / vLLM / …). */
-interface CompatEndpoint {
-  slug: string;
-  displayName: string;
-  defaultModel: string | null;
-  availableModels: string[];
-  enabled: boolean;
-}
+/** A user-configured OpenAI-compatible endpoint (OpenRouter / Together / Groq / DeepSeek / vLLM / …).
+ *  With `allowedModels` set, only those models are offered (the server refuses the rest). */
+type CompatEndpoint = PickerCompatEndpoint;
 
 /** SDK execution engine state (Settings → Execution engines). When enabled,
  *  sdk:<model> ids run through the machine's Claude Code login — no API key. */
@@ -87,8 +92,28 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   const [compatEndpoints, setCompatEndpoints] = useState<CompatEndpoint[]>([]);
   const [sdkEngine, setSdkEngine] = useState<SdkEngineState>({ enabled: false, models: [] });
   const [codexEngine, setCodexEngine] = useState<SdkEngineState>({ enabled: false, models: [] });
+  // Public demo: /api/config names the only models a visitor may pick.
+  const [publicConfig, setPublicConfig] = useState<PublicModelConfig | null>(null);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let live = true;
+    void loadPublicModelConfig().then((cfg) => {
+      if (live) setPublicConfig(cfg);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  // On a demo, a selection outside the offered list (the built-in default every
+  // new browser starts with, or a restored session) moves to the first offered
+  // model, so the label never names a model the demo does not run.
+  useEffect(() => {
+    const corrected = demoModelCorrection(value, publicConfig);
+    if (corrected) onChange(corrected);
+  }, [value, publicConfig, onChange]);
 
   useEffect(() => {
     fetch('/api/ollama/models')
@@ -181,19 +206,18 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   const azureMatch = typeof value === 'string' && value.startsWith('azure:')
     ? azureDeployments.find(d => d.deploymentName === value.replace('azure:', ''))
     : null;
-  // Flatten enabled OpenAI-compatible endpoints into compat:<slug>:<model> options.
-  const compatOptions = compatEndpoints.flatMap((ep) => {
-    const models = ep.availableModels.length > 0
-      ? ep.availableModels
-      : ep.defaultModel ? [ep.defaultModel] : [];
-    return models.map((m) => ({
-      id: `compat:${ep.slug}:${m}` as ModelId,
-      model: m,
-      endpointName: ep.displayName,
-    }));
-  });
+  // Flatten enabled OpenAI-compatible endpoints into compat:<slug>:<model> options
+  // (an endpoint's allowed-models list, when set, is all it offers).
+  const compatOptions = compatPickerOptions(compatEndpoints);
   const isCompatModel = typeof value === 'string' && value.startsWith('compat:');
   const compatBareModel = isCompatModel ? (value as string).split(':').slice(2).join(':') : '';
+  // A compat selection its endpoint's allow-list excludes — the server refuses it.
+  const notAllowed = compatModelNotAllowed(value, compatEndpoints);
+  // Public demo: the offered models and nothing else.
+  const demoOnly = pickerRestrictedToOffered(publicConfig);
+  const offeredOptions = demoOnly && publicConfig
+    ? offeredPickerOptions(publicConfig.offeredModels, compatEndpoints, [...MODELS, ...customModels])
+    : [];
   // Union of enabled subscription engines' models — one picker section.
   const subscriptionModels = [
     ...(sdkEngine.enabled ? sdkEngine.models : []),
@@ -274,7 +298,52 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
           );
         })()}
 
-        {open && (
+        {notAllowed && (
+          <div className="mt-1.5 flex items-start gap-2 rounded-md border border-adv-red/30 bg-adv-red/10 px-2.5 py-1.5 text-[11px] text-adv-red">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>
+              {notAllowed.model} is not on {notAllowed.endpointName}'s allowed models, so it will not run. Pick another model.
+            </span>
+          </div>
+        )}
+
+        {open && demoOnly && (
+          <div className="absolute z-50 mt-1 w-full max-h-80 overflow-y-auto rounded-lg border border-border bg-adv-card shadow-xl">
+            <div className="flex items-center gap-2 px-3 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-adv-gray">Models on this demo</span>
+            </div>
+            {offeredOptions.map((opt) => {
+              const isActive = value === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => { onChange(opt.id); setOpen(false); }}
+                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                    isActive
+                      ? 'bg-adv-teal-dim text-adv-teal'
+                      : 'hover:bg-adv-dark text-adv-off-white'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-medium truncate ${isActive ? 'text-adv-teal' : ''}`}>
+                        {opt.label}
+                      </span>
+                      {opt.detail && (
+                        <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-400">
+                          {opt.detail}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {isActive && <Check className="h-4 w-4 shrink-0 text-adv-teal" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {open && !demoOnly && (
           <div className="absolute z-50 mt-1 w-full max-h-80 overflow-y-auto rounded-lg border border-border bg-adv-card shadow-xl">
             {/* Built-in models, grouped by AI company */}
             {COMPANY_SECTIONS.map(({ provider, label }, gi) => {
@@ -533,6 +602,47 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
             )}
           </div>
         )}
+      </div>
+    );
+  }
+
+  // ── Cards variant, public demo: the offered models only ──────
+  if (demoOnly) {
+    return (
+      <div>
+        <label className="mb-2 block text-sm font-medium text-adv-off-white">Model</label>
+        <div className="space-y-2">
+          {offeredOptions.map((opt) => {
+            const isActive = value === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => onChange(opt.id)}
+                className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                  isActive
+                    ? 'border-adv-teal bg-adv-teal-dim'
+                    : 'border-border bg-adv-card hover:border-adv-gray-med'
+                }`}
+              >
+                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center ${isActive ? 'border-adv-teal' : 'border-adv-gray-med'}`}>
+                  {isActive && <div className="h-2 w-2 rounded-full bg-adv-teal" />}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-sm font-medium ${isActive ? 'text-adv-teal' : 'text-adv-off-white'}`}>
+                      {opt.label}
+                    </span>
+                    {opt.detail && (
+                      <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-400">
+                        {opt.detail}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     );
   }

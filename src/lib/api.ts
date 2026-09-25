@@ -79,6 +79,23 @@ export async function fetchModels() {
 // STREAM-06: SSE retry with exponential backoff (1s, 2s, 4s) on network drops
 const STREAM_RETRY_DELAYS = [1000, 2000, 4000];
 
+/**
+ * The sentence to show for a refused request. The Work route answers a refusal
+ * as JSON ({ error, code }) — e.g. the day's AI budget is used up, a model this
+ * server does not offer, an image the model cannot read — so show `error`, not
+ * the raw JSON; anything else is shown as it came.
+ */
+function readableError(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as { error?: unknown; message?: unknown };
+    if (typeof parsed.error === 'string' && parsed.error) return parsed.error;
+    if (typeof parsed.message === 'string' && parsed.message) return parsed.message;
+  } catch {
+    // not JSON
+  }
+  return body;
+}
+
 export async function* streamMessage(
   config: ClaudeRunConfig,
   signal?: AbortSignal
@@ -114,7 +131,7 @@ export async function* streamMessage(
     }
 
     if (!res.ok) {
-      const error = await res.text();
+      const error = readableError(await res.text());
       // 429 / 503 → retry; other errors → fail immediately
       if ((res.status === 429 || res.status === 503) && attempt < STREAM_RETRY_DELAYS.length) {
         lastError = error;

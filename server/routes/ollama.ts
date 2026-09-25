@@ -9,6 +9,7 @@
 
 import { Router } from 'express';
 import { safeError } from '../lib/error-response.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 const router = Router();
 
@@ -106,8 +107,10 @@ router.get('/models', async (req, res) => {
 });
 
 // ── Pull Model (Download from Ollama Registry) ────────────────
+// Pull and delete change the host's shared model store (disk, and the models
+// every user's runs depend on): admin-only in team mode.
 
-router.post('/pull', async (req, res) => {
+router.post('/pull', requireAdminOrSolo, async (req, res) => {
   const { modelName } = req.body;
 
   if (!modelName) {
@@ -169,7 +172,7 @@ router.post('/pull', async (req, res) => {
 
 // ── Delete Model ───────────────────────────────────────────────
 
-router.delete('/models/:modelName', async (req, res) => {
+router.delete('/models/:modelName', requireAdminOrSolo, async (req, res) => {
   const { modelName } = req.params;
 
   try {

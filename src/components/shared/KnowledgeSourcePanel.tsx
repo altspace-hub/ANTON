@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { Brain, Link, FolderOpen, Combine, ChevronDown, ChevronRight, Globe, Plus, X, Search, RefreshCw, Loader2, Database, CheckCircle2, Package, ArrowRight, Zap } from 'lucide-react';
-import type { KnowledgeSourceConfig, RagIndexedFolder, RagCollection, KnowledgeLibraryEntry } from '@/lib/types';
+import type { KnowledgeSourceConfig, RagIndexedFolder, RagCollection, KnowledgeLibraryEntry, ModelId } from '@/lib/types';
 import { fetchRagFolders, indexRagFolder, fetchRagCollections } from '@/lib/api';
+import { modelShortName, webSearchUnavailable } from '@/lib/compat-model-policy';
+import { useConfigStore } from '@/stores/useConfigStore';
 import HelpTooltip from './HelpTooltip';
 import { RAGSearchPanel } from './RAGSearchPanel';
 
@@ -17,9 +19,17 @@ const RAG_FOLDER_MODE_ENABLED = import.meta.env.VITE_RAG_FOLDER_MODE === 'true';
 interface KnowledgeSourcePanelProps {
   config: KnowledgeSourceConfig;
   onChange: (config: KnowledgeSourceConfig) => void;
+  /** The model the run will use. Defaults to the session's model (the Work
+   *  and prompt pages); a page with its own model picker passes that one. */
+  model?: ModelId;
 }
 
-function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
+function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelProps) {
+  const sessionModel = useConfigStore((s) => s.model);
+  const runModel = model ?? sessionModel;
+  // ANTON's web search is Claude's tool: a compat model gets none, so the box
+  // is shown off and locked (the saved choice is kept for a Claude model).
+  const webSearchOff = webSearchUnavailable(runModel);
   const [urlInput, setUrlInput] = useState('');
   const [folderInput, setFolderInput] = useState('');
   const [libraryEntries, setLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
@@ -73,16 +83,23 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         enabled={claudeKnowledge.enabled}
         onToggle={(v) => update('modes.claudeKnowledge.enabled', v)}
       >
-        <label className="flex items-center gap-2 text-xs text-adv-gray">
+        <label className={`flex items-center gap-2 text-xs text-adv-gray ${webSearchOff ? 'cursor-not-allowed opacity-60' : ''}`}>
           <input
             type="checkbox"
-            checked={claudeKnowledge.webSearchEnabled}
+            checked={claudeKnowledge.webSearchEnabled && !webSearchOff}
+            disabled={webSearchOff}
             onChange={(e) => update('modes.claudeKnowledge.webSearchEnabled', e.target.checked)}
             className="rounded border-adv-gray-med accent-adv-teal"
           />
           <Globe className="h-3 w-3" />
           Enable web search (the model searches the internet for latest publications)
         </label>
+        {webSearchOff && (
+          <p className="mt-1 text-xs text-adv-gray">
+            Web search runs on Claude models only, so it is off for {modelShortName(runModel)}. To give the model a
+            source, add its link under Online Regulation / Document Links.
+          </p>
+        )}
         <div className="mt-2">
           <label className="text-[11px] text-adv-gray">Focus area (optional):</label>
           <input

@@ -16,6 +16,9 @@
  *     historical state) carry no ownerId; in SOLO mode they are owned by the
  *     first authenticated caller per pragmatic legacy compat, and in TEAM mode
  *     they are admin-only — see makeRequirePortalOwner below.
+ *   - Instance-wide actions are admin-only in team mode (requireAdminOrSolo):
+ *     publishing (starting a walkthrough, finalize, import), the LAN scan and
+ *     its neighbour list, and installing a trust bundle.
  *   - Visitor endpoints (.../visit/...) and search/templates are public —
  *     anyone can fetch a portal page or invoke a declared capability.
  */
@@ -29,7 +32,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
 import { assertSafeLanEgressUrl } from '../lib/ssrf-guard.js';
 import { requireAuth } from '../middleware/auth.js';
-import { isTeamMode } from '../middleware/role-guards.js';
+import { isTeamMode, requireAdminOrSolo } from '../middleware/role-guards.js';
 
 import { createPortalDatabaseService } from '../services/portals/portal-database-service.js';
 import { createPortalHandler } from '../services/portals/portal-handler.js';
@@ -261,9 +264,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
 
   // Owner: trigger an mDNS scan of the LAN, fetch each peer's public
   // directory, ingest into the descriptor cache as remote-origin entries.
-  // Owner-only because scanning is mildly costly (mDNS + N HTTP fetches)
-  // and surfaces external state into the user's discovery UI.
-  router.post('/portals/lan/scan', requireAuth, async (_req, res) => {
+  // Admin-only in team mode: it maps the server's own network (mDNS + N HTTP
+  // fetches) into a cache every user's discovery reads.
+  router.post('/portals/lan/scan', requireAuth, requireAdminOrSolo, async (_req, res) => {
     try {
       const port = Number(process.env.PORT) || 3001;
       const result = await scanLan(db, port);
@@ -274,8 +277,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
   });
 
   // Owner: list LAN neighbors we've discovered + their last-scan health.
-  // Powers the "On your LAN" section of /portals/discovery.
-  router.get('/portals/lan/neighbors', requireAuth, async (_req, res) => {
+  // Powers the "On your LAN" section of /portals/discovery. Admin-only in team
+  // mode, like the scan: it is a map of the server's network.
+  router.get('/portals/lan/neighbors', requireAuth, requireAdminOrSolo, async (_req, res) => {
     try {
       const neighbors = await listKnownNeighbors(db);
       res.json({ neighbors });
@@ -302,7 +306,9 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     trustStoreVersion: z.number().int().positive(),
     registryOperators: z.array(trustedOperatorSchema).min(1),
   });
-  router.post('/portals/trust-bundle', requireAuth, async (req, res) => {
+  // Admin-only in team mode: the trust store is one per instance and decides
+  // whose registry proofs every user's lookups accept.
+  router.post('/portals/trust-bundle', requireAuth, requireAdminOrSolo, async (req, res) => {
     try {
       const parsed = trustBundleSchema.parse(req.body);
       // Reject placeholder keys to stop accidental no-op uploads.
@@ -420,7 +426,10 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     });
   });
 
-  router.post('/portals/walkthroughs', requireAuth, async (req, res) => {
+  // Building a portal is admin-only in team mode: finalize publishes it under
+  // this instance's identity (signed descriptor, relay registry), so starting a
+  // walkthrough a non-admin could never finish would only spend model calls.
+  router.post('/portals/walkthroughs', requireAuth, requireAdminOrSolo, async (req, res) => {
     try {
       // Always stamp ownerId from the authenticated user — never trust the body.
       const parsed = createWalkthroughSchema.parse({ ...req.body, ownerId: req.user!.id });
@@ -462,7 +471,7 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/walkthroughs/:id/finalize', requireAuth, async (req, res) => {
+  router.post('/portals/walkthroughs/:id/finalize', requireAuth, requireAdminOrSolo, async (req, res) => {
     try {
       if (!await assertSessionOwner(req, res)) return;
       // Step 11: caller may pass kyc fields in the body to trigger
@@ -1208,7 +1217,8 @@ export function createPortalsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
-  router.post('/portals/import', requireAuth, upload.single('bundle'), async (req, res) => {
+  // Importing publishes a portal from a bundle: admin-only in team mode, like finalize.
+  router.post('/portals/import', requireAuth, requireAdminOrSolo, upload.single('bundle'), async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'bundle file required' });
       const newName = (req.body?.newName as string | undefined);

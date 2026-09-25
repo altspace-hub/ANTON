@@ -47,6 +47,9 @@ interface StreamState {
   compactionOccurred: boolean;
   compactionMessage: string;
 
+  /** Notices the server sent for this run (one per code). */
+  streamNotices: Array<{ code: string; message: string }>;
+
   // Actions
   startStreaming: () => AbortController;
   stopStreaming: () => void;
@@ -84,6 +87,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
 
   compactionOccurred: false,
   compactionMessage: '',
+  streamNotices: [],
 
   startStreaming: () => {
     const controller = new AbortController();
@@ -101,6 +105,7 @@ export const useStreamStore = create<StreamState>((set, get) => ({
       ireCurrentPhaseName: '',
       compactionOccurred: false,
       compactionMessage: '',
+      streamNotices: [],
       lastWebSources: [],
       // Reset accumulated tokens at start of each stream
       lastInputTokens: 0,
@@ -120,7 +125,8 @@ export const useStreamStore = create<StreamState>((set, get) => ({
     _textBuf = '';
     _thinkBuf = '';
     if (_flushTimer) { clearTimeout(_flushTimer); _flushTimer = null; }
-    set({ streamingText: '', streamingThinking: '', ireChainId: null, ireCurrentPhase: 0, ireTotalPhases: 0, ireCurrentPhaseName: '' });
+    // The notices belong to the run they came with; another module or session must not show them.
+    set({ streamingText: '', streamingThinking: '', ireChainId: null, ireCurrentPhase: 0, ireTotalPhases: 0, ireCurrentPhaseName: '', streamNotices: [] });
   },
 
   setLastSourcesUsed: (sources) => set({ lastSourcesUsed: sources }),
@@ -200,6 +206,14 @@ export const useStreamStore = create<StreamState>((set, get) => ({
 
       case 'compaction':
         set({ compactionOccurred: true, compactionMessage: event.message });
+        break;
+
+      case 'notice':
+        set((s) => ({
+          streamNotices: s.streamNotices.some((n) => n.code === event.code)
+            ? s.streamNotices
+            : [...s.streamNotices, { code: event.code, message: event.message }],
+        }));
         break;
 
       case 'error':

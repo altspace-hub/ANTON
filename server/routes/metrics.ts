@@ -14,6 +14,7 @@ import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { getActiveStreams } from './health.js';
+import { isLoopbackRequest } from '../lib/request-origin.js';
 
 // ── In-process counters (reset on restart) ────────────────────
 let _totalRequests = 0;
@@ -40,10 +41,9 @@ export async function createMetricsRouter(db: DatabaseAdapter) {
   const router = Router();
 
   router.get('/metrics', async (req, res) => {
-    // Require explicit opt-in in non-local environments to avoid accidental exposure
-    const enabled = process.env.METRICS_ENABLED === 'true' ||
-      req.socket.remoteAddress === '127.0.0.1' ||
-      req.socket.remoteAddress === '::1';
+    // Require explicit opt-in in non-local environments to avoid accidental exposure.
+    // req.ip, not the socket: behind a same-host proxy every socket is 127.0.0.1.
+    const enabled = process.env.METRICS_ENABLED === 'true' || isLoopbackRequest(req);
 
     if (!enabled) {
       res.status(403).end('Metrics endpoint disabled. Set METRICS_ENABLED=true to enable.');

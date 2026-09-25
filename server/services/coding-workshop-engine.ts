@@ -42,6 +42,7 @@ import { resolveCodingModel } from './coding-model-resolver.js';
 import { retrieveGroundingText } from './framework-text-retrieval.js';
 import { CORE_TEAM_ROLES } from './core-team-panel.js';
 import { extractTextFromFile } from './text-extractor.js';
+import { CodingProjectCapError, codingProjectCapRefusal, stripReasoning } from './coding-workspace.js';
 
 // ── Attachment context (reuse the shared upload + text-extraction infra) ──────
 const WORKSHOP_UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
@@ -487,9 +488,12 @@ function extractStateUpdate(response: string): { obj: Record<string, unknown>; s
 }
 
 export function parseWorkshopUpdate(
-  response: string,
+  rawResponse: string,
   currentState: WorkshopState,
 ): { cleanResponse: string; updatedState: WorkshopState; phaseChanged: boolean } {
+  // A reasoning model can leak its <think>…</think> into the reply: the user
+  // must not see it, and its drafts of the state JSON must not win.
+  const response = stripReasoning(rawResponse);
   const stateUpdate = extractStateUpdate(response);
   const phaseCompleteMatch = response.match(/\[PHASE_COMPLETE:(\w+)\]/);
 
@@ -782,7 +786,9 @@ export interface WorkshopEngineDeps {
   suggestFrameworks?: (db: DatabaseAdapter, state: WorkshopState) => Promise<ChosenFramework[]>;
 }
 
-async function defaultCallOrchestrator(args: {
+// `db` reaches callChat so a compat:<slug>:<model> id can resolve its endpoint;
+// without it every OpenAI-compatible model (OpenRouter) threw before the call.
+async function defaultCallOrchestrator(db: DatabaseAdapter, args: {
   model: string;
   system: string;
   messages: Array<{ role: string; content: string }>;
@@ -793,12 +799,14 @@ async function defaultCallOrchestrator(args: {
     messages: args.messages,
     maxTokens: 2048,
     temperature: 0.5,
+    db,
   });
   return chat.text ?? '';
 }
 
 export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEngineDeps = {}) {
-  const callOrchestrator = deps.callOrchestrator ?? defaultCallOrchestrator;
+  const callOrchestrator = deps.callOrchestrator
+    ?? ((args: Parameters<typeof defaultCallOrchestrator>[1]) => defaultCallOrchestrator(db, args));
   const doSuggestFrameworks = deps.suggestFrameworks ?? suggestFrameworks;
 
   // ── Session CRUD ─────────────────────────────────────────────────────
@@ -1023,6 +1031,15 @@ export function createCodingWorkshopEngine(db: DatabaseAdapter, deps: WorkshopEn
     // the caller would hand a support admin's account the project the user just built —
     // and 404 the user out of their own work, which is the exact bug this block fixes.
     const ownerUserId = session.userId ?? userId ?? 'default';
+
+    // Team mode: the same per-person project cap as POST /coding/projects
+    // (CODING_MAX_PROJECTS_PER_USER), counted for the person who will own it.
+    // Only an admin owner is exempt — the role is read, not taken from the caller.
+    if (process.env.DEPLOYMENT_MODE === 'team') {
+      const owner = await db.get<{ role: string | null }>('SELECT role FROM users WHERE id = ?', ownerUserId);
+      const refusal = await codingProjectCapRefusal(db, ownerUserId, owner?.role === 'admin');
+      if (refusal) throw new CodingProjectCapError(refusal);
+    }
 
     await db.transaction(async (tx) => {
       await tx.run(

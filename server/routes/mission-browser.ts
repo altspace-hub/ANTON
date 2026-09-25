@@ -2,6 +2,10 @@
 //
 // Admin / debug endpoints. Mission Controller invokes browser actions via
 // the service directly; these routes are for Mission Dashboard "peek" + tests.
+// Admin-only in team mode (requireAdminOrSolo on every route): a session is a
+// browser on the host that navigates anywhere and runs page scripts, and the
+// sessions are not per user. The comment above said "admin" before anything
+// enforced it.
 
 import { Router } from 'express';
 import { z } from 'zod';
@@ -9,6 +13,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createBrowserAutomation } from '../services/missions/mission-browser.js';
 import { resolveCallerIdentity } from '../services/missions/mission-identity.js';
 import { safeError } from '../lib/error-response.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 function sendIdentityError(res: import('express').Response, err: unknown): void {
   const msg = safeError(err);
@@ -25,7 +30,7 @@ export function createBrowserRoutes(db: DatabaseAdapter): Router {
   browser.startCleanupLoop();
 
   // GET /api/browser-sessions — list sessions (optional mission filter)
-  router.get('/browser-sessions', async (req, res) => {
+  router.get('/browser-sessions', requireAdminOrSolo, async (req, res) => {
     try {
       const missionId = req.query.mission_id as string | undefined;
       const sessions = await browser.listSessions(missionId);
@@ -36,7 +41,7 @@ export function createBrowserRoutes(db: DatabaseAdapter): Router {
   });
 
   // GET /api/browser-sessions/health — is Playwright available?
-  router.get('/browser-sessions/health', async (_req, res) => {
+  router.get('/browser-sessions/health', requireAdminOrSolo, async (_req, res) => {
     try {
       const installed = await browser.isPlaywrightInstalled();
       res.json({
@@ -52,7 +57,7 @@ export function createBrowserRoutes(db: DatabaseAdapter): Router {
   });
 
   // POST /api/browser-sessions — create a new browser session
-  router.post('/browser-sessions', async (req, res) => {
+  router.post('/browser-sessions', requireAdminOrSolo, async (req, res) => {
     try {
       const schema = z.object({
         mission_id: z.string().min(1),
@@ -82,7 +87,7 @@ export function createBrowserRoutes(db: DatabaseAdapter): Router {
   });
 
   // POST /api/browser-sessions/:id/action — execute a single browser action
-  router.post('/browser-sessions/:id/action', async (req, res) => {
+  router.post('/browser-sessions/:id/action', requireAdminOrSolo, async (req, res) => {
     try {
       const schema = z.object({
         type: z.enum(['navigate', 'click', 'fill', 'select', 'upload', 'download',
@@ -105,7 +110,7 @@ export function createBrowserRoutes(db: DatabaseAdapter): Router {
   });
 
   // POST /api/browser-sessions/:id/close
-  router.post('/browser-sessions/:id/close', async (req, res) => {
+  router.post('/browser-sessions/:id/close', requireAdminOrSolo, async (req, res) => {
     try {
       try { await resolveCallerIdentity(db, undefined); }
       catch (err) { sendIdentityError(res, err); return; }

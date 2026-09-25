@@ -95,6 +95,23 @@ export interface CustomModelConfig {
   supportsJsonMode: boolean;
 }
 
+/** What GET /settings/custom-models sends in place of a saved slot key. */
+export const STORED_KEY_PLACEHOLDER = '__stored_key__';
+
+async function readCustomSlot(db: DatabaseAdapter, slot: 1 | 2): Promise<CustomModelConfig | null> {
+  const row = await db.get("SELECT value FROM app_settings WHERE key = ?", `custom_model_slot_${slot}`) as { value: string } | undefined;
+  return row ? JSON.parse(row.value) as CustomModelConfig : null;
+}
+
+/** The slot as any signed-in user may see it: the key replaced by the placeholder. */
+function redactSlotKey(config: CustomModelConfig | null): (CustomModelConfig & { hasApiKeyOverride: boolean }) | null {
+  if (!config) return null;
+  const { apiKeyOverride, ...rest } = config;
+  return apiKeyOverride
+    ? { ...rest, apiKeyOverride: STORED_KEY_PLACEHOLDER, hasApiKeyOverride: true }
+    : { ...rest, hasApiKeyOverride: false };
+}
+
 // Single allowlist shared with the boot-time loader (env-keys-store.ts).
 // Includes ANTHROPIC_API_KEY so a fresh GitHub-clone install can paste its
 // key in Settings without ever touching .env.
@@ -500,15 +517,15 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
     });
   });
 
-  // GET /api/settings/custom-models — return both custom model slot configs
+  // GET /api/settings/custom-models — return both custom model slot configs.
+  // Every signed-in user reads this (the model picker lists the slots), so the
+  // slot's own API key never leaves the server: it is replaced by
+  // STORED_KEY_PLACEHOLDER, which a save sends back to mean "keep it".
   router.get('/settings/custom-models', async (_req, res) => {
     try {
-      const slot1Row = await db.get("SELECT value FROM app_settings WHERE key = 'custom_model_slot_1'") as { value: string } | undefined;
-      const slot2Row = await db.get("SELECT value FROM app_settings WHERE key = 'custom_model_slot_2'") as { value: string } | undefined;
-
       res.json({
-        slot1: slot1Row ? JSON.parse(slot1Row.value) as CustomModelConfig : null,
-        slot2: slot2Row ? JSON.parse(slot2Row.value) as CustomModelConfig : null,
+        slot1: redactSlotKey(await readCustomSlot(db, 1)),
+        slot2: redactSlotKey(await readCustomSlot(db, 2)),
       });
     } catch (error) {
       console.error('[settings] Failed to load custom models:', error);
@@ -533,14 +550,22 @@ export async function createSettingsRoutes(db: DatabaseAdapter) {
         await db.run("DELETE FROM app_settings WHERE key = ?", settingKey);
         console.log(`[settings] Cleared custom model slot ${slot}`);
       } else {
-        const jsonValue = JSON.stringify(config);
+        const toStore: CustomModelConfig = { ...config };
+        delete (toStore as { hasApiKeyOverride?: unknown }).hasApiKeyOverride;
+        if (toStore.apiKeyOverride === STORED_KEY_PLACEHOLDER) {
+          // The form sent back what GET gave it: keep the saved key.
+          const stored = (await readCustomSlot(db, slot))?.apiKeyOverride;
+          if (stored) toStore.apiKeyOverride = stored;
+          else delete toStore.apiKeyOverride;
+        }
+        const jsonValue = JSON.stringify(toStore);
         await db.run(
           "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
         , settingKey, jsonValue);
 
         // If there's an API key override, also set it in the runtime env
-        if (config.apiKeyOverride) {
-          process.env[`CUSTOM_MODEL_${slot}_API_KEY`] = config.apiKeyOverride;
+        if (toStore.apiKeyOverride) {
+          process.env[`CUSTOM_MODEL_${slot}_API_KEY`] = toStore.apiKeyOverride;
         }
 
         console.log(`[settings] Saved custom model slot ${slot}: ${config.displayName} (${config.modelId})`);

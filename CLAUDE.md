@@ -200,6 +200,28 @@ Set the API key in `.env` to enable each provider. Users switch models in the UI
 
 **There are two routers, not one — and two callers that use neither.** `provider-router.ts` (`callChat` / `streamChat`) serves the gap assessor, specialised agents, Pathfinder, missions and School mode. `server/services/unified-llm-client.ts` (`streamToResponse` / `sendRequest` / `streamToHandler`) is a second dispatch layer with its own provider branches, serving the Civic, Grow and Procure pillars, the companion app, the intent router and smart actions. `sdk-agentic-runner.ts` drives the Agent SDK directly (it needs MCP tools) and `photo-id-service.ts` makes a direct vision call. Anything that must reach *every* model call has to be applied at the entry points of both routers and in those two callers — `server/lib/current-date.ts` is the pattern: one helper, applied at each entry, deferring when the text is already present so a request that passes through both routers is not doubled. It exists because no prompt carried today's date: on the SDK engine a plain `systemPrompt` string replaces Claude Code's default prompt, including the block that normally states the date, so a model trained to mid-2026 answered date-dependent questions from the wrong side of the line. Replay (`POST /api/rerun`, `mode: 'replay'`) opts out with `currentDate: false`, because it resends a stored prompt byte-for-byte. Tests that inspect what the model actually receives use `setSdkQueryImplForTests`, `setSdkAgentImplForTests` and a mocked `@anthropic-ai/sdk` (see `tests/services/current-date-reaches-model.test.ts`).
 
+**OpenAI-compatible endpoints (`compat:<slug>:<model>`, e.g. OpenRouter).** One resolver, `server/services/compat-endpoint.ts` (`resolveCompatModel`), serves both routers and the Work route. The database is registered at boot (`setRouterDb(db)`), so a call site that passes no `db` still resolves. An endpoint row (`custom_model_endpoints`, migration 288) carries:
+- `extra_body`: merged into every request, e.g. the OpenRouter EU zero-retention provider pin. Keys that choose the model are refused on save and dropped when sending (`COMPAT_EXTRA_BODY_RESERVED_KEYS`).
+- `allowed_models`: when non-empty, the only bare models that may run. They are refused before dispatch on every path, and the health check never writes this field.
+- `max_output_tokens`, optional prices, and read-only `model_meta` filled from GET /models.
+
+The single request builder and reply reader live in `server/services/adapters/openaiCompatibleAdapter.ts`.
+- **Reasoning:** effort comes from the thinking level, and only for a model that reasons (`compatReasoningParam` in thinking-map.ts; no level counts as quick).
+- **Usage, identity and length:** it sends `include_usage` and `user` (an HMAC of the user id), and clamps `max_tokens` with room left for reasoning.
+- **Images and tools:** images go as `image_url` parts or are refused; tools are never sent.
+- **Cost:** `usage.cost` is read back. Every priced call writes `llm_spend_ledger` (`server/services/llm-spend.ts`), and `LLM_DAILY_SPEND_CAP_USD` / `LLM_USER_DAILY_SPEND_CAP_USD` are checked before dispatch. The user comes from `server/lib/request-context.ts` (AsyncLocalStorage, mounted right after auth).
+- **The spend ledger:**
+  - A call reserves its worst case before dispatch (`cost_source` 'reserved'), so the caps count every call in flight.
+  - It then settles to 'reported' or 'endpoint_price'. A call cut short (abort, timeout, an error part-way) settles to 'estimated', which OpenRouter's `GET /generation?id=…` replaces.
+  - Prices come from the endpoint's admin prices, else the model's /models price (`modelMeta.pricing`, filled by the health check).
+- **The Work route's limits:**
+  - It charges `user_monthly_usage` for every run.
+  - It holds a compat run's whole input to the model's window: the oldest turns are dropped, and a request larger than the window is refused.
+  - In demo mode a non-admin runs only `DEMO_OFFERED_MODELS`.
+- **Notices:** on a non-Claude model the Work route sends `notice` frames for what did not happen (web search, a revelation chain, multi-agent) and for a cut-off answer.
+
+In the UI, `src/lib/compat-model-policy.ts` switches off web search, Investigate / Deep and multi-agent on a compat model. The model picker shows only an endpoint's `allowedModels`, or on a demo only `offeredModels`.
+
 ### Thinking Levels
 
 | Level | Description | Adaptive Claude (every Claude 5 id — Fable 5.x, Opus 5.5, Opus 5, Sonnet 5 — plus Opus 4.8 / 4.7, Sonnet 4.6) | Budget models (Sonnet 4.5, Haiku 4.5, Opus 4.6) |
@@ -519,6 +541,11 @@ When adding features, ask: *which layer does this serve, and does it make the ne
 - **Memory (knowledge atoms)** — module runs (never open chat) store their output in `workflow_outputs` with a learning ledger (`learning_status` pending → summarised → learned / skipped / failed); the summary + extraction run after the SDK slot is released and an hourly sweep (`server/services/memory-sweep.ts`, `MEMORY_SWEEP_DISABLED`) finishes refused ones. The extractor (`atom-extractor.ts`) records entities, drops `status.*` chatter, dedupes by `content_hash` and sets `owner_user_id`. Injection into Work runs goes through `server/services/atom-injection-gate.ts` (Settings `atom_injection_mode`: auto | on | off; auto waits for 100 module atoms + 30 ratings) via `buildAtomLayerDetailed`; injected atom ids ride in `contextUsed.atoms` and `retrieval_feedback.message_id`. Atom lifecycle (supersede / deactivate / delete / subject-search / by-subject erasure) lives in `server/routes/knowledge.ts`. After every answer `session-conclusion.ts` writes the session's conclusion (one `session_snapshots` row per answer + `sessions.summary`; the "Session conclusion" panel reads it); `project-context.ts` reads those, the matter brief and the engagement of the project. The Gap Assessor, engagement iterations and mission tasks feed the same ledger. Settings → "Memory & governance" (`/api/settings/memory-governance`) holds `atom_injection_mode`, `oversight_blocks_export` and `structured_extraction_auto`.
 - **Run record, replay and governance (Waves 5–6)** — every engine path writes `run_artifacts` (message runs plus agentic `gap_batch` / `task_step` / `engagement_step` parents, with `run_tool_calls`; `server/services/run-artifact-writer.ts`, read via `/api/run-artifacts/*`). `POST /api/rerun` with `mode: 'replay'` sends the stored prompt byte-for-byte to the served model and fails closed when that model is gone. The two deepest thinking levels run as revelation chains through the router on every Claude engine. The agentic runner wraps tool results as untrusted data and hands the subprocess an allow-listed environment; `sdk_daily_run_cap` caps subscription runs. After every answer the seven Work compliance rules run (`server/services/compliance-on-completion.ts`, setting `compliance_on_completion`); every changing API request writes `audit_events`; `callChat({ purpose })` audits utility calls. Team mode checks per-role module access (`server/services/module-access.ts`). Module bundles embed skill and persona text and block on injection findings unless `acceptInjectionFindings` is sent. `tests/lint/no-router-bypass.test.ts` fails on a new `getClient()` / `new Anthropic` / `callSync` site; the embedding provider is pinned in app_settings (`server/services/embedding-pin.ts`).
 - **Output Transformation System** (Phase 1) — Post-hoc renderer registry + Transform Panel. Every module run produces Markdown + a structured JSON payload (via Haiku-based extractor, cached by content hash); renderers are declared in `server/services/renderer-registry.builtin.ts` and filtered per-session by content type + required fields. Built-in renderers: the 5 existing exports + Mermaid flowchart / Gantt / sequence / mindmap, SVG risk heatmap, executive one-pager, plain-language, board deck, standalone HTML, devil's advocate + regulator's-eye reviews. Adding a new format = a single file in `server/services/renderers/` + a registry entry.
+- **Code Studio output boundary** — `parseFileBlocks` in `server/services/coding-workspace.ts` carries the standalone Code Studio's rules for weaker models:
+  - **Accepts:** any fence info string, `~~~`, fences indented up to 3 spaces, `file:` in any case, and a path on the line just above the fence.
+  - **Refuses:** elided blocks, diffs, ambiguous Markdown ends and sharp shrinks (`checkWholeFileWrite`).
+  - **Fixtures:** `tests/services/coding/fixtures/weak-model-replies.ts` is a verbatim copy of the standalone's, so change both parsers and both tables together.
+  - **JSON replies:** the Studio planner and the core-team panel read JSON with `extractJsonReply`, and the planner retries once with a JSON-only nudge.
 
 ---
 
@@ -546,7 +573,11 @@ See `.env.example` for the complete list. Key variables:
 | `MARKETS_THINKING_DISABLED` | No | `true` pauses every LLM-spending markets phase. Free phases (NAV, prices, prediction checkpoints, event triggers, MV refreshes) keep running. Markets LLM calls run on the Settings → "Markets AI model" choice (app_settings `markets_model`, e.g. `sdk:claude-opus-5` for subscription auth); unset falls back to the utility model. |
 | `MARKETS_FETCH_DISABLED` | No | `true` pauses every external markets data fetch (FMP, news, RSS). |
 | `MARKETS_REBALANCE_SHADOW` | No | `true` records what scheduled rebalancing WOULD trade without moving any holding, so prediction→portfolio attribution accrues before anything is risked. Only active while `MARKETS_AUTOREBALANCE_DISABLED=true`; the two are alternatives, not layers. Shadow rows carry `trigger_type='shadow'` and are reported apart from executed P&L in Markets → Learning → Portfolio Impact. |
-| `RADAR_AUTOMATION_DISABLED` | No | `true` disables radar auto-scan + scheduled radar cron. Manual UI scans still work. |
+| `RADAR_AUTOMATION_DISABLED` | No | `true` (or `DEMO_MODE=true`) disables radar auto-scan and the scheduled radar cron, including a schedule set at runtime; intervals are clamped to 1-576 h. Manual scans still work (admin-only in team mode). |
+| `LLM_DAILY_SPEND_CAP_USD` | No | Instance-wide USD cap per UTC day on priced (compat) model calls, read from `llm_spend_ledger`. Unset = no cap. |
+| `LLM_USER_DAILY_SPEND_CAP_USD` | No | Per-user USD cap per UTC day on priced calls (admins exempt). Unset = no cap. |
+| `DEMO_MODE` | No | `true` turns a team-mode server into a public showcase (Security item 9). The settings it reads are in `.env.demo.example`. |
+| `DATA_EXPORT_TABLES` | No | Tables of ANTON's own database a data export may write into, comma-separated. Unset = none. |
 
 ---
 
@@ -562,6 +593,7 @@ pnpm run db:migrate:pg  # Run pending migrations against PostgreSQL
 pnpm run typecheck      # TypeScript type check
 pnpm run test           # Vitest unit tests
 pnpm run test:e2e       # Playwright E2E tests
+pnpm run eval:openrouter -- --dry-run   # showcase model test run (plan + cost estimate; a real run needs OPENROUTER_API_KEY, capped by --max-usd)
 ```
 
 ---
@@ -579,23 +611,41 @@ pnpm run test:e2e       # Playwright E2E tests
    - **Email:** an email links a pre-SSO account only once, only if verified, and only to an account an administrator created (one with a password). The link removes that password.
    - **No passwords:** an account with an SSO identity cannot sign in with a password, reset one, or have one set by an admin.
    - **Roles:** with `OIDC_ROLE_MAP` set, the directory decides the role at every sign-in, including demotion to `OIDC_DEFAULT_ROLE`.
-   - **Switched-off accounts:** `users.disabled_at` ends sessions (`authMiddleware` joins on it).
+   - **Switched-off accounts:** `users.disabled_at` ends sessions (`authMiddleware` joins on it). So does a demo account (`demo_expires_at` set) past its expiry, or on a server that is not in demo mode. Every session lookup uses `LIVE_ACCOUNT_SQL` plus `sessionEndedOutsideDemo()` from `server/middleware/auth.ts`.
    - **Tokens:** every JWT carries a unique `jti`, and its lifetime is `JWT_EXPIRY`.
    - **Sign-in binding:** the one-time exchange code is bound to the browser by the `anton_auth_binder` cookie, and the flow uses PKCE plus a browser-bound `anton_oidc_state` cookie.
+   - **Google / GitHub (personal instances):** the state is a nonce bound to the `anton_oauth_state` cookie, and only an email the provider has verified signs in.
    - **Tests:** `tests/services/oidc-sso.test.ts`, plus `tests/routes/sso-oidc-flow.test.ts` (a fake Entra-shaped IdP, on a test database).
 8. **One person's data stays theirs (team mode).** On a shared server every route that reads or changes a user's rows checks the owner. The helpers are in `server/middleware/ownership.ts` (`scopesToOwner`, `ownerFilter`, `assertOwned`) and, for embedded content, `server/services/hybrid-search.ts` (`searchScopeForRequest`, `atomOwnerSql`, `strictOwnerSql`, `filterOwnedByScope`).
    - **Who is scoped:** solo mode and team admins are never scoped; every other team user is.
    - **Where the check runs:** in SQL, before the row is loaded. A row the caller may not see answers the same 404 as a missing one, never a 403.
-   - **Ids from the client:** a `sessionId`, `conversationId` or `projectId` in a request body is checked like one in the path. A session that is not the caller's is treated as absent.
+   - **Ids from the client:** a `sessionId`, `conversationId` or `projectId` in a request body is checked like one in the path. A session that is not the caller's is treated as absent. A module id never becomes a path: `legacyPromptPath()` in `server/services/module-loader.ts` accepts only the id alphabet and a file inside `server/prompts` (Express decodes `%2F` inside a route parameter).
    - **Knowledge atoms:** a user reads their own atoms plus shared ones (`owner_user_id` NULL); only admins change shared atoms. Every atom writer sets the owner.
    - **What never leaves the instance:** hives, peers and delegated tasks get shared atoms only, and never a Code Studio atom (`coding_project_id` set), in solo mode too.
-   - **Instance-wide actions are admin-only:** anything with no per-user owner, or that runs code on the host, uses `requireAdminOrSolo`. That covers brand and org context, the budget cap, knowledge packs, the orchestrator, embeddings maintenance, and Code Studio and hardware tool runs.
+   - **Instance-wide actions are admin-only:** anything with no per-user owner, or that runs code on the host, uses `requireAdminOrSolo`. That covers:
+     - brand and org context, the budget cap, knowledge packs, the orchestrator, embeddings maintenance;
+     - Code Studio and hardware tool runs, and Code Studio workspace provisioning;
+     - radar sources, scans, AI scoring and schedules;
+     - webhook triggers, Ollama pull and delete;
+     - FutureChain config, KYC, budget and transactions;
+     - pattern detection, browser sessions, alignment reviews;
+     - portal publishing, the LAN scan and the trust bundle.
+   - **Custom modules:** `custom_modules.user_id` (migration 290) is the owner. `canReadCustomModule()` in `routes/custom-modules.ts` is the read rule for other routes. `GET /api/settings/custom-models` never returns a slot key.
+   - **Errors the person should read:** safeError() is generic in production. An error written for the user sets `publicMessage` and is sent with `publicErrorMessage()` (`server/lib/error-response.ts`), e.g. the daily budget or a model the server does not offer. Detail such as endpoint URLs and provider text stays in `message`, for the logs.
    - **The server's disk and ANTON's own database:** a path from a request goes through `checkFolderPath` (`server/lib/folder-guard.ts`), in every mode. On a team server, only admins can read or write server files or export into the database, whether through `/api/data` or a workflow data step. Such an export writes only into tables listed in `DATA_EXPORT_TABLES`. An agent `database` connector with no connection string reads ANTON's database, so it:
      - never reads account, credential or settings tables (`forbiddenLocalTable` in `server/services/agent-connector-executor.ts`);
      - runs read-only, with a 5-second statement timeout;
      - on a team server, runs only for an admin's agent.
    - **Projects:** membership (`project_members`) decides access. An invitation is valid only while its sender may still give the role, and that is re-checked when it is accepted, including at sign-in.
    - **Tests:** a new owned surface gets a team-mode test with a negative control (the owner, an admin and solo still see the row). See `tests/routes/team-isolation-round*.test.ts` and `tests/db/*owner-scope*.db.test.ts`.
+9. **Public demo (`DEMO_MODE=true`, team mode only).** `server/middleware/demo-mode.ts` decides it:
+   - **Route allowlist:** mounted right after auth. Non-admins reach `WORK_ROUTES`, the enabled pillars and `DEMO_EXTRA_ROUTES`; everything else answers 404. A new API call on the Work page must be added to `WORK_ROUTES`, or it 404s on the demo.
+   - **Real-time rooms:** the Study Rooms and Community Socket.IO namespaces refuse connections.
+   - **Background work:** Markets, the missions runner, the memory sweep and radar automation are forced off. Visitor runs are never learned from.
+   - **Accounts:** visitors sign up at `POST /api/auth/demo-signup` (invite code, no email; `users.demo_expires_at`, migration 289), and an expired account's sessions end. Google/GitHub sign-in is refused.
+   - **Retention:** `server/services/demo-retention.ts` deletes expired demo accounts daily, with every row they wrote.
+   - **Privacy notice:** the one at `/privacy` is a DRAFT and needs legal review.
+   - **Runbook:** `docs/deployment/public-demo.md`. Tests: `tests/middleware/demo-mode.test.ts`, `tests/routes/demo-signup.db.test.ts`, `tests/services/demo-retention.db.test.ts`.
 
 ---
 

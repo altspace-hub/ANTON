@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import DemoBanner from '@/components/shared/DemoBanner';
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,6 +18,8 @@ export default function MainLayout() {
       </a>
       <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Public demo only (DEMO_MODE=true): the standing do-not-enter-personal-data notice. */}
+        <DemoBanner />
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main id="main-content" className="flex-1 overflow-auto p-4 lg:p-6">
           <Outlet />

@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import { assertSigningSession, SigningSessionError } from '../services/fc-signing-session.js';
+
+// Admin-only in team mode: transactions move the instance wallet's funds, and
+// the autofill reads the instance's community contacts.
 
 export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -9,7 +13,7 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
   const { createRealModeFCServices } = await import('../services/fc-real-mode.js');
   const { fcTx: svc, isRealMode } = await createRealModeFCServices(db);
 
-  router.post('/futurechain/transactions/build', async (req, res) => {
+  router.post('/futurechain/transactions/build', requireAdminOrSolo, async (req, res) => {
     try {
       const { fromAddress, toAddress, amountFtc, walletType, purpose, nature, goal, taskRef } = req.body;
       if (!fromAddress || !toAddress || !amountFtc || !walletType) {
@@ -20,7 +24,7 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
     } catch (err) { res.status(500).json({ error: 'Failed to build transaction' }); }
   });
 
-  router.get('/futurechain/transactions', async (req, res) => {
+  router.get('/futurechain/transactions', requireAdminOrSolo, async (req, res) => {
     try {
       const status = req.query.status as string | undefined;
       const limit = req.query.limit ? Number(req.query.limit) : undefined;
@@ -29,15 +33,15 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
     } catch (err) { res.status(500).json({ error: 'Failed to list transactions' }); }
   });
 
-  router.get('/futurechain/transactions/:id', async (req, res) => {
+  router.get('/futurechain/transactions/:id', requireAdminOrSolo, async (req, res) => {
     try {
-      const tx = await svc.getTransaction(req.params.id);
+      const tx = await svc.getTransaction(String(req.params.id));
       if (!tx) return res.status(404).json({ error: 'Transaction not found' });
       res.json(tx);
     } catch (err) { res.status(500).json({ error: 'Failed to get transaction' }); }
   });
 
-  router.post('/futurechain/transactions/:id/submit', async (req, res) => {
+  router.post('/futurechain/transactions/:id/submit', requireAdminOrSolo, async (req, res) => {
     try {
       // Signing-session enforcement (LOCAL_PAYMENTS_PLAN Phase 0, wired
       // 2026-07-17): in REAL mode a spend must be an explicit, time-boxed
@@ -46,7 +50,7 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
       // here. Stub mode stays tokenless (nothing real moves). Mission payments
       // use the service directly under their own approval gates.
       if (await isRealMode()) {
-        const tx = await svc.getTransaction(req.params.id) as { from_address?: string } | undefined;
+        const tx = await svc.getTransaction(String(req.params.id)) as { from_address?: string } | undefined;
         if (!tx) return res.status(404).json({ error: 'Transaction not found' });
         const wallet = await db.get<{ id: string }>(
           'SELECT id FROM fc_wallets WHERE address = ? AND is_active = TRUE', tx.from_address,
@@ -62,13 +66,13 @@ export async function createFCTransactionRoutes(db: DatabaseAdapter): Promise<Ro
           throw e;
         }
       }
-      const result = await svc.submitTransaction(req.params.id);
+      const result = await svc.submitTransaction(String(req.params.id));
       res.json(result);
     } catch (err) { res.status(500).json({ error: 'Failed to submit transaction' }); }
   });
 
   // Auto-fill creditor info from contact's payment details
-  router.get('/futurechain/transactions/autofill/:contactHash', async (req, res) => {
+  router.get('/futurechain/transactions/autofill/:contactHash', requireAdminOrSolo, async (req, res) => {
     try {
       const conn = await db.get(
         `SELECT payment_address, payment_name, payment_country, payment_street, payment_city, payment_postal_code,

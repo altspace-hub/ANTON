@@ -15,6 +15,15 @@ const TITLE_SYSTEM_PROMPT =
   'You write concise titles for saved work sessions. Given the user request and a preview of the answer, ' +
   'output ONLY a 5-8 word title that captures the core topic. No quotes, no trailing punctuation, no explanation.';
 
+/**
+ * Title generations in flight, per user. The route is a priced model call on a
+ * compat default, behind no model-call limiter: one account could put hundreds
+ * of them in flight at once, every one passing the daily spend cap at the same
+ * settled total (review L1). One at a time per user is all the page needs —
+ * it asks once, after a session's first answer.
+ */
+const titleGenerationsInFlight = new Set<string>();
+
 export async function createSessionRoutes(db: DatabaseAdapter) {
   const router = Router();
 
@@ -226,6 +235,8 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
   // background so it yields to interactive work. Best-effort: on failure the
   // 80-character first-line title simply stays.
   router.post('/sessions/:id/title/generate', async (req, res) => {
+    const flightKey = req.user?.id || req.ip || 'anonymous';
+    let holdsSlot = false;
     try {
       const { userMessage, responsePreview } = req.body as { userMessage?: string; responsePreview?: string };
       if (typeof userMessage !== 'string' || !userMessage.trim()) {
@@ -241,6 +252,13 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
         res.status(404).json({ error: 'Session not found' });
         return;
       }
+      if (titleGenerationsInFlight.has(flightKey)) {
+        // Best-effort by contract: the caller keeps its first-line title.
+        res.status(429).json({ title: null, error: 'A title is already being generated. Try again in a moment.' });
+        return;
+      }
+      titleGenerationsInFlight.add(flightKey);
+      holdsSlot = true;
 
       const chat = await callChat({
         model: await getRoutedUtilityModel(db),
@@ -262,6 +280,8 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       // Best-effort by contract: the caller keeps the first-line title.
       console.warn('[sessions] title generation failed:', error instanceof Error ? error.message : error);
       res.json({ title: null });
+    } finally {
+      if (holdsSlot) titleGenerationsInFlight.delete(flightKey);
     }
   });
 

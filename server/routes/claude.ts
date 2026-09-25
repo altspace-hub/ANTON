@@ -19,11 +19,11 @@ import { writeSessionConclusion } from '../services/session-conclusion.js';
 import { retrieveGroundingText, type GroundingResult } from '../services/framework-text-retrieval.js';
 import { frameworksForArea } from '../services/area-frameworks.js';
 import { resolveKnowledgeSources } from '../services/knowledge-resolver.js';
-import type { ResolvedKnowledge } from '../../src/lib/types.js';
-import { resolveContextBudget, resolveOllamaNumCtx } from '../services/context-budget.js';
+import type { ResolvedKnowledge, ThinkingLevel } from '../../src/lib/types.js';
+import { resolveContextBudget, resolveCompatInputWindow, resolveOllamaNumCtx } from '../services/context-budget.js';
 import { runMultiAgent } from '../services/multi-agent-orchestrator.js';
 import { writeAuditEntry } from '../services/auditLogger.js';
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
 import { MODEL_REGISTRY, getModelConfig, getTemperature, isApiKeyAvailable } from '../types/modelAdapter.js';
 import type { PrecisionLevel } from '../types/modelAdapter.js';
 import { streamOpenAI } from '../services/adapters/openaiAdapter.js';
@@ -32,8 +32,19 @@ import { streamMistral } from '../services/adapters/mistralAdapter.js';
 import { streamOllama, listOllamaModels } from '../services/adapters/ollamaAdapter.js';
 import { streamAzureOpenAI } from '../services/adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from '../services/adapters/azureOpenaiAdapter.js';
-import { streamOpenAICompatible } from '../services/adapters/openaiCompatibleAdapter.js';
-import { resolveCustomEndpoint } from '../services/custom-endpoint-resolver.js';
+import {
+  streamOpenAICompatible,
+  compatUnfinishedUsageOf,
+  compatSentMaxTokens,
+  estimateCompatInputTokens,
+  COMPAT_WORK_RUN_MAX_TOKENS,
+  type OpenAICompatibleStreamResult,
+  type CompatInputMessage,
+} from '../services/adapters/openaiCompatibleAdapter.js';
+import { resolveCompatModel, CompatEndpointError, modelAcceptsImages, type ResolvedCompatModel } from '../services/compat-endpoint.js';
+import { assertSpendAllowed, isSpendCapError, type SpendCostSource } from '../services/llm-spend.js';
+import { isDemoMode, demoOfferedModels } from '../middleware/demo-mode.js';
+import { compatReasoningParam } from '../services/thinking-map.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
 import { getAutoAttachSkillIds } from '../services/skills-manager.js';
@@ -45,7 +56,7 @@ import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
 import { capabilityModelId } from '../services/engine-model-id.js';
-import { mapModelToProvider, callChat } from '../services/provider-router.js';
+import { mapModelToProvider, callChat, getConfiguredProvider } from '../services/provider-router.js';
 import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
@@ -125,6 +136,80 @@ function armIdleAbort(
   res.on('close', stop);
   res.on('finish', stop);
   return stop;
+}
+
+/** Time to first output for a non-Claude run, per thinking level (armIdleAbort's firstTokenMs). */
+const ADAPTER_FIRST_TOKEN_MS: Readonly<Record<string, number>> = {
+  quick: 90_000, think: 180_000, think_hard: 300_000, investigate: 420_000, plan_first: 420_000, deep_investigate: 600_000,
+};
+let adapterTimerOverride: { firstTokenMs?: number; idleMs?: number } | null = null;
+
+/** Test hook: shorter non-Claude run timers (null restores the defaults). */
+export function setWorkRunTimeoutsForTests(opts: { firstTokenMs?: number; idleMs?: number } | null): void {
+  adapterTimerOverride = opts;
+}
+
+/**
+ * At most this many online references per run or preview. Each is fetched
+ * from this server (15 s and 2 MB apiece) and, in a preview, handed back as
+ * text: with no limit, one request made the server fetch hundreds of pages
+ * for whoever sent it.
+ */
+export const MAX_ONLINE_REFERENCE_URLS = 20;
+
+interface OnlineReferenceConfig { enabled?: unknown; urls?: unknown }
+
+function onlineReferenceOf(knowledgeSources: unknown): OnlineReferenceConfig | undefined {
+  const modes = (knowledgeSources as { modes?: { onlineReference?: unknown } } | null | undefined)?.modes;
+  const ref = modes?.onlineReference;
+  return typeof ref === 'object' && ref !== null ? (ref as OnlineReferenceConfig) : undefined;
+}
+
+/** The refusal for a request naming more online references than MAX_ONLINE_REFERENCE_URLS, or null. */
+function onlineReferenceLimitProblem(knowledgeSources: unknown): string | null {
+  const ref = onlineReferenceOf(knowledgeSources);
+  if (!ref?.enabled || !Array.isArray(ref.urls) || ref.urls.length <= MAX_ONLINE_REFERENCE_URLS) return null;
+  return `At most ${MAX_ONLINE_REFERENCE_URLS} online references can be used at once (${ref.urls.length} were given). Remove some and try again.`;
+}
+
+/**
+ * The knowledge sources with online references switched off — for a preview
+ * in demo mode, where a visitor's preview must not make this server fetch
+ * pages and hand back their text. The run itself still fetches them.
+ */
+function withoutOnlineReferenceFetch(knowledgeSources: unknown): unknown {
+  const ref = onlineReferenceOf(knowledgeSources);
+  if (!ref?.enabled) return knowledgeSources;
+  const ks = knowledgeSources as { modes: Record<string, unknown> };
+  return { ...ks, modes: { ...ks.modes, onlineReference: { ...ref, enabled: false } } };
+}
+
+const IMAGE_UPLOAD_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+
+/**
+ * Can this run's engine read an image attachment? Claude and the subscription
+ * engines take image blocks; a compat model does when its endpoint's /models
+ * lists image input. The other adapters (OpenAI, Gemini, Mistral, Azure,
+ * Ollama) take plain text only — they were handed the image as JSON-stringified
+ * base64 text: no vision, and a 2 MB photo billed as hundreds of thousands of
+ * tokens. Those runs are now refused with a clear message instead.
+ */
+function engineReadsImages(provider: string, compat: ResolvedCompatModel | null): boolean {
+  if (provider === 'anthropic' || provider === 'anthropic_sdk' || provider === 'openai_codex') return true;
+  if (provider === 'openai_compatible') return modelAcceptsImages(compat?.meta);
+  return false;
+}
+
+/** The text of a message's content — Claude blocks flattened, images and thinking dropped. */
+function contentText(content: string | object[]): string {
+  if (typeof content === 'string') return content;
+  return content
+    .map((b) => {
+      const block = b as { type?: unknown; text?: unknown };
+      return block.type === 'text' && typeof block.text === 'string' ? block.text : '';
+    })
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
@@ -339,6 +424,26 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const isCodexEngineModel = selectedModel.startsWith('codex:');
       const modelConfig = (isOllamaModel || isAzureModel || isCompatModel || isSdkEngineModel || isCodexEngineModel) ? undefined : await getModelConfig(selectedModel, db);
       const provider = isOllamaModel ? 'ollama' : isAzureModel ? 'azure_openai' : isCompatModel ? 'openai_compatible' : isSdkEngineModel ? 'anthropic_sdk' : isCodexEngineModel ? 'openai_codex' : (modelConfig?.provider || 'anthropic');
+      // The resolved compat endpoint (compat-endpoint.ts) for a compat: run.
+      let compatModel: ResolvedCompatModel | null = null;
+
+      // Demo mode: a visitor may run only the models the demo offers
+      // (DEMO_OFFERED_MODELS). The picker showed only those, but this route ran
+      // any model id it was sent, on any key the server holds — and outside
+      // the compat branch no daily USD cap applies. With no list set, only
+      // compat models run. Admins are not restricted. Checked on the model
+      // the run would actually use (after enforce_model and the defaults).
+      if (isDemoMode() && req.user?.role !== 'admin') {
+        const offered = demoOfferedModels();
+        const allowed = offered.length > 0 ? offered.includes(selectedModel) : provider === 'openai_compatible';
+        if (!allowed) {
+          res.status(403).json({
+            error: 'This model is not offered in this demo. Pick one of the models in the model menu.',
+            code: 'MODEL_NOT_OFFERED',
+          });
+          return;
+        }
+      }
 
       if (provider === 'anthropic') {
         if (!isApiKeyConfigured()) {
@@ -362,12 +467,58 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       } else if (provider === 'azure_openai') {
         // Azure credentials are stored in DB, not env vars — validated at stream time
       } else if (provider === 'openai_compatible') {
-        // Credentials live in the custom_model_endpoints table — validated at stream time
+        // Credentials live in the custom_model_endpoints table. Resolved here,
+        // before anything is saved or sent: the endpoint's allowed_models list
+        // refuses a model it does not offer, and a priced call stops at the
+        // daily spend caps (llm-spend.ts).
+        try {
+          compatModel = await resolveCompatModel(selectedModel, db);
+          await assertSpendAllowed({ db, userId: req.user?.id ?? null, role: req.user?.role ?? null });
+        } catch (err) {
+          if (isSpendCapError(err)) {
+            res.status(402).json({ error: publicErrorMessage(err), code: err.code });
+            return;
+          }
+          if (err instanceof CompatEndpointError) {
+            res.status(err.status).json({ error: publicErrorMessage(err), code: err.code });
+            return;
+          }
+          throw err;
+        }
       } else if (provider !== 'ollama' && !isApiKeyAvailable(selectedModel)) {
         const keyName = modelConfig?.requiresApiKey || 'API_KEY';
         res.status(500).json({ error: `${keyName} not configured. Add it in Settings or your .env file.` });
         return;
       }
+
+      // An image the chosen model cannot read is refused before anything is
+      // saved — never sent as base64 text in the prompt (engineReadsImages).
+      const requestedImageIds = (Array.isArray(req.body.uploadedFileIds) ? req.body.uploadedFileIds as unknown[] : [])
+        .filter((id): id is string => typeof id === 'string' && IMAGE_UPLOAD_EXTENSIONS.has(path.extname(id).toLowerCase()));
+      if (requestedImageIds.length > 0 && !engineReadsImages(provider, compatModel)) {
+        res.status(400).json({
+          error: `The model "${selectedModel}" does not read images. Remove the image, or pick a model that accepts images.`,
+          code: 'IMAGE_NOT_SUPPORTED',
+        });
+        return;
+      }
+      const tooManyUrls = onlineReferenceLimitProblem(knowledgeSources);
+      if (tooManyUrls) {
+        res.status(400).json({ error: tooManyUrls, code: 'TOO_MANY_ONLINE_REFERENCES' });
+        return;
+      }
+
+      // What a compat run will send as max_tokens (the reasoning room for this
+      // level included): the knowledge budget and the whole-input check below
+      // leave exactly that much of the window for the answer.
+      const compatSentMax = compatModel
+        ? (compatSentMaxTokens({
+            maxTokens: compatModel.endpoint.maxOutputTokens ?? COMPAT_WORK_RUN_MAX_TOKENS,
+            thinkingLevel: (thinking || 'think_hard') as ThinkingLevel,
+            modelMeta: compatModel.meta,
+            maxOutputTokens: compatModel.endpoint.maxOutputTokens,
+          }) ?? COMPAT_WORK_RUN_MAX_TOKENS)
+        : undefined;
 
       // Budget cap check (team mode only)
       if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
@@ -607,7 +758,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // by the raw request field, the sdk: default missed the table and got a
       // 16k budget on a 1M model.
       const is1MModel = (MODEL_CAPABILITIES[capabilityModelId(selectedModel)]?.maxContextWindow ?? 0) >= 1_000_000;
-      const knowledgeBudget = await resolveContextBudget(selectedModel, db as DatabaseAdapter);
+      const knowledgeBudget = await resolveContextBudget(
+        selectedModel,
+        db as DatabaseAdapter,
+        compatSentMax !== undefined ? { outputTokens: compatSentMax } : {},
+      );
 
       // TOKEN-03: Emit SSE progress events during context assembly when local folders are involved.
       // Set SSE headers early so we can stream progress before the Claude API call starts.
@@ -1042,10 +1197,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // Wave 0: the effort word the ladder resolves for this level on this
       // model — recorded so "how hard did it think" is a fact, not a level name.
       // Only Anthropic-family engines express effort; others record null.
+      // A compat model records the reasoning setting actually sent ('off' when
+      // switched off; null when the endpoint says the model does not reason).
+      const compatReasoning = provider === 'openai_compatible'
+        ? compatReasoningParam((thinking || 'think_hard') as Parameters<typeof compatReasoningParam>[0], compatModel?.meta?.reasoning)
+        : undefined;
       const resolvedEffort: string | null =
         provider === 'anthropic' || provider === 'anthropic_sdk'
           ? anthropicEffort((thinking || 'think_hard') as Parameters<typeof anthropicEffort>[0], capabilityModelId(selectedModel))
-          : null;
+          : compatReasoning
+            ? ('effort' in compatReasoning ? compatReasoning.effort : 'off')
+            : null;
       const contextUsed = {
         model: selectedModel,
         thinking: String(thinking || 'think_hard'),
@@ -1115,6 +1277,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         goalsValuesChars: goalsValuesPrompt.length,
         resumeContextChars: resumeContextPrompt.length,
         webSearch: tools.some((t) => t.type === 'web_search_20250305'),
+        // What the engine could not do as asked (web search, revelation chain,
+        // multi-agent on a non-Claude model; a cut-off answer) — also sent to
+        // the page as `notice` frames.
+        notices: [] as Array<{ code: string; message: string }>,
       };
 
       // Log composed prompt length for debugging
@@ -1163,13 +1329,43 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         });
       }
 
+      // The user's monthly token budget (team mode) counts every run: a
+      // finished one through runComplete below, one cut short from what the
+      // compat adapter recorded (the adapter catch). It used to be charged
+      // inside onComplete only — which exists only with a sessionId and runs
+      // only when an answer finished — so a run sent with no session, or
+      // closed before its last chunk, never counted (review C1/C3).
+      const chargeMonthlyUsage = async (inputTokens: number, outputTokens: number): Promise<void> => {
+        if (process.env.DEPLOYMENT_MODE !== 'team' || !req.user || req.user.id === 'solo') return;
+        const input = Math.max(0, Math.round(inputTokens || 0));
+        const output = Math.max(0, Math.round(outputTokens || 0));
+        if (input === 0 && output === 0) return;
+        try {
+          await db.run(`
+            INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, year_month) DO UPDATE SET
+              input_tokens = user_monthly_usage.input_tokens + excluded.input_tokens,
+              output_tokens = user_monthly_usage.output_tokens + excluded.output_tokens
+          `, crypto.randomUUID(), req.user.id, new Date().toISOString().slice(0, 7), input, output);
+        } catch {
+          // Non-fatal
+        }
+      };
+
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
-        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string; webSources?: Array<{ kind: 'web_search' | 'web_fetch'; query?: string; url?: string; title?: string; resultUrls?: string[]; sha256?: string; charCount?: number; retrievedAt: string; isError?: boolean }> }) => {
+        ? async (data: { text: string; thinking: string; inputTokens: number; outputTokens: number; cacheReadTokens?: number; cacheCreationTokens?: number; rawContentBlocks?: unknown[]; modelServed?: string; engineCostUsd?: number; systemPromptSent?: string; webSources?: Array<{ kind: 'web_search' | 'web_fetch'; query?: string; url?: string; title?: string; resultUrls?: string[]; sha256?: string; charCount?: number; retrievedAt: string; isError?: boolean }>; compatCost?: { usd: number; source: SpendCostSource } }) => {
             // Wave 0: how this run is billed, so a NULL cost reads as "plan usage"
-            // or "unknown pricing" rather than "free".
-            const costBasis: 'list' | 'free' | 'plan' | 'unknown' =
-              isSdkEngineModel || isCodexEngineModel ? 'plan' : isOllamaModel ? 'free' : hasKnownPricing ? 'list' : 'unknown';
+            // or "unknown pricing" rather than "free". A compat run whose
+            // endpoint reported what it charged (OpenRouter usage.cost) is
+            // 'reported'; one priced from the admin's endpoint prices is 'list'.
+            const costBasis: 'list' | 'free' | 'plan' | 'unknown' | 'reported' =
+              isSdkEngineModel || isCodexEngineModel ? 'plan'
+              : isOllamaModel ? 'free'
+              : data.compatCost?.source === 'reported' ? 'reported'
+              : hasKnownPricing || data.compatCost ? 'list'
+              : 'unknown';
             // Wave 1: content-addressed versions of the prompts this run used —
             // the module prompt (file or the user's override) and the ground
             // prompt — so the audit row names the exact text, not "latest".
@@ -1197,7 +1393,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               effort: resolvedEffort,
               modelServed: data.modelServed ?? null,
               costBasis,
-              engineCostUsd: data.engineCostUsd ?? null,
+              engineCostUsd: data.engineCostUsd ?? data.compatCost?.usd ?? null,
               thinking: req.body.thinking,
               creativity: req.body.creativity,
               transparencyLevel: req.body.transparencyLevel,
@@ -1235,16 +1431,21 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // Known pricing → real cache-adjusted cost. Ollama (free, no modelConfig)
             // → 0. Other unknown providers (azure/compat) → NULL so they never feed
             // the enforced cap or analytics with phantom Opus dollars (Finding #1).
-            const estimatedCostUsd: number | null = computeRunCostUsd({
-              hasKnownPricing,
-              isOllama: isOllamaModel,
-              costPer1MInput: costIn,
-              costPer1MOutput: costOut,
-              inputTokens: data.inputTokens || 0,
-              outputTokens: data.outputTokens || 0,
-              cacheReadTokens,
-              cacheCreationTokens,
-            });
+            // A compat run carries its own cost (the endpoint's usage.cost or
+            // the admin's prices), so it reaches the monthly cap and analytics
+            // instead of the NULL every compat run used to record.
+            const estimatedCostUsd: number | null = data.compatCost
+              ? data.compatCost.usd
+              : computeRunCostUsd({
+                  hasKnownPricing,
+                  isOllama: isOllamaModel,
+                  costPer1MInput: costIn,
+                  costPer1MOutput: costOut,
+                  inputTokens: data.inputTokens || 0,
+                  outputTokens: data.outputTokens || 0,
+                  cacheReadTokens,
+                  cacheCreationTokens,
+                });
             // Item 1.6: the assistant message id is captured so the run artifact
             // (composed prompt + pinned source manifest) can FK to this exact row.
             // (assistantMessageId is minted before dispatch — see the context frame.)
@@ -1441,22 +1642,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               systemPromptVersionId,
               atomArm: atomArm ?? undefined,
             });
-            // Update per-user monthly usage (team mode only)
-            if (process.env.DEPLOYMENT_MODE === 'team' && req.user && req.user.id !== 'solo') {
-              try {
-                const yearMonth = new Date().toISOString().slice(0, 7);
-                const usageId = crypto.randomUUID();
-                await db.run(`
-                  INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
-                  VALUES (?, ?, ?, ?, ?)
-                  ON CONFLICT(user_id, year_month) DO UPDATE SET
-                    input_tokens = input_tokens + excluded.input_tokens,
-                    output_tokens = output_tokens + excluded.output_tokens
-                `, usageId, req.user.id, yearMonth, data.inputTokens || 0, data.outputTokens || 0);
-              } catch {
-                // Non-fatal
-              }
-            }
+            // (The per-user monthly usage is charged by runComplete, below —
+            // for runs with no session too.)
             // Quality auto-scoring (non-fatal) — always run; fall back to 'open-chat' module.
             // The promise is kept (instead of pure fire-and-forget) so the apprentice
             // progression block below can fold the overall score into quality_avg
@@ -1603,6 +1790,28 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           }
         : undefined;
 
+      // What every engine calls when an answer finished: the monthly usage is
+      // charged whether or not the run has a session, then the session's own
+      // bookkeeping (onComplete) runs when there is one.
+      type RunCompletion = Parameters<NonNullable<typeof onComplete>>[0];
+      const runComplete = async (data: RunCompletion): Promise<void> => {
+        await chargeMonthlyUsage(data.inputTokens, data.outputTokens);
+        if (onComplete) await onComplete(data);
+      };
+
+      // A refusal before the model is called. Early progress frames (uploads,
+      // local folders) may already have sent the SSE headers; then it is said
+      // on the stream, where a JSON reply could no longer go.
+      const refuseRun = (status: number, body: { error: string; code: string } & Record<string, unknown>): void => {
+        if (!res.headersSent) {
+          res.status(status).json(body);
+          return;
+        }
+        res.write(`data: ${JSON.stringify({ type: 'error', message: body.error, code: body.code })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      };
+
       // ── MULTI-AGENT MODE ──────────────────────────────────────
       // If multi-agent is enabled and provider is Anthropic, run the multi-agent
       // orchestrator instead of standard streaming
@@ -1643,13 +1852,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             totalExecutionTimeMs: result.totalExecutionTimeMs,
           });
 
-          // Save to database if session exists
-          if (sessionId && onComplete) {
+          // Save to database if session exists (the monthly usage is charged either way)
+          {
             // Estimate tokens (rough: ~4 chars per token)
             const estimatedOutputTokens = Math.ceil(result.synthesis.length / 4);
             const estimatedInputTokens = Math.ceil(fullContext.length / 4);
 
-            onComplete({
+            void runComplete({
               text: result.synthesis,
               thinking: '', // Multi-agent doesn't expose thinking
               inputTokens: estimatedInputTokens,
@@ -1672,7 +1881,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // for knowledge assembly, so a 32k local model fails fast with a clear
       // message instead of silently truncating a ~900k prompt.
       if (resolved.tokenEstimate > knowledgeBudget) {
-        res.status(400).json({
+        refuseRun(400, {
           error: `Context too large for ${selectedModel}: estimated ~${Math.round(resolved.tokenEstimate / 1000)}k tokens exceeds its ~${Math.round(knowledgeBudget / 1000)}k context budget. ` +
                  `Trim knowledge sources, use Summary mode for online references, or pick a larger-context model.`,
           code: 'CONTEXT_TOO_LARGE',
@@ -1680,6 +1889,47 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           limit: knowledgeBudget,
         });
         return;
+      }
+
+      // A compat run: the WHOLE input is held to the window, not only the
+      // knowledge documents. The client sends the history, the message and a
+      // system-prompt override itself (up to 200 × 500k characters of
+      // history), and all of it went to the model — a model that reports a
+      // 1.31M window was billed far past the 128k this server caps a compat
+      // run at (review C3). The oldest turns are dropped while the input
+      // leaves less than the answer's max_tokens of the window; a request
+      // still larger than the window itself is refused before anything is
+      // sent. (Between the two it goes as it is: the server's own prompt
+      // layers can exceed the budget's small allowance for them, and a model
+      // with a larger real window answers it.) The system prompt — built
+      // here, every client part of it schema-bounded — is counted with the
+      // tokenizer the knowledge budget uses; the messages, which the client
+      // sends at any size, with the adapter's estimate: linear, never a
+      // tokenizer pass over megabytes, and generous on token-dense text.
+      let historyTurnsDropped = 0;
+      if (provider === 'openai_compatible' && compatModel) {
+        const window = await resolveCompatInputWindow(selectedModel, db as DatabaseAdapter);
+        const roomForAnswer = window - (compatSentMax ?? COMPAT_WORK_RUN_MAX_TOKENS);
+        const systemText = staticSystemPrompt ? `${staticSystemPrompt}\n\n${composedPrompt}` : composedPrompt;
+        let inputTokens = estimateTokens(systemText) + estimateCompatInputTokens('', messages as CompatInputMessage[]);
+        const dropOldest = (): void => {
+          const dropped = messages.shift();
+          if (dropped) inputTokens -= estimateCompatInputTokens('', [dropped as CompatInputMessage]);
+          historyTurnsDropped++;
+        };
+        // Never the new user message (the last one) …
+        while (inputTokens > roomForAnswer && messages.length > 1) dropOldest();
+        // … and the conversation then starts with a user turn, as providers expect.
+        while (historyTurnsDropped > 0 && messages.length > 1 && messages[0].role !== 'user') dropOldest();
+        if (inputTokens > window) {
+          refuseRun(400, {
+            error: `This request is too long for ${selectedModel}: about ${Math.round(inputTokens / 1000)}k tokens, more than the ${Math.round(window / 1000)}k this server lets the model take. Shorten the message or the instructions, or remove documents.`,
+            code: 'CONTEXT_TOO_LARGE',
+            tokenEstimate: inputTokens,
+            limit: window,
+          });
+          return;
+        }
       }
 
       // STREAM-05: per-user concurrent stream limit (max 3)
@@ -1761,7 +2011,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               tools: sdkWebRun ? tools : undefined,
             },
             res,
-            onComplete,
+            runComplete,
           );
         } finally {
           stopSdkTimers();
@@ -1829,13 +2079,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // so the previously-separate scoreOutput call here was a DUPLICATE — it produced
         // a second quality_scores row, a double updateBaselineWithWeight, and double utility
         // spend on the SAME synthesis text. Finding #5: scored exactly once via onComplete.
-        if (onComplete && ireSummary.synthesisText) {
-          await onComplete({
+        if (ireSummary.synthesisText) {
+          await runComplete({
             text: ireSummary.synthesisText,
             thinking: '',
             inputTokens: ireSummary.totalInputTokens || 0,
             outputTokens: ireSummary.totalOutputTokens || 0,
           });
+        } else {
+          await chargeMonthlyUsage(ireSummary.totalInputTokens || 0, ireSummary.totalOutputTokens || 0);
         }
         return;
       }
@@ -1864,7 +2116,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             compaction: compactionParam,
           },
           res,
-          onComplete
+          runComplete
         );
         recordSuccess();
       } catch (streamErr: unknown) {
@@ -1880,7 +2132,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // Non-Anthropic providers: set SSE headers, stream, then finalize
         const precisionLevel: PrecisionLevel = precision || 'balanced';
         const temperature = getTemperature(selectedModel, precisionLevel);
-        const maxTokens = modelConfig?.maxOutputTokens || 8192;
+        // A compat endpoint's own ceiling when the admin set one; else room for
+        // a long deliverable (reasoning comes on top, clamped by the adapter).
+        const maxTokens = provider === 'openai_compatible'
+          ? (compatModel?.endpoint.maxOutputTokens ?? COMPAT_WORK_RUN_MAX_TOKENS)
+          : (modelConfig?.maxOutputTokens || 8192);
 
         // Strip Claude-specific web search instructions from system prompt —
         // non-Anthropic models don't have the web_search tool and will hallucinate tool calls
@@ -1892,20 +2148,20 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // For ALL non-Anthropic providers: if web search was requested and Bing is
         // configured, pre-search and inject results (Claude uses its native
         // web_search tool on its own branch; everyone else gets Bing grounding).
+        let webResultsInjected = false;
         if (webSearchWasRequested) {
           try {
             const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('../services/bing-search.js');
             const bingKey = await getBingSearchApiKey(db);
             if (bingKey) {
-              // Get last user message as search query
+              // Get last user message as search query — its text only, never an image's base64.
               const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-              const queryText = lastUserMsg
-                ? (typeof lastUserMsg.content === 'string' ? lastUserMsg.content : JSON.stringify(lastUserMsg.content))
-                : '';
+              const queryText = lastUserMsg ? contentText(lastUserMsg.content) : '';
               if (queryText) {
                 const searchQuery = extractSearchQuery(queryText);
                 const searchResults = await searchAndFormat(searchQuery, bingKey);
                 composedPrompt += `\n\n${searchResults}`;
+                webResultsInjected = true;
               }
             }
           } catch (bingErr) {
@@ -1913,14 +2169,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           }
         }
 
-        // Abort controller for non-Anthropic providers (timeout + client disconnect)
+        // Abort controller for non-Anthropic providers (timeout + client disconnect).
+        // The ceilings govern time to first output, as on the Claude branches:
+        // a reasoning model writing a long answer is not cut off while it is
+        // still streaming. A closed page aborts the call — compat endpoints get
+        // the signal, so the generation stops being billed.
         const adapterAbort = new AbortController();
         req.on('close', () => adapterAbort.abort());
-        const adapterTimeouts: Record<string, number> = { quick: 90_000, think: 180_000, think_hard: 300_000, investigate: 420_000, plan_first: 420_000, deep_investigate: 600_000 };
-        const adapterTimeoutMs = adapterTimeouts[thinking as string] || 300_000;
-        const adapterTimeoutId = setTimeout(() => adapterAbort.abort(), adapterTimeoutMs);
-        res.on('close', () => clearTimeout(adapterTimeoutId));
-        res.on('finish', () => clearTimeout(adapterTimeoutId));
+        res.on('close', () => { if (!res.writableEnded) adapterAbort.abort(); });
+        const adapterTimeoutMs = adapterTimerOverride?.firstTokenMs ?? (ADAPTER_FIRST_TOKEN_MS[thinking as string] || 300_000);
 
         // Only when absent: the "context used" frame above has already sent them.
         // Writing them again threw ERR_HTTP_HEADERS_SENT, which the outer catch
@@ -1939,16 +2196,51 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
           res.write(`data: ${JSON.stringify(event)}\n\n`);
         };
 
+        // Say what this engine did not do as asked, and record it with the run.
+        // The page otherwise shows a web-search tick, a revelation-chain level
+        // or multi-agent as if each had happened.
+        const notice = (code: string, message: string, recordOnly = false) => {
+          contextUsed.notices.push({ code, message });
+          if (!recordOnly) sendEvent({ type: 'notice', code, message });
+        };
+        if (webSearchWasRequested && !webResultsInjected) {
+          contextUsed.webSearch = false;
+          notice('web_search_unavailable', `Web search is not available on ${selectedModel}, so nothing was searched. The answer uses the model's own knowledge and the sources you provided.`);
+          sendEvent({ type: 'context_used', context: contextUsed });
+        }
+        const ireLevel = String(thinking || '');
+        if ((iterativeReasoningEnabled === true || ireLevel === 'deep_investigate')
+          && ['think_hard', 'investigate', 'plan_first', 'deep_investigate'].includes(ireLevel)) {
+          notice('single_call', `Revelation chains run on Claude only. On ${selectedModel} this level ran as a single call${resolvedEffort ? ` at reasoning effort "${resolvedEffort}"` : ''}.`);
+        }
+        if (multiAgentEnabled) {
+          notice('multi_agent_unavailable', `Multi-agent review runs on Claude only. On ${selectedModel} this answer is a single model call.`);
+        }
+        if (historyTurnsDropped > 0) {
+          notice('history_trimmed', `The ${historyTurnsDropped} oldest message${historyTurnsDropped === 1 ? ' was' : 's were'} left out so the conversation fits ${selectedModel}'s context window.`);
+        }
+
         sendEvent({ type: 'stream_start', messageId: crypto.randomUUID() });
 
+        // Armed only now: armIdleAbort counts every write as a sign of life,
+        // so arming it before the frames above swapped this level's
+        // time-to-first-token ceiling for the shorter idle window at once — a
+        // reasoning phase that streams nothing was cut off (review C9).
+        const stopAdapterTimers = armIdleAbort(res, () => adapterAbort.abort(), {
+          firstTokenMs: adapterTimeoutMs,
+          ...(adapterTimerOverride?.idleMs !== undefined ? { idleMs: adapterTimerOverride.idleMs } : {}),
+        });
+
         try {
-          // Non-Anthropic adapters expect plain string content; normalize multi-block messages
+          // Non-Anthropic adapters expect plain string content: the text of
+          // each message (an image never reaches these — refused up front).
           const plainMessages = messages.map((m) => ({
             role: m.role,
-            content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+            content: contentText(m.content),
           }));
 
-          let result: { inputTokens: number; outputTokens: number; text: string };
+          let result: { inputTokens: number; outputTokens: number; text: string; thinking?: string };
+          let compatResult: OpenAICompatibleStreamResult | null = null;
 
           if (provider === 'openai') {
             result = await streamOpenAI({
@@ -2024,24 +2316,31 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               // Capability-aware num_ctx (plan 2.15) — trained window capped at 32k/env
               numCtx: await resolveOllamaNumCtx(selectedModel),
             }, res);
-          } else if (provider === 'openai_compatible') {
-            // compat:<slug>:<model> — resolve the user's configured OpenAI-compatible endpoint
-            const slug = selectedModel.split(':')[1];
-            if (!slug) throw new Error(`Invalid compat model id: ${selectedModel} (expected compat:<slug>:<model>)`);
-            const endpoint = await resolveCustomEndpoint(db, slug);
-            if (!endpoint) throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
-            const bareModel = selectedModel.split(':').slice(2).join(':');
-            if (!bareModel) throw new Error(`Invalid compat model id: ${selectedModel} (expected compat:<slug>:<model>)`);
-            result = await streamOpenAICompatible({
-              baseUrl: endpoint.baseUrl,
-              apiKey: endpoint.apiKey,
-              extraHeaders: endpoint.extraHeaders,
-              model: bareModel,
+          } else if (provider === 'openai_compatible' && compatModel) {
+            // compat:<slug>:<model> — the endpoint resolved (and its model
+            // allow-list checked) before the run started. The messages keep
+            // their content blocks: an image goes to the model as an image
+            // part, when the endpoint says the model reads images.
+            compatResult = await streamOpenAICompatible({
+              baseUrl: compatModel.endpoint.baseUrl,
+              apiKey: compatModel.endpoint.apiKey,
+              extraHeaders: compatModel.endpoint.extraHeaders,
+              extraBody: compatModel.endpoint.extraBody,
+              modelMeta: compatModel.meta,
+              maxOutputTokens: compatModel.endpoint.maxOutputTokens,
+              pricing: compatModel.pricing,
+              model: compatModel.model,
               system: composedPrompt,
-              messages: plainMessages,
+              messages: messages as CompatInputMessage[],
               temperature,
               maxTokens,
+              thinkingLevel: (thinking || 'think_hard') as import('../../src/lib/types.js').ThinkingLevel,
+              userId: req.user?.id ?? null,
+              signal: adapterAbort.signal,
+              spend: { modelId: selectedModel, db, purpose: 'work-run', sessionId: sessionId ? String(sessionId) : null, role: req.user?.role ?? null },
             }, res);
+            result = compatResult;
+            if (compatResult.warning) notice('output_truncated', compatResult.warning);
           } else {
             throw new Error(`Unsupported provider: ${provider}`);
           }
@@ -2050,7 +2349,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             type: 'usage',
             inputTokens: result.inputTokens,
             outputTokens: result.outputTokens,
-            thinkingTokens: 0,
+            thinkingTokens: compatResult?.reasoningTokens ?? 0,
             cacheCreationTokens: 0,
             cacheReadTokens: 0,
           });
@@ -2059,12 +2358,30 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             contentBlocks: [{ type: 'text', content: result.text }],
           });
 
-          if (onComplete) {
-            onComplete({ text: result.text, thinking: (result as { thinking?: string }).thinking || '', inputTokens: result.inputTokens, outputTokens: result.outputTokens, cacheReadTokens: 0, cacheCreationTokens: 0 });
-          }
+          void runComplete({
+            text: result.text,
+            thinking: result.thinking || '',
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+            cacheReadTokens: 0,
+            cacheCreationTokens: 0,
+            ...(compatResult && compatResult.costUsd !== null && compatResult.costSource
+              ? { compatCost: { usd: compatResult.costUsd, source: compatResult.costSource } }
+              : {}),
+          });
         } catch (adapterError) {
-          const errMsg = adapterError instanceof Error ? adapterError.message : 'Unknown adapter error';
-          sendEvent({ type: 'error', message: errMsg });
+          // The full error (it can hold an endpoint URL or a provider's own text)
+          // goes to the log; the person gets the message written for them, or
+          // safeError's (generic in production).
+          console.error('[claude] model adapter error:', adapterError instanceof Error ? adapterError.message : String(adapterError));
+          // A compat call cut short — the page closed, Stop, a timeout, an
+          // error part-way — was still billed. The adapter recorded it in the
+          // spend ledger; it counts against the monthly token budget too.
+          const unfinished = compatUnfinishedUsageOf(adapterError);
+          if (unfinished) await chargeMonthlyUsage(unfinished.inputTokens, unfinished.outputTokens);
+          sendEvent({ type: 'error', message: publicErrorMessage(adapterError) });
+        } finally {
+          stopAdapterTimers();
         }
 
         res.write('data: [DONE]\n\n');
@@ -2118,9 +2435,23 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         .map((id: string) => path.join(UPLOAD_DIR, id))
         .filter((p: string) => p.startsWith(UPLOAD_DIR));
 
+      // Online references: capped as on a run. In demo mode a visitor's
+      // preview does not fetch them at all — the preview hands the fetched
+      // text back, which made this route a free fetch-and-return proxy on the
+      // server's address (no model is called, so no budget or rate limit for
+      // model calls applied). The run itself still fetches them.
+      const tooManyUrls = onlineReferenceLimitProblem(knowledgeSources);
+      if (tooManyUrls) {
+        res.status(400).json({ error: tooManyUrls, code: 'TOO_MANY_ONLINE_REFERENCES' });
+        return;
+      }
+      const previewKnowledgeSources = isDemoMode() && req.user?.role !== 'admin'
+        ? withoutOnlineReferenceFetch(knowledgeSources)
+        : knowledgeSources;
+
       // Resolve knowledge sources
-      const resolved = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+      const resolved = previewKnowledgeSources
+        ? await resolveKnowledgeSources(previewKnowledgeSources as Parameters<typeof resolveKnowledgeSources>[0], uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // Wave 1: the preview composes the same layers as a run — org context,
@@ -2645,7 +2976,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // module-loader (full corpus), not from the client. Any client-provided module
   // list is ignored (kept in the body for backwards compatibility only).
   router.post('/modules/smart-search', async (req, res) => {
-    if (!hasClaudeEngine()) {
+    // The call below goes through provider-router on the routed utility
+    // model, so a server whose configured engine is an OpenAI-compatible
+    // endpoint or Ollama can answer it too.
+    const configured = getConfiguredProvider();
+    if (!hasClaudeEngine() && configured !== 'openai_compatible' && configured !== 'ollama') {
       res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
       return;
     }

@@ -94,6 +94,12 @@ export async function createVersionsRoutes(db: DatabaseAdapter) {
         res.status(400).json({ error: 'content required' });
         return;
       }
+      // Each save is a database row: bound it, so repeated saves cannot grow the
+      // database without limit (a public demo visitor can reach this route).
+      if (typeof content !== 'string' || content.length > 1_000_000) {
+        res.status(413).json({ error: 'Version content is too large (1,000,000 characters at most)' });
+        return;
+      }
 
       // MAX is deliberately NOT scoped to the caller: version_number stays unique
       // per entity, so an admin reading /:entityType/:entityId/:versionNumber

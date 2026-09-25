@@ -1,12 +1,18 @@
 import { Users, AlertCircle } from 'lucide-react';
 import { useSessionStore } from '@/stores/useSessionStore';
+import { modelShortName, multiAgentUnavailable } from '@/lib/compat-model-policy';
 import HelpTooltip from './HelpTooltip';
 
 export default function MultiAgentPanel() {
   const {
+    model,
     multiAgentEnabled, multiAgentTeam, multiAgentStyle,
     setMultiAgentEnabled, setMultiAgentTeam, setMultiAgentStyle,
   } = useSessionStore();
+  // Multi-agent runs parallel Claude instances; a compat model runs one call,
+  // so the switch is shown off and locked (the saved choice is kept for a Claude model).
+  const unavailable = multiAgentUnavailable(model);
+  const on = multiAgentEnabled && !unavailable;
 
   return (
     <div className="rounded-xl border border-border bg-adv-card p-4">
@@ -18,19 +24,30 @@ export default function MultiAgentPanel() {
         </div>
         <button
           onClick={() => setMultiAgentEnabled(!multiAgentEnabled)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            multiAgentEnabled ? 'bg-adv-teal' : 'bg-adv-gray-med/30'
+          disabled={unavailable}
+          role="switch"
+          aria-checked={on}
+          aria-label="Multi-agent mode"
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+            on ? 'bg-adv-teal' : 'bg-adv-gray-med/30'
           }`}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              multiAgentEnabled ? 'translate-x-6' : 'translate-x-1'
+              on ? 'translate-x-6' : 'translate-x-1'
             }`}
           />
         </button>
       </div>
 
-      {multiAgentEnabled && (
+      {unavailable && (
+        <p className="text-xs text-adv-gray">
+          Multi-agent mode runs several Claude instances side by side, so it is off for {modelShortName(model)}.
+          Runs on this model use a single agent.
+        </p>
+      )}
+
+      {on && (
         <>
           {/* Cost Warning */}
           <div className="mb-4 rounded-lg border border-adv-gold/30 bg-adv-gold/10 p-3">

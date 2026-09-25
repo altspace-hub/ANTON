@@ -70,9 +70,14 @@ import {
   runProjectTests,
   parseTestSummary,
   validateTestArgv,
+  checkWholeFileWrite,
+  extractJsonReply,
+  stripReasoning,
   FILE_BLOCK_FORMAT_VERSION,
   type ApplicationFileEntry,
   type FileDiff,
+  type ParsedFileBlock,
+  type ParseResult,
   type TestRunResult,
   type ExecFileImpl,
 } from './coding-workspace.js';
@@ -356,6 +361,8 @@ export interface OrchestratorDeps {
 const MAX_STEP_LOG = 200;
 const MAX_TASKS = 40;
 const CODEGEN_MAX_TOKENS = 8_000;
+// compat: endpoints (OpenRouter) — reasoning shares the budget; see codegenMaxTokens.
+const COMPAT_CODEGEN_MAX_TOKENS = 24_000;
 const PLAN_MAX_TOKENS = 4_000;
 const MAX_CODEGEN_CHARS = 200_000;
 const DEFAULT_REVISE_CAP = 4;
@@ -408,8 +415,9 @@ function mapRow(row: StudioRunRow): StudioRun {
 // ── The orchestrator (factory — one coding-integration instance per run) ─────
 
 export function createStudioOrchestrator(db: DatabaseAdapter, deps: OrchestratorDeps = {}) {
-  const callPlanner = deps.callPlanner ?? defaultCallPlanner;
-  const callCodegen = deps.callCodegen ?? defaultCallCodegen;
+  // The live calls take `db` so a compat:<slug>:<model> id resolves its endpoint.
+  const callPlanner = deps.callPlanner ?? ((input: OrchestratorPlanInput) => defaultCallPlanner(db, input));
+  const callCodegen = deps.callCodegen ?? ((input: CodegenInput) => defaultCallCodegen(db, input));
   const runPanel = deps.runPanel ?? runCoreTeamPanel;
   const applyFiles = deps.applyFiles ?? (async (p) => {
     const r = await applyFilesToWorkspace(p);
@@ -829,15 +837,84 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
       // Parse → diff → apply (writes with backups). The apply step is the write;
       // autonomy=more means we write+run WITHOUT a per-edit checkpoint.
       const parsed = parseFileBlocks(rawCode.slice(0, MAX_CODEGEN_CHARS));
-      const writable = parsed.files;
+      // A rewrite that shrinks an existing file sharply is refused like an
+      // elided one (the parser refuses those): a weak model that ran out of
+      // output would otherwise delete the rest of the file.
+      const oldContents = new Map<string, string | null>();
+      const writable: ParsedFileBlock[] = [];
+      for (const file of parsed.files) {
+        const old = await readWorkspaceFile(ctx.workspaceAbs, file.path);
+        const refusal = checkWholeFileWrite(file.path, file.content, old);
+        if (refusal) {
+          parsed.rejected.push({ reason: refusal, path: file.path });
+          continue;
+        }
+        oldContents.set(file.path, old);
+        writable.push(file);
+      }
       const appliedFiles = writable.map((f) => f.path);
+      const refusedNote = describeRefusedBlocks(parsed.rejected);
+      if (writable.length === 0 && parsed.rejected.length > 0) {
+        // Every file the model wrote was refused (elided, shrunk, bad path,
+        // truncated). Nothing is applied and nothing is tested: ask again,
+        // within the revise cap, and tell the model why.
+        lastFailureTail = `Codegen produced no applicable file blocks.\n${refusedNote}`;
+        await log(codingProjectId, { kind: 'apply', taskId: task.taskId, message: `Refused every file block for "${task.title}": ${refusedNote}` });
+        attempts.push({
+          round: reviseRound,
+          kind: isRevision ? 'revision' : 'initial',
+          at: new Date().toISOString(),
+          files_changed: [],
+          test_exit_code: null,
+          failure_summary: lastFailureTail.slice(0, 200),
+        });
+        if (attempts.length > 5) attempts.splice(0, attempts.length - 5);
+        reviseRound += 1;
+        if (reviseRound > ctx.reviseCap) {
+          await log(codingProjectId, { kind: 'task_failed', taskId: task.taskId, message: `Gave up on "${task.title}" after ${ctx.reviseCap} revise round(s) — no applicable files. Marked failed (honest).` });
+          return finish({ status: 'failed', reviseRounds: reviseRound - 1, error: `revise cap (${ctx.reviseCap}) exhausted — no applicable file blocks` });
+        }
+        continue;
+      }
+      // Some files applied and others refused: the refused ones may be the very
+      // change the task exists for, so neither a green run nor a missing test
+      // command makes the task done. Ask again for them, within the revise cap.
+      const refusedPaths = parsed.rejected.map((r) => (r.path ?? '(no path)').slice(0, 120));
+      const partial = writable.length > 0 && refusedPaths.length > 0;
+      const refusedList = refusedPaths.slice(0, 5).join(', ') + (refusedPaths.length > 5 ? ', …' : '');
+      const reviseForRefused = async (testExitCode: number | null): Promise<TaskOutcome | null> => {
+        lastFailureTail =
+          `${refusedNote}\nThe other file(s) were applied${testExitCode === 0 ? ' and the tests pass' : ''}, ` +
+          'but the task is not done until each refused file is written whole.';
+        await log(codingProjectId, {
+          kind: 'apply',
+          taskId: task.taskId,
+          message: `Not done: ${refusedPaths.length} file block(s) refused for "${task.title}" (${refusedList}).`,
+        });
+        attempts.push({
+          round: reviseRound,
+          kind: isRevision ? 'revision' : 'initial',
+          at: new Date().toISOString(),
+          files_changed: appliedFiles,
+          test_exit_code: testExitCode,
+          failure_summary: lastFailureTail.slice(0, 200),
+        });
+        if (attempts.length > 5) attempts.splice(0, attempts.length - 5);
+        reviseRound += 1;
+        if (reviseRound > ctx.reviseCap) {
+          await log(codingProjectId, { kind: 'task_failed', taskId: task.taskId, message: `Gave up on "${task.title}" after ${ctx.reviseCap} revise round(s) — file blocks still refused. Marked failed (honest).` });
+          return finish({ status: 'failed', reviseRounds: reviseRound - 1, error: `revise cap (${ctx.reviseCap}) exhausted — refused file blocks` });
+        }
+        return null;
+      };
+
       if (writable.length === 0) {
         // No files produced — treat as a failed round (counts toward the cap).
         lastFailureTail = 'Codegen produced no applicable file blocks.';
       } else {
         // Persist a coding_workspace_applications row (kind initial|revision) so
         // the A/B revise-round metric (coding-atom-stats) can count it.
-        const applicationId = await recordApplication(codingProjectId, task, ctx.workspaceAbs, parsed, isRevision);
+        const applicationId = await recordApplication(codingProjectId, task, ctx.workspaceAbs, writable, oldContents, parsed.rejected, isRevision);
         try {
           await applyFiles({
             workspaceAbs: ctx.workspaceAbs,
@@ -845,7 +922,8 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
             applicationId,
           });
           await markApplicationApplied(applicationId);
-          await log(codingProjectId, { kind: 'apply', taskId: task.taskId, message: `Applied ${writable.length} file(s) for "${task.title}".` });
+          const refusedPart = partial ? `; refused ${refusedPaths.length}: ${refusedList}` : '';
+          await log(codingProjectId, { kind: 'apply', taskId: task.taskId, message: `Applied ${writable.length} file(s) for "${task.title}"${refusedPart}.` });
         } catch (err) {
           await markApplicationFailed(applicationId, err instanceof Error ? err.message : 'apply failed');
           return finish({ status: 'failed', reviseRounds: reviseRound, error: err instanceof Error ? err.message : 'apply failed' });
@@ -858,6 +936,11 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
       // honestly treat a missing test command as "applied, not verified" = done
       // (verified=false; the panel TESTING gate still reviews the impl).
       if (!ctx.testArgv) {
+        if (partial) {
+          const gaveUp = await reviseForRefused(null);
+          if (gaveUp) return gaveUp;
+          continue;
+        }
         await log(codingProjectId, { kind: 'test', taskId: task.taskId, message: 'No test command configured — applied but not verified (TESTING gate still reviews).' });
         return finish({ status: 'done', reviseRounds: reviseRound, verified: false });
       }
@@ -888,11 +971,18 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
 
       if (passed) {
         await log(codingProjectId, { kind: 'test', taskId: task.taskId, message: `Tests GREEN on "${task.title}" (exit 0, ${testResult.durationMs} ms).` });
+        if (partial) {
+          const gaveUp = await reviseForRefused(0);
+          if (gaveUp) return gaveUp;
+          continue;
+        }
         return finish({ status: 'done', reviseRounds: reviseRound, verified: true });
       }
 
       // RED. Iterate — but enforce the revise cap (ALWAYS on).
-      lastFailureTail = combinedTail.slice(-2000) || `tests failed (exit ${testResult.exitCode ?? '?'}${testResult.timedOut ? ', timed out' : ''})`;
+      const testTail = combinedTail.slice(-2000) || `tests failed (exit ${testResult.exitCode ?? '?'}${testResult.timedOut ? ', timed out' : ''})`;
+      // Files refused this round are part of why it failed — say so first.
+      lastFailureTail = refusedNote ? `${refusedNote}\n${testTail}` : testTail;
       await log(codingProjectId, { kind: 'test', taskId: task.taskId, message: `Tests RED on "${task.title}" (exit ${testResult.exitCode ?? '?'}${testResult.timedOut ? ', timed out' : ''}).` });
 
       // GAP 1: record this attempt (what changed + why it failed) so the next
@@ -1205,18 +1295,14 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
     codingProjectId: string,
     task: PlanTask,
     workspaceAbs: string,
-    parsed: ReturnType<typeof parseFileBlocks>,
+    files: ParsedFileBlock[],
+    oldContents: Map<string, string | null>,
+    rejected: ParseResult['rejected'],
     isRevision: boolean,
   ): Promise<string> {
     // Build the deterministic diff + record (mirrors the apply/preview route).
-    const oldContents = new Map<string, string | null>();
-    const diffs: FileDiff[] = [];
-    for (const file of parsed.files) {
-      const old = await readWorkspaceFile(workspaceAbs, file.path);
-      oldContents.set(file.path, old);
-      diffs.push(buildFileDiff(file.path, old, file.content));
-    }
-    const record = buildApplicationRecord(parsed.files, diffs, oldContents);
+    const diffs: FileDiff[] = files.map((file) => buildFileDiff(file.path, oldContents.get(file.path) ?? null, file.content));
+    const record = buildApplicationRecord(files, diffs, oldContents);
     const applicationId = randomUUID();
     await db.run(
       `INSERT INTO coding_workspace_applications
@@ -1226,7 +1312,7 @@ export function createStudioOrchestrator(db: DatabaseAdapter, deps: Orchestrator
       applicationId, codingProjectId, task.taskId,
       isRevision ? 'revision' : 'initial', FILE_BLOCK_FORMAT_VERSION,
       workspaceAbs, JSON.stringify(record.files),
-      JSON.stringify(parsed.rejected), JSON.stringify(record.diff_summary),
+      JSON.stringify(rejected), JSON.stringify(record.diff_summary),
     );
     return applicationId;
   }
@@ -1466,7 +1552,8 @@ PATHS ARE EXACT AND LITERAL: write each file at PRECISELY the path the task asks
 
 ${isRevision
   ? 'This is a REVISION: the previous attempt FAILED its tests. Read the failure output and the "LESSONS FROM THIS PROJECT" below, then emit the CORRECTED file(s). Re-emit the full content of each file you change.'
-  : 'Write the complete file(s) the task needs.'}`;
+  : 'Write the complete file(s) the task needs.'}
+NEVER elide: no "... rest unchanged" or "// existing code" placeholders. A block with one is refused, and so is a rewrite that drops most of an existing file.`;
 }
 
 function buildCodegenUser(
@@ -1493,7 +1580,54 @@ function buildCodegenUser(
 
 // ── Default live calls (real provider — only used when not injected) ─────────
 
-async function defaultCallPlanner(input: OrchestratorPlanInput): Promise<{ releaseName: string; summary: string; tasks: RawPlanTask[] }> {
+/** The planner's shape: an object carrying a `tasks` array. */
+function isPlanShaped(v: unknown): boolean {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+    && Array.isArray((v as Record<string, unknown>).tasks);
+}
+
+/**
+ * The plan in a planner reply, or null when none can be read. Tolerant of
+ * leaked reasoning, a code example before the JSON, prose around it and
+ * several fenced blocks (extractJsonReply). Exported for tests.
+ */
+export function parsePlannerReply(text: string): { releaseName: string; summary: string; tasks: RawPlanTask[] } | null {
+  const reply = extractJsonReply(text, isPlanShaped);
+  if (!reply || !isPlanShaped(reply.value)) return null;
+  const parsed = reply.value as { releaseName?: unknown; summary?: unknown; tasks: RawPlanTask[] };
+  return {
+    releaseName: typeof parsed.releaseName === 'string' ? parsed.releaseName : 'Release 1',
+    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
+    tasks: parsed.tasks,
+  };
+}
+
+/** The second ask when the first planner reply held no readable plan. */
+export const PLANNER_JSON_NUDGE =
+  'Your reply could not be read as the plan. Reply again with ONLY the JSON object — '
+  + '{ "releaseName": "...", "summary": "...", "tasks": [ { "title": "...", "description": "...", "files": ["..."], "goalIds": ["..."] } ] } — '
+  + 'no prose, no reasoning, no other code before or after it.';
+
+/**
+ * Output budget for one codegen call. Whole files are re-emitted, and on an
+ * OpenAI-compatible endpoint (OpenRouter) a reasoning model spends part of
+ * max_tokens thinking, so compat asks for more; the endpoint's own ceiling
+ * (maxOutputTokens / the model's max completion) still clamps it.
+ */
+export function codegenMaxTokens(model: string): number {
+  return model.startsWith('compat:') ? COMPAT_CODEGEN_MAX_TOKENS : CODEGEN_MAX_TOKENS;
+}
+
+/** The call's reported cost in USD (compat endpoints report usage.cost), else 0. */
+function chatCostUsd(chat: object): number {
+  const cost = (chat as { costUsd?: unknown }).costUsd;
+  return typeof cost === 'number' && Number.isFinite(cost) ? cost : 0;
+}
+
+async function defaultCallPlanner(
+  db: DatabaseAdapter,
+  input: OrchestratorPlanInput,
+): Promise<{ releaseName: string; summary: string; tasks: RawPlanTask[] }> {
   const goals = input.goals ?? [];
   const goalBlock = goals.length
     ? `\n\nThe project's MEASURABLE GOALS (success-criteria the build is held to). Map EACH task to the goal ids it advances via "goalIds" (use these exact ids; [] for pure-infrastructure tasks):\n${goals.map((g) => `- ${g.id} [${g.priority}]: ${g.statement}`).join('\n')}\nTogether the tasks MUST cover every 'mvp' goal — do not leave an MVP goal unaddressed.`
@@ -1503,26 +1637,36 @@ async function defaultCallPlanner(input: OrchestratorPlanInput): Promise<{ relea
 { "releaseName": "...", "summary": "...", "tasks": [ { "title": "...", "description": "...", "files": ["src/..."], "goalIds": ["..."] } ] }
 \`\`\`
 Use as FEW tasks as the scope genuinely needs: a single small file = 1 task; a typical MVP = 3 to 7; only go higher for genuinely larger scope. CRITICAL: each task must leave the project's test suite PASSING when it is done — so do NOT split one file's implementation across several tasks (the tests only go green once that file is fully correct, which would make the earlier sub-tasks fail spuriously). Do not invent scope beyond the charter.${goalBlock}`;
-  const chat = await callChat({
+  const user = `Project: ${input.projectName}\n\nCharter:\n${input.charter}`;
+  const ask = (messages: Array<{ role: string; content: string }>) => callChat({
     model: input.model,
     system,
-    messages: [{ role: 'user', content: `Project: ${input.projectName}\n\nCharter:\n${input.charter}` }],
+    messages,
     maxTokens: PLAN_MAX_TOKENS,
     temperature: 0.3,
     jsonMode: true,
+    db,
   });
-  const text = chat.text ?? '';
-  const m = text.match(/```json\s*\n([\s\S]*?)\n```/);
-  const json = m ? m[1] : text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
-  const parsed = JSON.parse(json) as { releaseName?: string; summary?: string; tasks?: RawPlanTask[] };
-  return {
-    releaseName: typeof parsed.releaseName === 'string' ? parsed.releaseName : 'Release 1',
-    summary: typeof parsed.summary === 'string' ? parsed.summary : '',
-    tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
-  };
+
+  const first = await ask([{ role: 'user', content: user }]);
+  const plan = parsePlannerReply(first.text ?? '');
+  if (plan) return plan;
+
+  // One retry with a JSON-only nudge: weaker models answer with prose, a
+  // half-finished object or reasoning, and one unreadable reply used to fail
+  // the whole run. The first reply goes back so the model can see what it did.
+  const prior = stripReasoning(first.text ?? '').trim().slice(0, 4000);
+  const retry = await ask([
+    { role: 'user', content: user },
+    ...(prior ? [{ role: 'assistant', content: prior }] : []),
+    { role: 'user', content: PLANNER_JSON_NUDGE },
+  ]);
+  const retried = parsePlannerReply(retry.text ?? '');
+  if (retried) return retried;
+  throw new Error('The planner did not return a readable plan (asked twice) — no tasks were created.');
 }
 
-async function defaultCallCodegen(input: CodegenInput): Promise<CodegenResult> {
+async function defaultCallCodegen(db: DatabaseAdapter, input: CodegenInput): Promise<CodegenResult> {
   // Devstral is NON-thinking — no extended reasoning is requested here (the
   // caveat: a thinking request would silently run without reasoning; codegen is
   // gated to non-thinking by resolveCodingModel's role mapping).
@@ -1530,9 +1674,25 @@ async function defaultCallCodegen(input: CodegenInput): Promise<CodegenResult> {
     model: input.model,
     system: input.system,
     messages: [{ role: 'user', content: input.user }],
-    maxTokens: CODEGEN_MAX_TOKENS,
+    maxTokens: codegenMaxTokens(input.model),
     temperature: 0.2,
+    db,
   });
   // Return REAL token usage so the orchestrator can persist tokens_consumed (GAP 2).
-  return { text: chat.text ?? '', inputTokens: chat.inputTokens, outputTokens: chat.outputTokens, costUsd: 0 };
+  // Reasoning a model leaked into its reply stays in the text: parseFileBlocks
+  // skips <think> regions outside fences itself, and keeps them inside a file.
+  return {
+    text: chat.text ?? '',
+    inputTokens: chat.inputTokens,
+    outputTokens: chat.outputTokens,
+    costUsd: chatCostUsd(chat),
+  };
+}
+
+/** One line per refused file block, for the revise prompt and the step log. */
+function describeRefusedBlocks(rejected: ParseResult['rejected']): string {
+  if (rejected.length === 0) return '';
+  const lines = rejected.slice(0, 5).map((r) => `- ${r.path ?? '(no path)'}: ${r.reason}`);
+  if (rejected.length > 5) lines.push(`- … ${rejected.length - 5} more`);
+  return `Refused file blocks (not written) — emit each file whole, with no placeholders:\n${lines.join('\n')}`;
 }

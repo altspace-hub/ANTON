@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { randomUUID } from 'crypto';
@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
+import { assertOwned, ownerFilter, scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 const GUIDE_SYSTEM_PROMPT = `You are a friendly AI module designer helping users create custom Claude modules tailored to their specific tasks.
 
@@ -57,14 +58,43 @@ executive-summary, decision-memo, detailed-findings, regulatory-comparison, impa
 
 Choose area based on the domain. Common area IDs: financial-crime-prevention, legal-compliance, risk-management, banking-finance, technology, marketing-communications, hr-talent, strategy-consulting, legal-general, tax, data-analytics, startups-entrepreneurship, education, healthcare, coding, my-modules`;
 
+/**
+ * Whether the caller may read one custom module: its owner, an admin, anyone in
+ * solo mode, or anyone once it is shared with the community. A row the caller
+ * may not read answers like a missing one. Exported for the other routes that
+ * read a module by id (exchange export and fingerprint).
+ */
+export async function canReadCustomModule(db: DatabaseAdapter, req: OwnedRequest, id: string): Promise<boolean> {
+  if (!scopesToOwner(req)) {
+    return !!(await db.get('SELECT 1 AS ok FROM custom_modules WHERE id = ?', id));
+  }
+  if (!req.user?.id) return false;
+  return !!(await db.get(
+    'SELECT 1 AS ok FROM custom_modules WHERE id = ? AND (user_id = ? OR is_shared_with_community = 1)',
+    id, req.user.id,
+  ));
+}
+
+/**
+ * Custom modules belong to the person who made them (custom_modules.user_id,
+ * migration 290). In team mode a user lists their own, reads their own plus the
+ * community-shared ones, and only the owner or an admin may edit, delete or
+ * share one: a module's system prompt is what everyone who runs it gets, so it
+ * is not everyone's to rewrite. Solo mode is not scoped.
+ */
 export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
 
-  // GET /api/custom-modules — list all custom modules
-  router.get('/custom-modules', async (_req, res) => {
+  const ownedModule = (req: OwnedRequest, res: Response, id: string) =>
+    assertOwned(db, req, res, { table: 'custom_modules', ownerColumn: 'user_id', id, notFoundMessage: 'Not found' });
+
+  // GET /api/custom-modules — list the caller's custom modules (all of them for admins and solo)
+  router.get('/custom-modules', async (req, res) => {
     try {
+      const scope = ownerFilter(req, 'user_id');
       const modules = await db.all(
-        `SELECT * FROM custom_modules ORDER BY updated_at DESC`
+        `SELECT * FROM custom_modules WHERE 1=1${scope.sql} ORDER BY updated_at DESC`,
+        ...scope.params,
       ) as Record<string, unknown>[];
       res.json(modules.map((m) => ({
         ...m,
@@ -78,6 +108,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
   // GET /api/custom-modules/:id — get single custom module
   router.get('/custom-modules/:id', async (req, res) => {
     try {
+      if (!(await canReadCustomModule(db, req, req.params.id))) return res.status(404).json({ error: 'Not found' });
       const m = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
       if (!m) return res.status(404).json({ error: 'Not found' });
       res.json({ ...m, config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config });
@@ -107,8 +138,8 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
       const now = new Date().toISOString();
 
       await db.run(`
-        INSERT INTO custom_modules (id, name, short_name, description, icon, area, system_prompt, config, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO custom_modules (id, name, short_name, description, icon, area, system_prompt, config, created_at, updated_at, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
         id,
         name.trim(),
@@ -120,6 +151,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         JSON.stringify(config || {}),
         now,
         now,
+        req.user?.id ?? null,
       );
 
       const created = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, id) as Record<string, unknown>;
@@ -132,8 +164,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
   // PATCH /api/custom-modules/:id — update custom module
   router.patch('/custom-modules/:id', async (req, res) => {
     try {
-      const existing = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Not found' });
+      if (!(await ownedModule(req, res, req.params.id))) return;
 
       const { name, short_name, description, icon, area, system_prompt, config } = req.body as Record<string, unknown>;
       const now = new Date().toISOString();
@@ -171,6 +202,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
   // DELETE /api/custom-modules/:id
   router.delete('/custom-modules/:id', async (req, res) => {
     try {
+      if (!(await ownedModule(req, res, req.params.id))) return;
       const result = await db.run(`DELETE FROM custom_modules WHERE id = ?`, req.params.id);
       if (result.changes === 0) return res.status(404).json({ error: 'Not found' });
       res.json({ success: true });
@@ -188,11 +220,10 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
         return;
       }
 
-      const existing = await db.get(`SELECT id FROM custom_modules WHERE id = ?`, moduleId);
-      if (!existing) {
-        res.status(404).json({ error: 'Module not found' });
-        return;
-      }
+      // Only the owner (or an admin) may put a module in front of everyone.
+      if (!(await assertOwned(db, req, res, {
+        table: 'custom_modules', ownerColumn: 'user_id', id: moduleId, notFoundMessage: 'Module not found',
+      }))) return;
       await db.run(`UPDATE custom_modules SET is_shared_with_community = 1, updated_at = ? WHERE id = ?`, new Date().toISOString(), moduleId);
       res.json({ ok: true });
     } catch (error) {

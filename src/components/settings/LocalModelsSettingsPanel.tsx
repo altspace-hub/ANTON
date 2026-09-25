@@ -30,6 +30,21 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { fetchWithAuth } from '@/lib/api';
+import {
+  buildEndpointPayload,
+  describeModelMeta,
+  jsonForEditor,
+  normaliseAllowedModels,
+  openRouterAttributionHeaders,
+  parseExtraBodyInput,
+  parseExtraHeadersInput,
+  parseMaxOutputTokensInput,
+  parsePriceInput,
+  OPENROUTER_EU_ZDR_EXTRA_BODY,
+  OPENROUTER_SHOWCASE_MODEL,
+  type EndpointFormValues,
+  type EndpointModelMeta,
+} from '@/lib/model-endpoint-form';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -52,21 +67,39 @@ interface SafeEndpoint {
   availableModels: string[];
   contextWindow: number | null;
   extraHeaders: Record<string, string>;
+  /** Merged into every request body (e.g. OpenRouter provider routing). */
+  extraBody?: Record<string, unknown>;
+  /** Non-empty = only these bare model ids may run on this endpoint. */
+  allowedModels?: string[];
+  /** Ceiling for max_tokens on this endpoint. */
+  maxOutputTokens?: number | null;
+  /** Read-only: what the endpoint's /models said, per bare model id. */
+  modelMeta?: Record<string, EndpointModelMeta>;
+  /** USD per million tokens, for spend caps on an endpoint that reports no cost. */
+  inputPricePerMillion?: number | null;
+  outputPricePerMillion?: number | null;
   enabled: boolean;
   notes: string | null;
   updatedAt: string;
 }
 
-interface EndpointForm {
-  slug: string;
-  displayName: string;
-  baseUrl: string;
-  apiKey: string;
-  defaultModel: string;
-  contextWindow: string;
-  notes: string;
-  refererForOpenRouter?: string;
-}
+type EndpointForm = EndpointFormValues;
+
+const EMPTY_FORM: EndpointForm = {
+  slug: '',
+  displayName: '',
+  baseUrl: '',
+  apiKey: '',
+  defaultModel: '',
+  contextWindow: '',
+  notes: '',
+  extraHeaders: '',
+  extraBody: '',
+  allowedModels: [],
+  maxOutputTokens: '',
+  inputPricePerMillion: '',
+  outputPricePerMillion: '',
+};
 
 // ── Preset endpoint templates ──────────────────────────────────────────
 
@@ -79,7 +112,12 @@ interface PresetEndpoint {
   signupUrl: string;
   pricing: string;
   notes: string;
-  needsExtraHeaders?: boolean;
+  /** Pre-filled extra request body. */
+  extraBody?: Readonly<Record<string, unknown>>;
+  /** Pre-filled allow-list. */
+  allowedModels?: string[];
+  /** Pre-fill the OpenRouter app-attribution headers for this page's origin. */
+  attributionHeaders?: boolean;
 }
 
 const PRESETS: PresetEndpoint[] = [
@@ -94,15 +132,20 @@ const PRESETS: PresetEndpoint[] = [
     notes: 'DeepSeek-V3 and R1 reasoning. Very strong / very cheap. Great default.',
   },
   {
+    // Pre-set for the public showcase: GLM 5.3 Flash pinned to the two EU
+    // zero-retention providers. The provider pin applies to every model on the
+    // endpoint, so the allow-list starts with that one model.
     slug: 'openrouter',
     displayName: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1',
-    defaultModel: 'meta-llama/llama-3.3-70b-instruct',
-    contextWindow: 128_000,
+    defaultModel: OPENROUTER_SHOWCASE_MODEL,
+    contextWindow: 131_072,
     signupUrl: 'https://openrouter.ai/',
-    pricing: 'Pay-as-you-go across 200+ models — single key, transparent prices',
-    notes: '200+ models from one key. After saving, set HTTP-Referer and X-Title in extra headers.',
-    needsExtraHeaders: true,
+    pricing: 'One key for 400+ models, pay as you go. Pre-set: GLM 5.3 Flash (list price about $0.15 in / $0.50 out per 1M)',
+    notes: 'Pre-filled for GLM 5.3 Flash on the EU zero-retention providers (Inceptron, NextBit; no fallback), with the app-attribution headers. To run other models, change provider.only in the extra body and the allowed models.',
+    extraBody: OPENROUTER_EU_ZDR_EXTRA_BODY,
+    allowedModels: [OPENROUTER_SHOWCASE_MODEL],
+    attributionHeaders: true,
   },
   {
     slug: 'groq',
@@ -420,15 +463,7 @@ export default function LocalModelsSettingsPanel() {
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [healthChecking, setHealthChecking] = useState<string | null>(null);
   const [healthResult, setHealthResult] = useState<Record<string, { available: boolean; modelCount?: number; error?: string }>>({});
-  const [form, setForm] = useState<EndpointForm>({
-    slug: '',
-    displayName: '',
-    baseUrl: '',
-    apiKey: '',
-    defaultModel: '',
-    contextWindow: '',
-    notes: '',
-  });
+  const [form, setForm] = useState<EndpointForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSaving, setFormSaving] = useState(false);
 
@@ -471,23 +506,20 @@ export default function LocalModelsSettingsPanel() {
     setForm(
       preset
         ? {
+            ...EMPTY_FORM,
             slug: preset.slug,
             displayName: preset.displayName,
             baseUrl: preset.baseUrl,
-            apiKey: '',
             defaultModel: preset.defaultModel,
             contextWindow: String(preset.contextWindow),
             notes: preset.notes,
+            extraHeaders: preset.attributionHeaders
+              ? jsonForEditor(openRouterAttributionHeaders(window.location.origin))
+              : '',
+            extraBody: jsonForEditor(preset.extraBody ? { ...preset.extraBody } : undefined),
+            allowedModels: preset.allowedModels ? [...preset.allowedModels] : [],
           }
-        : {
-            slug: '',
-            displayName: '',
-            baseUrl: '',
-            apiKey: '',
-            defaultModel: '',
-            contextWindow: '',
-            notes: '',
-          },
+        : EMPTY_FORM,
     );
     setShowAddForm(true);
   }
@@ -503,6 +535,12 @@ export default function LocalModelsSettingsPanel() {
       defaultModel: ep.defaultModel ?? '',
       contextWindow: ep.contextWindow ? String(ep.contextWindow) : '',
       notes: ep.notes ?? '',
+      extraHeaders: jsonForEditor(ep.extraHeaders),
+      extraBody: jsonForEditor(ep.extraBody),
+      allowedModels: ep.allowedModels ?? [],
+      maxOutputTokens: ep.maxOutputTokens ? String(ep.maxOutputTokens) : '',
+      inputPricePerMillion: ep.inputPricePerMillion != null ? String(ep.inputPricePerMillion) : '',
+      outputPricePerMillion: ep.outputPricePerMillion != null ? String(ep.outputPricePerMillion) : '',
     });
     setShowAddForm(true);
   }
@@ -515,29 +553,24 @@ export default function LocalModelsSettingsPanel() {
 
   async function saveForm() {
     setFormError(null);
+    // The JSON fields are checked here so a typo never reaches the server.
+    const built = buildEndpointPayload(form, !!editingSlug);
+    if (!built.ok) {
+      setFormError(built.error);
+      return;
+    }
     setFormSaving(true);
     try {
-      const payload: Record<string, unknown> = {
-        slug: form.slug,
-        displayName: form.displayName,
-        baseUrl: form.baseUrl,
-        defaultModel: form.defaultModel || undefined,
-        contextWindow: form.contextWindow ? Number(form.contextWindow) : undefined,
-        notes: form.notes || undefined,
-      };
-      if (form.apiKey) payload.apiKey = form.apiKey;
-
+      // For PATCH the slug is the path, not part of the body.
       const url = editingSlug
         ? `/api/settings/model-endpoints/${editingSlug}`
         : '/api/settings/model-endpoints';
       const method = editingSlug ? 'PATCH' : 'POST';
-      // For PATCH, omit the slug — it's the path
-      if (editingSlug) delete (payload as Record<string, unknown>).slug;
 
       const res = await fetchWithAuth(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(built.value),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -826,7 +859,61 @@ export default function LocalModelsSettingsPanel() {
                 placeholder="Optional — visible in Settings only"
                 fullWidth
               />
+              <Field
+                label="Max output tokens"
+                hint="Optional — ceiling for every answer on this endpoint; reasoning counts against it"
+                value={form.maxOutputTokens}
+                onChange={(v) => setForm({ ...form, maxOutputTokens: v })}
+                placeholder="16000"
+                isNumber
+                error={formFieldError(parseMaxOutputTokensInput(form.maxOutputTokens))}
+              />
+              <Field
+                label="Input price (USD per 1M tokens)"
+                hint="Optional — only for an endpoint that reports no cost (OpenRouter does); feeds the daily spend caps"
+                value={form.inputPricePerMillion}
+                onChange={(v) => setForm({ ...form, inputPricePerMillion: v })}
+                placeholder="0.15"
+                inputMode="decimal"
+                error={formFieldError(parsePriceInput(form.inputPricePerMillion, 'Input price'))}
+              />
+              <Field
+                label="Output price (USD per 1M tokens)"
+                hint="Optional — as above; reasoning is billed as output"
+                value={form.outputPricePerMillion}
+                onChange={(v) => setForm({ ...form, outputPricePerMillion: v })}
+                placeholder="0.50"
+                inputMode="decimal"
+                error={formFieldError(parsePriceInput(form.outputPricePerMillion, 'Output price'))}
+              />
             </div>
+
+            <AllowedModelsPicker
+              selected={form.allowedModels}
+              discovered={editingSlug ? endpoints.find((e) => e.slug === editingSlug)?.availableModels ?? [] : []}
+              meta={editingSlug ? endpoints.find((e) => e.slug === editingSlug)?.modelMeta : undefined}
+              onChange={(next) => setForm({ ...form, allowedModels: next })}
+            />
+
+            <JsonField
+              label="Extra headers (JSON)"
+              hint="Sent with every request, e.g. OpenRouter's HTTP-Referer and X-OpenRouter-Title. Stored as plain text — never put a key here."
+              value={form.extraHeaders}
+              onChange={(v) => setForm({ ...form, extraHeaders: v })}
+              placeholder={'{\n  "HTTP-Referer": "https://anton.example.com"\n}'}
+              error={formFieldError(parseExtraHeadersInput(form.extraHeaders))}
+              rows={4}
+            />
+
+            <JsonField
+              label="Extra request body (JSON)"
+              hint="Merged into every request, e.g. OpenRouter provider routing or plugins. ANTON sets model, messages and stream itself."
+              value={form.extraBody}
+              onChange={(v) => setForm({ ...form, extraBody: v })}
+              placeholder={'{\n  "provider": { "zdr": true, "data_collection": "deny" }\n}'}
+              error={formFieldError(parseExtraBodyInput(form.extraBody))}
+              rows={7}
+            />
 
             {formError && (
               <div className="flex items-start gap-2 rounded-lg border border-adv-red/40 bg-adv-red/5 p-2.5">
@@ -838,7 +925,7 @@ export default function LocalModelsSettingsPanel() {
             <div className="flex items-center gap-2 pt-1">
               <button
                 onClick={saveForm}
-                disabled={formSaving || !form.slug || !form.displayName || !form.baseUrl}
+                disabled={formSaving || !form.slug || !form.displayName || !form.baseUrl || !buildEndpointPayload(form, !!editingSlug).ok}
                 className="flex items-center gap-1.5 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="h-3.5 w-3.5" /> {formSaving ? 'Saving…' : 'Save endpoint'}
@@ -862,6 +949,7 @@ export default function LocalModelsSettingsPanel() {
           <div className="space-y-2">
             {endpoints.map((ep) => {
               const health = healthResult[ep.slug];
+              const extraBodyKeys = Object.keys(ep.extraBody ?? {});
               return (
                 <div key={ep.slug} className="rounded-lg border border-border bg-adv-dark/30 p-3">
                   <div className="flex items-start justify-between gap-3 mb-2">
@@ -885,6 +973,37 @@ export default function LocalModelsSettingsPanel() {
                       {ep.availableModels.length > 0 && (
                         <p className="text-[11px] text-adv-gray mt-0.5">{ep.availableModels.length} model{ep.availableModels.length === 1 ? '' : 's'} discovered</p>
                       )}
+                      {(ep.allowedModels ?? []).length > 0 ? (
+                        <div className="mt-0.5 text-[11px] text-adv-gray">
+                          <span className="text-adv-off-white">Only these models may run:</span>
+                          <ul className="ml-3 list-disc">
+                            {(ep.allowedModels ?? []).map((m) => {
+                              const meta = describeModelMeta(ep.modelMeta?.[m]);
+                              return (
+                                <li key={m}>
+                                  <code className="text-xs">{m}</code>
+                                  {meta && <span> — {meta}</span>}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-adv-gray mt-0.5">Any model the endpoint lists may run (no allowed-models list).</p>
+                      )}
+                      {(ep.maxOutputTokens || extraBodyKeys.length > 0) ? (
+                        <p className="text-[11px] text-adv-gray mt-0.5">
+                          {[
+                            ep.maxOutputTokens ? `Answers capped at ${ep.maxOutputTokens.toLocaleString()} tokens` : '',
+                            extraBodyKeys.length > 0 ? `Extra request body: ${extraBodyKeys.join(', ')}` : '',
+                          ].filter(Boolean).join(' · ')}
+                        </p>
+                      ) : null}
+                      {(ep.inputPricePerMillion != null || ep.outputPricePerMillion != null) ? (
+                        <p className="text-[11px] text-adv-gray mt-0.5">
+                          Priced at ${ep.inputPricePerMillion ?? 0} in / ${ep.outputPricePerMillion ?? 0} out per 1M tokens
+                        </p>
+                      ) : null}
                       {ep.notes && <p className="text-[11px] text-adv-gray italic mt-0.5">{ep.notes}</p>}
                       {health && (
                         <p className={`text-[11px] mt-1 ${health.available ? 'text-adv-green' : 'text-adv-red'}`}>
@@ -963,9 +1082,12 @@ interface FieldProps {
   fullWidth?: boolean;
   isPassword?: boolean;
   isNumber?: boolean;
+  /** A text field for a decimal value (a number input steps by whole units). */
+  inputMode?: 'decimal';
+  error?: string;
 }
 
-function Field({ label, value, onChange, placeholder, hint, disabled, fullWidth, isPassword, isNumber }: FieldProps) {
+function Field({ label, value, onChange, placeholder, hint, disabled, fullWidth, isPassword, isNumber, inputMode, error }: FieldProps) {
   return (
     <div className={fullWidth ? 'md:col-span-2' : ''}>
       <label className="block text-xs text-adv-gray mb-1">
@@ -978,8 +1100,157 @@ function Field({ label, value, onChange, placeholder, hint, disabled, fullWidth,
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 disabled:opacity-50 focus:outline-none focus:border-adv-teal transition-colors"
+        inputMode={inputMode}
+        aria-label={label}
+        aria-invalid={error ? true : undefined}
+        className={`w-full rounded-lg border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 disabled:opacity-50 focus:outline-none focus:border-adv-teal transition-colors ${error ? 'border-adv-red' : 'border-border'}`}
       />
+      {error && <p className="mt-1 text-xs text-adv-red">{error}</p>}
+    </div>
+  );
+}
+
+function formFieldError(result: { ok: true } | { ok: false; error: string }): string | undefined {
+  return result.ok ? undefined : result.error;
+}
+
+// ── JSON text field (extra headers / extra request body) ──────────────
+
+interface JsonFieldProps {
+  label: string;
+  hint: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  error?: string;
+  rows: number;
+}
+
+function JsonField({ label, hint, value, onChange, placeholder, error, rows }: JsonFieldProps) {
+  return (
+    <div>
+      <label className="block text-xs text-adv-gray mb-1">
+        {label}
+        <span className="text-adv-gray opacity-60"> · {hint}</span>
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        spellCheck={false}
+        aria-label={label}
+        aria-invalid={error ? true : undefined}
+        className={`w-full rounded-lg border bg-adv-dark px-3 py-1.5 font-mono text-xs text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal transition-colors ${error ? 'border-adv-red' : 'border-border'}`}
+      />
+      {error && <p className="mt-1 text-xs text-adv-red">{error}</p>}
+    </div>
+  );
+}
+
+// ── Allowed models: pick from the endpoint's discovered list ──────────
+
+const MAX_LISTED_MODELS = 100;
+
+interface AllowedModelsPickerProps {
+  selected: string[];
+  /** What the endpoint's last health check discovered. */
+  discovered: string[];
+  meta?: Record<string, EndpointModelMeta>;
+  onChange: (next: string[]) => void;
+}
+
+function AllowedModelsPicker({ selected, discovered, meta, onChange }: AllowedModelsPickerProps) {
+  const [filter, setFilter] = useState('');
+  const needle = filter.trim().toLowerCase();
+  const matches = discovered.filter((m) => !needle || m.toLowerCase().includes(needle));
+  const typed = filter.trim();
+  const canAddTyped = typed.length > 0 && !selected.includes(typed);
+
+  const toggle = (model: string) => {
+    onChange(selected.includes(model) ? selected.filter((m) => m !== model) : normaliseAllowedModels([...selected, model]));
+  };
+
+  return (
+    <div>
+      <p className="block text-xs text-adv-gray mb-1">
+        Allowed models
+        <span className="opacity-60">
+          {' '}· Only these models may run on this endpoint, for everyone — the server refuses any other. Empty = any model the endpoint lists.
+        </span>
+      </p>
+
+      {selected.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {selected.map((m) => (
+            <span key={m} className="flex items-center gap-1 rounded bg-adv-teal/10 px-2 py-0.5 text-xs text-adv-teal">
+              <code>{m}</code>
+              <button
+                type="button"
+                onClick={() => toggle(m)}
+                className="rounded hover:text-adv-red"
+                aria-label={`Remove ${m} from allowed models`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder={discovered.length > 0 ? `Filter ${discovered.length} discovered models, or type a model id` : 'Type a model id, e.g. z-ai/glm-5.3-flash'}
+          aria-label="Filter discovered models or type a model id"
+          className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white placeholder:text-adv-gray/50 focus:outline-none focus:border-adv-teal transition-colors"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            onChange(normaliseAllowedModels([...selected, typed]));
+            setFilter('');
+          }}
+          disabled={!canAddTyped}
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-adv-off-white hover:border-adv-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add
+        </button>
+      </div>
+
+      {discovered.length === 0 ? (
+        <p className="mt-1 text-xs text-adv-gray">
+          Save the endpoint and run its health check (the server icon) to list the models it offers, or type a model id above.
+        </p>
+      ) : (
+        <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-border bg-adv-dark/40">
+          {matches.slice(0, MAX_LISTED_MODELS).map((m) => {
+            const line = describeModelMeta(meta?.[m]);
+            return (
+              <label key={m} className="flex cursor-pointer items-start gap-2 px-3 py-1.5 hover:bg-adv-dark">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(m)}
+                  onChange={() => toggle(m)}
+                  className="mt-0.5 rounded border-adv-gray-med accent-adv-teal"
+                />
+                <span className="min-w-0">
+                  <code className="text-xs text-adv-off-white">{m}</code>
+                  {line && <span className="block text-[11px] text-adv-gray">{line}</span>}
+                </span>
+              </label>
+            );
+          })}
+          {matches.length > MAX_LISTED_MODELS && (
+            <p className="px-3 py-1.5 text-xs text-adv-gray">
+              {matches.length - MAX_LISTED_MODELS} more — narrow the filter.
+            </p>
+          )}
+          {matches.length === 0 && <p className="px-3 py-1.5 text-xs text-adv-gray">No discovered model matches.</p>}
+        </div>
+      )}
     </div>
   );
 }

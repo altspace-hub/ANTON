@@ -499,6 +499,24 @@ export async function getAllModules(): Promise<ModuleConfig[]> {
   return areas.flatMap((a) => a.modules);
 }
 
+const LEGACY_PROMPTS_DIR = path.resolve(__dirname, '..', 'prompts');
+
+/**
+ * The module id alphabet of server/prompts/ (_foundation, civic-gap, …). The id
+ * comes from the client — GET /modules/:id/prompt, preview-prompt and
+ * /claude/message all reach this — and Express decodes '..%2F..%2FCLAUDE' in a
+ * path segment to '../../CLAUDE', so an id outside it named any .md file on the
+ * disk (2026-09-25).
+ */
+const LEGACY_PROMPT_ID = /^[a-z0-9_][a-z0-9_-]*$/i;
+
+/** server/prompts/<id>.md, or null when the id could name anything outside that directory. */
+export function legacyPromptPath(moduleId: string): string | null {
+  if (typeof moduleId !== 'string' || !LEGACY_PROMPT_ID.test(moduleId)) return null;
+  const resolved = path.resolve(LEGACY_PROMPTS_DIR, `${moduleId}.md`);
+  return resolved.startsWith(LEGACY_PROMPTS_DIR + path.sep) ? resolved : null;
+}
+
 /**
  * Get the system prompt for a module (from the loaded cache).
  * Falls back to the old server/prompts/ directory for backward compatibility.
@@ -508,8 +526,8 @@ export async function getModuleSystemPrompt(moduleId: string): Promise<string | 
   if (mod?.systemPrompt) return mod.systemPrompt;
 
   // Backward compatibility: old flat prompts directory
-  const legacyPath = path.join(__dirname, '..', 'prompts', `${moduleId}.md`);
-  if (await fs.pathExists(legacyPath)) {
+  const legacyPath = legacyPromptPath(moduleId);
+  if (legacyPath && await fs.pathExists(legacyPath)) {
     return (await fs.readFile(legacyPath, 'utf-8')).trim();
   }
 

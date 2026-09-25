@@ -1,7 +1,13 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import { Zap, Brain, Microscope, SearchCode, ListChecks, FlaskConical } from 'lucide-react';
 import type { ThinkingLevel, ModelId } from '@/lib/types';
 import { providerForModelId, thinkingGranularity, type ThinkingGranularity } from '@/lib/constants';
+import {
+  compatThinkingFallback,
+  isCompatModelId,
+  modelShortName,
+  thinkingLevelUnavailable,
+} from '@/lib/compat-model-policy';
 import HelpTooltip from './HelpTooltip';
 
 // Honest note about how the selected model's provider honours thinking levels
@@ -52,11 +58,26 @@ interface ThinkingControlsProps {
   onChange: (value: ThinkingLevel) => void;
   /** Optional selected model — enables an honest note about how it honours levels. */
   model?: ModelId;
+  /** Called instead of onChange when the control itself moves the level (a
+   *  level the selected model cannot run) — not a choice the person made. */
+  onAutoAdjust?: (value: ThinkingLevel) => void;
 }
 
-function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
+function ThinkingControls({ value, onChange, model, onAutoAdjust }: ThinkingControlsProps) {
+  const compat = isCompatModelId(model);
   const granularity = model ? thinkingGranularity(providerForModelId(model), model) : 'full';
-  const note = granularity !== 'full' ? GRANULARITY_NOTE[granularity] : undefined;
+  // A compat endpoint maps the level to reasoning effort when it reports that
+  // the model reasons, so the generic "levels have no effect" note is not true there.
+  const note = compat ? undefined : granularity !== 'full' ? GRANULARITY_NOTE[granularity] : undefined;
+
+  // Investigate and Deep run as multi-step chains on Claude only. A compat
+  // selection holding one (a module default, a restored session) moves to
+  // Think Hard, so the page never shows a level the run will not do.
+  const fallback = compatThinkingFallback(value, model);
+  useEffect(() => {
+    if (fallback) (onAutoAdjust ?? onChange)(fallback);
+  }, [fallback, onAutoAdjust, onChange]);
+
   return (
     <div>
       <div className="mb-2 flex items-center gap-1.5">
@@ -72,12 +93,17 @@ function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
         {levels.map((level) => {
           const Icon = iconMap[level.icon];
           const isActive = value === level.id;
+          const unavailable = thinkingLevelUnavailable(level.id, model);
           return (
             <button
               key={level.id}
               onClick={() => onChange(level.id)}
+              disabled={unavailable}
+              aria-disabled={unavailable || undefined}
               className={`flex flex-col items-center gap-1.5 rounded-lg border p-2.5 text-center transition-all ${
-                isActive && level.iterative
+                unavailable
+                  ? 'cursor-not-allowed border-border bg-adv-card text-adv-gray opacity-40'
+                  : isActive && level.iterative
                   ? 'border-adv-gold bg-adv-gold/10 text-adv-gold shadow-sm shadow-adv-gold/10'
                   : isActive
                   ? 'border-adv-teal bg-adv-teal-dim text-adv-teal shadow-sm shadow-adv-teal/10'
@@ -85,7 +111,7 @@ function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
                   ? 'border-adv-gold/30 bg-adv-card text-adv-gray hover:border-adv-gold/60 hover:text-adv-gold'
                   : 'border-border bg-adv-card text-adv-gray hover:border-adv-gray-med hover:text-adv-off-white'
               }`}
-              title={level.description}
+              title={unavailable ? `${level.label} runs on Claude models only` : level.description}
             >
               <Icon className="h-4 w-4" />
               <span className="text-[11px] font-medium leading-tight">{level.label}</span>
@@ -104,7 +130,14 @@ function ThinkingControls({ value, onChange, model }: ThinkingControlsProps) {
           {note}
         </p>
       )}
-      {value === 'deep_investigate' && (
+      {compat && model && (
+        <p className="mt-2 rounded-md border border-adv-blue/20 bg-adv-blue/5 px-3 py-2 text-xs text-adv-blue">
+          On {modelShortName(model)}, the level sets the model's reasoning effort where the endpoint reports that it
+          reasons (nearby levels can merge). Investigate and Deep are multi-step reasoning chains that run on Claude
+          models only, so they are switched off here.
+        </p>
+      )}
+      {value === 'deep_investigate' && !compat && (
         <p className="mt-2 rounded-md border border-adv-gold/20 bg-adv-gold/5 px-3 py-2 text-xs text-adv-gold">
           Deep mode uses the Iterative Reasoning Engine — 6 reasoning phases before synthesising. Expect 3–5× longer processing time and higher token cost. Best for critical regulatory analysis, gap assessments, and high-stakes legal research.
         </p>

@@ -4,6 +4,8 @@ import { randomUUID } from 'crypto';
 import { callChat } from '../services/provider-router.js';
 import { ingestLocalProject } from '../services/project-ingestor.js';
 import { safeError } from '../lib/error-response.js';
+import { checkFolderPath, type FolderPathCheck } from '../lib/folder-guard.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 const DIMENSIONS = [
   { name: 'feature-completeness', persona: 'Product Manager', reviewType: 'product' },
@@ -14,11 +16,31 @@ const DIMENSIONS = [
   { name: 'goal-drift', persona: 'Project Manager', reviewType: 'goal_alignment' },
 ] as const;
 
+/**
+ * Every route is admin-only in team mode. Reviews have no owner column, and a
+ * review carries what ingest read from a directory on the host (tree, key
+ * files, dependencies), so on a shared server one person's review would be
+ * every user's to read. Ingest also goes through the ALLOWED_FOLDER_PATHS
+ * guard in every mode, like the knowledge folders.
+ */
+/**
+ * The folder guard's refusal, with what to change. A default install allows
+ * only ./uploads and ./outputs, so a project path elsewhere is refused until
+ * the owner adds it to ALLOWED_FOLDER_PATHS; saying only "outside allowed
+ * directories" left them guessing (2026-09-25).
+ */
+function folderRefusal(guard: FolderPathCheck): string {
+  if (guard.reason === 'not_allowed') {
+    return `${guard.error ?? 'Path outside allowed directories'}. Add the project's folder (or a parent) to ALLOWED_FOLDER_PATHS in the server's .env and restart ANTON.`;
+  }
+  return guard.error ?? 'Path outside allowed directories';
+}
+
 export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
 
   // GET /api/coding/alignment-reviews — list all reviews
-  router.get('/coding/alignment-reviews', async (req, res) => {
+  router.get('/coding/alignment-reviews', requireAdminOrSolo, async (req, res) => {
     try {
       const reviews = await db.all('SELECT * FROM alignment_reviews ORDER BY created_at DESC');
       res.json(reviews);
@@ -28,12 +50,21 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
   });
 
   // POST /api/coding/alignment-reviews — create new review
-  router.post('/coding/alignment-reviews', async (req, res) => {
+  router.post('/coding/alignment-reviews', requireAdminOrSolo, async (req, res) => {
     try {
-      const { project_name, instruction_builder_project_id, target_tool } = req.body;
+      const { project_name, instruction_builder_project_id, target_tool, path: dirPath } = req.body;
       if (!project_name) {
         res.status(400).json({ error: 'project_name is required' });
         return;
+      }
+      // Optional: the folder ingest will read, checked before the review row
+      // exists, so a refused path leaves no empty review behind.
+      if (dirPath !== undefined) {
+        const guard = checkFolderPath(dirPath);
+        if (!guard.ok) {
+          res.status(403).json({ error: folderRefusal(guard) });
+          return;
+        }
       }
 
       const id = randomUUID();
@@ -50,7 +81,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
   });
 
   // GET /api/coding/alignment-reviews/:id — get review details
-  router.get('/coding/alignment-reviews/:id', async (req, res) => {
+  router.get('/coding/alignment-reviews/:id', requireAdminOrSolo, async (req, res) => {
     try {
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
@@ -77,7 +108,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
   });
 
   // POST /api/coding/alignment-reviews/:id/ingest — ingest project
-  router.post('/coding/alignment-reviews/:id/ingest', async (req, res) => {
+  router.post('/coding/alignment-reviews/:id/ingest', requireAdminOrSolo, async (req, res) => {
     try {
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
@@ -88,7 +119,12 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
       const { source_type, path: dirPath } = req.body;
 
       if (source_type === 'local-directory' && dirPath) {
-        const projectState = await ingestLocalProject(dirPath);
+        const guard = checkFolderPath(dirPath);
+        if (!guard.ok) {
+          res.status(403).json({ error: folderRefusal(guard) });
+          return;
+        }
+        const projectState = await ingestLocalProject(guard.resolved);
 
         await db.run("UPDATE alignment_reviews SET project_state_summary = ?, status = 'ingesting', updated_at = NOW() WHERE id = ?"
         , JSON.stringify(projectState), req.params.id);
@@ -103,7 +139,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
   });
 
   // POST /api/coding/alignment-reviews/:id/goals — set goals reference
-  router.post('/coding/alignment-reviews/:id/goals', async (req, res) => {
+  router.post('/coding/alignment-reviews/:id/goals', requireAdminOrSolo, async (req, res) => {
     try {
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
@@ -147,7 +183,7 @@ export async function createAlignmentReviewerRoutes(db: DatabaseAdapter): Promis
   });
 
   // POST /api/coding/alignment-reviews/:id/analyse — run alignment analysis
-  router.post('/coding/alignment-reviews/:id/analyse', async (req, res) => {
+  router.post('/coding/alignment-reviews/:id/analyse', requireAdminOrSolo, async (req, res) => {
     try {
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
@@ -234,7 +270,7 @@ Assess the alignment of this project against its stated goals for the "${dim.nam
   });
 
   // POST /api/coding/alignment-reviews/:id/generate-steering — generate steering instructions
-  router.post('/coding/alignment-reviews/:id/generate-steering', async (req, res) => {
+  router.post('/coding/alignment-reviews/:id/generate-steering', requireAdminOrSolo, async (req, res) => {
     try {
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {
@@ -332,7 +368,7 @@ Generate a ${instrType.filename} file with specific, actionable steering instruc
   });
 
   // GET /api/coding/alignment-reviews/:id/history — get review history
-  router.get('/coding/alignment-reviews/:id/history', async (req, res) => {
+  router.get('/coding/alignment-reviews/:id/history', requireAdminOrSolo, async (req, res) => {
     try {
       const review = await db.get('SELECT * FROM alignment_reviews WHERE id = ?', req.params.id) as any;
       if (!review) {

@@ -131,7 +131,13 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       const hash = await bcrypt.hash(password, 10);
       await db.run('UPDATE users SET password_hash = ? WHERE id = ?', hash, req.params.id);
     }
-    if (role) await db.run('UPDATE users SET role = ? WHERE id = ?', role, req.params.id);
+    if (role) {
+      await db.run('UPDATE users SET role = ? WHERE id = ?', role, req.params.id);
+      // A demo account made an administrator becomes an ordinary account
+      // (users.demo_expires_at NULL, migration 289): it no longer expires, and
+      // demo retention no longer deletes it or what it writes.
+      if (role === 'admin') await db.run('UPDATE users SET demo_expires_at = NULL WHERE id = ?', req.params.id);
+    }
     if (display_name) await db.run('UPDATE users SET display_name = ? WHERE id = ?', display_name, req.params.id);
     if (monthly_token_budget !== undefined) await db.run('UPDATE users SET monthly_token_budget = ? WHERE id = ?', monthly_token_budget, req.params.id);
     if (school_role !== undefined) await db.run('UPDATE users SET school_role = ? WHERE id = ?', school_role, req.params.id);
