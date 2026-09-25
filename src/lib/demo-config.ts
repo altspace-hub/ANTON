@@ -24,6 +24,8 @@ export interface DemoConfig {
   signupCodeRequired: boolean;
   retentionDays: number;
   privacyPath: string;
+  /** Whether a quality score follows each answer (a demo leaves it out unless DEMO_POST_ANSWER_CALLS=all). */
+  answersScored: boolean;
 }
 
 /** An ordinary (non-demo) server. */
@@ -35,6 +37,7 @@ export const DEMO_OFF: DemoConfig = {
   signupCodeRequired: false,
   retentionDays: 0,
   privacyPath: '/privacy',
+  answersScored: true,
 };
 
 const isPillar = (v: unknown): v is Pillar => typeof v === 'string' && (PILLARS as readonly string[]).includes(v);
@@ -55,6 +58,7 @@ export function parseDemoConfig(json: unknown): DemoConfig {
     retentionDays: Number.isFinite(days) && days > 0 ? Math.floor(days) : 30,
     // Only a same-site path: the value becomes a link on the login page.
     privacyPath: typeof c.privacyPath === 'string' && /^\/[a-z0-9/-]*$/i.test(c.privacyPath) ? c.privacyPath : '/privacy',
+    answersScored: c.answersScored !== false,
   };
 }
 

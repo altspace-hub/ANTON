@@ -25,6 +25,7 @@ import {
   resetPublicModelConfigCache,
   thinkingLevelUnavailable,
   webSearchUnavailable,
+  withoutCompatUnavailableFlags,
   type PickerCompatEndpoint,
 } from '../../src/lib/compat-model-policy';
 import type { ThinkingLevel } from '../../src/lib/types';
@@ -169,5 +170,33 @@ describe('what a compat model is not offered', () => {
     expect(multiAgentUnavailable(GLM)).toBe(true);
     expect(webSearchUnavailable('claude-opus-5-5')).toBe(false);
     expect(multiAgentUnavailable('claude-opus-5-5')).toBe(false);
+  });
+});
+
+describe('withoutCompatUnavailableFlags (what a run or preview request sends)', () => {
+  const request = (model: string) => ({
+    model,
+    multiAgentEnabled: true,
+    knowledgeSources: { modes: { claudeKnowledge: { enabled: true, webSearchEnabled: true, description: 'AMLR' } } },
+  });
+
+  it("sends web search and multi-agent off on a compat model, and leaves the caller's object alone", () => {
+    const saved = request(GLM);
+    const sent = withoutCompatUnavailableFlags(saved);
+    expect(sent.multiAgentEnabled).toBe(false);
+    expect(sent.knowledgeSources.modes.claudeKnowledge).toEqual({ enabled: true, webSearchEnabled: false, description: 'AMLR' });
+    expect(saved.multiAgentEnabled).toBe(true);
+    expect(saved.knowledgeSources.modes.claudeKnowledge.webSearchEnabled).toBe(true);
+  });
+
+  it('takes a request with no knowledge sources or flags as it is', () => {
+    expect(withoutCompatUnavailableFlags({ model: GLM })).toEqual({ model: GLM });
+  });
+
+  it('negative control: any other model gets the very same request back', () => {
+    for (const model of ['claude-opus-5-5', 'sdk:claude-opus-5-5', 'ollama:qwen3.5:9b']) {
+      const saved = request(model);
+      expect(withoutCompatUnavailableFlags(saved)).toBe(saved);
+    }
   });
 });

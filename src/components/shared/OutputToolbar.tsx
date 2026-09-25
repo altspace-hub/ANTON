@@ -11,6 +11,9 @@ import RerunComparison, { type RerunComparisonData } from '@/components/shared/R
 import ProvenancePanel from '@/components/shared/ProvenancePanel';
 import { createCustomModule, getSessionQualityScore, type SessionQualityScore, getAuthHeader, fetchWithAuth, exportTrustCertificate, rerunMessage } from '@/lib/api';
 import type { ModelId, ContextUsed } from '@/lib/types';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -94,6 +97,17 @@ const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentT
   { id: 'save', label: 'Save', icon: Puzzle },
 ];
 
+/**
+ * Public demo: the chips whose routes are outside a visitor's Work routes —
+ * citation checks, reviews, rerun, the .anton export and evidence packs. The
+ * Save chip stays as "Certificate": saving a custom module and distilling are
+ * outside too, the trust certificate is not.
+ */
+const DEMO_HIDDEN_CHIPS: ReadonlySet<string> = new Set(['citations', 'review', 'rerun', 'exportRun', 'evidence']);
+const DEMO_CHIPS = CHIPS
+  .filter((chip) => !DEMO_HIDDEN_CHIPS.has(chip.id))
+  .map((chip) => (chip.id === 'save' ? { ...chip, label: 'Certificate', icon: Award } : chip));
+
 // ── Component ────────────────────────────────────────────────
 
 export default function OutputToolbar(props: OutputToolbarProps) {
@@ -111,6 +125,12 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   } = props;
 
   const [activePanel, setActivePanel] = useState<PanelId>(null);
+  const demoConfig = useDemoStore((s) => s.config);
+  const demoLimited = demoRestricted(demoConfig, useAuthStore((s) => s.user?.role));
+  // A demo makes no quality score unless DEMO_POST_ANSWER_CALLS=all (admins included):
+  // the Trust Score panel says so instead of waiting for one that never comes.
+  const answersScored = !demoConfig.demoMode || demoConfig.answersScored;
+  const chips = demoLimited ? DEMO_CHIPS : CHIPS;
 
   // Save module state
   const [saveModuleName, setSaveModuleName] = useState('');
@@ -196,7 +216,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
 
   // Fetch quality score when trust panel opens — with retry (scoring is async, may not be ready yet)
   useEffect(() => {
-    if (activePanel !== 'trust' || !sessionId || trustScore || trustLoading) return;
+    if (activePanel !== 'trust' || !sessionId || trustScore || trustLoading || !answersScored) return;
     let cancelled = false;
     setTrustLoading(true);
     const tryFetch = async (attempt: number): Promise<void> => {
@@ -217,7 +237,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     };
     tryFetch(1);
     return () => { cancelled = true; };
-  }, [activePanel, sessionId]);
+  }, [activePanel, sessionId, answersScored]);
 
   // VER-02/03: Fetch version list + latest diff when history panel opens
   useEffect(() => {
@@ -404,14 +424,16 @@ export default function OutputToolbar(props: OutputToolbarProps) {
     <div className="space-y-2">
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-adv-card px-3 py-2">
-        {CHIPS.map((chip) => {
+        {chips.map((chip) => {
           const Icon = chip.icon;
           const isActive = activePanel === chip.id;
           const isThinkingChip = chip.id === 'thinking';
           const isFeedbackChip = chip.id === 'feedback';
           const isFeedbackDone = isFeedbackChip && feedbackDone;
           const isProvenanceChip = chip.id === 'provenance';
-          const disabled = (isStreaming && !isThinkingChip && !isProvenanceChip) || ((chip.id === 'rerun' || chip.id === 'exportRun' || chip.id === 'evidence') && !sessionId);
+          // A visitor's Certificate panel needs a session, as Rerun / Export run / Evidence do.
+          const needsSession = chip.id === 'rerun' || chip.id === 'exportRun' || chip.id === 'evidence' || (demoLimited && chip.id === 'save');
+          const disabled = (isStreaming && !isThinkingChip && !isProvenanceChip) || (needsSession && !sessionId);
 
           return (
             <button
@@ -647,107 +669,111 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           {/* ── Save as Module Panel ──────────────────────── */}
           {activePanel === 'save' && (
             <div>
-              <p className="mb-3 text-xs text-adv-gray">
-                Save the current configuration (system prompt, output formats, personas, skills, and settings) as a reusable custom module.
-              </p>
-
-              {/* Wave 4.8: distill, don't snapshot */}
-              {canDistill && (
-                <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
-                      <span className="text-xs font-medium text-adv-off-white">Distill a purpose-built prompt from this conversation</span>
-                    </div>
-                    <button
-                      onClick={handleDistill}
-                      disabled={distillStatus === 'running'}
-                      className="flex items-center gap-1.5 rounded-lg bg-adv-teal/10 border border-adv-teal/30 px-2.5 py-1 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
-                    >
-                      {distillStatus === 'running'
-                        ? <Loader2 className="h-3 w-3 animate-spin" />
-                        : <Sparkles className="h-3 w-3" />}
-                      {distillStatus === 'running' ? 'Distilling…' : distillStatus === 'done' ? 'Distill again' : 'Distill'}
-                    </button>
-                  </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-adv-gray">
-                    Instead of snapshotting the generic configuration, a background pass reads the conversation and synthesizes
-                    a module prompt from what it actually did — the task pattern, the instructions and constraints that emerged,
-                    the expertise exercised. You review and edit it before anything is saved.
+              {!demoLimited && (
+                <>
+                  <p className="mb-3 text-xs text-adv-gray">
+                    Save the current configuration (system prompt, output formats, personas, skills, and settings) as a reusable custom module.
                   </p>
 
-                  {distillStatus === 'failed' && (
-                    <p className="mt-2 text-[11px] text-adv-red">
-                      Distillation failed{distillError ? ` — ${distillError}` : ''}. Saving now keeps the current session prompt instead.
-                    </p>
-                  )}
+                  {/* Wave 4.8: distill, don't snapshot */}
+                  {canDistill && (
+                    <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-adv-teal" />
+                          <span className="text-xs font-medium text-adv-off-white">Distill a purpose-built prompt from this conversation</span>
+                        </div>
+                        <button
+                          onClick={handleDistill}
+                          disabled={distillStatus === 'running'}
+                          className="flex items-center gap-1.5 rounded-lg bg-adv-teal/10 border border-adv-teal/30 px-2.5 py-1 text-[11px] font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors disabled:opacity-50"
+                        >
+                          {distillStatus === 'running'
+                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                            : <Sparkles className="h-3 w-3" />}
+                          {distillStatus === 'running' ? 'Distilling…' : distillStatus === 'done' ? 'Distill again' : 'Distill'}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-[11px] leading-relaxed text-adv-gray">
+                        Instead of snapshotting the generic configuration, a background pass reads the conversation and synthesizes
+                        a module prompt from what it actually did — the task pattern, the instructions and constraints that emerged,
+                        the expertise exercised. You review and edit it before anything is saved.
+                      </p>
 
-                  {distillStatus === 'done' && (
-                    <div className="mt-2 space-y-2">
-                      <label className="block text-[11px] font-medium text-adv-off-white">
-                        Distilled system prompt — edit before saving (you own the final text)
-                      </label>
-                      <textarea
-                        value={distilledPrompt}
-                        onChange={(e) => setDistilledPrompt(e.target.value)}
-                        rows={10}
-                        className="w-full resize-y rounded-lg border border-border bg-adv-dark p-2.5 font-mono text-[11px] leading-relaxed text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
-                      />
-                      {distilledDescription && (
-                        <p className="text-[11px] text-adv-gray">Suggested description: {distilledDescription}</p>
+                      {distillStatus === 'failed' && (
+                        <p className="mt-2 text-[11px] text-adv-red">
+                          Distillation failed{distillError ? ` — ${distillError}` : ''}. Saving now keeps the current session prompt instead.
+                        </p>
                       )}
-                      {workedExample && (
-                        <div className="rounded-md border border-border bg-adv-dark p-2.5">
-                          <label className="flex cursor-pointer items-start gap-2 text-[11px] text-adv-off-white">
-                            <input
-                              type="checkbox"
-                              checked={includeExample}
-                              onChange={(e) => setIncludeExample(e.target.checked)}
-                              className="mt-0.5 h-3.5 w-3.5 accent-[#2DD4A8]"
-                            />
-                            <span>
-                              Include the best exchange as a worked example in the module prompt.
-                              <span className="block text-adv-gray">
-                                Off by default — the example quotes this conversation verbatim, so confirm it contains nothing confidential.
-                              </span>
-                            </span>
+
+                      {distillStatus === 'done' && (
+                        <div className="mt-2 space-y-2">
+                          <label className="block text-[11px] font-medium text-adv-off-white">
+                            Distilled system prompt — edit before saving (you own the final text)
                           </label>
-                          {includeExample && (
-                            <div className="mt-2 max-h-40 overflow-auto rounded bg-adv-dark-2 p-2 text-[10px] leading-relaxed text-adv-gray whitespace-pre-wrap">
-                              {`Example input:\n${workedExample.user}\n\nExample output:\n${workedExample.assistant}`}
+                          <textarea
+                            value={distilledPrompt}
+                            onChange={(e) => setDistilledPrompt(e.target.value)}
+                            rows={10}
+                            className="w-full resize-y rounded-lg border border-border bg-adv-dark p-2.5 font-mono text-[11px] leading-relaxed text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                          />
+                          {distilledDescription && (
+                            <p className="text-[11px] text-adv-gray">Suggested description: {distilledDescription}</p>
+                          )}
+                          {workedExample && (
+                            <div className="rounded-md border border-border bg-adv-dark p-2.5">
+                              <label className="flex cursor-pointer items-start gap-2 text-[11px] text-adv-off-white">
+                                <input
+                                  type="checkbox"
+                                  checked={includeExample}
+                                  onChange={(e) => setIncludeExample(e.target.checked)}
+                                  className="mt-0.5 h-3.5 w-3.5 accent-[#2DD4A8]"
+                                />
+                                <span>
+                                  Include the best exchange as a worked example in the module prompt.
+                                  <span className="block text-adv-gray">
+                                    Off by default — the example quotes this conversation verbatim, so confirm it contains nothing confidential.
+                                  </span>
+                                </span>
+                              </label>
+                              {includeExample && (
+                                <div className="mt-2 max-h-40 overflow-auto rounded bg-adv-dark-2 p-2 text-[10px] leading-relaxed text-adv-gray whitespace-pre-wrap">
+                                  {`Example input:\n${workedExample.user}\n\nExample output:\n${workedExample.assistant}`}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
                       )}
                     </div>
                   )}
-                </div>
-              )}
 
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={saveModuleName}
-                  onChange={(e) => setSaveModuleName(e.target.value)}
-                  placeholder="Module name"
-                  className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
-                  onKeyDown={(e) => e.key === 'Enter' && handleSaveAsModule()}
-                />
-                <button
-                  onClick={handleSaveAsModule}
-                  disabled={savingModule || !saveModuleName.trim()}
-                  className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50"
-                >
-                  {savingModule ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-              {savedFlash && (
-                <p className="mt-2 text-xs text-adv-green">Module saved successfully.</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={saveModuleName}
+                      onChange={(e) => setSaveModuleName(e.target.value)}
+                      placeholder="Module name"
+                      className="flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 text-sm text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveAsModule()}
+                    />
+                    <button
+                      onClick={handleSaveAsModule}
+                      disabled={savingModule || !saveModuleName.trim()}
+                      className="rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors disabled:opacity-50"
+                    >
+                      {savingModule ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                  {savedFlash && (
+                    <p className="mt-2 text-xs text-adv-green">Module saved successfully.</p>
+                  )}
+                </>
               )}
 
               {/* Trust Certificate download */}
               {sessionId && (
-                <div className="mt-4 border-t border-border pt-4">
+                <div className={demoLimited ? '' : 'mt-4 border-t border-border pt-4'}>
                   <p className="mb-2 text-xs text-adv-gray">
                     Download a PDF trust certificate documenting the quality score, model, and session metadata for this output.
                   </p>
@@ -802,9 +828,17 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                     <p className="mt-1.5 text-adv-gray">Scores are compared to your module's historical baseline to flag regressions.</p>
                   </div>
                 </div>
-                <span className="ml-auto text-xs text-adv-gray">Scored by Claude Haiku</span>
+                {answersScored && <span className="ml-auto text-xs text-adv-gray">Scored by Claude Haiku</span>}
               </div>
-              {trustLoading ? (
+              {!answersScored ? (
+                <div className="rounded-lg bg-adv-dark p-4 text-center">
+                  <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
+                  <p className="text-sm text-adv-gray">Answers are not scored on this demo.</p>
+                  <p className="mt-1 text-xs text-adv-gray">
+                    The score is a second model call per answer; the demo leaves it out to keep its budget for answers.
+                  </p>
+                </div>
+              ) : trustLoading ? (
                 <div className="flex items-center gap-2 text-xs text-adv-gray">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Scoring output...

@@ -58,6 +58,9 @@ import SmartModelBanner from '@/components/shared/SmartModelBanner';
 import { MODELS } from '@/lib/constants';
 import { fetchModulePrompt, fetchModuleConfig, fetchSession, fetchCustomModule, fetchModuleDefaults } from '@/lib/api';
 import { useConfigStore } from '@/stores/useConfigStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 import type { Message, ThinkingLevel, CreativityLevel } from '@/lib/types';
 import DynamicModule from '@/components/modules/DynamicModule';
@@ -137,6 +140,12 @@ export default function ModulePage() {
   const { files, upload, remove } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
+  // Public demo (DEMO_MODE=true): a visitor reaches only the Work routes
+  // (server/middleware/demo-mode.ts WORK_ROUTES). What would call anything else
+  // — deliberation, the Risk Atlas, the Trades / PE-VC templates, local folders,
+  // prompt versions — is not offered to them. Admins keep everything.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
+  const deliberationOn = deliberationEnabled && !demoLimited;
 
   // Per-message config snapshot for "How ANTON Thought" accuracy on old sessions
   const lastAssistantConfigSnapshot = useMemo(() => {
@@ -253,7 +262,8 @@ export default function ModulePage() {
         }).catch(() => {}); // fire-and-forget, don't block UI
       }
       // Feature C: offer learning loop for Trades modules with a process type
-      if (content && dynamicCfg?.myWayProcessType) {
+      // (its template routes are outside a demo visitor's routes)
+      if (content && dynamicCfg?.myWayProcessType && !demoLimited) {
         setLearnOffered(true);
         setLearnDone(false);
       }
@@ -286,17 +296,22 @@ export default function ModulePage() {
   // ITEM 13: Knowledge library suggestions
   useEffect(() => {
     if (!moduleId) return;
+    // The suggestion turns on Local Folders, which a demo visitor does not have.
+    if (demoLimited) { setSuggestedLibraryEntries([]); return; }
     const dismissed = localStorage.getItem(`dismissed-lib-suggest-${moduleId}`);
     if (dismissed) return;
+    let cancelled = false;
     fetch('/api/knowledge-library', { credentials: 'include', headers: getAuthHeader() })
       .then(r => r.ok ? r.json() : [])
       .then((entries: KnowledgeLibraryEntry[]) => {
         const categories = MODULE_KNOWLEDGE_CATEGORIES[moduleId] ?? [];
         const matches = entries.filter(e => categories.includes(e.category));
-        if (matches.length > 0) setSuggestedLibraryEntries(matches);
+        if (matches.length > 0 && !cancelled) setSuggestedLibraryEntries(matches);
       })
       .catch(() => {});
-  }, [moduleId]);
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleId, demoLimited]);
 
   // ITEM 11: Prefill from URL param
   useEffect(() => {
@@ -403,14 +418,15 @@ export default function ModulePage() {
 
   // Feature B: Check "My Way" setup status for Trades and PE/VC modules
   useEffect(() => {
-    if (!dynamicCfg?.myWayProcessType) { setMyWayActive(false); return; }
+    if (!dynamicCfg?.myWayProcessType || demoLimited) { setMyWayActive(false); return; }
     const isICMemo = dynamicCfg.myWayProcessType === 'ic-memo';
     const statusEndpoint = isICMemo ? '/api/pe-vc/setup-status' : '/api/trades/setup-status';
     fetch(statusEndpoint, { headers: getAuthHeader() })
       .then(r => r.ok ? r.json() : null)
       .then((data: { hasIdentity?: boolean } | null) => setMyWayActive(!!data?.hasIdentity))
       .catch(() => {});
-  }, [dynamicCfg]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dynamicCfg, demoLimited]);
 
   // Initialize module — runs when moduleId or sessionParam changes
   useEffect(() => {
@@ -847,7 +863,7 @@ export default function ModulePage() {
           <GapAnalysisWalkthrough moduleId={moduleId ?? ''} />
 
           {/* Risk Atlas migration banner — surfaces on legacy FCP modules that overlap with the seven-stage methodology */}
-          <AtlasMigrationBanner moduleId={moduleId} areaId={areaId ?? undefined} />
+          {!demoLimited && <AtlasMigrationBanner moduleId={moduleId} areaId={areaId ?? undefined} />}
 
           {/* Healthcare / medical disclaimer (LEGAL-03) */}
           {(areaId === 'healthcare' || areaId === 'community-health') && (
@@ -1120,31 +1136,33 @@ export default function ModulePage() {
           <MultiAgentPanel />
 
           {/* Multi-Model Deliberation */}
-          <div className="rounded-xl border border-border bg-adv-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Layers className="h-5 w-5 text-adv-teal" />
-                <h3 className="text-sm font-semibold text-adv-off-white">Deliberation Mode</h3>
-              </div>
-              <button
-                onClick={() => setDeliberationEnabled(!deliberationEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  deliberationEnabled ? 'bg-adv-teal' : 'bg-adv-gray-med/30'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    deliberationEnabled ? 'translate-x-6' : 'translate-x-1'
+          {!demoLimited && (
+            <div className="rounded-xl border border-border bg-adv-card p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-adv-teal" />
+                  <h3 className="text-sm font-semibold text-adv-off-white">Deliberation Mode</h3>
+                </div>
+                <button
+                  onClick={() => setDeliberationEnabled(!deliberationEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    deliberationEnabled ? 'bg-adv-teal' : 'bg-adv-gray-med/30'
                   }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      deliberationEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              {deliberationEnabled && (
+                <p className="mt-2 text-xs text-adv-gold">
+                  Opus + Sonnet + Haiku analyse in parallel · ~3× cost · Agreement-scored synthesis
+                </p>
+              )}
             </div>
-            {deliberationEnabled && (
-              <p className="mt-2 text-xs text-adv-gold">
-                Opus + Sonnet + Haiku analyse in parallel · ~3× cost · Agreement-scored synthesis
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Session Toggles: Writing Tone, Emoji, Structured Reasoning, Transparency */}
           <SessionTogglesPanel
@@ -1321,7 +1339,8 @@ export default function ModulePage() {
                   value={systemPrompt}
                   defaultValue={systemPrompt}
                   onChange={setSystemPrompt}
-                  entityId={moduleId}
+                  // Prompt versions (/versions/prompt) are outside a demo visitor's routes.
+                  entityId={demoLimited ? undefined : moduleId}
                   entityType="prompt"
                   lockedSuffix={areaId === 'fcp' ? FCP_COMPLIANCE_GUARDRAIL : undefined}
                 />
@@ -1387,7 +1406,7 @@ export default function ModulePage() {
         {/* Scrollable output area — everything flows naturally */}
         <div className="flex-1 overflow-auto space-y-3">
           {/* Deliberation Panel (replaces conversation thread when enabled) */}
-          {deliberationEnabled && (
+          {deliberationOn && (
             <DeliberationPanel
               config={{
                 moduleId: moduleId,
@@ -1417,7 +1436,7 @@ export default function ModulePage() {
           )}
 
           {/* Conversation (shown when deliberation mode is off) */}
-          {!deliberationEnabled && <div className="rounded-xl border border-border bg-adv-card p-5">
+          {!deliberationOn && <div className="rounded-xl border border-border bg-adv-card p-5">
             {messages.length === 0 && !isStreaming ? (
               <div className="flex min-h-[200px] items-center justify-center">
                 <div className="text-center">

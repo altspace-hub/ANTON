@@ -1,5 +1,8 @@
 import { type ReactNode } from 'react';
 import { Pen, Smile, BrainCog, Eye, EyeOff, AlertTriangle, Zap, Database } from 'lucide-react';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 type WritingTone = 'formal' | 'professional' | 'casual' | 'conversational';
 
@@ -74,6 +77,9 @@ export default function SessionTogglesPanel({
   onAtomInjectionChange,
   onAtomCollectionChange,
 }: SessionTogglesPanelProps) {
+  // Public demo: a visitor's runs are never learned from, so "Collect insights"
+  // would promise something the server does not do. Admins keep it.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const isOpusOrSonnet =
     currentModel === 'claude-fable-5-1' || currentModel === 'claude-fable-5' || currentModel === 'claude-opus-5-5' || currentModel === 'claude-opus-5' || currentModel === 'claude-sonnet-5' || currentModel === 'claude-opus-4-8' || currentModel === 'claude-sonnet-4-6' || currentModel === 'claude-sonnet-4-5-20250929';
   return (
@@ -233,22 +239,24 @@ export default function SessionTogglesPanel({
           />
         </div>
 
-        <div>
-          <ToggleSwitch
-            checked={atomCollectionEnabled}
-            onChange={onAtomCollectionChange}
-            label={
-              <div>
-                <div className="text-xs text-adv-off-white">Collect insights</div>
-                <p className="mt-0.5 text-xs text-adv-gray">
-                  {atomCollectionEnabled
-                    ? 'Responses contribute to knowledge base'
-                    : 'Playground mode — nothing saved'}
-                </p>
-              </div>
-            }
-          />
-        </div>
+        {!demoLimited && (
+          <div>
+            <ToggleSwitch
+              checked={atomCollectionEnabled}
+              onChange={onAtomCollectionChange}
+              label={
+                <div>
+                  <div className="text-xs text-adv-off-white">Collect insights</div>
+                  <p className="mt-0.5 text-xs text-adv-gray">
+                    {atomCollectionEnabled
+                      ? 'Responses contribute to knowledge base'
+                      : 'Playground mode — nothing saved'}
+                  </p>
+                </div>
+              }
+            />
+          </div>
+        )}
       </div>
 
       {/* Token impact indicator */}

@@ -129,9 +129,21 @@ describe('/api/config demo fields', () => {
       signupCodeRequired: true,
       retentionDays: 14,
       privacyPath: '/privacy',
+      answersScored: false,
     });
     // The code itself is never published.
     expect(JSON.stringify(cfg)).not.toContain('swordfish');
+  });
+
+  it('answersScored follows DEMO_POST_ANSWER_CALLS: only "all" makes a quality score', () => {
+    const scored = (v?: string) => {
+      const cfg = demoPublicConfig({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', ...(v === undefined ? {} : { DEMO_POST_ANSWER_CALLS: v }) });
+      return cfg.demoMode ? cfg.answersScored : null;
+    };
+    expect(scored()).toBe(false);
+    expect(scored('conclusion')).toBe(false);
+    expect(scored('none')).toBe(false);
+    expect(scored('all')).toBe(true);
   });
 
   it('sign-up: a code opens it; no code is closed unless DEMO_SIGNUP_OPEN=true', () => {
@@ -161,7 +173,7 @@ describe('the route allowlist (pure)', () => {
       ['GET', '/sessions/abc'], ['PATCH', '/sessions/abc'], ['DELETE', '/sessions/abc'],
       ['POST', '/files/upload'], ['POST', '/export'], ['GET', '/settings/default-model'],
       ['GET', '/csrf-token'], ['GET', '/health'], ['HEAD', '/health'], ['GET', '/run-artifacts/by-parent/message/m1'],
-      ['GET', '/sessions/'], ['GET', '/SESSIONS/abc'],
+      ['GET', '/sessions/'], ['GET', '/SESSIONS/abc'], ['GET', '/sessions/abc/messages/m1/artifacts'],
     ] as const) {
       expect(allowed(m, p), `${m} ${p}`).toBe(true);
     }
@@ -175,6 +187,7 @@ describe('the route allowlist (pure)', () => {
       ['PUT', '/profile'], ['GET', '/files/upload/extra'], ['GET', '/pathfinder/threads'], ['POST', '/renderers/run'],
       ['POST', '/rerun'], ['GET', '/admin/users'], ['POST', '/radar/settings'], ['GET', '/sessionsX'],
       ['GET', '//agents'], ['POST', '/claude/deliberate'], ['POST', '/auth/mfa/enable'],
+      ['DELETE', '/sessions/abc/messages/m1/artifacts'], ['GET', '/sessions/abc/messages/m1/artifacts/x'],
     ] as const) {
       expect(allowed(m, p), `${m} ${p}`).toBe(false);
     }

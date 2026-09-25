@@ -34,7 +34,14 @@ describe('parseDemoConfig', () => {
       signupCodeRequired: true,
       retentionDays: 30,
       privacyPath: '/privacy',
+      answersScored: true,
     });
+  });
+
+  it('answersScored: only an explicit false says a demo makes no quality score', () => {
+    expect(parseDemoConfig({ ...DEMO, answersScored: false }).answersScored).toBe(false);
+    expect(parseDemoConfig({ ...DEMO, answersScored: true }).answersScored).toBe(true);
+    expect(DEMO_OFF.answersScored).toBe(true);
   });
 
   it('treats anything but demoMode === true as an ordinary server', () => {

@@ -216,6 +216,8 @@ export interface DemoPublicConfig {
   signupCodeRequired: boolean;
   retentionDays: number;
   privacyPath: '/privacy';
+  /** False unless DEMO_POST_ANSWER_CALLS=all: no quality score is made after an answer. */
+  answersScored: boolean;
 }
 
 /** The /api/config fields: { demoMode: false } unless DEMO_MODE=true. Nothing secret — never the code. */
@@ -230,6 +232,7 @@ export function demoPublicConfig(env: Env = process.env): DemoPublicConfig | { d
     signupCodeRequired: signup.code !== null,
     retentionDays: demoAccountTtlDays(env),
     privacyPath: '/privacy',
+    answersScored: demoPostAnswerCalls(env) === 'all',
   };
 }
 
@@ -292,6 +295,8 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/sessions/:x/snapshots/auto'],
   ['GET', '/sessions/:x/resume-context'],
   ['GET', '/run-artifacts/*'],
+  // The Provenance panel's run record (the route scopes it to the caller's session)
+  ['GET', '/sessions/:x/messages/:x/artifacts'],
   // After the answer: rating, sign-off, versions, export
   ['GET', '/quality/by-session/:x'],
   ['POST', '/quality/feedback'],

@@ -202,6 +202,30 @@ export function multiAgentUnavailable(model: string | null | undefined): boolean
   return isCompatModelId(model);
 }
 
+const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * A run or preview request as it goes to the server: on a compat model web
+ * search and multi-agent are sent off, whatever the saved settings say. The
+ * page shows both locked there, but the saved flags still went out, so the
+ * prompt told the model to use a search tool it did not have and the answer
+ * came with a "nothing was searched" notice nobody asked for. The caller's
+ * object is not changed, so the saved choice returns with a Claude model.
+ */
+export function withoutCompatUnavailableFlags<T extends object>(request: T): T {
+  const req: Record<string, unknown> = { ...(request as Record<string, unknown>) };
+  if (!isCompatModelId(typeof req.model === 'string' ? req.model : null)) return request;
+  if (req.multiAgentEnabled) req.multiAgentEnabled = false;
+  const ks = req.knowledgeSources;
+  if (isRecord(ks) && isRecord(ks.modes) && isRecord(ks.modes.claudeKnowledge) && ks.modes.claudeKnowledge.webSearchEnabled) {
+    req.knowledgeSources = {
+      ...ks,
+      modes: { ...ks.modes, claudeKnowledge: { ...ks.modes.claudeKnowledge, webSearchEnabled: false } },
+    };
+  }
+  return req as T;
+}
+
 /** A short name for the model in an explanation: the bare model of a compat id. */
 export function modelShortName(model: string): string {
   return compatParts(model)?.model ?? model;

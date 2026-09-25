@@ -1,5 +1,6 @@
 import type { HealthStatus, StreamEvent, ClaudeRunConfig, RagIndexedFolder, RagCollection, DeliberationEvent, RunArtifact, InjectedAtomRow, PersistedAssistantMessageRow, SkillSummary, AtomInjectionStatus, AtomInjectionMode } from './types';
 import { safeStorage } from './safe-storage';
+import { withoutCompatUnavailableFlags } from './compat-model-policy';
 
 export const API_BASE = '/api';
 
@@ -97,9 +98,11 @@ function readableError(body: string): string {
 }
 
 export async function* streamMessage(
-  config: ClaudeRunConfig,
+  runConfig: ClaudeRunConfig,
   signal?: AbortSignal
 ): AsyncGenerator<StreamEvent> {
+  // A compat model gets no web search or multi-agent team; the saved settings stay as they are.
+  const config = withoutCompatUnavailableFlags(runConfig);
   let lastError: unknown;
 
   for (let attempt = 0; attempt <= STREAM_RETRY_DELAYS.length; attempt++) {
@@ -264,7 +267,8 @@ export async function fetchPromptPreview(config: Record<string, unknown>): Promi
   const res = await fetchWithAuth(`${API_BASE}/claude/preview-prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(config),
+    // The same flags as the run itself sends (streamMessage).
+    body: JSON.stringify(withoutCompatUnavailableFlags(config)),
   });
   if (!res.ok) throw new Error('Failed to fetch prompt preview');
   return res.json();

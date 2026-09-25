@@ -41,6 +41,9 @@ import IntelligenceHealthBanner from '@/components/shared/IntelligenceHealthBann
 import type { Session } from '@/lib/types';
 import { Section, Btn } from '@/components/web-ui';
 import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 type RightMode = 'digest' | 'agent';
 type FeedTone = 'accent' | 'gold' | 'red' | 'green' | 'blue';
@@ -171,6 +174,12 @@ const FEED_BORDER: Record<FeedTone, string> = {
 
 export default function HomeV2(): JSX.Element {
   const navigate = useNavigate();
+  // Public demo: a visitor reaches the Work modules only. Pathfinder, My Work,
+  // workflows and agents are outside the demo's routes, the 5-Minute Brief
+  // runs a fixed Claude model the demo does not offer, and "Add deadline" has
+  // nothing behind it — so Home shows a visitor the module catalogue and
+  // their own sessions. Admins see everything.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
 
   // ── Data ────────────────────────────────────────────────────
   const [stats, setStats] = useState<{
@@ -195,6 +204,10 @@ export default function HomeV2(): JSX.Element {
     fetchSessions(undefined, { hasOutput: true, limit: 4 })
       .then(setContinueWork).catch(() => { /* silent */ });
     fetchCustomModules().then(setCustomModules).catch(() => { /* silent */ });
+  }, []);
+
+  useEffect(() => {
+    if (demoLimited) return;
     fetchSearchHistory(8)
       .then((r) => setRecentSearches(
         (Array.isArray(r.searches) ? r.searches : [])
@@ -203,7 +216,7 @@ export default function HomeV2(): JSX.Element {
           .map((s) => ({ id: s.id, query: s.query, depth: typeof s.depth === 'string' ? s.depth : 'quick', created_at: s.created_at })),
       ))
       .catch(() => { /* silent */ });
-  }, []);
+  }, [demoLimited]);
 
   // Real activity feed — recent module sessions + Pathfinder searches,
   // newest first. No fabricated entries: empty state when there's nothing.
@@ -283,11 +296,11 @@ export default function HomeV2(): JSX.Element {
 
         {/* Wave 3.9: honest degradation banner — renders ONLY when background
             intelligence (embeddings / atom capture / pack RAG) is degraded */}
-        <IntelligenceHealthBanner />
+        {!demoLimited && <IntelligenceHealthBanner />}
 
         {/* Wave 4.1: workflow approvals pending — renders ONLY when at least
             one run is parked at a pause/approval gate (no fake UI) */}
-        <WorkflowApprovalsCard />
+        {!demoLimited && <WorkflowApprovalsCard />}
 
         {/* ── Top: Anton title + APCI tagline + 5-Minute Brief ── */}
         <div className="mb-4 flex items-start justify-between gap-4">
@@ -308,14 +321,16 @@ export default function HomeV2(): JSX.Element {
               Powered by APCI — Artificial Professional Context Intelligence. Every session builds on what came before, so your AI gets genuinely better at the work you need it to do.
             </p>
           </div>
-          <Btn
-            variant="accent"
-            size="md"
-            icon={<Zap size={13} strokeWidth={1.5} />}
-            onClick={() => navigate('/brief')}
-          >
-            5-Minute Brief
-          </Btn>
+          {!demoLimited && (
+            <Btn
+              variant="accent"
+              size="md"
+              icon={<Zap size={13} strokeWidth={1.5} />}
+              onClick={() => navigate('/brief')}
+            >
+              5-Minute Brief
+            </Btn>
+          )}
         </div>
 
         {/* ── Regulatory deadlines strip ──────────────────────── */}
@@ -338,16 +353,18 @@ export default function HomeV2(): JSX.Element {
               </div>
             );
           })}
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] text-[var(--color-text-muted)]"
-            style={{
-              background: 'transparent',
-              border: '1px dashed var(--color-border)',
-            }}
-          >
-            <Plus size={11} strokeWidth={1.5} /> Add deadline
-          </button>
+          {!demoLimited && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] text-[var(--color-text-muted)]"
+              style={{
+                background: 'transparent',
+                border: '1px dashed var(--color-border)',
+              }}
+            >
+              <Plus size={11} strokeWidth={1.5} /> Add deadline
+            </button>
+          )}
         </div>
 
         {/* ── 5 KPI stat cards ───────────────────────────────── */}
@@ -370,15 +387,26 @@ export default function HomeV2(): JSX.Element {
           >
             {continueWork.length > 0
               ? 'Pick up where you left off — your recent work is one click away.'
-              : 'Start your first session — pick a module below or ask Pathfinder.'}
+              : demoLimited
+                ? 'Start your first session — pick a module below.'
+                : 'Start your first session — pick a module below or ask Pathfinder.'}
           </h2>
           <p
             className="text-[var(--color-text-body)]"
             style={{ fontSize: 14, lineHeight: 1.6, maxWidth: 720 }}
           >
-            {MODULES.length} expert modules across {AREAS.length} areas are ready to run, and
-            Pathfinder answers research questions with sourced, multi-phase reasoning.
-            Your recent sessions and searches appear in the Activity rail on the right.
+            {demoLimited ? (
+              <>
+                {MODULES.length} expert modules across {AREAS.length} areas are ready to run.
+                Your recent sessions appear in the Activity rail on the right.
+              </>
+            ) : (
+              <>
+                {MODULES.length} expert modules across {AREAS.length} areas are ready to run, and
+                Pathfinder answers research questions with sourced, multi-phase reasoning.
+                Your recent sessions and searches appear in the Activity rail on the right.
+              </>
+            )}
           </p>
         </div>
 
@@ -389,12 +417,15 @@ export default function HomeV2(): JSX.Element {
               <Section className="inline-flex items-center gap-1.5">
                 <Clock size={12} strokeWidth={1.5} /> Continue Your Work
               </Section>
-              <button
-                onClick={() => navigate('/my-work')}
-                className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
-              >
-                View All →
-              </button>
+              {/* My Work searches and projects are outside the demo's routes */}
+              {!demoLimited && (
+                <button
+                  onClick={() => navigate('/my-work')}
+                  className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
+                >
+                  View All →
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
               {continueWork.map(s => (
@@ -429,43 +460,45 @@ export default function HomeV2(): JSX.Element {
         )}
 
         {/* ── Pathfinder bar ─────────────────────────────────── */}
-        <div className="mb-6">
-          <div className="mb-3 flex items-end justify-between">
-            <Section className="inline-flex items-center gap-1.5">
-              <Compass size={12} strokeWidth={1.5} /> Pathfinder · search that thinks
-            </Section>
-            <button
-              onClick={() => navigate('/pathfinder')}
-              className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
+        {!demoLimited && (
+          <div className="mb-6">
+            <div className="mb-3 flex items-end justify-between">
+              <Section className="inline-flex items-center gap-1.5">
+                <Compass size={12} strokeWidth={1.5} /> Pathfinder · search that thinks
+              </Section>
+              <button
+                onClick={() => navigate('/pathfinder')}
+                className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
+              >
+                Open full search →
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (pathQuery.trim()) navigate(`/pathfinder?q=${encodeURIComponent(pathQuery.trim())}`);
+              }}
+              className="flex items-center gap-2 px-3 py-2"
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-r2)',
+              }}
             >
-              Open full search →
-            </button>
+              <Search size={16} strokeWidth={1.5} className="text-[var(--color-text-muted)]" />
+              <input
+                value={pathQuery}
+                onChange={(e) => setPathQuery(e.target.value)}
+                placeholder="Search that thinks before it answers…"
+                className="flex-1 bg-transparent text-[14px] text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
+              />
+              <Btn type="submit" variant="primary" size="sm">Search</Btn>
+            </form>
+            <p className="mt-2 text-center text-[11px] text-[var(--color-text-faint)]">
+              Your search. Your data. No ads. No agenda.
+            </p>
           </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (pathQuery.trim()) navigate(`/pathfinder?q=${encodeURIComponent(pathQuery.trim())}`);
-            }}
-            className="flex items-center gap-2 px-3 py-2"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-r2)',
-            }}
-          >
-            <Search size={16} strokeWidth={1.5} className="text-[var(--color-text-muted)]" />
-            <input
-              value={pathQuery}
-              onChange={(e) => setPathQuery(e.target.value)}
-              placeholder="Search that thinks before it answers…"
-              className="flex-1 bg-transparent text-[14px] text-[var(--color-text)] placeholder:text-[var(--color-text-faint)] focus:outline-none"
-            />
-            <Btn type="submit" variant="primary" size="sm">Search</Btn>
-          </form>
-          <p className="mt-2 text-center text-[11px] text-[var(--color-text-faint)]">
-            Your search. Your data. No ads. No agenda.
-          </p>
-        </div>
+        )}
 
         {/* ── My Custom Modules ──────────────────────────────── */}
         {customModules.length > 0 && (
@@ -475,12 +508,14 @@ export default function HomeV2(): JSX.Element {
                 <Sparkles size={12} strokeWidth={1.5} /> My Custom Modules
                 <span className="ml-1 text-[var(--color-text-muted)]">{customModules.length}</span>
               </Section>
-              <button
-                onClick={() => navigate('/build-module')}
-                className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
-              >
-                Build new →
-              </button>
+              {!demoLimited && (
+                <button
+                  onClick={() => navigate('/build-module')}
+                  className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
+                >
+                  Build new →
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
               {customModules.slice(0, 4).map(m => (
@@ -615,7 +650,7 @@ export default function HomeV2(): JSX.Element {
                 {([
                   ['digest', 'Activity', Inbox],
                   ['agent',  'Agent status', Sparkles],
-                ] as const).map(([id, label, Icon]) => {
+                ] as const).filter(([id]) => !demoLimited || id === 'digest').map(([id, label, Icon]) => {
                   const active = rightMode === id;
                   return (
                     <button
@@ -640,7 +675,7 @@ export default function HomeV2(): JSX.Element {
             </div>
 
             <div className="flex-1 overflow-y-auto px-3.5 pb-12 pt-3.5">
-              {rightMode === 'digest' ? (
+              {rightMode === 'digest' || demoLimited ? (
                 <DigestList items={activityFeed} onOpen={(route) => navigate(route)} />
               ) : (
                 <AgentList />
@@ -660,15 +695,17 @@ export default function HomeV2(): JSX.Element {
             >
               <Inbox size={16} strokeWidth={1.5} />
             </button>
-            <button
-              type="button"
-              onClick={() => { setRailCollapsed(false); setRightMode('agent'); }}
-              aria-label="Agent status"
-              className="rounded-md p-1.5"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
-              <Sparkles size={16} strokeWidth={1.5} />
-            </button>
+            {!demoLimited && (
+              <button
+                type="button"
+                onClick={() => { setRailCollapsed(false); setRightMode('agent'); }}
+                aria-label="Agent status"
+                className="rounded-md p-1.5"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                <Sparkles size={16} strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         )}
 
