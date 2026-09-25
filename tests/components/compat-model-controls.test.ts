@@ -334,8 +334,10 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
       extraBody: body,
       extraHeaders: headers,
       maxOutputTokens: null,
-      inputPricePerMillion: null,
-      outputPricePerMillion: null,
+      // The pinned providers' price, not /models' promotional one: it prices the
+      // worst-case reservation made before each call.
+      inputPricePerMillion: 0.165,
+      outputPricePerMillion: 0.55,
     });
   });
 

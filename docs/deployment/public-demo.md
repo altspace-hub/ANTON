@@ -262,6 +262,7 @@ Sign in as `admin`. Then open **Settings → Local models → OpenAI-compatible 
 | Max output tokens | e.g. `16000` |
 | Extra headers | `HTTP-Referer: https://<demo host>`, `X-Title: ANTON demo` |
 | Extra body | see below |
+| Prices (per 1M tokens) | `0.165` input, `0.55` output: the dearer of the two pinned providers. OpenRouter's /models lists another provider's promotional $0.045 / $0.14, which would under-reserve. |
 
 ```json
 {"provider":{"only":["inceptron","nextbit"],"allow_fallbacks":false,"zdr":true,"data_collection":"deny"}}

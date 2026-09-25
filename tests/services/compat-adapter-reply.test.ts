@@ -17,6 +17,7 @@ import {
   CompatUpstreamError,
   COMPAT_BUDGET_EXHAUSTED_MESSAGE,
   COMPAT_IN_FLIGHT_MESSAGE,
+  COMPAT_RATE_LIMITED_MESSAGE,
   COMPAT_TRUNCATED_WARNING,
   type OpenAICompatibleStreamParams,
 } from '../../server/services/adapters/openaiCompatibleAdapter.js';
@@ -218,6 +219,33 @@ describe('402 from OpenRouter', () => {
     const out = await streamOpenAICompatible(base, sink().res);
     expect(out.text).toBe('ok');
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a 429 (rate-limited upstream) up to twice, then succeeds', async () => {
+    // Seen live 2026-09-25: the EU provider pin with no fallback answered
+    // "z-ai/glm-5.3-flash is temporarily rate-limited upstream" and the next
+    // call a few seconds later went through.
+    const limited = () => new Response(JSON.stringify({
+      error: { code: 429, message: 'Provider returned error', metadata: { raw: 'temporarily rate-limited upstream' } },
+    }), { status: 429, headers: { 'Retry-After': '0' } });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(limited())
+      .mockResolvedValueOnce(limited())
+      .mockResolvedValueOnce(streamResponse(sse([{ choices: [{ delta: { content: 'ok' }, finish_reason: 'stop' }] }])));
+    vi.stubGlobal('fetch', fetchMock);
+    const out = await streamOpenAICompatible(base, sink().res);
+    expect(out.text).toBe('ok');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('a third 429 is shown as "busy", not as a raw HTTP error with the provider\'s text', async () => {
+    const limited = () => new Response(JSON.stringify({ error: { code: 429, metadata: { raw: 'secret-upstream-detail' } } }),
+      { status: 429, headers: { 'Retry-After': '0' } });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited()).mockResolvedValueOnce(limited()));
+    const err = await streamOpenAICompatible(base, sink().res).catch((e: unknown) => e) as CompatUpstreamError;
+    expect(err.code).toBe('COMPAT_RATE_LIMITED');
+    expect(err.publicMessage).toBe(COMPAT_RATE_LIMITED_MESSAGE);
+    expect(err.publicMessage).not.toContain('secret-upstream-detail');
   });
 
   it('distinguishes a second in-flight refusal from a used-up budget', async () => {

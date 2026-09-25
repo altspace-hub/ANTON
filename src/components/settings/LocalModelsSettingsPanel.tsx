@@ -118,6 +118,12 @@ interface PresetEndpoint {
   allowedModels?: string[];
   /** Pre-fill the OpenRouter app-attribution headers for this page's origin. */
   attributionHeaders?: boolean;
+  /**
+   * Pre-filled prices (USD per 1M tokens). Used to reserve a call's worst case
+   * before it is sent and to price one cut short. OpenRouter's /models lists
+   * the cheapest provider's (often promotional) price, not the pinned ones'.
+   */
+  prices?: { input: number; output: number };
 }
 
 const PRESETS: PresetEndpoint[] = [
@@ -146,6 +152,10 @@ const PRESETS: PresetEndpoint[] = [
     extraBody: OPENROUTER_EU_ZDR_EXTRA_BODY,
     allowedModels: [OPENROUTER_SHOWCASE_MODEL],
     attributionHeaders: true,
+    // The dearer of the two pinned providers (NextBit, 2026-09-25); Inceptron
+    // charged about $0.11 / $0.50 in a live check. /models says $0.045 / $0.14,
+    // which is one other provider's promotional price.
+    prices: { input: 0.165, output: 0.55 },
   },
   {
     slug: 'groq',
@@ -518,6 +528,8 @@ export default function LocalModelsSettingsPanel() {
               : '',
             extraBody: jsonForEditor(preset.extraBody ? { ...preset.extraBody } : undefined),
             allowedModels: preset.allowedModels ? [...preset.allowedModels] : [],
+            inputPricePerMillion: preset.prices ? String(preset.prices.input) : '',
+            outputPricePerMillion: preset.prices ? String(preset.prices.output) : '',
           }
         : EMPTY_FORM,
     );

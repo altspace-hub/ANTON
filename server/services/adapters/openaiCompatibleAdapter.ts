@@ -353,6 +353,8 @@ export const COMPAT_BUDGET_EXHAUSTED_MESSAGE =
   "Today's AI budget for this demo is used up (the AI provider's spending limit was reached). Please try again later.";
 export const COMPAT_IN_FLIGHT_MESSAGE =
   'The AI service for this demo is busy right now — too many answers are being written at once. Please try again in a minute.';
+export const COMPAT_RATE_LIMITED_MESSAGE =
+  'The AI provider is busy right now and asked us to slow down. Please try again in a moment.';
 export const COMPAT_CONTEXT_TOO_LONG_MESSAGE =
   "The request is too long for this model's context window. Remove some documents or earlier turns, or start a new session.";
 
@@ -396,6 +398,18 @@ export function compatHttpError(
       return new CompatUpstreamError(COMPAT_IN_FLIGHT_MESSAGE, 'COMPAT_IN_FLIGHT_BUDGET', 402, retryAfterMs(retryAfter));
     }
     return new CompatUpstreamError(COMPAT_BUDGET_EXHAUSTED_MESSAGE, 'COMPAT_BUDGET_EXHAUSTED', 402);
+  }
+  if (status === 429) {
+    // Rate-limited upstream (OpenRouter: "temporarily rate-limited upstream"),
+    // common when the endpoint pins a few providers with no fallback. Worth a
+    // retry after Retry-After; the body stays in the logs.
+    return new CompatUpstreamError(
+      `OpenAI-compatible endpoint rate-limited (${baseUrl}): 429 — ${bodyText.slice(0, 300)}`,
+      'COMPAT_RATE_LIMITED',
+      429,
+      retryAfterMs(retryAfter),
+      COMPAT_RATE_LIMITED_MESSAGE,
+    );
   }
   if (isContextLengthRejection(status, bodyText)) {
     // Trying again cannot help, so the person is not told to.
@@ -446,7 +460,8 @@ function compatHeaders(params: OpenAICompatibleStreamParams): Record<string, str
 
 /**
  * POST the chat request. One retry without response_format on a 400/422 that
- * names it; one retry after Retry-After on OpenRouter's in-flight budget 402.
+ * names it; one retry after Retry-After on OpenRouter's in-flight budget 402;
+ * up to two after Retry-After on a 429 (rate-limited upstream).
  * Any other failure throws with a message the caller can show.
  */
 async function postCompatChat(
@@ -456,6 +471,7 @@ async function postCompatChat(
   const url = `${params.baseUrl.replace(/\/$/, '')}/chat/completions`;
   let withExtras = true;
   let retriedInFlight = false;
+  let rateLimitRetries = 0;
   for (;;) {
     const response = await fetch(url, {
       method: 'POST',
@@ -474,6 +490,11 @@ async function postCompatChat(
     if (err.code === 'COMPAT_IN_FLIGHT_BUDGET' && !retriedInFlight) {
       retriedInFlight = true;
       await sleep(err.retryAfterMs);
+      continue;
+    }
+    if (err.code === 'COMPAT_RATE_LIMITED' && rateLimitRetries < 2 && !params.signal?.aborted) {
+      rateLimitRetries++;
+      await sleep(err.retryAfterMs * rateLimitRetries);
       continue;
     }
     throw err;
