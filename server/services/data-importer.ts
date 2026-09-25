@@ -28,7 +28,7 @@ import { getDriver, isNoSQLDriver } from './db-drivers/driver-registry.js';
 import type { DbConfig } from './db-drivers/driver-interface.js';
 import { resolveExplicitDbDriver } from './workflow-step-registry.js';
 import { assertQueryPermitted, assertTablesAllowed, resolveMaxRows } from './connection-guard.js';
-import { checkFolderPath } from '../lib/folder-guard.js';
+import { checkFolderPath, allowedRootOf } from '../lib/folder-guard.js';
 
 /**
  * A file this service reads or writes, as an absolute path inside
@@ -40,7 +40,13 @@ import { checkFolderPath } from '../lib/folder-guard.js';
 function permittedFilePath(filePath: string): string {
   const check = checkFolderPath(filePath);
   if (!check.ok) throw new Error(`File path not permitted: ${check.error}`);
-  return check.resolved;
+  // The containment again, on the value returned (folder-guard allowedRootOf).
+  const abs = path.resolve(check.resolved);
+  const root = allowedRootOf(abs, check.allowedBases);
+  if (root === null || !abs.startsWith(root + path.sep)) {
+    throw new Error('File path not permitted: Path outside allowed directories');
+  }
+  return abs;
 }
 
 /**

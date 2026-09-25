@@ -271,6 +271,22 @@ export function checkFolderPath(
   return { ok: true, resolved, allowedBases };
 }
 
+/**
+ * The allowed base `abs` (an already resolved path) lies in, or null.
+ *
+ * checkFolderPath() has decided the question; this hands the caller the base
+ * so it can repeat the containment as `abs.startsWith(root)` right beside the
+ * file operation. CodeQL's js/path-injection only recognises a guard in the
+ * same function as the sink, and a check that is visibly next to the read or
+ * write is also the one a reviewer can trust.
+ */
+export function allowedRootOf(abs: string, allowedBases: readonly string[]): string | null {
+  for (const base of allowedBases) {
+    if (abs === base || abs.startsWith(base + path.sep)) return base;
+  }
+  return null;
+}
+
 /** Convenience predicate for call sites that only need yes/no. */
 export function isFolderPathAllowed(
   candidate: unknown,
