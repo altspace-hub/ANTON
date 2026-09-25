@@ -64,6 +64,7 @@ vi.mock('../../server/services/budget-manager.js', async (importOriginal) => {
 });
 
 import { createClaudeRoutes } from '../../server/routes/claude.js';
+import { adapterParams } from '../helpers/adapter-params';
 
 // ── Fake database ──────────────────────────────────────────────────────────────
 
@@ -107,6 +108,7 @@ function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
   const db = {
     dialect: 'postgresql',
     async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+      params = adapterParams(params);
       state.gets.push({ sql, params });
       if (/FROM sessions WHERE id = \? AND user_id = \?/.test(sql)) {
         return (state.sessions.get(String(params[0]))?.user_id === params[1] ? { ok: 1 } : undefined) as T | undefined;
@@ -134,6 +136,7 @@ function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
       return undefined;
     },
     async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
+      params = adapterParams(params);
       state.alls.push({ sql, params });
       if (/FROM file_uploads WHERE uploaded_by = \? AND id IN/.test(sql)) {
         const [owner, ...ids] = params;
@@ -142,6 +145,7 @@ function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
       return [];
     },
     async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+      params = adapterParams(params);
       state.runs.push({ sql, params });
       return { changes: 1, lastInsertRowid: 0 };
     },

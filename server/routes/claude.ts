@@ -308,7 +308,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     if (!userId || candidates.length === 0) return [];
     const rows = await db.all<{ id: string }>(
       `SELECT id FROM file_uploads WHERE uploaded_by = ? AND id IN (${candidates.map(() => '?').join(', ')})`,
-      userId, ...candidates,
+      [userId, ...candidates],
     );
     const owned = new Set(rows.map((r) => r.id));
     return candidates.filter((id) => owned.has(id));

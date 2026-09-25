@@ -19,6 +19,7 @@ import express from 'express';
 import type { Server } from 'node:http';
 import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
 import { createProfileRoutes } from '../../server/routes/profile.js';
+import { adapterParams } from '../helpers/adapter-params';
 
 const COLUMNS = [
   'name', 'role', 'company', 'industry', 'expertise', 'experience_level', 'communication_preferences',
@@ -45,6 +46,7 @@ function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
   const db = {
     dialect: 'postgresql',
     async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+      params = adapterParams(params);
       const row = state.rows.get(String(params[0]));
       if (sql === 'SELECT * FROM user_profiles WHERE id = ?') return (row ? { ...row } : undefined) as T | undefined;
       if (sql === 'SELECT brand_config FROM user_profiles WHERE id = ?') return (row ? { brand_config: row.brand_config ?? null } : undefined) as T | undefined;
@@ -52,6 +54,7 @@ function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
     },
     async all<T>(): Promise<T[]> { return []; },
     async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+      params = adapterParams(params);
       state.runs.push({ sql, params });
       if (/INSERT INTO user_profiles \(id, name, role/.test(sql)) {
         // The pre-B4 statement hard-coded the id (`VALUES ('default', ?, …)`); the fake
