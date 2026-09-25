@@ -194,7 +194,9 @@ router.post('/files/upload', uploadQuotaPrecheck, upload.single('file'), async (
     }
     if (refusal) {
       await db.run('DELETE FROM file_uploads WHERE id = ?', req.file.filename).catch(() => undefined);
-      await fs.remove(req.file.path).catch(() => undefined);
+      // multer wrote it into UPLOAD_DIR; remove nothing outside it.
+      const stored = path.resolve(req.file.path);
+      if (stored.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) await fs.remove(stored).catch(() => undefined);
       res.status(refusal.status).json(refusal.body);
       return;
     }

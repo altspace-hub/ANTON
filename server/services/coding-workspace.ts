@@ -259,7 +259,7 @@ const CLIKE_FILE =
 
 function commentBody(line: string, markdown: boolean): string | null {
   const t = line.trim();
-  let m = t.match(/^<!--(.*?)-->$/);
+  let m = t.match(/^<!--([\s\S]*?)-->$/);
   if (m) return m[1];
   if (markdown) return null;
   // {/* … */} and /* … */ — sliced to the same body the standalone's

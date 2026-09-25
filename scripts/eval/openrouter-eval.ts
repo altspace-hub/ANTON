@@ -1159,7 +1159,8 @@ function hostOf(url: string): string {
   try { return new URL(url).host; } catch { return url; }
 }
 function mdTable(head: string[], rows: string[][]): string {
-  const esc = (s: string): string => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  // Backslashes first, or a cell ending in "\" would escape the pipe that closes it.
+  const esc = (s: string): string => s.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n/g, ' ');
   return [
     `| ${head.map(esc).join(' | ')} |`,
     `| ${head.map(() => '---').join(' | ')} |`,

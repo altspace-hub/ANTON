@@ -566,6 +566,8 @@ const DEFAULT_OUTPUT_RESERVE = 16_384;
  * undercount the text someone would pick to be billed the most tokens.
  */
 export function estimateCompatTextTokens(text: string): number {
+  // A request body can carry anything; only a real string is counted.
+  if (typeof text !== 'string') return 0;
   let ascii = 0;
   let other = 0;
   for (let i = 0; i < text.length; i++) {

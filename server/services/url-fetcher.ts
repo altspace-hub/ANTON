@@ -25,6 +25,7 @@
 import { URL } from 'url';
 import { assertSafeEgressUrl } from '../lib/ssrf-guard.js';
 import { estimateTokens } from './token-estimator.js';
+import { decodeEntities, removeScriptsAndStyles, replaceUntilStable, stripTags } from '../lib/html-to-text.js';
 
 /** Whole-operation budget: guard + every redirect hop + body read. */
 export const FETCH_TIMEOUT_MS = 15_000;
@@ -231,24 +232,12 @@ function decodeBody(bytes: Uint8Array, contentType: string): string {
  * Strip HTML tags and decode common entities, producing clean plain text.
  */
 function htmlToText(html: string): string {
-  return html
-    // Remove <head> (title/meta/link — the title is captured separately) and <style>/<script> blocks entirely
-    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    // Remove nav/footer/header noise
-    .replace(/<(nav|header|footer)[^>]*>[\s\S]*?<\/\1>/gi, '')
-    // Convert block elements to newlines
-    .replace(/<\/(p|div|li|tr|h[1-6]|br|blockquote)>/gi, '\n')
-    // Strip all remaining tags
-    .replace(/<[^>]+>/g, ' ')
-    // Decode entities
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+  // Remove <head> (title/meta/link — the title is captured separately) and <style>/<script> blocks entirely
+  const noHead = replaceUntilStable(html, /<head\b[^>]*>[\s\S]*?<\/head[^>]*>/gi, '');
+  // Remove nav/footer/header noise
+  const noChrome = replaceUntilStable(removeScriptsAndStyles(noHead), /<(nav|header|footer)\b[^>]*>[\s\S]*?<\/\1[^>]*>/gi, '');
+  // Block elements end in a newline; every other tag becomes a space; entities are decoded last, once
+  return decodeEntities(stripTags(noChrome.replace(/<\/(p|div|li|tr|h[1-6]|br|blockquote)\s*>/gi, '\n')))
     // Collapse whitespace. Trailing spaces go first, so a run of space-only lines
     // (" \n \n \n", from nested block tags) collapses too: in Official Journal
     // XHTML they took about a quarter of the characters the fetcher keeps.
