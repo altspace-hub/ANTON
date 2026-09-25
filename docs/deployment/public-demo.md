@@ -41,6 +41,28 @@ A signed data processing agreement (DPA) is only available on OpenRouter's enter
 
 ## 2. The VM
 
+### Size
+
+The models run at OpenRouter, so the VM does no AI work apart from Ollama's small embedding model. It needs no GPU.
+
+| | Minimum | Recommended |
+|---|---|---|
+| vCPU | 2 | 4 |
+| RAM | 4 GB, if you build elsewhere | 8 GB |
+| SSD | 40 GB | 80 GB |
+
+- **Memory:**
+  - The ANTON process uses about 400 MB at rest (measured 2026-09-25, demo mode, background jobs off), and more while it reads a large PDF or writes an export.
+  - Add PostgreSQL (0.5–1 GB), Ollama with `nomic-embed-text` (about 0.5 GB) and the OS.
+  - The peak is the production build (`pnpm run build`: TypeScript plus Vite). Give it 4 GB of Node heap (`NODE_OPTIONS=--max-old-space-size=4096`), or build on another machine and copy `dist/`.
+- **Disk:**
+  - The code with its dependencies is about 3.5 GB (`node_modules` alone is 2.5 GB).
+  - Add the 20 GB filesystem for visitors' files below, PostgreSQL, logs, the OS and room for backups.
+- **CPU:**
+  - Two vCPUs carry a handful of visitors at once: while an answer streams, the server mostly waits on OpenRouter.
+  - Four leave room to read uploads and write exports while others' answers stream.
+- **Watch it for the first week** (`free -m`, `systemd-cgtop`), then resize. OpenRouter's rate limits (section 5) will bind long before the VM does.
+
 ```bash
 # As root, once
 adduser --disabled-password --gecos "" anton
