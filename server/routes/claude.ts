@@ -528,7 +528,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               source: { type: 'base64', media_type: mediaType, data: imgBuf.toString('base64') },
             });
           } catch (imgErr) {
-            console.error(`[claude] Failed to read image ${id}:`, imgErr);
+            // The id is the client's: an argument, never part of the format string.
+            console.error('[claude] Failed to read image %s:', id, imgErr);
           }
         }
         contentBlocks.push({ type: 'text', text: finalUserMessage });

@@ -179,7 +179,8 @@ export async function extractTextFromFile(filePath: string): Promise<string | nu
     }
     return capExtractedText(text, path.basename(filePath));
   } catch (err) {
-    console.error(`[extractor] Failed to extract ${filePath}:`, err);
+    // The path can come from a request: an argument, never part of the format string.
+    console.error('[extractor] Failed to extract %s:', filePath, err);
     return null;
   }
 }

@@ -34,6 +34,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, copyFile, stat, lstat, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { computeDiff, computeStats, type DiffChunk, type DiffStats } from './version-diff.js';
+import { allowedRootOf } from '../lib/folder-guard.js';
 import {
   TEAM_STORAGE_REFUSAL,
   isPathSameOrInside,
@@ -534,8 +535,10 @@ export async function validateWorkspacePath(
     return { ok: false, error: 'Workspace path must be absolute.', allowedBases };
   }
   const resolved = path.resolve(dirPath);
-  const inside = allowedBases.some((base) => resolved === base || resolved.startsWith(base + path.sep));
-  if (!inside) {
+  // The base it lies in, then the containment beside the disk access below
+  // (folder-guard allowedRootOf; CodeQL sees only a guard in this function).
+  const root = allowedRootOf(resolved, allowedBases);
+  if (root === null || !resolved.startsWith(root)) {
     return { ok: false, error: 'Workspace is outside ALLOWED_FOLDER_PATHS.', allowedBases, resolved };
   }
   const refusal = teamWorkspaceRefusal(resolved, env, scope);
