@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import https from 'https';
+import { fetchUrl } from '../services/url-fetcher.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -29,28 +29,16 @@ function buildEurLexUrl(celexNumber: string): string {
   return `https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:${celexNumber}`;
 }
 
+/**
+ * The act's text, at most 50k chars. EUR-Lex itself answers automated requests
+ * with a bot check, and this used to hand that page on as the regulation (so
+ * validate-pack checked packs against "JavaScript is disabled"); fetchUrl reads
+ * a CELEX link from the EU Publications Office instead, and fails on a bot check.
+ */
 async function fetchEurLexText(celexNumber: string): Promise<string> {
-  const url = buildEurLexUrl(celexNumber);
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, { headers: { 'User-Agent': 'openEXPERT/1.0 (research tool)' } }, (res) => {
-        let data = '';
-        res.on('data', (chunk: Buffer) => (data += chunk));
-        res.on('end', () => {
-          // Strip HTML tags for plain text
-          const text = data
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/\s{2,}/g, ' ')
-            .trim()
-            .slice(0, 50000); // limit to 50k chars
-          resolve(text);
-        });
-        res.on('error', reject);
-      })
-      .on('error', reject);
-  });
+  const result = await fetchUrl(buildEurLexUrl(celexNumber), 'full');
+  if (result.error) throw new Error(result.error);
+  return result.text.slice(0, 50000);
 }
 
 export async function createEurLexRoutes(db?: DatabaseAdapter, anthropic?: Anthropic) {
