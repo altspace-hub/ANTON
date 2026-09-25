@@ -206,7 +206,7 @@ async function visibleSessionOutputIds(db: DatabaseAdapter, ids: string[], scope
        FROM messages m
        JOIN sessions s ON s.id = m.session_id
       WHERE m.id IN (${placeholders}) AND s.user_id = ?`,
-    ...ids, scope.userId,
+    [...ids, scope.userId],
   );
   return new Set(rows.map((r) => r.id));
 }
@@ -224,7 +224,7 @@ async function visibleAtomIds(db: DatabaseAdapter, ids: string[], scope: SearchS
   const placeholders = ids.map(() => '?').join(',');
   const rows = await db.all<{ id: string }>(
     `SELECT id FROM knowledge_atoms WHERE id IN (${placeholders})${owner.sql}`,
-    ...ids, ...owner.params,
+    [...ids, ...owner.params],
   );
   return new Set(rows.map((r) => r.id));
 }
@@ -245,7 +245,7 @@ async function visibleStrictlyOwnedIds(
   if (ids.length === 0) return new Set();
   const rows = await db.all<{ id: string }>(
     `${kind.idsInSql} (${ids.map(() => '?').join(',')})${owner.sql}`,
-    ...ids, ...owner.params,
+    [...ids, ...owner.params],
   );
   return new Set(rows.map((r) => r.id));
 }
@@ -659,7 +659,7 @@ async function searchKnowledgeAtomsKeyword(
          WHERE ka.search_vector @@ plainto_tsquery('english', ?) AND ka.is_active = 1${owner.sql}
          ORDER BY ts_rank(ka.search_vector, plainto_tsquery('english', ?)) DESC
          LIMIT ?`,
-        tsQuery, ...owner.params, tsQuery, limit,
+        [tsQuery, ...owner.params, tsQuery, limit],
       ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
     }
 
@@ -672,7 +672,7 @@ async function searchKnowledgeAtomsKeyword(
        WHERE knowledge_atoms_fts MATCH ? AND ka.is_active = 1${owner.sql}
        ORDER BY rank
        LIMIT ?`,
-      ftsQuery, ...owner.params, limit,
+      [ftsQuery, ...owner.params, limit],
     ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
   } catch {
     // FTS not available yet — fall back to LIKE substring search
@@ -685,7 +685,7 @@ async function searchKnowledgeAtomsKeyword(
          FROM knowledge_atoms ka
          WHERE ka.is_active = 1 AND LOWER(ka.content) LIKE ?${owner.sql}
          ORDER BY ka.created_at DESC LIMIT ?`,
-        pattern, ...owner.params, limit,
+        [pattern, ...owner.params, limit],
       ) as Array<{ id: string; content: string; category: string; atom_type: string; tags: string }>;
     } catch {
       return [];
@@ -768,7 +768,7 @@ async function searchSessionOutputsKeyword(
        WHERE m.role = 'assistant' AND LENGTH(m.content) >= 200 AND (${whereExpr})${ownerSql}
        ORDER BY hits DESC, m.created_at DESC
        LIMIT ?`,
-      ...patterns, ...patterns, ...ownerParams, limit,
+      [...patterns, ...patterns, ...ownerParams, limit],
     ) as SessionOutputKeywordRow[];
     return rows.map((r) => ({ ...r, hits: Number(r.hits) }));
   } catch (err) {

@@ -191,7 +191,7 @@ async function listIreRevelations(db: DatabaseAdapter, scope: TrailScope, opts: 
     total_duration_ms: number;
     synthesis_quality_score: number | null;
     created_at: string;
-  }>(IRE_REVELATION_SQL.chains(where), ...args);
+  }>(IRE_REVELATION_SQL.chains(where), [...args]);
 
   return rows.map(r => ({
     id: `ire:${r.id}`,
@@ -253,7 +253,7 @@ async function listWorkflowRuns(db: DatabaseAdapter, scope: TrailScope, opts: Ki
       started_at: string;
       completed_at: string | null;
       error_message: string | null;
-    }>(WORKFLOW_RUN_SQL.runs(where), ...args);
+    }>(WORKFLOW_RUN_SQL.runs(where), [...args]);
     return rows.map(r => ({
       id: `wf:${r.id}`,
       kind: 'workflow_run' as TrailKind,
@@ -331,7 +331,7 @@ async function listSignedDeliveries(db: DatabaseAdapter, scope: TrailScope, opts
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
   try {
-    const rows = await db.all<SignedTrailEntryRow>(SIGNED_DELIVERY_SQL.entries(where), ...args);
+    const rows = await db.all<SignedTrailEntryRow>(SIGNED_DELIVERY_SQL.entries(where), [...args]);
     // Cross-reference verifications, if any, to derive signature status.
     const verifByTrailId = await getVerificationStatusMap(
       db,
@@ -380,7 +380,7 @@ async function getVerificationStatusMap(
     const placeholders = unique.map((_, idx) => `$${idx + 1}`).join(', ');
     const rows = await db.all<{ trail_id: string; verification_result: string }>(
       SIGNED_DELIVERY_SQL.latestVerificationPerTrail(placeholders),
-      ...unique
+      [...unique]
     );
     for (const r of rows) {
       map.set(r.trail_id, r.verification_result === 'valid' ? 'ok' : 'invalid');
@@ -442,7 +442,7 @@ async function listEvidencePacks(db: DatabaseAdapter, scope: TrailScope, opts: K
       compliance_frameworks: unknown;
       signature: string | null;
       created_at: string;
-    }>(EVIDENCE_PACK_SQL.packs(where), ...args);
+    }>(EVIDENCE_PACK_SQL.packs(where), [...args]);
     return rows.map(r => {
       const frameworks = parseFrameworks(r.compliance_frameworks);
       return {
@@ -509,7 +509,7 @@ async function listRendererArtifacts(db: DatabaseAdapter, scope: TrailScope, opt
       mime_type: string | null;
       created_by: string | null;
       created_at: string;
-    }>(RENDERER_ARTIFACT_SQL.artifacts(where), ...args);
+    }>(RENDERER_ARTIFACT_SQL.artifacts(where), [...args]);
     return rows.map(r => ({
       id: `rend:${String(r.id)}`,
       kind: 'renderer_artifact' as TrailKind,

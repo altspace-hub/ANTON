@@ -23,6 +23,7 @@ import type { Server } from 'node:http';
 import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
 import { createAuditTrailRoutes } from '../../server/routes/audit-trail.js';
 import { trailScopeForRequest, TRAIL_OWNER_SQL } from '../../server/services/trails-aggregator-service.js';
+import { adapterParams } from '../helpers/adapter-params';
 
 interface Call { sql: string; params: unknown[] }
 
@@ -32,6 +33,7 @@ const fakeDb = {
   dialect: 'postgresql',
   async get(): Promise<undefined> { throw new Error('fake db: get() is not expected'); },
   async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
+    params = adapterParams(params);
     calls.push({ sql, params });
     return [];
   },

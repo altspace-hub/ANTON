@@ -154,7 +154,7 @@ export class PgVectorStore {
     sql += ' ORDER BY embedding_vec <=> ?::vector LIMIT ?';
     args.push(literal, topK);
 
-    const rows = (await this.db.all(sql, ...args)) as PgSearchRow[];
+    const rows = (await this.db.all(sql, [...args])) as PgSearchRow[];
 
     return rows
       .filter((r) => r.similarity >= minSimilarity)
