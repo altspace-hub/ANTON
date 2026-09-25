@@ -14,7 +14,7 @@ import { FolderBrowseSchema, FolderRegisterSchema, FolderIndexSchema } from '../
 // Each handler reads the guard's RESOLVED path, not the request string: on
 // POSIX the kernel resolves "link/.." physically, so the string it was handed
 // can name a different folder from the one the guard approved.
-import { checkFolderPath } from '../lib/folder-guard.js';
+import { checkFolderPath, allowedRootOf } from '../lib/folder-guard.js';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
@@ -39,7 +39,13 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         res.status(403).json({ error: guard.error ?? 'Path outside allowed directories' });
         return;
       }
-      const dirPath = guard.resolved;
+      // The containment again, beside the reads below (folder-guard allowedRootOf).
+      const dirPath = path.resolve(guard.resolved);
+      const root = allowedRootOf(dirPath, guard.allowedBases);
+      if (root === null || !dirPath.startsWith(root)) {
+        res.status(403).json({ error: 'Path outside allowed directories' });
+        return;
+      }
 
       if (!await fs.pathExists(dirPath)) {
         res.status(404).json({ error: 'Path not found' });
@@ -81,14 +87,21 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         res.status(403).json({ error: guard.error ?? 'Path outside allowed directories' });
         return;
       }
+      // The containment again, beside the reads below (folder-guard allowedRootOf).
+      const folderAbs = path.resolve(guard.resolved);
+      const folderRoot = allowedRootOf(folderAbs, guard.allowedBases);
+      if (folderRoot === null || !folderAbs.startsWith(folderRoot)) {
+        res.status(403).json({ error: 'Path outside allowed directories' });
+        return;
+      }
 
-      if (!await fs.pathExists(guard.resolved)) {
+      if (!await fs.pathExists(folderAbs)) {
         res.status(404).json({ error: 'Folder not found' });
         return;
       }
 
       // Count supported files
-      const entries = await fs.readdir(guard.resolved, { withFileTypes: true });
+      const entries = await fs.readdir(folderAbs, { withFileTypes: true });
       const fileCount = entries.filter(
         e => e.isFile() && SUPPORTED_EXTENSIONS.includes(path.extname(e.name).toLowerCase())
       ).length;

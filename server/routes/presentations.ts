@@ -473,7 +473,13 @@ FORMATTING RULES:
           return;
         }
       }
-      const filePath = path.join(OUTPUT_DIR, filename);
+      // The file must be directly inside OUTPUT_DIR, whatever the name holds.
+      const outputRoot = path.resolve(OUTPUT_DIR) + path.sep;
+      const filePath = path.resolve(OUTPUT_DIR, filename);
+      if (!filePath.startsWith(outputRoot)) {
+        res.status(404).json({ error: 'File not found' });
+        return;
+      }
       if (!fs.existsSync(filePath)) {
         res.status(404).json({ error: 'File not found' });
         return;

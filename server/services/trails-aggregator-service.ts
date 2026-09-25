@@ -609,7 +609,8 @@ export async function getTrail(db: DatabaseAdapter, scope: TrailScope, composite
   const prefix = compositeId.slice(0, sep);
   const rowId = compositeId.slice(sep + 1);
   const lister = LISTER_BY_ID_PREFIX.get(prefix);
-  if (!lister || !rowId) return null;
+  // The prefix comes from the request: only a lister this module registered is called.
+  if (typeof lister !== 'function' || !rowId) return null;
   // rendered_artifacts.id is BIGINT; a non-numeric id would only make PG throw.
   if (prefix === 'rend' && !/^\d+$/.test(rowId)) return null;
   const rows = await lister(db, scope, { rowId });
