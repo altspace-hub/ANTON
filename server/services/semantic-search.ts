@@ -278,7 +278,7 @@ export async function searchCollections(
           AND e.embedding_dimension = ?
           AND d.index_status = 'indexed'
           AND d.collection_id IN (${placeholders})${scope.sql}`,
-      RAG_CHUNK_CONTENT_TYPE, adapter.model, adapter.dimensions, ...collections, ...scope.params,
+      [RAG_CHUNK_CONTENT_TYPE, adapter.model, adapter.dimensions, ...collections, ...scope.params],
     );
     diagnostics.embeddedChunks = rows.length;
 
@@ -292,7 +292,7 @@ export async function searchCollections(
           WHERE e.content_type = ?
             AND e.embedding_model <> ?
             AND d.collection_id IN (${placeholders})${scope.sql}`,
-        RAG_CHUNK_CONTENT_TYPE, adapter.model, ...collections, ...scope.params,
+        [RAG_CHUNK_CONTENT_TYPE, adapter.model, ...collections, ...scope.params],
       );
       diagnostics.staleVectorChunks = Number(stale?.n ?? 0);
       diagnostics.reason = diagnostics.staleVectorChunks > 0
@@ -432,7 +432,7 @@ export async function getChunkContext(
        JOIN rag_documents d ON d.id = c.document_id
       WHERE (c.id = ? OR c.chroma_id = ?)${scope.sql}
       LIMIT 1`,
-    chunkId, chunkId, ...scope.params,
+    [chunkId, chunkId, ...scope.params],
   );
   if (!chunk) return [];
 
@@ -483,7 +483,7 @@ async function loadCollectionChunks(
        JOIN knowledge_collections col ON col.id = d.collection_id
       WHERE d.collection_id IN (${placeholders})
         AND d.index_status = 'indexed'${scope.sql}`,
-    ...collections, ...scope.params,
+    [...collections, ...scope.params],
   );
 }
 

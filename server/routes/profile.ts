@@ -238,7 +238,7 @@ export async function createProfileRoutes(db: DatabaseAdapter) {
         // the current one — the upsert writes every column, so it must be re-sent.
         const brandSent = Object.prototype.hasOwnProperty.call(body, 'brand_config');
         const brand = brandSent ? ((body.brand_config as string | null | undefined) || null) : await instanceBrand();
-        await db.run(UPSERT_PROFILE_SQL, INSTANCE_PROFILE_ID, ...personalParams(body), brand);
+        await db.run(UPSERT_PROFILE_SQL, [INSTANCE_PROFILE_ID, ...personalParams(body), brand]);
         const updated = await db.get<UserProfile>('SELECT * FROM user_profiles WHERE id = ?', INSTANCE_PROFILE_ID);
         res.json(updated ?? emptyProfile(INSTANCE_PROFILE_ID));
         return;
@@ -262,7 +262,7 @@ export async function createProfileRoutes(db: DatabaseAdapter) {
 
         await db.transaction(async (tx) => {
           // Personal rows never carry a brand — it lives on the instance row only.
-          await tx.run(UPSERT_PROFILE_SQL, id, ...personalParams(body), null);
+          await tx.run(UPSERT_PROFILE_SQL, [id, ...personalParams(body), null]);
           if (changesBrand) {
             await tx.run(
               `INSERT INTO user_profiles (id, brand_config, updated_at) VALUES (?, ?, NOW())
@@ -277,7 +277,7 @@ export async function createProfileRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      await db.run(UPSERT_PROFILE_SQL, 'default', ...personalParams(body), body.brand_config || null);
+      await db.run(UPSERT_PROFILE_SQL, ['default', ...personalParams(body), body.brand_config || null]);
 
       const updated = await db.get('SELECT * FROM user_profiles WHERE id = ?', 'default');
       res.json(updated);

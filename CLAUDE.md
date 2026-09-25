@@ -248,6 +248,8 @@ await db.get(`SELECT * FROM sessions WHERE id = '${sessionId}'`);
 db.get('SELECT * FROM sessions WHERE id = ?', sessionId);
 ```
 
+A variable number of values goes in as one array — `db.all(sql, [userId, ...ids])` — not as spread arguments (`db.all(sql, userId, ...ids)`). The adapter takes both, but CodeQL cannot place spread values and reports request data in them as SQL injection (PR #78, 2026-09-25).
+
 A `DATE` column (or `x::date`) comes back as the text `'YYYY-MM-DD'` — the adapter sets pg's type parser, so compare it as a string. Show one in the browser with `formatDay` / `parseDay` from `src/lib/dates.ts`: `new Date('2027-03-31')` is UTC midnight, the day before west of Greenwich. `TIMESTAMPTZ` still arrives as a `Date`.
 
 ### 2. State: Zustand Stores
