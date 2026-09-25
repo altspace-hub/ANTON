@@ -7,3 +7,8 @@
 ee99480f68b653f390ee25d9a0a0a2c337a0f8e7:tests/services/folder-whitelist-enforced.test.ts:generic-api-key:36
 # The first version of this file quoted that sentinel in its own comment (commit dd7eb38f).
 dd7eb38f0119dc71ff0432b8c35962f106185ce0:.gitleaksignore:generic-api-key:4
+
+# 2026-09-25: the custom-model key-redaction test's SECRET is a made-up slot key; the
+# test proves the stored key is never sent back. Not a credential; the generic-api-key
+# rule matches on the variable name.
+f3d8160e848c65f8ed2d09463ecc6882c6814d66:tests/routes/custom-models-key-redaction.test.ts:generic-api-key:46
