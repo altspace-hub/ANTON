@@ -629,6 +629,8 @@ export interface RunResult {
   httpStatus?: number;
   /** A 402 for the key's limit or credits: nothing else will run. */
   budgetRefused?: boolean;
+  /** Taken over from an earlier run (--resume): not called or paid for in this one. */
+  reusedFrom?: string;
   finishReason?: string | null;
   nativeFinishReason?: string | null;
   truncated?: boolean;
@@ -971,6 +973,8 @@ export interface EvalOptions {
   baseUrl: string;
   outDir: string | null;
   rejudge: string | null;
+  /** An earlier run's results JSON: its finished answers are reused, not paid for again. */
+  resume: string | null;
   help: boolean;
 }
 
@@ -994,6 +998,7 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
     baseUrl: env.OPENROUTER_BASE_URL?.trim() || DEFAULT_BASE_URL,
     outDir: null,
     rejudge: null,
+    resume: null,
     help: false,
   };
   const args = [...argv];
@@ -1036,6 +1041,7 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
         break;
       }
       case '--models': opts.models = list(value(flag, inline)); break;
+      case '--resume': opts.resume = value(flag, inline); break;
       case '--cases': opts.cases = list(value(flag, inline)); break;
       case '--reference': opts.reference = value(flag, inline); break;
       case '--reference-price': {
@@ -1065,6 +1071,8 @@ export const USAGE = `Usage: npx tsx scripts/eval/openrouter-eval.ts [options]
   --temperature <n>       Default 0.5 (what ANTON sends compat models today).
   --timeout-sec <n>       Per call (default 900).
   --concurrency <n>       Parallel calls, 1-6 (default 1).
+  --resume <results.json> Reuse the finished answers of an earlier run (same case, model and
+                          request settings, not cut off); only the rest is called and paid for.
   --models <keys>         Subset of: ${CANDIDATES.map((c) => c.key).join(', ')}, reference.
   --cases <ids>           Subset of: ${CASES.map((c) => c.id).join(', ')}.
   --reference <model>     Add an OpenRouter model as a reference (key "reference").
@@ -1162,7 +1170,10 @@ export function selectCandidates(opts: Pick<EvalOptions, 'models' | 'reference' 
       key: 'reference',
       label: `Reference: ${opts.reference}`,
       model: opts.reference,
-      reasoning: null,
+      // The run's --effort, like the candidates. With no reasoning field Claude 5
+      // reasoned at full depth: 8-16k reasoning tokens of a 16k allowance, every
+      // answer cut off, $0.19 a call (live run, 2026-09-25).
+      reasoning: { mandatory: false, efforts: ['low', 'medium', 'high'] },
       ...(opts.referencePrice ? { pricePerM: opts.referencePrice } : {}),
     });
   }
@@ -1484,6 +1495,28 @@ export async function runEval(opts: EvalOptions, deps: EvalDeps = {}): Promise<E
       },
     };
   };
+  // --resume: an earlier answer to the very same request, finished (not cut off),
+  // is reused. Its cost was paid in that run, so it does not count against this
+  // run's --max-usd.
+  if (opts.resume) {
+    const earlier = JSON.parse(fs.readFileSync(opts.resume, 'utf8')) as EvalRecord;
+    const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+    let reused = 0;
+    jobs.forEach(({ p, c, body }, i) => {
+      const want = shell(p, c, body);
+      const prior = earlier.results.find((r) => r.caseId === want.caseId && r.candidate === want.candidate && r.model === want.model
+        && r.status === 'ok' && r.finishReason !== 'length' && !r.truncated
+        && same(r.request.reasoning, want.request.reasoning) && same(r.request.provider, want.request.provider)
+        && r.request.maxTokens === want.request.maxTokens);
+      if (prior) {
+        slots[i] = { ...prior, judge: undefined, reusedFrom: path.basename(opts.resume!) };
+        reused += 1;
+      }
+    });
+    record.results = slots.filter((r): r is RunResult => r !== undefined);
+    log(`Resuming: ${reused} of ${jobs.length} answer(s) reused from ${path.basename(opts.resume)}.`);
+  }
+
   const skipped = (i: number, reason: string): void => {
     const { p, c, body } = jobs[i];
     slots[i] = { ...shell(p, c, body), status: 'skipped', skipReason: reason, warnings: [], content: '', reasoning: '', usage: {}, costUsd: null, costSource: 'none' };
@@ -1494,6 +1527,7 @@ export async function runEval(opts: EvalOptions, deps: EvalDeps = {}): Promise<E
       const i = next;
       next += 1;
       if (i >= jobs.length) return;
+      if (slots[i]) continue;   // reused from an earlier run (--resume)
       const { p, c, body, estimate } = jobs[i];
       if (stopReason) { skipped(i, stopReason); continue; }
       if (spent + reserved >= opts.maxUsd) {

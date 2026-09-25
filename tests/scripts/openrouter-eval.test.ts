@@ -344,7 +344,9 @@ describe('runEval against a fake OpenAI-compatible server', () => {
     const ref = results[3];
     expect(ref).toMatchObject({ status: 'ok', finishReason: 'length', truncated: true, costUsd: 0.01 });
     expect(ref.warnings.join(' ')).toContain('cut off');
-    expect(ref.request).not.toHaveProperty('reasoning');
+    // The reference gets the run's effort (it used to get none, and Claude 5
+    // then reasoned away its whole allowance).
+    expect(ref.request.reasoning).toEqual({ effort: 'low' });
 
     // What reached the server: the key as a bearer token, the pin on the EU call only.
     expect(fake.requests).toHaveLength(4);
@@ -487,5 +489,44 @@ describe('judge', () => {
     expect(again.outcome.files!.json).toBe(jsonPath.replace(/\.json$/, '-judged.json'));
     const judged = JSON.parse(fs.readFileSync(again.outcome.files!.json, 'utf8')) as EvalRecord;
     expect(judged.results[0].judge?.overall).toBe(5);
+  });
+});
+
+describe('--resume and the reference model (after the first live run, 2026-09-25)', () => {
+  it('sends the reference model the same effort as the run, so it does not reason away its whole allowance', async () => {
+    fake.scenario = (model) => ({ status: 200, lines: okStream(model, 0.001) });
+    const { outcome } = await run(opts({ reference: 'anthropic/claude-sonnet-5', models: ['reference'] }));
+    expect(outcome.record!.results[0].request.reasoning).toEqual({ effort: 'low' });
+    expect(fake.requests.at(-1)?.body.reasoning).toEqual({ effort: 'low' });
+  });
+
+  it('reuses the finished answers of an earlier run and calls only the rest; a cut-off answer is called again', async () => {
+    fake.scenario = (model) => (model === 'inclusionai/ling-3.0-flash-vl'
+      ? { status: 200, lines: sse(
+        { choices: [{ delta: { content: 'Cut' } }] },
+        { choices: [{ delta: {}, finish_reason: 'length' }], usage: { prompt_tokens: 1, completion_tokens: 1, cost: 0.0001 } },
+      ) }
+      : { status: 200, lines: okStream(model, 0.002) });
+    const first = await run(opts());
+    const jsonPath = first.outcome.files!.json;
+    const callsBefore = fake.requests.length;
+
+    fake.scenario = (model) => ({ status: 200, lines: okStream(model, 0.003) });
+    const second = await run(opts({ resume: jsonPath }));
+    const calledAgain = fake.requests.slice(callsBefore).map((r) => r.body.model);
+    expect(calledAgain).toEqual(['inclusionai/ling-3.0-flash-vl']);   // only the cut-off one
+    const results = second.outcome.record!.results;
+    expect(results.filter((r) => r.reusedFrom)).toHaveLength(2);
+    expect(results.find((r) => r.candidate === 'ling-vl')?.reusedFrom).toBeUndefined();
+    // Reused answers were paid in the earlier run: this run spent only the new call.
+    expect(second.outcome.record!.meta.spentUsd).toBeCloseTo(0.003);
+    expect(second.log).toContain('Resuming: 2 of 3 answer(s) reused');
+  });
+
+  it('negative control: without --resume every call is made', async () => {
+    fake.scenario = (model) => ({ status: 200, lines: okStream(model, 0.002) });
+    const before = fake.requests.length;
+    await run(opts());
+    expect(fake.requests.length - before).toBe(3);
   });
 });

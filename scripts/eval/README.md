@@ -32,6 +32,9 @@ OPENROUTER_API_KEY=sk-or-... npx tsx scripts/eval/openrouter-eval.ts --max-usd 2
 # Also grade every answer on this machine's subscription engine (sdk:claude-opus-5-5)
 OPENROUTER_API_KEY=sk-or-... npx tsx scripts/eval/openrouter-eval.ts --judge
 
+# Continue a run that stopped part-way: finished answers are reused, only the rest is called
+OPENROUTER_API_KEY=sk-or-... npx tsx scripts/eval/openrouter-eval.ts --resume not_to_github/eval/2026-09-25/openrouter-eval-155401.json --judge
+
 # Grade an earlier run later, without calling OpenRouter again
 npx tsx scripts/eval/openrouter-eval.ts --rejudge not_to_github/eval/2026-09-25/openrouter-eval-101500.json
 ```
