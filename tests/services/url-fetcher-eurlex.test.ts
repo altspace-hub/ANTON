@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const { lookupMock } = vi.hoisted(() => ({ lookupMock: vi.fn() }));
 vi.mock('node:dns/promises', () => ({ lookup: lookupMock }));
 
-import { fetchUrl, eurLexSource } from '../../server/services/url-fetcher';
+import { fetchUrl, eurLexSource, euActArticlesFirst } from '../../server/services/url-fetcher';
 
 type FetchFn = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 const fetchMock = vi.fn<FetchFn>();
@@ -134,5 +134,57 @@ describe('negative controls: ordinary pages are untouched', () => {
     const r = await fetchUrl('https://example.com/article');
     expect(r.error).toBeUndefined();
     expect(r.wordCount).toBeGreaterThan(200);
+  });
+});
+
+// ── Long acts: the articles first ──────────────────────────────────────────────
+// The fetcher keeps the first 200k characters. The AMLR runs 167k characters of
+// recitals before Article 1, so a run grounded in it saw hardly an article.
+
+const OJ_ACT = [
+  '<html xmlns="http://www.w3.org/1999/xhtml"><body>',
+  '<div class="eli-container" id="pbl_1"><p class="oj-doc-ti">REGULATION (EU) 2024/1624</p>',
+  '<div class="eli-subdivision" id="rct_1"><p>(1) Recital one: why this exists.</p></div>',
+  '<div class="eli-subdivision" id="rct_2"><p>(2) Recital two.</p></div></div>',
+  '<div class="eli-subdivision" id="enc_1"><div class="eli-subdivision" id="art_1"><p class="oj-ti-art">Article 1</p>',
+  '<p class="oj-normal">Subject matter.</p></div></div>',
+  '<div class="eli-subdivision" id="fnp_1"><p>This Regulation shall be binding in its entirety.</p></div>',
+  '<div class="eli-container"><p>ANNEX I</p><p>Indicative list of risk factors.</p></div>',
+  '</body></html>',
+].join('\n');
+
+describe('euActArticlesFirst: an Official Journal act, articles first', () => {
+  it('orders title, articles, final provisions and annexes, then the recitals, and says so', () => {
+    const out = euActArticlesFirst(OJ_ACT);
+    expect(out).not.toBeNull();
+    const at = (needle: string) => out!.indexOf(needle);
+    expect(at('REGULATION (EU) 2024/1624')).toBeLessThan(at('Official Journal text in this order'));
+    expect(at('Official Journal text in this order')).toBeLessThan(at('Article 1'));
+    expect(at('Article 1')).toBeLessThan(at('shall be binding'));
+    expect(at('shall be binding')).toBeLessThan(at('ANNEX I'));
+    expect(at('ANNEX I')).toBeLessThan(at('RECITALS'));
+    expect(at('RECITALS')).toBeLessThan(at('Recital one'));
+    // Nothing is lost.
+    for (const part of ['Recital two', 'Subject matter', 'Indicative list']) expect(out).toContain(part);
+  });
+
+  it('leaves anything without that structure alone', () => {
+    expect(euActArticlesFirst('<html><body><p>Guidance.</p></body></html>')).toBeNull();
+    expect(euActArticlesFirst('<div id="enc_1">Article 1</div><div id="rct_1">late recital</div>')).toBeNull();
+  });
+
+  it('fetchUrl reads an act from the Publications Office articles first, space-only lines collapsed', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(OJ_ACT, { status: 200, headers: { 'content-type': 'application/xhtml+xml' } }));
+    const r = await fetchUrl('https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1624');
+    expect(r.error).toBeUndefined();
+    expect(r.text.indexOf('Article 1')).toBeLessThan(r.text.indexOf('Recital one'));
+    expect(r.text).not.toMatch(/\n[ \t]+\n/);
+  });
+
+  it('negative control: the same markup from another site keeps its own order', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(OJ_ACT, { status: 200, headers: { 'content-type': 'text/html' } }));
+    const r = await fetchUrl('https://example.com/copy-of-the-act');
+    expect(r.error).toBeUndefined();
+    expect(r.text.indexOf('Recital one')).toBeLessThan(r.text.indexOf('Article 1'));
   });
 });

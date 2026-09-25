@@ -81,6 +81,35 @@ export function eurLexSource(rawUrl: string): { url: string; language: string } 
   return { url: `https://publications.europa.eu/resource/celex/${encodeURIComponent(celex)}`, language };
 }
 
+/**
+ * An Official Journal act (Publications Office XHTML) with its articles first.
+ * The act runs title, recitals, articles (`id="enc_1"`), then final provisions
+ * and annexes (`id="fnp_1"`); the fetcher keeps the first MAX_CHARS, and the
+ * AMLR's 167k characters of recitals used to fill most of them, so a run
+ * grounded in it saw hardly an article. Returns the reordered markup — title,
+ * articles, final part and annexes, then the recitals — or null for anything
+ * without that structure.
+ */
+export function euActArticlesFirst(xhtml: string): string | null {
+  const tagStart = (id: string): number => {
+    const at = xhtml.indexOf(`id="${id}"`);
+    return at < 0 ? -1 : xhtml.lastIndexOf('<', at);
+  };
+  const recitals = tagStart('rct_1');
+  const articles = tagStart('enc_1');
+  if (recitals < 0 || articles < 0 || articles < recitals) return null;
+  const finalPart = tagStart('fnp_1');
+  const articlesEnd = finalPart > articles ? finalPart : xhtml.length;
+  return [
+    xhtml.slice(0, recitals),
+    '<p>[Official Journal text in this order: the articles, then the final provisions and annexes, then the recitals.]</p>',
+    xhtml.slice(articles, articlesEnd),
+    finalPart > articles ? xhtml.slice(finalPart) : '',
+    '<p>RECITALS</p>',
+    xhtml.slice(recitals, articles),
+  ].join('\n');
+}
+
 /** A bot check served in place of the page (EUR-Lex's WAF, Cloudflare and the like). */
 const BOT_CHECK = /verify (?:that )?you(?:'|’)?re not a robot|awsWafCookieDomainList|checking your browser before accessing|enable javascript and cookies to continue/i;
 /** A real page that merely mentions one of those phrases is longer than this. */
@@ -220,8 +249,11 @@ function htmlToText(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    // Collapse whitespace
+    // Collapse whitespace. Trailing spaces go first, so a run of space-only lines
+    // (" \n \n \n", from nested block tags) collapses too: in Official Journal
+    // XHTML they took about a quarter of the characters the fetcher keeps.
     .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -307,7 +339,8 @@ export async function fetchUrl(url: string, mode: 'full' | 'summary' = 'full'): 
     const raw = decodeBody(body.bytes, contentType);
 
     const isHtml = contentType.includes('text/html') || contentType.includes('application/xhtml');
-    const rawText = isHtml ? htmlToText(raw) : raw;
+    const actInOrder = isHtml && new URL(current).hostname === 'publications.europa.eu' ? euActArticlesFirst(raw) : null;
+    const rawText = isHtml ? htmlToText(actInOrder ?? raw) : raw;
     const titleMatch = isHtml ? raw.match(/<title[^>]*>([^<]+)<\/title>/i) : null;
     const title = titleMatch ? titleMatch[1].trim() : undefined;
     if (countWords(rawText) < BOT_CHECK_MAX_WORDS && BOT_CHECK.test(raw)) {
