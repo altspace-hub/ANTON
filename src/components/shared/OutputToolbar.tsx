@@ -14,6 +14,7 @@ import type { ModelId, ContextUsed } from '@/lib/types';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted } from '@/lib/demo-config';
+import { thinkingLevelUnavailable } from '@/lib/compat-model-policy';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -817,7 +818,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   <Info className="h-3.5 w-3.5 cursor-help text-adv-gray hover:text-adv-teal transition-colors" />
                   <div className="pointer-events-none absolute bottom-5 left-0 z-50 w-64 rounded-lg border border-border bg-adv-dark p-3 text-[11px] leading-relaxed text-adv-gray opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
                     <p className="mb-1.5 font-semibold text-adv-off-white">What is the Trust Score?</p>
-                    <p>After every output, Claude Haiku reads the response and rates it across five quality dimensions on a 0–10 scale:</p>
+                    <p>After every output, a quality check (a separate model call) rates the response across five quality dimensions on a 0–10 scale:</p>
                     <ul className="mt-1.5 space-y-0.5 pl-2">
                       <li>· <span className="text-adv-off-white">Completeness</span> — checks for key sections: Executive Summary, Introduction, Findings / Analysis, Recommendations / Actions, Conclusion, Implementation / Roadmap</li>
                       <li>· <span className="text-adv-off-white">Accuracy</span> — factual reliability and qualified claims</li>
@@ -828,7 +829,9 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                     <p className="mt-1.5 text-adv-gray">Scores are compared to your module's historical baseline to flag regressions.</p>
                   </div>
                 </div>
-                {answersScored && <span className="ml-auto text-xs text-adv-gray">Scored by Claude Haiku</span>}
+                {/* The scorer is the server's utility model, which is not Haiku on every
+                    server (and a heuristic when its reply does not parse), so it is not named. */}
+                {answersScored && <span className="ml-auto text-xs text-adv-gray">Scored by the quality check</span>}
               </div>
               {!answersScored ? (
                 <div className="rounded-lg bg-adv-dark p-4 text-center">
@@ -946,7 +949,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                     </div>
                   )}
 
-                  {/* Haiku reasoning — strengths / weaknesses / suggestion */}
+                  {/* The scorer's reasoning — strengths / weaknesses / suggestion */}
                   {trustScore.reasoning && (
                     (trustScore.reasoning.strengths?.length || trustScore.reasoning.weaknesses?.length || trustScore.reasoning.improvementSuggestion) ? (
                       <div className="mt-3 space-y-2 border-t border-border pt-3">
@@ -981,7 +984,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
                   <p className="text-sm text-adv-gray">Scoring in progress…</p>
                   <p className="mt-1 text-xs text-adv-gray">
-                    Claude Haiku is reviewing the output. Reopen this panel in a moment.
+                    The quality check is reviewing the output. Reopen this panel in a moment.
                   </p>
                 </div>
               )}
@@ -1061,8 +1064,11 @@ export default function OutputToolbar(props: OutputToolbarProps) {
         <RerunComparison data={rerunData} onClose={() => setShowComparison(false)} />
       )}
 
-      {/* ── Go Deeper prompt ── show when output exists and not at max thinking */}
-      {!isStreaming && outputContent && onUpgradeThinking && thinking !== 'investigate' && (
+      {/* ── Go Deeper prompt ── show when output exists and not at max thinking.
+          Not when the model cannot run the next level (Investigate on a compat
+          model): the thinking control would move it straight back to Think Hard. */}
+      {!isStreaming && outputContent && onUpgradeThinking && thinking !== 'investigate'
+        && !thinkingLevelUnavailable(goDeeperNextLevel(thinking), model) && (
         <GoDeeperPrompt thinking={thinking} onUpgrade={onUpgradeThinking} />
       )}
 
@@ -1247,6 +1253,11 @@ const THINKING_LABELS: Record<string, string> = {
   investigate: 'Investigate',
 };
 
+/** The level "Go deeper" offers: Think → Think Hard, any other level → Investigate. */
+function goDeeperNextLevel(thinking: string): 'think_hard' | 'investigate' {
+  return thinking === 'think' ? 'think_hard' : 'investigate';
+}
+
 function GoDeeperPrompt({
   thinking,
   onUpgrade,
@@ -1254,7 +1265,7 @@ function GoDeeperPrompt({
   thinking: string;
   onUpgrade: (level: 'think_hard' | 'investigate') => void;
 }) {
-  const nextLevel = thinking === 'think' ? 'think_hard' : 'investigate';
+  const nextLevel = goDeeperNextLevel(thinking);
   const nextLabel = THINKING_LABELS[nextLevel];
 
   return (
@@ -1265,7 +1276,7 @@ function GoDeeperPrompt({
         Re-run at <span className="text-adv-teal font-medium">{nextLabel}</span> for deeper analysis.
       </p>
       <button
-        onClick={() => onUpgrade(nextLevel as 'think_hard' | 'investigate')}
+        onClick={() => onUpgrade(nextLevel)}
         className="flex items-center gap-1.5 rounded-lg bg-adv-teal/10 border border-adv-teal/30 px-3 py-1 text-xs font-medium text-adv-teal hover:bg-adv-teal/20 transition-colors shrink-0"
       >
         Switch to {nextLabel}

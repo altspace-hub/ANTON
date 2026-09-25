@@ -33,10 +33,10 @@ function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps)
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-sm font-medium text-adv-off-white">What should Claude produce?</span>
+        <span className="text-sm font-medium text-adv-off-white">What should ANTON produce?</span>
         <HelpTooltip
           wide
-          text={"Click chips to select the format(s) you need. Multiple selections = multiple stand-alone deliverables in one response.\n\n• Strategic — board-ready summaries, decision memos, risk appetite statements.\n• Analysis — detailed findings, regulatory comparisons, impact assessments.\n• Operational — action plans, project plans, policy documents, RACI matrices.\n• Scoring — gap matrices (RAG-rated), maturity assessments, data readiness scorecards.\n• Communication — quick briefings, presentations, training materials.\n• Planning — compliance calendars, monitoring plans, budget estimates.\n\nEach format injects specific structural instructions so Claude produces exactly that deliverable. Best exports (DOCX, XLSX) are shown after selection."}
+          text={"Click chips to select the format(s) you need. Multiple selections = multiple stand-alone deliverables in one response.\n\n• Strategic — board-ready summaries, decision memos, risk appetite statements.\n• Analysis — detailed findings, regulatory comparisons, impact assessments.\n• Operational — action plans, project plans, policy documents, RACI matrices.\n• Scoring — gap matrices (RAG-rated), maturity assessments, data readiness scorecards.\n• Communication — quick briefings, presentations, training materials.\n• Planning — compliance calendars, monitoring plans, budget estimates.\n\nEach format injects specific structural instructions so the model produces exactly that deliverable. Best exports (DOCX, XLSX) are shown after selection."}
         />
       </div>
 
@@ -47,7 +47,7 @@ function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps)
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-adv-teal" />
               <span className="text-sm font-medium text-adv-off-white">Plain Text Mode</span>
-              <HelpTooltip text="Skip structured formatting and get natural Claude responses. Saves ~25-50% tokens." />
+              <HelpTooltip text="Skip structured formatting and get the model's natural responses. Saves ~25-50% tokens." />
             </div>
             <button
               onClick={() => setPlainTextMode(!plainTextMode)}
@@ -64,7 +64,7 @@ function OutputFormatSelector({ selected, onChange }: OutputFormatSelectorProps)
           </div>
           {plainTextMode && (
             <p className="mt-2 text-xs text-adv-gray">
-              Output formats disabled. Claude will respond naturally without structured formatting.
+              Output formats disabled. The model will respond naturally without structured formatting.
               Token savings: ~{estimateTokenSavings(selected)} tokens
             </p>
           )}

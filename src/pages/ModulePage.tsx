@@ -860,7 +860,7 @@ export default function ModulePage() {
           </div>
 
           {/* ONBOARD-02: First-run gap analysis walkthrough */}
-          <GapAnalysisWalkthrough moduleId={moduleId ?? ''} />
+          <GapAnalysisWalkthrough moduleId={moduleId ?? ''} model={model} />
 
           {/* Risk Atlas migration banner — surfaces on legacy FCP modules that overlap with the seven-stage methodology */}
           {!demoLimited && <AtlasMigrationBanner moduleId={moduleId} areaId={areaId ?? undefined} />}
@@ -1245,7 +1245,7 @@ export default function ModulePage() {
                 <span className="text-adv-teal font-medium">{activePacks.length === 1 ? activePacks[0].display_name : `${activePacks.length} regulatory packs`}</span>{' '}
                 active —{' '}
                 {activePacks.reduce((s, p) => s + p.entity_count, 0).toLocaleString()} entities and{' '}
-                {activePacks.reduce((s, p) => s + p.relationship_count, 0).toLocaleString()} relationships available to Claude.
+                {activePacks.reduce((s, p) => s + p.relationship_count, 0).toLocaleString()} relationships available to the model.
               </span>
             </div>
           )}

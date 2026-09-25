@@ -109,7 +109,7 @@ export default function PromptEditor({
           )}
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
             <span className="text-[11px] text-adv-gray">
-              This prompt shapes Claude's behavior for this module.
+              This prompt shapes the model's behavior for this module.
             </span>
             <div className="flex items-center gap-3">
               {entityId && (

@@ -197,7 +197,7 @@ export function RAGSearchPanel({
 
               <div className="text-xs text-adv-gray bg-adv-teal/10 p-2 rounded border border-adv-teal/20">
                 <Search className="h-3 w-3 inline mr-1" />
-                Will search selected collections using your message as the query. Retrieved chunks will be added to Claude's context.
+                Will search selected collections using your message as the query. Retrieved chunks will be added to the model's context.
               </div>
 
               {selectedCollections.length > 0 && (

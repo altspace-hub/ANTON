@@ -154,7 +154,7 @@ export default function WritingStylePanel({
                 Multi-perspective analysis
               </div>
               <p className="mt-0.5 text-[11px] text-adv-gray">
-                Claude analyses from multiple expert viewpoints (legal, compliance, business, regulatory) then synthesises.
+                The model analyses from multiple expert viewpoints (legal, compliance, business, regulatory) then synthesises.
               </p>
             </div>
           </label>
@@ -177,7 +177,7 @@ export default function WritingStylePanel({
                 Meta-cognitive reasoning
               </div>
               <p className="mt-0.5 text-[11px] text-adv-gray">
-                Structured decomposition with confidence scoring. Claude verifies logic and flags low-confidence areas.
+                Structured decomposition with confidence scoring. The model verifies logic and flags low-confidence areas.
               </p>
             </div>
           </label>

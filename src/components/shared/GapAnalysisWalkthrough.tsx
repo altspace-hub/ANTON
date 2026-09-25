@@ -5,6 +5,7 @@
  */
 import { useState } from 'react';
 import { X, Upload, Package, Play, CheckCircle2 } from 'lucide-react';
+import { thinkingLevelUnavailable, webSearchUnavailable } from '@/lib/compat-model-policy';
 
 const STORAGE_KEY = 'openexpert-gap-walkthrough-done';
 
@@ -14,29 +15,40 @@ interface Step {
   body: string;
 }
 
-const STEPS: Step[] = [
-  {
-    icon: <Upload className="h-4 w-4 text-adv-teal shrink-0 mt-0.5" />,
-    title: 'Step 1 — Upload your policy or framework document',
-    body: 'Use the Files & Folders section below to upload your client\'s AML policy, programme document, or internal framework. PDF, Word (.docx), and plain text files are supported.',
-  },
-  {
-    icon: <Package className="h-4 w-4 text-adv-teal shrink-0 mt-0.5" />,
-    title: 'Step 2 — Select the AMLR 2024 knowledge pack',
-    body: 'In the Knowledge Sources panel, enable "Claude\'s Own Knowledge" with web search on, and optionally activate the AMLR 2024 regulatory knowledge pack from the Knowledge Base. This gives Claude access to the full AMLR text as structured reference material.',
-  },
-  {
-    icon: <Play className="h-4 w-4 text-adv-teal shrink-0 mt-0.5" />,
-    title: 'Step 3 — Run the gap analysis',
-    body: 'Select "Gap Scoring Matrix" and "Executive Summary" in the Output Formats panel. Set thinking to "Investigate" for the deepest analysis. Then click "Run Analysis" at the bottom. Claude will compare your document against AMLR requirements and produce a scored gap assessment.',
-  },
-];
+/**
+ * The guide names only what the selected model can do: on a compat model web
+ * search and Investigate are switched off (compat-model-policy), so it does
+ * not send the reader to them.
+ */
+function walkthroughSteps(model: string | undefined): Step[] {
+  const webSearch = webSearchUnavailable(model) ? '' : ' with web search on';
+  const deepest = thinkingLevelUnavailable('investigate', model) ? 'Think Hard' : 'Investigate';
+  return [
+    {
+      icon: <Upload className="h-4 w-4 text-adv-teal shrink-0 mt-0.5" />,
+      title: 'Step 1 — Upload your policy or framework document',
+      body: 'Use the Files & Folders section below to upload your client\'s AML policy, programme document, or internal framework. PDF, Word (.docx), and plain text files are supported.',
+    },
+    {
+      icon: <Package className="h-4 w-4 text-adv-teal shrink-0 mt-0.5" />,
+      title: 'Step 2 — Select the AMLR 2024 knowledge pack',
+      body: `In the Knowledge Sources panel, enable "The Model's Own Knowledge"${webSearch}, and optionally activate the AMLR 2024 regulatory knowledge pack from the Knowledge Base. This gives the model access to the full AMLR text as structured reference material.`,
+    },
+    {
+      icon: <Play className="h-4 w-4 text-adv-teal shrink-0 mt-0.5" />,
+      title: 'Step 3 — Run the gap analysis',
+      body: `Select "Gap Scoring Matrix" and "Executive Summary" in the Output Formats panel. Set thinking to "${deepest}" for the deepest analysis. Then click "Run Analysis" at the bottom. ANTON will compare your document against AMLR requirements and produce a scored gap assessment.`,
+    },
+  ];
+}
 
 interface Props {
   moduleId: string;
+  /** The selected model; the guide leaves out what it cannot run. */
+  model?: string;
 }
 
-export default function GapAnalysisWalkthrough({ moduleId }: Props) {
+export default function GapAnalysisWalkthrough({ moduleId, model }: Props) {
   const [dismissed, setDismissed] = useState(() => {
     try {
       return !!localStorage.getItem(STORAGE_KEY);
@@ -74,7 +86,7 @@ export default function GapAnalysisWalkthrough({ moduleId }: Props) {
       </div>
 
       <div className="space-y-3">
-        {STEPS.map((step, i) => (
+        {walkthroughSteps(model).map((step, i) => (
           <div key={i} className="flex gap-2.5">
             {step.icon}
             <div>
