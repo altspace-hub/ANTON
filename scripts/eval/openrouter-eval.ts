@@ -63,10 +63,14 @@ export interface Candidate {
 const GLM = 'z-ai/glm-5.3-flash';
 const LING = 'inclusionai/ling-3.0-flash-vl';
 
-/** The showcase default: GLM pinned to the two EU zero-retention providers (brief, decision 1). */
+/**
+ * The showcase default: GLM pinned to the two EU zero-retention providers (brief,
+ * decision 1). `only` keeps it on those two; allow_fallbacks lets one stand in
+ * for the other on a 429 (with false, only OpenRouter's first pick is tried).
+ */
 export const EU_ZDR_PROVIDER = {
   only: ['inceptron', 'nextbit'],
-  allow_fallbacks: false,
+  allow_fallbacks: true,
   zdr: true,
   data_collection: 'deny',
 };

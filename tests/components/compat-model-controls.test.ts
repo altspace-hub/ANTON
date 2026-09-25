@@ -315,7 +315,7 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
 
     const body = JSON.parse(textareaByLabel('Extra request body (JSON)').value);
     expect(body).toEqual({
-      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: false, zdr: true, data_collection: 'deny' },
+      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' },
     });
     const headers = JSON.parse(textareaByLabel('Extra headers (JSON)').value);
     expect(headers).toEqual({ 'HTTP-Referer': window.location.origin, 'X-OpenRouter-Title': 'ANTON by openEXPERT' });

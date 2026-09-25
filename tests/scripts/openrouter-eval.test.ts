@@ -200,7 +200,7 @@ describe('request body', () => {
 
   it('pins the EU candidate to the zero-retention providers, and only that one', () => {
     const eu = buildRequestBody(byKey('glm-eu'), prepared, settings);
-    expect(eu.provider).toEqual({ only: ['inceptron', 'nextbit'], allow_fallbacks: false, zdr: true, data_collection: 'deny' });
+    expect(eu.provider).toEqual({ only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' });
     expect(EU_ZDR_PROVIDER).toEqual(eu.provider);
     // Negative control: default routing sends no provider object.
     expect(buildRequestBody(byKey('glm-default'), prepared, settings)).not.toHaveProperty('provider');

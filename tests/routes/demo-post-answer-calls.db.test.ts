@@ -103,6 +103,8 @@ d('after-answer model calls on a public demo', () => {
         }
         await db.run('DELETE FROM sessions WHERE id = ?', s).catch(() => {});
       }
+      // The utility calls carry no session id here, so their ledger rows go by model.
+      await db.run('DELETE FROM llm_spend_ledger WHERE model = ?', MODEL).catch(() => {});
       await db.run('DELETE FROM custom_model_endpoints WHERE slug = ?', SLUG).catch(() => {});
       const { setRouterDb } = await import('../../server/services/compat-endpoint.js');
       setRouterDb(null);

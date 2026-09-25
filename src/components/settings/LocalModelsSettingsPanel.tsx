@@ -148,7 +148,7 @@ const PRESETS: PresetEndpoint[] = [
     contextWindow: 131_072,
     signupUrl: 'https://openrouter.ai/',
     pricing: 'One key for 400+ models, pay as you go. Pre-set: GLM 5.3 Flash (list price about $0.15 in / $0.50 out per 1M)',
-    notes: 'Pre-filled for GLM 5.3 Flash on the EU zero-retention providers (Inceptron, NextBit; no fallback), with the app-attribution headers. To run other models, change provider.only in the extra body and the allowed models.',
+    notes: 'Pre-filled for GLM 5.3 Flash on the EU zero-retention providers (Inceptron, NextBit; either stands in for the other, no provider outside the two), with the app-attribution headers. To run other models, change provider.only in the extra body and the allowed models.',
     extraBody: OPENROUTER_EU_ZDR_EXTRA_BODY,
     allowedModels: [OPENROUTER_SHOWCASE_MODEL],
     attributionHeaders: true,

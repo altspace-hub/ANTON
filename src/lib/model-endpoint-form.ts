@@ -16,13 +16,16 @@ export interface EndpointModelMeta {
 
 /**
  * OpenRouter provider routing for the showcase: GLM 5.3 Flash only on the two
- * EU-located zero-data-retention providers, no fallback to any other provider,
- * and no provider that keeps prompts for training.
+ * EU-located zero-data-retention providers, and no provider that keeps prompts
+ * for training. `only` is what keeps every call on those two; allow_fallbacks
+ * lets one stand in when the other refuses. With it false OpenRouter tries only
+ * its first pick: in a live check on 2026-09-25 Inceptron answered 429 and
+ * NextBit was never tried (1 of 3 calls served; with it true, 3 of 3 on NextBit).
  */
 export const OPENROUTER_EU_ZDR_EXTRA_BODY: Readonly<Record<string, unknown>> = Object.freeze({
   provider: {
     only: ['inceptron', 'nextbit'],
-    allow_fallbacks: false,
+    allow_fallbacks: true,
     zdr: true,
     data_collection: 'deny',
   },

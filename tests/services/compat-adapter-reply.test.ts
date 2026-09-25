@@ -222,7 +222,7 @@ describe('402 from OpenRouter', () => {
   });
 
   it('retries a 429 (rate-limited upstream) up to three times, then succeeds', async () => {
-    // Seen live 2026-09-25: the EU provider pin with no fallback answered
+    // Seen live 2026-09-25: the EU provider pin answered
     // "z-ai/glm-5.3-flash is temporarily rate-limited upstream" and the next
     // call a few seconds later went through.
     const limited = () => new Response(JSON.stringify({

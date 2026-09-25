@@ -121,7 +121,7 @@ describe('request body for POST / PATCH', () => {
       slug: 'openrouter',
       apiKey: 'sk-or-test',
       contextWindow: 131072,
-      extraBody: { provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: false, zdr: true, data_collection: 'deny' } },
+      extraBody: { provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' } },
       extraHeaders: { 'HTTP-Referer': 'https://demo.example' },
       allowedModels: ['z-ai/glm-5.3-flash'],
       maxOutputTokens: 16000,
@@ -155,9 +155,9 @@ describe('request body for POST / PATCH', () => {
 });
 
 describe('OpenRouter showcase defaults', () => {
-  it('pins GLM to the EU zero-retention providers with no fallback', () => {
+  it('pins GLM to the two EU zero-retention providers, either standing in for the other', () => {
     expect(OPENROUTER_EU_ZDR_EXTRA_BODY).toEqual({
-      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: false, zdr: true, data_collection: 'deny' },
+      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' },
     });
   });
 

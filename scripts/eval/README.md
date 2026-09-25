@@ -66,7 +66,7 @@ Every organisation and person in the inputs is invented.
 
 | Key | Model | Routing |
 |---|---|---|
-| `glm-eu` | `z-ai/glm-5.3-flash` | `provider: {"only":["inceptron","nextbit"],"allow_fallbacks":false,"zdr":true,"data_collection":"deny"}` (the showcase default) |
+| `glm-eu` | `z-ai/glm-5.3-flash` | `provider: {"only":["inceptron","nextbit"],"allow_fallbacks":true,"zdr":true,"data_collection":"deny"}` (the showcase default) |
 | `glm-default` | `z-ai/glm-5.3-flash` | OpenRouter's default routing |
 | `ling-vl` | `inclusionai/ling-3.0-flash-vl` | OpenRouter's default routing, `max_tokens` capped at 32,768 |
 | `reference` | any, via `--reference <id>` | default routing, no `reasoning` field |

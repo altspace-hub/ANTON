@@ -265,8 +265,10 @@ Sign in as `admin`. Then open **Settings → Local models → OpenAI-compatible 
 | Prices (per 1M tokens) | `0.165` input, `0.55` output: the dearer of the two pinned providers. OpenRouter's /models lists another provider's promotional $0.045 / $0.14, which would under-reserve. |
 
 ```json
-{"provider":{"only":["inceptron","nextbit"],"allow_fallbacks":false,"zdr":true,"data_collection":"deny"}}
+{"provider":{"only":["inceptron","nextbit"],"allow_fallbacks":true,"zdr":true,"data_collection":"deny"}}
 ```
+
+`only` keeps every call on the two EU providers. `allow_fallbacks: true` lets one stand in when the other refuses. Do not set it to `false`: OpenRouter then tries only its first pick, and a 429 from that provider fails the call even when the other one is free.
 
 Then:
 
@@ -280,20 +282,21 @@ Then:
 
 ### Rate limits: the price of the EU pin
 
-The EU pin allows exactly two providers, Inceptron and NextBit, with no fallback. In a live test on 2026-09-25 that worked, but it was fragile:
+The EU pin allows exactly two providers, Inceptron and NextBit. What the live tests on 2026-09-25 showed:
 
-- **429s were common.** A single run was usually fine. But one call in four got `429 temporarily rate-limited upstream` while other calls ran on the same key. Every call that fired together with others was refused. OpenRouter's message suggests adding your own provider key.
-- **ANTON softens it.** A 429 is retried three times (2, 4, then 8 s), and a visitor who still gets one sees "busy, try again in a moment". On the demo, an answer is followed by at most the session conclusion (`DEMO_POST_ANSWER_CALLS`), not three calls at once.
-- **Answers are slow on the pin:** 45 s to 3.5 min for a full module answer. Visitors see the text arrive as it is written.
+- **Inceptron is often rate-limited.** It is OpenRouter's usual first pick for GLM 5.3 Flash on the pin, and it answered `429 temporarily rate-limited upstream` to about one call in three, even with nothing else on the key.
+- **The first version of the pin set `allow_fallbacks: false`, and that made it worse.** OpenRouter then tried only its first pick, so a refusal from Inceptron failed the call although NextBit was free. With `allow_fallbacks: true` (still limited to the two by `only`), NextBit stood in and 3 of 3 probe calls were served. With `false`, 1 of 3 were.
+- **ANTON softens what is left.** A 429 is retried three times (2, 4, then 8 s), and a visitor who still gets one sees "busy, try again in a moment". On the demo, an answer is followed by at most the session conclusion (`DEMO_POST_ANSWER_CALLS`), not three calls at once.
+- **Answers are slow on the pin:** 45 s to 3.5 min for a full module answer, up to 8 min when retries pile up. Visitors see the text arrive as it is written.
 
 If several visitors at once still get refused, you have three options:
 
-1. **Keep EU compute first, with a fallback.** Keep zero data retention, but let OpenRouter fall back to other providers. Their compute may be outside the EU, so the privacy notice has to say so:
+1. **Bring your own key:** add your own Inceptron or NextBit key in OpenRouter (Settings → Integrations). Your own rate limits then apply.
+2. **Let fewer people in at once:** a smaller `DEMO_MAX_SIGNUPS_PER_DAY`, or hand out invite codes in batches.
+3. **Allow providers outside the pair.** Keep zero data retention, but put the two EU providers first and let OpenRouter fall back to others. Their compute may be outside the EU, so the privacy notice has to say so. On OpenRouter's default routing the same model had no 429 in 10 calls:
    ```json
    {"provider":{"order":["inceptron","nextbit"],"allow_fallbacks":true,"zdr":true,"data_collection":"deny"}}
    ```
-2. **Bring your own key:** add your own Inceptron or NextBit key in OpenRouter (Settings → Integrations). Your own rate limits then apply.
-3. **Let fewer people in at once:** a smaller `DEMO_MAX_SIGNUPS_PER_DAY`, or hand out invite codes in batches.
 
 ## 6. What visitors can reach
 
