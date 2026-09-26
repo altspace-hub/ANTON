@@ -56,8 +56,12 @@ fs.ensureDirSync(OUTPUT_DIR);
  */
 async function keepExportCopy(filename: string, data: string | Buffer): Promise<void> {
   if (isDemoMode()) return;
-  if (typeof data === 'string') await fs.writeFile(path.join(OUTPUT_DIR, filename), data, 'utf-8');
-  else await fs.writeFile(path.join(OUTPUT_DIR, filename), data);
+  // Only ever a file directly inside OUTPUT_DIR, whatever the name holds.
+  const outputDir = path.resolve(OUTPUT_DIR);
+  const target = path.resolve(outputDir, path.basename(filename));
+  if (!target.startsWith(outputDir + path.sep)) return;
+  if (typeof data === 'string') await fs.writeFile(target, data, 'utf-8');
+  else await fs.writeFile(target, data);
 }
 
 function getUserId(req: unknown): string {
@@ -367,7 +371,9 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       }
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const outputFilename = `template-export-${timestamp}.${format}`;
+      // The schema allows docx or pptx only; the name is built from those literals, never the request text.
+      const extension = format === 'pptx' ? 'pptx' : 'docx';
+      const outputFilename = `template-export-${timestamp}.${extension}`;
       const outputPath = path.join(OUTPUT_DIR, outputFilename);
 
       const ti = await getTemplateInjector();

@@ -320,7 +320,7 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
         ? [...setParams, req.params.id]
         : [...setParams, req.params.id, userId!];
 
-      const result = await db.run(`UPDATE sessions SET ${setClauses.join(', ')} ${whereClause}`, ...params);
+      const result = await db.run(`UPDATE sessions SET ${setClauses.join(', ')} ${whereClause}`, params);
 
       if (result.changes === 0) {
         res.status(404).json({ error: 'Session not found or access denied' });
