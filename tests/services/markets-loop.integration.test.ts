@@ -520,7 +520,12 @@ describe.skipIf(!provision.ok)('Markets closed-loop integration (real PostgreSQL
       // 3. A phase still running: started, never closed. Left in flight
       //    deliberately — this is the signature Monday's outage would have had.
       let release: (() => void) | undefined;
-      const hung = recordPhase('hung-phase', () => new Promise<void>((resolve) => { release = resolve; }));
+      let workStarted!: () => void;
+      const started = new Promise<void>((resolve) => { workStarted = resolve; });
+      const hung = recordPhase('hung-phase', () => new Promise<void>((resolve) => { release = resolve; workStarted(); }));
+      // The running row is written before the work begins, so wait for the work:
+      // reading straight away raced the INSERT and failed CI now and then (2026-09-26).
+      await started;
 
       const rows = await db.all<{
         phase: string; status: string; completed_at: string | null; error: string | null;
