@@ -43,7 +43,7 @@ export default function ChallengeThisPage() {
   const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [docContent, setDocContent] = useState('');
   const [context, setContext] = useState('');
-  const [daModel, setDaModel] = useState<ModelId>('claude-opus-4-8');
+  const [daModel, setDaModel] = useState<ModelId>('claude-opus-5-5');
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
@@ -227,7 +227,8 @@ export default function ChallengeThisPage() {
                 {([
                   { id: 'claude-haiku-4-5-20251001', label: 'Haiku' },
                   { id: 'claude-sonnet-4-6', label: 'Sonnet' },
-                  { id: 'claude-opus-4-8', label: 'Opus' },
+                  { id: 'claude-opus-4-8', label: 'Opus 4.8' },
+                  { id: 'claude-opus-5-5', label: 'Opus 5.5' },
                 ] as { id: ModelId; label: string }[]).map((m) => (
                   <button
                     key={m.id}

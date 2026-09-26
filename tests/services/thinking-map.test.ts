@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   anthropicUsesAdaptive,
   anthropicSupportsXhigh,
+  claudeGeneration,
   anthropicEffort,
   anthropicBudgetTokens,
   azureReasoningEffort,
@@ -26,12 +27,30 @@ describe('thinking-map — Anthropic', () => {
     expect(anthropicUsesAdaptive('claude-sonnet-5')).toBe(true);
     expect(anthropicUsesAdaptive('claude-opus-4-8')).toBe(true);
     expect(anthropicUsesAdaptive('claude-sonnet-4-6')).toBe(true);
-    // Older models use budget_tokens — NOT adaptive (model-adapter used to send
-    // adaptive to every `opus`, which was wrong for 4.6/4.7).
-    expect(anthropicUsesAdaptive('claude-opus-4-7')).toBe(false);
+    // Opus 4.7 takes adaptive only — budget_tokens is a 400 there, so listing it
+    // as a budget model failed every Opus 4.7 run on the API path. Opus 4.6
+    // still accepts budget_tokens (deprecated) and stays on it.
+    expect(anthropicUsesAdaptive('claude-opus-4-7')).toBe(true);
     expect(anthropicUsesAdaptive('claude-opus-4-6')).toBe(false);
     expect(anthropicUsesAdaptive('claude-sonnet-4-5-20250929')).toBe(false);
     expect(anthropicUsesAdaptive('claude-haiku-4-5-20251001')).toBe(false);
+  });
+
+  it('treats every Claude 5 id as adaptive with xhigh — Opus 5.5 now, Sonnet 5.5 / Haiku 5.5 when they ship', () => {
+    // Opus 5.5 400s on budget_tokens AND on thinking {type:'disabled'} (the SDK
+    // engine's quick level on a budget model) — a miss here fails every run.
+    for (const id of ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-mythos-5-1', 'claude-opus-5-20260601', 'claude-opus-6']) {
+      expect(anthropicUsesAdaptive(id), id).toBe(true);
+      expect(anthropicSupportsXhigh(id), id).toBe(true);
+    }
+    expect(claudeGeneration('claude-opus-5-5')).toBe(5);
+    expect(claudeGeneration('claude-haiku-4-5-20251001')).toBe(4);
+    // Not Claude ids, or 4.x models the rule must not sweep in.
+    expect(claudeGeneration('gpt-6')).toBeNull();
+    expect(claudeGeneration('sdk:claude-opus-5-5')).toBeNull(); // callers strip the engine prefix first
+    expect(anthropicUsesAdaptive('claude-opus-4-6')).toBe(false);
+    expect(anthropicUsesAdaptive('claude-haiku-4-5')).toBe(false);
+    expect(anthropicSupportsXhigh('claude-sonnet-4-5-20250929')).toBe(false);
   });
 
   it('maps effort for adaptive models — the xhigh rung is reachable on models that have it', () => {
@@ -94,6 +113,21 @@ describe('thinking-map — OpenAI reasoning', () => {
     expect(isOpenAIReasoningModel('gpt-4o')).toBe(false);
     expect(isOpenAIReasoningModel('gpt-4o-mini')).toBe(false);
     expect(isOpenAIReasoningModel('some-unknown-model')).toBe(false);
+  });
+
+  it('GPT-6 (hyphenated ids) is a reasoning model with the full ladder', () => {
+    // gpt-6-astra / -sol / -luna never matched the gpt-5.x test, so they went
+    // out with temperature + max_tokens — a 400 on an always-reasoning model.
+    for (const id of ['gpt-6-astra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6', 'gpt-7-sol']) {
+      expect(isOpenAIReasoningModel(id), id).toBe(true);
+    }
+    expect(openaiReasoningEffort('investigate', 'gpt-6-sol')).toBe('xhigh');
+    expect(openaiReasoningEffort('deep_investigate', 'gpt-6-astra')).toBe('max');
+    // Astra has no 'none'; the lowest level ANTON sends is 'low'.
+    expect(openaiReasoningEffort('quick', 'gpt-6-astra')).toBe('low');
+    // The generation test must not sweep in older or look-alike ids.
+    expect(isOpenAIReasoningModel('gpt-4.1')).toBe(false);
+    expect(isOpenAIReasoningModel('gpt-60x')).toBe(false);
   });
 
   it('gives gpt-5.x the full ladder — the top levels no longer collapse', () => {

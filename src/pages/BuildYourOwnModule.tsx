@@ -58,7 +58,8 @@ const ICON_OPTIONS = [
 const THINKING_OPTIONS = ['quick', 'think', 'think_hard', 'investigate', 'plan_first'];
 const CREATIVITY_OPTIONS = ['strict', 'balanced', 'creative'];
 const MODEL_OPTIONS = [
-  { value: 'claude-opus-4-8', label: 'Opus 4.8 (most capable)' },
+  { value: 'claude-opus-5-5', label: 'Opus 5.5 (most capable)' },
+  { value: 'claude-opus-4-8', label: 'Opus 4.8' },
   { value: 'claude-sonnet-4-6', label: 'Sonnet 4.6 (fast)' },
   { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (budget)' },
 ];
@@ -525,7 +526,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
     system_prompt: initialData?.system_prompt || '',
     thinking: initialData?.thinking || 'think_hard',
     creativity: initialData?.creativity || 'balanced',
-    model: 'claude-opus-4-8',
+    model: 'claude-opus-5-5',
     transparencyLevel: 1,
     personas: initialData?.personas || [],
     skills: initialData?.skills || [],

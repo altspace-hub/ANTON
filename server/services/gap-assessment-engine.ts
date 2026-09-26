@@ -15,6 +15,7 @@ import { callChat, mapModelToProvider } from './provider-router.js';
 import { runAgentic, type AgentToolDefinition } from './sdk-agentic-runner.js';
 import { writeRunArtifactV2, buildAgenticRunArtifactInput } from './run-artifact-writer.js';
 import { isSdkModel } from './engine-model-id.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { retrieveGroundingText } from './framework-text-retrieval.js';
 import { z } from 'zod';
 import { frameworkDomain, domainForFrameworks, domainProfile, type GapDomain } from './gap-domains.js';
@@ -71,7 +72,7 @@ function getModelConfig(tier: GapModelTier) {
   // verbatim so the selector's choice is honoured exactly.
   if (isOpus) {
     return {
-      model: (tier === 'opus' ? 'claude-opus-4-8' : String(tier)) as string,
+      model: (tier === 'opus' ? CLAUDE_LARGE : String(tier)) as string,
       thinkingLevel: 'investigate' as string,
       maxTokensBatch: 16000,
       maxTokensSynthesis: 128_000,

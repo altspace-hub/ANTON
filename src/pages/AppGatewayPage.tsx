@@ -239,6 +239,7 @@ const THINKING_LEVELS = [
 ];
 
 const MODEL_OPTIONS = [
+  { value: 'claude-opus-5-5', label: 'Claude Opus 5.5' },
   { value: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5' },
   { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },

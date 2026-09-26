@@ -7,7 +7,7 @@
  *     (user `model`)                          // 1. user override
  *     || getAreaDefaultModelSync(areaId)      // 3. AREA default (seed coding=mistral-large)
  *     || getEffectiveDefaultModel()           // 4. product default (Settings / env)
- *     || 'claude-opus-4-8';                    // 5. final fallback
+ *     || CLAUDE_LARGE;                         // 5. final fallback (Opus 5.5)
  *
  * (rung 2, compliance enforce_model, is applied AFTER and still wins — it is a
  * governance override, exercised separately by the MGOV tests.)
@@ -39,7 +39,7 @@ function resolvePolicyModel(model: string | undefined, areaId: string | null | u
     (model as string) ||
     getAreaDefaultModelSync(areaId) ||
     getEffectiveDefaultModel() ||
-    'claude-opus-4-8'
+    'claude-opus-5-5'
   );
 }
 
@@ -171,6 +171,6 @@ describe('claude.ts model-resolution precedence', () => {
     const { db } = makeFakeDb();
     initAreaDefaultModelStore(db);
     initDefaultModelStore(db);
-    expect(resolvePolicyModel(undefined, 'unseeded-area')).toBe('claude-opus-4-8');
+    expect(resolvePolicyModel(undefined, 'unseeded-area')).toBe('claude-opus-5-5');
   });
 });

@@ -58,6 +58,7 @@ export { SDK_MODEL_PREFIX, isSdkModel, sdkUnderlyingModel };
 /** The models offered in the picker when the engine is enabled — single
  *  source for the Settings route; the frontend renders what this returns. */
 export const SDK_ENGINE_MODELS: ReadonlyArray<{ id: string; label: string }> = [
+  { id: 'sdk:claude-opus-5-5', label: 'Claude Opus 5.5 (subscription)' },
   { id: 'sdk:claude-opus-5', label: 'Claude Opus 5 (subscription)' },
   { id: 'sdk:claude-sonnet-5', label: 'Claude Sonnet 5 (subscription)' },
   { id: 'sdk:claude-fable-5', label: 'Claude Fable 5 (subscription)' },
@@ -495,11 +496,23 @@ interface SdkResultMessage {
   structured_output?: unknown;
 }
 
-/** The model that did the work: the usage-map entry with the most output tokens
- *  (a web run may also touch a helper model; the deliverable comes from the
- *  main one). Undefined when the SDK reports no per-model usage. */
-function servedModelFromUsage(usage: SdkResultMessage['modelUsage']): string | undefined {
+/** The model that did the work. Claude Code also runs a small helper model
+ *  (Haiku) inside a run, so the usage map can hold two entries: the requested
+ *  model's entry wins whenever it is there — on a short answer the helper can
+ *  out-write it (9 tokens against 4 on a live Opus 5.5 check, 2026-09-23), and
+ *  "most output tokens" then recorded the run as Haiku. Without a match, the
+ *  entry with the most output tokens. Undefined when the SDK reports none. */
+export function servedModelFromUsage(
+  usage: Record<string, { outputTokens?: number; canonicalModel?: string }> | undefined,
+  requested?: string,
+): string | undefined {
   if (!usage) return undefined;
+  if (requested) {
+    for (const [id, u] of Object.entries(usage)) {
+      const canonical = u?.canonicalModel || id;
+      if (id === requested || canonical === requested) return canonical;
+    }
+  }
   let best: { id: string; out: number } | undefined;
   for (const [id, u] of Object.entries(usage)) {
     const out = u?.outputTokens ?? 0;
@@ -935,7 +948,7 @@ export async function streamToResponse(
             cacheReadTokens: result.usage?.cache_read_input_tokens ?? 0,
             cacheCreationTokens: result.usage?.cache_creation_input_tokens ?? 0,
           };
-          modelServed = servedModelFromUsage(result.modelUsage);
+          modelServed = servedModelFromUsage(result.modelUsage, underlying);
           engineCostUsd = typeof result.total_cost_usd === 'number' ? result.total_cost_usd : undefined;
           if (config.outputFormat && result.structured_output !== undefined) {
             structuredOutput = result.structured_output;

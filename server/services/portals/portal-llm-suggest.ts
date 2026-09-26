@@ -30,6 +30,7 @@ import {
 } from './portal-walkthrough-engine.js';
 import { maxPhaseOutputTokens, type WalkthroughDepth } from './walkthrough-depth.js';
 import { buildPhaseUserMessage } from './portal-prompt-enrichment.js';
+import { CLAUDE_LARGE, CLAUDE_MEDIUM, CLAUDE_SMALL } from '../../config/claude-lineup.js';
 
 const log = childLogger('portal-llm-suggest');
 
@@ -356,9 +357,9 @@ function writeSseEvent(res: Response, name: string, payload: unknown): void {
  */
 export function mapDepthToModel(depth: WalkthroughDepth): string {
   switch (depth) {
-    case 'simple': return 'claude-haiku-4-5-20251001';
-    case 'standard': return 'claude-sonnet-4-6';
-    case 'deep': return 'claude-opus-4-8';
+    case 'simple': return CLAUDE_SMALL;
+    case 'standard': return CLAUDE_MEDIUM;
+    case 'deep': return CLAUDE_LARGE;
   }
 }
 

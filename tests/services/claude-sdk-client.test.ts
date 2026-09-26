@@ -35,6 +35,7 @@ import {
   releaseSdkSlot,
   SDK_ENGINE_MODELS,
   SDK_WEB_MAX_TURNS,
+  servedModelFromUsage,
   WEB_SOURCE_RESULT_CAP,
   type SdkCompletionData,
   type WebSourceRecord,
@@ -598,6 +599,32 @@ describe('model-id routing', () => {
       expect(isSdkModel(m.id)).toBe(true);
       expect(getProviderFromModelId(m.id)).toBe('anthropic_sdk');
     }
+  });
+
+  it('the served model is the requested one even when the helper model out-writes it', () => {
+    // The usage map of a live Opus 5.5 run (2026-09-23): Claude Code's Haiku
+    // helper wrote 9 tokens, the answer ("ready") 4 — "most output" said Haiku.
+    const usage = {
+      'claude-haiku-4-5-20251001': { outputTokens: 9, canonicalModel: 'claude-haiku-4-5' },
+      'claude-opus-5-5': { outputTokens: 4, canonicalModel: 'claude-opus-5-5' },
+    };
+    expect(servedModelFromUsage(usage, 'claude-opus-5-5')).toBe('claude-opus-5-5');
+    // Negative control: without the requested id the old rule still applies —
+    // it is the requested-model match that fixes the label, not a reordering.
+    expect(servedModelFromUsage(usage)).toBe('claude-haiku-4-5');
+    // A dated served id matches through its canonical alias.
+    expect(servedModelFromUsage({ 'claude-opus-5-5-20260920': { outputTokens: 1, canonicalModel: 'claude-opus-5-5' } }, 'claude-opus-5-5')).toBe('claude-opus-5-5');
+    expect(servedModelFromUsage(undefined, 'claude-opus-5-5')).toBeUndefined();
+  });
+
+  it('Opus 5.5 is offered, and never asked to run with thinking disabled', () => {
+    expect(SDK_ENGINE_MODELS.map((m) => m.id)).toContain('sdk:claude-opus-5-5');
+    // Opus 5.5 400s on thinking {type:'disabled'} at every effort — quick must
+    // lower the effort instead, the way every Claude 5 model does.
+    expect(sdkThinkingOptions('quick', 'claude-opus-5-5')).toEqual({ thinking: { type: 'adaptive' }, effort: 'low' });
+    expect(sdkThinkingOptions('investigate', 'claude-opus-5-5')).toEqual({ thinking: { type: 'adaptive' }, effort: 'xhigh' });
+    // Negative control: a budget model still gets thinking disabled on quick.
+    expect(sdkThinkingOptions('quick', 'claude-haiku-4-5-20251001')).toEqual({ thinking: { type: 'disabled' } });
   });
 });
 

@@ -59,6 +59,30 @@ describe('a component reads its keys from the namespace that has them', () => {
   });
 });
 
+describe('School-mode locale parity with en-school.json', () => {
+  // School mode has its own files for six languages (src/i18n/index.ts). On
+  // 2026-09-23 sv/fr lacked ~150 keys and ar/ur/hi ~430 of 509 — most of the
+  // School UI was English in those languages. All filled; this keeps them so.
+  const enSchool = load('en-school.json');
+  const schoolLocales = readdirSync(DIR).filter((f) => /^[a-z]{2}-school\.json$/.test(f) && f !== 'en-school.json');
+
+  it('finds the School locales', () => {
+    expect(schoolLocales.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it.each(schoolLocales)('%s has every English key, with its {{placeholders}}', (file) => {
+    const loc = load(file);
+    const problems: string[] = [];
+    for (const [key, english] of enSchool) {
+      const value = loc.get(key);
+      if (value === undefined) problems.push(`${key}: missing`);
+      else if (!value.trim()) problems.push(`${key}: empty`);
+      else if (tokens(value).join() !== tokens(english).join()) problems.push(`${key}: {{${tokens(english).join(', ')}}} → {{${tokens(value).join(', ')}}}`);
+    }
+    expect(problems).toEqual([]);
+  });
+});
+
 describe('locale parity with en.json', () => {
   it('finds the locales (so an empty scan cannot pass)', () => {
     expect(en.size).toBeGreaterThan(800);

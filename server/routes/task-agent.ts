@@ -25,6 +25,7 @@ import multer from 'multer';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { streamChat, callChat, mapModelToProvider } from '../services/provider-router.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { retrieveGroundingText } from '../services/framework-text-retrieval.js';
 import { findCandidateModules, type CandidateModule } from '../services/module-recommendation.js';
 import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
@@ -951,7 +952,7 @@ export async function createTaskAgentRoutes(db: DatabaseAdapter, anthropic: Anth
     // full, search the regulatory packs, and consult ANTON's expert modules
     // for a specialist view, over several turns, before writing the
     // deliverable. Every call is streamed to the page and kept on the step.
-    const stepModel = mapModelToProvider('claude-opus-4-8');
+    const stepModel = mapModelToProvider(CLAUDE_LARGE);
     const useAgentic = isSdkModel(stepModel);
     let lastToolCalls: AgenticToolCall[] = [];
     /** Wave 5: attempt counter for the step's run records (a retry is a second record under the same parent). */

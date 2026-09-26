@@ -17,6 +17,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { callChat, mapModelToProvider } from './provider-router.js';
+import { CLAUDE_LARGE, CLAUDE_SMALL } from '../config/claude-lineup.js';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -67,7 +68,7 @@ Approach:
 - Flag regulatory risks and compliance gaps
 - Distinguish mandatory vs. recommended practices`,
       focus: 'Regulatory compliance, legal requirements, and citations',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
     {
       name: 'Risk Officer',
@@ -85,7 +86,7 @@ Approach:
 - Evaluate control adequacy
 - Recommend risk mitigation measures`,
       focus: 'Risk identification, assessment, and mitigation strategies',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
     {
       name: 'Technical Implementer',
@@ -103,7 +104,7 @@ Approach:
 - Flag implementation challenges
 - Propose practical system/process solutions`,
       focus: 'Implementation feasibility, technical requirements, and data needs',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
   ],
 
@@ -124,7 +125,7 @@ Approach:
 - Identify opportunities and competitive advantages
 - Recommend phased, risk-based implementation`,
       focus: 'Strategic implications, business impact, and stakeholder considerations',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
     {
       name: 'Financial Analyst',
@@ -142,7 +143,7 @@ Approach:
 - Calculate ROI and payback periods
 - Identify cost optimization opportunities`,
       focus: 'Financial impact, cost-benefit analysis, and ROI assessment',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
     {
       name: 'Change Manager',
@@ -160,7 +161,7 @@ Approach:
 - Design communication and engagement plans
 - Recommend training and capability building`,
       focus: 'People and culture impact, change management, and organizational readiness',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
   ],
 
@@ -181,7 +182,7 @@ Approach:
 - Verify claims are supported by evidence
 - Ensure recommendations are specific and implementable`,
       focus: 'Completeness, clarity, structure, and professional quality',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
     {
       name: 'Peer Reviewer',
@@ -199,7 +200,7 @@ Approach:
 - Propose alternative interpretations
 - Suggest areas for deeper analysis`,
       focus: 'Logic gaps, assumptions, and alternative perspectives',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
     {
       name: 'Red Team',
@@ -217,7 +218,7 @@ Approach:
 - Flag implementation risks
 - Challenge happy-path assumptions`,
       focus: 'Edge cases, failure modes, and what could go wrong',
-      model: 'claude-haiku-4-5-20251001',
+      model: CLAUDE_SMALL,
     },
   ],
 };
@@ -360,7 +361,7 @@ export async function runMultiAgent(
 
   try {
     const synthesisResult = await callChat({
-      model: mapModelToProvider('claude-opus-4-8'),
+      model: mapModelToProvider(CLAUDE_LARGE),
       system: synthesizerPrompt,
       messages: [{ role: 'user', content: request.userMessage }],
       maxTokens: 24192,

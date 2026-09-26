@@ -46,6 +46,7 @@ import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { compareIterations, buildSinceLastAssessmentSection } from '../services/gap-comparison.js';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { bundleGapAssessmentToAnton } from '../services/anton-bundler.js';
 import { signAntonBundle } from '../services/anton-bundle-signing.js';
 import { createOutputStore, type StoreOutputParams } from '../services/output-store.js';
@@ -984,7 +985,7 @@ HOW TO RUN THE INTERVIEW
   // slot (gap_finding_opinions) — gap_findings is never touched. Streams SSE
   // progress like /run and finishes with the deterministic agreement summary.
   const tierToModelId = (tier: GapModelTier): string =>
-    tier === 'opus' ? 'claude-opus-4-8' : tier === 'sonnet' ? 'claude-sonnet-4-6' : tier;
+    tier === 'opus' ? CLAUDE_LARGE : tier === 'sonnet' ? 'claude-sonnet-4-6' : tier;
 
   router.post('/gap-assessments/:id/second-opinion', async (req: Request, res: Response) => {
     if (!engineAvailable()) return res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });

@@ -4,6 +4,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
+import { CLAUDE_SMALL } from '../config/claude-lineup.js';
 
 export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdapter) {
   const router = Router();
@@ -23,7 +24,7 @@ export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdap
       headers,
       template,
       systemPrompt,
-      model = 'claude-haiku-4-5-20251001',
+      model = CLAUDE_SMALL,
       maxTokens = 2048,
       knowledgeLibraryIds,
     } = req.body as {
@@ -154,7 +155,7 @@ export async function createBatchRoutes(anthropic?: Anthropic, db?: DatabaseAdap
       headers: colHeaders,
       template,
       systemPrompt,
-      model = 'claude-haiku-4-5-20251001',
+      model = CLAUDE_SMALL,
       maxTokens = 2048,
     } = req.body as {
       rows: string[][];

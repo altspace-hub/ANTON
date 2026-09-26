@@ -25,6 +25,8 @@
     "review": "مراجعہ",
     "parentView": "والدین کا نظارہ",
     "ucas": "UCAS بیان",
+    "studyRooms": "مطالعے کے کمرے",
+    "lessonLibrary": "اسباق کی لائبریری",
     "role": {
       "student": "طالب علم",
       "guardian": "سرپرست",
@@ -34,12 +36,24 @@
   },
   "dashboard": {
     "welcome": "خوش آمدید، {{name}}!",
+    "thisWeek": "اس ہفتے",
+    "myProgress": "میری پیشرفت",
+    "allSubjects": "تمام مضامین",
+    "quickQuestion": "فوری سوال",
+    "quickQuestionPlaceholder": "کچھ بھی پوچھیں...",
+    "quickQuestionHelp": "ایسے فوری سوالات کے لیے جو کسی خاص مضمون سے متعلق نہ ہوں",
+    "continueStudying": "جاری رکھیں",
     "level": "سطح {{level}}",
     "streak": "{{count}} دن کی لگاتار پڑھائی",
     "xp": "{{total}} XP",
     "startStudying": "پڑھائی شروع کریں",
+    "progressLabel": "{{pct}}% مکمل",
     "myClasses": "میری کلاسیں",
     "noClasses": "ابھی تک کوئی کلاس نہیں۔",
+    "enrollPrompt": "شروع کرنے کے لیے اپنے استاد سے کلاس کوڈ مانگیں۔",
+    "loading": "آپ کا ڈیش بورڈ لوڈ ہو رہا ہے...",
+    "streakShields": "لگاتار پڑھائی کی ڈھالیں",
+    "shieldUsed": "ڈھال استعمال ہو گئی — لگاتار پڑھائی محفوظ رہی!",
     "upcomingAssignments": "آنے والے اسائنمنٹس",
     "noAssignments": "کوئی آنے والا اسائنمنٹ نہیں"
   },
@@ -47,8 +61,231 @@
     "placeholder": "اپنا سوال یہاں لکھیں...",
     "send": "بھیجیں",
     "thinking": "سوچ رہا ہوں...",
-    "greeting": "ہیلو! آج میں آپ کی کیا مدد کر سکتا ہوں؟",
-    "assistanceLevel": "مدد کی سطح"
+    "uploadsAllowed": "آپ اپنے کام کی فائلیں یا تصاویر اپ لوڈ کر سکتے ہیں",
+    "laxhjalpMode": "کہیں اٹک گئے ہیں؟ آئیے مل کر حل کریں",
+    "endSession": "سیشن ختم کریں",
+    "attachFile": "دستاویز منسلک کریں",
+    "fileAttached": "دستاویز منسلک ہو گئی: {{filename}}",
+    "removeAttachment": "منسلکہ ہٹائیں",
+    "actions": {
+      "practice": "مشقی سوالات",
+      "practiceMsg": "جس موضوع پر ہم بات کر رہے ہیں اس پر مجھے 3 مشقی سوالات دیں۔ ابھی جوابات نہ دکھائیں۔",
+      "quiz": "مجھ سے سوال کریں",
+      "quizMsg": "اس موضوع پر مجھ سے ایک سوال پوچھیں۔ یہ بتانے سے پہلے کہ میں صحیح ہوں یا نہیں، میرے جواب کا انتظار کریں۔",
+      "hint": "اشارہ دیں",
+      "hintMsg": "مجھے تھوڑی مشکل ہو رہی ہے۔ کیا آپ پورا جواب بتائے بغیر مجھے ایک اشارہ دے سکتے ہیں؟",
+      "summarise": "سیشن کا خلاصہ",
+      "summariseMsg": "کیا آپ اس سیشن میں زیرِ بحث آنے والی اہم باتوں کا خلاصہ کر سکتے ہیں؟"
+    },
+    "greeting": "ہیلو! میں {{persona}} ہوں۔ آج آپ کس چیز پر کام کر رہے ہیں؟",
+    "taskTypes": {
+      "homework": "ہوم ورک میں مدد",
+      "studying": "مطالعہ",
+      "practice": "مشقی سوالات"
+    },
+    "assistanceLevel": {
+      "L1": "مکمل رہنمائی",
+      "L2": "درمیانی مدد",
+      "L3": "مشق موڈ",
+      "L4": "حوالہ موڈ",
+      "label": "مدد کی سطح"
+    }
+  },
+  "laxhjalp": {
+    "title": "اٹکنے کا مقام — آئیے اسے سلجھائیں",
+    "subtitle": "Alma آپ کی سمجھ میں کمی ڈھونڈنے اور اسے پُر کرنے میں مدد کرے گی",
+    "phase": {
+      "identify": "آپ کہاں اٹکے ہیں؟",
+      "traceBack": "مضبوط بنیاد کی تلاش",
+      "bridge": "سمجھ پیدا کرنا",
+      "practice": "مشق",
+      "return": "اپنے سوال پر واپس",
+      "verify": "اپنی سمجھ جانچیں"
+    },
+    "stuckPrompt": "مجھے بالکل ٹھیک بتائیں کہ آپ کہاں اٹکے ہیں۔ آپ کیا کرنے کی کوشش کر رہے تھے؟",
+    "progress": "مرحلہ {{current}} از {{total}}",
+    "resolved": "بہت خوب! آپ نے اسے حل کر لیا۔",
+    "continue": "اصل سوال پر جائیں",
+    "stuckQuestion": "آپ کہاں اٹکے ہیں؟",
+    "stuckDescription": "بالکل اس مقام کی وضاحت کریں جہاں آپ الجھ گئے۔ جتنی زیادہ تفصیل ہوگی، میں اتنی بہتر مدد کر سکوں گی۔",
+    "stuckPlaceholder": "مثلاً \"مجھے ضرب سمجھ آتی ہے، لیکن منفی اعداد جمع کرتے وقت مجھے الجھن ہوتی ہے...\"",
+    "startSession": "آئیے مل کر حل کریں",
+    "iUnderstandNow": "اب سمجھ آ گئی — واپس اپنے کام پر!"
+  },
+  "assessment": {
+    "multipleChoice": "کثیر انتخابی",
+    "shortAnswer": "مختصر جواب",
+    "calculation": "حساب",
+    "checkAnswer": "میرا جواب جانچیں",
+    "nextQuestion": "اگلا سوال",
+    "submit": "جمع کرائیں",
+    "score": "{{score}}%",
+    "correct": "درست!",
+    "incorrect": "پوری طرح درست نہیں — آئیے اسے مل کر دیکھیں",
+    "explanation": "وضاحت",
+    "timeRemaining": "{{minutes}} منٹ باقی",
+    "completed": "جائزہ مکمل",
+    "resultsSummary": "آپ نے {{topic}} میں {{score}}% حاصل کیے",
+    "socraticExam": "سقراطی امتحان",
+    "endExam": "امتحان ختم کریں",
+    "endExamConfirm": "امتحان ختم کریں؟",
+    "endExamNote": "AI گفتگو کا جائزہ لے کر آپ کی رپورٹ تیار کرے گا۔ اسے واپس نہیں لیا جا سکتا۔",
+    "examinerThinking": "ممتحن سوچ رہا ہے...",
+    "socraticPlaceholder": "اپنا جواب لکھیں... (بھیجنے کے لیے Enter، نئی سطر کے لیے Shift+Enter)",
+    "evaluationReport": "امتحانی رپورٹ",
+    "generating": "جائزہ تیار ہو رہا ہے...",
+    "backToAssignments": "اسائنمنٹس پر واپس",
+    "startSocratic": "امتحان شروع کریں"
+  },
+  "teacher": {
+    "dashboard": {
+      "title": "میری کلاسیں",
+      "createClass": "کلاس بنائیں",
+      "classCode": "کلاس کوڈ",
+      "copyCode": "کاپی کریں",
+      "codeCopied": "کاپی ہو گیا!",
+      "studentsEnrolled": "{{count}} طلبہ",
+      "viewProgress": "پیشرفت دیکھیں",
+      "createAssignment": "اسائنمنٹ بنائیں",
+      "noClasses": "آپ نے ابھی تک کوئی کلاس نہیں بنائی۔",
+      "setupFirst": "شروع کرنے کے لیے اپنی پہلی کلاس ترتیب دیں۔",
+      "templates": "اسائنمنٹ ٹیمپلیٹس",
+      "useTemplate": "ٹیمپلیٹ استعمال کریں"
+    },
+    "classConfig": {
+      "title": "کلاس کی ترتیبات",
+      "className": "کلاس کا نام",
+      "subject": "مضمون",
+      "tier": "تعلیمی سطح",
+      "assistanceLevels": "مدد کی سطحیں",
+      "homeworkLevel": "ہوم ورک",
+      "selfStudyLevel": "خود مطالعہ",
+      "examPracticeLevel": "امتحانی مشق",
+      "referenceLevel": "حوالہ",
+      "defaultPersona": "پہلے سے طے شدہ استاد",
+      "curriculum": "نصاب",
+      "webSearch": "ویب سرچ کی اجازت دیں",
+      "leaderboard": "کلاس لیڈر بورڈ دکھائیں (XP کے لحاظ سے سرفہرست 10، نام ظاہر کیے بغیر)",
+      "save": "ترتیبات محفوظ کریں",
+      "saved": "محفوظ ہو گیا",
+      "uploadCurriculum": "نصاب کی دستاویز اپ لوڈ کریں",
+      "uploadHelp": "اپنے اسکول کا نصاب یا سالانہ منصوبہ (PDF، DOCX) اپ لوڈ کریں۔ Alma ہفتہ وار مطالعاتی منصوبہ تیار کرے گی۔",
+      "studyPlan": "مطالعاتی منصوبہ",
+      "generatePlan": "مطالعاتی منصوبہ تیار کریں",
+      "generating": "منصوبہ تیار ہو رہا ہے..."
+    },
+    "lesson": {
+      "libraryTitle": "اسباق کی لائبریری",
+      "newLesson": "نیا سبق",
+      "newTitle": "سبق بنائیں",
+      "editTitle": "سبق میں ترمیم کریں",
+      "titleLabel": "سبق کا عنوان",
+      "titlePlaceholder": "مثلاً دو درجی مساوات کا تعارف",
+      "objectives": "تعلیمی مقاصد",
+      "objectivesHelp": "سبق کے آخر تک طلبہ کو کیا معلوم ہونا چاہیے یا وہ کیا کر سکیں؟",
+      "objectivePlaceholder": "مثلاً فارمولے کی مدد سے دو درجی مساوات حل کرنا",
+      "addObjective": "مقصد شامل کریں",
+      "contentBlocks": "سبق کا مواد",
+      "contentBlocksHelp": "اپنے سبق کو بلاکس کی شکل میں ترتیب دیں۔ Alma انہیں اسی ترتیب سے پیش کرے گی۔",
+      "blockType": "قسم",
+      "duration": "دورانیہ (منٹ)",
+      "blockContent": "مواد / ہدایات",
+      "explanationPlaceholder": "تصور، فارمولا یا نظریہ واضح کریں...",
+      "activityPlaceholder": "حل کرنے کے لیے مشق یا سوال بیان کریں...",
+      "discussionPlaceholder": "بحث کا سوال یا موضوع لکھیں...",
+      "addBlock": "مواد کا بلاک شامل کریں",
+      "assignTo": "کلاس کو تفویض کریں",
+      "optional": "اختیاری",
+      "noClass": "کسی کلاس کو تفویض نہیں",
+      "save": "سبق محفوظ کریں",
+      "saving": "محفوظ ہو رہا ہے…",
+      "edit": "ترمیم",
+      "assignToClass": "کلاس کو تفویض کریں",
+      "assign": "تفویض کریں",
+      "cancel": "منسوخ کریں",
+      "assigned": "تفویض ہو گیا!",
+      "selectClass": "کلاس منتخب کریں…",
+      "blocks": "بلاکس",
+      "obj": "مقاصد:",
+      "assignedClass": "تفویض شدہ",
+      "noLessons": "آپ نے ابھی تک کوئی سبق نہیں بنایا۔",
+      "noLessonsHelp": "منظم اسباق بنائیں جنہیں Alma گفتگو کے انداز میں آپ کے طلبہ تک پہنچائے گی۔",
+      "buildFirst": "اپنا پہلا سبق بنائیں"
+    },
+    "assignment": {
+      "title": "اسائنمنٹ بنائیں",
+      "assignmentTitle": "عنوان",
+      "titlePlaceholder": "مثلاً دو درجی مساوات — ہفتہ 38",
+      "instructions": "ہدایات",
+      "instructionsPlaceholder": "طلبہ کو کیا کرنا چاہیے؟",
+      "type": "قسم",
+      "typeHomework": "ہوم ورک",
+      "typeExam": "امتحان",
+      "typePractice": "مشق",
+      "typeSocratic": "سقراطی امتحان",
+      "socraticObjectives": "تعلیمی مقاصد",
+      "socraticObjectivesPlaceholder": "وہ تعلیمی مقاصد درج کریں جن کا AI ممتحن جائزہ لے۔ ہر سطر میں ایک۔",
+      "socraticHelp": "AI ممتحن ان مقاصد کا جائزہ لینے کے لیے زبانی امتحان جیسا مکالمہ کرے گا۔ سوالات کی فہرست کی ضرورت نہیں۔",
+      "addQuestion": "سوال شامل کریں",
+      "questionContent": "سوال",
+      "questionType": "قسم",
+      "questionMarks": "نمبر",
+      "removeQuestion": "ہٹائیں",
+      "assistanceLevel": "مدد کی سطح",
+      "dueDate": "آخری تاریخ",
+      "timeLimit": "وقت کی حد",
+      "timeLimitUnlimited": "کوئی حد نہیں",
+      "retakes": "دوبارہ کوشش کی اجازت",
+      "retakesNone": "دوبارہ کوشش نہیں",
+      "export": ".anton کے طور پر برآمد کریں",
+      "save": "محفوظ کریں",
+      "saveAsTemplate": "ٹیمپلیٹ کے طور پر محفوظ کریں (تمام کلاسوں میں دوبارہ قابلِ استعمال)",
+      "rubricsSection": "گریڈنگ روبرک",
+      "addRubricCriteria": "معیار شامل کریں"
+    }
+  },
+  "guardian": {
+    "parent": {
+      "title": "والدین کا نظارہ",
+      "sessionsThisWeek": "اس ہفتے کے سیشن",
+      "streak": "لگاتار پڑھائی",
+      "stage": "مرحلہ",
+      "subjectsStudied": "اس ہفتے پڑھے گئے مضامین",
+      "cardsDue": "کارڈز کا آج مراجعہ باقی ہے"
+    },
+    "dashboard": {
+      "title": "{{name}} کی تعلیم",
+      "overallProgress": "مجموعی پیشرفت",
+      "recentActivity": "حالیہ سرگرمی",
+      "upcomingDeadlines": "آنے والی آخری تاریخیں",
+      "subjects": "مضامین",
+      "timeThisWeek": "اس ہفتے مطالعے کا وقت",
+      "noData": "اس ہفتے ابھی تک کوئی سرگرمی نہیں۔",
+      "linkPrompt": "پیشرفت دیکھنے کے لیے طالب علم کا اکاؤنٹ منسلک کریں۔"
+    },
+    "link": {
+      "title": "طالب علم کے اکاؤنٹ سے منسلک کریں",
+      "enterCode": "اپنے بچے یا اس کے استاد سے ملا ہوا دعوتی کوڈ درج کریں",
+      "codePlaceholder": "مثلاً MATH-9B-ANNA",
+      "link": "اکاؤنٹ منسلک کریں",
+      "success": "{{name}} کے اکاؤنٹ سے کامیابی سے منسلک ہو گیا!",
+      "error": "کوڈ غلط ہے۔ براہ کرم استاد سے تصدیق کریں۔",
+      "privacyNote": "آپ پیشرفت کے خلاصے دیکھ سکیں گے۔ آپ کے بچے کی انفرادی گفتگو نجی رہتی ہے۔"
+    },
+    "digest": {
+      "title": "ہفتہ وار خلاصہ",
+      "period": "گزشتہ 7 دن",
+      "sessionsCount": "{{count}} مطالعاتی سیشن",
+      "xpEarned": "{{xp}} XP حاصل کیے",
+      "streakDays": "{{count}} دن کی لگاتار پڑھائی",
+      "stage": "تعلیمی مرحلہ: {{stage}}",
+      "assignmentsSubmitted": "{{count}} اسائنمنٹس جمع کرائے",
+      "sendEmail": "خلاصہ ای میل پر بھیجیں",
+      "sending": "بھیجا جا رہا ہے...",
+      "sent": "بھیج دیا گیا!",
+      "nextSend": "اگلا خودکار خلاصہ: پیر 08:00",
+      "lastSent": "آخری بار بھیجا گیا: {{date}}"
+    }
   },
   "onboarding": {
     "welcome": {
@@ -60,6 +297,8 @@
       "title": "اپنی تعلیم کی سطح منتخب کریں",
       "step1": {
         "title": "آپ کس کلاس میں ہیں؟",
+        "subtitle": "آئیے آپ کی ترتیب مکمل کریں۔",
+        "selectTier": "آپ کس جماعت میں ہیں؟",
         "tierT1": "ابتدائی اسکول (عمر 6–12)",
         "tierT2": "مڈل اسکول (عمر 13–15)",
         "tierT3": "ہائی اسکول (عمر 16–18)",
@@ -67,6 +306,7 @@
       },
       "step2": {
         "title": "آپ کا ملک/نصاب؟",
+        "selectCountry": "اپنا ملک منتخب کریں",
         "sweden": "سویڈن",
         "norway": "ناروے",
         "uk": "برطانیہ",
@@ -75,20 +315,185 @@
         "nigeria": "نائجیریا (WAEC)",
         "pakistan": "پاکستان",
         "other": "دیگر"
+      },
+      "step2b": {
+        "gymnasietTitle": "آپ کس پروگرام میں ہیں؟",
+        "universityTitle": "آپ کیا پڑھ رہے ہیں؟",
+        "gymnasietSubtitle": "آپ کا Gymnasiet پروگرام (linje)",
+        "universitySubtitle": "آپ کا یونیورسٹی پروگرام",
+        "skip": "چھوڑیں — بعد میں ترتیب دیں"
+      },
+      "step3": {
+        "title": "اپنی کلاس میں شامل ہوں",
+        "enterCode": "اپنے استاد سے ملا ہوا کلاس کوڈ درج کریں",
+        "codePlaceholder": "مثلاً MATH-9B-2026",
+        "join": "کلاس میں شامل ہوں",
+        "skip": "بعد میں شامل ہوں"
+      },
+      "step4": {
+        "title": "ریاضی کی فوری جانچ",
+        "subtitle": "5 سوالات جن سے Alma سمجھ سکے گی کہ آپ کہاں کھڑے ہیں۔ اس کے نمبر نہیں لگیں گے۔",
+        "start": "جانچ شروع کریں",
+        "skip": "ابھی چھوڑ دیں"
+      },
+      "complete": {
+        "title": "سب تیار ہے!",
+        "subtitle": "آپ کا ڈیش بورڈ تیار ہے۔",
+        "goToDashboard": "میرے ڈیش بورڈ پر جائیں"
+      }
+    },
+    "teacher": {
+      "step1": {
+        "title": "استاد کی حیثیت سے خوش آمدید!",
+        "subtitle": "آئیے آپ کی پہلی کلاس ترتیب دیں۔",
+        "createClass": "کلاس بنائیں"
+      },
+      "complete": {
+        "title": "آپ کی کلاس تیار ہے!",
+        "classCode": "یہ کوڈ اپنے طلبہ کے ساتھ شیئر کریں:",
+        "goToDashboard": "میرے ڈیش بورڈ پر جائیں"
       }
     }
   },
+  "coding": {
+    "title": "کمپیوٹیشنل سوچ",
+    "subtitle": "Alma کی رہنمائی میں کوڈنگ سیکھیں",
+    "explainerTitle": "کوڈ کی وضاحت",
+    "explainerDesc": "کوڈ پیسٹ کریں اور اسے قدم بہ قدم سمجھیں",
+    "explainerExample": "مثلاً \"یہ Python لوپ کیا کرتا ہے؟\"",
+    "mentorTitle": "کوڈ رہنما",
+    "mentorDesc": "بتائیں کہ آپ کیا بنانا چاہتے ہیں اور Alma آپ کی رہنمائی کرے گی",
+    "mentorExample": "مثلاً \"نمبر بوجھنے والا گیم بنانے میں میری مدد کریں\"",
+    "debugTitle": "ڈیبگ گائیڈ",
+    "debugDesc": "اپنا خراب کوڈ دکھائیں اور مل کر اس کا حل تلاش کریں",
+    "debugExample": "مثلاً \"لائن 5 پر TypeError آ رہا ہے — کیوں؟\"",
+    "language": "پروگرامنگ زبان",
+    "python": "Python",
+    "javascript": "JavaScript",
+    "scratch": "Scratch",
+    "codePlaceholder": "اپنا کوڈ یہاں پیسٹ کریں...",
+    "goalPlaceholder": "آپ کیا بنانا چاہتے ہیں؟",
+    "errorPlaceholder": "اپنا کوڈ اور خرابی کا پیغام پیسٹ کریں...",
+    "sandbox": "سینڈ باکس",
+    "run": "چلائیں",
+    "copy": "کاپی کریں",
+    "copied": "کاپی ہو گیا!",
+    "clickRun": "پیش منظر کے لیے چلائیں پر کلک کریں",
+    "runPython": "Python چلائیں",
+    "runningPython": "چل رہا ہے...",
+    "loadingPyodide": "Python ماحول لوڈ ہو رہا ہے (پہلی بار)...",
+    "pythonOutput": "نتیجہ",
+    "pythonError": "خرابی"
+  },
+  "persona": {
+    "alma": {
+      "name": "Alma",
+      "subject": "ریاضی",
+      "description": "تحمل مزاج اور منظم ریاضی کی استاد جو قدم بہ قدم آپ کی رہنمائی کرتی ہیں"
+    },
+    "saga": {
+      "name": "Saga",
+      "subject": "سویڈش اور انگریزی",
+      "description": "ادب دوست، گرم جوش زبان کی استاد جو آپ کو اپنا اندازِ بیان تلاش کرنے میں مدد دیتی ہیں"
+    },
+    "viktor": {
+      "name": "Viktor",
+      "subject": "سائنس",
+      "description": "پُرجوش سائنس کے استاد جو ہر سبق کسی معمّے سے شروع کرتے ہیں"
+    },
+    "erik": {
+      "name": "Erik",
+      "subject": "تاریخ اور معاشرتی علوم",
+      "description": "سنجیدہ اور تجزیاتی استاد جو آپ کو ذرائع پر سوال اٹھانا سکھاتے ہیں"
+    },
+    "leo": {
+      "name": "Leo",
+      "subject": "ٹیکنالوجی اور ڈیجیٹل مہارتیں",
+      "description": "پُرجوش ٹیکنالوجی کے استاد جو ڈیجیٹل دنیا کو آسان بنا کر سمجھاتے ہیں"
+    },
+    "freja": {
+      "name": "Freja",
+      "subject": "آرٹ اور موسیقی",
+      "description": "تخلیقی فنون کی استاد جو نتیجے سے زیادہ عمل کو اہمیت دیتی ہیں"
+    },
+    "mia": {
+      "name": "Mia",
+      "subject": "زندگی کی مہارتیں اور مطالعے کی تکنیکیں",
+      "description": "عملی کوچ جو بالغ زندگی کی مہارتیں اور تحقیق پر مبنی مطالعے کی عادات سکھاتی ہیں"
+    },
+    "oscar": {
+      "name": "Oscar",
+      "subject": "کھیل اور صحت",
+      "description": "توانائی سے بھرپور کھیلوں کے کوچ جو جسمانی سرگرمی کو سائنس اور صحت و بہبود سے جوڑتے ہیں"
+    },
+    "nora": {
+      "name": "Nora",
+      "subject": "شماریات اور ڈیٹا سائنس",
+      "description": "تجزیاتی ڈیٹا معلمہ جو ہمیشہ حقیقی ڈیٹا سیٹس اور ڈیٹا کی بصری پیشکش سے آغاز کرتی ہیں"
+    },
+    "professor-lindstrom": {
+      "name": "Professor Lindström",
+      "subject": "یونیورسٹی سطح کی علمی تحقیق",
+      "description": "یونیورسٹی طلبہ کے لیے سینئر ماہرِ تعلیم جو سقراطی سیمینار کا طریقہ استعمال کرتے ہیں"
+    }
+  },
+  "journey": {
+    "title": "میرا تعلیمی سفر",
+    "subtitle": "ہر مضمون میں اپنی پیشرفت پر نظر رکھیں",
+    "bloomsTitle": "تعلیم کی جہتیں"
+  },
+  "radar": {
+    "title": "میرا ریڈار",
+    "subtitle": "دیکھیں کہ آج کی دنیا آپ کی پڑھائی سے کیسے جڑی ہے",
+    "loading": "روابط تلاش ہو رہے ہیں...",
+    "refresh": "تازہ کریں",
+    "exploreWith": "{{persona}} کے ساتھ دریافت کریں",
+    "noItems": "کوئی ربط نہیں ملا۔ تازہ کر کے دیکھیں یا کوئی اور مضمون منتخب کریں۔"
+  },
   "subject": {
     "mathematics": "ریاضی",
+    "algebra": "الجبرا",
+    "geometry": "جیومیٹری",
+    "statistics": "شماریات اور ڈیٹا سائنس",
+    "functions": "فنکشنز",
+    "numberTheory": "نظریۂ اعداد",
     "svenska": "اردو / زبان",
     "english": "انگریزی",
     "science": "سائنس",
     "history": "تاریخ",
     "geography": "جغرافیہ",
     "biology": "حیاتیات",
+    "swedishAdvanced": "سویڈش (اعلیٰ)",
+    "swedish-advanced": "سویڈش (اعلیٰ)",
+    "philosophy": "فلسفہ",
+    "idrottHalsa": "کھیل اور صحت",
+    "idrott-halsa": "کھیل اور صحت",
+    "data-science": "ڈیٹا سائنس",
+    "modersmal": "مادری زبان (Modersmål)",
+    "sfiBridge": "نئے آنے والوں کے لیے سویڈش (SFI Bridge)",
+    "sfi-bridge": "نئے آنے والوں کے لیے سویڈش (SFI Bridge)",
+    "uni-mathematics": "اعلیٰ ریاضی / کیلکولس",
+    "uni-physics": "یونیورسٹی طبیعیات",
+    "uni-economics": "مائیکرو اکنامکس اور میکرو اکنامکس",
+    "uni-computer-science": "کمپیوٹر سائنس اور الگورتھمز",
+    "uni-law": "قانون کا تعارف",
+    "uni-psychology": "نفسیات اور رویّہ جاتی سائنس",
+    "uni-biology": "خلوی حیاتیات اور جینیات",
+    "uni-chemistry": "نامیاتی اور طبیعی کیمیا",
+    "uni-philosophy": "فلسفہ اور اخلاقیات",
+    "uni-statistics": "اطلاقی شماریات اور ڈیٹا تجزیہ",
     "chemistry": "کیمیا",
     "physics": "طبیعیات",
     "social-studies": "معاشرتی علوم",
+    "socialStudies": "معاشرتی علوم (SO)",
+    "computationalThinking": "کمپیوٹیشنل سوچ",
+    "technology": "ٹیکنالوجی اور ڈیجیٹل مہارتیں",
+    "lifeSkills": "زندگی کی مہارتیں",
+    "life-skills": "زندگی کی مہارتیں",
+    "studySkills": "مطالعے کی مہارتیں",
+    "study-skills": "مطالعے کی مہارتیں",
+    "advancedMathematics": "اعلیٰ ریاضی",
+    "advanced-mathematics": "اعلیٰ ریاضی",
     "computer-science": "کمپیوٹر سائنس",
     "art-music": "آرٹ اور موسیقی",
     "home-economics": "گھریلو معیشت",
@@ -97,13 +502,21 @@
     "primary-writing": "ابتدائی لکھنا",
     "primary-science": "ابتدائی سائنس",
     "primary-english": "ابتدائی انگریزی",
-    "primary-art": "ابتدائی آرٹ"
+    "primary-art": "ابتدائی آرٹ",
+    "gymnasiet-economics": "معاشیات اور کاروبار",
+    "gymnasiet-technology": "ٹیکنالوجی اور انجینئرنگ",
+    "uni-industriell-ekonomi": "صنعتی معاشیات",
+    "uni-datateknik": "کمپیوٹر سائنس اور انجینئرنگ",
+    "uni-kemiteknik": "کیمیکل انجینئرنگ",
+    "uni-maskinteknik": "مکینیکل انجینئرنگ",
+    "uni-elektroteknik": "الیکٹریکل انجینئرنگ"
   },
   "review": {
     "title": "مراجعہ کریں",
     "noCards": "آج کے لیے کوئی کارڈ نہیں۔ بعد میں دوبارہ آئیں!",
+    "noCardsHint": "Alma سے بات چیت کے دوران کارڈز خودبخود بنتے جاتے ہیں۔",
     "done": "آج کا مراجعہ مکمل ہو گیا!",
-    "cardsReviewed": "{{n}} کارڈز کا مراجعہ کیا",
+    "cardsReviewed": "کارڈز کا مراجعہ کیا",
     "answer": "جواب دکھائیں",
     "tapToFlip": "جواب دیکھنے کے لیے کلک کریں",
     "blackout": "بھول گیا",
@@ -111,13 +524,122 @@
     "good": "ٹھیک",
     "easy": "آسان"
   },
+  "ucas": {
+    "title": "UCAS ذاتی بیان",
+    "subtitle": "برطانوی یونیورسٹی درخواستوں کے لیے AI کی مدد سے پہلا مسودہ",
+    "disclaimer": "یہ مسودہ صرف ایک آغاز ہے۔ اسے اچھی طرح اپنے مطابق ڈھالیں — داخلہ افسران ہزاروں بیانات پڑھتے ہیں۔ آپ کا منفرد انداز اور مخصوص تفصیلات ہی فرق پیدا کرتی ہیں۔",
+    "formTitle": "ہمیں اپنے بارے میں بتائیں",
+    "courseTitle": "وہ کورس جس کے لیے آپ درخواست دے رہے ہیں",
+    "coursePlaceholder": "مثلاً Computer Science BSc، Medicine MBBS...",
+    "universities": "مطلوبہ یونیورسٹیاں (اختیاری)",
+    "universitiesPlaceholder": "مثلاً Imperial، UCL، Edinburgh، Bristol، Manchester",
+    "subjects": "A-Level مضامین",
+    "subjectsPlaceholder": "مثلاً Mathematics A*، Physics A، Chemistry A",
+    "whySubject": "یہی مضمون کیوں؟ آپ کی دلچسپی کس چیز سے پیدا ہوئی؟",
+    "whyPlaceholder": "بتائیں کہ آپ اس مضمون کی طرف کیسے متوجہ ہوئے — کوئی کتاب، پروجیکٹ، تجربہ یا احساس...",
+    "moreDetails": "مزید تفصیلات شامل کریں (تجویز کردہ)",
+    "workExperience": "کام کا تجربہ / رضاکارانہ خدمات",
+    "workPlaceholder": "انٹرن شپ، جاب شیڈونگ، جز وقتی کام، رضاکارانہ خدمات...",
+    "extracurriculars": "غیر نصابی سرگرمیاں",
+    "extrasPlaceholder": "کھیل، موسیقی، کلب، مقابلے، کامیابیاں...",
+    "futureGoals": "کیریئر کے اہداف / مستقبل کے منصوبے",
+    "goalsPlaceholder": "یونیورسٹی کے بعد آپ خود کو کہاں دیکھتے ہیں؟",
+    "draftLength": "مسودے کی طوالت",
+    "length": {
+      "short": "مختصر",
+      "standard": "معیاری",
+      "long": "طویل"
+    },
+    "errorRequired": "کورس کا عنوان اور مضمون چننے کی وجہ لازمی ہیں۔",
+    "generating": "آپ کا مسودہ لکھا جا رہا ہے...",
+    "generate": "مسودہ تیار کریں",
+    "regenerate": "مسودہ دوبارہ تیار کریں",
+    "draft": "آپ کا مسودہ",
+    "emptyState": "فارم پُر کریں اور \"مسودہ تیار کریں\" پر کلک کریں — آپ کے ذاتی بیان کا مسودہ یہاں نظر آئے گا۔",
+    "copy": "کاپی کریں",
+    "copied": "کاپی ہو گیا!",
+    "nextSteps": "اگلے اقدامات:",
+    "nextStepsText": "مسودے میں اپنی مخصوص مثالیں اور اپنا انداز شامل کریں۔ جو کچھ آپ جیسا محسوس نہ ہو اسے ہٹا دیں۔ جمع کرانے سے پہلے اپنے اسکول کے UCAS مشیر کو ضرور دکھائیں۔"
+  },
+  "avatar": {
+    "title": "اپنا اوتار بنائیں",
+    "chooseEmoji": "اپنا ایموجی منتخب کریں",
+    "chooseColor": "رنگوں کا انداز",
+    "chooseFrame": "فریم",
+    "titleLabel": "دکھایا جانے والا لقب (اختیاری)",
+    "titlePlaceholder": "مثلاً ریاضی کا جادوگر، تاریخ کا شوقین..."
+  },
   "leaderboard": {
     "title": "لیڈر بورڈ",
     "weekly": "اس ہفتے",
     "allTime": "ہر وقت",
     "noWeeklyData": "اس ہفتے ابھی تک کوئی سرگرمی نہیں۔ یہاں آنے کے لیے پڑھنا شروع کریں!"
   },
+  "season": {
+    "daysLeft": "{n} دن باقی",
+    "multiplier": "{n}× XP"
+  },
+  "studyRooms": {
+    "title": "مطالعے کے کمرے",
+    "subtitle": "براہِ راست مل کر پڑھیں",
+    "create": "کمرہ بنائیں",
+    "newRoom": "مطالعے کا نیا کمرہ",
+    "roomNamePlaceholder": "مثلاً ریاضی امتحان کی تیاری — جماعت 11",
+    "codePlaceholder": "6 حرفی کوڈ درج کریں...",
+    "join": "شامل ہوں",
+    "createBtn": "بنائیں",
+    "cancel": "منسوخ کریں",
+    "noRooms": "مطالعے کا کوئی فعال کمرہ نہیں۔ شروع کرنے کے لیے ایک بنائیں!",
+    "invalidCode": "کمرہ نہیں ملا یا اس کی میعاد ختم ہو گئی۔",
+    "joinError": "کمرے میں شامل نہیں ہو سکے۔"
+  },
+  "studyRoom": {
+    "connected": "لائیو",
+    "disconnected": "منقطع",
+    "participants": "کمرے میں",
+    "leave": "چھوڑیں",
+    "empty": "ابھی تک کوئی پیغام نہیں۔ سلام کہیں!",
+    "placeholder": "پیغام لکھیں...",
+    "connectingPlaceholder": "منسلک ہو رہا ہے..."
+  },
+  "settings": {
+    "programmeSection": "پروگرام / Linje",
+    "gymnasietProgramme": "Gymnasiet پروگرام",
+    "universityProgramme": "یونیورسٹی پروگرام",
+    "changeProgramme": "پروگرام تبدیل کریں"
+  },
+  "login": {
+    "title": "ANTON School",
+    "subtitle": "اپنے اسکول اکاؤنٹ سے سائن اِن کریں",
+    "googleBtn": "Google کے ساتھ جاری رکھیں",
+    "microsoftBtn": "Microsoft کے ساتھ جاری رکھیں",
+    "orLocal": "یا صارف نام سے سائن اِن کریں",
+    "username": "صارف نام",
+    "usernamePlaceholder": "اپنا صارف نام درج کریں",
+    "password": "پاس ورڈ",
+    "passwordPlaceholder": "اپنا پاس ورڈ درج کریں",
+    "signIn": "سائن اِن",
+    "failed": "لاگ اِن ناکام",
+    "oauthFailed": "لاگ اِن ناکام",
+    "oauthError": "لاگ اِن ناکام — تصدیقی کوڈ کا تبادلہ نہیں ہو سکا۔",
+    "backToWork": "ورک موڈ پر واپس جائیں",
+    "privacy": "آپ کی گفتگو نجی ہے اور اسی ڈیوائس پر مقامی طور پر محفوظ کی جاتی ہے۔"
+  },
   "progress": {
+    "mastery": {
+      "beginning": "ابتدائی",
+      "developing": "ترقی پذیر",
+      "proficient": "مستحکم",
+      "advanced": "اعلیٰ"
+    },
+    "blooms": {
+      "knowledge": "علم",
+      "application": "اطلاق",
+      "analysis": "تجزیہ",
+      "evaluation": "جانچ",
+      "creation": "تخلیق",
+      "metacognition": "فوق ادراک"
+    },
     "title": "میری پیشرفت",
     "stage": "مرحلہ {{stage}}",
     "xpToNextLevel": "اگلے سطح تک {{xp}} XP",
@@ -125,8 +647,20 @@
     "totalSessions": "{{n}} کل سیشن"
   },
   "quest": {
+    "dailyQuests": "روزانہ کے اہداف",
+    "chatTurns": "Alma سے {{target}} سوالات پوچھیں",
+    "completeAssignment": "ایک اسائنمنٹ جمع کرائیں",
+    "reviewCard": "{{target}} فلیش کارڈز کا مراجعہ کریں",
+    "streakProtect": "آج لاگ اِن کریں",
+    "xpReward": "+{{xp}} XP",
+    "completed": "مکمل!",
     "title": "آج کے اہداف",
     "noQuests": "آج کے لیے کوئی ہدف نہیں",
     "complete": "مکمل!"
+  },
+  "curriculum": {
+    "frBac": "فرانسیسی Baccalauréat",
+    "cbse": "CBSE (ہندوستان)",
+    "waec": "WAEC/JAMB (نائجیریا)"
   }
 }

@@ -107,7 +107,7 @@ describe('resolveCodingModel — role defaults', () => {
     onlyProvider('anthropic');
     // Large→Opus, Medium→Sonnet, Small→Haiku. devstral isn't a Claude id, so
     // mapModelToProvider routes it via its (medium) tier → Sonnet.
-    expect(resolveCodingModel('orchestrator')).toBe('claude-opus-4-8');
+    expect(resolveCodingModel('orchestrator')).toBe('claude-opus-5-5'); // the lineup's large tier
     expect(resolveCodingModel('expert')).toBe('claude-sonnet-4-6');
     expect(resolveCodingModel('utility')).toBe('claude-haiku-4-5-20251001');
     expect(resolveCodingModel('codegen')).toBe('claude-sonnet-4-6');

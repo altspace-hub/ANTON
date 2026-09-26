@@ -80,6 +80,6 @@ describe('the boot sync does not give up on a refused answer', () => {
     const { useConfigStore, sync } = await loadStores();
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(answer(200, { model: SDK, source: 'env' }));
     await sync();
-    expect(useConfigStore.getState().model).toBe('claude-opus-5');
+    expect(useConfigStore.getState().model).toBe('claude-opus-5-5'); // the store's own fallback
   });
 });

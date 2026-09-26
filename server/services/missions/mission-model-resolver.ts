@@ -16,11 +16,12 @@ import { mapModelToProvider } from '../provider-router.js';
 import { getProviderFromModelId } from '../model-adapter.js';
 import { MODEL_REGISTRY } from '../../types/modelAdapter.js';
 import type { ModelStrategy, ModelStrategyTier } from './types.js';
+import { CLAUDE_LARGE, CLAUDE_MEDIUM, CLAUDE_SMALL } from '../../config/claude-lineup.js';
 
 const CLAUDE_TIER_DEFAULTS: Record<ModelStrategyTier, string> = {
-  planning: 'claude-opus-4-8',
-  execution: 'claude-sonnet-4-6',
-  utility: 'claude-haiku-4-5-20251001',
+  planning: CLAUDE_LARGE,
+  execution: CLAUDE_MEDIUM,
+  utility: CLAUDE_SMALL,
 };
 
 /**

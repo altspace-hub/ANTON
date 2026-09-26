@@ -3597,8 +3597,19 @@ export const AREAS = [
 export const MODELS: ModelInfo[] = [
   // ── Anthropic ─────────────────────────────────────────────
   {
-    id: 'claude-opus-5',
+    id: 'claude-opus-5-5',
     recommended: true,
+    label: 'Claude Opus 5.5',
+    description: 'Newest Opus — successor to Opus 5 at a lower price. 1M context, 128k output. Best for complex reasoning, long agentic work and high-stakes compliance work. Thinking is always on; the thinking level sets how deep it goes.',
+    inputCostPer1M: 4,
+    outputCostPer1M: 20,
+    maxOutput: 128000,
+    provider: 'anthropic',
+    contextWindow: 1000000,
+    costTier: 3,
+  },
+  {
+    id: 'claude-opus-5',
     label: 'Claude Opus 5',
     description: 'Claude 5 flagship. 1M context, 128k output. Best for complex reasoning, agentic coding, and high-stakes compliance work. Adaptive thinking, on by default. Same price as Opus 4.8.',
     inputCostPer1M: 5,
@@ -3612,10 +3623,9 @@ export const MODELS: ModelInfo[] = [
     id: 'claude-sonnet-5',
     recommended: true,
     label: 'Claude Sonnet 5',
-    // PRICING CHANGES 2026-08-31: introductory $2/$10 reverts to $3/$15. Update
-    // these numbers and the server capability row together — cost displays and the
-    // budget bar both read from here, so a stale rate silently under-reports spend.
-    description: 'Claude 5 workhorse. 1M context, 128k output. Strong reasoning at a fraction of Opus cost. Adaptive thinking. Introductory pricing ($2/$10) through 31 Aug 2026, then $3/$15.',
+    // $2/$10 is now the standard price — the rise to $3/$15 scheduled for
+    // 2026-09-01 was cancelled. Keep in lockstep with the server capability row.
+    description: 'Claude 5 workhorse. 1M context, 128k output. Strong reasoning at a fraction of Opus cost. Adaptive thinking.',
     inputCostPer1M: 2,
     outputCostPer1M: 10,
     maxOutput: 128000,
@@ -3626,7 +3636,7 @@ export const MODELS: ModelInfo[] = [
   {
     id: 'claude-fable-5-1',
     label: 'Claude Fable 5.1',
-    description: 'Newest Claude — the Mythos-class tier above Opus. 1M context, 128k output, xhigh effort for long agentic work. Adaptive thinking only. Pricing assumed equal to Fable 5.',
+    description: 'The Mythos-class tier above Opus. 1M context, 128k output, xhigh effort for long agentic work. Adaptive thinking only.',
     inputCostPer1M: 10,
     outputCostPer1M: 50,
     maxOutput: 128000,
@@ -3714,6 +3724,39 @@ export const MODELS: ModelInfo[] = [
     costTier: 1,
   },
   // ── OpenAI ────────────────────────────────────────────────
+  {
+    id: 'gpt-6-astra',
+    label: 'GPT-6 Astra',
+    description: "OpenAI's GPT-6 frontier tier. 1.05M context, 128k output. Always reasons — effort low to max follows the thinking level. Most expensive OpenAI model.",
+    inputCostPer1M: 10,
+    outputCostPer1M: 50,
+    maxOutput: 128000,
+    provider: 'openai',
+    contextWindow: 1050000,
+    costTier: 3,
+  },
+  {
+    id: 'gpt-6-sol',
+    label: 'GPT-6 Sol',
+    description: 'GPT-6 balanced tier. 1.05M context, 128k output. Always reasons — effort follows the thinking level.',
+    inputCostPer1M: 2,
+    outputCostPer1M: 10,
+    maxOutput: 128000,
+    provider: 'openai',
+    contextWindow: 1050000,
+    costTier: 2,
+  },
+  {
+    id: 'gpt-6-luna',
+    label: 'GPT-6 Luna',
+    description: 'GPT-6 high-volume tier. 1.05M context, 128k output. Always reasons, at a fraction of the cost.',
+    inputCostPer1M: 0.1,
+    outputCostPer1M: 0.5,
+    maxOutput: 128000,
+    provider: 'openai',
+    contextWindow: 1050000,
+    costTier: 1,
+  },
   {
     id: 'gpt-5.6-sol',
     label: 'GPT-5.6 Sol',
@@ -3960,6 +4003,14 @@ export function providerForModelId(modelId: string): string {
   }
   if (modelId.startsWith('codex:')) return 'openai';
   return MODELS.find((m) => m.id === modelId)?.provider ?? 'unknown';
+}
+
+/** The MODELS entry for an id, looking through a subscription-engine prefix
+ *  (sdk:claude-opus-5 → claude-opus-5) — context window, output ceiling and
+ *  price describe the model that runs. Undefined for ids MODELS does not list. */
+export function modelInfoFor(modelId: string): ModelInfo | undefined {
+  const bare = modelId.startsWith('sdk:') ? modelId.slice(4) : modelId.startsWith('codex:') ? modelId.slice(6) : modelId;
+  return MODELS.find((m) => m.id === bare);
 }
 
 /**

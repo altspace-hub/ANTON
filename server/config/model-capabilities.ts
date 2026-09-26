@@ -11,6 +11,7 @@
  *     at Medium 3.5 (v26.04); mistral-small-latest at Small 4 (v26.03).
  *   - Added Codestral + Devstral 2 (code specialists).
  *
+ * Opus 5.5 (2026-09): $4/$20, cache reads $0.20, 1M / 128k, thinking always on.
  * Fable 5: 1M context, 128k output, adaptive thinking only — new tier above Opus
  *   ($10/$50). Added 2026-06-10 as selectable; Opus 4.8 remains the default.
  *   API gotcha: explicit thinking {type:'disabled'} 400s on Fable — omit instead.
@@ -92,6 +93,29 @@ export type AntonThinkingLevel = 'quick' | 'think' | 'think_hard' | 'investigate
 // can't import server config; would need a frontend snapshot/endpoint).
 export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   // ─── Anthropic Claude ──────────────────────────────────────────
+  'claude-opus-5-5': {
+    // Claude Opus 5.5 (2026-09) — successor to Opus 5 at a lower price. Same
+    // 1M context / 128k output / tokenizer. Thinking is ALWAYS on: both
+    // {type:'disabled'} and budget_tokens 400 at every effort, and the API's
+    // default effort is 'medium' (Opus 5: 'high') — ANTON always sends effort
+    // explicitly, so its levels mean the same thing on both. Forced tool_choice
+    // ('any' / 'tool') also 400s; ANTON sends only 'auto'.
+    maxContextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: true,
+    supportsAdaptiveThinking: true,
+    supportsExtendedThinking: false,   // Adaptive only, cannot be disabled
+    pricing: {
+      inputPerMillion: 4,
+      outputPerMillion: 20,
+      cachedInputPerMillion: 0.20,     // cache reads are $0.20 on Opus 5.5 (not the usual 10% of input)
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'anthropic',
+  },
   'claude-opus-5': {
     maxContextWindow: 1_000_000,
     maxOutputTokens: 128_000,
@@ -117,9 +141,10 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     supportsAdaptiveThinking: true,
     supportsExtendedThinking: false,   // Adaptive only
     pricing: {
-      // INTRODUCTORY through 2026-08-31, then $3/$15. Keep in lockstep with the
-      // MODELS entry in src/lib/constants.ts — the two registries are read by
-      // different layers and a stale rate here under-reports actual spend.
+      // $2/$10 is the standard price: announced as introductory through
+      // 2026-08-31, but the scheduled rise to $3/$15 was cancelled (Anthropic
+      // pricing page, checked 2026-09-23). Keep in lockstep with the MODELS
+      // entry in src/lib/constants.ts.
       inputPerMillion: 2,
       outputPerMillion: 10,
       cachedInputPerMillion: 0.20,     // 90% discount
@@ -149,8 +174,8 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   'claude-fable-5-1': {
     // Claude Fable 5.1 (2026-09) — the Mythos-class tier above Opus, 1M context,
     // adaptive thinking only (budget_tokens is rejected), supports 'xhigh'.
-    // Pricing assumed equal to Fable 5; verify against the catalogue before
-    // relying on cost display for this id — it only affects the API path.
+    // $10/$50 like Fable 5, but cache reads are 0.025x input = $0.25
+    // (Anthropic pricing page, checked 2026-09-23).
     maxContextWindow: 1_000_000,
     maxOutputTokens: 128_000,
     requires1MBetaHeader: false,
@@ -160,7 +185,7 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
     pricing: {
       inputPerMillion: 10,
       outputPerMillion: 50,
-      cachedInputPerMillion: 1.00,
+      cachedInputPerMillion: 0.25,
       premiumThreshold: null,
       premiumInputMultiplier: 1,
       premiumOutputMultiplier: 1,
@@ -280,6 +305,63 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapabilities> = {
   },
 
   // ─── OpenAI ────────────────────────────────────────────────────
+  // GPT-6 (Astra 2026-09-03; Sol + Luna 2026-09-22). 1.05M context, 128k
+  // output, always-reasoning: reasoning_effort + max_completion_tokens, no
+  // temperature (thinking-map isOpenAIReasoningModel). Astra takes low..max
+  // (no 'none'); Sol/Luna none..max. On Chat Completions, Astra has no tool
+  // calling and Sol/Luna call tools only at effort 'none' — ANTON's OpenAI
+  // paths send no tools. Prices: developers.openai.com model pages, 2026-09-23.
+  'gpt-6-astra': {
+    maxContextWindow: 1_050_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 10,
+      outputPerMillion: 50,
+      cachedInputPerMillion: 1,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
+  'gpt-6-sol': {
+    maxContextWindow: 1_050_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 2,
+      outputPerMillion: 10,
+      cachedInputPerMillion: 0.2,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
+  'gpt-6-luna': {
+    maxContextWindow: 1_050_000,
+    maxOutputTokens: 128_000,
+    requires1MBetaHeader: false,
+    supportsCompaction: false,
+    supportsAdaptiveThinking: false,
+    supportsExtendedThinking: false,
+    pricing: {
+      inputPerMillion: 0.1,
+      outputPerMillion: 0.5,
+      cachedInputPerMillion: 0.01,
+      premiumThreshold: null,
+      premiumInputMultiplier: 1,
+      premiumOutputMultiplier: 1,
+    },
+    provider: 'openai',
+  },
   // GPT-5.4 — user-selectable (frontend MODELS[] / ModelValue union). Added here
   // 2026-05-31 so cost estimation + context budgeting work for it (previously it
   // existed only in modelAdapter.ts MODEL_REGISTRY, so estimateCost returned 0).

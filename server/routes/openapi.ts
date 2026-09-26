@@ -10,6 +10,7 @@
  */
 
 import express from 'express';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 
 export function createOpenApiRouter() {
   const router = express.Router();
@@ -188,7 +189,7 @@ export function createOpenApiRouter() {
                     required: ['module_id'],
                     properties: {
                       module_id: { type: 'string' },
-                      model: { type: 'string', default: 'claude-opus-4-8' },
+                      model: { type: 'string', default: CLAUDE_LARGE },
                       thinking: { type: 'string', enum: ['quick', 'think', 'think_hard', 'investigate', 'plan_first'] },
                       creativity: { type: 'string', enum: ['strict', 'balanced', 'creative'] },
                     },
@@ -242,7 +243,7 @@ export function createOpenApiRouter() {
                     properties: {
                       message: { type: 'string', description: 'User message content' },
                       sessionId: { type: 'string' },
-                      model: { type: 'string', default: 'claude-opus-4-8' },
+                      model: { type: 'string', default: CLAUDE_LARGE },
                       thinking: { type: 'string', enum: ['quick', 'think', 'think_hard', 'investigate', 'plan_first'] },
                       creativity: { type: 'string', enum: ['strict', 'balanced', 'creative'] },
                       selectedOutputFormats: { type: 'array', items: { type: 'string' } },

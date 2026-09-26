@@ -22,12 +22,17 @@
     "myProfile": "Mon profil",
     "backToWork": "Retour au mode Travail",
     "close": "Fermer",
+    "review": "Révision",
+    "parentView": "Vue parent",
     "role": {
       "student": "Élève",
       "guardian": "Parent / Tuteur",
       "teacher": "Enseignant",
       "school_admin": "Admin école"
-    }
+    },
+    "ucas": "Lettre UCAS",
+    "studyRooms": "Salles d'étude",
+    "lessonLibrary": "Bibliothèque de leçons"
   },
   "dashboard": {
     "welcome": "Bon retour, {{name}} !",
@@ -91,7 +96,20 @@
     "uni-biology": "Biologie cellulaire et génétique",
     "uni-chemistry": "Chimie organique et physique",
     "uni-philosophy": "Philosophie et éthique",
-    "uni-statistics": "Statistiques appliquées et analyse de données"
+    "uni-statistics": "Statistiques appliquées et analyse de données",
+    "primary-mathematics": "Maths (primaire)",
+    "primary-reading": "Lecture",
+    "primary-writing": "Écriture",
+    "primary-science": "Sciences",
+    "primary-english": "Anglais",
+    "primary-art": "Arts et créativité",
+    "gymnasiet-economics": "Économie et gestion",
+    "gymnasiet-technology": "Technologie et ingénierie",
+    "uni-industriell-ekonomi": "Génie industriel et gestion",
+    "uni-datateknik": "Génie informatique",
+    "uni-kemiteknik": "Génie chimique",
+    "uni-maskinteknik": "Génie mécanique",
+    "uni-elektroteknik": "Génie électrique"
   },
   "chat": {
     "greeting": "Bonjour ! Je suis {{persona}}. Sur quoi travaillez-vous aujourd'hui ?",
@@ -281,6 +299,14 @@
     }
   },
   "guardian": {
+    "parent": {
+      "title": "Vue parent",
+      "sessionsThisWeek": "Sessions cette semaine",
+      "streak": "Série",
+      "stage": "Niveau",
+      "subjectsStudied": "Matières étudiées cette semaine",
+      "cardsDue": "fiches à réviser aujourd'hui"
+    },
     "dashboard": {
       "title": "L'apprentissage de {{name}}",
       "overallProgress": "Progression globale",
@@ -321,6 +347,7 @@
         "title": "Bienvenue sur ANTON École !",
         "subtitle": "Configurons votre compte.",
         "selectTier": "En quelle année êtes-vous ?",
+        "tierT1": "École primaire (7–12 ans)",
         "tierT2": "Collège (13–15 ans)",
         "tierT3": "Lycée (16–18 ans)",
         "tierT4": "Université (18+)"
@@ -332,7 +359,16 @@
         "norway": "Norvège (LK20)",
         "uk": "Royaume-Uni",
         "france": "France (Baccalauréat)",
+        "india": "Inde (CBSE)",
+        "nigeria": "Nigeria (WAEC)",
         "other": "Autre"
+      },
+      "step2b": {
+        "gymnasietTitle": "Dans quelle filière êtes-vous ?",
+        "universityTitle": "Qu'étudiez-vous ?",
+        "gymnasietSubtitle": "Votre filière au Gymnasiet (linje)",
+        "universitySubtitle": "Votre cursus universitaire",
+        "skip": "Passer — je le ferai plus tard"
       },
       "step3": {
         "title": "Rejoindre votre classe",
@@ -389,7 +425,12 @@
     "run": "Exécuter",
     "copy": "Copier",
     "copied": "Copié !",
-    "clickRun": "Cliquez sur Exécuter pour prévisualiser"
+    "clickRun": "Cliquez sur Exécuter pour prévisualiser",
+    "runPython": "Exécuter Python",
+    "runningPython": "Exécution...",
+    "loadingPyodide": "Chargement de l'environnement Python (première exécution)...",
+    "pythonOutput": "Sortie",
+    "pythonError": "Erreur"
   },
   "persona": {
     "alma": {
@@ -482,6 +523,122 @@
     "completed": "Terminé !"
   },
   "curriculum": {
-    "frBac": "Baccalauréat Français"
+    "frBac": "Baccalauréat Français",
+    "cbse": "CBSE (Inde)",
+    "waec": "WAEC/JAMB (Nigeria)"
+  },
+  "review": {
+    "title": "Fiches de révision",
+    "noCards": "Aucune fiche à réviser aujourd'hui",
+    "noCardsHint": "Les fiches sont créées automatiquement pendant vos échanges avec Alma.",
+    "done": "Terminé pour aujourd'hui !",
+    "cardsReviewed": "fiches révisées",
+    "answer": "Réponse",
+    "tapToFlip": "Touchez pour voir la réponse",
+    "blackout": "Oublié",
+    "hard": "Difficile",
+    "good": "Bien",
+    "easy": "Facile"
+  },
+  "ucas": {
+    "title": "Lettre de motivation UCAS",
+    "subtitle": "Un premier jet rédigé par l'IA pour vos candidatures aux universités britanniques",
+    "disclaimer": "Ce brouillon n'est qu'un point de départ. Personnalisez-le en profondeur : les responsables des admissions lisent des milliers de lettres. Ce qui fait la différence, c'est votre voix et vos exemples précis.",
+    "formTitle": "Parlez-nous de vous",
+    "courseTitle": "Formation visée",
+    "coursePlaceholder": "ex. Computer Science BSc, Medicine MBBS...",
+    "universities": "Universités visées (facultatif)",
+    "universitiesPlaceholder": "ex. Imperial, UCL, Edinburgh, Bristol, Manchester",
+    "subjects": "Matières de A-level",
+    "subjectsPlaceholder": "ex. Mathématiques A*, Physique A, Chimie A",
+    "whySubject": "Pourquoi cette matière ? Qu'est-ce qui a éveillé votre intérêt ?",
+    "whyPlaceholder": "Décrivez ce qui vous a attiré vers cette matière : un livre, un projet, une expérience, un déclic...",
+    "moreDetails": "Ajouter des détails (recommandé)",
+    "workExperience": "Expérience professionnelle / bénévolat",
+    "workPlaceholder": "Stages, observation en milieu professionnel, job à temps partiel, bénévolat...",
+    "extracurriculars": "Activités extrascolaires",
+    "extrasPlaceholder": "Sport, musique, clubs, concours, distinctions...",
+    "futureGoals": "Objectifs professionnels / projets d'avenir",
+    "goalsPlaceholder": "Où vous voyez-vous après l'université ?",
+    "draftLength": "Longueur du brouillon",
+    "length": {
+      "short": "Court",
+      "standard": "Standard",
+      "long": "Long"
+    },
+    "errorRequired": "La formation visée et la motivation sont obligatoires.",
+    "generating": "Rédaction de votre brouillon...",
+    "generate": "Générer le brouillon",
+    "regenerate": "Régénérer le brouillon",
+    "draft": "Votre brouillon",
+    "emptyState": "Remplissez le formulaire et cliquez sur Générer pour voir ici le brouillon de votre lettre de motivation.",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "nextSteps": "Prochaines étapes :",
+    "nextStepsText": "Retravaillez le brouillon pour y ajouter vos propres exemples et votre voix. Supprimez tout ce qui ne vous ressemble pas. Faites-le relire par le conseiller UCAS de votre établissement avant de l'envoyer."
+  },
+  "avatar": {
+    "title": "Personnalisez votre avatar",
+    "chooseEmoji": "Choisissez votre emoji",
+    "chooseColor": "Palette de couleurs",
+    "chooseFrame": "Cadre",
+    "titleLabel": "Titre affiché (facultatif)",
+    "titlePlaceholder": "ex. As des maths, Fan d'histoire..."
+  },
+  "leaderboard": {
+    "title": "Classement",
+    "weekly": "Cette semaine",
+    "allTime": "Depuis le début",
+    "noWeeklyData": "Aucune activité cette semaine. Commencez à étudier pour apparaître ici !"
+  },
+  "season": {
+    "daysLeft": "{n} jours restants",
+    "multiplier": "XP ×{n}"
+  },
+  "studyRooms": {
+    "title": "Salles d'étude",
+    "subtitle": "Étudiez ensemble en temps réel",
+    "create": "Créer une salle",
+    "newRoom": "Nouvelle salle d'étude",
+    "roomNamePlaceholder": "ex. Révisions examen de maths — 3e",
+    "codePlaceholder": "Entrez le code à 6 lettres...",
+    "join": "Rejoindre",
+    "createBtn": "Créer",
+    "cancel": "Annuler",
+    "noRooms": "Aucune salle d'étude active. Créez-en une pour commencer !",
+    "invalidCode": "Salle introuvable ou expirée.",
+    "joinError": "Impossible de rejoindre la salle."
+  },
+  "studyRoom": {
+    "connected": "En direct",
+    "disconnected": "Déconnecté",
+    "participants": "dans la salle",
+    "leave": "Quitter",
+    "empty": "Aucun message pour l'instant. Dites bonjour !",
+    "placeholder": "Écrivez un message...",
+    "connectingPlaceholder": "Connexion..."
+  },
+  "settings": {
+    "programmeSection": "Filière / Linje",
+    "gymnasietProgramme": "Filière au Gymnasiet",
+    "universityProgramme": "Cursus universitaire",
+    "changeProgramme": "Changer de filière"
+  },
+  "login": {
+    "title": "ANTON École",
+    "subtitle": "Connectez-vous avec votre compte scolaire",
+    "googleBtn": "Continuer avec Google",
+    "microsoftBtn": "Continuer avec Microsoft",
+    "orLocal": "ou connectez-vous avec un nom d'utilisateur",
+    "username": "Nom d'utilisateur",
+    "usernamePlaceholder": "Entrez votre nom d'utilisateur",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Entrez votre mot de passe",
+    "signIn": "Se connecter",
+    "failed": "Échec de la connexion",
+    "oauthFailed": "Échec de la connexion",
+    "oauthError": "Échec de la connexion — impossible d'échanger le code d'autorisation.",
+    "backToWork": "Retour au mode Travail",
+    "privacy": "Vos conversations sont privées et stockées localement sur cet appareil."
   }
 }

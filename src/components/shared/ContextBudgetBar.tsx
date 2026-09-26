@@ -7,6 +7,7 @@
 
 import { useMemo } from 'react';
 import { AlertTriangle, Info } from 'lucide-react';
+import { modelInfoFor } from '@/lib/constants';
 
 const CHARS_PER_TOKEN = 4;
 
@@ -14,7 +15,10 @@ function est(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
 }
 
-// Context windows per model: Opus 4.8 + Sonnet 4.6 = 1M (GA)
+// Fallback context windows for ids MODELS does not describe. The window is
+// read from MODELS first (modelInfoFor, which also looks through sdk:), so a
+// newly listed model — Opus 5, Sonnet 5, Opus 5.5 — is not measured against
+// a 200k window it does not have.
 const CONTEXT_WINDOWS: Record<string, number> = {
   'claude-fable-5-1': 1_000_000,
   'claude-fable-5': 1_000_000,
@@ -49,7 +53,7 @@ export default function ContextBudgetBar({ systemPrompt, userInput, history, mod
     const message = est(userInput);
     const docs = documentTokens;
     const total = system + historyTokens + message + docs;
-    const maxCtx = CONTEXT_WINDOWS[model] ?? 200_000;
+    const maxCtx = modelInfoFor(model)?.contextWindow ?? CONTEXT_WINDOWS[model] ?? 200_000;
     const pct = Math.min(100, (total / maxCtx) * 100);
     const level: 'ok' | 'warning' | 'critical' =
       pct >= 90 ? 'critical' : pct >= 75 ? 'warning' : 'ok';

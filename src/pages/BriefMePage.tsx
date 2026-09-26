@@ -71,7 +71,7 @@ export default function BriefMePage() {
     try {
       const stream = streamMessage(
         {
-          model: 'claude-opus-4-8',
+          model: 'claude-opus-5-5',
           thinking: 'think',
           creativity: 'balanced',
           systemPrompt: BRIEF_SYSTEM_PROMPT,

@@ -74,7 +74,7 @@ describe('resolveMissionModel', () => {
 
   it('falls back to the tier default for unknown model ids', () => {
     onlyProvider('anthropic');
-    expect(resolveMissionModel('planning', { planning_model: 'claude-bananas' })).toBe('claude-opus-4-8');
+    expect(resolveMissionModel('planning', { planning_model: 'claude-bananas' })).toBe('claude-opus-5-5'); // the lineup's large tier
   });
 
   it('maps the tier default to the configured provider when no strategy model is set', () => {

@@ -17,7 +17,10 @@ import {
   mapModelToProvider,
   convertToolsForProvider,
   resolveMistralThinking,
+  anthropicThinkingParams,
+  IMPLICIT_THINKING_MIN_TOKENS,
 } from '../../server/services/provider-router.js';
+import { CLAUDE_LARGE } from '../../server/config/claude-lineup.js';
 
 const ENV_KEYS = ['ANTHROPIC_API_KEY', 'MISTRAL_API_KEY', 'OPENAI_API_KEY', 'GOOGLE_API_KEY', 'DEFAULT_MODEL'] as const;
 let saved: Record<string, string | undefined>;
@@ -46,7 +49,8 @@ describe('resolveModel (tier → concrete model for active provider)', () => {
 
   it('resolves large/medium/small for the anthropic provider', () => {
     onlyProvider('anthropic');
-    expect(resolveModel('large')).toBe('claude-opus-4-8');
+    expect(resolveModel('large')).toBe(CLAUDE_LARGE);
+    expect(CLAUDE_LARGE).toBe('claude-opus-5-5'); // owner decision 2026-09-23
     expect(resolveModel('medium')).toBe('claude-sonnet-4-6');
     expect(resolveModel('small')).toBe('claude-haiku-4-5-20251001');
   });
@@ -138,10 +142,13 @@ describe('M5 — configured DEFAULT_MODEL overrides env-priority for specialty r
     expect(mapModelToProvider('claude-haiku-4-5-20251001')).toBe('compat:openrouter:qwen/qwen-2.5-72b');
   });
 
-  it('leaves Claude behavior unchanged for a claude- DEFAULT_MODEL', () => {
+  it('leaves Claude behavior unchanged for a claude- DEFAULT_MODEL, and large-tier work follows it', () => {
     setEnv({ ANTHROPIC_API_KEY: 'k', MISTRAL_API_KEY: 'k', DEFAULT_MODEL: 'claude-opus-4-8' });
     expect(mapModelToProvider('claude-sonnet-4-6')).toBe('claude-sonnet-4-6');
+    // The user's pick, not the lineup's Opus 5.5 — as on the subscription engine.
     expect(resolveModel('large')).toBe('claude-opus-4-8');
+    // Negative control: the other tiers still come from the lineup.
+    expect(resolveModel('medium')).toBe('claude-sonnet-4-6');
   });
 
   it('falls back to env-priority when DEFAULT_MODELs provider key is missing', () => {
@@ -189,5 +196,26 @@ describe('subscription engine (sdk:) as the default — the router follows it', 
     setEnv({ ANTHROPIC_API_KEY: 'k', DEFAULT_MODEL: 'codex:gpt-5.4' });
     expect(resolveModel('small')).toBe('codex:gpt-5.4');
     expect(mapModelToProvider('claude-opus-4-8')).toBe('codex:gpt-5.4');
+  });
+});
+
+describe('anthropicThinkingParams — a Claude 5 call without a thinking level', () => {
+  it('Opus 5.5 always thinks, so a no-level call gets effort low and room for the thinking', () => {
+    const r = anthropicThinkingParams('claude-opus-5-5', undefined, 300);
+    expect(r.params).toEqual({ output_config: { effort: 'low' } });
+    expect(r.maxTokens).toBe(IMPLICIT_THINKING_MIN_TOKENS);
+    // A caller that already asked for more keeps its number.
+    expect(anthropicThinkingParams('claude-opus-5-5', undefined, 20_000).maxTokens).toBe(20_000);
+  });
+
+  it('a named level is honoured as before', () => {
+    const r = anthropicThinkingParams('claude-opus-5-5', 'think_hard', 300);
+    expect(r.params).toEqual({ thinking: { type: 'adaptive' }, output_config: { effort: 'high' } });
+    expect(r.maxTokens).toBe(65_536);
+  });
+
+  it('negative control — a 4.x model without a level still sends no thinking at all', () => {
+    expect(anthropicThinkingParams('claude-opus-4-8', undefined, 300)).toEqual({ params: {}, maxTokens: 300 });
+    expect(anthropicThinkingParams('claude-haiku-4-5-20251001', undefined, 300)).toEqual({ params: {}, maxTokens: 300 });
   });
 });

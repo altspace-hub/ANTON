@@ -1145,6 +1145,7 @@ Produce: A clear executive summary of the council's findings, the top 3 improvem
                         className="w-full rounded border border-adv-teal/20 bg-adv-dark px-2 py-1 text-xs text-adv-off-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 disabled:opacity-60"
                       >
                         <optgroup label="Claude">
+                          <option value="claude-opus-5-5">Claude Opus 5.5</option>
                           <option value="claude-opus-4-8">Claude Opus 4.8</option>
                           <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                           <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>

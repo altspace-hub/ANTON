@@ -24,6 +24,7 @@ import { requireAdminOrSolo } from '../middleware/auth.js';
 import { encryptConfig, decryptConfig } from '../services/credential-vault.js';
 import { getClient } from '../services/claude-client.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -201,7 +202,7 @@ export async function createBridgePublicRoutes(db: DatabaseAdapter, _anthropic?:
       // 7. Call AI (non-streaming — bridge clients expect a complete response)
       const startTime = Date.now();
       const result = await callChat({
-        model: mapModelToProvider('claude-opus-4-8'),
+        model: mapModelToProvider(CLAUDE_LARGE),
         system: systemPrompt,
         messages: [{ role: 'user', content: message.trim() }],
         maxTokens: 1024,

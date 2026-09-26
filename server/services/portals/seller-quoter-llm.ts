@@ -11,11 +11,12 @@
 import type { DatabaseAdapter } from '../../db/database.js';
 import { callChat, mapModelToProvider } from '../provider-router.js';
 import type { QuoteLLM } from './seller-quoter.js';
+import { CLAUDE_SMALL } from '../../config/claude-lineup.js';
 
-const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+export const DEFAULT_QUOTE_MODEL: string = CLAUDE_SMALL;
 
 export function createCallChatQuoteLLM(db: DatabaseAdapter): QuoteLLM {
-  const model = (process.env.ANTON_AUTOQUOTE_MODEL || DEFAULT_MODEL).trim();
+  const model = (process.env.ANTON_AUTOQUOTE_MODEL || DEFAULT_QUOTE_MODEL).trim();
   return {
     async propose({ systemPrompt, userPrompt }) {
       const res = await callChat({

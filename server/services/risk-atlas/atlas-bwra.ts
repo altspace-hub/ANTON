@@ -17,7 +17,7 @@ import crypto from 'node:crypto';
 import type { DatabaseAdapter } from '../../db/database.js';
 import { createAtlasExport, type AtlasExportSnapshot } from './atlas-export.js';
 import { createAtlasEventLogger } from './atlas-event-logger.js';
-import { appetitePositionFor } from './atlas-residual-calculator.js';
+import { countedPosition } from './atlas-appetite-position.js';
 import { RESIDUAL_REDUCTION, type AppetitePosition, type Score1to5, type ThreatPathFull } from './types.js';
 import { getModuleSystemPrompt } from '../module-loader.js';
 import { callChat, type ChatResult, type StreamChatConfig } from '../provider-router.js';
@@ -90,10 +90,9 @@ function residualOf(p: ThreatPathFull): Score1to5 | null {
   return (p.residual?.residual_score ?? null) as Score1to5 | null;
 }
 
+/** The position the path counts at — the shared rule in atlas-appetite-position.ts. */
 function appetiteOf(p: ThreatPathFull): AppetitePosition | null {
-  if (p.appetite?.appetite_position) return p.appetite.appetite_position;
-  const r = residualOf(p);
-  return r ? appetitePositionFor(r) : null;
+  return countedPosition(p.appetite?.appetite_position, !!p.appetite?.approved_at, residualOf(p));
 }
 
 // ── 1. Stage tables — rendered from the Atlas, never by the model ──────────

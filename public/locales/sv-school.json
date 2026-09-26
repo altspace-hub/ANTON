@@ -55,7 +55,7 @@
     "mathematics": "Matematik",
     "algebra": "Algebra",
     "geometry": "Geometri",
-    "statistics": "Statistik och sannolikhetslära",
+    "statistics": "Statistik & datavetenskap",
     "functions": "Funktioner",
     "numberTheory": "Talteori",
     "svenska": "Svenska",
@@ -79,11 +79,33 @@
     "philosophy": "Filosofi",
     "idrottHalsa": "Idrott & Hälsa",
     "idrott-halsa": "Idrott & Hälsa",
-    "statistics": "Statistik & datavetenskap",
     "data-science": "Datavetenskap",
     "modersmal": "Modersmål",
     "sfiBridge": "SFI-brygga (Svenska för nyanlända)",
-    "sfi-bridge": "SFI-brygga (Svenska för nyanlända)"
+    "sfi-bridge": "SFI-brygga (Svenska för nyanlända)",
+    "uni-mathematics": "Högre matematik / Analys",
+    "uni-physics": "Fysik på universitetsnivå",
+    "uni-economics": "Mikro- och makroekonomi",
+    "uni-computer-science": "Datavetenskap & algoritmer",
+    "uni-law": "Introduktion till juridik",
+    "uni-psychology": "Psykologi & beteendevetenskap",
+    "uni-biology": "Cellbiologi & genetik",
+    "uni-chemistry": "Organisk & fysikalisk kemi",
+    "uni-philosophy": "Filosofi & etik",
+    "uni-statistics": "Tillämpad statistik & dataanalys",
+    "primary-mathematics": "Matematik (åk 1–6)",
+    "primary-reading": "Läsning",
+    "primary-writing": "Skrivande",
+    "primary-science": "NO",
+    "primary-english": "Engelska",
+    "primary-art": "Bild & kreativitet",
+    "gymnasiet-economics": "Ekonomi & företagande",
+    "gymnasiet-technology": "Teknik & ingenjörskap",
+    "uni-industriell-ekonomi": "Industriell ekonomi",
+    "uni-datateknik": "Datateknik",
+    "uni-kemiteknik": "Kemiteknik",
+    "uni-maskinteknik": "Maskinteknik",
+    "uni-elektroteknik": "Elektroteknik"
   },
   "chat": {
     "greeting": "Hej! Jag är {{persona}}. Vad jobbar du med idag?",
@@ -273,6 +295,14 @@
     }
   },
   "guardian": {
+    "parent": {
+      "title": "Föräldravy",
+      "sessionsThisWeek": "Sessioner den här veckan",
+      "streak": "Streak",
+      "stage": "Nivå",
+      "subjectsStudied": "Ämnen som studerats den här veckan",
+      "cardsDue": "repetitionskort att gå igenom idag"
+    },
     "dashboard": {
       "title": "{{name}}:s lärande",
       "overallProgress": "Övergripande framsteg",
@@ -291,6 +321,20 @@
       "success": "Länkad till {{name}}:s konto!",
       "error": "Ogiltig kod. Kontrollera med läraren.",
       "privacyNote": "Du ser sammanfattningar av framsteg. Enskilda konversationer är privata för ditt barn."
+    },
+    "digest": {
+      "title": "Veckosammanfattning",
+      "period": "Senaste 7 dagarna",
+      "sessionsCount": "{{count}} studiesessioner",
+      "xpEarned": "{{xp}} XP intjänade",
+      "streakDays": "{{count}} dagars streak",
+      "stage": "Lärandenivå: {{stage}}",
+      "assignmentsSubmitted": "{{count}} uppgifter inlämnade",
+      "sendEmail": "Skicka sammanfattningen via e-post",
+      "sending": "Skickar...",
+      "sent": "Skickat!",
+      "nextSend": "Nästa automatiska sammanfattning: måndag 08:00",
+      "lastSent": "Senast skickad: {{date}}"
     }
   },
   "onboarding": {
@@ -299,6 +343,7 @@
         "title": "Välkommen till ANTON Skola!",
         "subtitle": "Låt oss ställa in allt.",
         "selectTier": "Vilket år går du?",
+        "tierT1": "Åk 1–6 (7–12 år)",
         "tierT2": "Åk 7–9 (13–15 år)",
         "tierT3": "Gymnasiet (16–18 år)",
         "tierT4": "Universitetet (18+)"
@@ -310,7 +355,16 @@
         "norway": "Norge (LK20)",
         "uk": "Storbritannien",
         "france": "Frankrike (Baccalauréat)",
+        "india": "Indien (CBSE)",
+        "nigeria": "Nigeria (WAEC)",
         "other": "Annat"
+      },
+      "step2b": {
+        "gymnasietTitle": "Vilket program går du?",
+        "universityTitle": "Vad studerar du?",
+        "gymnasietSubtitle": "Ditt gymnasieprogram",
+        "universitySubtitle": "Ditt utbildningsprogram på universitetet",
+        "skip": "Hoppa över — jag gör det senare"
       },
       "step3": {
         "title": "Gå med i din klass",
@@ -367,7 +421,12 @@
     "run": "Kör",
     "copy": "Kopiera",
     "copied": "Kopierat!",
-    "clickRun": "Klicka Kör för förhandsgranskning"
+    "clickRun": "Klicka Kör för förhandsgranskning",
+    "runPython": "Kör Python",
+    "runningPython": "Kör...",
+    "loadingPyodide": "Laddar Python-miljön (första körningen)...",
+    "pythonOutput": "Utdata",
+    "pythonError": "Fel"
   },
   "persona": {
     "alma": {
@@ -449,5 +508,133 @@
       "creation": "Skapande",
       "metacognition": "Metakognition"
     }
+  },
+  "quest": {
+    "dailyQuests": "Dagliga uppdrag",
+    "chatTurns": "Ställ {{target}} frågor till Alma",
+    "completeAssignment": "Lämna in en uppgift",
+    "reviewCard": "Repetera {{target}} kort",
+    "streakProtect": "Logga in idag",
+    "xpReward": "+{{xp}} XP",
+    "completed": "Klart!"
+  },
+  "curriculum": {
+    "frBac": "Fransk Baccalauréat",
+    "cbse": "CBSE (Indien)",
+    "waec": "WAEC/JAMB (Nigeria)"
+  },
+  "review": {
+    "title": "Repetitionskort",
+    "noCards": "Inga kort att repetera idag",
+    "noCardsHint": "Korten skapas automatiskt när du chattar med Alma.",
+    "done": "Klart för idag!",
+    "cardsReviewed": "kort repeterade",
+    "answer": "Svar",
+    "tapToFlip": "Tryck för att visa",
+    "blackout": "Helt blankt",
+    "hard": "Svårt",
+    "good": "Bra",
+    "easy": "Lätt"
+  },
+  "ucas": {
+    "title": "Personal Statement för UCAS",
+    "subtitle": "AI-stött första utkast för ansökan till brittiska universitet",
+    "disclaimer": "Det här utkastet är en startpunkt. Bearbeta det ordentligt så att det blir ditt eget — antagningshandläggare läser tusentals texter. Det är din egen röst och dina konkreta detaljer som gör skillnaden.",
+    "formTitle": "Berätta om dig själv",
+    "courseTitle": "Utbildningen du söker",
+    "coursePlaceholder": "t.ex. Computer Science BSc, Medicine MBBS...",
+    "universities": "Universitet du siktar på (valfritt)",
+    "universitiesPlaceholder": "t.ex. Imperial, UCL, Edinburgh, Bristol, Manchester",
+    "subjects": "A-level-ämnen",
+    "subjectsPlaceholder": "t.ex. Mathematics A*, Physics A, Chemistry A",
+    "whySubject": "Varför just det här ämnet? Vad väckte ditt intresse?",
+    "whyPlaceholder": "Beskriv vad som drog dig till ämnet — en bok, ett projekt, ett experiment, en insikt...",
+    "moreDetails": "Lägg till fler detaljer (rekommenderas)",
+    "workExperience": "Arbetslivserfarenhet / ideellt arbete",
+    "workPlaceholder": "Praktik, jobbskuggning, extrajobb, ideellt arbete...",
+    "extracurriculars": "Fritidsaktiviteter",
+    "extrasPlaceholder": "Idrott, musik, föreningar, tävlingar, prestationer...",
+    "futureGoals": "Karriärmål / framtidsplaner",
+    "goalsPlaceholder": "Var ser du dig själv efter universitetet?",
+    "draftLength": "Utkastets längd",
+    "length": {
+      "short": "Kort",
+      "standard": "Standard",
+      "long": "Lång"
+    },
+    "errorRequired": "Utbildning och motivering måste fyllas i.",
+    "generating": "Skriver ditt utkast...",
+    "generate": "Skapa utkast",
+    "regenerate": "Skapa nytt utkast",
+    "draft": "Ditt utkast",
+    "emptyState": "Fyll i formuläret och klicka på Skapa utkast för att se ditt utkast till personal statement här.",
+    "copy": "Kopiera",
+    "copied": "Kopierat!",
+    "nextSteps": "Nästa steg:",
+    "nextStepsText": "Redigera utkastet och lägg till dina egna konkreta exempel och din egen röst. Ta bort allt som inte känns som du. Låt skolans UCAS-rådgivare läsa det innan du skickar in."
+  },
+  "avatar": {
+    "title": "Anpassa din avatar",
+    "chooseEmoji": "Välj din emoji",
+    "chooseColor": "Färgschema",
+    "chooseFrame": "Ram",
+    "titleLabel": "Visningstitel (valfritt)",
+    "titlePlaceholder": "t.ex. Mattegeni, Historienörd..."
+  },
+  "leaderboard": {
+    "title": "Topplista",
+    "weekly": "Den här veckan",
+    "allTime": "Genom tiderna",
+    "noWeeklyData": "Ingen aktivitet än den här veckan. Börja studera för att synas här!"
+  },
+  "season": {
+    "daysLeft": "{n} dagar kvar",
+    "multiplier": "{n}× XP"
+  },
+  "studyRooms": {
+    "title": "Studierum",
+    "subtitle": "Studera tillsammans i realtid",
+    "create": "Skapa rum",
+    "newRoom": "Nytt studierum",
+    "roomNamePlaceholder": "t.ex. Plugga till matteprovet — åk 9",
+    "codePlaceholder": "Ange koden på 6 bokstäver...",
+    "join": "Gå med",
+    "createBtn": "Skapa",
+    "cancel": "Avbryt",
+    "noRooms": "Inga aktiva studierum. Skapa ett för att komma igång!",
+    "invalidCode": "Rummet hittades inte eller har gått ut.",
+    "joinError": "Det gick inte att gå med i rummet."
+  },
+  "studyRoom": {
+    "connected": "Live",
+    "disconnected": "Frånkopplad",
+    "participants": "i rummet",
+    "leave": "Lämna",
+    "empty": "Inga meddelanden än. Säg hej!",
+    "placeholder": "Skriv ett meddelande...",
+    "connectingPlaceholder": "Ansluter..."
+  },
+  "settings": {
+    "programmeSection": "Program / linje",
+    "gymnasietProgramme": "Gymnasieprogram",
+    "universityProgramme": "Universitetsprogram",
+    "changeProgramme": "Byt program"
+  },
+  "login": {
+    "title": "ANTON Skola",
+    "subtitle": "Logga in med ditt skolkonto",
+    "googleBtn": "Fortsätt med Google",
+    "microsoftBtn": "Fortsätt med Microsoft",
+    "orLocal": "eller logga in med användarnamn",
+    "username": "Användarnamn",
+    "usernamePlaceholder": "Ange ditt användarnamn",
+    "password": "Lösenord",
+    "passwordPlaceholder": "Ange ditt lösenord",
+    "signIn": "Logga in",
+    "failed": "Inloggningen misslyckades",
+    "oauthFailed": "Inloggningen misslyckades",
+    "oauthError": "Inloggningen misslyckades — det gick inte att lösa in autentiseringskoden.",
+    "backToWork": "Tillbaka till Arbetsläge",
+    "privacy": "Dina konversationer är privata och sparas lokalt på den här enheten."
   }
 }

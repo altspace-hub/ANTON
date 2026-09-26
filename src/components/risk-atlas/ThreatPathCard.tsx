@@ -131,6 +131,9 @@ export default function ThreatPathCard({ full, onChanged }: Props) {
               {drift && (
                 <div className="text-[10px] text-adv-gold">⚠ drift</div>
               )}
+              {calculatedAppetite && declaredAppetite && isMoreLenient(declaredAppetite, calculatedAppetite) && !appetite?.approved_by && (
+                <div className="text-[10px] text-adv-gold">counts as {APPETITE_META[calculatedAppetite].label} until approved</div>
+              )}
             </div>
           ) : <span className="text-adv-gray italic">—</span>}
         </ChainCell>
@@ -183,6 +186,12 @@ function bucketAppetite(residual: number): AppetitePosition {
   if (residual === 3) return 'boundary';
   if (residual === 4) return 'outside';
   return 'unacceptable';
+}
+
+const APPETITE_RANK: Record<AppetitePosition, number> = { within: 0, boundary: 1, outside: 2, unacceptable: 3 };
+/** Mirrors server/services/risk-atlas/atlas-appetite-position.ts: a lenient declaration counts only once approved. */
+function isMoreLenient(declared: AppetitePosition, band: AppetitePosition): boolean {
+  return APPETITE_RANK[declared] < APPETITE_RANK[band];
 }
 
 function ChainCell({ label, icon: Icon, count, children }: { label: string; icon: typeof GitBranch; count?: number; children: React.ReactNode }) {
@@ -312,6 +321,12 @@ function AppetiteForm({ atlasId, threatPathId, current, calculated, onSaved, onC
       <div className="text-[11px] font-medium text-adv-gold">Set appetite</div>
       {calculated && current?.appetite_position && current.appetite_position !== calculated && (
         <div className="text-[10px] text-adv-gold/80 italic">Calculator suggests {calculated}; your declared position is {current.appetite_position}.</div>
+      )}
+      {calculated && isMoreLenient(position, calculated) && (
+        <div className="text-[10px] text-adv-gold">
+          {position} is more lenient than the residual band ({calculated}). It counts in the company-wide position only once someone
+          approves the statement — accepting a risk above appetite is a signed decision. Until then this path counts as {calculated}.
+        </div>
       )}
       {error && <div className="text-[11px] text-adv-red flex items-center gap-1"><AlertCircle className="h-3 w-3" />{error}</div>}
       <div className="grid grid-cols-2 gap-2">

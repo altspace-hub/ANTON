@@ -38,6 +38,8 @@ import { completeText as codexEngineCompleteText, streamToResponse as codexEngin
 import type { StreamSink } from './stream-sink.js';
 import { streamMistral, type MistralStreamParams } from './adapters/mistralAdapter.js';
 import { streamOpenAI } from './adapters/openaiAdapter.js';
+import { isOpenAIReasoningModel, openaiReasoningEffort, claudeGeneration } from './thinking-map.js';
+import { isThinkingLevel } from './user-module-defaults.js';
 import { streamGemini } from './adapters/geminiAdapter.js';
 import { streamOllama, callOllama } from './adapters/ollamaAdapter.js';
 import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
@@ -45,6 +47,7 @@ import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
 import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
 import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
 import { MODEL_CAPABILITIES, getThinkingConfig, estimateCost } from '../config/model-capabilities.js';
+import { CLAUDE_LARGE, CLAUDE_MEDIUM, CLAUDE_SMALL } from '../config/claude-lineup.js';
 import { getEffectiveDefaultModel } from './default-model-store.js';
 import { enqueueAudit } from './audit-queue.js';
 import type { AuditEntry } from './auditLogger.js';
@@ -152,10 +155,11 @@ export interface ChatResult {
 
 /** Default tier-to-model mapping per provider */
 export const TIER_MAP: Record<string, Record<ModelTier, string>> = {
+  // The API-path lineup — one place to move when a model ships (claude-lineup.ts).
   anthropic: {
-    large: 'claude-opus-4-8',
-    medium: 'claude-sonnet-4-6',
-    small: 'claude-haiku-4-5-20251001',
+    large: CLAUDE_LARGE,
+    medium: CLAUDE_MEDIUM,
+    small: CLAUDE_SMALL,
   },
   mistral: {
     large: 'mistral-large-latest',
@@ -173,12 +177,12 @@ export const TIER_MAP: Record<string, Record<ModelTier, string>> = {
     small: 'gemini-2.0-flash',
   },
   // The subscription engine. `large` is overridden by the configured default
-  // (the user's own pick — sdk:claude-opus-5 today, sdk:claude-fable-5-1 if
+  // (the user's own pick — sdk:claude-opus-5-5 today, sdk:claude-fable-5-1 if
   // they choose it); medium and small stay on Sonnet 5 so the ~40 Haiku-class
   // utility calls (extraction, scoring, naming) are not promoted to Opus on
   // plan usage the moment the router learns about the engine.
   anthropic_sdk: {
-    large: 'sdk:claude-opus-5',
+    large: 'sdk:claude-opus-5-5',
     medium: 'sdk:claude-sonnet-5',
     small: 'sdk:claude-sonnet-5',
   },
@@ -233,9 +237,18 @@ export function resolveModel(tierOrModel?: string, tier?: ModelTier): string {
   if ((provider === 'ollama' || provider === 'openai_compatible' || provider === 'openai_codex') && def) {
     return def;
   }
-  // Subscription engine: the large tier is whatever the user set as default.
-  if (provider === 'anthropic_sdk' && t === 'large' && def) return def;
+  // The large tier is whatever the user set as default — on the subscription
+  // engine, and on the API when the default is a Claude id. Without the second
+  // half a Settings pick of Opus 4.8 ran large-tier work on the lineup's Opus.
+  if (t === 'large' && def && (provider === 'anthropic_sdk' || (provider === 'anthropic' && def.startsWith('claude-')))) return def;
   return TIER_MAP[provider]?.[t] || TIER_MAP.anthropic[t];
+}
+
+/** The tier a Claude family name implies; 'medium' for anything else. */
+function claudeFamilyTier(claudeModelId: string): ModelTier {
+  if (/^claude-(?:opus|fable|mythos)-/.test(claudeModelId)) return 'large';
+  if (/^claude-haiku-/.test(claudeModelId)) return 'small';
+  return 'medium';
 }
 
 /**
@@ -263,6 +276,7 @@ export function mapModelToProvider(claudeModelId: string): string {
   const claudeToTier: Record<string, ModelTier> = {
     'claude-fable-5-1': 'large',
     'claude-fable-5': 'large',
+    'claude-opus-5-5': 'large',
     'claude-opus-5': 'large',
     'claude-opus-4-8': 'large',
     'claude-opus-4-7': 'large',
@@ -270,10 +284,13 @@ export function mapModelToProvider(claudeModelId: string): string {
     'claude-sonnet-5': 'medium',
     'claude-sonnet-4-6': 'medium',
     'claude-sonnet-4-5-20250929': 'medium',
-    'claude-haiku-4-5-20251001': 'small',
+    // Haiku (4.5 today, 5.5 next) takes 'small' from claudeFamilyTier below.
   };
 
-  const tier = claudeToTier[claudeModelId] || 'medium';
+  // A Claude id not listed yet (Haiku 5.5, Sonnet 5.5 the day they ship) takes
+  // its family's tier — defaulting it to 'medium' would run a Haiku utility
+  // call on Sonnet, or an Opus run on Sonnet.
+  const tier = claudeToTier[claudeModelId] || claudeFamilyTier(claudeModelId);
   // Subscription engine: a large-tier Claude id follows the user's default.
   if (provider === 'anthropic_sdk' && tier === 'large' && def) return def;
   return TIER_MAP[provider]?.[tier] || claudeModelId;
@@ -392,6 +409,9 @@ export async function streamChat(
       temperature,
       maxTokens,
       seed: config.seed,
+      // Without it every reasoning model ran at the adapter's 'think' default,
+      // whatever level the run asked for.
+      thinkingLevel: isThinkingLevel(config.thinkingLevel) ? config.thinkingLevel : undefined,
     }, res);
     return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
   }
@@ -544,6 +564,50 @@ async function streamChatEngine(
   };
 }
 
+// ── Anthropic thinking ──
+
+/** max_tokens floor for a Claude 5 call that names no thinking level. */
+export const IMPLICIT_THINKING_MIN_TOKENS = 4096;
+
+/**
+ * Thinking parameters for an Anthropic API request, and the max_tokens to send.
+ *
+ * With a thinking level: the capability table's config. Without one, a Claude 5
+ * model still thinks — omitting the parameter runs adaptive thinking at the
+ * API's default effort ('medium' on Opus 5.5, 'high' on Opus 5), and Opus 5.5
+ * cannot turn it off. A no-level call meant "no thinking" on Opus 4.8, and its
+ * max_tokens was sized for the answer alone; so such a call gets effort 'low'
+ * and at least IMPLICIT_THINKING_MIN_TOKENS, or the thinking can use up a small
+ * budget and the answer comes back empty.
+ */
+export function anthropicThinkingParams(
+  modelId: string,
+  thinkingLevel: string | undefined,
+  maxTokens: number,
+): { params: Record<string, unknown>; maxTokens: number } {
+  const thinkingConfig = thinkingLevel ? getThinkingConfig(modelId, thinkingLevel) : null;
+  if (thinkingConfig && thinkingConfig.thinkingType === 'adaptive') {
+    return {
+      params: { thinking: { type: 'adaptive' }, output_config: { effort: thinkingConfig.effort || 'medium' } },
+      maxTokens: Math.max(thinkingConfig.maxTokens, maxTokens),
+    };
+  }
+  if (thinkingConfig && thinkingConfig.thinkingType === 'enabled' && thinkingConfig.budgetTokens) {
+    return {
+      params: { thinking: { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens } },
+      maxTokens: Math.max(thinkingConfig.maxTokens, maxTokens),
+    };
+  }
+  const generation = claudeGeneration(modelId);
+  if (!thinkingConfig && generation !== null && generation >= 5) {
+    return {
+      params: { output_config: { effort: 'low' } },
+      maxTokens: Math.max(maxTokens, IMPLICIT_THINKING_MIN_TOKENS),
+    };
+  }
+  return { params: {}, maxTokens: Math.max(thinkingConfig?.maxTokens || 0, maxTokens) };
+}
+
 // ── Anthropic streaming helper ──
 
 async function streamChatAnthropic(
@@ -557,24 +621,15 @@ async function streamChatAnthropic(
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
   const client = new Anthropic({ apiKey });
-  const thinkingConfig = config.thinkingLevel
-    ? getThinkingConfig(modelId, config.thinkingLevel)
-    : null;
+  const thinkingSetup = anthropicThinkingParams(modelId, config.thinkingLevel, maxTokens);
 
   const apiParams: Record<string, unknown> = {
     model: modelId,
-    max_tokens: Math.max(thinkingConfig?.maxTokens || 0, maxTokens),
+    max_tokens: thinkingSetup.maxTokens,
     system: config.system,
     messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+    ...thinkingSetup.params,
   };
-
-  // Add thinking params
-  if (thinkingConfig && thinkingConfig.thinkingType === 'adaptive') {
-    apiParams.thinking = { type: 'adaptive' };
-    apiParams.output_config = { effort: thinkingConfig.effort || 'medium' };
-  } else if (thinkingConfig && thinkingConfig.thinkingType === 'enabled' && thinkingConfig.budgetTokens) {
-    apiParams.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
-  }
 
   // Tools and thinking go together on the Messages API — adaptive thinking is
   // built for tool use, and budget thinking has taken tools since Claude 3.7.
@@ -885,23 +940,15 @@ async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
     const client = new Anthropic({ apiKey });
-    const thinkingConfig = config.thinkingLevel
-      ? getThinkingConfig(modelId, config.thinkingLevel)
-      : null;
+    const thinkingSetup = anthropicThinkingParams(modelId, config.thinkingLevel, maxTokens);
 
     const apiParams: Record<string, unknown> = {
       model: modelId,
-      max_tokens: thinkingConfig?.maxTokens || maxTokens,
+      max_tokens: thinkingSetup.maxTokens,
       system: config.system,
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
+      ...thinkingSetup.params,
     };
-
-    if (thinkingConfig && thinkingConfig.thinkingType === 'adaptive') {
-      apiParams.thinking = { type: 'adaptive' };
-      apiParams.output_config = { effort: thinkingConfig.effort || 'medium' };
-    } else if (thinkingConfig && thinkingConfig.thinkingType === 'enabled' && thinkingConfig.budgetTokens) {
-      apiParams.thinking = { type: 'enabled', budget_tokens: thinkingConfig.budgetTokens };
-    }
 
     // Forward tools — with thinking too; see streamChatAnthropic for why the
     // former exclusivity guard was wrong.
@@ -1028,6 +1075,12 @@ async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
 
+    // Reasoning models (o-series, GPT-5.x, GPT-6) take reasoning_effort +
+    // max_completion_tokens and reject temperature — the same split as the
+    // streaming adapter; this branch used to send temperature to all of them.
+    const sizing: Record<string, unknown> = isOpenAIReasoningModel(modelId)
+      ? { reasoning_effort: openaiReasoningEffort(isThinkingLevel(config.thinkingLevel) ? config.thinkingLevel : 'think', modelId), max_completion_tokens: maxTokens }
+      : { max_tokens: maxTokens, temperature: config.temperature ?? 0.5 };
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -1037,10 +1090,13 @@ async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
           { role: 'system', content: config.system },
           ...config.messages.map(m => ({ role: m.role, content: m.content })),
         ],
-        max_tokens: maxTokens,
-        temperature: config.temperature ?? 0.5,
+        ...sizing,
       }),
     });
+    if (!response.ok) {
+      // A 4xx used to come back as an empty answer (data.choices undefined).
+      throw new Error(`OpenAI API error: ${response.status} ${(await response.text()).slice(0, 300)}`);
+    }
 
     const data = await response.json();
     return {

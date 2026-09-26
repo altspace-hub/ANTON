@@ -31,6 +31,7 @@ import { getProviderFromModelId } from './model-adapter.js';
 import { enqueueAudit } from './audit-queue.js';
 import { MODEL_CAPABILITIES, estimateCost } from '../config/model-capabilities.js';
 import { capabilityModelId } from './engine-model-id.js';
+import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { checkAndRecordSpendGate, SPEND_GATE_STATE_KEY } from './orchestrator-spend-gate.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -897,7 +898,7 @@ ${atomSection}
 Current date: ${new Date().toISOString().substring(0, 10)}`;
 
   // Always use deep thinking for orchestrator briefings — higher quality, better reasoning
-  const isOpus = model === 'claude-opus-4-8';
+  const isOpus = model === CLAUDE_LARGE || model === 'claude-opus-4-8';
   const maxTokens = isOpus ? 16000 : (model === 'claude-sonnet-4-6') ? 48000 : 4000;
 
   let raw = '';
@@ -1311,7 +1312,7 @@ Keep plans specific and executable. Reference real ANTON modules and step patter
 export async function generateWorkflowPlan(
   proposal: OrchestratorProposal,
   anthropic: AnthropicSDK | null | undefined,
-  model: string = process.env.ORCHESTRATOR_BRIEFING_MODEL || 'claude-opus-4-8',
+  model: string = process.env.ORCHESTRATOR_BRIEFING_MODEL || CLAUDE_LARGE,
   thinkingEnabled = false
 ): Promise<string | null> {
   const userMsg = `Generate a complete workflow execution plan for this proposal:
@@ -1325,7 +1326,7 @@ Estimated effort: ${proposal.estimated_effort ?? 'unknown'}
 Produce a concrete, executable workflow plan using ANTON's existing step types.`;
 
   // Always use deep thinking for workflow plans — critical for execution quality
-  const isOpusPlan = model === 'claude-opus-4-8';
+  const isOpusPlan = model === CLAUDE_LARGE || model === 'claude-opus-4-8';
   const planMaxTokens = isOpusPlan ? 16000 : 48000;
 
   try {

@@ -28,6 +28,8 @@ import { createAppMailService, type MailProviderKind } from '../services/app-mai
 import { resolvePinnedModuleIds, resolveIntentChips, intentCategoryModuleIds } from '../services/app-module-pins.js';
 import type { ModuleDefinition } from '../../src/lib/types.js';
 import { safeError } from '../lib/error-response.js';
+import { CLAUDE_LARGE, CLAUDE_MEDIUM, CLAUDE_SMALL } from '../config/claude-lineup.js';
+import { MODEL_REGISTRY } from '../types/modelAdapter.js';
 // MODULES + AREAS are loaded at boot via dynamic import — the existing
 // pattern across app-gateway.ts. A static import drags in src/lib/constants.ts
 // which has hundreds of relative imports without .js extensions, tripping
@@ -1843,10 +1845,13 @@ export async function createAppGatewayRoutes(db: DatabaseAdapter, radarFetcher?:
       id: string; label: string; provider: string; tier: Tier; description: string;
     }> = [];
     if (process.env.ANTHROPIC_API_KEY) {
+      // The Claude lineup (claude-lineup.ts), labelled from the registry so a
+      // lineup move relabels the phone too.
+      const label = (id: string): string => MODEL_REGISTRY[id]?.displayName ?? id;
       out.push(
-        { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', provider: 'anthropic', tier: 'fast',     description: 'Fastest. Quick questions, drafts, summaries.' },
-        { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6', provider: 'anthropic', tier: 'balanced', description: 'Balanced. Day-to-day work, most modules.' },
-        { id: 'claude-opus-4-8',           label: 'Claude Opus 4.8',   provider: 'anthropic', tier: 'top',      description: 'Most capable. Long, hard reasoning.' },
+        { id: CLAUDE_SMALL,      label: label(CLAUDE_SMALL),      provider: 'anthropic', tier: 'fast',     description: 'Fastest. Quick questions, drafts, summaries.' },
+        { id: CLAUDE_MEDIUM,     label: label(CLAUDE_MEDIUM),     provider: 'anthropic', tier: 'balanced', description: 'Balanced. Day-to-day work, most modules.' },
+        { id: CLAUDE_LARGE,      label: label(CLAUDE_LARGE),      provider: 'anthropic', tier: 'top',      description: 'Most capable. Long, hard reasoning.' },
       );
     }
     if (process.env.OPENAI_API_KEY) {
