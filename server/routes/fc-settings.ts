@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import { encrypt, decrypt } from '../services/credential-vault.js';
+
+// Every route is admin-only in team mode. The config holds the node URL, the
+// wallet directory and the stub-mode switch (off = real payments), and the KYC
+// profile is the instance owner's decrypted identity data: one per instance,
+// not per user.
 
 // Fields that must be encrypted at rest (contain PII)
 const ENCRYPTED_FIELDS = [
@@ -14,28 +20,28 @@ export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Route
   const { createFCConnectionService } = await import('../services/fc-connection-service.js');
   const svc = await createFCConnectionService(db);
 
-  router.get('/futurechain/config', async (_req, res) => {
+  router.get('/futurechain/config', requireAdminOrSolo, async (_req, res) => {
     try {
       const config = await svc.getConfig();
       res.json(config);
     } catch (err) { res.status(500).json({ error: 'Failed to get FutureChain config' }); }
   });
 
-  router.put('/futurechain/config', async (req, res) => {
+  router.put('/futurechain/config', requireAdminOrSolo, async (req, res) => {
     try {
       const config = await svc.updateConfig(req.body);
       res.json(config);
     } catch (err) { res.status(500).json({ error: 'Failed to update FutureChain config' }); }
   });
 
-  router.post('/futurechain/health-check', async (_req, res) => {
+  router.post('/futurechain/health-check', requireAdminOrSolo, async (_req, res) => {
     try {
       const result = await svc.healthCheck();
       res.json(result);
     } catch (err) { res.status(500).json({ error: 'Failed to run health check' }); }
   });
 
-  router.get('/futurechain/status', async (_req, res) => {
+  router.get('/futurechain/status', requireAdminOrSolo, async (_req, res) => {
     try {
       const config = await svc.getConfig();
       const c = config as Record<string, unknown> | undefined;
@@ -51,7 +57,7 @@ export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Route
   });
 
   // ── KYC Profile ──────────────────────────────────────────────
-  router.get('/futurechain/kyc', async (_req, res) => {
+  router.get('/futurechain/kyc', requireAdminOrSolo, async (_req, res) => {
     try {
       const profile = await db.get('SELECT * FROM fc_kyc_profiles WHERE id = $1', 'default') as Record<string, unknown> | undefined;
       if (!profile) return res.json({});
@@ -65,7 +71,7 @@ export async function createFCSettingsRoutes(db: DatabaseAdapter): Promise<Route
     } catch (err) { res.status(500).json({ error: 'Failed to load KYC profile' }); }
   });
 
-  router.put('/futurechain/kyc', async (req, res) => {
+  router.put('/futurechain/kyc', requireAdminOrSolo, async (req, res) => {
     try {
       const fields = req.body as Record<string, unknown>;
       const allowedCols = [

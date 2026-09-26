@@ -3,6 +3,9 @@ import { fetchWithAuth } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { FileText, FileSpreadsheet, FileDown, File, Presentation, Share2, Check, Copy, RefreshCw, ChevronDown, Layout, Star } from 'lucide-react';
 import ExplainFor from './ExplainFor';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 interface BrandTemplate {
   id: string;
@@ -35,6 +38,10 @@ const formatConfig: Record<string, { icon: React.ComponentType<{ className?: str
 
 export default function ExportBar({ content, availableFormats, onExport, isExporting, sessionId, onReframe, moduleContext, entityId, moduleId }: ExportBarProps) {
   const { t } = useTranslation();
+  // Public demo: share links, the quality-rating log (/pmm) and Explain-For are
+  // outside a visitor's routes — Share stuck on "Sharing…" and the stars said
+  // "thank you" for a rating that was refused. Admins keep them.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const [shareState, setShareState] = useState<'idle' | 'loading' | 'copied'>('idle');
   const [qualityRating, setQualityRating] = useState<number | null>(null);
   const [qualitySubmitted, setQualitySubmitted] = useState(false);
@@ -177,7 +184,7 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
       )}
 
       {/* Share button — only shown when sessionId is provided */}
-      {sessionId && (
+      {sessionId && !demoLimited && (
         <button
           onClick={handleShare}
           disabled={shareState !== 'idle'}
@@ -220,7 +227,7 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
     </div>
 
     {/* EUAI-04: Output quality rating (post-market monitoring) */}
-    {sessionId && !qualitySubmitted && (
+    {sessionId && !qualitySubmitted && !demoLimited && (
       <div className="flex items-center gap-2 text-xs text-adv-gray">
         <Star className="h-3 w-3 flex-shrink-0" />
         <span>{t('export.rateQuality', 'Rate output quality:')}</span>
@@ -263,11 +270,13 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
     )}
 
     {/* Explain-It-Different: trigger button + slide-out panel (renders below the button row) */}
-    <ExplainFor
-      content={content}
-      moduleContext={moduleContext}
-      entityId={entityId}
-    />
+    {!demoLimited && (
+      <ExplainFor
+        content={content}
+        moduleContext={moduleContext}
+        entityId={entityId}
+      />
+    )}
     </div>
   );
 }

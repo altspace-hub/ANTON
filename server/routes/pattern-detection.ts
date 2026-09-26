@@ -3,19 +3,26 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { createPatternDetection } from '../services/pattern-detection.js';
 import { createPatternScheduler } from '../services/pattern-scheduler.js';
 import { safeError } from '../lib/error-response.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 function errMsg(err: unknown): string {
   // Delegates to the shared safeError — redacts in production.
   return safeError(err);
 }
 
+/**
+ * Every route is admin-only in team mode. The detectors read every user's
+ * knowledge atoms and workflow outputs, so a detected pattern names entities
+ * from other people's work; the scheduler and its config are instance-wide
+ * switches. Solo mode is unchanged.
+ */
 export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   const router = Router();
   const patternDetection = await createPatternDetection(db);
   const scheduler = await createPatternScheduler(db);
 
   // POST /api/patterns/detect — run all detectors
-  router.post('/patterns/detect', async (req, res) => {
+  router.post('/patterns/detect', requireAdminOrSolo, async (req, res) => {
     try {
       const result = await patternDetection.runAllDetectors();
       res.json({
@@ -33,7 +40,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // GET /api/patterns — list patterns with optional filters
-  router.get('/patterns', async (req, res) => {
+  router.get('/patterns', requireAdminOrSolo, async (req, res) => {
     try {
       const filters = {
         type: req.query.type as string | undefined,
@@ -61,9 +68,9 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // PUT /api/patterns/:id/status — update pattern status
-  router.put('/patterns/:id/status', async (req, res) => {
+  router.put('/patterns/:id/status', requireAdminOrSolo, async (req, res) => {
     try {
-      const { id } = req.params;
+      const id = String(req.params.id);
       const { status, resolvedBy, notes } = req.body;
 
       if (!status) {
@@ -97,7 +104,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // GET /api/patterns/detector-state — get detector state
-  router.get('/patterns/detector-state', async (req, res) => {
+  router.get('/patterns/detector-state', requireAdminOrSolo, async (req, res) => {
     try {
       const state = await patternDetection.getDetectorState();
       res.json({
@@ -120,7 +127,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/patterns/detect/:type — run specific detector
-  router.post('/patterns/detect/:type', async (req, res) => {
+  router.post('/patterns/detect/:type', requireAdminOrSolo, async (req, res) => {
     try {
       const { type } = req.params;
       let patterns: any[] = [];
@@ -166,7 +173,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   // ===== SCHEDULER ENDPOINTS =====
 
   // GET /api/patterns/scheduler/status — get scheduler status
-  router.get('/patterns/scheduler/status', async (req, res) => {
+  router.get('/patterns/scheduler/status', requireAdminOrSolo, async (req, res) => {
     try {
       const status = await scheduler.getStatus();
       res.json({ success: true, ...status });
@@ -177,7 +184,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/patterns/scheduler/start — start scheduler
-  router.post('/patterns/scheduler/start', async (req, res) => {
+  router.post('/patterns/scheduler/start', requireAdminOrSolo, async (req, res) => {
     try {
       await scheduler.start();
       const status = await scheduler.getStatus();
@@ -189,7 +196,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/patterns/scheduler/stop — stop scheduler
-  router.post('/patterns/scheduler/stop', async (req, res) => {
+  router.post('/patterns/scheduler/stop', requireAdminOrSolo, async (req, res) => {
     try {
       await scheduler.stop();
       const status = await scheduler.getStatus();
@@ -201,7 +208,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // PUT /api/patterns/scheduler/config — update scheduler config
-  router.put('/patterns/scheduler/config', async (req, res) => {
+  router.put('/patterns/scheduler/config', requireAdminOrSolo, async (req, res) => {
     try {
       const { enabled, cronExpression, detectorTypes } = req.body;
       await scheduler.updateConfig({ enabled, cronExpression, detectorTypes });
@@ -214,7 +221,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // POST /api/patterns/scheduler/run-now — run detection manually
-  router.post('/patterns/scheduler/run-now', async (req, res) => {
+  router.post('/patterns/scheduler/run-now', requireAdminOrSolo, async (req, res) => {
     try {
       const result = await scheduler.runManual();
       res.json(result);
@@ -225,7 +232,7 @@ export async function createPatternDetectionRoutes(db: DatabaseAdapter) {
   });
 
   // GET /api/patterns/scheduler/history — get recent runs
-  router.get('/patterns/scheduler/history', async (req, res) => {
+  router.get('/patterns/scheduler/history', requireAdminOrSolo, async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const runs = await scheduler.getRecentRuns(limit);

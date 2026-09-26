@@ -44,8 +44,9 @@ import { streamGemini } from './adapters/geminiAdapter.js';
 import { streamOllama, callOllama } from './adapters/ollamaAdapter.js';
 import { streamAzureOpenAI } from './adapters/azureOpenaiAdapter.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
-import { streamOpenAICompatible, callOpenAICompatible } from './adapters/openaiCompatibleAdapter.js';
-import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
+import { streamOpenAICompatible, callOpenAICompatible, type OpenAICompatibleStreamParams } from './adapters/openaiCompatibleAdapter.js';
+import { resolveCompatModel } from './compat-endpoint.js';
+import { assertSpendAllowed } from './llm-spend.js';
 import { MODEL_CAPABILITIES, getThinkingConfig, estimateCost } from '../config/model-capabilities.js';
 import { CLAUDE_LARGE, CLAUDE_MEDIUM, CLAUDE_SMALL } from '../config/claude-lineup.js';
 import { getEffectiveDefaultModel } from './default-model-store.js';
@@ -62,21 +63,32 @@ import {
 } from './adapters/provider-extras.js';
 
 // ── OpenAI-compatible (compat:<slug>:<model>) endpoint resolution ──
-async function resolveCompatConfig(
+/**
+ * The adapter params every compat call shares, from the one resolver
+ * (compat-endpoint.ts): it refuses a model the endpoint does not allow, and
+ * falls back on the database registered at boot when the call site passed
+ * none — about sixty callChat / streamChat sites do not, and all of them threw
+ * on a compat default before.
+ */
+async function compatCallParams(
   modelId: string,
-  db?: import('../db/database.js').DatabaseAdapter,
-): Promise<{ baseUrl: string; apiKey?: string; extraHeaders?: Record<string, string>; model: string }> {
-  if (!db) throw new Error('Database adapter required to resolve a compat: model endpoint');
-  const slug = modelId.split(':')[1];
-  if (!slug) throw new Error(`Invalid compat model id: ${modelId} (expected compat:<slug>:<model>)`);
-  const endpoint = await resolveCustomEndpoint(db, slug);
-  if (!endpoint) {
-    throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
-  }
-  const parts = modelId.split(':');
-  const model = parts.slice(2).join(':');
-  if (!model) throw new Error(`Invalid compat model id: ${modelId} (expected compat:<slug>:<model>)`);
-  return { baseUrl: endpoint.baseUrl, apiKey: endpoint.apiKey, extraHeaders: endpoint.extraHeaders, model };
+  config: StreamChatConfig,
+): Promise<Omit<OpenAICompatibleStreamParams, 'system' | 'messages'>> {
+  const compat = await resolveCompatModel(modelId, config.db);
+  return {
+    baseUrl: compat.endpoint.baseUrl,
+    apiKey: compat.endpoint.apiKey,
+    extraHeaders: compat.endpoint.extraHeaders,
+    extraBody: compat.endpoint.extraBody,
+    modelMeta: compat.meta,
+    maxOutputTokens: compat.endpoint.maxOutputTokens,
+    pricing: compat.pricing,
+    model: compat.model,
+    thinkingLevel: isThinkingLevel(config.thinkingLevel) ? config.thinkingLevel : undefined,
+    jsonMode: config.jsonMode,
+    tools: config.tools,
+    spend: { modelId, db: config.db, purpose: config.purpose },
+  };
 }
 
 // ── Types ──────────────────────────────────────────────────────
@@ -149,6 +161,22 @@ export interface ChatResult {
    * providers that do not report one; never a copy of the id that was sent.
    */
   modelServed?: string;
+  /** USD for the call where it is known — a compat endpoint's reported cost
+   *  or its admin prices. Undefined elsewhere. */
+  costUsd?: number;
+  /** Reasoning tokens (part of outputTokens), where the provider reports them. */
+  reasoningTokens?: number;
+  /**
+   * Why the model stopped, where the provider says ('length' = cut off at the
+   * output limit). Set for compat endpoints.
+   */
+  finishReason?: string | null;
+  /**
+   * Set when the answer is incomplete (a compat answer cut off at the output
+   * limit). A caller that saves or shows prose should pass it on; streamChat
+   * also writes it to the stream as a `warning` frame.
+   */
+  warning?: string;
 }
 
 // ── Model Tier Resolution ──────────────────────────────────────
@@ -373,6 +401,8 @@ export async function streamChat(
   } catch {
     provider = 'anthropic';
   }
+  // Priced calls stop at the daily spend caps (llm-spend.ts) before dispatch.
+  if (provider === 'openai_compatible') await assertSpendAllowed({ db: config.db });
 
   const temperature = config.temperature ?? 0.5;
   const maxTokens = config.maxTokens ?? 8192;
@@ -480,23 +510,34 @@ export async function streamChat(
 
   // ── OpenAI-compatible (compat:<slug>:<model>) ──
   if (provider === 'openai_compatible') {
-    const compat = await resolveCompatConfig(modelId, config.db);
     const result = await streamOpenAICompatible({
-      baseUrl: compat.baseUrl,
-      apiKey: compat.apiKey,
-      extraHeaders: compat.extraHeaders,
-      model: compat.model,
+      ...(await compatCallParams(modelId, config)),
       system: config.system,
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature,
       maxTokens,
-      jsonMode: config.jsonMode,
-      tools: config.tools,
     }, res);
-    return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+    // A cut-off answer is said so on the stream — the frame engagements and
+    // the task agent already write — instead of reading as complete.
+    if (result.warning) res.write(`data: ${JSON.stringify({ type: 'warning', code: 'output_truncated', message: result.warning })}\n\n`);
+    return compatChatResult(result);
   }
 
   throw new Error(`Unsupported provider: ${provider}`);
+}
+
+/** A compat reply as a ChatResult — its reasoning, cost, reasoning tokens, finish reason and truncation warning kept. */
+function compatChatResult(result: Awaited<ReturnType<typeof callOpenAICompatible>>): ChatResult {
+  return {
+    text: result.text,
+    thinking: result.thinking,
+    inputTokens: result.inputTokens,
+    outputTokens: result.outputTokens,
+    ...(result.costUsd !== null ? { costUsd: result.costUsd } : {}),
+    ...(result.reasoningTokens ? { reasoningTokens: result.reasoningTokens } : {}),
+    finishReason: result.finishReason,
+    ...(result.warning ? { warning: result.warning } : {}),
+  };
 }
 
 // ── Subscription-engine streaming helper ──
@@ -839,6 +880,8 @@ export interface UtilityAuditInput {
   outputTokens: number;
   cacheReadTokens?: number;
   cacheCreationTokens?: number;
+  /** A cost the call itself reported (a compat endpoint's usage.cost / admin prices). */
+  costUsd?: number;
   status: 'success' | 'error';
 }
 
@@ -859,7 +902,9 @@ export function buildUtilityAuditEntry(input: UtilityAuditInput): AuditEntry {
   const caps = isEngine ? undefined : MODEL_CAPABILITIES[bareModel];
   const cacheRead = input.cacheReadTokens ?? 0;
   const cacheCreate = input.cacheCreationTokens ?? 0;
-  const estimatedCostUsd = caps
+  const estimatedCostUsd = typeof input.costUsd === 'number' && Number.isFinite(input.costUsd)
+    ? input.costUsd
+    : caps
     ? estimateCost(bareModel, input.inputTokens + cacheRead + cacheCreate, input.outputTokens, cacheRead)
       + (cacheCreate / 1_000_000) * caps.pricing.inputPerMillion * 0.25
     : input.provider === 'ollama' ? 0 : undefined;
@@ -910,6 +955,7 @@ export async function callChat(config: StreamChatConfig): Promise<ChatResult> {
       outputTokens: usage.outputTokens || 0,
       cacheReadTokens: usage.cacheReadTokens || 0,
       cacheCreationTokens: usage.cacheCreationTokens || 0,
+      ...(typeof usage.costUsd === 'number' ? { costUsd: usage.costUsd } : {}),
       status,
     }));
   };
@@ -931,6 +977,8 @@ async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
   } catch {
     provider = 'anthropic';
   }
+  // Priced calls stop at the daily spend caps (llm-spend.ts) before dispatch.
+  if (provider === 'openai_compatible') await assertSpendAllowed({ db: config.db });
 
   const maxTokens = config.maxTokens ?? 8192;
 
@@ -1168,20 +1216,14 @@ async function dispatchCallChat(config: StreamChatConfig): Promise<ChatResult> {
 
   // ── OpenAI-compatible (non-streaming) ──
   if (provider === 'openai_compatible') {
-    const compat = await resolveCompatConfig(modelId, config.db);
     const result = await callOpenAICompatible({
-      baseUrl: compat.baseUrl,
-      apiKey: compat.apiKey,
-      extraHeaders: compat.extraHeaders,
-      model: compat.model,
+      ...(await compatCallParams(modelId, config)),
       system: config.system,
       messages: config.messages.map(m => ({ role: m.role, content: m.content })),
       temperature: config.temperature,
       maxTokens,
-      jsonMode: config.jsonMode,
-      tools: config.tools,
     });
-    return { text: result.text, thinking: '', inputTokens: result.inputTokens, outputTokens: result.outputTokens };
+    return compatChatResult(result);
   }
 
   // ── Subscription execution engines (non-streaming) ──

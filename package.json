@@ -39,6 +39,7 @@
     "db:init": "tsx server/db/init-unified.ts",
     "db:init:pg": "tsx scripts/db-init-pg.ts",
     "db:migrate:pg": "tsx scripts/db-migrate-pg.ts",
+    "eval:openrouter": "tsx scripts/eval/openrouter-eval.ts",
     "atom-ab:report": "tsx scripts/atom-ab-report.ts",
     "check:bundle-drift": "node scripts/check-bundle-drift.mjs",
     "check:app-drift": "node scripts/check-app-drift.mjs",

@@ -1855,7 +1855,7 @@ function GapAssessmentWizardInner() {
 
             {/* ── Knowledge Sources (RAG, Folders, Web Search) ───────── */}
             <div className="rounded-xl border border-border bg-adv-card p-4">
-              <KnowledgeSourcePanel config={knowledgeSources} onChange={setKnowledgeSources} />
+              <KnowledgeSourcePanel config={knowledgeSources} onChange={setKnowledgeSources} model={contextConfig.modelTier as ModelId} />
             </div>
 
             {/* Evidence summary */}

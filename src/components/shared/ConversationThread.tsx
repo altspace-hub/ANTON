@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message } from '@/lib/types';
-import { User, Bot, Brain, Pencil, BookOpen, Layers } from 'lucide-react';
+import { User, Bot, Brain, Pencil, BookOpen, Layers, Info } from 'lucide-react';
 import { useStreamStore } from '@/stores/useStreamStore';
 import QualityIndicatorBar from '@/components/shared/QualityIndicatorBar';
 import MessageWithThinking from '@/components/shared/MessageWithThinking';
@@ -129,6 +129,23 @@ function CompactionIndicator() {
   );
 }
 
+// ── Run notices — what this run did not do on this model ──
+
+function StreamNotices() {
+  const notices = useStreamStore((s) => s.streamNotices);
+  if (notices.length === 0) return null;
+  return (
+    <div role="status" className="space-y-1 rounded-lg border border-adv-gold/30 bg-adv-gold/5 px-3 py-2">
+      {notices.map((n) => (
+        <div key={n.code} className="flex items-start gap-2">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-adv-gold" aria-hidden="true" />
+          <span className="text-sm text-adv-off-white">{n.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ──
 
 interface ConversationThreadProps {
@@ -235,6 +252,9 @@ export default function ConversationThread({
 
       {/* Compaction indicator */}
       <CompactionIndicator />
+
+      {/* What this run did not do on this model (web search, a chain, a cut-off answer) */}
+      <StreamNotices />
 
       {/* Streaming indicator */}
       {isStreaming && (

@@ -726,8 +726,8 @@ export async function importAntonFile(
       `INSERT INTO custom_modules (
         id, name, short_name, description, icon, area,
         system_prompt, config,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        created_at, updated_at, user_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ,
       moduleId,
       manifest.meta.name,
@@ -738,7 +738,10 @@ export async function importAntonFile(
       systemPrompt,
       configBlob,
       new Date().toISOString(),
-      new Date().toISOString()
+      new Date().toISOString(),
+      // The importer owns what they import (migration 290): in team mode a module
+      // with no owner is admin-only, so it would vanish from its importer's list.
+      userId ?? null,
     );
 
     console.log(

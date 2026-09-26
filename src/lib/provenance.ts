@@ -97,10 +97,11 @@ export function engineLabel(engine: string | null | undefined): string {
   }
 }
 
-export type CostBasis = 'list' | 'free' | 'plan' | 'unknown';
+/** 'reported': the amount the AI provider itself charged (e.g. OpenRouter's usage.cost). */
+export type CostBasis = 'list' | 'free' | 'plan' | 'unknown' | 'reported';
 
 export function normalizeCostBasis(v: unknown): CostBasis | null {
-  return v === 'list' || v === 'free' || v === 'plan' || v === 'unknown' ? v : null;
+  return v === 'list' || v === 'free' || v === 'plan' || v === 'unknown' || v === 'reported' ? v : null;
 }
 
 /**
@@ -114,6 +115,8 @@ export function costLabel(costBasis: CostBasis | null, usd: number | null | unde
     case 'unknown': return 'Unknown pricing';
     case 'list':
       return typeof usd === 'number' && Number.isFinite(usd) ? `$${usd.toFixed(4)} (list price)` : 'List price (amount not recorded)';
+    case 'reported':
+      return typeof usd === 'number' && Number.isFinite(usd) ? `$${usd.toFixed(4)} (charged by the AI provider)` : 'Charged by the AI provider (amount not recorded)';
     default:
       return typeof usd === 'number' && Number.isFinite(usd) && usd > 0 ? `$${usd.toFixed(4)}` : 'Not recorded';
   }

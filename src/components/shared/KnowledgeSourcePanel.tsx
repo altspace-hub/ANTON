@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { Brain, Link, FolderOpen, Combine, ChevronDown, ChevronRight, Globe, Plus, X, Search, RefreshCw, Loader2, Database, CheckCircle2, Package, ArrowRight, Zap } from 'lucide-react';
-import type { KnowledgeSourceConfig, RagIndexedFolder, RagCollection, KnowledgeLibraryEntry } from '@/lib/types';
+import type { KnowledgeSourceConfig, RagIndexedFolder, RagCollection, KnowledgeLibraryEntry, ModelId } from '@/lib/types';
 import { fetchRagFolders, indexRagFolder, fetchRagCollections } from '@/lib/api';
+import { modelShortName, webSearchUnavailable } from '@/lib/compat-model-policy';
+import { demoRestricted } from '@/lib/demo-config';
+import { useConfigStore } from '@/stores/useConfigStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
 import HelpTooltip from './HelpTooltip';
 import { RAGSearchPanel } from './RAGSearchPanel';
 
@@ -17,9 +22,22 @@ const RAG_FOLDER_MODE_ENABLED = import.meta.env.VITE_RAG_FOLDER_MODE === 'true';
 interface KnowledgeSourcePanelProps {
   config: KnowledgeSourceConfig;
   onChange: (config: KnowledgeSourceConfig) => void;
+  /** The model the run will use. Defaults to the session's model (the Work
+   *  and prompt pages); a page with its own model picker passes that one. */
+  model?: ModelId;
 }
 
-function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
+function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelProps) {
+  const sessionModel = useConfigStore((s) => s.model);
+  const runModel = model ?? sessionModel;
+  // ANTON's web search is Claude's tool: a compat model gets none, so the box
+  // is shown off and locked (the saved choice is kept for a Claude model).
+  const webSearchOff = webSearchUnavailable(runModel);
+  // Public demo: a visitor keeps the model's own knowledge and online links
+  // (fetched by the server during the run). Local folders, combined mode, the
+  // collections (RAG) and the knowledge packs are outside the demo's routes
+  // and would only answer 404. Admins keep them all.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const [urlInput, setUrlInput] = useState('');
   const [folderInput, setFolderInput] = useState('');
   const [libraryEntries, setLibraryEntries] = useState<KnowledgeLibraryEntry[]>([]);
@@ -28,6 +46,8 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
   const update = (path: string, value: unknown) => {
     const newConfig = JSON.parse(JSON.stringify(config)) as KnowledgeSourceConfig;
     const parts = path.split('.');
+    // The paths are this component's own, but a key that reaches the prototype is never followed.
+    if (parts.some((p) => p === '__proto__' || p === 'constructor' || p === 'prototype')) return;
     let obj: Record<string, unknown> = newConfig as unknown as Record<string, unknown>;
     for (let i = 0; i < parts.length - 1; i++) {
       obj = obj[parts[i]] as Record<string, unknown>;
@@ -61,7 +81,9 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         <span className="text-sm font-medium text-adv-off-white">Knowledge Sources</span>
         <HelpTooltip
           wide
-          text={"Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data + optional live web search for the latest regulatory publications.\n• Online links — paste URLs to specific regulations; the model reads them directly.\n• Local folders — point to folders on your computer containing client documents, regulation texts, or policy files.\n• Combined mode — use local documents alongside the model's knowledge. Best for gap analysis: compare client docs against regulatory requirements.\n\nYou can enable multiple sources at once. Token usage is shown below."}
+          text={demoLimited
+            ? "Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data (+ live web search on Claude models).\n• Online links — paste URLs to specific regulations; the model reads them directly.\n\nYou can enable both at once."
+            : "Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data + optional live web search for the latest regulatory publications.\n• Online links — paste URLs to specific regulations; the model reads them directly.\n• Local folders — point to folders on your computer containing client documents, regulation texts, or policy files.\n• Combined mode — use local documents alongside the model's knowledge. Best for gap analysis: compare client docs against regulatory requirements.\n\nYou can enable multiple sources at once. Token usage is shown below."}
         />
       </div>
 
@@ -73,16 +95,23 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         enabled={claudeKnowledge.enabled}
         onToggle={(v) => update('modes.claudeKnowledge.enabled', v)}
       >
-        <label className="flex items-center gap-2 text-xs text-adv-gray">
+        <label className={`flex items-center gap-2 text-xs text-adv-gray ${webSearchOff ? 'cursor-not-allowed opacity-60' : ''}`}>
           <input
             type="checkbox"
-            checked={claudeKnowledge.webSearchEnabled}
+            checked={claudeKnowledge.webSearchEnabled && !webSearchOff}
+            disabled={webSearchOff}
             onChange={(e) => update('modes.claudeKnowledge.webSearchEnabled', e.target.checked)}
             className="rounded border-adv-gray-med accent-adv-teal"
           />
           <Globe className="h-3 w-3" />
           Enable web search (the model searches the internet for latest publications)
         </label>
+        {webSearchOff && (
+          <p className="mt-1 text-xs text-adv-gray">
+            Web search runs on Claude models only, so it is off for {modelShortName(runModel)}. To give the model a
+            source, add its link under Online Regulation / Document Links.
+          </p>
+        )}
         <div className="mt-2">
           <label className="text-[11px] text-adv-gray">Focus area (optional):</label>
           <input
@@ -208,6 +237,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         icon={<FolderOpen className="h-4 w-4" />}
         title="Local Folders"
         description="Point to folders on your computer containing regulation texts, client documents, or reference materials."
+        hidden={demoLimited}
         enabled={localFolder.enabled}
         onToggle={(v) => update('modes.localFolder.enabled', v)}
       >
@@ -345,6 +375,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         icon={<Combine className="h-4 w-4" />}
         title="Combined: Search + Local Documents"
         description="The model uses its knowledge AND your local documents. Best for comparing client docs against regulations."
+        hidden={demoLimited}
         enabled={combinedMode.enabled}
         onToggle={(v) => update('modes.combinedMode.enabled', v)}
       >
@@ -374,7 +405,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
       </SourceCard>
 
       {/* Mode 5a: Indexed Knowledge Base (RAG) - Folder-based — flag-gated, see RAG_FOLDER_MODE_ENABLED */}
-      {!RAG_FOLDER_MODE_ENABLED && (
+      {!RAG_FOLDER_MODE_ENABLED && !demoLimited && (
         <div className="rounded-lg border border-border bg-adv-card px-3 py-2.5 opacity-70" aria-disabled="true">
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-adv-gray" />
@@ -391,6 +422,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         icon={<Search className="h-4 w-4" />}
         title="Indexed Knowledge Base (Folders)"
         description="Keyword (BM25) retrieval across your indexed document library. Retrieves the most relevant passages — not whole documents."
+        hidden={demoLimited}
         enabled={config.ragMode?.enabled ?? false}
         onToggle={(v) =>
           onChange({
@@ -451,6 +483,7 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         icon={<Database className="h-4 w-4" />}
         title="Knowledge Collections (RAG)"
         description="Retrieves the most relevant passages from your collections during the run — local vector search fused with keyword matching. Each run reports the method actually used (vector, hybrid or keyword)."
+        hidden={demoLimited}
         enabled={config.ragSearch?.enabled ?? false}
         onToggle={(v) =>
           onChange({
@@ -498,8 +531,8 @@ function KnowledgeSourcePanel({ config, onChange }: KnowledgeSourcePanelProps) {
         />
       </SourceCard>
 
-      {/* Mode 6: Regulatory Knowledge Packs */}
-      <RegulatoryPacksCard />
+      {/* Mode 6: Regulatory Knowledge Packs — activating one is an instance-wide admin action */}
+      {!demoLimited && <RegulatoryPacksCard />}
     </div>
   );
 }
@@ -848,6 +881,7 @@ function SourceCard({
   onToggle,
   children,
   badge,
+  hidden = false,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -856,8 +890,11 @@ function SourceCard({
   onToggle: (v: boolean) => void;
   children: React.ReactNode;
   badge?: string;
+  /** Not offered to this person (a demo visitor); its children are never mounted. */
+  hidden?: boolean;
 }) {
   const [expanded, setExpanded] = useState(enabled);
+  if (hidden) return null;
 
   return (
     <div

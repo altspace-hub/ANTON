@@ -239,7 +239,7 @@ export default function ExplainFor({ content, moduleContext, entityId, onExplain
           <div className="absolute bottom-full left-0 mb-1 z-50 min-w-52 rounded-lg border border-border bg-adv-card shadow-xl">
             <div className="px-3 py-2 border-b border-border">
               <p className="text-xs font-medium text-adv-gray">Choose audience</p>
-              <p className="text-xs text-adv-gray mt-0.5">Claude will rewrite the output for them</p>
+              <p className="text-xs text-adv-gray mt-0.5">ANTON will rewrite the output for them</p>
             </div>
             <div className="py-1">
               {AUDIENCES.map((audience) => (

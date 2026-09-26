@@ -394,6 +394,9 @@ export type StreamEvent =
   | { type: 'phase_end'; phaseIndex: number; phaseName: string; durationMs: number; confidenceScore: number | null }
   | { type: 'revelation_chain_id'; chainId: string }
   | { type: 'compaction'; message: string }
+  /** Something the run did not do, or did differently, on this model — e.g. web search
+   *  or a revelation chain on a non-Claude model, or an answer cut off at the length limit. */
+  | { type: 'notice'; code: string; message: string }
   | { type: 'context_used'; context: ContextUsed }
   | { type: 'source_fetched'; source: WebSourceRecord };
 

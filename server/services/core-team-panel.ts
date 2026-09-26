@@ -43,6 +43,7 @@ import {
   type DissentExtractionResult,
 } from './council-dissent.js';
 import { recordParseOutcome } from './parse-telemetry.js';
+import { extractJsonReply, stripReasoning } from './coding-workspace.js';
 import type { DatabaseAdapter } from '../db/database.js';
 
 // ── Roles ────────────────────────────────────────────────────────────────
@@ -289,18 +290,10 @@ ${lines.join('\n\n')}`;
 
 // ── Tolerant parsing (FORK of council-dissent.parseDissentLedger) ──────────
 
-function extractJsonBlock(text: string): string | null {
-  // Prefer the LAST fenced json block (models sometimes think out loud first).
-  const re = /```json\s*\n([\s\S]*?)\n```/g;
-  let match: RegExpExecArray | null;
-  let last: string | null = null;
-  while ((match = re.exec(text)) !== null) last = match[1];
-  if (last) return last.trim();
-  const firstBrace = text.indexOf('{');
-  if (firstBrace < 0) return null;
-  const lastBrace = text.lastIndexOf('}');
-  if (lastBrace < firstBrace) return null;
-  return text.slice(firstBrace, lastBrace + 1);
+/** A panel reply's JSON: an object carrying an `experts` array. */
+function isPanelShaped(v: unknown): boolean {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+    && Array.isArray((v as Record<string, unknown>).experts);
 }
 
 function asTrimmedString(v: unknown, maxLen: number): string | null {
@@ -371,19 +364,11 @@ export function parsePanelVerdict(
   synthesis: string | null;
   error?: string;
 } | null {
-  const json = extractJsonBlock(text);
-  if (!json) return null;
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(json);
-  } catch {
-    return null;
-  }
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-  const obj = parsed as Record<string, unknown>;
-
-  if (!Array.isArray(obj.experts)) return null;
+  // Reasoning stripped, fenced blocks last-first, then balanced braces: the
+  // first candidate shaped like a panel reply wins (extractJsonReply).
+  const reply = extractJsonReply(text, isPanelShaped);
+  if (reply === null || !isPanelShaped(reply.value)) return null;
+  const obj = reply.value as Record<string, unknown> & { experts: unknown[] };
 
   const mandatory = new Set(GATE_MANDATORY_ROLES[gate]);
   const experts: ExpertReview[] = [];
@@ -456,7 +441,12 @@ export function computeRollup(
 
 // ── Live run ───────────────────────────────────────────────────────────────
 
-async function defaultCallExpert(args: { model: string; system: string; user: string }): Promise<string> {
+// `db` reaches callChat so a compat:<slug>:<model> id can resolve its endpoint;
+// without it every OpenAI-compatible model (OpenRouter) threw before the call.
+async function defaultCallExpert(
+  db: DatabaseAdapter,
+  args: { model: string; system: string; user: string },
+): Promise<string> {
   const chat = await Promise.race([
     callChat({
       model: args.model,
@@ -465,6 +455,7 @@ async function defaultCallExpert(args: { model: string; system: string; user: st
       maxTokens: EXPERT_MAX_TOKENS,
       temperature: 0.4, // a little spread to keep the seven voices distinct
       jsonMode: true,
+      db,
     }),
     new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error(`Panel call timed out after ${PANEL_TIMEOUT_MS}ms`)), PANEL_TIMEOUT_MS),
@@ -473,7 +464,10 @@ async function defaultCallExpert(args: { model: string; system: string; user: st
   return chat.text ?? '';
 }
 
-async function defaultCallChair(args: { model: string; system: string; user: string }): Promise<string> {
+async function defaultCallChair(
+  db: DatabaseAdapter,
+  args: { model: string; system: string; user: string },
+): Promise<string> {
   const chat = await Promise.race([
     callChat({
       model: args.model,
@@ -481,6 +475,7 @@ async function defaultCallChair(args: { model: string; system: string; user: str
       messages: [{ role: 'user', content: args.user }],
       maxTokens: CHAIR_MAX_TOKENS,
       temperature: 0.2,
+      db,
     }),
     new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error(`Chair call timed out after ${PANEL_TIMEOUT_MS}ms`)), PANEL_TIMEOUT_MS),
@@ -514,7 +509,7 @@ export async function runCoreTeamPanel(
   const mode: PanelMode = opts.mode ?? 'fast';
 
   const expertModel = resolveCodingModel('expert', { override: opts.expertModelOverride ?? undefined });
-  const callExpert = opts.callExpert ?? defaultCallExpert;
+  const callExpert = opts.callExpert ?? ((a: { model: string; system: string; user: string }) => defaultCallExpert(db, a));
 
   const system = buildPanelSystemPrompt(gate);
   const user = buildPanelUserPrompt(gate, opts.artifact);
@@ -598,14 +593,14 @@ export async function runCoreTeamPanel(
   } else if (mode === 'thorough') {
     // A separate orchestrator(Large) chair-synthesis pass (use for FINISH).
     chairModel = resolveCodingModel('orchestrator');
-    const callChair = opts.callChair ?? defaultCallChair;
+    const callChair = opts.callChair ?? ((a: { model: string; system: string; user: string }) => defaultCallChair(db, a));
     try {
       const chairText = await callChair({
         model: chairModel,
         system: 'You are the chair of ANTON Studio\'s core-team panel. You synthesise the seven experts\' verdicts honestly and never invent objections they did not raise.',
         user: buildChairUserPrompt(gate, verdict),
       });
-      const synthesis = asTrimmedString(chairText, MAX_SYNTHESIS_CHARS);
+      const synthesis = asTrimmedString(stripReasoning(chairText), MAX_SYNTHESIS_CHARS);
       if (synthesis) verdict.synthesis = synthesis;
     } catch {
       // Non-fatal — keep the model's own synthesis.

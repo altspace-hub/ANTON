@@ -1,8 +1,9 @@
 import React, { useEffect, lazy, Suspense, useState } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import MainLayout from './components/layout/MainLayout';
 import { useAuthStore } from './stores/useAuthStore';
+import { useDemoStore } from './stores/useDemoStore';
 import { ensureCsrfToken } from './lib/api';
 import PWAInstallPrompt from './components/shared/PWAInstallPrompt';
 import { CommandPalette } from './components/shared/CommandPalette';
@@ -61,6 +62,8 @@ const ModulePage = lazy(() => import('./pages/ModulePage'));
 // (We tried a parallel /module-v2 page too; user preferred the existing
 // ModulePage layout so that experiment was dropped.)
 const HomeV2 = lazy(() => import('./pages/HomeV2'));
+// Public demo (DEMO_MODE=true): the privacy notice, readable before signing in.
+const PrivacyNoticePage = lazy(() => import('./pages/PrivacyNoticePage'));
 
 // Heavy/secondary pages — lazy-loaded to reduce initial bundle size
 const PromptPage = lazy(() => import('./pages/PromptPage'));
@@ -388,8 +391,24 @@ const StudyRoomsPage = lazy(() => import('./pages/school/StudyRoomsPage'));
 const StudyRoomPage = lazy(() => import('./pages/school/StudyRoomPage'));
 const SchoolLoginPage = lazy(() => import('./pages/school/SchoolLoginPage'));
 
+// In team mode: redirect to login if session token has expired (e.g. navigating after
+// a long idle). In solo mode: hasEntered bypasses login so no redirect needed.
+// Declared here, not inside App: App re-renders on every navigation (it reads
+// the location for /privacy), and a component declared in its body gets a new
+// identity each render — React would then remount the whole layout and page
+// on every click.
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const isTeamMode = useAuthStore((s) => s.isTeamMode);
+  if (isTeamMode && !user) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+}
+
 export default function App() {
   const { i18n } = useTranslation();
+  const { pathname } = useLocation();
   const { user, isLoading, isTeamMode, checkAuth, setIsTeamMode } = useAuthStore();
   // Controls whether the landing page has been dismissed.
   // In solo mode the user can bypass it with one click; in team mode login is required.
@@ -439,6 +458,8 @@ export default function App() {
       .then((data: { deploymentMode?: string }) => {
         const teamMode = data.deploymentMode === 'team';
         setIsTeamMode(teamMode);
+        // The public-demo fields ride on the same answer (banner, sign-up, pillars).
+        useDemoStore.getState().applyConfig(data);
       })
       .catch(() => {})
       .finally(() => {
@@ -454,6 +475,16 @@ export default function App() {
       }
     }
   }, [isLoading, user, hasEntered]);
+
+  // The privacy notice is for anyone deciding whether to sign up: it renders
+  // before the sign-in check, signed in or not.
+  if (pathname === '/privacy') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-white" />}>
+        <PrivacyNoticePage />
+      </Suspense>
+    );
+  }
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -480,15 +511,6 @@ export default function App() {
       <span className="text-adv-gray text-sm">Loading...</span>
     </div>
   );
-
-  // In team mode: redirect to login if session token has expired (e.g. navigating after
-  // a long idle). In solo mode: hasEntered bypasses login so no redirect needed.
-  function ProtectedRoute({ children }: { children: React.ReactNode }) {
-    if (isTeamMode && !user) {
-      return <Navigate to="/" replace />;
-    }
-    return <>{children}</>;
-  }
 
   return (
     <AppErrorBoundary>

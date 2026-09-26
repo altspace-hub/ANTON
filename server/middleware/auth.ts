@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { SOLO_USER_ID } from './user-constants.js';
 import { isUserRole } from './role-guards.js';
+import { isDemoMode } from './demo-mode.js';
 
 // Re-export so existing `import { SOLO_USER_ID } from '../middleware/auth.js'` keeps
 // working; the value itself lives in the side-effect-free user-constants module.
@@ -82,6 +83,24 @@ declare global {
  * id and the offending role literal are logged — no username, no token.
  */
 const warnedUnknownRole = new Set<string>();
+
+/**
+ * The account half of every session check, as SQL on `users u`: a switched-off
+ * account, and a demo account (migration 289) past its expiry, have no live
+ * session. Pair it with sessionEndedOutsideDemo() on the row's demo_expires_at.
+ */
+export const LIVE_ACCOUNT_SQL = 'u.disabled_at IS NULL AND (u.demo_expires_at IS NULL OR u.demo_expires_at > NOW())';
+
+/**
+ * A demo account has no session on a server that is not a demo — the rule
+ * sign-in already applies (routes/auth.ts). Without it, a visitor still signed
+ * in when the owner restarted without DEMO_MODE kept a full analyst session
+ * with no route allowlist, and retention no longer ran to delete them.
+ */
+export function sessionEndedOutsideDemo(demoExpiresAt: unknown): boolean {
+  return demoExpiresAt !== null && demoExpiresAt !== undefined && !isDemoMode();
+}
+
 function floorUnknownRole(userId: string, role: string | null): 'viewer' {
   if (!warnedUnknownRole.has(userId)) {
     warnedUnknownRole.add(userId);
@@ -148,15 +167,18 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
       // rides along on the join that was already happening, so it costs no extra query.
       //
       // u.disabled_at rides on the same join: switching an account off must end
-      // the sessions it already holds, not only refuse the next sign-in.
-      const session = await db.get<{ role: string | null; school_role: string | null }>(
-        `SELECT u.role, u.school_role
+      // the sessions it already holds, not only refuse the next sign-in. So does
+      // u.demo_expires_at (migration 289): a public-demo account ends when it
+      // expires, whatever its sessions say — and on a server that is no longer
+      // a demo, like sign-in.
+      const session = await db.get<{ role: string | null; school_role: string | null; demo_expires_at: unknown }>(
+        `SELECT u.role, u.school_role, u.demo_expires_at
            FROM user_sessions s
            JOIN users u ON u.id = s.user_id
-          WHERE s.token = ? AND s.expires_at > NOW() AND u.disabled_at IS NULL`,
+          WHERE s.token = ? AND s.expires_at > NOW() AND ${LIVE_ACCOUNT_SQL}`,
         token,
       );
-      if (!session) {
+      if (!session || sessionEndedOutsideDemo(session.demo_expires_at)) {
         res.status(401).json({ error: 'Session expired — please log in again' });
         return;
       }

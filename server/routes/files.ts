@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import multer from 'multer';
 import path from 'path';
@@ -7,8 +7,10 @@ import { fileTypeFromBuffer } from 'file-type';
 import { extractTextFromFile } from '../services/text-extractor.js';
 import { validateParams } from '../lib/validate.js';
 import { FileIdParamSchema } from '../lib/schemas.js';
+import { safeError } from '../lib/error-response.js';
 import type { DatabaseAdapter } from '../db/database.js';
 import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { isDemoMode, demoUserUploadQuota, type UploadQuota } from '../middleware/demo-mode.js';
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 fs.ensureDirSync(UPLOAD_DIR);
@@ -49,11 +51,61 @@ const upload = multer({
   },
 });
 
+/**
+ * The storage quota that applies to this caller, or null: a non-admin on a
+ * public demo (DEMO_MODE=true). One visitor must not be able to fill the
+ * disk that uploads share with PostgreSQL; the owner is not limited.
+ */
+function uploadQuotaFor(req: Request): UploadQuota | null {
+  if (!isDemoMode() || !req.user || req.user.role === 'admin') return null;
+  const quota = demoUserUploadQuota();
+  return quota.maxBytes > 0 || quota.maxFiles > 0 ? quota : null;
+}
+
+/** What an account keeps in uploads, from the ownership records. */
+async function uploadUsage(db: DatabaseAdapter, userId: string): Promise<{ bytes: number; files: number }> {
+  const row = await db.get<{ bytes: string | number | null; files: string | number | null }>(
+    'SELECT COALESCE(SUM(size_bytes), 0) AS bytes, COUNT(*) AS files FROM file_uploads WHERE uploaded_by = ?',
+    userId,
+  );
+  return { bytes: Number(row?.bytes ?? 0), files: Number(row?.files ?? 0) };
+}
+
+function overQuota(quota: UploadQuota, bytes: number, files: number): boolean {
+  return (quota.maxBytes > 0 && bytes > quota.maxBytes) || (quota.maxFiles > 0 && files > quota.maxFiles);
+}
+
+function quotaMessage(quota: UploadQuota): string {
+  const parts: string[] = [];
+  if (quota.maxBytes > 0) parts.push(`${Math.round(quota.maxBytes / (1024 * 1024))} MB`);
+  if (quota.maxFiles > 0) parts.push(`${quota.maxFiles} files`);
+  return `This demo account has reached its upload limit (${parts.join(' or ')}).`;
+}
+
 export function createFilesRoutes(db: DatabaseAdapter): Router {
   const router = Router();
 
+  // Refused before multer writes anything: what the account already keeps,
+  // plus this request's size, must fit. Checked again after the write, when
+  // the real size is known (two uploads at once both pass this check).
+  const uploadQuotaPrecheck = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const quota = uploadQuotaFor(req);
+    if (!quota) { next(); return; }
+    try {
+      const used = await uploadUsage(db, req.user!.id);
+      const incoming = Number(req.headers['content-length']) || 0;
+      if (overQuota(quota, used.bytes + incoming, used.files + 1)) {
+        res.status(413).json({ error: quotaMessage(quota), code: 'UPLOAD_QUOTA' });
+        return;
+      }
+      next();
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  };
+
   // POST /api/files/upload
-router.post('/files/upload', upload.single('file'), async (req, res) => {
+router.post('/files/upload', uploadQuotaPrecheck, upload.single('file'), async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
     return;
@@ -126,6 +178,29 @@ router.post('/files/upload', upload.single('file'), async (req, res) => {
      VALUES (?, ?, ?, ?, ?)`,
     req.file.filename, req.file.originalname, ext, req.file.size, req.user?.id ?? null,
   );
+
+  // The quota again, now that this file is on disk and on record: counted
+  // after the insert, so of several uploads racing past the pre-check none
+  // that stays can take the account over the limit.
+  const quota = uploadQuotaFor(req);
+  if (quota) {
+    // Fails closed: a quota that cannot be read keeps nothing.
+    let refusal: { status: number; body: { error: string; code?: string } } | null = null;
+    try {
+      const used = await uploadUsage(db, req.user!.id);
+      if (overQuota(quota, used.bytes, used.files)) refusal = { status: 413, body: { error: quotaMessage(quota), code: 'UPLOAD_QUOTA' } };
+    } catch (err) {
+      refusal = { status: 500, body: { error: safeError(err) } };
+    }
+    if (refusal) {
+      await db.run('DELETE FROM file_uploads WHERE id = ?', req.file.filename).catch(() => undefined);
+      // multer wrote it into UPLOAD_DIR; remove nothing outside it.
+      const stored = path.resolve(req.file.path);
+      if (stored.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) await fs.remove(stored).catch(() => undefined);
+      res.status(refusal.status).json(refusal.body);
+      return;
+    }
+  }
 
   // For images: return base64 data for Claude vision API; for documents: extract text
   if (isImage) {

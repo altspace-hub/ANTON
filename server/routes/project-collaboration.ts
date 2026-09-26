@@ -4,6 +4,7 @@ import { randomUUID, randomBytes } from 'crypto';
 import { sendProjectInvitationEmail } from '../services/email.js';
 import { scopesToOwner } from '../middleware/ownership.js';
 import { isTeamMode } from '../middleware/role-guards.js';
+import { publicBaseUrl } from '../lib/request-origin.js';
 
 /** The roles project_members.role accepts (its CHECK constraint). */
 const PROJECT_ROLES = ['owner', 'admin', 'member', 'viewer'] as const;
@@ -286,8 +287,9 @@ export async function createProjectCollaborationRoutes(db: DatabaseAdapter) {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `, id, req.params.id, email, role || 'member', user.id, token, expiresAt);
 
-      // Send invitation email
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      // Send invitation email. The link's host comes from configuration, not
+      // the request: a forged Host header would mail a link to another server.
+      const baseUrl = publicBaseUrl(req);
       const acceptUrl = `${baseUrl}/api/projects/invitations/accept/${token}`;
       try {
         await sendProjectInvitationEmail(

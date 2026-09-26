@@ -24,6 +24,8 @@ import {
   probeAllToolchains,
   allLanguagePresets,
   languagePreset,
+  codingProjectCapRefusal,
+  checkWholeFileWrite,
   type ApplicationFileEntry,
   type FileDiff,
   type ToolchainLanguage,
@@ -132,6 +134,21 @@ async function ensureCodingProject(
  * definition; returns false once it has replied 403.
  */
 function mayRunCode(req: Request, res: Response): boolean {
+  let allowed = false;
+  requireAdminOrSolo(req, res, () => { allowed = true; });
+  return allowed;
+}
+
+/**
+ * Team mode: provisioning a workspace is an ADMIN action.
+ *
+ * It creates a folder on the server's disk (no size cap) and, when the app's
+ * database role has CREATEDB, a Postgres database and role per project. On a
+ * shared or public server any account could otherwise fill the disk or the
+ * database cluster one project at a time. Same placement rule as mayRunCode:
+ * after ensureCodingProject, so a foreign id still answers 404 first.
+ */
+function mayProvisionWorkspace(req: Request, res: Response): boolean {
   let allowed = false;
   requireAdminOrSolo(req, res, () => { allowed = true; });
   return allowed;
@@ -1042,7 +1059,7 @@ export function myFunction(): void {
 Format rules (violations make the block unappliable):
 1. Workspace-relative paths with forward slashes only — never absolute paths, never drive letters, never \`..\`
 2. One file per code block; the header line is the FIRST line of the block
-3. When modifying an existing file, re-emit the FULL file — never elide with "rest unchanged" comments
+3. When modifying an existing file, re-emit the FULL file — never elide with "rest unchanged" or "// existing code" comments. A block with one is refused, and so is a rewrite that drops most of an existing file
 4. Code blocks without a FILE header are treated as illustration and ignored
 
 ## COMPLETION RECORD
@@ -2042,6 +2059,11 @@ export async function createCodingLargeRoutes(
         });
         if (access !== 'ok') return res.status(404).json({ error: 'Project not found' });
       }
+
+      // Team mode: a person may hold at most CODING_MAX_PROJECTS_PER_USER
+      // projects (admins and solo are not capped).
+      const capRefusal = await codingProjectCapRefusal(db, req.user?.id ?? null, !scopesToOwner(req as OwnedRequest));
+      if (capRefusal) return res.status(403).json({ error: capRefusal });
 
       // Minted before the bind check so the check knows which Studio folder is
       // this project's own (none exists yet, so no sibling's can be claimed).
@@ -3100,6 +3122,7 @@ export async function createCodingLargeRoutes(
   router.post('/coding/projects/:id/workspace/provision', async (req, res) => {
     try {
       if (!(await ensureCodingProject(db, req, res))) return;
+      if (!mayProvisionWorkspace(req, res)) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -3522,6 +3545,11 @@ export async function createCodingLargeRoutes(
       if (!response_text || typeof response_text !== 'string') {
         return res.status(400).json({ error: 'response_text is required' });
       }
+      // The parser reads at most this much (parseFileBlocks MAX_TOTAL_CHARS);
+      // express.json would otherwise hand it up to 50 MB of client text.
+      if (response_text.length > 4_000_000) {
+        return res.status(413).json({ error: 'response_text is too large' });
+      }
       if (kind !== 'initial' && kind !== 'revision') {
         return res.status(400).json({ error: "kind must be 'initial' or 'revision'" });
       }
@@ -3533,6 +3561,8 @@ export async function createCodingLargeRoutes(
       }
       const workspaceAbs = validation.resolved;
 
+      // parseFileBlocks skips <think> regions a model left outside its fences
+      // (their draft file blocks are not proposed) and refuses elided blocks.
       const parsed = parseFileBlocks(response_text);
       if (parsed.files.length === 0) {
         return res.status(422).json({
@@ -3565,6 +3595,13 @@ export async function createCodingLargeRoutes(
         }
         let old: string | null = null;
         try { old = await readFile(target, 'utf8'); } catch { /* new file */ }
+        // A rewrite that keeps only a sliver of the existing file is almost
+        // always a truncated or elided reply — refused, never proposed.
+        const shrink = checkWholeFileWrite(file.path, file.content, old);
+        if (shrink) {
+          parsed.rejected.push({ reason: shrink, path: file.path });
+          continue;
+        }
         oldContents.set(file.path, old);
         diffs.push(buildFileDiff(file.path, old, file.content));
       }
@@ -3605,6 +3642,9 @@ export async function createCodingLargeRoutes(
         rejected_blocks: parsed.rejected,
         duplicates: parsed.duplicates,
         ignored_blocks: parsed.ignoredBlocks,
+        // Files named by the line above their fence rather than a FILE header —
+        // worth a second look in the diff.
+        paths_from_line_above: parsed.pathsFromLineAbove,
         totals: record.diff_summary.totals,
         verification: `Parsed ${applicableFiles.length} file block(s); ${parsed.rejected.length} rejected. No files written — review the diff and approve to apply.`,
       });

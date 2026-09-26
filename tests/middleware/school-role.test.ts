@@ -68,7 +68,8 @@ describe('the role is sourced from the database, not the token', () => {
 
 describe('/auth/me exposes the role the client needs', () => {
   it('selects school_role in team mode', () => {
-    expect(AUTH_ROUTES).toMatch(/u\.display_name, u\.school_role FROM user_sessions/);
+    // Further columns may follow (u.demo_expires_at, for the demo-account session rule).
+    expect(AUTH_ROUTES).toMatch(/u\.display_name, u\.school_role(, u\.\w+)* FROM user_sessions/);
   });
 
   it('returns it in solo mode too', () => {

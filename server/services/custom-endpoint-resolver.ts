@@ -26,6 +26,13 @@ interface EndpointRow {
   context_window: number | null;
   extra_headers: Record<string, string>;
   enabled: boolean;
+  // Migration 288 — absent on a database that has not run it yet.
+  extra_body?: Record<string, unknown> | null;
+  allowed_models?: unknown;
+  max_output_tokens?: number | null;
+  model_meta?: Record<string, unknown> | null;
+  input_price_per_million?: number | null;
+  output_price_per_million?: number | null;
 }
 
 export interface ResolvedEndpoint {
@@ -38,6 +45,27 @@ export interface ResolvedEndpoint {
   contextWindow: number | null;
   extraHeaders: Record<string, string>;
   enabled: boolean;
+  /** Migration 288: merged into every request body (OpenRouter provider routing, …). */
+  extraBody: Record<string, unknown>;
+  /** Migration 288: when non-empty, the only bare model ids that may run here. */
+  allowedModels: string[];
+  /** Migration 288: ceiling for max_tokens on this endpoint. */
+  maxOutputTokens: number | null;
+  /** Migration 288: per bare model id, what the endpoint's /models reported
+   *  (shape: compat-endpoint.ts CompatModelMeta). */
+  modelMeta: Record<string, unknown>;
+  /** Migration 288: admin prices, USD per million tokens (null = none set). */
+  inputPricePerMillion: number | null;
+  outputPricePerMillion: number | null;
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+function finiteOrNull(v: unknown): number | null {
+  const n = typeof v === 'string' ? Number(v) : v;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
 }
 
 let endpointCache: Map<string, ResolvedEndpoint> | null = null;
@@ -63,6 +91,14 @@ export async function resolveCustomEndpoint(
             contextWindow: r.context_window,
             extraHeaders: r.extra_headers ?? {},
             enabled: r.enabled,
+            extraBody: isPlainObject(r.extra_body) ? r.extra_body : {},
+            allowedModels: Array.isArray(r.allowed_models)
+              ? r.allowed_models.filter((m): m is string => typeof m === 'string' && m.length > 0)
+              : [],
+            maxOutputTokens: finiteOrNull(r.max_output_tokens),
+            modelMeta: isPlainObject(r.model_meta) ? r.model_meta : {},
+            inputPricePerMillion: finiteOrNull(r.input_price_per_million),
+            outputPricePerMillion: finiteOrNull(r.output_price_per_million),
           });
         }
         endpointCache = map;

@@ -14,11 +14,18 @@
  * Content-Length above the cap is honoured as an early truncation signal, and a
  * running byte counter cuts an undeclared or lying one), so a large page costs
  * at most ~2 MB of memory instead of the whole response.
+ *
+ * EUR-Lex — the host answers every automated request with a bot check ("verify
+ * that you're not a robot", HTTP 202), never the act. A EUR-Lex link that names
+ * an act (CELEX or ELI) is read from the EU Publications Office instead, which
+ * serves the same Official Journal text; any other bot-check page is an error,
+ * not 26 words of "JavaScript is disabled" passed to the model as the source.
  */
 
 import { URL } from 'url';
 import { assertSafeEgressUrl } from '../lib/ssrf-guard.js';
 import { estimateTokens } from './token-estimator.js';
+import { decodeEntities, removeScriptsAndStyles, replaceUntilStable, stripTags } from '../lib/html-to-text.js';
 
 /** Whole-operation budget: guard + every redirect hop + body read. */
 export const FETCH_TIMEOUT_MS = 15_000;
@@ -39,6 +46,84 @@ const REQUEST_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (compatible; openEXPERT/1.0; +local)',
   'Accept': 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
 };
+
+/** EUR-Lex language codes (legal-content/<XX>/) to the Publications Office's. */
+const EU_LANGUAGES: Readonly<Record<string, string>> = {
+  BG: 'bul', CS: 'ces', DA: 'dan', DE: 'deu', EL: 'ell', EN: 'eng', ES: 'spa', ET: 'est',
+  FI: 'fin', FR: 'fra', GA: 'gle', HR: 'hrv', HU: 'hun', IT: 'ita', LT: 'lit', LV: 'lav',
+  MT: 'mlt', NL: 'nld', PL: 'pol', PT: 'por', RO: 'ron', SK: 'slk', SL: 'slv', SV: 'swe',
+};
+const ELI_TYPES: Readonly<Record<string, string>> = { reg: 'R', dir: 'L', dec: 'D' };
+
+/**
+ * The Publications Office address of the act a EUR-Lex link names, or null.
+ * `…/legal-content/SV/TXT/HTML/?uri=CELEX:32024R1624` → …/resource/celex/32024R1624
+ * in Swedish; `…/eli/reg/2016/679/oj` → 32016R0679. The act is asked for as
+ * XHTML in a language: without Accept-Language some acts answer 400.
+ */
+export function eurLexSource(rawUrl: string): { url: string; language: string } | null {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return null;
+  }
+  if (u.hostname !== 'eur-lex.europa.eu' && u.hostname !== 'www.eur-lex.europa.eu') return null;
+  const byCelex = (u.searchParams.get('uri') ?? '').match(/^CELEX:([0-9A-Z()-]+)$/i);
+  const byEli = u.pathname.match(/^\/eli\/(reg|dir|dec)\/(\d{4})\/(\d{1,4})(?:\/|$)/i);
+  const celex = byCelex
+    ? byCelex[1].toUpperCase()
+    : byEli ? `3${byEli[2]}${ELI_TYPES[byEli[1].toLowerCase()]}${byEli[3].padStart(4, '0')}` : null;
+  if (!celex) return null;
+  const two = u.pathname.match(/\/legal-content\/([A-Z]{2})\//i)?.[1].toUpperCase();
+  const three = u.pathname.match(/\/oj\/([a-z]{3})\/?$/i)?.[1].toLowerCase();
+  const language = (two ? EU_LANGUAGES[two] : undefined)
+    ?? (three && Object.values(EU_LANGUAGES).includes(three) ? three : 'eng');
+  return { url: `https://publications.europa.eu/resource/celex/${encodeURIComponent(celex)}`, language };
+}
+
+/**
+ * An Official Journal act (Publications Office XHTML) with its articles first.
+ * The act runs title, recitals, articles (`id="enc_1"`), then final provisions
+ * and annexes (`id="fnp_1"`); the fetcher keeps the first MAX_CHARS, and the
+ * AMLR's 167k characters of recitals used to fill most of them, so a run
+ * grounded in it saw hardly an article. Returns the reordered markup — title,
+ * articles, final part and annexes, then the recitals — or null for anything
+ * without that structure.
+ */
+export function euActArticlesFirst(xhtml: string): string | null {
+  const tagStart = (id: string): number => {
+    const at = xhtml.indexOf(`id="${id}"`);
+    return at < 0 ? -1 : xhtml.lastIndexOf('<', at);
+  };
+  const recitals = tagStart('rct_1');
+  const articles = tagStart('enc_1');
+  if (recitals < 0 || articles < 0 || articles < recitals) return null;
+  const finalPart = tagStart('fnp_1');
+  const articlesEnd = finalPart > articles ? finalPart : xhtml.length;
+  return [
+    xhtml.slice(0, recitals),
+    '<p>[Official Journal text in this order: the articles, then the final provisions and annexes, then the recitals.]</p>',
+    xhtml.slice(articles, articlesEnd),
+    finalPart > articles ? xhtml.slice(finalPart) : '',
+    '<p>RECITALS</p>',
+    xhtml.slice(recitals, articles),
+  ].join('\n');
+}
+
+/** A bot check served in place of the page (EUR-Lex's WAF, Cloudflare and the like). */
+const BOT_CHECK = /verify (?:that )?you(?:'|’)?re not a robot|awsWafCookieDomainList|checking your browser before accessing|enable javascript and cookies to continue/i;
+/** A real page that merely mentions one of those phrases is longer than this. */
+const BOT_CHECK_MAX_WORDS = 200;
+
+function botCheckError(host: string): string {
+  if (host === 'eur-lex.europa.eu' || host === 'www.eur-lex.europa.eu') {
+    return 'EUR-Lex answered with a bot check instead of the page. Link the act by its CELEX number '
+      + '(https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1624) or its ELI, and it is read '
+      + 'from the EU Publications Office instead.';
+  }
+  return 'The site answered with a bot check instead of the page; paste the text or upload the document instead.';
+}
 
 /**
  * Parse + scheme check only (no DNS). Returns an error string or null.
@@ -147,26 +232,17 @@ function decodeBody(bytes: Uint8Array, contentType: string): string {
  * Strip HTML tags and decode common entities, producing clean plain text.
  */
 function htmlToText(html: string): string {
-  return html
-    // Remove <head> (title/meta/link — the title is captured separately) and <style>/<script> blocks entirely
-    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    // Remove nav/footer/header noise
-    .replace(/<(nav|header|footer)[^>]*>[\s\S]*?<\/\1>/gi, '')
-    // Convert block elements to newlines
-    .replace(/<\/(p|div|li|tr|h[1-6]|br|blockquote)>/gi, '\n')
-    // Strip all remaining tags
-    .replace(/<[^>]+>/g, ' ')
-    // Decode entities
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    // Collapse whitespace
+  // Remove <head> (title/meta/link — the title is captured separately) and <style>/<script> blocks entirely
+  const noHead = replaceUntilStable(html, /<head\b[^>]*>[\s\S]*?<\/head[^>]*>/gi, '');
+  // Remove nav/footer/header noise
+  const noChrome = replaceUntilStable(removeScriptsAndStyles(noHead), /<(nav|header|footer)\b[^>]*>[\s\S]*?<\/\1[^>]*>/gi, '');
+  // Block elements end in a newline; every other tag becomes a space; entities are decoded last, once
+  return decodeEntities(stripTags(noChrome.replace(/<\/(p|div|li|tr|h[1-6]|br|blockquote)\s*>/gi, '\n')))
+    // Collapse whitespace. Trailing spaces go first, so a run of space-only lines
+    // (" \n \n \n", from nested block tags) collapses too: in Official Journal
+    // XHTML they took about a quarter of the characters the fetcher keeps.
     .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -198,9 +274,13 @@ export async function fetchUrl(url: string, mode: 'full' | 'summary' = 'full'): 
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const eurLex = eurLexSource(url);
+  const headers: Record<string, string> = eurLex
+    ? { ...REQUEST_HEADERS, Accept: 'application/xhtml+xml', 'Accept-Language': eurLex.language }
+    : REQUEST_HEADERS;
 
   try {
-    let current = url;
+    let current = eurLex?.url ?? url;
     let response: Response | undefined;
 
     for (let hop = 0; ; hop++) {
@@ -213,7 +293,7 @@ export async function fetchUrl(url: string, mode: 'full' | 'summary' = 'full'): 
       const candidate = await fetch(current, {
         redirect: 'manual',
         signal: controller.signal,
-        headers: REQUEST_HEADERS,
+        headers,
       });
 
       const location = candidate.headers.get('location');
@@ -248,9 +328,13 @@ export async function fetchUrl(url: string, mode: 'full' | 'summary' = 'full'): 
     const raw = decodeBody(body.bytes, contentType);
 
     const isHtml = contentType.includes('text/html') || contentType.includes('application/xhtml');
-    const rawText = isHtml ? htmlToText(raw) : raw;
+    const actInOrder = isHtml && new URL(current).hostname === 'publications.europa.eu' ? euActArticlesFirst(raw) : null;
+    const rawText = isHtml ? htmlToText(actInOrder ?? raw) : raw;
     const titleMatch = isHtml ? raw.match(/<title[^>]*>([^<]+)<\/title>/i) : null;
     const title = titleMatch ? titleMatch[1].trim() : undefined;
+    if (countWords(rawText) < BOT_CHECK_MAX_WORDS && BOT_CHECK.test(raw)) {
+      return makeError(url, botCheckError(new URL(current).hostname));
+    }
 
     const cutAtChars = rawText.length > MAX_CHARS;
     const truncated = cutAtChars || body.truncated;

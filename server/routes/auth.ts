@@ -1,16 +1,23 @@
-import { Router, type Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { randomUUID, randomBytes, createHash } from 'crypto';
+import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'crypto';
+import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import { generateToken, sessionTtlMs, type AuthUser } from '../middleware/auth.js';
+import {
+  generateToken, sessionTtlMs, LIVE_ACCOUNT_SQL, sessionEndedOutsideDemo, type AuthUser,
+} from '../middleware/auth.js';
 import { sendPasswordResetEmail } from '../services/email.js';
 import { logSecurityEvent } from '../services/security-logger.js';
 import * as oidcClient from 'openid-client';
 import { getUserBudgetStatus } from '../services/budget-manager.js';
 import { safeError } from '../lib/error-response.js';
 import { validate } from '../lib/validate.js';
-import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } from '../lib/schemas.js';
+import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, RegisterSchema } from '../lib/schemas.js';
+import {
+  isDemoMode, demoSignupPolicy, demoAccountTtlDays, demoUserMonthlyTokens,
+  demoMaxSignupsPerDay, createDemoSignupLimiter,
+} from '../middleware/demo-mode.js';
 import {
   readOidcSettings, oidcSettingsProblems, identityFromClaims, tenantAllowed,
   provisionOidcUser, hasSsoIdentity, SsoRefusedError, type OidcSettings,
@@ -28,10 +35,12 @@ const isSecureCookie = (): boolean => process.env.NODE_ENV === 'production' || p
 
 /** A signed-in session: the JWT, its user_sessions row (which logout and a
  *  disabled account end) and the last-login stamp. One lifetime for both,
- *  from JWT_EXPIRY. */
-async function issueSession(db: DatabaseAdapter, user: AuthUser): Promise<string> {
+ *  from JWT_EXPIRY — cut short at notAfter (a demo account's expiry), so no
+ *  session outlives its account. */
+async function issueSession(db: DatabaseAdapter, user: AuthUser, notAfter?: Date | null): Promise<string> {
   const token = generateToken(user);
-  const expiresAt = new Date(Date.now() + sessionTtlMs()).toISOString();
+  const until = Math.min(Date.now() + sessionTtlMs(), notAfter ? notAfter.getTime() : Infinity);
+  const expiresAt = new Date(until).toISOString();
   await db.run('INSERT INTO user_sessions (token, user_id, expires_at) VALUES (?, ?, ?)', token, user.id, expiresAt);
   await db.run('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', user.id);
   return token;
@@ -135,6 +144,78 @@ function createExchangeCode(res: Response, token: string, secure: boolean): stri
   });
   return code;
 }
+
+/** Equal strings, compared in constant time (an invite code, an OAuth state). */
+function sameSecret(a: string, b: string): boolean {
+  const x = Buffer.from(a, 'utf8');
+  const y = Buffer.from(b, 'utf8');
+  return x.length === y.length && timingSafeEqual(x, y);
+}
+
+// ── Google / GitHub state ─────────────────────────────────────────────────────
+//
+// The state these flows send used to be '' or 'school', so a callback link
+// carrying the attacker's own authorisation code signed the victim's browser
+// into the attacker's account (login CSRF). Now it is a random nonce, also
+// kept in an httpOnly cookie on the browser that started the sign-in, and the
+// callback accepts only a state equal to that cookie. SameSite=Lax: the
+// callback is a top-level GET navigation from the provider.
+const OAUTH_STATE_COOKIE = 'anton_oauth_state';
+const OAUTH_COOKIE_PATH = '/api/auth';
+
+function startOAuthState(res: Response, fromSchool: boolean): string {
+  const state = `${randomBytes(24).toString('hex')}${fromSchool ? '.school' : ''}`;
+  res.cookie(OAUTH_STATE_COOKIE, state, {
+    httpOnly: true, secure: isSecureCookie(), sameSite: 'lax', maxAge: 10 * 60 * 1000, path: OAUTH_COOKIE_PATH,
+  });
+  return state;
+}
+
+/** The callback's state against the cookie. The cookie is cleared either way: a state is used once. */
+function checkOAuthState(req: Request, res: Response): { ok: boolean; fromSchool: boolean } {
+  const cookie = (req as { cookies?: Record<string, string> }).cookies?.[OAUTH_STATE_COOKIE];
+  res.clearCookie(OAUTH_STATE_COOKIE, { path: OAUTH_COOKIE_PATH });
+  const state = typeof req.query.state === 'string' ? req.query.state : '';
+  const ok = !!state && typeof cookie === 'string' && sameSecret(state, cookie);
+  return { ok, fromSchool: ok && state.endsWith('.school') };
+}
+
+/** Where the provider sends the browser back. The state cookie belongs to this host. */
+function oauthCallbackUrl(provider: 'google' | 'github'): string {
+  return `${process.env.BASE_URL || 'http://localhost:3001'}/api/auth/${provider}/callback`;
+}
+
+/**
+ * Started on another host name than the one the provider returns to, the
+ * callback would never see the state cookie — so the sign-in starts over on
+ * that host (as /auth/oidc/start does). Null when this is the right host.
+ *
+ * The name is req.hostname: it honours a trusted proxy's X-Forwarded-Host and
+ * leaves the port out, as a cookie does. Behind a proxy that passes neither
+ * the public Host nor X-Forwarded-Host every request looked like the wrong
+ * host, and the browser was sent round in a loop (ERR_TOO_MANY_REDIRECTS). So
+ * a restarted request carries ?restarted=1 and is never restarted again: at
+ * worst the callback answers invalid_state.
+ */
+function restartOnCallbackHost(req: Request, provider: 'google' | 'github'): string | null {
+  const query = req.query as { from?: string; restarted?: string };
+  if (query.restarted !== undefined) return null;
+  const callback = new URL(oauthCallbackUrl(provider));
+  const host = req.hostname;
+  if (!host || host.toLowerCase() === callback.hostname.toLowerCase()) return null;
+  const params = new URLSearchParams();
+  if (query.from === 'school') params.set('from', 'school');
+  params.set('restarted', '1');
+  return `${callback.origin}/api/auth/${provider}?${params}`;
+}
+
+/** POST /api/auth/demo-signup — username and password as elsewhere (RegisterSchema), plus the invite code. */
+const DemoSignupSchema = RegisterSchema.pick({ username: true, password: true }).extend({
+  code: z.string().max(200).optional(),
+});
+
+/** Names a visitor may not take: they read as the instance speaking. */
+const RESERVED_DEMO_USERNAMES = new Set(['admin', 'administrator', 'root', 'solo', 'system', 'anton', 'openexpert', 'support', 'owner']);
 
 export async function createAuthRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -260,6 +341,19 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       return;
     }
 
+    // A demo account (migration 289) signs in only while the server is a demo
+    // and the account has not expired; its session ends when the account does.
+    const demoExpiresAt = user.demo_expires_at ? new Date(user.demo_expires_at as string | Date) : null;
+    if (demoExpiresAt && (!isDemoMode() || !(demoExpiresAt.getTime() > Date.now()))) {
+      logSecurityEvent(db, {
+        eventType: 'unauthorized_access', userId: user.id as string, ipAddress,
+        details: isDemoMode() ? 'Sign-in refused: demo account expired' : 'Sign-in refused: demo account outside demo mode',
+        severity: 'low',
+      });
+      res.status(403).json({ error: 'This demo account has expired.' });
+      return;
+    }
+
     // Record successful attempt
     await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
 
@@ -269,7 +363,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       role: user.role as 'admin' | 'analyst' | 'viewer',
       display_name: user.display_name as string | undefined,
     };
-    const token = await issueSession(db, authUser);
+    const token = await issueSession(db, authUser, demoExpiresAt);
 
     // Auto-accept any pending project invitations for this email
     if (typeof user.email === 'string' && user.email) void acceptPendingInvitations(db, user.id as string, user.email);
@@ -278,6 +372,79 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
 
     // Also return token in body for backward compatibility with existing clients
     res.json({ user: authUser, token });
+  });
+
+  // POST /api/auth/demo-signup — a visitor makes their own account on a demo
+  // server (DEMO_MODE=true, team mode). No email is asked for. The account is
+  // an analyst with a small monthly token budget; it expires after
+  // DEMO_ACCOUNT_TTL_DAYS, when services/demo-retention.ts deletes it and
+  // everything it wrote. Throttled per IP (every attempt counts) and capped
+  // per day instance-wide; the invite code is DEMO_SIGNUP_CODE.
+  const demoSignupLimiter = createDemoSignupLimiter();
+  router.post('/auth/demo-signup', demoSignupLimiter, validate(DemoSignupSchema), async (req, res) => {
+    if (!IS_TEAM_MODE || !isDemoMode()) {
+      res.status(404).json({ error: 'Not found' });
+      return;
+    }
+    const { username, password, code } = req.body as z.infer<typeof DemoSignupSchema>;
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+    const policy = demoSignupPolicy();
+    if (!policy.open) {
+      res.status(403).json({ error: 'Sign-up is closed on this demo.' });
+      return;
+    }
+    if (policy.code !== null && !sameSecret((code ?? '').trim(), policy.code)) {
+      logSecurityEvent(db, {
+        eventType: 'failed_login', ipAddress, details: 'Demo sign-up refused: wrong invite code', severity: 'low',
+      });
+      res.status(403).json({ error: 'That invite code is not valid.' });
+      return;
+    }
+    if (RESERVED_DEMO_USERNAMES.has(username.toLowerCase())) {
+      res.status(409).json({ error: 'That username is not available. Choose another.' });
+      return;
+    }
+    try {
+      const cap = demoMaxSignupsPerDay();
+      if (cap > 0) {
+        const today = await db.get<{ n: number | string }>(
+          `SELECT COUNT(*) AS n FROM users WHERE demo_expires_at IS NOT NULL AND created_at > NOW() - INTERVAL '1 day'`,
+        );
+        if (Number(today?.n ?? 0) >= cap) {
+          res.status(429).json({ error: 'Today\'s demo sign-ups are full. Please try again tomorrow.' });
+          return;
+        }
+      }
+      // Case-insensitively unique: 'Alice' and 'alice' would be two people who look like one.
+      const taken = await db.get('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', username);
+      if (taken) {
+        res.status(409).json({ error: 'That username is taken. Choose another.' });
+        return;
+      }
+
+      const id = randomUUID();
+      const expiresAt = new Date(Date.now() + demoAccountTtlDays() * 24 * 60 * 60 * 1000);
+      const hash = await bcrypt.hash(password, 10);
+      await db.run(
+        `INSERT INTO users (id, username, password_hash, role, display_name, monthly_token_budget, demo_expires_at)
+         VALUES (?, ?, ?, 'analyst', ?, ?, ?)`,
+        id, username, hash, username, demoUserMonthlyTokens(), expiresAt.toISOString(),
+      );
+      await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
+      console.log(`[auth] demo account created: user ${id}`);
+
+      const authUser: AuthUser = { id, username, role: 'analyst', display_name: username };
+      const token = await issueSession(db, authUser, expiresAt);
+      setSessionCookie(res, token);
+      res.status(201).json({ user: authUser, token, expiresAt: expiresAt.toISOString() });
+    } catch (err) {
+      // Two sign-ups for one name at once: the unique index decides.
+      if ((err as { code?: string }).code === '23505') {
+        res.status(409).json({ error: 'That username is taken. Choose another.' });
+        return;
+      }
+      res.status(500).json({ error: safeError(err) });
+    }
   });
 
   // POST /api/auth/forgot-password
@@ -375,12 +542,16 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     }
     const token = req.headers.authorization?.slice(7);
     if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
-    const session = await db.get(`SELECT u.id, u.username, u.role, u.display_name, u.school_role FROM user_sessions s
+    // The same account rule as the auth middleware: the web client decides
+    // "still signed in" from this answer alone.
+    const session = await db.get(`SELECT u.id, u.username, u.role, u.display_name, u.school_role, u.demo_expires_at FROM user_sessions s
        JOIN users u ON s.user_id = u.id
-       WHERE s.token = ? AND s.expires_at > NOW()`
+       WHERE s.token = ? AND s.expires_at > NOW() AND ${LIVE_ACCOUNT_SQL}`
     , token) as Record<string, unknown> | undefined;
-    if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
-    res.json(session);
+    if (!session || sessionEndedOutsideDemo(session.demo_expires_at)) { res.status(401).json({ error: 'Session expired' }); return; }
+    const me: Record<string, unknown> = { ...session };
+    delete me.demo_expires_at;
+    res.json(me);
   });
 
   // GET /api/auth/me/budget — get current user's budget status
@@ -393,12 +564,12 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     if (!token) { res.status(401).json({ error: 'Not authenticated' }); return; }
 
     const session = await db.get(
-      `SELECT u.id FROM user_sessions s
+      `SELECT u.id, u.demo_expires_at FROM user_sessions s
        JOIN users u ON s.user_id = u.id
-       WHERE s.token = ? AND s.expires_at > NOW()`
-    , token) as { id: string } | undefined;
+       WHERE s.token = ? AND s.expires_at > NOW() AND ${LIVE_ACCOUNT_SQL}`
+    , token) as { id: string; demo_expires_at: unknown } | undefined;
 
-    if (!session) { res.status(401).json({ error: 'Session expired' }); return; }
+    if (!session || sessionEndedOutsideDemo(session.demo_expires_at)) { res.status(401).json({ error: 'Session expired' }); return; }
 
     try {
       const status = await getUserBudgetStatus(db, session.id);
@@ -410,39 +581,51 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
 
   // ─── Google OAuth ──────────────────────────────────────────────────────────
 
+  // Google and GitHub sign in anyone with an account there, so a public demo
+  // (DEMO_MODE=true) turns both off: visitors sign up with an invite code.
+
   // GET /api/auth/google — redirect to Google consent screen
   // Optional: ?from=school — causes callback to redirect to /school after auth
   router.get('/auth/google', async (req, res) => {
+    if (isDemoMode()) {
+      res.status(404).json({ error: 'Not available in this demo' });
+      return;
+    }
     if (!GOOGLE_CLIENT_ID) {
       res.status(501).json({ error: 'Google OAuth not configured' });
       return;
     }
-    const fromParam = (req.query as { from?: string }).from || '';
-    const state = fromParam === 'school' ? 'school' : '';
+    const restart = restartOnCallbackHost(req, 'google');
+    if (restart) { res.redirect(restart); return; }
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: `${process.env.BASE_URL || 'http://localhost:3001'}/api/auth/google/callback`,
+      redirect_uri: oauthCallbackUrl('google'),
       response_type: 'code',
       scope: 'openid email profile',
       access_type: 'offline',
       prompt: 'select_account',
+      state: startOAuthState(res, (req.query as { from?: string }).from === 'school'),
     });
-    if (state) params.set('state', state);
     res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
   });
 
   // GET /api/auth/google/callback
   router.get('/auth/google/callback', async (req, res) => {
-    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    if (isDemoMode() || !GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
       res.redirect('/?auth_error=not_configured');
       return;
     }
-    const { code, state } = req.query as { code?: string; state?: string };
+    const state = checkOAuthState(req, res);
+    if (!state.ok) {
+      res.redirect('/?auth_error=invalid_state');
+      return;
+    }
+    const { code } = req.query as { code?: string };
     if (!code) {
       res.redirect('/?auth_error=no_code');
       return;
     }
-    const redirectBase = state === 'school' ? '/?from=school&auth_code=' : '/?auth_code=';
+    const redirectBase = state.fromSchool ? '/?from=school&auth_code=' : '/?auth_code=';
     try {
       // Exchange code for tokens
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -452,7 +635,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
           code,
           client_id: GOOGLE_CLIENT_ID,
           client_secret: GOOGLE_CLIENT_SECRET,
-          redirect_uri: `${process.env.BASE_URL || 'http://localhost:3001'}/api/auth/google/callback`,
+          redirect_uri: oauthCallbackUrl('google'),
           grant_type: 'authorization_code',
         }),
       });
@@ -462,7 +645,14 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
-      const googleUser = await userRes.json() as { email: string; name: string; picture?: string };
+      const googleUser = await userRes.json() as { email?: string; verified_email?: boolean; name: string; picture?: string };
+
+      // Accounts are matched by email, so only an address Google has verified
+      // may sign in: an unverified one could be anybody's, a colleague's included.
+      if (!googleUser.email || googleUser.verified_email !== true) {
+        res.redirect('/?auth_error=no_email');
+        return;
+      }
 
       const token = await sessionForProviderAccount(db, googleUser.email, googleUser.name, 'google');
       res.redirect(`${redirectBase}${createExchangeCode(res, token, isSecureCookie())}`);
@@ -475,23 +665,35 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
   // ─── GitHub OAuth ──────────────────────────────────────────────────────────
 
   // GET /api/auth/github — redirect to GitHub
-  router.get('/auth/github', async (_req, res) => {
+  router.get('/auth/github', async (req, res) => {
+    if (isDemoMode()) {
+      res.status(404).json({ error: 'Not available in this demo' });
+      return;
+    }
     if (!GITHUB_CLIENT_ID) {
       res.status(501).json({ error: 'GitHub OAuth not configured' });
       return;
     }
+    const restart = restartOnCallbackHost(req, 'github');
+    if (restart) { res.redirect(restart); return; }
     const params = new URLSearchParams({
       client_id: GITHUB_CLIENT_ID,
-      redirect_uri: `${process.env.BASE_URL || 'http://localhost:3001'}/api/auth/github/callback`,
+      redirect_uri: oauthCallbackUrl('github'),
       scope: 'user:email',
+      state: startOAuthState(res, (req.query as { from?: string }).from === 'school'),
     });
     res.redirect(`https://github.com/login/oauth/authorize?${params}`);
   });
 
   // GET /api/auth/github/callback
   router.get('/auth/github/callback', async (req, res) => {
-    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    if (isDemoMode() || !GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
       res.redirect('/?auth_error=not_configured');
+      return;
+    }
+    const state = checkOAuthState(req, res);
+    if (!state.ok) {
+      res.redirect('/?auth_error=invalid_state');
       return;
     }
     const { code } = req.query as { code?: string };
@@ -508,7 +710,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
           client_id: GITHUB_CLIENT_ID,
           client_secret: GITHUB_CLIENT_SECRET,
           code,
-          redirect_uri: `${process.env.BASE_URL || 'http://localhost:3001'}/api/auth/github/callback`,
+          redirect_uri: oauthCallbackUrl('github'),
         }),
       });
       const tokenData = await tokenRes.json() as { access_token: string };
@@ -517,17 +719,17 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const userRes = await fetch('https://api.github.com/user', {
         headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: 'application/vnd.github+json' },
       });
-      const ghUser = await userRes.json() as { login: string; name?: string; email: string | null };
+      const ghUser = await userRes.json() as { login: string; name?: string };
 
-      // Get primary email if not public
-      let email = ghUser.email;
-      if (!email) {
-        const emailRes = await fetch('https://api.github.com/user/emails', {
-          headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: 'application/vnd.github+json' },
-        });
-        const emails = await emailRes.json() as Array<{ email: string; primary: boolean }>;
-        email = emails.find(e => e.primary)?.email || emails[0]?.email || null;
-      }
+      // Accounts are matched by email, so only an address GitHub has verified
+      // may sign in. The profile's public email says nothing about that; the
+      // emails list does.
+      const emailRes = await fetch('https://api.github.com/user/emails', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}`, Accept: 'application/vnd.github+json' },
+      });
+      const emails = await emailRes.json() as Array<{ email: string; primary: boolean; verified?: boolean }>;
+      const verified = Array.isArray(emails) ? emails.filter((e) => e.verified === true) : [];
+      const email = verified.find((e) => e.primary)?.email || verified[0]?.email || null;
 
       if (!email) {
         res.redirect('/?auth_error=no_email');
@@ -535,7 +737,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       }
 
       const token = await sessionForProviderAccount(db, email, ghUser.name || ghUser.login, 'github');
-      res.redirect(`/?auth_code=${createExchangeCode(res, token, isSecureCookie())}`);
+      res.redirect(`${state.fromSchool ? '/?from=school&auth_code=' : '/?auth_code='}${createExchangeCode(res, token, isSecureCookie())}`);
     } catch (err) {
       console.error('[auth] GitHub OAuth error:', err);
       res.redirect('/?auth_error=oauth_failed');
@@ -576,12 +778,12 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
     const bearer = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : undefined;
     const token = req.cookies?.['openexpert_session'] || bearer;
     if (!token) return false;
-    const row = await db.get<{ role: string }>(
-      `SELECT u.role FROM user_sessions s JOIN users u ON u.id = s.user_id
-        WHERE s.token = ? AND s.expires_at > NOW() AND u.disabled_at IS NULL`,
+    const row = await db.get<{ role: string; demo_expires_at: unknown }>(
+      `SELECT u.role, u.demo_expires_at FROM user_sessions s JOIN users u ON u.id = s.user_id
+        WHERE s.token = ? AND s.expires_at > NOW() AND ${LIVE_ACCOUNT_SQL}`,
       token,
     ).catch(() => undefined);
-    return row?.role === 'admin';
+    return row?.role === 'admin' && !sessionEndedOutsideDemo(row.demo_expires_at);
   }
 
   // GET /api/auth/oidc/test — for whoever sets SSO up: does discovery work, and

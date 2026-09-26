@@ -36,6 +36,15 @@ import {
   type ClaudeToolLike,
 } from './adapters/provider-extras.js';
 import { resolveOllamaNumCtx } from './context-budget.js';
+import {
+  callOpenAICompatible,
+  compatStreamEvents,
+  type CompatInputMessage,
+  type OpenAICompatibleStreamParams,
+  type OpenAICompatibleStreamResult,
+} from './adapters/openaiCompatibleAdapter.js';
+import type { CompatModelMeta } from './compat-endpoint.js';
+import type { EndpointPricing } from './llm-spend.js';
 
 // ── Unified Request Interface ──────────────────────────────────
 
@@ -55,6 +64,10 @@ export interface UnifiedLLMRequest {
     schema?: any; // JSON Schema for OpenAI/Google
     description?: string; // Natural language description
   };
+  /** OpenAI-compatible endpoints only: the messages with their content blocks
+   *  intact, so images reach the model as image parts instead of base64 JSON
+   *  text. Other adapters read `messages`. */
+  compatMessages?: CompatInputMessage[];
 }
 
 export interface UnifiedLLMResponse {
@@ -610,9 +623,27 @@ export interface OpenAICompatibleConfig {
   baseUrl: string;
   apiKey?: string;
   extraHeaders?: Record<string, string>;
+  // From the resolved endpoint (compat-endpoint.ts, migration 288):
+  extraBody?: Record<string, unknown>;
+  /** What the endpoint's /models said about the model this adapter serves. */
+  modelMeta?: CompatModelMeta;
+  maxOutputTokens?: number | null;
+  pricing?: EndpointPricing | null;
+  /** The full compat:<slug>:<model> id; a priced call writes a spend-ledger row under it. */
+  modelId?: string;
+  db?: DatabaseAdapter;
 }
 
+/**
+ * The unified-llm-client side of compat endpoints. The request body and the
+ * reply reader are openaiCompatibleAdapter.ts's — the same code provider-router
+ * and the Work route use — so extra body, reasoning, max_tokens ceilings,
+ * images, cost and the stream error checks are the same on every path.
+ */
 class OpenAICompatibleAdapter extends BaseAdapter {
+  /** Tokens and cost of the last call — the stream generator yields text only. */
+  lastResult: OpenAICompatibleStreamResult | null = null;
+
   constructor(private readonly cfg: OpenAICompatibleConfig) { super(); }
 
   private resolveModelName(modelId: string): string {
@@ -622,114 +653,59 @@ class OpenAICompatibleAdapter extends BaseAdapter {
     return modelId.replace(/^compat:[^:]+:?/, '') || modelId;
   }
 
-  private headers(): Record<string, string> {
-    const h: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(this.cfg.extraHeaders ?? {}),
-    };
-    if (this.cfg.apiKey) h['Authorization'] = `Bearer ${this.cfg.apiKey}`;
-    return h;
-  }
-
-  /** M7 (plan 2.13): response_format + tools pass-through (OpenRouter /
-   *  Groq / DeepSeek accept them). `withExtras=false` is the one-retry
-   *  fallback for minimal vLLM/llama.cpp configs that reject the fields. */
-  private buildBody(req: UnifiedLLMRequest, stream: boolean, withExtras: boolean): Record<string, unknown> {
-    const wantsJson = !!req.structuredOutput?.enabled;
-    const tools = withExtras ? convertClaudeToolsToOpenAI(req.tools as ClaudeToolLike[] | undefined) : undefined;
-    const systemPrompt = !withExtras && wantsJson
-      ? req.systemPrompt + JSON_ONLY_NUDGE
-      : req.systemPrompt;
+  private params(req: UnifiedLLMRequest): OpenAICompatibleStreamParams {
     return {
+      baseUrl: this.cfg.baseUrl,
+      apiKey: this.cfg.apiKey,
+      extraHeaders: this.cfg.extraHeaders,
+      extraBody: this.cfg.extraBody,
+      modelMeta: this.cfg.modelMeta,
+      maxOutputTokens: this.cfg.maxOutputTokens,
+      pricing: this.cfg.pricing,
       model: this.resolveModelName(req.model),
-      stream,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...req.messages,
-      ],
-      ...(req.maxTokens !== undefined ? { max_tokens: req.maxTokens } : {}),
-      ...(req.temperature !== undefined ? { temperature: req.temperature } : {}),
-      ...(withExtras && wantsJson ? { response_format: { type: 'json_object' } } : {}),
-      ...(tools ? { tools, tool_choice: 'auto' } : {}),
+      system: req.systemPrompt,
+      messages: req.compatMessages ?? req.messages,
+      temperature: req.temperature,
+      maxTokens: req.maxTokens,
+      jsonMode: !!req.structuredOutput?.enabled,
+      thinkingLevel: req.thinking,
+      ...(this.cfg.modelId ? { spend: { modelId: this.cfg.modelId, db: this.cfg.db } } : {}),
     };
-  }
-
-  private async postChat(req: UnifiedLLMRequest, stream: boolean): Promise<globalThis.Response> {
-    const url = `${this.cfg.baseUrl.replace(/\/$/, '')}/chat/completions`;
-    const hasExtras = !!(req.structuredOutput?.enabled || (req.tools && req.tools.length > 0));
-    let response = await fetch(url, {
-      method: 'POST',
-      headers: this.headers(),
-      body: JSON.stringify(this.buildBody(req, stream, true)),
-    });
-    if (!response.ok && hasExtras) {
-      const errText = await response.text();
-      if (!isCapabilityRejection(response.status, errText)) {
-        throw new Error(`OpenAI-compatible endpoint error (${this.cfg.baseUrl}): ${response.status} — ${errText}`);
-      }
-      console.warn(`[model-adapter] OpenAI-compatible endpoint rejected tools/response_format — retrying without (model=${req.model})`);
-      response = await fetch(url, {
-        method: 'POST',
-        headers: this.headers(),
-        body: JSON.stringify(this.buildBody(req, stream, false)),
-      });
-    }
-    return response;
   }
 
   async sendRequest(req: UnifiedLLMRequest): Promise<UnifiedLLMResponse> {
-    const response = await this.postChat(req, false);
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`OpenAI-compatible endpoint error (${this.cfg.baseUrl}): ${response.status} — ${errText}`);
-    }
-
-    const data = await response.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
-      usage?: { prompt_tokens?: number; completion_tokens?: number };
-    };
-
+    const result = await callOpenAICompatible(this.params(req));
+    this.lastResult = result;
     return {
-      content: data.choices?.[0]?.message?.content ?? '',
+      content: result.text,
+      thinking: result.thinking || undefined,
       usage: {
-        inputTokens: data.usage?.prompt_tokens ?? 0,
-        outputTokens: data.usage?.completion_tokens ?? 0,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        ...(result.reasoningTokens ? { thinkingTokens: result.reasoningTokens } : {}),
       },
+      finishReason: result.finishReason ?? undefined,
     };
   }
 
   async *sendStreamRequest(req: UnifiedLLMRequest): AsyncGenerator<string, void, unknown> {
-    const response = await this.postChat(req, true);
-    if (!response.ok || !response.body) {
-      throw new Error(`OpenAI-compatible endpoint error: ${response.statusText}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith('data:')) continue;
-        const payload = trimmed.slice(5).trim();
-        if (payload === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(payload) as {
-            choices?: Array<{ delta?: { content?: string } }>;
-          };
-          const delta = parsed.choices?.[0]?.delta?.content;
-          if (delta) yield delta;
-        } catch {
-          // Ignore keep-alive comments / malformed lines
+    const events = compatStreamEvents(this.params(req));
+    let ended = false;
+    try {
+      for (;;) {
+        const next = await events.next();
+        if (next.done) {
+          ended = true;
+          this.lastResult = next.value;
+          return;
         }
+        if (next.value.type === 'text') yield next.value.text;
       }
+    } finally {
+      // A consumer that stopped reading (a break, or a throw in its loop)
+      // leaves the call open: end it, so the read is cancelled and what was
+      // billed is recorded. (After a failed call this is a no-op.)
+      if (!ended) await events.throw(new Error('The reader stopped before the answer ended.')).catch(() => undefined);
     }
   }
 }

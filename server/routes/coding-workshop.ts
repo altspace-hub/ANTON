@@ -24,7 +24,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
+import { CodingProjectCapError } from '../services/coding-workspace.js';
 import {
   createCodingWorkshopEngine,
   type WorkshopTier,
@@ -155,6 +156,8 @@ export function createCodingWorkshopRoutes(
         projectId: result.projectId,
       });
     } catch (err) {
+      // The per-user project cap (team mode) says what to do, not a generic 500.
+      if (err instanceof CodingProjectCapError) { res.status(403).json({ error: publicErrorMessage(err) }); return; }
       // A missing problem statement is a 400 (the caller must keep talking).
       const message = safeError(err);
       const status = /problem statement/i.test(message) ? 400 : 500;

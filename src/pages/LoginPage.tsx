@@ -1,7 +1,11 @@
 import { signInErrorMessage } from '@/lib/sign-in-errors';
 import { useState, FormEvent, useEffect } from 'react';
-import { useAuthStore } from '@/stores/useAuthStore';
-import { Eye, EyeOff, ArrowRight, Send, Building2 } from 'lucide-react';
+import { useAuthStore, type AuthUser } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoSignupProblem, demoSignupErrorMessage } from '@/lib/demo-config';
+import { safeStorage } from '@/lib/safe-storage';
+import DemoBanner from '@/components/shared/DemoBanner';
+import { Eye, EyeOff, ArrowRight, Send, Building2, UserPlus } from 'lucide-react';
 
 interface Props {
   /** Provided in solo mode — clicking "Enter Anton" calls this instead of logging in */
@@ -56,9 +60,55 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
           oidc: !!d.oidcEnabled,
           oidcLabel: d.oidcButtonLabel || 'Sign in with single sign-on',
         });
+        useDemoStore.getState().applyConfig(d);
       })
       .catch(() => {});
   }, []);
+
+  // ── Public demo (DEMO_MODE=true): visitors make their own account ──────────
+  const demo = useDemoStore((s) => s.config);
+  const [view, setView] = useState<'signin' | 'signup'>('signin');
+  const [suUsername, setSuUsername] = useState('');
+  const [suPassword, setSuPassword] = useState('');
+  const [suCode, setSuCode] = useState('');
+  const [suAgreed, setSuAgreed] = useState(false);
+  const [suError, setSuError] = useState('');
+  const [suSubmitting, setSuSubmitting] = useState(false);
+  const showSignup = demo.demoMode && demo.signupOpen && view === 'signup';
+
+  async function handleSignup(e: FormEvent) {
+    e.preventDefault();
+    setSuError('');
+    const problem = demoSignupProblem(
+      { username: suUsername, password: suPassword, code: suCode, agreed: suAgreed },
+      demo.signupCodeRequired,
+    );
+    if (problem) { setSuError(problem); return; }
+    setSuSubmitting(true);
+    try {
+      const res = await fetch('/api/auth/demo-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: suUsername.trim(),
+          password: suPassword,
+          ...(demo.signupCodeRequired ? { code: suCode.trim() } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({})) as { user?: AuthUser; token?: string };
+      if (!res.ok || !data.user || !data.token) {
+        setSuError(demoSignupErrorMessage(res.status, data));
+        return;
+      }
+      // Signed straight in, exactly as a password sign-in leaves it.
+      safeStorage.setItem('openexpert-token', data.token);
+      useAuthStore.setState({ user: data.user, token: data.token });
+    } catch {
+      setSuError('Network error. Please try again.');
+    } finally {
+      setSuSubmitting(false);
+    }
+  }
 
   // Handle ?auth_code=xxx redirect after OAuth flow (C2 fix — JWT is never in the URL)
   useEffect(() => {
@@ -171,6 +221,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
       {/* ── RIGHT PANEL — white login panel ───────────────────────────── */}
       <div className="flex-1 lg:w-1/2 flex flex-col bg-white">
+        <DemoBanner variant="light" />
 
         {/* Top bar */}
         <div className="flex items-center justify-between px-10 pt-7">
@@ -233,6 +284,115 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
             ) : (
               /* ── TEAM MODE — login form + optional OAuth ── */
               <>
+              {/* Public demo: sign in, or make a demo account */}
+              {demo.demoMode && demo.signupOpen && (
+                <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Sign in or sign up">
+                  {(['signin', 'signup'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="tab"
+                      aria-selected={view === v}
+                      onClick={() => { setView(v); setError(''); setSuError(''); }}
+                      className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                        view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      {v === 'signin' ? 'Sign in' : 'Create a demo account'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showSignup && (
+                <form onSubmit={handleSignup} className="space-y-4" aria-label="Create a demo account">
+                  <div>
+                    <label htmlFor="su-username" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                      Username
+                    </label>
+                    <input
+                      id="su-username"
+                      type="text"
+                      autoComplete="username"
+                      value={suUsername}
+                      onChange={(e) => setSuUsername(e.target.value)}
+                      required
+                      disabled={suSubmitting}
+                      placeholder="3–50 letters, numbers, _ or -"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Not your real name — no email address is needed.</p>
+                  </div>
+                  <div>
+                    <label htmlFor="su-password" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                      Password
+                    </label>
+                    <input
+                      id="su-password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      value={suPassword}
+                      onChange={(e) => setSuPassword(e.target.value)}
+                      required
+                      minLength={12}
+                      disabled={suSubmitting}
+                      placeholder="At least 12 characters"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
+                    />
+                  </div>
+                  {demo.signupCodeRequired && (
+                    <div>
+                      <label htmlFor="su-code" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                        Invite code
+                      </label>
+                      <input
+                        id="su-code"
+                        type="text"
+                        autoComplete="off"
+                        value={suCode}
+                        onChange={(e) => setSuCode(e.target.value)}
+                        required
+                        disabled={suSubmitting}
+                        placeholder="The code you were given"
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
+                      />
+                    </div>
+                  )}
+                  <label className="flex items-start gap-2.5 text-sm leading-snug text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={suAgreed}
+                      onChange={(e) => setSuAgreed(e.target.checked)}
+                      disabled={suSubmitting}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#0D7D6C]"
+                    />
+                    <span>
+                      I will not enter personal or client data. I understand my account and everything in it is
+                      deleted after {demo.retentionDays} days, and I have read the{' '}
+                      <a href={demo.privacyPath} className="text-[#0D7D6C] underline">privacy notice</a>.
+                    </span>
+                  </label>
+                  {suError && (
+                    <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                      {suError}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={suSubmitting || !suUsername || !suPassword || !suAgreed}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-adv-teal px-4 py-3.5 text-[15px] font-bold text-white transition-all hover:bg-adv-teal-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {suSubmitting ? <span>Creating your account…</span> : (
+                      <>
+                        <UserPlus className="w-4 h-4" aria-hidden="true" />
+                        <span>Create account and start</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {!showSignup && (
               <form onSubmit={handleSubmit} className="space-y-4">
 
                 {/* Username */}
@@ -265,6 +425,8 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     >
                       Password
                     </label>
+                    {/* A demo account has no email address to send a reset link to. */}
+                    {!demo.demoMode && (
                     <button
                       type="button"
                       tabIndex={-1}
@@ -278,6 +440,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     >
                       Forgot password?
                     </button>
+                    )}
                   </div>
                   <div className="relative">
                     <input
@@ -398,9 +561,10 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                   )}
                 </button>
               </form>
+              )}
 
               {/* OAuth buttons — only shown in team mode when configured */}
-              {(oauthConfig.google || oauthConfig.github || oauthConfig.oidc) && (
+              {!showSignup && (oauthConfig.google || oauthConfig.github || oauthConfig.oidc) && (
                 <div className="mt-4">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
@@ -455,6 +619,11 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
         {/* Footer */}
         <div className="px-10 pb-7 text-center">
+          {demo.demoMode && (
+            <p className="mb-2 text-sm">
+              <a href={demo.privacyPath} className="text-gray-500 underline hover:text-[#0D7D6C]">Privacy notice</a>
+            </p>
+          )}
           <p className="text-[11px] text-gray-300">
             Created by Daniel Bardun &amp; FutureChain &mdash; Enhanced by You
           </p>

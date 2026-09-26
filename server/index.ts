@@ -45,7 +45,7 @@ import { seedApeApiEndpoint } from './services/apeapi-seed.js';
 import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
-import { createAuthMiddleware, requireAdminOrSolo, jwtSecretProblem } from './middleware/auth.js';
+import { createAuthMiddleware, requireAdminOrSolo, jwtSecretProblem, LIVE_ACCOUNT_SQL, sessionEndedOutsideDemo } from './middleware/auth.js';
 import { createAuthRoutes, createAuthMfaRoutes } from './routes/auth.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createCompliancePolicyRoutes } from './routes/compliance-policy.js';
@@ -65,7 +65,11 @@ import { createWorkflowRoutes } from './routes/workflows.js';
 import { createMemoryRoutes } from './routes/memory.js';
 import { createCanvasRoutes } from './routes/canvas.js';
 import { createRadarRoutes } from './routes/radar.js';
-import { createRadarFetcher } from './services/radar-fetcher.js';
+import { createRadarFetcher, isRadarAutomationDisabled, radarCronIsAtMostHourly } from './services/radar-fetcher.js';
+import { setRouterDb } from './services/compat-endpoint.js';
+import { requestContextMiddleware } from './lib/request-context.js';
+import { isLoopbackRequest } from './lib/request-origin.js';
+import { createBudgetMiddleware } from './middleware/budget.js';
 import createNotificationsRouter from './routes/notifications.js';
 import * as cron from 'node-cron';
 import { createProjectFilesRoutes } from './routes/project-files.js';
@@ -78,6 +82,11 @@ import { createIntelligenceDashboardRoutes } from './routes/intelligence-dashboa
 import { createPatternDetectionRoutes } from './routes/pattern-detection.js';
 import { createPatternDetection } from './services/pattern-detection.js';
 import { startMemorySweep } from './services/memory-sweep.js';
+import {
+  isDemoMode, demoModeStartupProblem, demoModeWarnings, applyDemoModeOverrides,
+  demoPublicConfig, createDemoAllowlistMiddleware, createDemoWriteLimiter,
+} from './middleware/demo-mode.js';
+import { startDemoRetention } from './services/demo-retention.js';
 import { ensureWorkComplianceRules } from './services/work-compliance-rules.js';
 import { markInterruptedRuns } from './services/run-recovery.js';
 import { createAuditEventsMiddleware } from './middleware/audit-events.js';
@@ -234,6 +243,20 @@ if (!process.env.DEPLOYMENT_MODE) {
   if (problem) throw new Error(problem);
 }
 
+// Public showcase (DEMO_MODE=true): team mode only, and the background jobs
+// that spend or learn are forced off here, before any scheduler reads its
+// flag. See server/middleware/demo-mode.ts and docs/deployment/public-demo.md.
+{
+  const problem = demoModeStartupProblem();
+  if (problem) throw new Error(problem);
+  if (isDemoMode()) {
+    const forced = applyDemoModeOverrides();
+    logger.warn(`[demo] DEMO_MODE=true — public showcase: non-admins reach the Work routes only${forced.length ? `; forced ${forced.map((n) => `${n}=true`).join(', ')}` : ''}`);
+    // The configuration warnings come after the Settings-saved provider keys
+    // are loaded (loadPersistedEnvKeys below), so a key saved there is seen.
+  }
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 
@@ -333,6 +356,8 @@ app.use('/api/auth/reset-password', authLimiter);
 // Apply Claude-specific rate limiter to AI endpoints
 app.use('/api/claude/message', claudeLimiter);
 app.use('/api/claude/message-sync', claudeLimiter);
+app.use('/api/claude/preview-prompt', claudeLimiter);
+app.post('/api/sessions/:id/title/generate', claudeLimiter);
 
 // SEC-05: Parse cookies so auth middleware can read httpOnly session cookie
 app.use(cookieParser());
@@ -374,6 +399,11 @@ if (!projectsTable) {
 // RATE-04: initialise async audit queue now that DB is ready
 initAuditQueue(db);
 
+// Both LLM routers resolve compat:<slug>:<model> endpoints, record priced calls
+// and check the daily spend caps through this database, including the call
+// sites that pass no db of their own (services/compat-endpoint.ts).
+setRouterDb(db);
+
 // Restore Settings-persisted provider API keys (app_settings → process.env)
 // BEFORE any LLM client is constructed below (quality-scoring Anthropic
 // instance, claude-client singleton, route factories). Keys set in the
@@ -384,6 +414,11 @@ try {
   if (restoredKeys.length > 0) {
     console.log(`[settings] restored persisted provider key(s): ${restoredKeys.join(', ')}`);
   }
+  if (isDemoMode()) {
+    for (const warning of demoModeWarnings()) logger.warn(`[demo] ${warning}`);
+  }
+  const { spendCapConfigWarnings } = await import('./services/llm-spend.js');
+  for (const line of spendCapConfigWarnings()) logger.warn(`[llm-spend] ${line}`);
 } catch (err) {
   console.warn('[settings] failed to restore persisted provider keys:', err instanceof Error ? err.message : err);
 }
@@ -464,6 +499,14 @@ try {
   console.warn('[memory-sweep] failed to start:', error instanceof Error ? error.message : error);
 }
 
+// Public showcase: expired demo accounts are deleted daily with everything
+// they wrote (services/demo-retention.ts). Registers only with DEMO_MODE=true.
+try {
+  startDemoRetention(db);
+} catch (error) {
+  console.warn('[demo-retention] failed to start:', error instanceof Error ? error.message : error);
+}
+
 // Wave 6: the seven Work-deliverable compliance rules (category 'work') are
 // seeded idempotently; they run after every module answer
 // (compliance-on-completion.ts, setting compliance_on_completion, default on).
@@ -497,9 +540,8 @@ app.use('/mcp', (req, res, next) => {
     }
     return next();
   }
-  const ip = req.socket.remoteAddress ?? '';
-  const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-  if (!isLoopback) {
+  // req.ip honours TRUST_PROXY: behind a same-host proxy every socket is 127.0.0.1.
+  if (!isLoopbackRequest(req)) {
     return res.status(401).json({ error: 'MCP over the network requires MCP_SECRET (send Authorization: Bearer <MCP_SECRET>)' });
   }
   next();
@@ -611,11 +653,16 @@ if (APP_GATEWAY_ENABLED) {
 app.get('/api/config', (_req, res) => {
   const deploymentMode = process.env.DEPLOYMENT_MODE || 'solo';
   const oidc = readOidcSettings();
+  // A demo turns Google/GitHub sign-in off (routes/auth.ts), so the buttons go too.
+  const demo = isDemoMode();
   res.json({
     deploymentMode,
     version: appVersion(),
-    googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
-    githubOAuthEnabled: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
+    googleOAuthEnabled: !demo && !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    githubOAuthEnabled: !demo && !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
+    // Public showcase: { demoMode: false } unless DEMO_MODE=true, then the
+    // offered models, enabled pillars, sign-up state and retention.
+    ...demoPublicConfig(),
     // Enabled = the sign-in button shows (team mode). Configured = the OIDC_*
     // settings are present — Settings shows "activates in team mode" for an
     // instance being prepared before it switches over.
@@ -628,6 +675,13 @@ app.get('/api/config', (_req, res) => {
 // Auth middleware — protects all subsequent /api routes
 const authMiddleware = await createAuthMiddleware(db);
 app.use('/api', authMiddleware);
+// Who is asking, for code that has no req: the per-user spend cap and the
+// hashed `user` sent to compat endpoints (lib/request-context.ts).
+app.use('/api', requestContextMiddleware);
+// Public showcase: with DEMO_MODE=true a non-admin reaches only the Work
+// routes (and the enabled pillars); everything else answers 404. Does
+// nothing outside demo mode. Keep it directly after authMiddleware.
+app.use('/api', createDemoAllowlistMiddleware());
 // Wave 6: one audit_events row per mutating API request (method, route pattern,
 // status, duration, user, role — never the body). After auth so req.user is set.
 app.use('/api', createAuditEventsMiddleware(db));
@@ -643,6 +697,24 @@ app.use('/api', csrfProtection);
 
 // Apply per-user rate limiter to all authenticated API routes
 app.use('/api', userLimiter);
+
+// Code Studio routes that call a model directly get the same per-IP model-call
+// limiter as /api/claude/message and the per-user budget check. Both call next()
+// on success, so the request falls through to its router below.
+const codingModelBudget = createBudgetMiddleware(db);
+
+// Public demo: uploads, exports and version saves per visitor per 10 minutes
+// (DEMO_USER_WRITES_PER_10_MIN). Calls next() for everyone else.
+const demoWriteLimiter = createDemoWriteLimiter();
+app.post('/api/files/upload', demoWriteLimiter);
+app.post(['/api/export', '/api/export/*'], demoWriteLimiter);
+app.post('/api/versions/*', demoWriteLimiter);
+app.post('/api/core-team/:projectId/panel', claudeLimiter, codingModelBudget);
+app.get('/api/coding/workshop/sessions/:id/start', claudeLimiter, codingModelBudget);
+app.post('/api/coding/workshop/sessions/:id/respond', claudeLimiter, codingModelBudget);
+app.post('/api/coding/studio/:projectId/run', claudeLimiter, codingModelBudget);
+app.post('/api/coding/studio/:projectId/run/approve-plan', claudeLimiter, codingModelBudget);
+app.post('/api/coding/script-lite/preview', claudeLimiter, codingModelBudget);
 
 // MFA enrolment — deliberately mounted HERE and not with the rest of the auth router
 // at line ~469. Those routes have to be reachable without a session (login, OAuth
@@ -958,7 +1030,7 @@ app.use('/api', await createMarketplaceRoutes(db));
 // Strategic Improvements + Event-Driven Triggers
 const webhookListenerInstance = await createWebhookListener(db);
 setEventEmitter(webhookListenerInstance);            // Wire internal event emitter singleton
-app.use('/api', await createTriggersRoutes(db));           // RBAC-protected trigger management
+app.use('/api', await createTriggersRoutes(db));           // Trigger management — admin-only in team mode (routes/triggers.ts)
 app.use('/webhooks', webhookLimiter);                 // Rate limit public webhook endpoint (SEC-19) — matches the root mount below
 app.use('/', await createWebhooksPublicRoutes(db));        // Public inbound webhook endpoint (no ANTON auth) — POST /webhooks/inbound/:id
 app.use('/api', await createSessionResumeRoutes(db));      // Session Resume (snapshots)
@@ -1132,6 +1204,15 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
+// Public showcase: the Study Rooms relay (unauthenticated) and Community rooms
+// sit outside the HTTP route allowlist, so a visitor could use them as a
+// message relay. Refuse every connection to them in demo mode.
+if (isDemoMode()) {
+  for (const ns of ['/study-rooms', '/community']) {
+    io.of(ns).use((_socket, next) => next(new Error('Not available in this demo')));
+  }
+}
+
 // Study room namespace
 const studyRooms = io.of('/study-rooms');
 studyRooms.on('connection', (socket) => {
@@ -1173,8 +1254,15 @@ communityNS.use((socket, next) => {
   if (!token) { next(new Error('Authentication required')); return; }
   try {
     jwt.verify(token, SOCK_JWT_SECRET);
-    db.get('SELECT id FROM user_sessions WHERE token = ? AND expires_at > datetime(\'now\')', token).then(session => {
-      if (!session) { next(new Error('Session expired')); return; }
+    // PostgreSQL (this was SQLite's datetime('now'), which failed every lookup),
+    // and the same account rule as authMiddleware: a switched-off or expired
+    // demo account has no live session.
+    db.get<{ demo_expires_at: unknown }>(
+      `SELECT u.demo_expires_at FROM user_sessions s JOIN users u ON u.id = s.user_id
+        WHERE s.token = ? AND s.expires_at > NOW() AND ${LIVE_ACCOUNT_SQL}`,
+      token,
+    ).then(session => {
+      if (!session || sessionEndedOutsideDemo(session.demo_expires_at)) { next(new Error('Session expired')); return; }
       next();
     }).catch(() => next(new Error('Session lookup failed')));
   } catch {
@@ -2645,10 +2733,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
 
   // Initialize radar background scanning from DB settings
   if (radarFetcher) {
-    const radarAutomationDisabled =
-      String(process.env.RADAR_AUTOMATION_DISABLED || '').toLowerCase() === 'true';
-    if (radarAutomationDisabled) {
-      console.log('[radar] RADAR_AUTOMATION_DISABLED=true — auto-scan + cron skipped');
+    if (isRadarAutomationDisabled()) {
+      console.log('[radar] radar automation disabled (RADAR_AUTOMATION_DISABLED or DEMO_MODE) — auto-scan + cron skipped');
     } else {
       try {
         const autoEnabled = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_enabled'");
@@ -2666,8 +2752,9 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
         // Also check for cron-based radar schedule
         const radarCronRow = await db.get<{ value: string }>("SELECT value FROM radar_settings WHERE key = 'auto_scan_cron'");
         const radarCronExpr = radarCronRow?.value;
-        if (radarCronExpr && cron.validate(radarCronExpr)) {
+        if (radarCronExpr && cron.validate(radarCronExpr) && radarCronIsAtMostHourly(radarCronExpr)) {
           cron.schedule(radarCronExpr, async () => {
+            if (isRadarAutomationDisabled()) return;
             console.log('[radar-cron] Starting scheduled radar scan');
             try {
               await radarFetcher!.scanAllSources();
@@ -2677,6 +2764,8 @@ httpServer.listen(Number(PORT), BIND_ADDR, async () => {
             }
           });
           console.log(`[radar-cron] Scheduled radar scan: ${radarCronExpr}`);
+        } else if (radarCronExpr) {
+          console.warn('[radar-cron] stored schedule ignored: invalid, or runs more often than hourly');
         }
       } catch (err) {
         console.error('[radar] Failed to read auto-scan settings:', err);

@@ -227,6 +227,90 @@ export function mistralUsesReasoning(level: string): boolean {
   return MISTRAL_REASONING_LEVELS.has(level);
 }
 
+// ── OpenAI-compatible endpoints (OpenRouter reasoning object) ─────────────────
+
+/** The effort words a compat endpoint may take, weakest first. */
+const COMPAT_EFFORT_ORDER = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+
+/** What each level asks for before it is fitted to the model's own efforts. */
+const COMPAT_EFFORT_WANTED: Record<ThinkingLevel, string> = {
+  quick: 'low',
+  think: 'medium',
+  think_hard: 'high',
+  investigate: 'xhigh',
+  plan_first: 'xhigh',
+  deep_investigate: 'max',
+};
+
+/** Efforts assumed when a reasoning model lists none: the three every
+ *  OpenRouter reasoning model takes. */
+const COMPAT_DEFAULT_EFFORTS = ['low', 'medium', 'high'];
+
+export interface CompatReasoningInput {
+  mandatory?: boolean;
+  supportedEfforts?: string[];
+}
+
+export type CompatReasoningParam = { effort: string } | { enabled: false };
+
+/**
+ * The `reasoning` body field for a compat model, or undefined to send none.
+ *
+ * Sent only when the endpoint's /models said the model reasons (`reasoning`
+ * present in its meta) — a model that does not reason gets nothing, as before.
+ * The level's effort is fitted to the efforts the model lists: the nearest one,
+ * ties going up (a user who picked a higher level asked for more thought). GLM
+ * 5.3 Flash takes only low/high/max and turns anything else into max, so an
+ * unlisted word is never sent. Without this every GLM call reasoned at max, its
+ * default, whatever level was picked. A model whose reasoning is optional gets
+ * { enabled: false } for quick. A call that names no level (the utility calls:
+ * titles, scoring, extraction) is treated as quick, as a Claude 5 call with no
+ * level gets effort low — not billed at the model's default.
+ */
+export function compatReasoningParam(
+  level: ThinkingLevel | undefined,
+  reasoning: CompatReasoningInput | undefined,
+): CompatReasoningParam | undefined {
+  if (!reasoning) return undefined;
+  const lvl: ThinkingLevel = level ?? 'quick';
+  if (lvl === 'quick' && reasoning.mandatory === false) return { enabled: false };
+
+  const rank = (e: string): number => COMPAT_EFFORT_ORDER.indexOf(e as typeof COMPAT_EFFORT_ORDER[number]);
+  const offered = (reasoning.supportedEfforts && reasoning.supportedEfforts.length > 0
+    ? reasoning.supportedEfforts
+    : COMPAT_DEFAULT_EFFORTS
+  ).filter((e) => rank(e) >= 0 && e !== 'none');
+  if (offered.length === 0) return undefined;
+
+  const wanted = rank(COMPAT_EFFORT_WANTED[lvl]);
+  let best = offered[0];
+  let bestDistance = Infinity;
+  for (const e of offered) {
+    const distance = Math.abs(rank(e) - wanted);
+    if (distance < bestDistance || (distance === bestDistance && rank(e) > rank(best))) {
+      best = e;
+      bestDistance = distance;
+    }
+  }
+  return { effort: best };
+}
+
+/**
+ * Output tokens to add to max_tokens for reasoning at this setting. Reasoning
+ * counts against max_tokens on OpenRouter, so a 512-token utility call to a
+ * model that must reason could spend all of it thinking and answer nothing.
+ */
+export function compatReasoningAllowance(param: CompatReasoningParam | undefined): number {
+  if (!param || !('effort' in param)) return 0;
+  switch (param.effort) {
+    case 'minimal':
+    case 'low': return 2_048;
+    case 'medium': return 4_096;
+    case 'high': return 8_192;
+    default: return 16_384;   // xhigh, max
+  }
+}
+
 // ── UI granularity classifier ─────────────────────────────────────────────────
 
 /**

@@ -7,6 +7,7 @@
 import * as path from 'path';
 import fs from 'fs-extra';
 import { estimateTokens } from './token-estimator.js';
+import { decodeEntities, removeScriptsAndStyles, stripTags } from '../lib/html-to-text.js';
 
 // ── Limits ───────────────────────────────────────────────────
 
@@ -126,16 +127,8 @@ async function extractHtml(filePath: string): Promise<string> {
   const note = await oversizeNote(filePath, 'HTML file', 'Split the file into smaller parts and re-upload.');
   if (note) return note;
   const raw = await fs.readFile(filePath, 'utf-8');
-  // Strip tags, decode basic entities
-  return raw
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
+  // Strip tags, then decode entities (once, last)
+  return decodeEntities(stripTags(removeScriptsAndStyles(raw)))
     .replace(/\s{2,}/g, ' ')
     .trim();
 }

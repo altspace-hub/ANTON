@@ -118,4 +118,17 @@ describe('PATCH /admin/users/:id', () => {
     expect(res.status).toBe(200);
     expect(runs.some((r) => r.sql.includes('UPDATE users SET display_name'))).toBe(true);
   });
+
+  it('promoting an account to admin makes it an ordinary account: a demo expiry is cleared', async () => {
+    // A demo account (users.demo_expires_at, migration 289) made an administrator
+    // must not be deleted by demo retention at expiry, with everything it wrote.
+    const res = await patch('u-demo', { role: 'admin' });
+    expect(res.status).toBe(200);
+    expect(runs.some((r) => r.sql.includes('SET demo_expires_at = NULL') && r.params[0] === 'u-demo')).toBe(true);
+
+    // Negative control: any other role change leaves the expiry alone.
+    runs.length = 0;
+    await patch('u-demo', { role: 'analyst' });
+    expect(runs.some((r) => r.sql.includes('demo_expires_at'))).toBe(false);
+  });
 });

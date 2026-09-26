@@ -11,6 +11,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Sparkles, Send, ArrowRight, Loader2, RotateCcw } from 'lucide-react';
 import { MODULES, AREAS } from '@/lib/constants';
 import { getAuthHeader } from '@/lib/api';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
 
 interface ModuleMatch {
   moduleId: string;
@@ -43,6 +46,10 @@ export default function SmartModuleSearch() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState('');
+  // Public demo (DEMO_MODE=true): a visitor may not call /modules/smart-search
+  // (it is outside the demo's Work routes and spends model budget), and the
+  // failure advice points to Settings they cannot open. Admins keep it.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
 
   async function handleSearch() {
     const q = query.trim();
@@ -93,6 +100,9 @@ export default function SmartModuleSearch() {
     'Analyse ESG risks in our supply chain',
     'Build a cash flow forecast for my market stall',
   ];
+
+  // The module catalogue in the sidebar is the visitor's way in.
+  if (demoLimited) return null;
 
   return (
     <div className="mb-8 rounded-xl border border-adv-teal/20 bg-adv-card">

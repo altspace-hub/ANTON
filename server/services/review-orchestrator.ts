@@ -16,9 +16,9 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 
-import Anthropic from '@anthropic-ai/sdk';
+import type Anthropic from '@anthropic-ai/sdk';
 import { getRoutedUtilityModelSync } from './utility-model.js';
-import { callChat, mapModelToProvider } from './provider-router.js';
+import { callChat } from './provider-router.js';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -61,7 +61,11 @@ export interface ReviewEngineOutput {
 
 // ── Review Orchestrator ────────────────────────────────────────
 
-export async function createReviewOrchestrator(anthropic?: Anthropic) {
+/**
+ * The Anthropic client argument is no longer used — the reviewers run through
+ * provider-router on the configured model. Kept so existing callers compile.
+ */
+export async function createReviewOrchestrator(_anthropic?: Anthropic) {
   /**
    * Run all 5 review agents in parallel on an output
    */
@@ -73,11 +77,11 @@ export async function createReviewOrchestrator(anthropic?: Anthropic) {
 
     // Run all reviewers in parallel for speed
     const [quality, regulatory, technical, comms, redTeam] = await Promise.all([
-      runQualityReview(output, context, anthropic),
-      runRegulatoryReview(output, context, anthropic),
-      runTechnicalReview(output, context, anthropic),
-      runCommunicationsReview(output, context, anthropic),
-      runRedTeamReview(output, context, anthropic),
+      runQualityReview(output, context),
+      runRegulatoryReview(output, context),
+      runTechnicalReview(output, context),
+      runCommunicationsReview(output, context),
+      runRedTeamReview(output, context),
     ]);
 
     const reviews = [quality, regulatory, technical, comms, redTeam];
@@ -124,15 +128,83 @@ export async function createReviewOrchestrator(anthropic?: Anthropic) {
 }
 
 // ── Individual Review Agents ───────────────────────────────────
+//
+// Each reviewer runs on the configured model through provider-router. They
+// used to run only when an Anthropic client object existed: on a server with
+// no Anthropic key (a subscription-only instance, the OpenRouter showcase) the
+// route returned placeholder scores (8.0, 8.5, …) that no model had given.
+// Now every reviewer calls the model; when the call fails or its reply holds
+// no score, the result says so in an info finding and falls back to the
+// heuristic checks, instead of passing the placeholder off as a review.
 
-async function runQualityReview(
-  output: string,
-  context: ReviewContext,
-  anthropic?: Anthropic
-): Promise<ReviewResult> {
+interface ReviewerSpec {
+  agent: string;
+  agentDescription: string;
+  systemPrompt: string;
+  userContent: string;
+  /** Starting score for the heuristic fallback. */
+  fallbackScore: number;
+  /** Heuristic checks used when the model gives no usable review. */
+  heuristics?: (findings: ReviewFinding[]) => void;
+}
+
+function isScore(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 10;
+}
+
+async function runReviewer(spec: ReviewerSpec): Promise<ReviewResult> {
   const startTime = Date.now();
+  const findings: ReviewFinding[] = [];
+  const suggestions: string[] = [];
+  let score: number | null = null;
+  let fallbackReason = '';
 
-  const systemPrompt = `You are a Quality Reviewer for professional compliance consulting outputs.
+  try {
+    const chatResult = await callChat({
+      model: getRoutedUtilityModelSync(),
+      maxTokens: 2048,
+      system: spec.systemPrompt,
+      messages: [{ role: 'user', content: spec.userContent }],
+    });
+    const parsed = extractJSON(chatResult.text) as { score?: unknown; findings?: unknown; suggestions?: unknown } | null;
+    if (parsed && isScore(parsed.score)) {
+      score = parsed.score;
+      if (Array.isArray(parsed.findings)) findings.push(...(parsed.findings as ReviewFinding[]));
+      if (Array.isArray(parsed.suggestions)) suggestions.push(...parsed.suggestions.filter((x): x is string => typeof x === 'string'));
+    } else {
+      fallbackReason = 'the reviewer model did not return a readable score';
+    }
+  } catch (error) {
+    console.error(`[${spec.agent}-reviewer] model call failed:`, error instanceof Error ? error.message : error);
+    fallbackReason = 'the reviewer model could not be reached';
+  }
+
+  if (score === null) {
+    findings.push({
+      severity: 'info',
+      category: 'system',
+      message: `${spec.agentDescription} ran in fallback mode: ${fallbackReason}. The score comes from heuristic checks, not a model review.`,
+    });
+    spec.heuristics?.(findings);
+    score = adjustScoreForFindings(spec.fallbackScore, findings);
+  }
+
+  return {
+    agent: spec.agent,
+    agentDescription: spec.agentDescription,
+    score,
+    findings,
+    suggestions,
+    executionTimeMs: Math.max(1, Date.now() - startTime), // Ensure at least 1ms
+  };
+}
+
+async function runQualityReview(output: string, context: ReviewContext): Promise<ReviewResult> {
+  return runReviewer({
+    agent: 'quality',
+    agentDescription: 'Quality Reviewer',
+    fallbackScore: 8.0,
+    systemPrompt: `You are a Quality Reviewer for professional compliance consulting outputs.
 
 Your role: Assess completeness, structure, clarity, and professional quality.
 
@@ -153,22 +225,8 @@ Output JSON:
     {"severity": "medium", "category": "clarity", "message": "Paragraph 2.1 uses undefined acronym", "location": "Section 2.1", "suggestion": "Define 'BWRA' on first use"}
   ],
   "suggestions": ["Add executive summary", "Include visual risk matrix"]
-}`;
-
-  const findings: ReviewFinding[] = [];
-  const suggestions: string[] = [];
-  let score = 8.0; // Default if API unavailable
-
-  if (anthropic) {
-    try {
-      const chatResult = await callChat({
-        model: getRoutedUtilityModelSync(),
-        maxTokens: 2048,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `# Quality Review Request
+}`,
+    userContent: `# Quality Review Request
 
 ## Module Context
 - Module: ${context.moduleName} (${context.moduleId})
@@ -183,68 +241,35 @@ ${context.userMessage}
 ${output.slice(0, 100000)} <!-- Truncate to 100k chars for token limits -->
 
 Provide your quality review as JSON.`,
-          },
-        ],
-      });
-
-      const text = chatResult.text;
-      const parsed = extractJSON(text);
-      if (parsed) {
-        score = parsed.score || 8.0;
-        findings.push(...(parsed.findings || []));
-        suggestions.push(...(parsed.suggestions || []));
-      }
-    } catch (error) {
-      console.error('[quality-reviewer] API error:', error);
-      findings.push({
-        severity: 'info',
-        category: 'system',
-        message: 'Quality review ran in fallback mode (API unavailable)',
-      });
-    }
-  } else {
-    // Fallback: heuristic quality checks
-    if (output.length < 500)
-      findings.push({
-        severity: 'high',
-        category: 'completeness',
-        message: 'Output is very short (< 500 chars). May be incomplete.',
-      });
-    if (!output.includes('#'))
-      findings.push({
-        severity: 'medium',
-        category: 'structure',
-        message: 'No markdown headings detected. Add structure.',
-      });
-    if (output.split('\n').length < 10)
-      findings.push({
-        severity: 'medium',
-        category: 'completeness',
-        message: 'Output has fewer than 10 lines. Expand detail.',
-      });
-
-    // Adjust score based on findings in fallback mode
-    score = adjustScoreForFindings(score, findings);
-  }
-
-  return {
-    agent: 'quality',
-    agentDescription: 'Quality Reviewer',
-    score,
-    findings,
-    suggestions,
-    executionTimeMs: Math.max(1, Date.now() - startTime), // Ensure at least 1ms
-  };
+    heuristics: (findings) => {
+      if (output.length < 500)
+        findings.push({
+          severity: 'high',
+          category: 'completeness',
+          message: 'Output is very short (< 500 chars). May be incomplete.',
+        });
+      if (!output.includes('#'))
+        findings.push({
+          severity: 'medium',
+          category: 'structure',
+          message: 'No markdown headings detected. Add structure.',
+        });
+      if (output.split('\n').length < 10)
+        findings.push({
+          severity: 'medium',
+          category: 'completeness',
+          message: 'Output has fewer than 10 lines. Expand detail.',
+        });
+    },
+  });
 }
 
-async function runRegulatoryReview(
-  output: string,
-  context: ReviewContext,
-  anthropic?: Anthropic
-): Promise<ReviewResult> {
-  const startTime = Date.now();
-
-  const systemPrompt = `You are a Regulatory Reviewer specializing in AML/CFT compliance.
+async function runRegulatoryReview(output: string, context: ReviewContext): Promise<ReviewResult> {
+  return runReviewer({
+    agent: 'regulatory',
+    agentDescription: 'Regulatory Reviewer',
+    fallbackScore: 8.5,
+    systemPrompt: `You are a Regulatory Reviewer specializing in AML/CFT compliance.
 
 Your role: Verify regulatory accuracy, citation quality, and compliance with current law.
 
@@ -257,22 +282,8 @@ Evaluate:
 
 Score 0-10 (10 = legally sound, 0 = regulatory errors).
 
-Output JSON with findings and score.`;
-
-  const findings: ReviewFinding[] = [];
-  const suggestions: string[] = [];
-  let score = 8.5;
-
-  if (anthropic) {
-    try {
-      const chatResult = await callChat({
-        model: getRoutedUtilityModelSync(),
-        maxTokens: 2048,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `# Regulatory Review Request
+Output JSON with findings and score.`,
+    userContent: `# Regulatory Review Request
 
 Module: ${context.moduleName}
 Area: ${context.areaId}
@@ -281,53 +292,24 @@ Output to review:
 ${output.slice(0, 100000)}
 
 Provide regulatory review as JSON.`,
-          },
-        ],
-      });
-
-      const text = chatResult.text;
-      const parsed = extractJSON(text);
-      if (parsed) {
-        score = parsed.score || 8.5;
-        findings.push(...(parsed.findings || []));
-        suggestions.push(...(parsed.suggestions || []));
-      }
-    } catch (error) {
-      console.error('[regulatory-reviewer] API error:', error);
-    }
-  } else {
-    // Fallback: check for common regulatory keywords
-    const hasAMLR = output.toLowerCase().includes('amlr') || output.includes('2024/1624');
-    const has6AMLD = output.toLowerCase().includes('6amld') || output.includes('2018/1673');
-    if (!hasAMLR && context.areaId === 'fcp')
-      findings.push({
-        severity: 'medium',
-        category: 'citations',
-        message: 'No AMLR reference found. Consider citing Regulation (EU) 2024/1624.',
-      });
-
-    // Adjust score based on findings in fallback mode
-    score = adjustScoreForFindings(score, findings);
-  }
-
-  return {
-    agent: 'regulatory',
-    agentDescription: 'Regulatory Reviewer',
-    score,
-    findings,
-    suggestions,
-    executionTimeMs: Math.max(1, Date.now() - startTime), // Ensure at least 1ms
-  };
+    heuristics: (findings) => {
+      const hasAMLR = output.toLowerCase().includes('amlr') || output.includes('2024/1624');
+      if (!hasAMLR && context.areaId === 'fcp')
+        findings.push({
+          severity: 'medium',
+          category: 'citations',
+          message: 'No AMLR reference found. Consider citing Regulation (EU) 2024/1624.',
+        });
+    },
+  });
 }
 
-async function runTechnicalReview(
-  output: string,
-  context: ReviewContext,
-  anthropic?: Anthropic
-): Promise<ReviewResult> {
-  const startTime = Date.now();
-
-  const systemPrompt = `You are a Technical Reviewer for compliance implementations.
+async function runTechnicalReview(output: string, context: ReviewContext): Promise<ReviewResult> {
+  return runReviewer({
+    agent: 'technical',
+    agentDescription: 'Technical Reviewer',
+    fallbackScore: 8.0,
+    systemPrompt: `You are a Technical Reviewer for compliance implementations.
 
 Your role: Assess technical correctness, feasibility, and implementation risks.
 
@@ -340,59 +322,17 @@ Evaluate:
 
 Score 0-10 (10 = technically sound, 0 = contains errors).
 
-Output JSON with findings and score.`;
-
-  const findings: ReviewFinding[] = [];
-  const suggestions: string[] = [];
-  let score = 8.0;
-
-  if (anthropic) {
-    try {
-      const chatResult = await callChat({
-        model: getRoutedUtilityModelSync(),
-        maxTokens: 2048,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `Technical review for: ${context.moduleName}\n\n${output.slice(0, 100000)}`,
-          },
-        ],
-      });
-
-      const text = chatResult.text;
-      const parsed = extractJSON(text);
-      if (parsed) {
-        score = parsed.score || 8.0;
-        findings.push(...(parsed.findings || []));
-        suggestions.push(...(parsed.suggestions || []));
-      }
-    } catch (error) {
-      console.error('[technical-reviewer] API error:', error);
-    }
-  } else {
-    // Adjust score based on findings in fallback mode
-    score = adjustScoreForFindings(score, findings);
-  }
-
-  return {
-    agent: 'technical',
-    agentDescription: 'Technical Reviewer',
-    score,
-    findings,
-    suggestions,
-    executionTimeMs: Math.max(1, Date.now() - startTime), // Ensure at least 1ms
-  };
+Output JSON with findings and score.`,
+    userContent: `Technical review for: ${context.moduleName}\n\n${output.slice(0, 100000)}`,
+  });
 }
 
-async function runCommunicationsReview(
-  output: string,
-  context: ReviewContext,
-  anthropic?: Anthropic
-): Promise<ReviewResult> {
-  const startTime = Date.now();
-
-  const systemPrompt = `You are a Communications Reviewer for compliance documents.
+async function runCommunicationsReview(output: string, context: ReviewContext): Promise<ReviewResult> {
+  return runReviewer({
+    agent: 'communications',
+    agentDescription: 'Communications Reviewer',
+    fallbackScore: 7.5,
+    systemPrompt: `You are a Communications Reviewer for compliance documents.
 
 Your role: Assess tone, audience fit, readability, and messaging effectiveness.
 
@@ -405,59 +345,17 @@ Evaluate:
 
 Score 0-10 (10 = excellent comms, 0 = unclear/inappropriate).
 
-Output JSON with findings and score.`;
-
-  const findings: ReviewFinding[] = [];
-  const suggestions: string[] = [];
-  let score = 7.5;
-
-  if (anthropic) {
-    try {
-      const chatResult = await callChat({
-        model: getRoutedUtilityModelSync(),
-        maxTokens: 2048,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `Communications review for: ${context.moduleName}\n\n${output.slice(0, 100000)}`,
-          },
-        ],
-      });
-
-      const text = chatResult.text;
-      const parsed = extractJSON(text);
-      if (parsed) {
-        score = parsed.score || 7.5;
-        findings.push(...(parsed.findings || []));
-        suggestions.push(...(parsed.suggestions || []));
-      }
-    } catch (error) {
-      console.error('[comms-reviewer] API error:', error);
-    }
-  } else {
-    // Adjust score based on findings in fallback mode
-    score = adjustScoreForFindings(score, findings);
-  }
-
-  return {
-    agent: 'communications',
-    agentDescription: 'Communications Reviewer',
-    score,
-    findings,
-    suggestions,
-    executionTimeMs: Math.max(1, Date.now() - startTime), // Ensure at least 1ms
-  };
+Output JSON with findings and score.`,
+    userContent: `Communications review for: ${context.moduleName}\n\n${output.slice(0, 100000)}`,
+  });
 }
 
-async function runRedTeamReview(
-  output: string,
-  context: ReviewContext,
-  anthropic?: Anthropic
-): Promise<ReviewResult> {
-  const startTime = Date.now();
-
-  const systemPrompt = `You are a Red Team Reviewer (adversarial QA).
+async function runRedTeamReview(output: string, context: ReviewContext): Promise<ReviewResult> {
+  return runReviewer({
+    agent: 'red-team',
+    agentDescription: 'Red Team Reviewer',
+    fallbackScore: 7.0,
+    systemPrompt: `You are a Red Team Reviewer (adversarial QA).
 
 Your role: Find edge cases, failure modes, risks, and what could go wrong.
 
@@ -470,49 +368,9 @@ Evaluate:
 
 Score 0-10 (10 = robust against edge cases, 0 = many failure modes).
 
-Output JSON with findings (focus on CRITICAL and HIGH severity issues).`;
-
-  const findings: ReviewFinding[] = [];
-  const suggestions: string[] = [];
-  let score = 7.0;
-
-  if (anthropic) {
-    try {
-      const chatResult = await callChat({
-        model: getRoutedUtilityModelSync(),
-        maxTokens: 2048,
-        system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `Red team review for: ${context.moduleName}\n\n${output.slice(0, 100000)}`,
-          },
-        ],
-      });
-
-      const text = chatResult.text;
-      const parsed = extractJSON(text);
-      if (parsed) {
-        score = parsed.score || 7.0;
-        findings.push(...(parsed.findings || []));
-        suggestions.push(...(parsed.suggestions || []));
-      }
-    } catch (error) {
-      console.error('[red-team-reviewer] API error:', error);
-    }
-  } else {
-    // Adjust score based on findings in fallback mode
-    score = adjustScoreForFindings(score, findings);
-  }
-
-  return {
-    agent: 'red-team',
-    agentDescription: 'Red Team Reviewer',
-    score,
-    findings,
-    suggestions,
-    executionTimeMs: Math.max(1, Date.now() - startTime), // Ensure at least 1ms
-  };
+Output JSON with findings (focus on CRITICAL and HIGH severity issues).`,
+    userContent: `Red team review for: ${context.moduleName}\n\n${output.slice(0, 100000)}`,
+  });
 }
 
 // ── Utilities ──────────────────────────────────────────────────
@@ -548,7 +406,7 @@ function adjustScoreForFindings(baseScore: number, findings: ReviewFinding[]): n
   return Math.max(0, Math.min(10, adjustedScore));
 }
 
-function extractJSON(text: string): any {
+function extractJSON(text: string): unknown {
   try {
     // Try to find JSON in code blocks first
     const jsonMatch = text.match(/```json\s*(\{[\s\S]*?\})\s*```/);

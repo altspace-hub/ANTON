@@ -47,7 +47,7 @@ export default function StructureReference({ value, onChange }: StructureReferen
       {expanded && (
         <div className="mt-2 rounded-lg border border-border bg-adv-dark-2 p-3">
           <p className="mb-3 text-[11px] text-adv-gray">
-            Provide an example document or describe the structure you want Claude to follow.
+            Provide an example document or describe the structure you want the output to follow.
           </p>
 
           {/* Mode toggle buttons */}

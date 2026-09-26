@@ -27,14 +27,14 @@ export default function ReferenceOutputPanel({ value, onChange }: ReferenceOutpu
       {expanded && (
         <div className="mt-2 rounded-lg border border-border bg-adv-dark-2 p-3">
           <p className="mb-2 text-[11px] text-adv-gray">
-            Paste a high-quality example of the kind of output you want Claude to produce. Claude will match its structure, depth, and formatting.
+            Paste a high-quality example of the kind of output you want. The model will match its structure, depth, and formatting.
           </p>
 
           <div className="relative">
             <textarea
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder="Paste a golden example output here — e.g. a previous high-quality gap analysis, report, or memo that Claude should emulate..."
+              placeholder="Paste a golden example output here — e.g. a previous high-quality gap analysis, report, or memo that the model should emulate..."
               className="w-full rounded-lg border border-border bg-adv-dark p-2.5 pr-8 text-xs text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
               rows={6}
             />

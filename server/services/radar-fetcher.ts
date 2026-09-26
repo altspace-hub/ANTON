@@ -494,11 +494,18 @@ Return ONLY valid JSON (no markdown):
 
   // ── Auto-scan schedule management ──────────────────────────
 
-  async function startAutoScan(intervalHours: number) {
+  /** Returns false, and schedules nothing, while automation is disabled. */
+  function startAutoScan(intervalHours: number): boolean {
     stopAutoScan();
-    autoScanIntervalHours = intervalHours;
-    const intervalMs = intervalHours * 3600000;
+    if (isRadarAutomationDisabled()) {
+      console.log('[radar-fetcher] Auto-scan not scheduled: radar automation is disabled (RADAR_AUTOMATION_DISABLED or DEMO_MODE)');
+      return false;
+    }
+    const hours = clampAutoScanIntervalHours(intervalHours);
+    autoScanIntervalHours = hours;
+    const intervalMs = hours * 3600000;
     autoScanTimer = setInterval(async () => {
+      if (isRadarAutomationDisabled()) return;
       try {
         console.log('[radar-fetcher] Running scheduled auto-scan...');
         const result = await scanAllSources();
@@ -507,7 +514,8 @@ Return ONLY valid JSON (no markdown):
         console.error('[radar-fetcher] Auto-scan error:', error);
       }
     }, intervalMs);
-    console.log(`[radar-fetcher] Auto-scan scheduled every ${intervalHours}h`);
+    console.log(`[radar-fetcher] Auto-scan scheduled every ${hours}h`);
+    return true;
   }
 
   function stopAutoScan() {
@@ -527,6 +535,44 @@ Return ONLY valid JSON (no markdown):
   }
 
   return { scanAllSources, scanSource, scoreUnscoredItems, getScanStatus, stopScan, startAutoScan, stopAutoScan, getAutoScanConfig };
+}
+
+// ── Schedule guards ──────────────────────────────────────────────
+
+/** Scheduled scans call the model for every new item, unattended: never more
+ *  often than hourly. */
+export const MIN_AUTO_SCAN_INTERVAL_HOURS = 1;
+/** setInterval's ceiling is about 24.8 days; above it Node fires every 1 ms. */
+export const MAX_AUTO_SCAN_INTERVAL_HOURS = 24 * 24;
+const DEFAULT_AUTO_SCAN_INTERVAL_HOURS = 24;
+
+/**
+ * True when no scheduled radar scan may run: RADAR_AUTOMATION_DISABLED=true,
+ * or DEMO_MODE=true (a public demo never spends on background scans). Read at
+ * call time, so a scan scheduled at runtime (PUT /api/radar/settings) obeys it
+ * as well as the one started at boot. Manual scans are not affected.
+ */
+export function isRadarAutomationDisabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  const on = (v: string | undefined) => String(v ?? '').trim().toLowerCase() === 'true';
+  return on(env.RADAR_AUTOMATION_DISABLED) || on(env.DEMO_MODE);
+}
+
+/** The interval a timer may actually use: a number inside the bounds, else the default. */
+export function clampAutoScanIntervalHours(hours: number): number {
+  if (!Number.isFinite(hours)) return DEFAULT_AUTO_SCAN_INTERVAL_HOURS;
+  return Math.min(MAX_AUTO_SCAN_INTERVAL_HOURS, Math.max(MIN_AUTO_SCAN_INTERVAL_HOURS, hours));
+}
+
+/**
+ * Whether a cron expression fires at most once an hour: its minute field (and
+ * seconds field, when node-cron's six-field form is used) must be one fixed
+ * number. `* * * * *` would scan every minute.
+ */
+export function radarCronIsAtMostHourly(expr: string): boolean {
+  const fields = expr.trim().split(/\s+/);
+  if (fields.length !== 5 && fields.length !== 6) return false;
+  const fixed = fields.length === 6 ? fields.slice(0, 2) : fields.slice(0, 1);
+  return fixed.every((f) => /^\d{1,2}$/.test(f));
 }
 
 // ── Helpers ──────────────────────────────────────────────────────

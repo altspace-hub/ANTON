@@ -80,7 +80,7 @@ export default function SkillAttacher({ selected, onChange }: SkillAttacherProps
       {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3">
           <p className="mb-3 text-xs text-adv-gray">
-            Attach skills to enhance Claude's expertise or communication style for this session.
+            Attach skills to enhance the model's expertise or communication style for this session.
           </p>
 
           {/* Active skills */}

@@ -18,8 +18,10 @@
 //
 // Disable entirely with MISSIONS_RUNNER_DISABLED=true (documented in
 // .env.example) — missions then advance only via the manual API/UI.
+// DEMO_MODE=true turns it off too: a tick then does nothing.
 
 import type { DatabaseAdapter } from '../../db/database.js';
+import { isDemoMode } from '../../middleware/demo-mode.js';
 import { createMissionController } from './mission-controller.js';
 import type { Mission } from './types.js';
 
@@ -72,6 +74,8 @@ export function createMissionRunner(
    */
   async function tick(): Promise<RunnerTickResult> {
     const result: RunnerTickResult = { picked: 0, advanced: 0, completed: 0, paused: 0, failed: 0 };
+    // A public demo runs no unattended model calls, whatever MISSIONS_RUNNER_DISABLED says.
+    if (isDemoMode()) return result;
     const active = await controller.state.listMissions({ status: 'active' });
     const ids = selectRunnableMissions(active, inFlight, maxConcurrent);
     if (ids.length === 0) return result;

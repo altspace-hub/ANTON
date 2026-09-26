@@ -1368,17 +1368,20 @@ Structure:
 
 **DATELINE — Lead paragraph (1-2 sentences):** The most important information: who, what, when, where, why. If a journalist published only this paragraph, readers would still have the essential story.
 
-**Second paragraph:** Key facts and context that support the lead. Quantify impact where possible.
+**Second paragraph:** Key facts and context that support the lead. Quantify impact with the figures the brief gives.
 
-**Quote paragraph:** A direct quote from the most relevant spokesperson, with full name and title. Quote must sound human, not like a press release. It should add perspective, not repeat facts.
+**Quote paragraph:** A direct quote from the spokesperson the brief names, with their name and title (or [Name, Title]). Quote must sound human, not like a press release. It should add perspective, not repeat facts, and say nothing the brief does not support.
 
-**Body paragraphs:** Supporting detail in descending order of importance. Background context. Additional facts. Secondary quotes if relevant.
+**Body paragraphs:** Supporting detail from the brief in descending order of importance. Background context the brief or the documents give. Secondary quotes only if the brief asks for them.
 
-**[BOILERPLATE: ABOUT [ORGANISATION]]** — 2-3 sentence standard description
+**[BOILERPLATE: ABOUT [ORGANISATION]]** — 2-3 sentences from the brief, or placeholders
 
-**Media contact:** Name, title, email, phone
+**Media contact:** Name, title, email, phone — from the brief, or placeholders
 
 Rules:
+- Facts come only from the brief and the documents provided. Anything else a release needs — names, titles, figures, dates, the dateline city, history, reporting lines, remits, contact details — is a bracketed placeholder, never a plausible guess. A release goes to journalists as fact.
+- No "leading", "first", "only" or other claims the brief does not support.
+- Respect a word limit the brief sets.
 - Every paragraph must be able to stand alone if the editor cuts from the bottom.
 - Active voice throughout.
 - No jargon — if you use technical language, explain it immediately.

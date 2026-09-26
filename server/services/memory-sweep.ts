@@ -14,6 +14,7 @@
  */
 import type { DatabaseAdapter } from '../db/database.js';
 import { sweepUnlearnedOutputs, type SweepOptions, type SweepResult } from './output-store.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
 
 export interface MemorySweepOptions extends SweepOptions {
   /** Time between passes. Default one hour. */
@@ -40,6 +41,11 @@ export const MEMORY_SWEEP_DISABLED_ENV = 'MEMORY_SWEEP_DISABLED';
 export function startMemorySweep(db: DatabaseAdapter, opts: MemorySweepOptions = {}): MemorySweepHandle | null {
   if (process.env[MEMORY_SWEEP_DISABLED_ENV] === 'true') {
     console.log(`[memory-sweep] disabled (${MEMORY_SWEEP_DISABLED_ENV}=true) — unlearned outputs are not retried`);
+    return null;
+  }
+  // A public demo never learns from visitors' runs, whatever the flag says.
+  if (isDemoMode()) {
+    console.log('[memory-sweep] disabled (DEMO_MODE=true) — a demo does not learn from visitors');
     return null;
   }
 

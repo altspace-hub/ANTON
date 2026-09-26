@@ -20,7 +20,10 @@ import * as sdkClient from './claude-sdk-client.js';
 import * as codexClient from './codex-sdk-client.js';
 import { decrypt } from './credential-vault.js';
 import type { AzureOpenAIConfig } from './adapters/azureOpenaiAdapter.js';
-import { resolveCustomEndpoint } from './custom-endpoint-resolver.js';
+import { resolveCompatModel } from './compat-endpoint.js';
+import { assertSpendAllowed } from './llm-spend.js';
+import { mapModelToProvider } from './provider-router.js';
+import type { CompatInputMessage, OpenAICompatibleStreamResult } from './adapters/openaiCompatibleAdapter.js';
 import { withCurrentDate } from '../lib/current-date.js';
 import type { ModelId, ThinkingLevel, CreativityLevel } from '../../src/lib/types.js';
 
@@ -52,6 +55,15 @@ export interface StreamCompletionData {
   inputTokens: number;
   outputTokens: number;
   thinkingTokens?: number;
+  /** Why the model stopped, where the adapter reports it ('length' = cut off). */
+  finishReason?: string | null;
+  /** Set when the answer is incomplete (a compat answer cut off at the output limit). */
+  warning?: string;
+}
+
+/** The frame that tells a streaming client its answer was cut off. */
+function truncationFrame(warning: string): object {
+  return { type: 'warning', code: 'output_truncated', message: warning };
 }
 
 // ── Environment Variables ─────────────────────────────────────
@@ -100,22 +112,57 @@ async function resolveAzureConfig(modelId: string, db?: DatabaseAdapter): Promis
 // Resolve the custom endpoint config (DeepSeek / OpenRouter / Together / Groq /
 // vLLM / …) for compat:<slug>:<model> ids. Shared by all three entry points
 // (streamToResponse, sendRequest, streamToHandler) so each passes the same
-// 4th arg to createModelAdapter.
+// 4th arg to createModelAdapter. The one resolver (compat-endpoint.ts) refuses
+// a model the endpoint does not allow and falls back on the database
+// registered at boot when the caller passed none.
 async function resolveCompatConfig(modelId: string, db?: DatabaseAdapter): Promise<OpenAICompatibleConfig> {
-  if (!db) {
-    throw new Error('Database required to resolve custom OpenAI-compatible endpoint');
-  }
-  const slug = modelId.split(':')[1];
-  if (!slug) throw new Error(`Invalid compat model id: ${modelId} (expected compat:<slug>:<model>)`);
-  const endpoint = await resolveCustomEndpoint(db, slug);
-  if (!endpoint) {
-    throw new Error(`No enabled custom model endpoint with slug "${slug}". Add one in Settings → Local & cost-effective models.`);
-  }
+  const compat = await resolveCompatModel(modelId, db);
   return {
-    baseUrl: endpoint.baseUrl,
-    apiKey: endpoint.apiKey,
-    extraHeaders: endpoint.extraHeaders,
+    baseUrl: compat.endpoint.baseUrl,
+    apiKey: compat.endpoint.apiKey,
+    extraHeaders: compat.endpoint.extraHeaders,
+    extraBody: compat.endpoint.extraBody,
+    modelMeta: compat.meta,
+    maxOutputTokens: compat.endpoint.maxOutputTokens,
+    pricing: compat.pricing,
+    modelId,
+    db,
   };
+}
+
+/**
+ * Entry rules shared by the three entry points: today's date in the system
+ * prompt, a bare claude-* id mapped to the configured engine (Civic, Grow and
+ * Procure name literal Sonnet ids; on a server with no Anthropic key they
+ * failed with "API key not configured" instead of following the Settings
+ * default, as every provider-router call does), and the daily spend caps for
+ * priced compat calls.
+ */
+async function enterRouter(config: UnifiedStreamConfig): Promise<{ config: UnifiedStreamConfig; provider: ReturnType<typeof getProviderFromModelId> }> {
+  let next = withCurrentDate(config);
+  if (typeof next.model === 'string' && next.model.startsWith('claude-')) {
+    const mapped = mapModelToProvider(next.model);
+    if (mapped !== next.model) next = { ...next, model: mapped as ModelId };
+  }
+  const provider = getProviderFromModelId(next.model, next.db);
+  if (provider === 'openai_compatible') await assertSpendAllowed({ db: next.db });
+  return { config: next, provider };
+}
+
+/** The compat adapter's own token counts, when the last call reported them. */
+function compatUsageOf(adapter: object): OpenAICompatibleStreamResult | null {
+  const last = (adapter as { lastResult?: OpenAICompatibleStreamResult | null }).lastResult;
+  return last ?? null;
+}
+
+/**
+ * For a compat endpoint, the messages with their content blocks intact: the
+ * adapter turns images into image parts (or refuses them), instead of the
+ * JSON-stringified base64 every other adapter here is handed.
+ */
+function compatMessagesFor(provider: string, config: UnifiedStreamConfig): { compatMessages?: CompatInputMessage[] } {
+  if (provider !== 'openai_compatible') return {};
+  return { compatMessages: config.messages.map((m) => ({ role: m.role, content: m.content })) };
 }
 
 // ── Provider Detection ─────────────────────────────────────────
@@ -175,8 +222,9 @@ export async function streamToResponse(
   res: StreamSink,
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
-  config = withCurrentDate(config);
-  const provider = getProviderFromModelId(config.model, config.db);
+  const entered = await enterRouter(config);
+  config = entered.config;
+  const provider = entered.provider;
 
   // Subscription execution engines — sdk:<model> / codex:<model> run through
   // the Claude Agent SDK / Codex SDK subprocess (subscription auth), emitting
@@ -301,6 +349,7 @@ export async function streamToResponse(
       tools: config.tools,
       structuredOutput: config.structuredOutput,
       stream: true,
+      ...compatMessagesFor(provider, config),
     };
 
     let fullText = '';
@@ -314,11 +363,16 @@ export async function streamToResponse(
 
     const elapsed = Date.now() - startTime;
 
-    // Estimate tokens (rough approximation: 1 token ≈ 4 characters)
-    const estimatedInputTokens = Math.ceil(
+    // Estimate tokens (rough approximation: 1 token ≈ 4 characters) — unless
+    // the endpoint reported them (compat endpoints do, with include_usage).
+    const reported = compatUsageOf(adapter);
+    const estimatedInputTokens = reported?.inputTokens || Math.ceil(
       (unifiedReq.systemPrompt.length + JSON.stringify(unifiedReq.messages).length) / 4
     );
-    const estimatedOutputTokens = Math.ceil(fullText.length / 4);
+    const estimatedOutputTokens = reported?.outputTokens || Math.ceil(fullText.length / 4);
+
+    // A compat answer cut off at the output limit is said so, not passed off as complete.
+    if (reported?.warning) sendEvent(truncationFrame(reported.warning));
 
     // Send completion event
     sendEvent({
@@ -337,9 +391,13 @@ export async function streamToResponse(
     if (onComplete) {
       onComplete({
         text: fullText,
-        thinking: '', // Non-Anthropic models don't separate thinking blocks
+        // Compat endpoints return the model's reasoning; other adapters do not.
+        thinking: reported?.thinking ?? '',
         inputTokens: estimatedInputTokens,
         outputTokens: estimatedOutputTokens,
+        ...(reported?.reasoningTokens ? { thinkingTokens: reported.reasoningTokens } : {}),
+        ...(reported ? { finishReason: reported.finishReason } : {}),
+        ...(reported?.warning ? { warning: reported.warning } : {}),
       });
     }
 
@@ -365,8 +423,9 @@ export async function streamToResponse(
 // ── Non-Streaming Request (for Review Engine, etc.) ───────────
 
 export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCompletionData> {
-  config = withCurrentDate(config);
-  const provider = getProviderFromModelId(config.model, config.db);
+  const entered = await enterRouter(config);
+  config = entered.config;
+  const provider = entered.provider;
 
   // Subscription execution engines — aggregate the stream into one completion.
   if (provider === 'anthropic_sdk' || provider === 'openai_codex') {
@@ -424,9 +483,11 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
     tools: config.tools,
     structuredOutput: config.structuredOutput,
     stream: false,
+    ...compatMessagesFor(provider, config),
   };
 
   const response = await adapter.sendRequest(unifiedReq);
+  const warning = compatUsageOf(adapter)?.warning;
 
   return {
     text: response.content,
@@ -434,6 +495,9 @@ export async function sendRequest(config: UnifiedStreamConfig): Promise<StreamCo
     inputTokens: response.usage.inputTokens,
     outputTokens: response.usage.outputTokens,
     thinkingTokens: response.usage.thinkingTokens,
+    // Kept, so a caller can tell a cut-off answer ('length') from a complete one.
+    finishReason: response.finishReason ?? null,
+    ...(warning ? { warning } : {}),
   };
 }
 
@@ -444,8 +508,9 @@ export async function streamToHandler(
   onEvent: (event: object) => void,
   onComplete?: (data: StreamCompletionData) => void
 ): Promise<void> {
-  config = withCurrentDate(config);
-  const provider = getProviderFromModelId(config.model, config.db);
+  const entered = await enterRouter(config);
+  config = entered.config;
+  const provider = entered.provider;
 
   if (provider === 'anthropic' || provider === 'anthropic_sdk' || provider === 'openai_codex') {
     // Create a mock response to capture SSE events from claude-client
@@ -569,6 +634,7 @@ export async function streamToHandler(
     tools: config.tools,
     structuredOutput: config.structuredOutput,
     stream: true,
+    ...compatMessagesFor(provider, config),
   };
 
   let fullText = '';
@@ -581,11 +647,13 @@ export async function streamToHandler(
       onEvent({ type: 'content_block_delta', delta: { type: 'text_delta', text: chunk } });
     }
 
-    const estimatedInputTokens = Math.ceil(
+    const reported = compatUsageOf(adapter);
+    const estimatedInputTokens = reported?.inputTokens || Math.ceil(
       (unifiedReq.systemPrompt.length + JSON.stringify(unifiedReq.messages).length) / 4
     );
-    const estimatedOutputTokens = Math.ceil(fullText.length / 4);
+    const estimatedOutputTokens = reported?.outputTokens || Math.ceil(fullText.length / 4);
 
+    if (reported?.warning) onEvent(truncationFrame(reported.warning));
     onEvent({
       type: 'message_stop',
       usage: { input_tokens: estimatedInputTokens, output_tokens: estimatedOutputTokens },
@@ -595,9 +663,12 @@ export async function streamToHandler(
     if (onComplete) {
       onComplete({
         text: fullText,
-        thinking: '',
+        thinking: reported?.thinking ?? '',
         inputTokens: estimatedInputTokens,
         outputTokens: estimatedOutputTokens,
+        ...(reported?.reasoningTokens ? { thinkingTokens: reported.reasoningTokens } : {}),
+        ...(reported ? { finishReason: reported.finishReason } : {}),
+        ...(reported?.warning ? { warning: reported.warning } : {}),
       });
     }
   } catch (error) {

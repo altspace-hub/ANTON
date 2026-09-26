@@ -1,17 +1,28 @@
 /**
  * triggers.ts
- * RBAC-protected API for managing event-driven webhook triggers.
- * Follows the same pattern as other routes (see workflows.ts, connections.ts).
+ * API for managing event-driven webhook triggers.
+ *
+ * Admin-only in team mode (requireAdminOrSolo on every route). A trigger gives
+ * the internet an unauthenticated URL that runs a workflow — model calls billed
+ * to the instance — so on a shared server it is an instance-wide switch, not a
+ * personal setting. This header used to call the API "RBAC-protected" while no
+ * route checked a role.
  */
 
 import { Router, Request, Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { createWebhookListener, type TriggerType } from '../services/webhook-listener.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
+import { publicBaseUrl } from '../lib/request-origin.js';
 
 export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
   const listener = await createWebhookListener(db);
+
+  // Scoped to /triggers: this router is mounted on /api, so a pathless use()
+  // would guard every /api route mounted after it.
+  router.use('/triggers', requireAdminOrSolo);
 
   function getUserId(req: Request): string {
     return (req as unknown as { user?: { id?: string } }).user?.id ?? 'default';
@@ -102,7 +113,7 @@ export async function createTriggersRoutes(db: DatabaseAdapter): Promise<Router>
 
       res.status(201).json({
         trigger: { ...trigger, auth_config: { ...trigger.auth_config, secret: undefined } },
-        webhook_url: `${req.protocol}://${req.get('host')}${trigger.endpoint_path}`,
+        webhook_url: `${publicBaseUrl(req)}${trigger.endpoint_path}`,
       });
     } catch (err) {
       console.error('[triggers] create error:', err);
