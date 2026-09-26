@@ -15,17 +15,26 @@ export interface EndpointModelMeta {
 }
 
 /**
- * OpenRouter provider routing for the showcase: GLM 5.3 Flash only on the two
- * EU-located zero-data-retention providers, and no provider that keeps prompts
- * for training. `only` is what keeps every call on those two; allow_fallbacks
- * lets one stand in when the other refuses. With it false OpenRouter tries only
- * its first pick: in a live check on 2026-09-25 Inceptron answered 429 and
- * NextBit was never tried (1 of 3 calls served; with it true, 3 of 3 on NextBit).
+ * OpenRouter provider routing for the showcase: GLM 5.3 Flash on Inceptron
+ * only (EU/EEA, zero data retention), and no provider that keeps prompts for
+ * training. `only` is what keeps every call there.
+ *
+ * NextBit was the second provider until 2026-09-26 and is out: its own ZDR
+ * statement says request data may be kept for up to 90 days, and its terms put
+ * compute nodes inside and outside the EEA. OpenRouter's ZDR label is no
+ * guarantee (its DPA §2.4(b)). Do not add it back without OpenRouter's written
+ * confirmation that the endpoint is zero-retention and EEA-only.
+ *
+ * With one provider there is nothing to fall back to. In a live check on
+ * 2026-09-25 Inceptron answered 429 to about one call in three (NextBit served
+ * the rest); after the adapter's three retries such a call now ends as a "busy"
+ * error. The fix for that is Inceptron under a direct contract, not a second
+ * provider here. On a demo the adapter refuses to send to OpenRouter without
+ * zdr, data_collection 'deny' and `only` (compat-endpoint.ts).
  */
 export const OPENROUTER_EU_ZDR_EXTRA_BODY: Readonly<Record<string, unknown>> = Object.freeze({
   provider: {
-    only: ['inceptron', 'nextbit'],
-    allow_fallbacks: true,
+    only: ['inceptron'],
     zdr: true,
     data_collection: 'deny',
   },

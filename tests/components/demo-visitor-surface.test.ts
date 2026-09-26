@@ -9,7 +9,7 @@
  *
  *   - "Collect insights — Responses contribute to knowledge base": a demo
  *     never learns from a visitor's runs;
- *   - knowledge modes a visitor cannot use: Local Folders, Combined, the
+ *   - knowledge modes a visitor cannot use: Online links, Local Folders, Combined, the
  *     Knowledge Collections (RAG) and the Regulatory Knowledge Packs;
  *   - Home's Pathfinder search, 5-Minute Brief and "Add deadline";
  *   - on the Work page: Deliberation mode, the Risk Atlas banner, the
@@ -206,13 +206,13 @@ describe('KnowledgeSourcePanel: the modes a visitor can use', () => {
     },
     ragSearch: { enabled: true, collections: [], topK: 10, rerank: true, showRelevance: true },
   };
-  const hiddenFromVisitor = ['Local Folders', 'Combined: Search + Local Documents', 'Indexed Knowledge Base (Folders)', 'Knowledge Collections (RAG)', 'Regulatory Knowledge Packs'];
+  // Online links too: the server does not fetch them for a visitor (privacy review H4, D8).
+  const hiddenFromVisitor = ['Online Regulation / Document Links', 'Local Folders', 'Combined: Search + Local Documents', 'Indexed Knowledge Base (Folders)', 'Knowledge Collections (RAG)', 'Regulatory Knowledge Packs'];
 
-  it('offers a visitor the model\'s own knowledge and online links only, and calls nothing outside the demo', async () => {
+  it('offers a visitor the model\'s own knowledge only, and calls nothing outside the demo', async () => {
     as('visitor');
     await render(KnowledgeSourcePanel as ComponentType<object>, { config: everyMode, onChange: () => {}, model: GLM });
     expect(text()).toContain("The Model's Own Knowledge");
-    expect(text()).toContain('Online Regulation / Document Links');
     for (const title of hiddenFromVisitor) expect(text(), title).not.toContain(title);
     expect(called('/api/collections')).toBe(false);
     expect(called('/api/knowledge-packs')).toBe(false);

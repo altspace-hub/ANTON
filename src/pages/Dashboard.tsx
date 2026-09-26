@@ -33,7 +33,7 @@ import {
   ArrowRight, ChevronRight, Clock, LayoutGrid, MessageSquare, Zap, Trash2, Pencil, Check, X, X as XIcon,
   Star, Puzzle, Plus,
 } from 'lucide-react';
-import { MODULES, MODELS, AREAS } from '@/lib/constants';
+import { MODULES, MODELS } from '@/lib/constants';
 import MorningBrief from '@/features/time-intelligence/MorningBrief';
 import TeamWorkloadView from '@/features/workflows/TeamWorkloadView';
 import RadarWidget from '@/features/radar/RadarWidget';
@@ -41,6 +41,7 @@ import PathfinderBar from '@/components/pathfinder/PathfinderBar';
 import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
 import { STARTER_PACKS } from '@/lib/starter-packs';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { fetchSessions, fetchSessionStats, deleteSession, updateSessionTitle, fetchCommunityModules, fetchCustomModules, fetchProfile, type CustomModuleData } from '@/lib/api';
 import type { Session } from '@/lib/types';
 
@@ -185,6 +186,8 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const formatRelativeTime = useFormatRelativeTime();
   const { checkHealth, health } = useSettingsStore();
+  // Public demo: a visitor is not shown the modules and areas the demo keeps off (privacy review H3).
+  const catalogue = useDemoCatalogue();
   const [recentSessions, setRecentSessions] = useState<Session[]>([]);
   const [continueWorkSessions, setContinueWorkSessions] = useState<Session[]>([]);
   const [stats, setStats] = useState<SessionStats | null>(null);
@@ -360,13 +363,15 @@ export default function Dashboard() {
 
   // Favourites row — resolve modules in the order they were starred
   const favoriteModules = [...favorites]
-    .map((id) => MODULES.find((m) => m.id === id))
+    .map((id) => catalogue.modules.find((m) => m.id === id))
     .filter(Boolean) as typeof MODULES;
+  const shownCustomModules = myCustomModules.filter((m) => !catalogue.moduleHidden(m.id, m.area));
+  const shownCommunityModules = communityModules.filter((m) => !catalogue.moduleHidden(m.id, m.area));
 
   // Search filtering
   const query = moduleSearch.trim().toLowerCase();
   const filteredModules = query
-    ? MODULES.filter(
+    ? catalogue.modules.filter(
         (m) =>
           m.label.toLowerCase().includes(query) ||
           m.shortLabel.toLowerCase().includes(query) ||
@@ -835,15 +840,15 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Puzzle className="h-4 w-4 text-adv-teal" />
             <h2 className="text-sm font-semibold text-adv-teal uppercase tracking-wider">My Custom Modules</h2>
-            {myCustomModules.length > 0 && (
-              <span className="text-xs text-adv-gray">{myCustomModules.length}</span>
+            {shownCustomModules.length > 0 && (
+              <span className="text-xs text-adv-gray">{shownCustomModules.length}</span>
             )}
           </div>
           <Link to="/build-module" className="text-xs text-adv-teal hover:underline flex items-center gap-1">
             Build new <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-        {myCustomModules.length === 0 ? (
+        {shownCustomModules.length === 0 ? (
           <div className="rounded-xl border border-dashed border-adv-teal/20 bg-adv-teal/5 px-5 py-5 text-center">
             <Puzzle className="h-8 w-8 text-adv-teal/30 mx-auto mb-2" />
             <p className="text-sm text-adv-gray">No custom modules yet.</p>
@@ -853,7 +858,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-adv-card">
-            {myCustomModules.map((mod) => (
+            {shownCustomModules.map((mod) => (
               <Link
                 key={mod.id}
                 to={`/module/${mod.id}`}
@@ -890,7 +895,7 @@ export default function Dashboard() {
             {favoriteModules.map((mod) => {
               const Icon = iconMap[mod.icon] || Search;
               const colorClass = colorMap[mod.color] || colorMap['adv-teal'];
-              const area = AREAS.find((a) => a.moduleIds.includes(mod.id as never));
+              const area = catalogue.areas.find((a) => a.moduleIds.includes(mod.id as never));
               return (
                 <ModuleCard
                   key={mod.id}
@@ -941,7 +946,7 @@ export default function Dashboard() {
             {filteredModules.map((mod) => {
               const Icon = iconMap[mod.icon] || Search;
               const colorClass = colorMap[mod.color] || colorMap['adv-teal'];
-              const area = AREAS.find((a) => a.moduleIds.includes(mod.id as never));
+              const area = catalogue.areas.find((a) => a.moduleIds.includes(mod.id as never));
               return (
                 <ModuleCard
                   key={mod.id}
@@ -960,9 +965,9 @@ export default function Dashboard() {
       ) : (
         /* Grouped by area */
         <div className="space-y-8">
-          {AREAS.map((area) => {
+          {catalogue.areas.map((area) => {
             const areaModules = area.moduleIds
-              .map((id) => MODULES.find((m) => m.id === id))
+              .map((id) => catalogue.modules.find((m) => m.id === id))
               .filter(Boolean) as typeof MODULES;
             if (areaModules.length === 0) return null;
             return (
@@ -994,15 +999,15 @@ export default function Dashboard() {
       )}
 
       {/* Community Modules */}
-      {communityModules.length > 0 && (
+      {shownCommunityModules.length > 0 && (
         <div className="mt-10">
           <div className="mb-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-adv-gold" />
             <h2 className="text-sm font-semibold text-adv-gold uppercase tracking-wider">{t('dashboard.communityModules')}</h2>
-            <span className="text-xs text-adv-gray">{communityModules.length}</span>
+            <span className="text-xs text-adv-gray">{shownCommunityModules.length}</span>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {communityModules.map((mod) => (
+            {shownCommunityModules.map((mod) => (
               <Link
                 key={mod.id}
                 to={`/module/${mod.id}`}

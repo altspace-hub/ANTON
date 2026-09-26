@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Settings, Circle, Sun, Moon, Building2, Menu, Command } from 'lucide-react';
-import { MODULES } from '@/lib/constants';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { headerEngineStatus } from '@/lib/engine-status';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -13,6 +12,7 @@ import { InsightsBell } from '@/components/shared/InsightsBell';
 import ModeToggle from '@/components/school/ModeToggle';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -36,13 +36,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
   // Public demo: a visitor reaches only the Work routes, so the insights,
   // notifications and Settings would only show errors. Admins keep them.
   const demoLimited = demoRestricted(useDemoStore((s) => s.config), authUser?.role);
+  // A module the demo keeps off is not named to a visitor, not even here.
+  const catalogue = useDemoCatalogue();
 
   // Build breadcrumb
   const parts: Array<{ label: string; path: string }> = [{ label: t('header.appName'), path: '/' }];
 
   const moduleMatch = location.pathname.match(/^\/module\/(.+)$/);
   if (moduleMatch) {
-    const mod = MODULES.find((m) => m.id === moduleMatch[1]);
+    const mod = catalogue.modules.find((m) => m.id === moduleMatch[1]);
     if (mod) {
       parts.push({ label: mod.label, path: location.pathname });
     }

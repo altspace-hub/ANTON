@@ -4,6 +4,8 @@ import { ilike } from '../db/dialect-helpers.js';
 import { callChat } from '../services/provider-router.js';
 import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { resolveProjectAccess } from '../services/project-context.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
+import { deleteSessionRows } from '../services/demo-retention.js';
 
 // Lazy read — a module-scope snapshot would evaluate before index.ts resolves
 // DEPLOYMENT_MODE (see middleware/auth.ts).
@@ -353,15 +355,19 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
         return;
       }
 
+      // Public demo: a visitor's review carries no name. The page sends only
+      // the status; a name typed into a direct API call would be a real name
+      // the demo says it does not collect (privacy review L8).
+      const reviewer = isDemoMode() && userRole !== 'admin' ? null : (reviewedBy || null);
       await db.run('UPDATE sessions SET review_status = ?, reviewed_by = ?, reviewed_at = ?, updated_at = ? WHERE id = ?'
-      , 
+      ,
         status,
-        status === 'draft' ? null : (reviewedBy || null),
+        status === 'draft' ? null : reviewer,
         status === 'draft' ? null : new Date().toISOString(),
         new Date().toISOString(),
         req.params.id
       );
-      res.json({ ok: true, status, reviewedBy: reviewedBy || null });
+      res.json({ ok: true, status, reviewedBy: reviewer });
     } catch (error) {
       res.status(500).json({ error: 'Failed to update review status' });
     }
@@ -376,6 +382,20 @@ export async function createSessionRoutes(db: DatabaseAdapter) {
       // Check ownership before delete
       const whereClause = userRole === 'admin' ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
       const params = userRole === 'admin' ? [req.params.id] : [req.params.id, userId!];
+
+      // Ownership first: the rows below are deleted only for a session that is
+      // the caller's. They have no foreign key to sessions — copies of its
+      // answers (versions, embeddings) and, on the public demo, every row keyed
+      // by it — and nothing could reach them once the session is gone.
+      const owned = await db.get<{ id: string }>(`SELECT id FROM sessions ${whereClause}`, ...params);
+      if (!owned) {
+        res.status(404).json({ error: 'Session not found or access denied' });
+        return;
+      }
+      const related = await deleteSessionRows(db, owned.id, { allSessionRows: isDemoMode() });
+      if (related.errors.length > 0) {
+        console.warn(`[sessions] delete: ${related.errors.length} related statement(s) failed: ${related.errors.map((e) => `${e.table}(${e.code})`).join(' ')}`);
+      }
 
       const result = await db.run(`DELETE FROM sessions ${whereClause}`, ...params);
 

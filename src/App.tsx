@@ -62,8 +62,9 @@ const ModulePage = lazy(() => import('./pages/ModulePage'));
 // (We tried a parallel /module-v2 page too; user preferred the existing
 // ModulePage layout so that experiment was dropped.)
 const HomeV2 = lazy(() => import('./pages/HomeV2'));
-// Public demo (DEMO_MODE=true): the privacy notice, readable before signing in.
+// Public demo (DEMO_MODE=true): the privacy notice and the demo terms, readable before signing in.
 const PrivacyNoticePage = lazy(() => import('./pages/PrivacyNoticePage'));
+const DemoTermsPage = lazy(() => import('./pages/DemoTermsPage'));
 
 // Heavy/secondary pages — lazy-loaded to reduce initial bundle size
 const PromptPage = lazy(() => import('./pages/PromptPage'));
@@ -476,12 +477,12 @@ export default function App() {
     }
   }, [isLoading, user, hasEntered]);
 
-  // The privacy notice is for anyone deciding whether to sign up: it renders
-  // before the sign-in check, signed in or not.
-  if (pathname === '/privacy') {
+  // The privacy notice and the demo terms are for anyone deciding whether to
+  // sign up: they render before the sign-in check, signed in or not.
+  if (pathname === '/privacy' || pathname === '/terms') {
     return (
       <Suspense fallback={<div className="min-h-screen bg-white" />}>
-        <PrivacyNoticePage />
+        {pathname === '/privacy' ? <PrivacyNoticePage /> : <DemoTermsPage />}
       </Suspense>
     );
   }

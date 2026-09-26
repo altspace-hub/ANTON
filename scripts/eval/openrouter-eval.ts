@@ -64,13 +64,14 @@ const GLM = 'z-ai/glm-5.3-flash';
 const LING = 'inclusionai/ling-3.0-flash-vl';
 
 /**
- * The showcase default: GLM pinned to the two EU zero-retention providers (brief,
- * decision 1). `only` keeps it on those two; allow_fallbacks lets one stand in
- * for the other on a 429 (with false, only OpenRouter's first pick is tried).
+ * The showcase default: GLM pinned to Inceptron, the one EU zero-retention
+ * provider (brief, decision 1; the same pin as the Settings preset,
+ * src/lib/model-endpoint-form.ts). NextBit was dropped on 2026-09-26: its own
+ * terms keep request data up to 90 days and put compute outside the EEA. With
+ * one provider a 429 has nothing to fall back to.
  */
 export const EU_ZDR_PROVIDER = {
-  only: ['inceptron', 'nextbit'],
-  allow_fallbacks: true,
+  only: ['inceptron'],
   zdr: true,
   data_collection: 'deny',
 };
@@ -83,11 +84,12 @@ export const EU_ZDR_PROVIDER = {
 export const CANDIDATES: readonly Candidate[] = [
   {
     key: 'glm-eu',
-    label: 'GLM 5.3 Flash, pinned to Inceptron/NextBit (EU, zero retention)',
+    label: 'GLM 5.3 Flash, pinned to Inceptron (EU, zero retention)',
     model: GLM,
     extraBody: { provider: EU_ZDR_PROVIDER },
     reasoning: { mandatory: true, efforts: ['low', 'high', 'max'] },
-    pricePerM: { input: 0.165, output: 0.55 },
+    // Inceptron: listed $0.11 / $0.45; a live call was billed about $0.50 out.
+    pricePerM: { input: 0.11, output: 0.5 },
   },
   {
     key: 'glm-default',

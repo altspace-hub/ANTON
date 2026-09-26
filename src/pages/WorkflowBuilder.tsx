@@ -15,6 +15,7 @@ import { streamMessage } from '@/lib/api';
 import type { WorkflowDefinition, WorkflowStep, WorkflowStepType } from '@/lib/workflow-definitions';
 import type { ThinkingLevel, CreativityLevel, StreamEvent, ModelId } from '@/lib/types';
 import { MODULES, AREAS, MODELS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { estimateWorkflowCost, formatCostEstimate } from '@/lib/workflow-cost';
 import {
   ApiCallStep, DatabaseStep, FileReadStep, FileWriteStep, ScriptStep,
@@ -94,6 +95,8 @@ export default function WorkflowBuilder() {
   const { saveWorkflow, getWorkflow, customWorkflows } = useWorkflowStore();
   // Session/global model — the default for claude steps without a per-step override (4.5)
   const { model: sessionModel } = useSessionStore();
+  // On a public demo the step pickers leave out the modules and areas kept off it.
+  const catalogue = useDemoCatalogue();
 
   const [workflow, setWorkflow] = useState<WorkflowDefinition>(createBlankWorkflow());
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
@@ -641,7 +644,7 @@ export default function WorkflowBuilder() {
                               className="w-full rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
                             >
                               <option value="">— All areas —</option>
-                              {AREAS.map((area) => (
+                              {catalogue.areas.map((area) => (
                                 <option key={area.id} value={area.id}>{area.label}</option>
                               ))}
                             </select>
@@ -669,7 +672,7 @@ export default function WorkflowBuilder() {
                                 ? AREAS.find((a) => a.id === step.config.areaId)?.moduleIds ?? []
                                 : AREAS.flatMap((a) => a.moduleIds)
                               ).map((moduleId) => {
-                                const mod = MODULES.find((m) => m.id === moduleId);
+                                const mod = catalogue.modules.find((m) => m.id === moduleId);
                                 if (!mod) return null;
                                 const area = AREAS.find((a) => (a.moduleIds as readonly string[]).includes(moduleId));
                                 return (

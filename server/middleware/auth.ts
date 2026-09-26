@@ -37,15 +37,29 @@ export function jwtSecretProblem(secret: string | undefined, teamMode: boolean):
  * How long a sign-in lasts — the JWT and its user_sessions row alike.
  * JWT_EXPIRY takes 30m / 8h / 7d or plain seconds; it was documented in
  * .env.example but never read, so every session lasted seven days.
+ *
+ * On a public demo (DEMO_MODE=true) a sign-in lasts at most
+ * DEMO_MAX_SESSION_TTL_MS (8 hours), whatever JWT_EXPIRY says: the privacy
+ * notice promises it, and an unset or longer JWT_EXPIRY would otherwise give a
+ * visitor's token the 7-day default. A shorter JWT_EXPIRY still applies.
  */
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const DEMO_MAX_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 let warnedExpiry: string | null = null;
-export function sessionTtlMs(value: string | undefined = process.env.JWT_EXPIRY): number {
+export function sessionTtlMs(
+  value: string | undefined = process.env.JWT_EXPIRY,
+  env: Record<string, string | undefined> = process.env,
+): number {
+  const ttl = parseSessionTtlMs(value);
+  return isDemoMode(env) ? Math.min(ttl, DEMO_MAX_SESSION_TTL_MS) : ttl;
+}
+
+function parseSessionTtlMs(value: string | undefined): number {
   const m = /^\s*(\d+)\s*([smhd]?)\s*$/i.exec(value ?? '');
   if (!m) {
     if (value && value.trim() && warnedExpiry !== value) {
       warnedExpiry = value;
-      console.warn(`[auth] JWT_EXPIRY=${JSON.stringify(value)} is not a duration ANTON reads (30m, 8h, 7d or seconds) — sessions last 7 days`);
+      console.warn(`[auth] JWT_EXPIRY=${JSON.stringify(value)} is not a duration ANTON reads (30m, 8h, 7d or seconds) — sessions last 7 days (8 hours on a demo)`);
     }
     return DEFAULT_SESSION_TTL_MS;
   }

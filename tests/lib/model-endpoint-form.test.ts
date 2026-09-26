@@ -121,7 +121,7 @@ describe('request body for POST / PATCH', () => {
       slug: 'openrouter',
       apiKey: 'sk-or-test',
       contextWindow: 131072,
-      extraBody: { provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' } },
+      extraBody: { provider: { only: ['inceptron'], zdr: true, data_collection: 'deny' } },
       extraHeaders: { 'HTTP-Referer': 'https://demo.example' },
       allowedModels: ['z-ai/glm-5.3-flash'],
       maxOutputTokens: 16000,
@@ -155,10 +155,12 @@ describe('request body for POST / PATCH', () => {
 });
 
 describe('OpenRouter showcase defaults', () => {
-  it('pins GLM to the two EU zero-retention providers, either standing in for the other', () => {
+  it('pins GLM to Inceptron alone, zero retention and no data collection (NextBit dropped 2026-09-26)', () => {
     expect(OPENROUTER_EU_ZDR_EXTRA_BODY).toEqual({
-      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' },
+      provider: { only: ['inceptron'], zdr: true, data_collection: 'deny' },
     });
+    // NextBit keeps request data up to 90 days and computes outside the EEA.
+    expect(JSON.stringify(OPENROUTER_EU_ZDR_EXTRA_BODY)).not.toMatch(/nextbit/i);
   });
 
   it('attribution headers name the page origin and ANTON', () => {

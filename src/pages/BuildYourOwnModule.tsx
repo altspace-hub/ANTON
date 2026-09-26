@@ -4,6 +4,7 @@ import { Puzzle, Trash2, ChevronRight, Wand2, BookMarked, Check, Download, Spark
 import { fetchCustomModules, createCustomModule, patchCustomModule, deleteCustomModule, shareModuleWithCommunity, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
 import { AREAS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { useSessionStore } from '@/stores/useSessionStore';
 
 interface SkillDef {
@@ -68,6 +69,8 @@ const MODEL_OPTIONS = [
 
 function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { systemPrompt, selectedOutputFormats, selectedPersonas, selectedSkills, thinking, creativity, model, knowledgeSources } = useSessionStore();
+  // On a public demo the area list leaves out the areas kept off it.
+  const { areas: visibleAreas } = useDemoCatalogue();
   const [name, setName] = useState('');
   const [shortName, setShortName] = useState('');
   const [description, setDescription] = useState('');
@@ -160,7 +163,7 @@ function SaveAsDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               <select className={inputCls} value={area} onChange={(e) => setArea(e.target.value)}>
                 <option value="my-modules">⭐ My Modules (default)</option>
                 <optgroup label="────────────">
-                  {AREAS.map((a) => (
+                  {visibleAreas.map((a) => (
                     <option key={a.id} value={a.id}>{a.label}</option>
                   ))}
                 </optgroup>
@@ -505,6 +508,8 @@ function AiSuggestInputsButton({ name, description, systemPrompt, onSuggest }: {
 }
 
 function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () => void; initialData?: Partial<WizardData>; editingModuleId?: string }) {
+  // On a public demo the area list leaves out the areas kept off it.
+  const { areas: visibleAreas } = useDemoCatalogue();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [shareWithCommunity, setShareWithCommunity] = useState(false);
@@ -720,7 +725,7 @@ function BuildWizard({ onSaved, initialData, editingModuleId }: { onSaved: () =>
               <select className={inputCls} value={data.area} onChange={(e) => set('area', e.target.value)}>
                 <option value="my-modules">⭐ My Modules (default)</option>
                 <optgroup label="────────────">
-                  {AREAS.map((a) => (
+                  {visibleAreas.map((a) => (
                     <option key={a.id} value={a.id}>{a.label}</option>
                   ))}
                 </optgroup>

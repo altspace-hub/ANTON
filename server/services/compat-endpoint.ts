@@ -7,7 +7,8 @@
  * endpoint offers on the owner's key (on OpenRouter that is several hundred, up
  * to about 3,000 times the price of the showcase model). They all resolve here
  * now, and the endpoint's allowed_models list (migration 288) is enforced here,
- * before anything is dispatched.
+ * before anything is dispatched. On a public demo, so is the OpenRouter privacy
+ * pin (assertDemoPrivacyPin, at the end of this file).
  *
  * The database is registered once at boot (setRouterDb). About sixty
  * callChat / streamChat call sites pass no `db`, and a compat default made
@@ -17,6 +18,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { resolveCustomEndpoint, type ResolvedEndpoint } from './custom-endpoint-resolver.js';
+import { isDemoMode, demoAllowedProviders } from '../middleware/demo-mode.js';
 
 // ── The database the routers fall back on ──────────────────────
 
@@ -253,7 +255,8 @@ export interface ResolvedCompatModel {
 
 /**
  * Resolve a compat:<slug>:<model> id to its endpoint, refusing a model the
- * endpoint does not allow. `db` falls back on the registered router database.
+ * endpoint does not allow and, on a demo, an OpenRouter endpoint without the
+ * privacy pin. `db` falls back on the registered router database.
  */
 export async function resolveCompatModel(modelId: string, db?: DatabaseAdapter): Promise<ResolvedCompatModel> {
   const { slug, model } = parseCompatModelId(modelId);
@@ -271,6 +274,10 @@ export async function resolveCompatModel(modelId: string, db?: DatabaseAdapter):
   if (!isModelAllowedOnEndpoint(endpoint, model)) {
     throw new CompatModelNotAllowedError(model, slug);
   }
+  // A demo sends nothing to OpenRouter without the privacy pin. Here, the Work
+  // route refuses the run before anything is saved; the adapter checks again
+  // for a caller that did not come through this resolver.
+  assertDemoPrivacyPin({ slug, baseUrl: endpoint.baseUrl, extraBody: endpoint.extraBody });
   const pricing = endpoint.inputPricePerMillion !== null && endpoint.outputPricePerMillion !== null
     ? { inputPerMillion: endpoint.inputPricePerMillion, outputPerMillion: endpoint.outputPricePerMillion }
     : null;
@@ -283,3 +290,87 @@ export async function resolveCompatModel(modelId: string, db?: DatabaseAdapter):
     pricing,
   };
 }
+
+// ── The demo's privacy pin (OpenRouter) ─────────────────────────
+
+/** True when the base URL is OpenRouter's API (openrouter.ai or a subdomain of it). */
+export function isOpenRouterBaseUrl(baseUrl: string): boolean {
+  try {
+    const host = new URL(baseUrl).hostname.toLowerCase();
+    return host === 'openrouter.ai' || host.endsWith('.openrouter.ai');
+  } catch {
+    return false;
+  }
+}
+
+/** The name missingPrivacyPinSettings gives a provider.only that reaches past the allowed providers. */
+export const PROVIDER_ONLY_OUTSIDE_ALLOWED = 'provider.only (a provider not in DEMO_ALLOWED_PROVIDERS)';
+
+/**
+ * What an OpenRouter extra body leaves out of the privacy pin a public demo
+ * sends with every request: provider.zdr = true (zero-data-retention
+ * endpoints only), provider.data_collection = 'deny' (no provider that stores
+ * or trains on prompts) and a non-empty provider.only (the named providers and
+ * no other). With allowedProviders, every entry of provider.only must also be
+ * one of them (case-insensitive): a pin to a provider the privacy notice does
+ * not name is not the pin it promises. Setting names only, never values;
+ * empty = the pin is complete.
+ */
+export function missingPrivacyPinSettings(
+  extraBody: Record<string, unknown> | null | undefined,
+  allowedProviders?: readonly string[] | null,
+): string[] {
+  const provider = asObject(extraBody?.provider);
+  const only = provider?.only;
+  const missing: string[] = [];
+  if (provider?.zdr !== true) missing.push('provider.zdr');
+  if (provider?.data_collection !== 'deny') missing.push('provider.data_collection');
+  if (!Array.isArray(only) || only.length === 0 || !only.every((p) => typeof p === 'string' && p.trim() !== '')) {
+    missing.push('provider.only');
+  } else if (allowedProviders) {
+    const allowed = new Set(allowedProviders.map((p) => p.trim().toLowerCase()));
+    if (!only.every((p) => allowed.has(String(p).trim().toLowerCase()))) missing.push(PROVIDER_ONLY_OUTSIDE_ALLOWED);
+  }
+  return missing;
+}
+
+export const DEMO_PRIVACY_PIN_MESSAGE =
+  'The AI service is switched off on this demo because its privacy settings are incomplete. Nothing was sent. Please try again later.';
+
+/** A demo call to OpenRouter refused because the endpoint's extra body lacks the privacy pin. */
+export class CompatPrivacyPinError extends CompatEndpointError {
+  override readonly code = 'DEMO_PRIVACY_PIN_MISSING';
+  override readonly status = 503;
+  constructor(readonly slug: string | null, readonly missing: readonly string[]) {
+    super(
+      `refused a call to the OpenRouter endpoint ${slug ? `"${slug}"` : '(slug unknown)'}: its extra body lacks ${missing.join(', ')}. Nothing was sent.`,
+      DEMO_PRIVACY_PIN_MESSAGE,
+    );
+    this.name = 'CompatPrivacyPinError';
+  }
+}
+
+/**
+ * In demo mode, refuse a call to an OpenRouter endpoint whose extra body lacks
+ * the privacy pin, before anything is sent (privacy review H9). The privacy
+ * notice says every request asks for zero retention and no data collection
+ * and goes only to the pinned provider; that rests on an extra body an admin
+ * saved, and an edited or lost one would send visitors' prompts to any
+ * provider. provider.only must name DEMO_ALLOWED_PROVIDERS only (default
+ * "inceptron"), so an endpoint saved from an older preset that also names
+ * another provider is refused too. The log line names the slug and the missing
+ * settings, never the URL, the key, the body or a provider. Outside demo mode,
+ * or for another endpoint, nothing is checked.
+ */
+export function assertDemoPrivacyPin(
+  endpoint: { slug: string | null; baseUrl: string; extraBody?: Record<string, unknown> | null },
+  env: Record<string, string | undefined> = process.env,
+): void {
+  if (!isDemoMode(env) || !isOpenRouterBaseUrl(endpoint.baseUrl)) return;
+  const missing = missingPrivacyPinSettings(endpoint.extraBody, demoAllowedProviders(env));
+  if (missing.length === 0) return;
+  const err = new CompatPrivacyPinError(endpoint.slug, missing);
+  console.warn(`[demo] ${err.message}`);
+  throw err;
+}
+

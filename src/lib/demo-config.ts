@@ -24,8 +24,23 @@ export interface DemoConfig {
   signupCodeRequired: boolean;
   retentionDays: number;
   privacyPath: string;
+  /** The demo terms page. */
+  termsPath: string;
+  /** The terms version sign-up must send back (server DEMO_TERMS_VERSION); '' when unknown. */
+  termsVersion: string;
+  /** Who runs the demo, for "Operated by …" (DEMO_OPERATOR_NAME); '' when not set. */
+  operatorName: string;
   /** Whether a quality score follows each answer (a demo leaves it out unless DEMO_POST_ANSWER_CALLS=all). */
   answersScored: boolean;
+  /**
+   * The area ids and module ids kept off the demo: the server's effective
+   * DEMO_HIDDEN_AREAS and DEMO_HIDDEN_MODULES, lower-cased. They invite health,
+   * employment, credit or criminal-offence data (privacy review H3). The
+   * server refuses to run them for a visitor, and the browser does not list
+   * them (demoModuleHiddenFor).
+   */
+  hiddenAreas: string[];
+  hiddenModules: string[];
 }
 
 /** An ordinary (non-demo) server. */
@@ -37,10 +52,26 @@ export const DEMO_OFF: DemoConfig = {
   signupCodeRequired: false,
   retentionDays: 0,
   privacyPath: '/privacy',
+  termsPath: '/terms',
+  termsVersion: '',
+  operatorName: '',
   answersScored: true,
+  hiddenAreas: [],
+  hiddenModules: [],
 };
 
 const isPillar = (v: unknown): v is Pillar => typeof v === 'string' && (PILLARS as readonly string[]).includes(v);
+
+/** Only a same-site path, never '//host' (which a browser reads as another site): the value becomes a link. */
+const sitePath = (v: unknown, fallback: string): string =>
+  typeof v === 'string' && /^\/(?!\/)[a-z0-9/-]*$/i.test(v) ? v : fallback;
+
+/** Area or module ids: strings of the id alphabet only, lower-cased, each once. */
+const idList = (v: unknown): string[] => (Array.isArray(v)
+  ? [...new Set(v
+    .filter((id): id is string => typeof id === 'string' && /^[a-z0-9][a-z0-9._-]{0,99}$/i.test(id.trim()))
+    .map((id) => id.trim().toLowerCase()))]
+  : []);
 
 /** Reads /api/config defensively: anything malformed means "not a demo". */
 export function parseDemoConfig(json: unknown): DemoConfig {
@@ -56,15 +87,49 @@ export function parseDemoConfig(json: unknown): DemoConfig {
     signupOpen: c.signupOpen === true,
     signupCodeRequired: c.signupCodeRequired === true,
     retentionDays: Number.isFinite(days) && days > 0 ? Math.floor(days) : 30,
-    // Only a same-site path: the value becomes a link on the login page.
-    privacyPath: typeof c.privacyPath === 'string' && /^\/[a-z0-9/-]*$/i.test(c.privacyPath) ? c.privacyPath : '/privacy',
+    privacyPath: sitePath(c.privacyPath, '/privacy'),
+    termsPath: sitePath(c.termsPath, '/terms'),
+    termsVersion: typeof c.termsVersion === 'string' && /^[a-z0-9._-]{1,40}$/i.test(c.termsVersion) ? c.termsVersion : '',
+    // Shown as text; control characters and excess length are dropped.
+    operatorName: typeof c.operatorName === 'string'
+      ? Array.from(c.operatorName).filter((ch) => ch >= ' ' && ch !== '\u007f').join('').trim().slice(0, 200)
+      : '',
     answersScored: c.answersScored !== false,
+    hiddenAreas: idList(c.hiddenAreas),
+    hiddenModules: idList(c.hiddenModules),
   };
 }
 
 /** True when this person is held to the demo's reduced surface. */
 export function demoRestricted(cfg: DemoConfig, role: string | undefined): boolean {
   return cfg.demoMode && role !== 'admin';
+}
+
+/** Whether this area is kept from this person: a demo, not an admin, and the area in hiddenAreas. */
+export function demoAreaHiddenFor(cfg: DemoConfig, role: string | undefined, areaId: string | null | undefined): boolean {
+  if (!demoRestricted(cfg, role) || !areaId) return false;
+  return cfg.hiddenAreas.includes(areaId.trim().toLowerCase());
+}
+
+/**
+ * Whether this module is kept from this person: on a demo, for a non-admin,
+ * when its id is in hiddenModules or an area it belongs to is in hiddenAreas.
+ * The server applies the same rule (demoModuleHidden in
+ * server/middleware/demo-mode.ts). The browser's catalogue can list a module
+ * under more than one area; pass them all, and any hidden one hides it.
+ * Admins and ordinary servers: never.
+ */
+export function demoModuleHiddenFor(
+  cfg: DemoConfig,
+  role: string | undefined,
+  moduleId: string | null | undefined,
+  areaId?: string | null | readonly (string | null | undefined)[],
+): boolean {
+  if (!demoRestricted(cfg, role)) return false;
+  const mod = (moduleId ?? '').trim().toLowerCase();
+  if (mod !== '' && cfg.hiddenModules.includes(mod)) return true;
+  const areas: readonly (string | null | undefined)[] = Array.isArray(areaId) ? areaId : [areaId as string | null | undefined];
+  return areas.some((a) => demoAreaHiddenFor(cfg, role, a));
 }
 
 /** Whether a pillar is offered to this person. */

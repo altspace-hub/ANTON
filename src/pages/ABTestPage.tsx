@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { streamMessage } from '@/lib/api';
 import { MODULES, AREAS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import type { StreamEvent, ThinkingLevel, CreativityLevel } from '@/lib/types';
 
 // ── Constants ────────────────────────────────────────────────
@@ -98,6 +99,8 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
   const accentColor = label === 'A' ? 'adv-teal' : 'adv-gold';
   const accentClass = label === 'A' ? 'text-adv-teal border-adv-teal/30 bg-adv-teal/5' : 'text-adv-gold border-adv-gold/30 bg-adv-gold/5';
   const badgeClass = label === 'A' ? 'bg-adv-teal text-adv-dark' : 'bg-adv-gold text-adv-dark';
+  // On a public demo the pickers leave out the modules and areas kept off it.
+  const catalogue = useDemoCatalogue();
 
   const selectedModule = MODULES.find((m) => m.id === config.moduleId);
   const selectedArea = selectedModule
@@ -136,7 +139,7 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
               className="rounded-lg border border-border bg-adv-dark px-2.5 py-1.5 text-xs text-adv-off-white focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1"
             >
               <option value="">All areas</option>
-              {AREAS.map((area) => (
+              {catalogue.areas.map((area) => (
                 <option key={area.id} value={area.id}>{area.label}</option>
               ))}
             </select>
@@ -149,10 +152,10 @@ function VariantPanel({ label, config, onChange, output, isStreaming, onCopy, co
               {(() => {
                 const filterAreaId = selectedArea?.id ?? '';
                 const filteredModules = filterAreaId
-                  ? (AREAS.find((a) => a.id === filterAreaId)?.moduleIds ?? []).map(
-                      (id) => MODULES.find((m) => m.id === id)
+                  ? (catalogue.areas.find((a) => a.id === filterAreaId)?.moduleIds ?? []).map(
+                      (id) => catalogue.modules.find((m) => m.id === id)
                     ).filter(Boolean)
-                  : MODULES;
+                  : catalogue.modules;
                 return filteredModules.map((mod) => {
                   if (!mod) return null;
                   const area = AREAS.find((a) => (a.moduleIds as readonly string[]).includes(mod.id));

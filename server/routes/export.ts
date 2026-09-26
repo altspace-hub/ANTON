@@ -7,6 +7,7 @@ import { safeError } from '../lib/error-response.js';
 import { buildProvenanceAppendix } from '../services/export-provenance.js';
 import { getOversightStatus } from '../services/oversight-status.js';
 import { scopesToOwner, assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
 
 // PERF-04: Heavy export libraries (docx, exceljs, puppeteer) are loaded lazily on first use
 // to improve server startup time. Dynamic imports are cached by Node's module system after first call.
@@ -46,6 +47,18 @@ import { generateFountain, generateFdx } from '../services/export-fountain.js';
 
 const OUTPUT_DIR = process.env.OUTPUT_DIR || './outputs';
 fs.ensureDirSync(OUTPUT_DIR);
+
+/**
+ * The copy of an export kept in OUTPUT_DIR. No route serves it. In demo mode
+ * none is written: the file goes back to the visitor and nothing of it stays
+ * on the server, where the copy had no owner and outlived the account
+ * (privacy review M6).
+ */
+async function keepExportCopy(filename: string, data: string | Buffer): Promise<void> {
+  if (isDemoMode()) return;
+  if (typeof data === 'string') await fs.writeFile(path.join(OUTPUT_DIR, filename), data, 'utf-8');
+  else await fs.writeFile(path.join(OUTPUT_DIR, filename), data);
+}
 
 function getUserId(req: unknown): string {
   return (req as { user?: { id?: string } }).user?.id ?? 'default';
@@ -236,7 +249,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       switch (format) {
         case 'md': {
           const filename = `${basename}.md`;
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), exportedContent, 'utf-8');
+          await keepExportCopy(filename, exportedContent);
           res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(exportedContent);
@@ -247,7 +260,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
           const filename = `${basename}.docx`;
           const fn = await getExporter('docx') as typeof import('../services/export-docx.js').generateDocx;
           const buffer = await fn(exportedContent, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          await keepExportCopy(filename, buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
@@ -258,7 +271,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
           const filename = `${basename}.xlsx`;
           const fn = await getExporter('xlsx') as typeof import('../services/export-xlsx.js').generateXlsx;
           const buffer = await fn(exportedContent, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          await keepExportCopy(filename, buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
@@ -269,7 +282,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
           const filename = `${basename}.pdf`;
           const fn = await getExporter('pdf') as typeof import('../services/export-pdf.js').generatePdf;
           const buffer = await fn(exportedContent, { title, author, model, thinking, moduleId, sessionId, creativity, documentsLoaded }, brandConfig);
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          await keepExportCopy(filename, buffer);
           res.setHeader('Content-Type', 'application/pdf');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
@@ -281,7 +294,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
           const fn = await getExporter('pptx') as typeof import('../services/export-pptx.js').generatePptx;
           // Wave 3: the provenance appendix becomes the deck's closing slides.
           const buffer = await fn(content + provenanceMarkdown, { title, author });
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          await keepExportCopy(filename, buffer);
           res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
@@ -292,7 +305,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
         case 'fountain': {
           const filename = `${basename}.fountain`;
           const buffer = generateFountain(content, { title, author });
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          await keepExportCopy(filename, buffer);
           res.setHeader('Content-Type', 'text/plain; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
@@ -303,7 +316,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
         case 'fdx': {
           const filename = `${basename}.fdx`;
           const buffer = generateFdx(content, { title, author });
-          await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+          await keepExportCopy(filename, buffer);
           res.setHeader('Content-Type', 'application/xml; charset=utf-8');
           res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
           res.send(buffer);
@@ -358,23 +371,28 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       const outputPath = path.join(OUTPUT_DIR, outputFilename);
 
       const ti = await getTemplateInjector();
-      if (format === 'docx') {
-        await ti.injectIntoDocxTemplate(tpl.file_path, content, outputPath);
-        res.setHeader(
-          'Content-Type',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        );
-        res.setHeader('Content-Disposition', `attachment; filename="${outputFilename}"`);
-        res.send(await fs.readFile(outputPath));
-      } else {
-        await ti.injectIntoPptxTemplate(tpl.file_path, content, outputPath);
-        res.setHeader(
-          'Content-Type',
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        );
-        res.setHeader('Content-Disposition', `attachment; filename="${outputFilename}"`);
-        res.send(await fs.readFile(outputPath));
+      // The injector writes the file to disk. In demo mode it is deleted once
+      // it has been read to send, or when the injection fails (keepExportCopy).
+      let file: Buffer;
+      try {
+        if (format === 'docx') await ti.injectIntoDocxTemplate(tpl.file_path, content, outputPath);
+        else await ti.injectIntoPptxTemplate(tpl.file_path, content, outputPath);
+        file = await fs.readFile(outputPath);
+      } finally {
+        if (isDemoMode()) {
+          await fs.remove(outputPath).catch((err: unknown) => {
+            console.warn('[export/with-template] could not delete the demo copy:', safeError(err));
+          });
+        }
       }
+      res.setHeader(
+        'Content-Type',
+        format === 'docx'
+          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          : 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${outputFilename}"`);
+      res.send(file);
     } catch (error) {
       const message = safeError(error);
       console.error('[export/with-template] Error:', message);
@@ -487,7 +505,7 @@ export async function createExportRouter(db: DatabaseAdapter): Promise<Router> {
       const buffer = await generatePdfFn(markdown, { title: `Trust Certificate — ${sessionTitle}`, author: 'ANTON by openEXPERT' }, brandConfig);
 
       const filename = `trust-certificate-${sessionId.slice(0, 8)}-${certDate}.pdf`;
-      await fs.writeFile(path.join(OUTPUT_DIR, filename), buffer);
+      await keepExportCopy(filename, buffer);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(buffer);

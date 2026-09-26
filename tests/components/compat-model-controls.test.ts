@@ -315,7 +315,7 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
 
     const body = JSON.parse(textareaByLabel('Extra request body (JSON)').value);
     expect(body).toEqual({
-      provider: { only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' },
+      provider: { only: ['inceptron'], zdr: true, data_collection: 'deny' },
     });
     const headers = JSON.parse(textareaByLabel('Extra headers (JSON)').value);
     expect(headers).toEqual({ 'HTTP-Referer': window.location.origin, 'X-OpenRouter-Title': 'ANTON by openEXPERT' });
@@ -334,10 +334,10 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
       extraBody: body,
       extraHeaders: headers,
       maxOutputTokens: null,
-      // The pinned providers' price, not /models' promotional one: it prices the
-      // worst-case reservation made before each call.
-      inputPricePerMillion: 0.165,
-      outputPricePerMillion: 0.55,
+      // The pinned provider's price (Inceptron), not /models' promotional one:
+      // it prices the worst-case reservation made before each call.
+      inputPricePerMillion: 0.11,
+      outputPricePerMillion: 0.5,
     });
   });
 

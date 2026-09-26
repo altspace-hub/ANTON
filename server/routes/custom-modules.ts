@@ -7,6 +7,7 @@ import { getRoutedUtilityModel } from '../services/utility-model.js';
 import { callChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
 import { assertOwned, ownerFilter, scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { isDemoMode, demoModuleHidden } from '../middleware/demo-mode.js';
 
 const GUIDE_SYSTEM_PROMPT = `You are a friendly AI module designer helping users create custom Claude modules tailored to their specific tasks.
 
@@ -76,6 +77,20 @@ export async function canReadCustomModule(db: DatabaseAdapter, req: OwnedRequest
 }
 
 /**
+ * Demo mode: whether a visitor (a non-admin) must not see this custom module,
+ * because its id or its area is kept off the demo (demoModuleHidden, the same
+ * rule as the built-in catalogue in routes/modules.ts and the run route). An
+ * admin, and everyone outside demo mode, sees it.
+ */
+function hiddenFromDemoVisitor(req: OwnedRequest, row: { id?: unknown; area?: unknown }): boolean {
+  if (!isDemoMode() || req.user?.role === 'admin') return false;
+  return demoModuleHidden(
+    typeof row.id === 'string' ? row.id : null,
+    typeof row.area === 'string' ? row.area : null,
+  );
+}
+
+/**
  * Custom modules belong to the person who made them (custom_modules.user_id,
  * migration 290). In team mode a user lists their own, reads their own plus the
  * community-shared ones, and only the owner or an admin may edit, delete or
@@ -110,7 +125,7 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
     try {
       if (!(await canReadCustomModule(db, req, req.params.id))) return res.status(404).json({ error: 'Not found' });
       const m = await db.get(`SELECT * FROM custom_modules WHERE id = ?`, req.params.id) as Record<string, unknown> | undefined;
-      if (!m) return res.status(404).json({ error: 'Not found' });
+      if (!m || hiddenFromDemoVisitor(req, m)) return res.status(404).json({ error: 'Not found' });
       res.json({ ...m, config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch custom module' });
@@ -232,10 +247,11 @@ export async function createCustomModuleRoutes(db: DatabaseAdapter, anthropic?: 
   });
 
   // GET /api/modules/community — return all community-shared custom modules
-  router.get('/modules/community', async (_req, res) => {
+  // (on a demo, a visitor gets none whose id or area is kept off the demo)
+  router.get('/modules/community', async (req, res) => {
     try {
       const modules = await db.all(`SELECT * FROM custom_modules WHERE is_shared_with_community = 1 ORDER BY updated_at DESC`) as Record<string, unknown>[];
-      res.json(modules.map((m) => ({
+      res.json(modules.filter((m) => !hiddenFromDemoVisitor(req, m)).map((m) => ({
         ...m,
         config: typeof m.config === 'string' ? JSON.parse(m.config as string) : m.config,
       })));

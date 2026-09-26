@@ -33,10 +33,12 @@ function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelP
   // ANTON's web search is Claude's tool: a compat model gets none, so the box
   // is shown off and locked (the saved choice is kept for a Claude model).
   const webSearchOff = webSearchUnavailable(runModel);
-  // Public demo: a visitor keeps the model's own knowledge and online links
-  // (fetched by the server during the run). Local folders, combined mode, the
-  // collections (RAG) and the knowledge packs are outside the demo's routes
-  // and would only answer 404. Admins keep them all.
+  // Public demo: a visitor keeps the model's own knowledge. Local folders,
+  // combined mode, the collections (RAG) and the knowledge packs are outside
+  // the demo's routes and would only answer 404. Online links are off too
+  // (privacy review H4, D8): the server would fetch third-party pages, whose
+  // text goes to the model provider, and it does not fetch them for a
+  // visitor. Admins keep them all.
   const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const [urlInput, setUrlInput] = useState('');
   const [folderInput, setFolderInput] = useState('');
@@ -82,7 +84,7 @@ function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelP
         <HelpTooltip
           wide
           text={demoLimited
-            ? "Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data (+ live web search on Claude models).\n• Online links — paste URLs to specific regulations; the model reads them directly.\n\nYou can enable both at once."
+            ? "Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data (+ live web search on Claude models).\n\nTo give the model a specific document, upload it as a file."
             : "Controls where the model gets its reference material.\n\n• Model knowledge — built-in training data + optional live web search for the latest regulatory publications.\n• Online links — paste URLs to specific regulations; the model reads them directly.\n• Local folders — point to folders on your computer containing client documents, regulation texts, or policy files.\n• Combined mode — use local documents alongside the model's knowledge. Best for gap analysis: compare client docs against regulatory requirements.\n\nYou can enable multiple sources at once. Token usage is shown below."}
         />
       </div>
@@ -109,7 +111,7 @@ function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelP
         {webSearchOff && (
           <p className="mt-1 text-xs text-adv-gray">
             Web search runs on Claude models only, so it is off for {modelShortName(runModel)}. To give the model a
-            source, add its link under Online Regulation / Document Links.
+            source, {demoLimited ? 'upload it as a file' : 'add its link under Online Regulation / Document Links'}.
           </p>
         )}
         <div className="mt-2">
@@ -129,6 +131,7 @@ function KnowledgeSourcePanel({ config, onChange, model }: KnowledgeSourcePanelP
         icon={<Link className="h-4 w-4" />}
         title="Online Regulation / Document Links"
         description="Paste URLs to specific regulatory texts, guidelines, or online documents."
+        hidden={demoLimited}
         enabled={onlineReference.enabled}
         onToggle={(v) => update('modes.onlineReference.enabled', v)}
       >
