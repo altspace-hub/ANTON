@@ -1923,12 +1923,18 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         res.on('close', () => clearTimeout(adapterTimeoutId));
         res.on('finish', () => clearTimeout(adapterTimeoutId));
 
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
-          'X-Accel-Buffering': 'no',
-        });
+        // Only when absent: the "context used" frame above has already sent them.
+        // Writing them again threw ERR_HTTP_HEADERS_SENT, which the outer catch
+        // could not answer (headers gone), so every non-Claude run — Ollama,
+        // OpenAI, Mistral, Gemini, Azure, compat: — hung after that frame.
+        if (!res.headersSent) {
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            Connection: 'keep-alive',
+            'X-Accel-Buffering': 'no',
+          });
+        }
 
         const sendEvent = (event: object) => {
           res.write(`data: ${JSON.stringify(event)}\n\n`);
