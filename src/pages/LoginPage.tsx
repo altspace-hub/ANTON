@@ -1,3 +1,4 @@
+import { signInErrorMessage } from '@/lib/sign-in-errors';
 import { useState, FormEvent, useEffect } from 'react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { Eye, EyeOff, ArrowRight, Send, Building2 } from 'lucide-react';
@@ -43,16 +44,17 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   const isSoloMode = !!onEnterWithoutLogin;
 
   // OAuth availability (fetched from /api/config)
-  const [oauthConfig, setOauthConfig] = useState({ google: false, github: false, oidc: false });
+  const [oauthConfig, setOauthConfig] = useState({ google: false, github: false, oidc: false, oidcLabel: 'Sign in with single sign-on' });
 
   useEffect(() => {
     fetch('/api/config')
       .then(r => r.json())
-      .then((d: { googleOAuthEnabled?: boolean; githubOAuthEnabled?: boolean; oidcEnabled?: boolean }) => {
+      .then((d: { googleOAuthEnabled?: boolean; githubOAuthEnabled?: boolean; oidcEnabled?: boolean; oidcButtonLabel?: string }) => {
         setOauthConfig({
           google: !!d.googleOAuthEnabled,
           github: !!d.githubOAuthEnabled,
           oidc: !!d.oidcEnabled,
+          oidcLabel: d.oidcButtonLabel || 'Sign in with single sign-on',
         });
       })
       .catch(() => {});
@@ -85,7 +87,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
         .catch(() => setError('OAuth login failed: could not exchange auth code'));
     }
     if (authError) {
-      setError(`OAuth login failed: ${authError.replace(/_/g, ' ')}`);
+      setError(signInErrorMessage(authError));
       window.history.replaceState({}, '', '/');
     }
   }, []);
@@ -440,17 +442,10 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                         className="w-full flex items-center justify-center gap-3 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Building2 className="w-4 h-4 text-gray-500" />
-                        Enterprise SSO (Azure AD / Okta)
+                        {oauthConfig.oidcLabel}
                       </a>
                     )}
                   </div>
-                  {oauthConfig.oidc && (
-                    <p className="mt-3 text-center text-[11px] text-gray-300">
-                      SSO configured via{' '}
-                      <code className="rounded bg-gray-100 px-1 text-gray-400">OIDC_ISSUER_URL</code>{' '}
-                      in your <code className="rounded bg-gray-100 px-1 text-gray-400">.env</code> file.
-                    </p>
-                  )}
                 </div>
               )}
               </>

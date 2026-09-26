@@ -11,6 +11,7 @@
  * exchanges the code for a JWT, then navigates to /school.
  */
 
+import { signInErrorMessage } from '@/lib/sign-in-errors';
 import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -100,7 +101,8 @@ export default function SchoolLoginPage() {
     }
 
     if (authError) {
-      setError(`${t('login.oauthFailed', { defaultValue: 'Login failed' })}: ${authError.replace(/_/g, ' ')}`);
+      // A fixed message per reason code — never the URL parameter's own text.
+      setError(signInErrorMessage(authError));
       window.history.replaceState({}, '', '/school/login');
     }
   }, [t]);

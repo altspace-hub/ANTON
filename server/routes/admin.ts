@@ -8,6 +8,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 import { requireRole, USER_ROLES, isUserRole } from '../middleware/role-guards.js';
 import * as budgetManager from '../services/budget-manager.js';
 import { safeError } from '../lib/error-response.js';
+import { hasSsoIdentity } from '../services/oidc-sso.js';
 
 export async function createAdminRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -31,7 +32,9 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   // GET /api/admin/users — list all users (admin only)
   router.get('/admin/users', requireRole('admin'), async (_req, res) => {
     const users = await db.all(
-      `SELECT u.id, u.username, u.role, u.display_name, u.monthly_token_budget, u.last_login,
+      `SELECT u.id, u.username, u.role, u.display_name, u.email, u.monthly_token_budget, u.last_login,
+       u.disabled_at,
+       EXISTS (SELECT 1 FROM user_identities i WHERE i.user_id = u.id) AS sso,
        COALESCE(SUM(m.input_tokens + m.output_tokens), 0) as tokens_this_month
        FROM users u
        LEFT JOIN user_monthly_usage m ON u.id = m.user_id AND m.year_month = TO_CHAR(NOW(), 'YYYY-MM')
@@ -62,14 +65,25 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   });
 
   // PATCH /api/admin/users/:id — update user (admin only)
+  //
+  // Every field is checked before anything is written: a request refused for one
+  // field must not have applied another (a 400 that had already switched the
+  // account off and signed it out).
   router.patch('/admin/users/:id', requireRole('admin'), async (req, res) => {
-    const { role, display_name, monthly_token_budget, password, school_role } = req.body as {
+    const { role, display_name, monthly_token_budget, password, school_role, disabled, email } = req.body as {
       role?: string;
       display_name?: string;
       monthly_token_budget?: number;
       password?: string;
       school_role?: string | null;
+      disabled?: boolean;
+      email?: string | null;
     };
+
+    if (disabled !== undefined) {
+      if (typeof disabled !== 'boolean') { res.status(400).json({ error: 'disabled must be a boolean' }); return; }
+      if (disabled && req.params.id === req.user?.id) { res.status(400).json({ error: 'Cannot switch off your own account' }); return; }
+    }
 
     // school_role had NO write path anywhere in the codebase, so the column was NULL for
     // every user ever created — which made every teacher-gated branch in school.ts dead
@@ -86,6 +100,33 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
       res.status(400).json({ error: `school_role must be one of ${SCHOOL_ROLES.join(', ')}, or null to clear` });
       return;
     }
+
+    // The address single sign-on links a pre-SSO account by, and the one
+    // invitations go to — editable so an administrator can resolve two accounts
+    // sharing one address (SSO answers ambiguous_email until they do).
+    if (email !== undefined && email !== null
+        && (typeof email !== 'string' || email.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))) {
+      res.status(400).json({ error: 'email must be an email address, or null to clear' });
+      return;
+    }
+
+    // An account that signs in through SSO has no password: one set here would be
+    // a second way in that skips the directory's MFA and survives offboarding.
+    if (password && await hasSsoIdentity(db, String(req.params.id))) {
+      res.status(400).json({ error: 'This account signs in with single sign-on — it cannot have a password' });
+      return;
+    }
+
+    // Switching an account off keeps its data and ends its sessions; the next
+    // sign-in — password or SSO — is refused until it is switched on again.
+    // Deleting was the only option before, and the next SSO sign-in simply
+    // created the person again.
+    if (disabled === true) {
+      await db.run('UPDATE users SET disabled_at = COALESCE(disabled_at, NOW()) WHERE id = ?', req.params.id);
+      await db.run('DELETE FROM user_sessions WHERE user_id = ?', req.params.id);
+    } else if (disabled === false) {
+      await db.run('UPDATE users SET disabled_at = NULL WHERE id = ?', req.params.id);
+    }
     if (password) {
       const hash = await bcrypt.hash(password, 10);
       await db.run('UPDATE users SET password_hash = ? WHERE id = ?', hash, req.params.id);
@@ -94,6 +135,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
     if (display_name) await db.run('UPDATE users SET display_name = ? WHERE id = ?', display_name, req.params.id);
     if (monthly_token_budget !== undefined) await db.run('UPDATE users SET monthly_token_budget = ? WHERE id = ?', monthly_token_budget, req.params.id);
     if (school_role !== undefined) await db.run('UPDATE users SET school_role = ? WHERE id = ?', school_role, req.params.id);
+    if (email !== undefined) await db.run('UPDATE users SET email = ? WHERE id = ?', email || null, req.params.id);
     res.json({ success: true });
   });
 

@@ -6,7 +6,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
+import { randomUUID, randomInt } from 'crypto';
 
 import { PostgresAdapter } from './adapters/postgresql-adapter.js';
 import type { DatabaseAdapter } from './database.js';
@@ -784,11 +784,16 @@ export async function initPostgresDatabase(connectionString: string): Promise<Da
 
   // 3r. Seed admin user on first launch (team mode only)
   if (process.env.DEPLOYMENT_MODE === 'team') {
-    const adminExists = await db.get<{ id: string }>("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+    // The 'solo' row (step 3q, every mode) is an admin with no password — it is
+    // not a team administrator. Counting it meant a team server never got its
+    // break-glass admin, and nobody could sign in to configure anything.
+    const adminExists = await db.get<{ id: string }>("SELECT id FROM users WHERE role = 'admin' AND id <> 'solo' LIMIT 1");
     if (!adminExists) {
+      // The break-glass admin of a server: 20 characters from the CSPRNG. It was 8
+      // from Math.random, which is neither long enough nor unpredictable.
       const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
       let generatedPassword = '';
-      for (let i = 0; i < 8; i++) generatedPassword += chars[Math.floor(Math.random() * chars.length)];
+      for (let i = 0; i < 20; i++) generatedPassword += chars[randomInt(chars.length)];
       const hash = bcrypt.hashSync(generatedPassword, 10);
       const adminId = randomUUID();
       await db.run(

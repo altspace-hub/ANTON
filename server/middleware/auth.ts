@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'node:crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { SOLO_USER_ID } from './user-constants.js';
 import { isUserRole } from './role-guards.js';
@@ -17,6 +18,42 @@ if (!JWT_SECRET) {
     'and add it to your .env file.'
   );
 }
+// The .env.example placeholder, and anything short enough to guess, signs every
+// session token — server/index.ts refuses to start team mode with one. Solo mode
+// issues no tokens. (Checked at start-up rather than here, at import, so a test
+// that imports this module in team mode is not refused its short test secret.)
+const PLACEHOLDER_JWT_SECRETS = new Set(['change-me-in-production', 'dev-secret', 'changeme', 'secret']);
+export function jwtSecretProblem(secret: string | undefined, teamMode: boolean): string | null {
+  if (!teamMode || !secret) return null;
+  if (PLACEHOLDER_JWT_SECRETS.has(secret) || secret.length < 32) {
+    return '[auth] FATAL: DEPLOYMENT_MODE=team with a placeholder or short JWT_SECRET. '
+      + `Generate one with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`;
+  }
+  return null;
+}
+
+/**
+ * How long a sign-in lasts — the JWT and its user_sessions row alike.
+ * JWT_EXPIRY takes 30m / 8h / 7d or plain seconds; it was documented in
+ * .env.example but never read, so every session lasted seven days.
+ */
+const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+let warnedExpiry: string | null = null;
+export function sessionTtlMs(value: string | undefined = process.env.JWT_EXPIRY): number {
+  const m = /^\s*(\d+)\s*([smhd]?)\s*$/i.exec(value ?? '');
+  if (!m) {
+    if (value && value.trim() && warnedExpiry !== value) {
+      warnedExpiry = value;
+      console.warn(`[auth] JWT_EXPIRY=${JSON.stringify(value)} is not a duration ANTON reads (30m, 8h, 7d or seconds) — sessions last 7 days`);
+    }
+    return DEFAULT_SESSION_TTL_MS;
+  }
+  const n = Number(m[1]);
+  const unit = (m[2] || 's').toLowerCase();
+  const ms = n * ({ s: 1_000, m: 60_000, h: 3_600_000, d: 86_400_000 } as Record<string, number>)[unit];
+  return ms > 0 ? ms : DEFAULT_SESSION_TTL_MS;
+}
+
 // Read lazily: this module is imported (and would otherwise snapshot the env) BEFORE
 // index.ts's module body finishes resolving DEPLOYMENT_MODE, so a module-scope const
 // here silently disables team-mode auth enforcement (the 2026-07-17 split-brain bug).
@@ -109,11 +146,14 @@ export async function createAuthMiddleware(db: DatabaseAdapter) {
       // every request. They could re-promote themselves before it expired. Deletion
       // was always immediate (user_sessions cascades); demotion was not. This column
       // rides along on the join that was already happening, so it costs no extra query.
+      //
+      // u.disabled_at rides on the same join: switching an account off must end
+      // the sessions it already holds, not only refuse the next sign-in.
       const session = await db.get<{ role: string | null; school_role: string | null }>(
         `SELECT u.role, u.school_role
            FROM user_sessions s
            JOIN users u ON u.id = s.user_id
-          WHERE s.token = ? AND s.expires_at > NOW()`,
+          WHERE s.token = ? AND s.expires_at > NOW() AND u.disabled_at IS NULL`,
         token,
       );
       if (!session) {
@@ -150,7 +190,10 @@ export {
 } from './role-guards.js';
 
 export function generateToken(user: AuthUser): string {
-  return jwt.sign(user, JWT_SECRET!, { expiresIn: '7d' });
+  // jwtid makes every token unique. Two sign-ins of one person in the same second
+  // (same payload, same iat) produced the same token, and the second session row
+  // collided with the first on user_sessions' primary key — the sign-in failed.
+  return jwt.sign(user, JWT_SECRET!, { expiresIn: Math.floor(sessionTtlMs() / 1000), jwtid: randomUUID() });
 }
 
 // requireAuth / requireAdmin / requireAdminOrSolo now live in role-guards.ts and are

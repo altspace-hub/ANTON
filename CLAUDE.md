@@ -574,6 +574,15 @@ pnpm run test:e2e       # Playwright E2E tests
 4. **No shell injection.** Use `execFile` with args arrays, never `shell: true`.
 5. **No PII in logs.** Log IDs and event types only.
 6. **Parameterized SQL.** All queries use prepared statements.
+7. **Single sign-on (team mode).** OpenID Connect, built for Microsoft Entra ID. The decisions live in `server/services/oidc-sso.ts`; the redirect flow is in `server/routes/auth.ts`; IT's guide is `docs/deployment/entra-id-sso.md`.
+   - **Identity:** an identity is a `user_identities` row keyed on issuer + subject. For Entra that is `oid`, with the issuer rebuilt from `tid`. Never key on email.
+   - **Email:** an email links a pre-SSO account only once, only if verified, and only to an account an administrator created (one with a password). The link removes that password.
+   - **No passwords:** an account with an SSO identity cannot sign in with a password, reset one, or have one set by an admin.
+   - **Roles:** with `OIDC_ROLE_MAP` set, the directory decides the role at every sign-in, including demotion to `OIDC_DEFAULT_ROLE`.
+   - **Switched-off accounts:** `users.disabled_at` ends sessions (`authMiddleware` joins on it).
+   - **Tokens:** every JWT carries a unique `jti`, and its lifetime is `JWT_EXPIRY`.
+   - **Sign-in binding:** the one-time exchange code is bound to the browser by the `anton_auth_binder` cookie, and the flow uses PKCE plus a browser-bound `anton_oidc_state` cookie.
+   - **Tests:** `tests/services/oidc-sso.test.ts`, plus `tests/routes/sso-oidc-flow.test.ts` (a fake Entra-shaped IdP, on a test database).
 
 ---
 

@@ -45,7 +45,7 @@ import { seedApeApiEndpoint } from './services/apeapi-seed.js';
 import { seedMoonshotEndpoint } from './services/moonshot-seed.js';
 import { createRagRoutes } from './routes/rag.js';
 import { createEurLexRoutes } from './routes/eurlex.js';
-import { createAuthMiddleware, requireAdminOrSolo } from './middleware/auth.js';
+import { createAuthMiddleware, requireAdminOrSolo, jwtSecretProblem } from './middleware/auth.js';
 import { createAuthRoutes, createAuthMfaRoutes } from './routes/auth.js';
 import { createAdminRoutes } from './routes/admin.js';
 import { createCompliancePolicyRoutes } from './routes/compliance-policy.js';
@@ -190,6 +190,7 @@ import { setEventEmitter } from './services/event-emitter.js';
 import { runEmbeddingPipeline } from './services/embedding-pipeline.js';
 import Anthropic from '@anthropic-ai/sdk';
 import jwt from 'jsonwebtoken';
+import { readOidcSettings } from './services/oidc-sso.js';
 import { ensureWorkspacesRoot } from './services/workspace.js';
 import { createServer as createHttpServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
@@ -226,6 +227,13 @@ if (!process.env.DEPLOYMENT_MODE) {
   );
 }
 
+// Team mode signs every session with JWT_SECRET: the .env.example placeholder,
+// or anything short enough to guess, would let anyone mint an admin token.
+{
+  const problem = jwtSecretProblem(process.env.JWT_SECRET, process.env.DEPLOYMENT_MODE === 'team');
+  if (problem) throw new Error(problem);
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 
@@ -236,6 +244,25 @@ const allowedOrigins = (process.env.CORS_ORIGINS || `http://localhost:${PORT},ht
   .map((o) => o.trim());
 
 const app = express();
+
+// Behind a reverse proxy (required for SSO: Entra accepts https redirect URIs
+// only, and Express speaks plain http) req.ip and req.protocol must come from
+// X-Forwarded-*, or every person shares the proxy's address — and with it the
+// per-IP sign-in lockout and rate limits. 'loopback' trusts a proxy on this
+// machine; set TRUST_PROXY to the proxy's address (or a hop count) otherwise.
+{
+  const trustProxy = (process.env.TRUST_PROXY ?? 'loopback').trim();
+  const value = /^\d+$/.test(trustProxy) ? Number(trustProxy)
+    : trustProxy === 'false' ? false
+    : trustProxy === 'true' ? true
+    : trustProxy;
+  try {
+    app.set('trust proxy', value);
+  } catch {
+    // Express throws a bare "invalid IP address" for a value it cannot read.
+    throw new Error(`TRUST_PROXY=${JSON.stringify(trustProxy)} is not understood — use loopback, the proxy's address (or a comma-separated list), a hop count, true or false`);
+  }
+}
 
 // ── Security headers (helmet) ─────────────────────────────────
 app.use(
@@ -577,34 +604,25 @@ if (APP_GATEWAY_ENABLED) {
   logger.info('[app-gateway] Companion App Gateway disabled (APP_GATEWAY_ENABLED=false)');
 }
 
-// Deployment config endpoint (public — no auth required)
-app.get('/api/config', (req, res) => {
+// Deployment config endpoint (public — no auth required). The sign-in flags
+// are booleans the login page needs BEFORE anyone is signed in: in team mode
+// they used to be withheld from unauthenticated callers, so the SSO button
+// never rendered on the one page that needs it. Nothing secret is here.
+app.get('/api/config', (_req, res) => {
   const deploymentMode = process.env.DEPLOYMENT_MODE || 'solo';
-  const base = { deploymentMode, version: appVersion() };
-
-  const oauthFlags = {
+  const oidc = readOidcSettings();
+  res.json({
+    deploymentMode,
+    version: appVersion(),
     googleOAuthEnabled: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     githubOAuthEnabled: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
-    oidcEnabled: !!process.env.OIDC_ISSUER_URL,
-  };
-
-  if (deploymentMode !== 'team') {
-    // Solo mode: always return full config
-    return res.json({ ...base, ...oauthFlags });
-  }
-
-  // Team mode: only authenticated users see OAuth flags
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  let isAuthenticated = false;
-  if (token) {
-    try {
-      jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
-      isAuthenticated = true;
-    } catch { /* invalid token */ }
-  }
-
-  res.json(isAuthenticated ? { ...base, ...oauthFlags } : base);
+    // Enabled = the sign-in button shows (team mode). Configured = the OIDC_*
+    // settings are present — Settings shows "activates in team mode" for an
+    // instance being prepared before it switches over.
+    oidcEnabled: !!oidc && deploymentMode === 'team',
+    oidcConfigured: !!oidc,
+    ...(oidc ? { oidcButtonLabel: oidc.buttonLabel } : {}),
+  });
 });
 
 // Auth middleware — protects all subsequent /api routes
