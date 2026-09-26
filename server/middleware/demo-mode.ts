@@ -12,7 +12,12 @@
  *     instance through the same server;
  *   - background work that spends or learns: Markets, the missions runner, the
  *     memory sweep and radar automation are forced off, whatever else is set;
- *   - sign-up: who may create an account, how long it lives, its budget;
+ *   - sign-up: who may create an account, how long it lives, its budget, and
+ *     the version of the demo terms it must accept (DEMO_TERMS_VERSION);
+ *   - the modules kept off the demo (DEMO_HIDDEN_AREAS / DEMO_HIDDEN_MODULES,
+ *     built-in lists when unset; demoModuleHidden), which the run route and
+ *     the module listings apply;
+ *   - the OpenRouter providers a request may go to (DEMO_ALLOWED_PROVIDERS);
  *   - the public /api/config fields the web client reads.
  *
  * Nothing here touches the database. The sign-up route is in routes/auth.ts
@@ -40,6 +45,24 @@ export function demoModeStartupProblem(env: Env = process.env): string | null {
   for (const name of SPEND_CAP_VARS) {
     if (parseSpendCap(env[name]).invalid) return `[demo] FATAL: ${invalidSpendCapMessage(name)}.`;
   }
+  // The `user` id sent to OpenRouter with every call is an HMAC of the
+  // visitor's account id (openaiCompatibleAdapter.ts). On a demo it has its
+  // own key: outside demo mode it falls back on JWT_SECRET, which signs every
+  // session (privacy review M3 / D11). Names only, never a value.
+  const hashSecret = (env.LLM_USER_HASH_SECRET ?? '').trim();
+  const generate = 'Generate one with: openssl rand -hex 32';
+  if (!hashSecret) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is not set. It keys the pseudonymous id sent to OpenRouter and must differ from JWT_SECRET. ${generate}`;
+  }
+  if (hashSecret === (env.JWT_SECRET ?? '').trim()) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is the same as JWT_SECRET. Give it its own value. ${generate}`;
+  }
+  if (/^<.*>$/.test(hashSecret)) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is still the <...> placeholder from .env.demo.example. ${generate}`;
+  }
+  if (hashSecret.length < 32) {
+    return `[demo] FATAL: LLM_USER_HASH_SECRET is shorter than 32 characters. ${generate}`;
+  }
   return null;
 }
 
@@ -49,7 +72,7 @@ export function demoModeWarnings(env: Env = process.env): string[] {
   const warnings: string[] = [];
   if (env.ANTHROPIC_API_KEY) warnings.push('ANTHROPIC_API_KEY is set: visitors\' runs can reach Claude on that key. The showcase runs on OpenRouter only.');
   if (String(env.SDK_ENGINE_ENABLED ?? '').toLowerCase() === 'true') warnings.push('SDK_ENGINE_ENABLED=true: the subscription engine (this machine\'s Claude login) is on for a public server.');
-  if (!env.DEMO_SIGNUP_CODE && String(env.DEMO_SIGNUP_OPEN ?? '').toLowerCase() === 'true') warnings.push('DEMO_SIGNUP_OPEN=true with no DEMO_SIGNUP_CODE: anyone on the internet can make an account.');
+  if (!env.DEMO_SIGNUP_CODE && String(env.DEMO_SIGNUP_OPEN ?? '').toLowerCase() === 'true') warnings.push('DEMO_SIGNUP_OPEN=true with no DEMO_SIGNUP_CODE: anyone on the internet can make an account, and the privacy notice and the demo terms, which say sign-up needs an invite code, are then untrue.');
   if (demoOfferedModels(env).length === 0) warnings.push('DEMO_OFFERED_MODELS is empty: the model picker has nothing to offer visitors.');
   if (parseSpendCap(env.LLM_DAILY_SPEND_CAP_USD).value === null) warnings.push('LLM_DAILY_SPEND_CAP_USD is not set (or 0): nothing in ANTON caps a day\'s model spend (the OpenRouter key limit still does).');
   if (parseSpendCap(env.LLM_USER_DAILY_SPEND_CAP_USD).value === null) warnings.push('LLM_USER_DAILY_SPEND_CAP_USD is not set (or 0): one visitor can use the whole day\'s budget.');
@@ -59,6 +82,20 @@ export function demoModeWarnings(env: Env = process.env): string[] {
   if (String(env.CODEX_ENGINE_ENABLED ?? '').toLowerCase() === 'true') warnings.push('CODEX_ENGINE_ENABLED=true: the ChatGPT subscription engine is on for a public server.');
   for (const name of unknownPillarNames(env)) warnings.push(`DEMO_ENABLED_PILLARS names "${name}", which is not a pillar — ignored.`);
   for (const entry of invalidExtraRoutes(env)) warnings.push(`DEMO_EXTRA_ROUTES entry "${entry}" is not a /path (optionally METHOD:/path) — ignored.`);
+  if (!demoOperatorName(env)) warnings.push('DEMO_OPERATOR_NAME is not set: the pages cannot say who operates the demo, which the law requires before it opens to the public.');
+  if (demoHiddenAreas(env).length === 0 && demoHiddenModules(env).length === 0) {
+    warnings.push('DEMO_HIDDEN_AREAS and DEMO_HIDDEN_MODULES are both "none": visitors can run the health, HR, credit, CV and investigation modules, which invite data the demo must not receive.');
+  } else {
+    // An explicit list replaces the built-in one; the privacy notice promises
+    // every recommended module is off the demo.
+    for (const [name, effective, recommended] of [
+      ['DEMO_HIDDEN_AREAS', demoHiddenAreas(env), DEFAULT_DEMO_HIDDEN_AREAS],
+      ['DEMO_HIDDEN_MODULES', demoHiddenModules(env), DEFAULT_DEMO_HIDDEN_MODULES],
+    ] as const) {
+      const left = recommended.filter((id) => !effective.includes(id));
+      if (left.length > 0) warnings.push(`${name} leaves out ${left.join(', ')}: the privacy notice says the demo does not offer them.`);
+    }
+  }
   return warnings;
 }
 
@@ -146,6 +183,21 @@ export function demoOfferedModels(env: Env = process.env): string[] {
   return [...new Set(listEnv(env.DEMO_OFFERED_MODELS))];
 }
 
+/**
+ * DEMO_ALLOWED_PROVIDERS: the OpenRouter providers a demo's requests may go
+ * to (comma-separated, lower-cased), default "inceptron". Every entry of the
+ * endpoint's provider.only must be one of them, or the call is refused before
+ * anything is sent (assertDemoPrivacyPin in services/compat-endpoint.ts): the
+ * privacy notice names the provider, and its transfer assessment covers that
+ * one only. An endpoint saved from an older preset (["inceptron","nextbit"])
+ * would otherwise pass.
+ */
+export const DEFAULT_DEMO_ALLOWED_PROVIDERS: readonly string[] = ['inceptron'];
+export function demoAllowedProviders(env: Env = process.env): string[] {
+  const named = [...new Set(listEnv(env.DEMO_ALLOWED_PROVIDERS).map((s) => s.toLowerCase()))];
+  return named.length > 0 ? named : [...DEFAULT_DEMO_ALLOWED_PROVIDERS];
+}
+
 /** How long a demo account lives. DEMO_ACCOUNT_TTL_DAYS, 1–365, default 30. */
 export function demoAccountTtlDays(env: Env = process.env): number {
   return intEnv(env.DEMO_ACCOUNT_TTL_DAYS, 30, 1, 365);
@@ -208,6 +260,24 @@ export function demoSignupPolicy(env: Env = process.env): DemoSignupPolicy {
   return { open: String(env.DEMO_SIGNUP_OPEN ?? '').trim().toLowerCase() === 'true', code: null };
 }
 
+/**
+ * The version of the demo terms (the /terms page) a visitor accepts at
+ * sign-up. POST /api/auth/demo-signup refuses any other version and stores
+ * this one with the time of acceptance (migration 291). Change it whenever
+ * the terms text changes: a browser still showing the old terms is then
+ * refused and asked to reload.
+ */
+export const DEMO_TERMS_VERSION = '2026-09-26';
+
+/**
+ * DEMO_OPERATOR_NAME: the legal name of whoever runs the demo, for the
+ * "Operated by …" line (lag 2002:562 8 §). Empty when unset — the page then
+ * shows no such line.
+ */
+export function demoOperatorName(env: Env = process.env): string {
+  return (env.DEMO_OPERATOR_NAME ?? '').trim().slice(0, 200);
+}
+
 export interface DemoPublicConfig {
   demoMode: true;
   offeredModels: string[];
@@ -216,8 +286,21 @@ export interface DemoPublicConfig {
   signupCodeRequired: boolean;
   retentionDays: number;
   privacyPath: '/privacy';
+  /** The demo terms page; sign-up sends termsVersion back. */
+  termsPath: '/terms';
+  termsVersion: string;
+  /** DEMO_OPERATOR_NAME, or '' when unset. */
+  operatorName: string;
   /** False unless DEMO_POST_ANSWER_CALLS=all: no quality score is made after an answer. */
   answersScored: boolean;
+  /**
+   * The area and module ids kept off the demo for visitors (demoHiddenAreas /
+   * demoHiddenModules: the effective lists, the built-in ones when the .env
+   * sets none). The web client leaves them out of its catalogue; the server
+   * refuses a run of one and leaves them out of its listings either way.
+   */
+  hiddenAreas: string[];
+  hiddenModules: string[];
 }
 
 /** The /api/config fields: { demoMode: false } unless DEMO_MODE=true. Nothing secret — never the code. */
@@ -232,8 +315,98 @@ export function demoPublicConfig(env: Env = process.env): DemoPublicConfig | { d
     signupCodeRequired: signup.code !== null,
     retentionDays: demoAccountTtlDays(env),
     privacyPath: '/privacy',
+    termsPath: '/terms',
+    termsVersion: DEMO_TERMS_VERSION,
+    operatorName: demoOperatorName(env),
     answersScored: demoPostAnswerCalls(env) === 'all',
+    hiddenAreas: demoHiddenAreas(env),
+    hiddenModules: demoHiddenModules(env),
   };
+}
+
+// ── Hidden modules ────────────────────────────────────────────────────────────
+
+/**
+ * The areas and modules a demo keeps from visitors when the .env names none:
+ * the ones the privacy notice says the demo does not offer (health, HR,
+ * workers' rights, criminal law and investigations, credit risk, CV writing).
+ * They invite health, employment, credit or criminal-offence data. The
+ * notice's claim must hold without configuration, so an unset list means
+ * these; "none" turns a list off. .env.demo.example repeats them, and a test
+ * keeps the two equal. Module ids are bare (the folder name under
+ * server/areas/<area>/modules/), as a run sends them.
+ */
+export const DEFAULT_DEMO_HIDDEN_AREAS: readonly string[] = ['healthcare', 'community-health', 'hr', 'workers-rights'];
+export const DEFAULT_DEMO_HIDDEN_MODULES: readonly string[] = [
+  // Credit risk and credit scoring
+  'credit-risk', 'fintech-credit-risk-assessment', 'microfinance-credit-scoring', 'credit-score-builder',
+  // CV writing
+  'cv-writer',
+  // Employment and social-protection (benefits, disability) questions
+  'employment-rights', 'social-protection-navigator',
+  // HR talent modules (candidate assessment and recruitment). Their prompts
+  // live in server/prompts, not under server/areas/hr, so the hr area alone
+  // does not reach them on the server.
+  'talent-discovery', 'talent-ad-generator', 'talent-ad-generation', 'talent-assessment', 'talent-aspiration',
+  // Criminal law and investigations: court cases, alerts, suspicious-activity
+  // reports, screening hits and sanctions cases are about named people
+  'court-process-demystifier', 'alert-investigation', 'investigation-support', 'ivts-detection-investigation',
+  'blockchain-investigation', 'investigative-research', 'sar-quality-check', 'daily-screening-review',
+  'sanctions-advisory',
+];
+
+/**
+ * One hidden list from the .env: unset or blank → the built-in list; "none"
+ * (any case) → no list; otherwise the ids given, trimmed, lower-cased and
+ * without repeats. A value with no id in it (",") counts as blank.
+ */
+function hiddenList(value: string | undefined, builtIn: readonly string[]): string[] {
+  const raw = (value ?? '').trim();
+  if (raw.toLowerCase() === 'none') return [];
+  const named = [...new Set(listEnv(raw).map((s) => s.toLowerCase()))];
+  return named.length > 0 ? named : [...builtIn];
+}
+
+/**
+ * The area ids kept off the demo: DEMO_HIDDEN_AREAS (comma-separated, e.g.
+ * healthcare,hr), DEFAULT_DEMO_HIDDEN_AREAS when unset, none for "none".
+ * Empty outside demo mode, where nothing is hidden.
+ */
+export function demoHiddenAreas(env: Env = process.env): string[] {
+  if (!isDemoMode(env)) return [];
+  return hiddenList(env.DEMO_HIDDEN_AREAS, DEFAULT_DEMO_HIDDEN_AREAS);
+}
+
+/**
+ * The module ids kept off the demo: DEMO_HIDDEN_MODULES (comma-separated, e.g.
+ * credit-risk,cv-writer), DEFAULT_DEMO_HIDDEN_MODULES when unset, none for
+ * "none". Empty outside demo mode, where nothing is hidden.
+ */
+export function demoHiddenModules(env: Env = process.env): string[] {
+  if (!isDemoMode(env)) return [];
+  return hiddenList(env.DEMO_HIDDEN_MODULES, DEFAULT_DEMO_HIDDEN_MODULES);
+}
+
+/**
+ * Whether a module is kept off the demo: its id is in DEMO_HIDDEN_MODULES or
+ * its area's id is in DEMO_HIDDEN_AREAS. Always false outside demo mode.
+ *
+ * It does not look at the caller. Apply it to non-admins only — the run route
+ * refuses a hidden module (claude.ts) and the module listing leaves hidden
+ * ones out (modules.ts); an admin, as everywhere on the demo, sees everything.
+ * These modules invite health, employment, credit or criminal-offence data,
+ * which the demo must not receive (privacy review H3, 2026-09-26).
+ */
+export function demoModuleHidden(
+  moduleId: string | null | undefined,
+  areaId: string | null | undefined,
+  env: Env = process.env,
+): boolean {
+  if (!isDemoMode(env)) return false;
+  const mod = (moduleId ?? '').trim().toLowerCase();
+  const area = (areaId ?? '').trim().toLowerCase();
+  return (mod !== '' && demoHiddenModules(env).includes(mod))
+    || (area !== '' && demoHiddenAreas(env).includes(area));
 }
 
 // ── The route allowlist ───────────────────────────────────────────────────────
@@ -306,7 +479,10 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/embeddings/feedback'],
   ['POST', '/embeddings/feedback/bulk'],
   ['GET', '/oversight/modules'],
-  ['GET,POST', '/oversight/reviews'],
+  // Read only: the sign-off form asks for the reviewer's name, and visitors
+  // are told never to give a real one (privacy review H1). The page hides the
+  // form for them; an admin can still sign off.
+  ['GET', '/oversight/reviews'],
   ['GET', '/oversight/sessions/:x/review'],
   ['GET', '/versions/diff'],
   ['GET,POST', '/versions/output/:x'],

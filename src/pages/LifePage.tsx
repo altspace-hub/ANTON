@@ -23,6 +23,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import {
   Newspaper, Wallet, Map, Users,
   ChevronRight, Shield, TrendingUp, Radio, User,
@@ -127,6 +128,12 @@ const SECTIONS: SectionCard[] = [
 
 function SectionCard({ section }: { section: SectionCard }) {
   const navigate = useNavigate();
+  // Public demo: no link to a module the demo keeps off (cv-writer; privacy review H3).
+  const { moduleHidden } = useDemoCatalogue();
+  const features = section.features.filter((f) => {
+    const target = /^\/module\/([^/?#]+)/.exec(f.to);
+    return !target || !moduleHidden(target[1]);
+  });
 
   return (
     <div
@@ -152,7 +159,7 @@ function SectionCard({ section }: { section: SectionCard }) {
       {/* Feature links */}
       <div className="flex-1 px-6 pb-4">
         <div className="flex flex-col gap-1">
-          {section.features.map(f => (
+          {features.map(f => (
             <button
               key={f.to}
               onClick={() => navigate(f.to)}

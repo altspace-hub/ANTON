@@ -47,6 +47,7 @@ import {
   type PreparedCase,
 } from '../../scripts/eval/openrouter-eval';
 import { buildOutputInstruction } from '../../src/lib/output-format-definitions';
+import { OPENROUTER_EU_ZDR_EXTRA_BODY } from '../../src/lib/model-endpoint-form';
 
 const FIXED_NOW = new Date(2026, 8, 25, 10, 30, 0);
 const KEY = 'test-key-not-real';
@@ -198,10 +199,12 @@ describe('request body', () => {
   beforeAll(async () => { prepared = await prepareCase(CASES.find((c) => c.id === 'press-release')!, FIXED_NOW); });
   const settings = { effort: 'low' as const, maxTokens: 16384, temperature: 0.5 };
 
-  it('pins the EU candidate to the zero-retention providers, and only that one', () => {
+  it('pins the EU candidate to the zero-retention provider (Inceptron alone), and only that one', () => {
     const eu = buildRequestBody(byKey('glm-eu'), prepared, settings);
-    expect(eu.provider).toEqual({ only: ['inceptron', 'nextbit'], allow_fallbacks: true, zdr: true, data_collection: 'deny' });
+    expect(eu.provider).toEqual({ only: ['inceptron'], zdr: true, data_collection: 'deny' });
     expect(EU_ZDR_PROVIDER).toEqual(eu.provider);
+    // The run tests what the demo sends: the same pin as the Settings preset.
+    expect(EU_ZDR_PROVIDER).toEqual(OPENROUTER_EU_ZDR_EXTRA_BODY.provider);
     // Negative control: default routing sends no provider object.
     expect(buildRequestBody(byKey('glm-default'), prepared, settings)).not.toHaveProperty('provider');
     expect(buildRequestBody(byKey('ling-vl'), prepared, settings)).not.toHaveProperty('provider');

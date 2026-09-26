@@ -34,7 +34,12 @@ describe('parseDemoConfig', () => {
       signupCodeRequired: true,
       retentionDays: 30,
       privacyPath: '/privacy',
+      termsPath: '/terms',
+      termsVersion: '',
+      operatorName: '',
       answersScored: true,
+      hiddenAreas: [],
+      hiddenModules: [],
     });
   });
 

@@ -138,24 +138,25 @@ const PRESETS: PresetEndpoint[] = [
     notes: 'DeepSeek-V3 and R1 reasoning. Very strong / very cheap. Great default.',
   },
   {
-    // Pre-set for the public showcase: GLM 5.3 Flash pinned to the two EU
-    // zero-retention providers. The provider pin applies to every model on the
-    // endpoint, so the allow-list starts with that one model.
+    // Pre-set for the public showcase: GLM 5.3 Flash pinned to Inceptron, the
+    // one EU zero-retention provider. The provider pin applies to every model
+    // on the endpoint, so the allow-list starts with that one model.
     slug: 'openrouter',
     displayName: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1',
     defaultModel: OPENROUTER_SHOWCASE_MODEL,
     contextWindow: 131_072,
     signupUrl: 'https://openrouter.ai/',
-    pricing: 'One key for 400+ models, pay as you go. Pre-set: GLM 5.3 Flash (list price about $0.15 in / $0.50 out per 1M)',
-    notes: 'Pre-filled for GLM 5.3 Flash on the EU zero-retention providers (Inceptron, NextBit; either stands in for the other, no provider outside the two), with the app-attribution headers. To run other models, change provider.only in the extra body and the allowed models.',
+    pricing: 'One key for 400+ models, pay as you go. Pre-set: GLM 5.3 Flash on Inceptron (about $0.11 in / $0.50 out per 1M)',
+    notes: 'Pre-filled for GLM 5.3 Flash on Inceptron only (EU/EEA, zero data retention), with the app-attribution headers. No other provider stands in, so when Inceptron is busy the call fails with a "busy" message. On a public demo ANTON refuses to send to OpenRouter unless the extra body keeps zdr, data_collection "deny" and provider.only. To run other models, change provider.only in the extra body and the allowed models.',
     extraBody: OPENROUTER_EU_ZDR_EXTRA_BODY,
     allowedModels: [OPENROUTER_SHOWCASE_MODEL],
     attributionHeaders: true,
-    // The dearer of the two pinned providers (NextBit, 2026-09-25); Inceptron
-    // charged about $0.11 / $0.50 in a live check. /models says $0.045 / $0.14,
-    // which is one other provider's promotional price.
-    prices: { input: 0.165, output: 0.55 },
+    // Inceptron's price: OpenRouter lists $0.11 / $0.45, and a live call on
+    // 2026-09-25 was billed about $0.11 / $0.50, so the higher output price.
+    // It prices the worst-case reservation made before each call. /models
+    // says $0.045 / $0.14, which is one other provider's promotional price.
+    prices: { input: 0.11, output: 0.5 },
   },
   {
     slug: 'groq',

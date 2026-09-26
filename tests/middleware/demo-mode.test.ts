@@ -19,6 +19,7 @@ import {
   isDemoMode, demoModeStartupProblem, applyDemoModeOverrides, DEMO_FORCED_FLAGS,
   demoPublicConfig, demoEnabledPillars, demoSignupPolicy, demoAccountTtlDays,
   demoRouteAllowed, demoRouteRules, createDemoAllowlistMiddleware, demoModeWarnings,
+  DEMO_TERMS_VERSION, DEFAULT_DEMO_HIDDEN_AREAS, DEFAULT_DEMO_HIDDEN_MODULES,
 } from '../../server/middleware/demo-mode.js';
 
 const ENV_KEYS = [
@@ -45,12 +46,12 @@ describe('the DEMO_MODE switch', () => {
   it('refuses to start a demo outside team mode (every solo visitor would be an admin)', () => {
     expect(demoModeStartupProblem({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'solo' })).toMatch(/requires DEPLOYMENT_MODE=team/);
     expect(demoModeStartupProblem({ DEMO_MODE: 'true' })).toMatch(/requires DEPLOYMENT_MODE=team/);
-    expect(demoModeStartupProblem({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team' })).toBeNull();
+    expect(demoModeStartupProblem({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', LLM_USER_HASH_SECRET: 'h'.repeat(64) })).toBeNull();
     expect(demoModeStartupProblem({ DEPLOYMENT_MODE: 'solo' })).toBeNull();
   });
 
   it('refuses to start with a spend cap it cannot read, naming the variable and not its value', () => {
-    const team = { DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team' };
+    const team = { DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', LLM_USER_HASH_SECRET: 'h'.repeat(64) };
     const comma = demoModeStartupProblem({ ...team, LLM_USER_DAILY_SPEND_CAP_USD: '0,25' });
     expect(comma).toMatch(/FATAL: LLM_USER_DAILY_SPEND_CAP_USD/);
     expect(comma).not.toContain('0,25');
@@ -129,7 +130,13 @@ describe('/api/config demo fields', () => {
       signupCodeRequired: true,
       retentionDays: 14,
       privacyPath: '/privacy',
+      termsPath: '/terms',
+      termsVersion: DEMO_TERMS_VERSION,
+      operatorName: '',
       answersScored: false,
+      // Neither hidden list is set: the built-in ones apply (demo-hidden-defaults.test.ts).
+      hiddenAreas: [...DEFAULT_DEMO_HIDDEN_AREAS],
+      hiddenModules: [...DEFAULT_DEMO_HIDDEN_MODULES],
     });
     // The code itself is never published.
     expect(JSON.stringify(cfg)).not.toContain('swordfish');

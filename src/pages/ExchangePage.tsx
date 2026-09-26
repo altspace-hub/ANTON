@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Package, Upload, Download, AlertTriangle, CheckCircle, XCircle, Info, Loader2, ShieldCheck, ShieldAlert, Shield } from 'lucide-react';
-import { MODULES, AREAS } from '@/lib/constants';
+import type { MODULES } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { fetchCustomModules, getAuthHeader, type CustomModuleData } from '@/lib/api';
 
 const API_BASE = '/api';
@@ -94,6 +95,8 @@ export default function ExchangePage() {
 }
 
 function ExportTab() {
+  // On a public demo the module list leaves out the modules and areas kept off it.
+  const catalogue = useDemoCatalogue();
   const [moduleId, setModuleId] = useState('');
   const [isCustom, setIsCustom] = useState(false);
   const [authorName, setAuthorName] = useState('');
@@ -132,10 +135,10 @@ function ExportTab() {
   }, []);
 
   // Build built-in module options grouped by area
-  const builtinOptions = AREAS.map((area) => ({
+  const builtinOptions = catalogue.areas.map((area) => ({
     area,
     modules: area.moduleIds
-      .map((id) => MODULES.find((m) => m.id === id))
+      .map((id) => catalogue.modules.find((m) => m.id === id))
       .filter(Boolean) as typeof MODULES,
   })).filter((g) => g.modules.length > 0);
 

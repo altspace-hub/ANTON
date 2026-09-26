@@ -5,7 +5,8 @@ import { MessageCircle, Send, Square, ArrowRight, Sparkles, Copy, Check, Downloa
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { streamMessage } from '@/lib/api';
-import { MODULES, AREAS } from '@/lib/constants';
+import { AREAS } from '@/lib/constants';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import type { Message } from '@/lib/types';
 
 const BRIEF_SYSTEM_PROMPT = `You are Anton, an expert AI assistant powered by openEXPERT. You have deep expertise across financial crime prevention, legal & compliance, risk management, audit, consulting, HR, finance, technology, and many other professional domains.
@@ -20,6 +21,8 @@ You can handle any professional question — compliance, legal, risk, strategy, 
 
 export default function BriefMePage() {
   const { t } = useTranslation();
+  // Suggestions never name a module a public demo keeps off.
+  const catalogue = useDemoCatalogue();
   const [transparencyLevel, setTransparencyLevel] = useState<0 | 1 | 2>(0);
   const [userInput, setUserInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -173,7 +176,7 @@ export default function BriefMePage() {
     const lastQuestion = messages.filter((m) => m.role === 'user').pop()?.content?.toLowerCase() ?? '';
     const words = lastQuestion.split(/\W+/).filter((w) => w.length > 3);
 
-    return MODULES
+    return catalogue.modules
       .map((mod) => {
         const text = `${mod.label} ${mod.description}`.toLowerCase();
         const score = words.reduce((s, w) => s + (text.includes(w) ? 1 : 0), 0);

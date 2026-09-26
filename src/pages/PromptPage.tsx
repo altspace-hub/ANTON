@@ -26,6 +26,11 @@ import { ResumePanel } from '@/components/shared/ResumePanel';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useExport } from '@/hooks/useExport';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { demoRestricted } from '@/lib/demo-config';
+import { findSensitiveInput, describeSensitiveKinds, type SensitiveFinding } from '@/lib/sensitive-input-check';
 import { Send, Square, Trash2, ChevronDown, ChevronRight, Copy, Check, Sparkles, Loader2, X, ArrowRight, Coins, Zap, Users, Mic, MicOff, Plus, MessageSquare, Clock, Paperclip, File as FileIcon } from 'lucide-react';
 import { MODELS } from '@/lib/constants';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
@@ -91,6 +96,18 @@ export default function PromptPage() {
   const { files, upload, remove, clear: clearAttachments } = useFileUpload();
   const { doExport, isExporting } = useExport();
   const { isListening, transcript, startListening, stopListening, isSupported: isSpeechSupported } = useSpeechRecognition();
+  // Public demo (DEMO_MODE=true): the same safeguards as the module page for a
+  // visitor, who can reach this page by its address. No microphone (privacy
+  // review M5, D9): the browser's speech recognition may send the audio to the
+  // browser's maker. A line under the composer, and a check before the text is
+  // sent (H3). And no lens the demo keeps off. Admins keep everything.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
+  const { moduleHidden } = useDemoCatalogue();
+  // What in the visitor's text looks like real personal data, and which send
+  // it holds back (the message, the draft to improve, or the answers to its
+  // questions); and what they have already confirmed is made up.
+  const [sensitiveCheck, setSensitiveCheck] = useState<{ findings: SensitiveFinding[]; action: 'send' | 'improve' | 'build' } | null>(null);
+  const confirmedSensitiveRef = useRef<Set<string>>(new Set());
 
   // Per-message config snapshot for "How ANTON Thought" accuracy on old sessions
   const lastAssistantConfigSnapshot = useMemo(() => {
@@ -105,6 +122,10 @@ export default function PromptPage() {
   const setLens = useConfigStore((s) => s.setLens);
   const [lensBusy, setLensBusy] = useState(false);
   const [lensDeclined, setLensDeclined] = useState(false);
+  // A lens kept from an earlier visit that the demo keeps off is dropped.
+  useEffect(() => {
+    if (lens && moduleHidden(lens.moduleId, lens.areaId)) setLens(null);
+  }, [lens, moduleHidden, setLens]);
   // The project (matter) this chat is filed under.
   const project = useConfigStore((s) => s.project);
   const setProject = useConfigStore((s) => s.setProject);
@@ -293,9 +314,36 @@ export default function PromptPage() {
     }
   }, [sessionId, handleNewChat]);
 
+  /**
+   * A demo visitor's text is checked for a personnummer, email addresses and
+   * phone numbers before it is sent, as on the module page: shown back, and
+   * held until they confirm or edit it. True when it was held.
+   */
+  const holdForSensitive = (text: string, action: 'send' | 'improve' | 'build'): boolean => {
+    if (!demoLimited) return false;
+    const findings = findSensitiveInput([text])
+      .filter((f) => !confirmedSensitiveRef.current.has(`${f.kind}:${f.match}`));
+    if (findings.length === 0) return false;
+    setSensitiveCheck({ findings, action });
+    return true;
+  };
+
+  /** The visitor says the personal-looking details are made up or public: send as asked. */
+  const sendAfterConfirm = () => {
+    if (!sensitiveCheck) return;
+    sensitiveCheck.findings.forEach((f) => confirmedSensitiveRef.current.add(`${f.kind}:${f.match}`));
+    const { action } = sensitiveCheck;
+    setSensitiveCheck(null);
+    if (action === 'send') void handleSend();
+    else if (action === 'improve') void handleImprovePrompt();
+    else void handleBuildImproved();
+  };
+
   const handleSend = async () => {
     const text = userInput.trim();
     if (!text || isStreaming || lensBusy) return;
+    if (holdForSensitive(text, 'send')) return;
+    setSensitiveCheck(null);
     setUserInput('');
     // First turn with no lens chosen: let the router pick the expert lens
     // BEFORE the answer, so that module's prompt shapes it. Bounded — a slow
@@ -306,7 +354,7 @@ export default function PromptPage() {
       const timer = setTimeout(() => ac.abort(), 8000);
       try {
         const top = (await suggestModuleLens(text, ac.signal))[0];
-        if (top && top.moduleId !== 'open-chat') {
+        if (top && top.moduleId !== 'open-chat' && !moduleHidden(top.moduleId, top.areaId)) {
           setLens({ moduleId: top.moduleId, areaId: top.areaId, label: top.label, reason: top.reason });
         }
       } catch {
@@ -341,6 +389,9 @@ export default function PromptPage() {
 
   const handleImprovePrompt = async () => {
     if (!userInput.trim() || isStreaming || improveState !== 'idle') return;
+    // The draft goes to the model too, so it is checked the same way.
+    if (holdForSensitive(userInput, 'improve')) return;
+    setSensitiveCheck(null);
 
     setImproveDraft(userInput);
     setImproveState('analyzing');
@@ -429,6 +480,9 @@ export default function PromptPage() {
 
   const handleBuildImproved = async () => {
     if (!improveAnswers.trim() || (improveState !== 'questions' && improveState !== 'suggestions')) return;
+    // The answers go to the model with the draft, so they are checked too.
+    if (holdForSensitive(improveAnswers, 'build')) return;
+    setSensitiveCheck(null);
 
     setImproveState('building');
     setImproveBuildingText('');
@@ -774,7 +828,10 @@ export default function PromptPage() {
             <div className="space-y-3">
               <textarea
                 value={improveAnswers}
-                onChange={(e) => setImproveAnswers(e.target.value)}
+                onChange={(e) => {
+                  if (sensitiveCheck) setSensitiveCheck(null);
+                  setImproveAnswers(e.target.value);
+                }}
                 placeholder="Answer the questions above... (you can number your answers to match, or write freely)"
                 className="w-full resize-none rounded-lg border border-border bg-adv-dark p-3 text-sm text-adv-off-white placeholder:text-adv-gray focus:border-adv-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4A8] focus-visible:ring-offset-1 focus:ring-1 focus:ring-adv-teal"
                 rows={4}
@@ -968,9 +1025,15 @@ export default function PromptPage() {
           }}
         />
         <textarea
+          id="prompt-composer"
           ref={composerRef}
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
+          aria-describedby={demoLimited ? 'demo-data-warning' : undefined}
+          onChange={(e) => {
+            // An edited text is checked again when it is sent.
+            if (sensitiveCheck) setSensitiveCheck(null);
+            setUserInput(e.target.value);
+          }}
           onKeyDown={handleKeyDown}
           onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
           onDragLeave={() => setIsDraggingFile(false)}
@@ -1028,7 +1091,7 @@ export default function PromptPage() {
               >
                 <Sparkles className="h-3.5 w-3.5" />
               </button>
-              {isSpeechSupported && (
+              {isSpeechSupported && !demoLimited && (
                 <button
                   type="button"
                   onClick={isListening ? stopListening : startListening}
@@ -1047,6 +1110,45 @@ export default function PromptPage() {
           )}
         </div>
       </div>
+      {demoLimited && (
+        <p id="demo-data-warning" className="mt-1.5 text-sm text-adv-gold">
+          Demo: don&apos;t enter real personal or client data.
+        </p>
+      )}
+      {demoLimited && sensitiveCheck && sensitiveCheck.findings.length > 0 && (
+        <div role="alert" className="mt-2 rounded-lg border border-adv-gold/40 bg-adv-gold/10 px-3 py-2.5 text-sm text-adv-off-white">
+          <p>
+            Your text seems to contain {describeSensitiveKinds(sensitiveCheck.findings)}:{' '}
+            {sensitiveCheck.findings.slice(0, 3).map((f, i) => (
+              <span key={`${f.kind}:${f.match}`}>
+                {i > 0 && ', '}
+                <code className="rounded bg-adv-dark px-1">{f.match}</code>
+              </span>
+            ))}
+            {sensitiveCheck.findings.length > 3 && ' …'}
+          </p>
+          <p className="mt-1 text-adv-gray">
+            This demo must not receive real personal data. Remove it or replace it with made-up details. If it is
+            made up or public, you can send it as it is.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => { setSensitiveCheck(null); composerRef.current?.focus(); }}
+              className="rounded-lg bg-adv-teal px-3 py-1.5 text-sm font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+            >
+              Edit my text
+            </button>
+            <button
+              type="button"
+              onClick={sendAfterConfirm}
+              className="rounded-lg border border-border px-3 py-1.5 text-sm text-adv-off-white hover:border-adv-gold transition-colors"
+            >
+              It is made up or public: send it
+            </button>
+          </div>
+        </div>
+      )}
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-xs text-adv-gray">

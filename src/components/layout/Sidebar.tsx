@@ -57,6 +57,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted, demoHiddenNavItems } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 import { fetchSessions, fetchProfile, fetchSessionStats, getAuthHeader, type CustomModuleData } from '@/lib/api';
 import type { Session } from '@/lib/types';
 import AreaDashboard from './AreaDashboard';
@@ -422,6 +423,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   // it is not offered here. Admins keep everything.
   const demoConfig = useDemoStore((s) => s.config);
   const demoLimited = demoRestricted(demoConfig, authUser?.role);
+  // Nor does a visitor see the modules and areas the demo keeps off (health,
+  // HR, credit, criminal matters; privacy review H3).
+  const catalogue = useDemoCatalogue();
   const hiddenNavItems = useMemo(() => new Set([
     ...userHiddenNavItems,
     ...demoHiddenNavItems(demoConfig, authUser?.role, ALL_NAV_ITEMS.map((item) => item.id)),
@@ -2588,7 +2592,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         )}
 
         {/* Collapsed: flat module icon list */}
-        {sidebarCollapsed && MODULES.map((mod) => {
+        {sidebarCollapsed && catalogue.modules.map((mod) => {
           const Icon = iconMap[mod.icon] || Search;
           return (
             <NavLink
@@ -2605,7 +2609,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         {/* UX-04: Filtered module results — replaces area tree when search is active */}
         {!sidebarCollapsed && sectionsExpanded.modules && moduleSearch.trim() && (() => {
           const q = moduleSearch.trim().toLowerCase();
-          const matched = MODULES.filter(
+          const matched = catalogue.modules.filter(
             (m) => m.id.includes(q) || m.shortLabel.toLowerCase().includes(q) || m.label?.toLowerCase().includes(q)
           );
           if (matched.length === 0) {
@@ -2615,7 +2619,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             <div className="mb-2">
               {matched.map((mod) => {
                 const Icon = iconMap[mod.icon] || Search;
-                const area = AREAS.find((a) => (a.moduleIds as readonly string[]).includes(mod.id as string));
+                const area = catalogue.areas.find((a) => (a.moduleIds as readonly string[]).includes(mod.id as string));
                 return (
                   <NavLink
                     key={mod.id}
@@ -2635,7 +2639,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
         {/* ── My Modules section — appears before domain areas for quick access ── */}
         {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && (() => {
-          const myModules = customModules.filter(() => true);
+          const myModules = customModules.filter((cm) => !catalogue.moduleHidden(cm.id, cm.area));
           if (myModules.length === 0) return null;
           const isExpanded = expandedAreas.has('my-modules');
           return (
@@ -2683,15 +2687,15 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         })()}
 
         {/* Expanded: modules grouped by area — hidden when search is active */}
-        {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && AREAS.map((area) => {
+        {!sidebarCollapsed && sectionsExpanded.modules && !moduleSearch.trim() && catalogue.areas.map((area) => {
           const isExpanded = expandedAreas.has(area.id);
           const colors = AREA_COLORS[area.id] ?? DEFAULT_AREA_COLOR;
           const AreaIcon = iconMap[area.icon] || Search;
           const areaModules = area.moduleIds
-            .map((id) => MODULES.find((m) => m.id === id))
+            .map((id) => catalogue.modules.find((m) => m.id === id))
             .filter(Boolean) as typeof MODULES;
           // Custom modules assigned to this area
-          const areaCustomModules = customModules.filter((cm) => cm.area === area.id);
+          const areaCustomModules = customModules.filter((cm) => cm.area === area.id && !catalogue.moduleHidden(cm.id, cm.area));
           const totalCount = areaModules.length + areaCustomModules.length;
 
           return (
@@ -2721,7 +2725,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
                   <AreaDashboard
                     areaId={area.id}
                     areaLabel={area.label}
-                    moduleIds={area.moduleIds as unknown as string[]}
+                    moduleIds={(area.moduleIds as readonly string[]).filter((id) => !catalogue.moduleHidden(id, area.id))}
                     topModules={topModules}
                     areaSessions={areaSessionCounts[area.id] ?? 0}
                   />

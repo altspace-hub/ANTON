@@ -69,6 +69,7 @@ import { createRadarFetcher, isRadarAutomationDisabled, radarCronIsAtMostHourly 
 import { setRouterDb } from './services/compat-endpoint.js';
 import { requestContextMiddleware } from './lib/request-context.js';
 import { isLoopbackRequest } from './lib/request-origin.js';
+import { cspDirectives } from './lib/content-security-policy.js';
 import { createBudgetMiddleware } from './middleware/budget.js';
 import createNotificationsRouter from './routes/notifications.js';
 import * as cron from 'node-cron';
@@ -291,27 +292,8 @@ const app = express();
 app.use(
   helmet({
     contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],  // SEC-02: no unsafe-inline; Vite prod build uses ES module scripts
-        styleSrc:  ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        imgSrc:    ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc: [
-          "'self'",
-          'ws:',
-          'wss:',
-          'https://api.anthropic.com',
-          'https://api.openai.com',
-          'https://generativelanguage.googleapis.com',
-          'https://api.mistral.ai',
-        ],
-        fontSrc:   ["'self'", 'data:', 'https://fonts.gstatic.com'],
-        objectSrc: ["'none'"],
-        mediaSrc:  ["'self'"],
-        frameSrc:  ["'self'", 'blob:'],
-        frameAncestors: ["'none'"],
-        upgradeInsecureRequests: [], // Upgrade HTTP to HTTPS when available
-      },
+      // Fonts from this origin only; on the demo, no remote images (server/lib/content-security-policy.ts).
+      directives: cspDirectives(isDemoMode()),
     },
     crossOriginEmbedderPolicy: false, // Needed for external API calls
     hsts: {
@@ -421,6 +403,19 @@ try {
   for (const line of spendCapConfigWarnings()) logger.warn(`[llm-spend] ${line}`);
 } catch (err) {
   console.warn('[settings] failed to restore persisted provider keys:', err instanceof Error ? err.message : err);
+}
+
+// Public showcase: the owner's org context, Trades and fund identities and
+// shared knowledge atoms must not be in a demo's database (privacy memo G6).
+// One warning line naming what is there, never its content.
+if (isDemoMode()) {
+  try {
+    const { findDemoOwnerData, demoOwnerDataWarning } = await import('./services/demo-owner-data.js');
+    const warning = demoOwnerDataWarning(await findDemoOwnerData(db));
+    if (warning) logger.warn(`[demo] ${warning}`);
+  } catch (err) {
+    console.warn('[demo] could not check the database for the owner\'s data:', err instanceof Error ? err.message : err);
+  }
 }
 
 // FC-CONN-SEED: pick up FUTURECHAIN_RPC_URL from the portable bundle's

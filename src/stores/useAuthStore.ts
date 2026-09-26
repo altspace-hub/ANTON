@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import { safeStorage } from '@/lib/safe-storage';
+import { safeStorage, setSessionOnlyAuthStorage, clearPreferenceKeys } from '@/lib/safe-storage';
+import { useDemoStore } from '@/stores/useDemoStore';
+
+// On a public demo the sign-in token is kept for the tab only, in
+// sessionStorage (privacy review D25). The demo config arrives with
+// /api/config, which App.tsx applies before it calls checkAuth.
+setSessionOnlyAuthStorage(useDemoStore.getState().config.demoMode);
+useDemoStore.subscribe((s) => setSessionOnlyAuthStorage(s.config.demoMode));
 
 export interface AuthUser {
   id: string;
@@ -56,6 +63,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }).catch(() => {});
     }
     safeStorage.removeItem('openexpert-token');
+    // On a public demo the visitor's remembered choices go with the sign-in,
+    // so the demo leaves nothing in this browser (D25). Elsewhere they stay.
+    if (useDemoStore.getState().config.demoMode) clearPreferenceKeys();
     set({ user: null, token: null });
   },
 

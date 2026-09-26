@@ -9,7 +9,7 @@ import { runDeliberation, DEFAULT_PANELISTS } from '../services/deliberation-eng
 import { createOutputStore } from '../services/output-store.js';
 import { composeSystemPrompt, composeSystemPromptParts, foundationPromptText } from '../services/prompt-composer.js';
 import { ensurePromptVersion, FOUNDATION_PROMPT_ID } from '../services/prompt-versions.js';
-import { getModule } from '../services/module-loader.js';
+import { getModule, getModuleSystemPrompt } from '../services/module-loader.js';
 import { estimateTokens } from '../services/token-estimator.js';
 import { buildOutputInstruction } from '../../src/lib/output-format-definitions.js';
 import { buildOrgContextLayer, buildResumeContextLayer, buildKnowledgePackLayer, buildKnowledgePackLayerDetailed, buildAtomLayerDetailed } from '../services/prompt-builder.js';
@@ -43,7 +43,7 @@ import {
 } from '../services/adapters/openaiCompatibleAdapter.js';
 import { resolveCompatModel, CompatEndpointError, modelAcceptsImages, type ResolvedCompatModel } from '../services/compat-endpoint.js';
 import { assertSpendAllowed, isSpendCapError, type SpendCostSource } from '../services/llm-spend.js';
-import { isDemoMode, demoOfferedModels, demoPostAnswerCalls } from '../middleware/demo-mode.js';
+import { isDemoMode, demoOfferedModels, demoPostAnswerCalls, demoModuleHidden } from '../middleware/demo-mode.js';
 import { compatReasoningParam } from '../services/thinking-map.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
@@ -173,9 +173,10 @@ function onlineReferenceLimitProblem(knowledgeSources: unknown): string | null {
 }
 
 /**
- * The knowledge sources with online references switched off — for a preview
- * in demo mode, where a visitor's preview must not make this server fetch
- * pages and hand back their text. The run itself still fetches them.
+ * The knowledge sources with online references switched off — for a
+ * visitor's preview and run in demo mode, where this server must not fetch
+ * pages for them: a preview handed the text back, and a run sent it to the
+ * model host (privacy review H4).
  */
 function withoutOnlineReferenceFetch(knowledgeSources: unknown): unknown {
   const ref = onlineReferenceOf(knowledgeSources);
@@ -266,6 +267,24 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Demo mode: is this run's module kept off the demo (demoModuleHidden)? The
+   * area checked is the one sent and the module's own, looked up as
+   * refuseForbiddenModule does, so a hidden module sent with another area id
+   * is still caught. A failed lookup counts as hidden: this keeps data the
+   * demo must not receive away from the model, so it fails closed.
+   */
+  async function demoRunHidden(moduleId: unknown, areaId: unknown): Promise<boolean> {
+    const mod = typeof moduleId === 'string' ? moduleId : null;
+    if (demoModuleHidden(mod, typeof areaId === 'string' ? areaId : null)) return true;
+    if (!mod) return false;
+    try {
+      return demoModuleHidden(mod, await resolveModuleAreaId(db, mod));
+    } catch {
+      return true;
     }
   }
 
@@ -433,7 +452,20 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // the compat branch no daily USD cap applies. With no list set, only
       // compat models run. Admins are not restricted. Checked on the model
       // the run would actually use (after enforce_model and the defaults).
+      //
+      // The modules kept off the demo (DEMO_HIDDEN_AREAS / DEMO_HIDDEN_MODULES)
+      // invite health, employment, credit or criminal-offence data, which the
+      // demo must not receive (privacy review H3). The listing leaves them out
+      // (modules.ts); a visitor's run of one is refused here, before anything
+      // is saved or sent.
       if (isDemoMode() && req.user?.role !== 'admin') {
+        if (await demoRunHidden(moduleId, areaId)) {
+          res.status(403).json({
+            error: 'This module is not available in this demo. Pick another module.',
+            code: 'MODULE_NOT_OFFERED',
+          });
+          return;
+        }
         const offered = demoOfferedModels();
         const allowed = offered.length > 0 ? offered.includes(selectedModel) : provider === 'openai_compatible';
         if (!allowed) {
@@ -785,8 +817,15 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Resolve knowledge sources (existing: Claude knowledge, URLs, local folders)
-      const resolved: ResolvedKnowledge = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
+      // In demo mode a visitor's online references are not fetched, as on a
+      // preview: the pages' text (possibly about other people) would go to the
+      // model host, and a fetched page is the easiest way in for a prompt
+      // injection (privacy review H4). Admins keep them.
+      const runKnowledgeSources = isDemoMode() && req.user?.role !== 'admin'
+        ? withoutOnlineReferenceFetch(knowledgeSources) as Parameters<typeof resolveKnowledgeSources>[0]
+        : knowledgeSources;
+      const resolved: ResolvedKnowledge = runKnowledgeSources
+        ? await resolveKnowledgeSources(runKnowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
@@ -1371,8 +1410,17 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // the module prompt (file or the user's override) and the ground
             // prompt — so the audit row names the exact text, not "latest".
             const modulePromptPart = composed.parts.find((p) => p.key === 'layer4_module_prompt');
-            const modulePromptVersion = moduleId && modulePromptPart
-              ? await ensurePromptVersion(db, String(moduleId), modulePromptPart.text, systemPrompt ? 'user-override' : 'system')
+            // Public demo: a visitor's edited module prompt gets no
+            // system_prompts row — the table has no owner, so the row would
+            // outlive the account. The page sends the module's own prompt when
+            // nothing was edited; that one is versioned as the system text. The
+            // edited text stays in the message and session snapshots, which go
+            // with the session and the account (privacy review F3).
+            const demoVisitorPrompt = isDemoMode() && req.user?.role !== 'admin' && !!systemPrompt;
+            const visitorPromptEdit = demoVisitorPrompt && !!moduleId && !!modulePromptPart
+              && modulePromptPart.text.trim() !== ((await getModuleSystemPrompt(String(moduleId))) ?? '').trim();
+            const modulePromptVersion = moduleId && modulePromptPart && !visitorPromptEdit
+              ? await ensurePromptVersion(db, String(moduleId), modulePromptPart.text, systemPrompt && !demoVisitorPrompt ? 'user-override' : 'system')
               : null;
             const foundationVersion = await ensurePromptVersion(db, FOUNDATION_PROMPT_ID, foundationPromptText());
             // Build config snapshot first — used in both INSERT and UPDATE below
@@ -1401,7 +1449,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               selectedOutputFormats: outputFormats,
               selectedPersonas,
               selectedSkills,
-              knowledgeSources,
+              // What the run used: on the demo a visitor's online references are off.
+              knowledgeSources: runKnowledgeSources,
               plainTextMode: !!req.body.plainTextMode,
               writingTone: req.body.writingTone || 'professional',
               audience: req.body.audience || null,
@@ -1595,7 +1644,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
               // atomCollectionEnabled=false on its dispatched body, and embedding
               // a rerun would store a near-duplicate of the original conclusion
               // under a fresh id, crowding retrieval top-K with copies.
-              if (atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
+              // Public demo: none. Nothing a visitor can open searches them
+              // (hybrid search and Pathfinder are outside the demo's routes);
+              // they would only be a search index over visitors' answers.
+              if (!isDemoMode() && atomCollectionEnabled !== false && data.text && data.text.length >= 200) {
                 void embedSessionOutput(db, {
                   messageId: assistantMessageId,
                   sessionId: String(sessionId),
@@ -1678,11 +1730,13 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             try {
               await db.run('UPDATE sessions SET config = ?, updated_at = ? WHERE id = ?', JSON.stringify(configSnapshot), new Date().toISOString(), sessionId);
             } catch { /* non-fatal */ }
-            // Auto-save version snapshot
+            // Auto-save version snapshot, owned by the caller (migration 265):
+            // an unowned copy was never deleted with its account, and in team
+            // mode its owner could not read it back.
             if (sessionId && data.text && data.text.length > 100) {
               try {
                 const last = await db.get('SELECT MAX(version_number) as max_v FROM versions WHERE entity_type=? AND entity_id=?', 'session', sessionId) as { max_v: number | null };
-                await db.run('INSERT INTO versions (entity_type, entity_id, version_number, label, content) VALUES (?,?,?,?,?)', 'session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text);
+                await db.run('INSERT INTO versions (entity_type, entity_id, version_number, label, content, user_id) VALUES (?,?,?,?,?,?)', 'session', sessionId, (last?.max_v ?? 0) + 1, `Auto v${(last?.max_v ?? 0) + 1}`, data.text, req.user?.id ?? null);
               } catch { /* non-fatal */ }
             }
             // Apprentice progression.
@@ -1691,7 +1745,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // would inflate sessions_completed and could trigger an unearned
             // promotion. Skip the whole block for reruns (the quality fold below
             // is part of it, so a rerun also never folds a second model's score).
-            if (moduleId && !rerunOf) {
+            // Public demo: none — /apprentice is closed to visitors, so the
+            // per-module usage profile would serve nobody (privacy review M9).
+            if (moduleId && !rerunOf && !isDemoMode()) {
               try {
                 const uid = req.user?.id || 'default';
                 type ApprenticeRow = { id: string; stage: string; sessions_completed: number; quality_avg: number | null; quality_n: number | null };
@@ -2442,7 +2498,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // preview does not fetch them at all — the preview hands the fetched
       // text back, which made this route a free fetch-and-return proxy on the
       // server's address (no model is called, so no budget or rate limit for
-      // model calls applied). The run itself still fetches them.
+      // model calls applied). The run does not fetch them either.
       const tooManyUrls = onlineReferenceLimitProblem(knowledgeSources);
       if (tooManyUrls) {
         res.status(400).json({ error: tooManyUrls, code: 'TOO_MANY_ONLINE_REFERENCES' });

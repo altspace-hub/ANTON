@@ -31,7 +31,7 @@ import {
   ShieldCheck, AlertTriangle, Settings as SettingsIcon, Layers,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { MODULES, AREAS } from '@/lib/constants';
+import type { MODULES } from '@/lib/constants';
 import {
   fetchSessions, fetchSessionStats, fetchCustomModules,
   type CustomModuleData,
@@ -44,6 +44,7 @@ import SmartModuleSearch from '@/components/shared/SmartModuleSearch';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted } from '@/lib/demo-config';
+import { useDemoCatalogue } from '@/hooks/useDemoCatalogue';
 
 type RightMode = 'digest' | 'agent';
 type FeedTone = 'accent' | 'gold' | 'red' | 'green' | 'blue';
@@ -180,6 +181,10 @@ export default function HomeV2(): JSX.Element {
   // nothing behind it — so Home shows a visitor the module catalogue and
   // their own sessions. Admins see everything.
   const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
+  // The modules and areas a demo keeps off (health, HR, credit, criminal
+  // matters; privacy review H3) are not listed for a visitor. Everyone else
+  // gets the whole catalogue.
+  const catalogue = useDemoCatalogue();
 
   // ── Data ────────────────────────────────────────────────────
   const [stats, setStats] = useState<{
@@ -277,8 +282,12 @@ export default function HomeV2(): JSX.Element {
   const filteredAreas = useMemo(() => {
     if (!moduleQuery.trim()) return null;
     const q = moduleQuery.toLowerCase();
-    return MODULES.filter(m => m.label.toLowerCase().includes(q) || m.description.toLowerCase().includes(q)).slice(0, 24);
-  }, [moduleQuery]);
+    return catalogue.modules.filter(m => m.label.toLowerCase().includes(q) || m.description.toLowerCase().includes(q)).slice(0, 24);
+  }, [moduleQuery, catalogue.modules]);
+  const visibleCustomModules = useMemo(
+    () => customModules.filter((m) => !catalogue.moduleHidden(m.id, m.area)),
+    [customModules, catalogue],
+  );
 
   const railWidth = railCollapsed ? '40px' : '380px';
 
@@ -397,12 +406,12 @@ export default function HomeV2(): JSX.Element {
           >
             {demoLimited ? (
               <>
-                {MODULES.length} expert modules across {AREAS.length} areas are ready to run.
+                {catalogue.modules.length} expert modules across {catalogue.areas.length} areas are ready to run.
                 Your recent sessions appear in the Activity rail on the right.
               </>
             ) : (
               <>
-                {MODULES.length} expert modules across {AREAS.length} areas are ready to run, and
+                {catalogue.modules.length} expert modules across {catalogue.areas.length} areas are ready to run, and
                 Pathfinder answers research questions with sourced, multi-phase reasoning.
                 Your recent sessions and searches appear in the Activity rail on the right.
               </>
@@ -501,12 +510,12 @@ export default function HomeV2(): JSX.Element {
         )}
 
         {/* ── My Custom Modules ──────────────────────────────── */}
-        {customModules.length > 0 && (
+        {visibleCustomModules.length > 0 && (
           <div className="mb-6">
             <div className="mb-3 flex items-end justify-between">
               <Section className="inline-flex items-center gap-1.5">
                 <Sparkles size={12} strokeWidth={1.5} /> My Custom Modules
-                <span className="ml-1 text-[var(--color-text-muted)]">{customModules.length}</span>
+                <span className="ml-1 text-[var(--color-text-muted)]">{visibleCustomModules.length}</span>
               </Section>
               {!demoLimited && (
                 <button
@@ -518,7 +527,7 @@ export default function HomeV2(): JSX.Element {
               )}
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-              {customModules.slice(0, 4).map(m => (
+              {visibleCustomModules.slice(0, 4).map(m => (
                 <button
                   key={m.id}
                   type="button"
@@ -587,10 +596,10 @@ export default function HomeV2(): JSX.Element {
             )
             : (
               <>
-                {AREAS.map(area => {
+                {catalogue.areas.map(area => {
                   const tone = AREA_TONE[area.id] ?? 'accent';
                   const list = area.moduleIds
-                    .map(id => MODULES.find(m => m.id === id))
+                    .map(id => catalogue.modules.find(m => m.id === id))
                     .filter((m): m is NonNullable<typeof m> => Boolean(m));
                   if (list.length === 0) return null;
                   return (
