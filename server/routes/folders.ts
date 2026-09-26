@@ -9,8 +9,12 @@ import { FolderBrowseSchema, FolderRegisterSchema, FolderIndexSchema } from '../
 // server/lib/folder-guard.ts so the knowledge-read path (knowledge-resolver,
 // knowledge-library, the RAG indexer) enforces the SAME rule — those paths had
 // no check at all. Same semantics as before, including the uploads/outputs
-// fallback when ALLOWED_FOLDER_PATHS is unset.
-import { isFolderPathAllowed } from '../lib/folder-guard.js';
+// fallback when ALLOWED_FOLDER_PATHS is unset. In team mode the guard also
+// refuses ANTON's own upload/output storage, which holds every user's files.
+// Each handler reads the guard's RESOLVED path, not the request string: on
+// POSIX the kernel resolves "link/.." physically, so the string it was handed
+// can name a different folder from the one the guard approved.
+import { checkFolderPath, allowedRootOf } from '../lib/folder-guard.js';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md', '.xlsx', '.csv', '.html'];
 
@@ -24,13 +28,21 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
   // POST /api/folders/browse — list directory contents
   router.post('/folders/browse', validate(FolderBrowseSchema), async (req, res) => {
     try {
-      const { path: dirPath } = req.body as { path: string };
-      if (!path.isAbsolute(dirPath)) {
+      const { path: requestedPath } = req.body as { path: string };
+      if (!path.isAbsolute(requestedPath)) {
         res.status(400).json({ error: 'Absolute path required' });
         return;
       }
 
-      if (!isFolderPathAllowed(dirPath)) {
+      const guard = checkFolderPath(requestedPath);
+      if (!guard.ok) {
+        res.status(403).json({ error: guard.error ?? 'Path outside allowed directories' });
+        return;
+      }
+      // The containment again, beside the reads below (folder-guard allowedRootOf).
+      const dirPath = path.resolve(guard.resolved);
+      const root = allowedRootOf(dirPath, guard.allowedBases);
+      if (root === null || !dirPath.startsWith(root)) {
         res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
@@ -70,18 +82,26 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      if (!isFolderPathAllowed(folderPath)) {
+      const guard = checkFolderPath(folderPath);
+      if (!guard.ok) {
+        res.status(403).json({ error: guard.error ?? 'Path outside allowed directories' });
+        return;
+      }
+      // The containment again, beside the reads below (folder-guard allowedRootOf).
+      const folderAbs = path.resolve(guard.resolved);
+      const folderRoot = allowedRootOf(folderAbs, guard.allowedBases);
+      if (folderRoot === null || !folderAbs.startsWith(folderRoot)) {
         res.status(403).json({ error: 'Path outside allowed directories' });
         return;
       }
 
-      if (!await fs.pathExists(folderPath)) {
+      if (!await fs.pathExists(folderAbs)) {
         res.status(404).json({ error: 'Folder not found' });
         return;
       }
 
       // Count supported files
-      const entries = await fs.readdir(folderPath, { withFileTypes: true });
+      const entries = await fs.readdir(folderAbs, { withFileTypes: true });
       const fileCount = entries.filter(
         e => e.isFile() && SUPPORTED_EXTENSIONS.includes(path.extname(e.name).toLowerCase())
       ).length;
@@ -129,8 +149,9 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         return;
       }
 
-      if (!isFolderPathAllowed(folderPath)) {
-        res.status(403).json({ error: 'Path outside allowed directories' });
+      const guard = checkFolderPath(folderPath);
+      if (!guard.ok) {
+        res.status(403).json({ error: guard.error ?? 'Path outside allowed directories' });
         return;
       }
 
@@ -165,7 +186,7 @@ export async function createFolderRoutes(db: DatabaseAdapter) {
         }
       }
 
-      await scanDir(folderPath);
+      await scanDir(guard.resolved);
 
       const totalSize = files.reduce((sum, f) => sum + f.sizeBytes, 0);
       const estimatedWords = Math.round(totalSize / 6); // Rough estimate

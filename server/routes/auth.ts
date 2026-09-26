@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { randomUUID, randomBytes, createHash } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -15,7 +15,7 @@ import {
   readOidcSettings, oidcSettingsProblems, identityFromClaims, tenantAllowed,
   provisionOidcUser, hasSsoIdentity, SsoRefusedError, type OidcSettings,
 } from '../services/oidc-sso.js';
-import type { Response } from 'express';
+import { invitationStillValid } from './project-collaboration.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -962,12 +962,19 @@ async function acceptPendingInvitations(db: DatabaseAdapter, userId: string, ema
     // db.all: this was db.get, whose single row (or undefined) the loop below
     // could not iterate — the throw was caught, and no invitation was ever
     // accepted at sign-in.
-    const pending = await db.all<{ id: string; project_id: string; role: string; invited_by: string }>(`
+    const pending = await db.all<{ id: string; project_id: string; role: string; invited_by: string | null }>(`
       SELECT * FROM project_invitations
       WHERE LOWER(email) = LOWER(?) AND status = 'pending' AND expires_at > NOW()
     `, email);
 
     for (const inv of pending) {
+      // The same rule as accepting by link: the sender must still be allowed to
+      // give this role. Otherwise a member who invited their own address, and
+      // was then removed, came straight back in at their next sign-in.
+      if (!(await invitationStillValid(db, inv))) {
+        await db.run("UPDATE project_invitations SET status = 'revoked' WHERE id = ? AND status = 'pending'", inv.id);
+        continue;
+      }
       const memberId = randomUUID();
       try {
         await db.run(`

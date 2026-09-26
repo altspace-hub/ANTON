@@ -9,21 +9,23 @@
  * for the module's guided fields, keyed by field id; `jurisdictionSkill` is
  * the jurisdiction pack the profile's jurisdiction maps to, or null.
  *
- * user_profiles and org_context are single-row tables (id = 'default'); the
- * defaults row is keyed by the authenticated user, so team-mode users each
- * keep their own.
+ * The profile is the caller's own Layer-0 profile (loadLayer0Profile: the
+ * 'default' row in solo, the caller's row in team mode — never the instance row,
+ * which on a team server still holds the original solo owner's details). The
+ * org context is instance-wide (one row, id = 'default'). The defaults row is
+ * keyed by the authenticated user, so team-mode users each keep their own.
  */
 import { Router, type Request, type Response } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { requireAuth } from '../middleware/role-guards.js';
 import { safeError } from '../lib/error-response.js';
+import { loadLayer0Profile } from './profile.js';
 import { getModule } from '../services/module-loader.js';
 import { findJurisdictionSkill, isDiskSkillsPreloaded, preloadDiskSkills } from '../services/skills-manager.js';
 import {
   getModuleDefaults,
   recordModuleUse,
   suggestGuidedPrefill,
-  type PrefillProfile,
   type PrefillOrgContext,
 } from '../services/user-module-defaults.js';
 
@@ -54,7 +56,7 @@ export function createUserModuleDefaultsRoutes(db: DatabaseAdapter): Router {
 
       const [defaults, profile, orgContext, mod] = await Promise.all([
         getModuleDefaults(db, userId, moduleId),
-        db.get<PrefillProfile>('SELECT jurisdiction, output_language, organisation, company FROM user_profiles WHERE id = ?', 'default'),
+        loadLayer0Profile(db, req),
         db.get<PrefillOrgContext>('SELECT jurisdiction, org_name, preferred_language FROM org_context WHERE id = ?', 'default'),
         getModule(moduleId),
       ]);

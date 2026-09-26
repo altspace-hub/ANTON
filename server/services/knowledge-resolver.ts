@@ -36,6 +36,7 @@ import fs from 'fs-extra';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import { checkFolderPath } from '../lib/folder-guard.js';
+import { ownerFilter, scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 import { extractTextFromFile } from './text-extractor.js';
 import { fetchUrl } from './url-fetcher.js';
 import { retrieveChunks } from './rag/retriever.js';
@@ -131,6 +132,14 @@ export async function resolveKnowledgeSources(
     /** Display name per uploaded path — project files carry a random
      *  on-disk name, and the model should see "Engagement letter.pdf (project)". */
     fileLabels?: Record<string, string>;
+    /**
+     * Who the run is for — scopes RAG retrieval in team mode (their own
+     * collection documents, folders they may read). Omitted in team mode means
+     * no identity, so retrieval returns nothing: fail closed, never "everyone's".
+     * Local folders need no identity: the folder guard refuses shared storage
+     * for every caller.
+     */
+    requester?: OwnedRequest;
   },
 ): Promise<ResolvedKnowledge> {
   const result: ResolvedKnowledge = {
@@ -313,9 +322,13 @@ export async function resolveKnowledgeSources(
       // pasted into the prompt. Same whitelist the folder browser enforces
       // (CLAUDE.md pattern 6); skip the folder rather than failing the whole run
       // so one bad path does not lose the user's other sources.
+      // In team mode the guard also refuses ANTON's own upload/output storage
+      // (every user's files); no whitelist entry re-opens that, so the hint to
+      // widen the whitelist is given only where it would help.
       const guard = checkFolderPath(folderPath);
       if (!guard.ok) {
-        contextParts.push(`\n### LOCAL FOLDER (REFUSED — ${guard.error}; add it to ALLOWED_FOLDER_PATHS to use it): ${folderPath}`);
+        const hint = guard.reason === 'team_storage' ? '' : '; add it to ALLOWED_FOLDER_PATHS to use it';
+        contextParts.push(`\n### LOCAL FOLDER (REFUSED — ${guard.error}${hint}): ${folderPath}`);
         sourceDetails.push({
           type: 'local_folder',
           name: folderPath,
@@ -392,7 +405,14 @@ export async function resolveKnowledgeSources(
   // ── MODE 5: RAG Retrieval (Semantic Vector Search or BM25) — packed last ────
 
   if (options?.ragMode?.enabled && options.db && options.userQuery) {
-    const { folderPaths, collections, topK = 10, minScore = 0.1, useSemanticSearch = true, rerank = false } = options.ragMode;
+    const { collections, topK = 10, minScore = 0.1, useSemanticSearch = true, rerank = false } = options.ragMode;
+    const requester: OwnedRequest = options.requester ?? {};
+    // Indexed folders carry no owner: a team-mode caller may retrieve only from
+    // folders the guard lets them read (an index built before the storage rule
+    // may still hold another user's uploads). Solo and admins are not scoped.
+    const folderPaths = scopesToOwner(requester)
+      ? (options.ragMode.folderPaths ?? []).filter(p => checkFolderPath(p).ok)
+      : options.ragMode.folderPaths;
 
     // Semantic search via ChromaDB (preferred)
     if (useSemanticSearch && collections && collections.length > 0) {
@@ -405,7 +425,22 @@ export async function resolveKnowledgeSources(
         });
 
         // Filter by minimum relevance score
-        const filtered = searchResults.filter(r => r.relevanceScore >= minScore);
+        let filtered = searchResults.filter(r => r.relevanceScore >= minScore);
+
+        // Collections are shared (regulations, client-docs …) but each document
+        // belongs to its uploader, and semanticSearch() does not filter by
+        // owner. Until it does, keep only the requester's own documents here,
+        // decided in SQL (rag_documents.uploaded_by) like every ownership check.
+        const scope = ownerFilter(requester, 'uploaded_by');
+        if (scope.sql && filtered.length > 0) {
+          const docIds = [...new Set(filtered.map(r => r.documentId))];
+          const owned = await options.db.all<{ id: string }>(
+            `SELECT id FROM rag_documents WHERE id IN (${docIds.map(() => '?').join(',')})${scope.sql}`,
+            ...docIds, ...scope.params,
+          );
+          const ownedIds = new Set(owned.map(r => r.id));
+          filtered = filtered.filter(r => ownedIds.has(r.documentId));
+        }
 
         if (filtered.length > 0) {
           // Wave 2: name the method that actually ran (the set's `method`) and

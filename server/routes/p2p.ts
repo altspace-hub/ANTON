@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { atomOwnerSql, NO_OWNED_CONTENT } from '../services/hybrid-search.js';
 import {
   getMyX25519Keys, getPeerX25519PublicKey, deriveSharedSecret, decryptMessage,
 } from '../services/community-e2e.js';
@@ -321,17 +322,27 @@ export async function createP2PRoutes(db: DatabaseAdapter): Promise<Router> {
       const searchTerms = query.split(/\s+/).slice(0, 5);
       const likePattern = `%${searchTerms.join('%')}%`;
 
-      // Search knowledge atoms
+      // Search knowledge atoms. A peer is answered from the instance's SHARED
+      // knowledge only: on a team server that is the atoms with no owner
+      // (NO_OWNED_CONTENT) — a person's own atoms are distilled from their
+      // sessions and are nobody else's to hand out, least of all to whoever can
+      // name an accepted contact hash. Retired atoms (is_active = 0, including
+      // erasure by deactivation) are never served, nor is a Coding Studio
+      // project's lesson — it belongs to that project's runs (the agent rule),
+      // and one whose project is gone stays owner NULL, i.e. "shared", forever.
+      // Solo has one human and is not owner-filtered (atomOwnerSql), as before.
+      const shared = atomOwnerSql(NO_OWNED_CONTENT, 'owner_user_id');
       const knowledgeAtoms = await db.all<{
         id: string; content: string; atom_type: string; category: string;
         confidence: number; created_at: string;
       }>(`
         SELECT id, content, atom_type, category, confidence, created_at
         FROM knowledge_atoms
-        WHERE content ILIKE ? AND confidence >= 0.5
+        WHERE content ILIKE ? AND confidence >= 0.5 AND is_active = 1
+          AND coding_project_id IS NULL${shared.sql}
         ORDER BY confidence DESC
         LIMIT ?
-      `, likePattern, maxResults);
+      `, likePattern, ...shared.params, maxResults);
 
       // Search market atoms
       const marketAtoms = await db.all<{

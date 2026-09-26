@@ -90,24 +90,20 @@ export default function DatasetsPage() {
 
       if (res.ok) {
         const data = await res.json();
-        // Export as JSON
-        const exportRes = await fetch('/api/data/export', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            datasetId: data.cacheId,
-            destination: 'file',
-            fileType: 'json',
-            filePath: `./exports/${name}.json`,
-          }),
-        });
-
-        if (exportRes.ok) {
-          alert(`Dataset exported to exports/${name}.json`);
-        }
+        // Download to this computer. This used to ask the server to write
+        // ./exports/<name>.json on its own disk, with a request the export route
+        // did not accept, so nothing was ever saved anywhere.
+        const fileRes = await fetch(
+          `/api/data/cache/${encodeURIComponent(data.cacheId)}/download?name=${encodeURIComponent(name)}`,
+          { headers: { Authorization: `Bearer ${getToken()}` } },
+        );
+        if (!fileRes.ok) throw new Error(`Download failed (${fileRes.status})`);
+        const url = URL.createObjectURL(await fileRes.blob());
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${name}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
       }
     } catch (err) {
       alert('Export failed');

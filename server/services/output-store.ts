@@ -5,6 +5,17 @@ import type { ExtractAtomsResult } from './atom-extractor.js';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
+/**
+ * An owner predicate on checkpoint_decisions.decided_by — build it with
+ * `ownerFilter(req, 'decided_by')` (middleware/ownership.ts). decided_by holds
+ * the deciding user's id (storeCheckpointDecision writes req.user.id), so on a
+ * team server a non-admin reads only the decisions they made: module workflows
+ * are 'module:<id>', shared by every user, so a workflow id alone scoped nothing.
+ * Required rather than defaulted so a new caller has to decide; empty sql is the
+ * unscoped read (solo, admins).
+ */
+export interface DecisionOwnerScope { sql: string; params: string[] }
+
 export interface StoreOutputParams {
   executionId: string;
   workflowId: string;
@@ -342,23 +353,24 @@ export async function createOutputStore(db: DatabaseAdapter) {
   `, executionId) as WorkflowOutput[];
   }
 
-  async function getDecisionsForWorkflow(workflowId: string, limit = 100): Promise<CheckpointDecision[]> {
+  async function getDecisionsForWorkflow(workflowId: string, owner: DecisionOwnerScope, limit = 100): Promise<CheckpointDecision[]> {
     return await db.all(`
-    SELECT * FROM checkpoint_decisions WHERE workflow_id = ? ORDER BY decided_at DESC LIMIT ?
-  `, workflowId, limit) as CheckpointDecision[];
+    SELECT * FROM checkpoint_decisions WHERE workflow_id = ?${owner.sql} ORDER BY decided_at DESC LIMIT ?
+  `, workflowId, ...owner.params, limit) as CheckpointDecision[];
   }
 
   async function getDecisionDistribution(
     workflowId: string,
-    stepIndex: number
+    stepIndex: number,
+    owner: DecisionOwnerScope,
   ): Promise<Record<string, number>> {
     const rows = await db.all(`
     SELECT human_decision AS decision, COUNT(*) AS count
     FROM checkpoint_decisions
-    WHERE workflow_id = ? AND step_index = ?
+    WHERE workflow_id = ? AND step_index = ?${owner.sql}
     GROUP BY human_decision
     ORDER BY count DESC
-  `, workflowId, stepIndex) as Array<{
+  `, workflowId, stepIndex, ...owner.params) as Array<{
       decision: string;
       count: number;
     }>;

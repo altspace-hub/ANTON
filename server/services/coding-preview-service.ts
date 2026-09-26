@@ -354,6 +354,12 @@ export async function startPreview(
     projectId,
   );
   if (!proj) return { ok: false, code: 404, error: 'Coding project not found.' };
+  // No WorkspaceScope, deliberately: this service has no caller identity, and
+  // its one caller (POST /coding/projects/:id/preview/start) is admin-only in
+  // team mode, after the ownership 404 — so the non-admin rule (studioOnly) has
+  // no one to apply to. The rules that need no caller (per-user storage, the
+  // Studio root) still apply. The route, which has the request, is where a
+  // project scope belongs if preview is ever opened to non-admins.
   const ws = await validate(proj.directory_path);
   if (!ws.ok || !ws.resolved) {
     return { ok: false, code: 400, error: ws.error ?? 'Workspace directory is not valid for preview.' };

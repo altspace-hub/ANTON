@@ -25,6 +25,9 @@ import bcrypt from 'bcryptjs';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { assertOwned, scopesToOwner } from '../middleware/ownership.js';
+import { isTeamMode } from '../middleware/role-guards.js';
+import { resolveProjectAccess } from '../services/project-context.js';
 import { childLogger } from '../lib/logger.js';
 
 import {
@@ -104,22 +107,52 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   /**
    * Owner check: Phase 1 ties ownership to created_by. Phase 2 will broaden
    * via the new evidence_pack.view_others permission.
+   *
+   * The owner condition is in the SQL, and someone else's pack answers the
+   * same 404 as a missing one (ownership.ts). It answered 403 'Not the pack
+   * owner', which let a non-admin test whether a pack id existed — and the ids
+   * carry only 24 random bits per day. Solo and admins are not scoped, as before.
    */
   async function assertOwnerOrAdmin(req: Request, res: Response, packId: string): Promise<boolean> {
-    const row = await db.get<{ created_by: string }>(
-      `SELECT created_by FROM evidence_packs WHERE id = ?`, packId,
-    );
-    if (!row) { res.status(404).json({ error: 'Pack not found' }); return false; }
-    if (row.created_by !== req.user!.id && req.user!.role !== 'admin') {
-      res.status(403).json({ error: 'Not the pack owner' }); return false;
+    return assertOwned(db, req, res, {
+      table: 'evidence_packs', ownerColumn: 'created_by', id: packId, notFoundMessage: 'Pack not found',
+    });
+  }
+
+  /**
+   * Every root a scope names must be readable by the caller (team-mode
+   * non-admins; solo and admins are not scoped). A pack's scope was only
+   * validated for shape, and the collector reads by id alone — so any user
+   * could name a colleague's session, project, assessment, engagement, mission
+   * or task and export its messages, thinking and composed prompts (round-1
+   * verifier gap, 2026-09-23). Checked where a scope is accepted (create,
+   * scope/add) and again wherever a stored scope is read (view, collect,
+   * preview, export, share), because scope_ref outlives the access that let it
+   * in — and packs created before this check exist. A root the caller may not
+   * read answers the same 404 as one that does not exist.
+   */
+  async function assertScopeReadable(req: Request, res: Response, scope: ScopeDefinition | null): Promise<boolean> {
+    if (!scopesToOwner(req)) return true;
+    if (!(await scopeReadableBy(db, { id: req.user!.id, role: req.user!.role }, scope))) {
+      res.status(404).json({ error: 'Scope not found' });
+      return false;
     }
     return true;
+  }
+
+  /** The stored scope of a pack the caller owns (checked by assertOwnerOrAdmin first). */
+  async function assertStoredScopeReadable(req: Request, res: Response, packId: string): Promise<boolean> {
+    if (!scopesToOwner(req)) return true;
+    const pack = await readPackRow(db, packId);
+    if (!pack) { res.status(404).json({ error: 'Pack not found' }); return false; }
+    return assertScopeReadable(req, res, pack.scope_ref as unknown as ScopeDefinition | null);
   }
 
   // ── Create draft ────────────────────────────────────────────────────────
   router.post('/evidence-pack', requireAuth, async (req, res) => {
     try {
       const parsed = createPackSchema.parse(req.body);
+      if (!(await assertScopeReadable(req, res, parsed.scope))) return;
       const id = generatePackId();
       await db.run(
         `INSERT INTO evidence_packs
@@ -169,6 +202,10 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   router.get('/evidence-pack/:id', requireAuth, async (req, res) => {
     try {
       if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      // The stored item summaries quote their sources (a decision's text, a
+      // mission activity), so a pack whose scope names a root its creator can no
+      // longer read — one created before scope roots were checked — is not shown.
+      if (!(await assertStoredScopeReadable(req, res, String(req.params.id)))) return;
       const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       const items = await db.all(
@@ -195,6 +232,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
         return res.status(409).json({ error: `Pack is ${pack.status}; cannot re-collect` });
       }
       const scope = pack.scope_ref as unknown as ScopeDefinition;
+      if (!(await assertScopeReadable(req, res, scope))) return;
       const collected = await collectForScope(db, scope);
       const assembled = await assemblePack(db, {
         packId: pack.id,
@@ -230,6 +268,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
     try {
       if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const added = singleScopeSchema.parse(req.body?.scope);
+      if (!(await assertScopeReadable(req, res, added))) return;
       const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
       if (pack.status !== 'draft') {
@@ -263,6 +302,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
   router.post('/evidence-pack/:id/preview', requireAuth, async (req, res) => {
     try {
       if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
+      if (!(await assertStoredScopeReadable(req, res, String(req.params.id)))) return;
       const assembled = await rebuildAssembledPack(db, String(req.params.id));
       if (!assembled) return res.status(404).json({ error: 'Pack not found' });
       const mapping = mapCompliance(
@@ -344,6 +384,7 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
     try {
       if (!await assertOwnerOrAdmin(req, res, String(req.params.id))) return;
       const format = exportFormatSchema.parse(req.body?.format ?? 'anton');
+      if (!(await assertStoredScopeReadable(req, res, String(req.params.id)))) return;
       const assembled = await rebuildAssembledPack(db, String(req.params.id));
       if (!assembled) return res.status(404).json({ error: 'Pack not found' });
 
@@ -397,6 +438,8 @@ export function createEvidencePackRoutes(db: DatabaseAdapter): Router {
       const parsed = createShareSchema.parse(req.body);
       const pack = await readPackRow(db, String(req.params.id));
       if (!pack) return res.status(404).json({ error: 'Pack not found' });
+      // A share's download re-collects the scope for someone outside the instance.
+      if (!(await assertScopeReadable(req, res, pack.scope_ref as unknown as ScopeDefinition | null))) return;
       if (pack.status !== 'finalised') {
         return res.status(409).json({ error: 'Pack must be finalised before sharing' });
       }
@@ -585,6 +628,90 @@ function generatePackId(): string {
   return `EP-${date}-${rand}`;
 }
 
+/** Whose reading rights a scope is checked against: the caller, or a pack's creator. */
+interface ScopeReader { id: string; role: string }
+
+/** evidence_packs.scope_ref as read raw (jsonb, or text on an adapter that returns it so). */
+function parseStoredScope(raw: unknown): ScopeDefinition | null {
+  try {
+    const value: unknown = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return value && typeof value === 'object' ? (value as ScopeDefinition) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a team-mode non-admin may read one scope root — the same rule the
+ * root's own routes apply. Owner columns: sessions.user_id, missions.created_by,
+ * gap_assessments.user_id, anton_tasks.user_id. Checked in SQL, so a foreign
+ * row is never loaded. Anything else — including a table name that only passed
+ * the schema's `in` check, such as 'toString' — is refused.
+ *
+ * Project and engagement roots need more than being able to see the project.
+ * Packing one walks EVERY session filed in it: colleagues' transcripts,
+ * thinking and audit rows, and with includePrompts their composed prompts —
+ * which carry each author's own atoms, profile layer and uploaded documents,
+ * none of which a colleague may otherwise read (GET /sessions/:id is
+ * owner-only; members see only the project layer). So a project root needs an
+ * editing role in it (owner, admin or member — not 'viewer'), or to be the
+ * recorded owner of a project with no member list; an engagement root needs its
+ * owner or an editing member of its project (engagements.ts canEdit). A viewer
+ * packs their own sessions instead (round-2 gap "verify2:projects-2").
+ */
+async function mayReadScopeRoot(db: DatabaseAdapter, reader: ScopeReader, root: { table: string; id: string }): Promise<boolean> {
+  const userId = reader.id;
+  const walker = Object.prototype.hasOwnProperty.call(CUSTOM_SCOPE_TABLES, root.table)
+    ? CUSTOM_SCOPE_TABLES[root.table] : undefined;
+  switch (walker) {
+    case 'session':
+      return !!(await db.get('SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?', root.id, userId));
+    case 'project': {
+      const access = await resolveProjectAccess(db, {
+        projectId: root.id, userId, userRole: reader.role, teamMode: true,
+      });
+      if (access !== 'ok') return false;
+      // 'ok' with no membership row is the recorded owner of a memberless project.
+      const member = await db.get<{ role: string }>(
+        'SELECT role FROM project_members WHERE project_id = ? AND user_id = ?', root.id, userId,
+      );
+      return !member || member.role !== 'viewer';
+    }
+    case 'mission':
+      return !!(await db.get('SELECT 1 AS ok FROM missions.missions WHERE id = ? AND created_by = ?', root.id, userId));
+    case 'gap_assessment':
+      return !!(await db.get('SELECT 1 AS ok FROM gap_assessments WHERE id = ? AND user_id = ?', root.id, userId));
+    case 'engagement':
+      return !!(await db.get(
+        `SELECT 1 AS ok FROM engagements e
+         WHERE e.id = ? AND (e.user_id = ? OR EXISTS (
+           SELECT 1 FROM project_members pm
+            WHERE pm.project_id = e.project_id AND pm.user_id = ? AND pm.role <> 'viewer'))`,
+        root.id, userId, userId,
+      ));
+    case 'task':
+      return !!(await db.get('SELECT 1 AS ok FROM anton_tasks WHERE id = ? AND user_id = ?', root.id, userId));
+    default:
+      return false;
+  }
+}
+
+/**
+ * Whether `reader` may read every root the scope names. Solo mode and an admin
+ * reader are not scoped; an empty or malformed scope is not readable.
+ */
+async function scopeReadableBy(db: DatabaseAdapter, reader: ScopeReader, scope: ScopeDefinition | null): Promise<boolean> {
+  if (!isTeamMode() || reader.role === 'admin') return true;
+  const roots = !scope || typeof scope !== 'object' ? []
+    : scope.type === 'custom' ? (Array.isArray(scope.items) ? scope.items : [])
+    : [scopeToCustomItem(scope)].filter((r): r is { table: string; id: string } => r !== null);
+  if (roots.length === 0) return false;
+  for (const root of roots) {
+    if (!(await mayReadScopeRoot(db, reader, root))) return false;
+  }
+  return true;
+}
+
 // ── Public regulator factory (no auth, mounted before authMiddleware) ─────
 
 /**
@@ -631,7 +758,7 @@ export function createSharedPackRoutes(db: DatabaseAdapter): Router {
       return null;
     }
     const pack = await db.get<PackRowMin>(
-      `SELECT id, title, status FROM evidence_packs WHERE id = ?`, share.pack_id,
+      `SELECT id, title, status, created_by, scope_ref FROM evidence_packs WHERE id = ?`, share.pack_id,
     );
     if (!pack) { res.status(404).json({ error: 'Pack not found' }); return null; }
 
@@ -656,6 +783,25 @@ export function createSharedPackRoutes(db: DatabaseAdapter): Router {
       if (!sessionHeader || sessionHeader !== expected) {
         await logAccess(db, baseLog, false, 'password_required');
         res.status(401).json({ error: 'Password required', kind: 'password_required' });
+        return null;
+      }
+    }
+
+    // Team mode: the share is only as good as its creator's access. A pack
+    // shared before scope roots were checked can name rows its creator never
+    // could read, and the download re-collects them for someone outside the
+    // instance; the index and item routes return the stored summaries, which
+    // quote their sources. So every stored root is re-checked against the
+    // creator (users.role read now, so a creator no longer admin is checked like
+    // anyone else) and a pack that fails answers like a missing one — after the
+    // password check, so an unauthenticated caller learns nothing new.
+    // Solo mode and an admin creator are not scoped.
+    if (isTeamMode()) {
+      const creator = await db.get<{ role: string | null }>('SELECT role FROM users WHERE id = ?', pack.created_by);
+      const reader: ScopeReader = { id: pack.created_by, role: creator?.role ?? '' };
+      if (!(await scopeReadableBy(db, reader, parseStoredScope(pack.scope_ref)))) {
+        await logAccess(db, baseLog, false, 'scope_not_readable_by_creator');
+        res.status(404).json({ error: 'Pack not found' });
         return null;
       }
     }
@@ -761,7 +907,7 @@ interface ShareRow {
   revoked_at: string | null; allow_download: boolean;
   watermark_text: string | null;
 }
-interface PackRowMin { id: string; title: string; status: string }
+interface PackRowMin { id: string; title: string; status: string; created_by: string; scope_ref: unknown }
 
 async function logAccess(
   db: DatabaseAdapter,

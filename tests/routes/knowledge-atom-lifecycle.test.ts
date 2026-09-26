@@ -13,8 +13,10 @@
  *   - subject-search matches content or an entity name, escapes LIKE
  *     wildcards, and refuses a query under three characters;
  *   - DELETE by-subject dry-runs by default and only deletes on dryRun:false;
- *   - in team mode a non-admin only reaches atoms that are theirs or unowned
- *     (404, never 403); admins and solo are unscoped;
+ *   - in team mode a non-admin reads atoms that are theirs or unowned, but
+ *     changes only their own: a shared (unowned) atom reaches every user's
+ *     prompts, so retiring, restoring, superseding or erasing it is an admin
+ *     decision (404, never 403); admins and solo are unscoped;
  *   - every mutation is refused without a user (401).
  *
  * The negative control at the end proves the fake is reached.
@@ -92,10 +94,12 @@ function makeFakeDb(state: FakeState): DatabaseAdapter {
     // Undo the route's LIKE escaping to get the plain query back.
     const q = String(params[0]).slice(1, -1).replace(/\\([\\%_])/g, '$1').toLowerCase();
     const scoped = sql.includes(ATOM_LIFECYCLE_SQL.ownerScope) ? String(params[2]) : null;
+    const strict = sql.includes(ATOM_LIFECYCLE_SQL.ownerMutationScope) ? String(params[2]) : null;
     return [...state.atoms.values()]
       .filter((a) => a.content.toLowerCase().includes(q)
         || state.entityRefs.some((r) => r.atom_id === a.id && r.entity_name.toLowerCase().includes(q)))
       .filter((a) => scoped === null || a.owner_user_id === null || a.owner_user_id === scoped)
+      .filter((a) => strict === null || a.owner_user_id === strict)
       .sort((x, y) => (x.created_at < y.created_at ? 1 : -1));
   };
   const db = {
@@ -118,7 +122,8 @@ function makeFakeDb(state: FakeState): DatabaseAdapter {
           is_active: a.is_active, owner_user_id: a.owner_user_id,
         }) as T);
       }
-      if (sql === ATOM_LIFECYCLE_SQL.subjectIds('') || sql === ATOM_LIFECYCLE_SQL.subjectIds(ATOM_LIFECYCLE_SQL.ownerScope)) {
+      if (sql === ATOM_LIFECYCLE_SQL.subjectIds('') || sql === ATOM_LIFECYCLE_SQL.subjectIds(ATOM_LIFECYCLE_SQL.ownerScope)
+        || sql === ATOM_LIFECYCLE_SQL.subjectIds(ATOM_LIFECYCLE_SQL.ownerMutationScope)) {
         return subjectMatch(sql, params).map((a) => ({ id: a.id }) as T);
       }
       throw new Error(`fake db: unexpected all(): ${sql.slice(0, 80)}`);
@@ -427,23 +432,44 @@ describe('knowledge atom lifecycle routes', () => {
       expect(state.atoms.get('a1')!.is_active).toBe(1);
     });
 
-    it('a non-admin may touch their own atom and an unowned one', async () => {
+    it('a non-admin may change their own atom', async () => {
       expect((await call('POST', '/knowledge/atoms/a2/deactivate', { reason: 'mine' })).status).toBe(200);
-      expect((await call('POST', '/knowledge/atoms/a3/deactivate', { reason: 'unowned' })).status).toBe(200);
       expect(state.atoms.get('a2')!.deactivated_reason).toBe('mine');
-      expect(state.atoms.get('a3')!.deactivated_reason).toBe('unowned');
+      expect((await call('POST', '/knowledge/atoms/a2/reactivate')).status).toBe(200);
+      expect(state.atoms.get('a2')!.is_active).toBe(1);
     });
 
-    it('subject-search and by-subject are scoped to own + unowned atoms', async () => {
+    it('a non-admin cannot change a SHARED (unowned) atom — 404 like a foreign one, nothing written', async () => {
+      // Round-2 team isolation: a shared atom reaches every user's prompts, so
+      // one viewer retiring, restoring, superseding or deleting it changed
+      // everyone's runs. It stays readable (subject-search below lists it).
+      const missing = await call('POST', '/knowledge/atoms/ghost/deactivate', {});
+      const shared = await call('POST', '/knowledge/atoms/a3/deactivate', { reason: 'unowned' });
+      expect(shared.status).toBe(404);
+      expect(shared.json).toEqual(missing.json);                                   // no oracle
+      expect((await call('POST', '/knowledge/atoms/a3/reactivate')).status).toBe(404);
+      expect((await call('PATCH', '/knowledge/atoms/a3', { isActive: false })).status).toBe(404);
+      expect((await call('PATCH', '/knowledge/atoms/a3', { supersededBy: 'a2' })).status).toBe(404);
+      expect((await call('DELETE', '/knowledge/atoms/a3')).status).toBe(404);
+      expect(state.runs).toEqual([]);
+      expect(state.atoms.get('a3')).toMatchObject({ is_active: 1, superseded_by: null, deactivated_reason: null });
+    });
+
+    it('subject-search reads own + unowned atoms; by-subject erases only the caller\'s own', async () => {
       const search = await call('GET', '/knowledge/atoms/subject-search?q=the');
       expect((search.json.atoms as Array<{ id: string }>).map((a) => a.id)).toEqual(['a2', 'a3']);   // a1 (u-1) hidden
       expect(search.json.total).toBe(2);
       expect(state.lastSubjectSql).toContain(ATOM_LIFECYCLE_SQL.ownerScope);
       expect(state.lastSubjectParams![2]).toBe('u-2');
 
+      // The dry run shows exactly what the real run deletes: a2 (theirs), not a3 (shared).
+      const preview = await call('DELETE', '/knowledge/atoms/by-subject', { q: 'the' });
+      expect(preview.json).toEqual({ dryRun: true, count: 1, ids: ['a2'] });
+      expect(state.lastSubjectSql).toContain(ATOM_LIFECYCLE_SQL.ownerMutationScope);
+
       const erase = await call('DELETE', '/knowledge/atoms/by-subject', { q: 'the', dryRun: false });
-      expect(erase.json).toEqual({ dryRun: false, deleted: 2, ids: ['a2', 'a3'] });
-      expect([...state.atoms.keys()]).toEqual(['a1', 'a4']);
+      expect(erase.json).toEqual({ dryRun: false, deleted: 1, ids: ['a2'] });
+      expect([...state.atoms.keys()]).toEqual(['a1', 'a3', 'a4']);
     });
 
     it('a non-admin cannot supersede their atom WITH another user\'s atom — same answer as an unknown id', async () => {
@@ -463,9 +489,11 @@ describe('knowledge atom lifecycle routes', () => {
       expect(state.atoms.get('a2')!.superseded_by).toBe('a3');
     });
 
-    it('an admin in team mode is unscoped', async () => {
+    it('an admin in team mode is unscoped — shared atoms included', async () => {
       currentUser = { id: 'admin-1', username: 'admin', role: 'admin' };
       expect((await call('PATCH', '/knowledge/atoms/a1', { isActive: false })).status).toBe(200);
+      expect((await call('POST', '/knowledge/atoms/a3/deactivate', { reason: 'retired by admin' })).status).toBe(200);
+      expect(state.atoms.get('a3')!.deactivated_reason).toBe('retired by admin');
       const search = await call('GET', '/knowledge/atoms/subject-search?q=the');
       expect(search.json.total).toBe(3);
       expect(state.lastSubjectSql).not.toContain(ATOM_LIFECYCLE_SQL.ownerScope);
@@ -481,6 +509,14 @@ describe('knowledge atom lifecycle routes', () => {
     expect((await call('GET', '/knowledge/atoms/subject-search?q=nordea')).status).toBe(401);
     expect((await call('DELETE', '/knowledge/atoms/by-subject', { q: 'nordea' })).status).toBe(401);
     expect(state.runs).toEqual([]);
+  });
+
+  it('solo: a shared (unowned) atom is changed and erased exactly as before', async () => {
+    expect((await call('POST', '/knowledge/atoms/a3/deactivate', { reason: 'solo' })).status).toBe(200);
+    expect(state.atoms.get('a3')!.deactivated_reason).toBe('solo');
+    const erase = await call('DELETE', '/knowledge/atoms/by-subject', { q: 'mlro', dryRun: false });
+    expect(erase.json).toEqual({ dryRun: false, deleted: 1, ids: ['a3'] });
+    expect(state.lastSubjectSql).not.toContain(ATOM_LIFECYCLE_SQL.ownerMutationScope);
   });
 
   it('negative control: the same deactivate with the atom removed from the fake is a 404', async () => {

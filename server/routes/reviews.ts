@@ -7,10 +7,28 @@ import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { REVIEW_MODES } from '../services/review-engine.js';
 import { createReviewOrchestrator, type ReviewContext } from '../services/review-orchestrator.js';
 import { safeError } from '../lib/error-response.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
   const orchestrator = await createReviewOrchestrator(anthropic);
+
+  /**
+   * Team isolation: may this caller read or add reviews for this session?
+   * Checked in SQL before anything keyed on the id. A review quotes and critiques
+   * the reviewed output, so listing them by another user's sessionId read their
+   * work, and POST planted rows into their session. A session that is not the
+   * caller's is treated exactly like a missing one: the list is empty and a review
+   * is not persisted (a missing session never was — the FK refuses the insert).
+   * Solo mode and admins are not scoped.
+   */
+  async function mayUseSession(req: OwnedRequest, sessionId: string): Promise<boolean> {
+    if (!scopesToOwner(req)) return true;
+    const userId = req.user?.id;
+    if (!userId) return false;
+    const row = await db.get('SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?', sessionId, userId);
+    return !!row;
+  }
 
   // GET /api/reviews/modes — list available review modes
   router.get('/reviews/modes', async (_req, res) => {
@@ -43,6 +61,10 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
     }
 
     try {
+      // Decided before streaming starts, so nothing about the session changes what
+      // the caller sees — only whether the finished review is stored with it.
+      const persistTo = sessionId && (await mayUseSession(req, String(sessionId))) ? String(sessionId) : null;
+
       const resolvedModel = mapModelToProvider((model as string) || CLAUDE_LARGE);
 
       setSSEHeaders(res);
@@ -64,12 +86,12 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
       res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
       res.end();
 
-      // Save review to database
-      if (sessionId) {
+      // Save review to database (attributed to the reviewer — the column defaulted to 'default')
+      if (persistTo) {
         try {
           await db.run(
-            `INSERT INTO reviews (id, session_id, review_mode, content, created_at) VALUES (?, ?, ?, ?, ?)`
-          , crypto.randomUUID(), sessionId, modeId, result.text, new Date().toISOString());
+            `INSERT INTO reviews (id, session_id, review_mode, content, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)`
+          , crypto.randomUUID(), persistTo, modeId, result.text, req.user?.id ?? 'default', new Date().toISOString());
         } catch {
           // Non-fatal
         }
@@ -85,6 +107,8 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
     const { sessionId } = req.query as { sessionId?: string };
     if (!sessionId) { res.json([]); return; }
     try {
+      // Another user's session lists like a missing one: empty.
+      if (!(await mayUseSession(req, String(sessionId)))) { res.json([]); return; }
       const reviews = await db.all(
         `SELECT * FROM reviews WHERE session_id = ? ORDER BY created_at DESC`,
         sessionId,

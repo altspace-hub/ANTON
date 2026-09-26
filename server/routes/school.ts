@@ -42,6 +42,8 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { isTeamMode } from '../middleware/role-guards.js';
+import { loadLayer0Profile, INSTANCE_PROFILE_ID } from './profile.js';
 import { screenStudentMessage, helplinesFor, SUPPORT_GUIDANCE } from '../services/school-safety.js';
 import { aiScreenStudentMessage } from '../services/school-safety-ai.js';
 
@@ -564,6 +566,32 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
   const router = Router();
 
   /**
+   * Which country's helplines a pupil in distress is shown. The pupil's own profile
+   * first (loadLayer0Profile: the 'default' row in solo, exactly as before; their own
+   * row in team mode, where the 'default' row is no longer anyone's profile). Pupils
+   * rarely fill one in, so in team mode it falls back to the instance's jurisdiction:
+   * the org context an admin sets, then the instance profile row. A country code is
+   * not a personal detail here, and a child reaching out must get local numbers
+   * rather than the generic list whenever the instance knows where it is.
+   */
+  async function helplineJurisdiction(req: { user?: { id?: string } }): Promise<string | null> {
+    try {
+      const own = (await loadLayer0Profile(db, req))?.jurisdiction?.trim();
+      if (own || !isTeamMode()) return own || null;
+      const org = await db.get<{ jurisdiction: string | null }>(
+        'SELECT jurisdiction FROM org_context WHERE id = ?', 'default',
+      );
+      if (org?.jurisdiction?.trim()) return org.jurisdiction.trim();
+      const instance = await db.get<{ jurisdiction: string | null }>(
+        'SELECT jurisdiction FROM user_profiles WHERE id = ?', INSTANCE_PROFILE_ID,
+      );
+      return instance?.jurisdiction?.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Safety screen for every pupil-facing LLM route.
    *
    * Runs on the pupil's own words before any model call. Three outcomes, and the middle
@@ -616,11 +644,8 @@ export async function createSchoolRoutes(db: DatabaseAdapter) {
       return null;
     }
 
-    const profileRow = await db.get<{ jurisdiction: string | null }>(
-      'SELECT jurisdiction FROM user_profiles WHERE id = ?', 'default',
-    ).catch(() => null);
     res.setHeader('X-Anton-Safety', 'support');
-    res.setHeader('X-Anton-Safety-Help', JSON.stringify(helplinesFor(profileRow?.jurisdiction)));
+    res.setHeader('X-Anton-Safety-Help', JSON.stringify(helplinesFor(await helplineJurisdiction(req))));
     // PREPENDED, not appended: buildSchoolPrompt puts T1 Child Mode first under its own
     // "ALWAYS follow these rules" framing, and a care directive arriving after it would
     // be competing with an instruction to add emoji and stay relentlessly upbeat.

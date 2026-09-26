@@ -47,7 +47,7 @@ export async function retrieveChunks(
      WHERE chunk_id IN (SELECT id FROM document_chunks WHERE folder_path IN (${placeholders}))
      AND term IN (${queryPlaceholders})
      GROUP BY term`,
-    ...folderPaths, ...queryTokens
+    [...folderPaths, ...queryTokens]
   ) as Array<{ term: string; df: number }>;
 
   const docFrequency: Record<string, number> = {};
@@ -65,7 +65,7 @@ export async function retrieveChunks(
     // Get term frequencies for this chunk
     const tfRows = await db.all(
       `SELECT term, freq FROM chunk_terms WHERE chunk_id = ? AND term IN (${queryPlaceholders})`,
-      chunk.id, ...queryTokens
+      [chunk.id, ...queryTokens]
     ) as Array<{ term: string; freq: number }>;
 
     const termFreqs: Record<string, number> = {};

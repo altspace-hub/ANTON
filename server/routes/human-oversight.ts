@@ -102,7 +102,10 @@ export const OVERSIGHT_SQL = {
   /** The run's prompt hash, written by run-artifact-writer at the end of the run. Params: message_id. */
   runArtifactHash:
     'SELECT prompt_sha256 FROM run_artifacts WHERE message_id = ?',
-  /** Existence check for an optional evidence pack reference. Params: id. */
+  /**
+   * Existence check for an optional evidence pack reference. Params: id (+ owner
+   * scope: ownerFilter(req, 'created_by') is appended in team mode).
+   */
   evidencePack:
     'SELECT id FROM evidence_packs WHERE id = ?',
   /**
@@ -197,8 +200,16 @@ export async function createHumanOversightRoutes(db: DatabaseAdapter) {
         return res.status(400).json({ error: 'messageId is not an assistant message of this session' });
       }
 
+      // Only a pack the caller may open (its creator; solo and admins are not
+      // scoped), and someone else's pack gets the same 400 as a missing one:
+      // this check answered for any pack id, which made it an existence oracle
+      // for ids evidence-pack.ts hides behind a 404, and let a sign-off cite a
+      // colleague's pack (round-2 gap "verify2:projects-2").
       if (evidencePackId) {
-        const pack = await db.get<{ id: string }>(OVERSIGHT_SQL.evidencePack, evidencePackId);
+        const packScope = ownerFilter(req, 'created_by');
+        const pack = await db.get<{ id: string }>(
+          OVERSIGHT_SQL.evidencePack + packScope.sql, evidencePackId, ...packScope.params,
+        );
         if (!pack) return res.status(400).json({ error: 'evidencePackId does not name an evidence pack' });
       }
 

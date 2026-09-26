@@ -13,6 +13,7 @@
 
 import type { DatabaseAdapter } from '../db/database.js';
 import { callChat } from './provider-router.js';
+import { atomOwnerSql, NO_OWNED_CONTENT } from './hybrid-search.js';
 
 export async function createTaskAutoProcessor(db: DatabaseAdapter) {
 
@@ -165,13 +166,22 @@ export async function createTaskAutoProcessor(db: DatabaseAdapter) {
       const keywords = `${payload.title} ${payload.description}`.slice(0, 200);
       const searchPattern = `%${keywords.split(/\s+/).slice(0, 3).join('%')}%`;
 
-      // Local knowledge atoms
+      // Local knowledge atoms. The result goes back to the PEER that delegated the
+      // task, so this is the /p2p/knowledge-query rule: the instance's shared
+      // knowledge only — on a team server the atoms with no owner (a person's own
+      // atoms are distilled from their sessions), never a retired atom, never a
+      // Coding Studio project's lesson (it belongs to that project's runs). This
+      // used to read every user's atoms, retired ones too, so a peer refused
+      // colleagues' atoms on knowledge-query could delegate "list your LOCAL
+      // KNOWLEDGE about X" and receive them. Solo is not owner-filtered.
       try {
+        const shared = atomOwnerSql(NO_OWNED_CONTENT, 'owner_user_id');
         const relevantAtoms = await db.all<{ content: string; atom_type: string; confidence: number }>(
           `SELECT content, atom_type, confidence FROM knowledge_atoms
            WHERE content ILIKE ? AND confidence >= 0.5
+             AND is_active = 1 AND coding_project_id IS NULL${shared.sql}
            ORDER BY confidence DESC LIMIT 10`,
-          searchPattern
+          searchPattern, ...shared.params
         );
         if (relevantAtoms.length > 0) {
           localKnowledge = `\n\nLOCAL KNOWLEDGE (from this ANTON's knowledge base):\n` +

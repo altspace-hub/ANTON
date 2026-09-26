@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 
 export async function createAnalyticsRouter(db: DatabaseAdapter) {
@@ -159,7 +160,11 @@ export async function createAnalyticsRouter(db: DatabaseAdapter) {
   });
 
   // POST /api/analytics/budget-cap — update the global monthly budget cap (admin only)
-  router.post('/budget-cap', async (req, res) => {
+  // H11 (team-server readiness, 2026-09-23): the comment said admin only but nothing
+  // enforced it. The cap is instance-wide — claude.ts refuses every user's runs once
+  // the month's spend reaches it — so any user could lift it for everyone, or set it
+  // low and stop everyone else's work. requireAdminOrSolo: a no-op on a laptop.
+  router.post('/budget-cap', requireAdminOrSolo, async (req, res) => {
     try {
       const { cap } = req.body as { cap?: number };
       const value = typeof cap === 'number' && cap >= 0 ? cap : 0;

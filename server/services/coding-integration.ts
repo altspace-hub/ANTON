@@ -11,6 +11,7 @@ import { createQualityRatchet } from './quality-ratchet.js';
 import { createAtomExtractor } from './atom-extractor.js';
 import { computeDiff, computeStats, buildSemanticSummary } from './version-diff.js';
 import { embedAndStore } from './hybrid-search.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 
 /** learning_error is a reason, not a stack trace (same cap as output-store). */
 const LEARNING_ERROR_MAX_CHARS = 500;
@@ -74,6 +75,16 @@ export interface MintCodingAtomParams {
   /** Optional task scope — recorded as a tag for later attribution. */
   taskId?: string | null;
 }
+
+/**
+ * Who a coding project's atoms belong to: the owner of the ANTON project the coding
+ * project sits in (projects.user_id). The same source `ensureCodingProject`
+ * (routes/coding-large.ts) checks every /coding/projects/:id request against —
+ * never coding_projects.created_by, which is free text (historically 'system').
+ * Params: coding project id. Exported so a test can answer it by identity.
+ */
+export const CODING_ATOM_OWNER_SQL =
+  'SELECT p.user_id AS owner_user_id FROM coding_projects cp LEFT JOIN projects p ON p.id = cp.project_id WHERE cp.id = ?';
 
 /** Map an atom_type like 'risk.identified' to its category root ('risk'). */
 function categoryFromType(type: string): string {
@@ -316,6 +327,25 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
     const content = params.text.trim().slice(0, 2000);
     const tags = params.taskId ? JSON.stringify([`task:${params.taskId}`]) : null;
 
+    // Attribute the atom to the project's owner. An atom with no owner is SHARED
+    // knowledge on a team server — listed to and searchable by every user — so an
+    // unattributed coding lesson (test failures, CVEs, panel flags) leaked the
+    // project to colleagues who cannot open the project itself. On a team server
+    // an owner we cannot resolve therefore means no atom (fail closed: the project
+    // is admin-only then, and so would its lessons have to be). Solo has one human
+    // and no ownership rule, so it mints as before.
+    let ownerUserId: string | null = null;
+    try {
+      const owner = await db.get<{ owner_user_id: string | null }>(CODING_ATOM_OWNER_SQL, params.projectId);
+      ownerUserId = owner?.owner_user_id ?? null;
+    } catch (err) {
+      console.warn('[coding-integration] mintCodingAtom owner lookup failed:', err instanceof Error ? err.message : err);
+    }
+    if (ownerUserId === null && isTeamMode()) {
+      console.warn(`[coding-integration] mintCodingAtom skipped: coding project ${params.projectId} has no owner`);
+      return null;
+    }
+
     try {
       // source_workflow_id / source_execution_id are NOT NULL — use synthetic,
       // project-stable values (same convention as extractKnowledge above).
@@ -323,8 +353,8 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
         `INSERT INTO knowledge_atoms
            (id, source_output_id, source_workflow_id, source_execution_id,
             source_area_id, source_module_id, content, atom_type, confidence,
-            category, tags, coding_project_id, atom_origin, created_at)
-         VALUES (?, NULL, ?, ?, 'coding', NULL, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            category, tags, coding_project_id, atom_origin, owner_user_id, created_at)
+         VALUES (?, NULL, ?, ?, 'coding', NULL, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         atomId,
         `coding-${params.projectId}`,
         `coding-signal-${params.origin}`,
@@ -335,6 +365,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
         tags,
         params.projectId,
         params.origin,
+        ownerUserId,
       );
     } catch (err) {
       console.error('[coding-integration] mintCodingAtom insert failed (non-fatal):', err);
@@ -353,6 +384,7 @@ export async function createCodingIntegration(db: DatabaseAdapter, anthropicClie
         confidence,
         coding_project_id: params.projectId,
         atom_origin: params.origin,
+        owner_user_id: ownerUserId,
         created_at: new Date().toISOString(),
         is_superseded: 0,
       },

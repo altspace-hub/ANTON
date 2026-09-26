@@ -21,7 +21,7 @@
  * SQL text that reaches the driver, because that is the only place the failure is
  * visible: a joined-text assertion on the returned Dataset would pass either way.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import type { DatabaseAdapter, RunResult } from '../../server/db/database.js';
 import { createDatasetStore } from '../../server/services/dataset-store.js';
 import { createDataset } from '../../server/services/data-transformer.js';
@@ -225,6 +225,16 @@ describe('dataset-store.save with a hostile CSV header', () => {
 // ── 3. exportToDatabase — INSERT INTO <body.tableName> (<csv headers>) ──────
 
 describe('exportToDatabase identifier handling', () => {
+  // A database export writes only into tables the operator opened for it
+  // (DATA_EXPORT_TABLES — see tests/services/host-data-access.test.ts); these
+  // cases are about identifiers, so they open 'reports'.
+  const savedTables = process.env.DATA_EXPORT_TABLES;
+  beforeAll(() => { process.env.DATA_EXPORT_TABLES = 'reports'; });
+  afterAll(() => {
+    if (savedTables === undefined) delete process.env.DATA_EXPORT_TABLES;
+    else process.env.DATA_EXPORT_TABLES = savedTables;
+  });
+
   it('refuses a request-body table name that is not an identifier, running no SQL', async () => {
     const db = recordingDb();
     const dataset = createDataset([{ a: 1 }], 'test');

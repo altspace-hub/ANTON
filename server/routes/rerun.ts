@@ -52,7 +52,7 @@
  */
 
 import { Router } from 'express';
-import { assertOwned, type OwnedRequest } from '../middleware/ownership.js';
+import { assertOwned, scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 import type { Request, Response, NextFunction } from 'express';
 import { EventEmitter } from 'node:events';
 import crypto from 'node:crypto';
@@ -176,7 +176,10 @@ export const REPLAY_NOTE =
 export function dispatchClaudeMessage(
   claudeRouter: Router,
   body: Record<string, unknown>,
-  opts: { userId?: string; timeoutMs?: number } = {},
+  /** `role` is the caller's: the claude router's team-mode checks (session ownership,
+   *  module access) read req.user.role, and an identity without one is treated as a
+   *  non-admin — an admin rerunning a colleague's session was refused with a 404. */
+  opts: { userId?: string; role?: string; timeoutMs?: number } = {},
 ): Promise<DispatchResult> {
   return new Promise<DispatchResult>((resolve, reject) => {
     const timeoutMs = opts.timeoutMs ?? 15 * 60 * 1000;
@@ -191,7 +194,7 @@ export function dispatchClaudeMessage(
       body,
       query: {},
       params: {},
-      user: opts.userId ? { id: opts.userId } : undefined,
+      user: opts.userId ? { id: opts.userId, ...(opts.role ? { role: opts.role } : {}) } : undefined,
       ip: '127.0.0.1',
       get(name: string): string | undefined {
         return (this as { headers: Record<string, string> }).headers[name.toLowerCase()];
@@ -1058,8 +1061,10 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
 
       // 4) Execute through the live pipeline (internal dispatch — see header).
       const t0 = new Date(Date.now() - 50).toISOString();
-      const userId = (req as Request & { user?: { id?: string } }).user?.id;
-      const result = await dispatchClaudeMessage(claudeRouter, body, { userId });
+      // The caller's role travels with the id, so an admin (already allowed past the
+      // ownership check above) is not treated as a non-admin inside the pipeline.
+      const { id: userId, role } = (req as Request & { user?: { id?: string; role?: string } }).user ?? {};
+      const result = await dispatchClaudeMessage(claudeRouter, body, { userId, role });
 
       // Non-SSE JSON response = the pipeline rejected the request (bad key,
       // budget, context too large, validation, …). Forward it honestly.
@@ -1171,8 +1176,18 @@ export function createRerunRoutes(db: DatabaseAdapter, claudeRouter: Router): Ro
   // (quality_scores is keyed by content hash; scoring is async, so the UI polls).
   router.get('/rerun/quality/:messageId', async (req: Request, res: Response) => {
     try {
-      const msg = await db.get<{ content: string; session_id: string }>(
-        'SELECT content, session_id FROM messages WHERE id = ?', req.params.messageId as string);
+      const messageId = req.params.messageId as string;
+      // Team isolation: the message's session must be the caller's, joined in SQL
+      // before anything is read. Another user's message answers the same 404 as a
+      // missing one, so the route no longer confirms that an id exists. Solo mode
+      // and admins are not scoped.
+      const msg = scopesToOwner(req as OwnedRequest)
+        ? await db.get<{ content: string; session_id: string }>(
+            `SELECT m.content, m.session_id FROM messages m JOIN sessions s ON s.id = m.session_id
+              WHERE m.id = ? AND s.user_id = ?`,
+            messageId, (req as OwnedRequest).user?.id ?? '')
+        : await db.get<{ content: string; session_id: string }>(
+            'SELECT content, session_id FROM messages WHERE id = ?', messageId);
       if (!msg) return res.status(404).json({ error: 'Message not found' });
       const hash = qualityContentHash(msg.content);
       const score = await db.get<Record<string, unknown>>(

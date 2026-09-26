@@ -11,10 +11,12 @@
 // Uses the existing knowledge_atoms shape (verified in the investigation
 // memo): id, source_workflow_id, source_execution_id, source_area_id,
 // source_module_id, content, atom_type, confidence, category, subcategory,
-// tags, created_at.
+// tags, created_at — plus owner_user_id (migration 275; backfilled for older
+// Atlas atoms by migration 286).
 
 import type { DatabaseAdapter } from '../../db/database.js';
 import { randomUUID } from 'crypto';
+import { isTeamMode } from '../../middleware/role-guards.js';
 import type {
   RiskAtlasRow, AtlasThreatPathRow, AtlasControlRow, AtlasVulnerabilityRow,
   AtlasResidualScoreRow, AtlasAppetiteStatementRow, FcpDomain,
@@ -35,6 +37,14 @@ interface PushAtomInput {
 
 export function createAtlasKnowledgeBridge(db: DatabaseAdapter) {
   async function pushAtom(input: PushAtomInput): Promise<string | null> {
+    // The atom belongs to the Atlas's owner. An atom with no owner is SHARED
+    // knowledge on a team server — listed to and searched by every user — so
+    // unattributed Atlas atoms showed one person's threat paths, controls and
+    // residual scores to colleagues whom ensureAtlasAccess keeps out of the Atlas
+    // itself. An Atlas with no owner is admin-only on a team server, so its atoms
+    // are not written at all there (fail closed); solo has no ownership rule.
+    const ownerUserId = input.atlas.owner_user_id ?? null;
+    if (ownerUserId === null && isTeamMode()) return null;
     const id = `kna_${randomUUID().slice(0, 12)}`;
     const tags = JSON.stringify([
       'risk-atlas',
@@ -46,8 +56,8 @@ export function createAtlasKnowledgeBridge(db: DatabaseAdapter) {
       await db.run(
         `INSERT INTO knowledge_atoms
           (id, source_workflow_id, source_execution_id, source_module_id, source_area_id,
-           content, atom_type, confidence, category, subcategory, tags, created_at)
-         VALUES (?, ?, ?, ?, 'risk', ?, ?, ?, ?, ?, ?, NOW())`,
+           content, atom_type, confidence, category, subcategory, tags, owner_user_id, created_at)
+         VALUES (?, ?, ?, ?, 'risk', ?, ?, ?, ?, ?, ?, ?, NOW())`,
         id,
         // source_workflow_id + source_execution_id are NOT NULL on knowledge_atoms.
         // Atlases aren't workflows, so we use synthetic identifiers that mark the
@@ -59,6 +69,7 @@ export function createAtlasKnowledgeBridge(db: DatabaseAdapter) {
         // category is NOT NULL — fall back to the atom_type so the row is valid.
         input.category ?? input.type,
         input.subcategory ?? null, tags,
+        ownerUserId,
       );
       return id;
     } catch (err) {

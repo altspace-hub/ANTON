@@ -12,6 +12,7 @@ import { safeError } from '../lib/error-response.js';
 import { p2pLimiter } from '../middleware/rate-limit.js';
 import { ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import { loadOwnedRow, respondToRowAccessError, isRowAccessError } from '../lib/owned-row.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 
 const createAgentSchema = z.object({
   name: z.string().min(1).max(200),
@@ -200,6 +201,14 @@ export async function createAgentRoutes(db: DatabaseAdapter): Promise<Router> {
         config: Record<string, unknown>; authConfig?: Record<string, unknown>;
       };
       if (!name || !connectorType) { res.status(400).json({ error: 'name and connectorType required' }); return; }
+      // A database connector with no connection string reads ANTON's own database,
+      // and its readable-table list is whatever this request says. On a team server
+      // that is an instance-wide grant, so only an admin can make one (the executor
+      // also refuses a non-admin's agent, for connectors made before this rule).
+      if (connectorType === 'database' && isTeamMode() && req.user?.role !== 'admin') {
+        res.status(403).json({ error: 'Only an administrator can add a database connector' });
+        return;
+      }
 
       // Encrypt auth credentials before storage
       let encryptedAuth = '{}';

@@ -8,12 +8,25 @@ import { getCodingAtomAbReport } from '../services/coding-atom-ab-report.js';
 import { getAtomInjectionStatus, setAtomInjectionMode, isAtomInjectionMode } from '../services/atom-injection-gate.js';
 import { safeError } from '../lib/error-response.js';
 import { requireAdminOrSolo } from '../middleware/role-guards.js';
+import { atomOwnerSql, searchScopeForRequest } from '../services/hybrid-search.js';
+import { entityVisibleSql } from './knowledge-graph.js';
 
 /** Narrow `unknown` thrown values to a user-safe error message. */
 function errMsg(err: unknown): string {
   // Delegates to the shared safeError — redacts in production.
   return safeError(err);
 }
+
+// ── Whose atoms the dashboard reads (team mode) ─────────────────────────────
+//
+// Every atom this dashboard lists, counts, exports or hands to the insights
+// model follows the rule that decides which atoms reach a person's prompts: in
+// team mode a non-admin reads their own atoms and the shared ones (owner NULL),
+// via atomOwnerSql(searchScopeForRequest(req)). Before 2026-09-23 the summary,
+// the export and the insights served every user's atoms with their content.
+// Entity nodes follow the knowledge graph's rule (entityVisibleSql). Solo and
+// admins are unscoped, so their statements are exactly what they were.
+// detected_patterns is instance-wide and appears here only as two counts.
 
 export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -23,13 +36,16 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   // GET /api/intelligence/summary — aggregate stats for dashboard
   router.get('/intelligence/summary', async (req, res) => {
     try {
+      const scope = searchScopeForRequest(req);
+      const owner = atomOwnerSql(scope, 'owner_user_id');
+      const entity = entityVisibleSql(scope, 'en.entity_type', 'en.entity_id');
       const stats = {
-        totalAtoms: (await db.get('SELECT COUNT(*) as n FROM knowledge_atoms WHERE is_active = 1') as any).n,
-        totalEntities: (await db.get('SELECT COUNT(*) as n FROM entity_nodes') as any).n,
+        totalAtoms: (await db.get(`SELECT COUNT(*) as n FROM knowledge_atoms WHERE is_active = 1${owner.sql}`, ...owner.params) as any).n,
+        totalEntities: (await db.get(`SELECT COUNT(*) as n FROM entity_nodes en WHERE 1=1${entity.sql}`, ...entity.params) as any).n,
         totalPatterns: (await db.get("SELECT COUNT(*) as n FROM detected_patterns WHERE status = 'active'") as any).n,
         criticalPatterns: (await db.get("SELECT COUNT(*) as n FROM detected_patterns WHERE severity = 'critical' AND status = 'active'") as any).n,
-        recentAtoms: await db.all('SELECT * FROM knowledge_atoms WHERE is_active = 1 ORDER BY created_at DESC LIMIT 10'),
-        topEntities: await db.all('SELECT * FROM entity_nodes ORDER BY interaction_count DESC LIMIT 10'),
+        recentAtoms: await db.all(`SELECT * FROM knowledge_atoms WHERE is_active = 1${owner.sql} ORDER BY created_at DESC LIMIT 10`, ...owner.params),
+        topEntities: await db.all(`SELECT en.* FROM entity_nodes en WHERE 1=1${entity.sql} ORDER BY en.interaction_count DESC LIMIT 10`, ...entity.params),
       };
       res.json(stats);
     } catch (error: unknown) {
@@ -123,14 +139,15 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const since = new Date(Date.now() - days * 86400000).toISOString();
+      const owner = atomOwnerSql(searchScopeForRequest(req), 'owner_user_id');
       const results = await db.all(`
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM knowledge_atoms
         WHERE is_active = 1
-          AND created_at >= ?
+          AND created_at >= ?${owner.sql}
         GROUP BY DATE(created_at)
         ORDER BY date ASC
-      `, since);
+      `, since, ...owner.params);
       res.json(results);
     } catch (error: unknown) {
       console.error('[intelligence/temporal/atoms-per-day]', error);
@@ -162,14 +179,15 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
     try {
       const weeks = parseInt(req.query.weeks as string) || 12;
       const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
+      const owner = atomOwnerSql(searchScopeForRequest(req), 'knowledge_atoms.owner_user_id');
       const results = await db.all(`
         SELECT TO_CHAR(created_at, 'IYYY-"W"IW') as week, COUNT(DISTINCT entity_type || ':' || entity_id) as entity_count
         FROM knowledge_entity_refs
         JOIN knowledge_atoms ON knowledge_entity_refs.atom_id = knowledge_atoms.id
-        WHERE knowledge_atoms.created_at >= ?
+        WHERE knowledge_atoms.created_at >= ?${owner.sql}
         GROUP BY week
         ORDER BY week ASC
-      `, since);
+      `, since, ...owner.params);
       res.json(results);
     } catch (error: unknown) {
       console.error('[intelligence/temporal/entity-activity]', error);
@@ -183,15 +201,16 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const weeks = parseInt(req.query.weeks as string) || 12;
       const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
       // knowledge_atoms has no quality_score column — use confidence as proxy
+      const owner = atomOwnerSql(searchScopeForRequest(req), 'owner_user_id');
       const results = await db.all(`
         SELECT TO_CHAR(created_at, 'IYYY-"W"IW') as week, AVG(confidence) as avg_quality
         FROM knowledge_atoms
         WHERE confidence IS NOT NULL
           AND is_active = 1
-          AND created_at >= ?
+          AND created_at >= ?${owner.sql}
         GROUP BY week
         ORDER BY week ASC
-      `, since);
+      `, since, ...owner.params);
       res.json(results);
     } catch (error: unknown) {
       console.error('[intelligence/temporal/quality-trend]', error);
@@ -207,11 +226,14 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const areaId = req.query.areaId as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
 
+      // The atoms sent to the model are the caller's own + shared ones: the
+      // insights, and the supporting atom ids returned with them, quote them.
       const generatedInsights = await insights.generateInsights({
         timeRange: timeRange as any,
         category,
         areaId,
         limit,
+        scope: searchScopeForRequest(req),
       });
 
       res.json({ insights: generatedInsights });
@@ -225,7 +247,10 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/distribution', async (req, res) => {
     try {
       const timeRange = (req.query.timeRange as string) || 'week';
-      const distribution = await insights.getAtomDistribution({ timeRange: timeRange as 'day' | 'week' | 'month' | 'all' });
+      const distribution = await insights.getAtomDistribution({
+        timeRange: timeRange as 'day' | 'week' | 'month' | 'all',
+        scope: searchScopeForRequest(req),
+      });
       res.json(distribution);
     } catch (error: unknown) {
       console.error('[intelligence/distribution]', error);
@@ -237,7 +262,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/top-entities', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-      const topEntities = await insights.getTopEntities(limit);
+      const topEntities = await insights.getTopEntities(limit, searchScopeForRequest(req));
       res.json(topEntities);
     } catch (error: unknown) {
       console.error('[intelligence/top-entities]', error);
@@ -249,7 +274,7 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
   router.get('/intelligence/sentiment-trend', async (req, res) => {
     try {
       const days = req.query.days ? parseInt(req.query.days as string, 10) : 30;
-      const trend = await insights.getSentimentTrend(days);
+      const trend = await insights.getSentimentTrend(days, searchScopeForRequest(req));
       res.json(trend);
     } catch (error: unknown) {
       console.error('[intelligence/sentiment-trend]', error);
@@ -264,9 +289,11 @@ export async function createIntelligenceDashboardRoutes(db: DatabaseAdapter) {
       const timeRange = req.query.timeRange as string | undefined;
       const category = req.query.category as string | undefined;
 
-      // Build query
-      let query = 'SELECT * FROM knowledge_atoms WHERE is_active = 1';
-      const queryParams: any[] = [];
+      // Build query — own + shared atoms in team mode (up to 1000 with content,
+      // so this was the widest copy of every user's atoms on the server).
+      const owner = atomOwnerSql(searchScopeForRequest(req), 'owner_user_id');
+      let query = `SELECT * FROM knowledge_atoms WHERE is_active = 1${owner.sql}`;
+      const queryParams: any[] = [...owner.params];
 
       if (timeRange) {
         const timeMap = {

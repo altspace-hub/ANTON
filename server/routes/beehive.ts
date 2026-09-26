@@ -613,6 +613,10 @@ export function createBeehiveRoutes(db: DatabaseAdapter): Router {
       if (!participant) { res.status(404).json({ error: 'Not a participant of this hive' }); return; }
 
       const policy: DisclosurePolicy = participant.disclosure_policy;
+      // The preview is exactly what would be disclosed, and on a team server that
+      // is the instance's shared atoms only (selectAtomsForDisclosure): every
+      // logged-in user may already read those, so no colleague's atom is shown
+      // here. It used to preview every user's atoms, content included.
       const atoms = await knowledge.selectAtomsForDisclosure({
         hiveQuestion: state.hive.question,
         policy,

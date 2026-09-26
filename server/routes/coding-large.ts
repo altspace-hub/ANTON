@@ -15,9 +15,11 @@ import {
   parseFileBlocks,
   parseTestSummary,
   resolveTargetPath,
+  isWriteWithinWorkspaceReal,
   runProjectTests,
   validateTestArgv,
   validateWorkspacePath,
+  workspacesOverlap,
   getCodingStudioRoot,
   probeAllToolchains,
   allLanguagePresets,
@@ -25,6 +27,7 @@ import {
   type ApplicationFileEntry,
   type FileDiff,
   type ToolchainLanguage,
+  type WorkspaceScope,
 } from '../services/coding-workspace.js';
 import {
   deriveProjectSlug,
@@ -48,7 +51,9 @@ import {
   CONTAINER_ENABLE_ENV,
 } from '../services/coding-container.js';
 import { safeError } from '../lib/error-response.js';
-import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
+import { assertOwned, ownerFilter, scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { requireAdminOrSolo, isTeamMode } from '../middleware/role-guards.js';
+import { resolveProjectAccess } from '../services/project-context.js';
 
 /**
  * Ownership for a coding project lives on its PARENT `projects` row, not on
@@ -107,6 +112,93 @@ async function ensureCodingProject(
     idColumn: 'cp.id',
     notFoundMessage: 'Project not found',
   });
+}
+
+/**
+ * Team mode: running a project's commands is an ADMIN action.
+ *
+ * The setup/build/test runs are arbitrary code execution by design, as the
+ * server's OS user, and validateTestArgv only refuses shells — so
+ * ["node","-e","…readdirSync('<repo>/uploads')…"] is a valid test command, and
+ * its output comes back in output_tail. On a shared server that read every
+ * user's uploads, exports and .env, whatever the folder guard or the ownership
+ * checks said. Docker isolation is opt-in per project and per operator, falls
+ * back to local, and mounts the workspace read-write (a container can plant
+ * .git/config that host-side git later executes), so it does not exempt a run.
+ *
+ * Called AFTER ensureCodingProject, never as route middleware: a foreign or
+ * missing project must still get the same 404 before anyone learns that the
+ * action itself is refused. Delegates to requireAdminOrSolo so the rule has one
+ * definition; returns false once it has replied 403.
+ */
+function mayRunCode(req: Request, res: Response): boolean {
+  let allowed = false;
+  requireAdminOrSolo(req, res, () => { allowed = true; });
+  return allowed;
+}
+
+/**
+ * The project's own Studio folder, for validateWorkspacePath — lets team mode
+ * refuse a sibling project's coding-studio/<slug>/ (another user's code). A
+ * project id that yields no slug gets none, so no Studio folder is its own.
+ *
+ * `studioOnly` for a caller scoped to their own rows (team mode, not an admin):
+ * such a caller may bind and write only inside that folder. The
+ * ALLOWED_FOLDER_PATHS bases are shared folders — a non-admin who bound one could
+ * read a colleague's files as the apply preview's "old" side and overwrite them
+ * on approve, including a colleague's own bound workspace. Checked at bind time
+ * AND at every use, so a binding made before this rule stops working for them.
+ */
+function studioScopeOf(req: Request, codingProjectId: string): WorkspaceScope {
+  const studioOnly = scopesToOwner(req as OwnedRequest);
+  try {
+    return { studioSlug: deriveProjectSlug(codingProjectId), studioOnly };
+  } catch {
+    return { studioSlug: null, studioOnly };
+  }
+}
+
+/** Another person's project already binds an overlapping folder. */
+const WORKSPACE_HELD_REFUSAL =
+  "Workspace not permitted: another person's project already uses this folder, a folder inside it, or one around it";
+
+/**
+ * Team mode: does a coding project with ANOTHER owner already bind `resolved`,
+ * a folder inside it, or one around it (workspacesOverlap)?
+ *
+ * Two projects on one folder share every file, so on a shared server that is
+ * allowed only when one person owns both — otherwise the second binder reads the
+ * first's code through the apply preview, and an admin binding a colleague's
+ * project there hands them the other's. Owners resolve through projects.user_id,
+ * as ensureCodingProject does; an unattributed project (no owner) matches nobody,
+ * so it conflicts with everyone (fail closed). Solo mode: never — one person.
+ *
+ * Reads only directory paths, never returns them: the caller learns only that
+ * the bind was refused.
+ */
+async function workspaceHeldByAnotherOwner(
+  db: DatabaseAdapter,
+  resolved: string,
+  codingProjectId: string,
+  ownerId: string | null,
+): Promise<boolean> {
+  if (!isTeamMode()) return false;
+  const rows = await db.all<{ directory_path: string; owner_id: string | null }>(
+    `SELECT cp.directory_path, p.user_id AS owner_id
+       FROM coding_projects cp LEFT JOIN projects p ON p.id = cp.project_id
+      WHERE cp.id <> ? AND cp.directory_path IS NOT NULL AND cp.directory_path <> ''`,
+    codingProjectId,
+  );
+  return rows.some((r) => (ownerId === null || r.owner_id !== ownerId) && workspacesOverlap(resolved, r.directory_path));
+}
+
+/** The owner (projects.user_id) of an existing coding project, or null. */
+async function codingProjectOwner(db: DatabaseAdapter, codingProjectId: string): Promise<string | null> {
+  const row = await db.get<{ owner_id: string | null }>(
+    'SELECT p.user_id AS owner_id FROM coding_projects cp LEFT JOIN projects p ON p.id = cp.project_id WHERE cp.id = ?',
+    codingProjectId,
+  );
+  return row?.owner_id ?? null;
 }
 
 // ── Phase Prompt Builders ───────────────────────────────────────────────────
@@ -1934,11 +2026,40 @@ export async function createCodingLargeRoutes(
       const { name, description, tier = 'large', project_id, directory_path } = req.body;
       if (!name) return res.status(400).json({ error: 'name is required' });
 
+      // A caller-supplied parent must be a project the caller may access (the
+      // membership rule, resolveProjectAccess). It was stored unchecked, so a
+      // team user could plant a coding project — name, description, workspace —
+      // in a colleague's project and Code Studio list, and the 500 an unknown id
+      // hit (FK) against the 200 of a real one told them which ids exist. A
+      // foreign id now answers the same 404 as a missing one. Solo and admins
+      // are not scoped (ownership.ts), so their path is unchanged.
+      if (project_id && scopesToOwner(req as OwnedRequest)) {
+        const access = await resolveProjectAccess(db, {
+          projectId: String(project_id),
+          userId: req.user?.id ?? '',
+          userRole: req.user?.role ?? null,
+          teamMode: true,
+        });
+        if (access !== 'ok') return res.status(404).json({ error: 'Project not found' });
+      }
+
+      // Minted before the bind check so the check knows which Studio folder is
+      // this project's own (none exists yet, so no sibling's can be claimed).
+      const id = randomUUID();
+
       // Workspace binding is security-gated: validate against ALLOWED_FOLDER_PATHS at bind time.
       if (directory_path) {
-        const validation = await validateWorkspacePath(directory_path);
+        const validation = await validateWorkspacePath(directory_path, process.env, studioScopeOf(req, id));
         if (!validation.ok) {
           return res.status(403).json({ error: `Workspace not permitted: ${validation.error}`, workspace: validation });
+        }
+        // The owner-to-be: the parent's recorded owner, or the caller for the
+        // parent created below.
+        const ownerId = project_id
+          ? (await db.get<{ user_id: string | null }>('SELECT user_id FROM projects WHERE id = ?', String(project_id)))?.user_id ?? null
+          : req.user?.id ?? null;
+        if (await workspaceHeldByAnotherOwner(db, validation.resolved ?? '', id, ownerId)) {
+          return res.status(409).json({ error: WORKSPACE_HELD_REFUSAL });
         }
       }
 
@@ -1965,7 +2086,6 @@ export async function createCodingLargeRoutes(
         `, parentProjectId, name, description || '', req.user?.id ?? 'default');
       }
 
-      const id = randomUUID();
       await db.run(`
         INSERT INTO coding_projects (id, project_id, name, description, tier, directory_path, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -2086,9 +2206,13 @@ export async function createCodingLargeRoutes(
       if (!(await ensureCodingProject(db, req, res))) return;
       // Workspace binding is security-gated: validate against ALLOWED_FOLDER_PATHS at bind time.
       if (req.body.directory_path) {
-        const validation = await validateWorkspacePath(req.body.directory_path);
+        const validation = await validateWorkspacePath(req.body.directory_path, process.env, studioScopeOf(req, req.params.id));
         if (!validation.ok) {
           return res.status(403).json({ error: `Workspace not permitted: ${validation.error}`, workspace: validation });
+        }
+        const ownerId = await codingProjectOwner(db, req.params.id);
+        if (await workspaceHeldByAnotherOwner(db, validation.resolved ?? '', req.params.id, ownerId)) {
+          return res.status(409).json({ error: WORKSPACE_HELD_REFUSAL });
         }
       }
 
@@ -2759,7 +2883,7 @@ export async function createCodingLargeRoutes(
       if (!(await ensureCodingProject(db, req, res))) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
-      const validation = await validateWorkspacePath(project.directory_path);
+      const validation = await validateWorkspacePath(project.directory_path, process.env, studioScopeOf(req, req.params.id));
       res.json({
         directory_path: project.directory_path || null,
         bound: !!project.directory_path,
@@ -2789,9 +2913,13 @@ export async function createCodingLargeRoutes(
       if (typeof directory_path !== 'string') {
         return res.status(400).json({ error: 'directory_path must be a string (or null to unbind)' });
       }
-      const validation = await validateWorkspacePath(directory_path);
+      const validation = await validateWorkspacePath(directory_path, process.env, studioScopeOf(req, req.params.id));
       if (!validation.ok) {
         return res.status(403).json({ error: `Workspace not permitted: ${validation.error}`, validation });
+      }
+      const ownerId = await codingProjectOwner(db, req.params.id);
+      if (await workspaceHeldByAnotherOwner(db, validation.resolved ?? '', req.params.id, ownerId)) {
+        return res.status(409).json({ error: WORKSPACE_HELD_REFUSAL });
       }
       await db.run('UPDATE coding_projects SET directory_path = ?, updated_at = NOW() WHERE id = ?', validation.resolved, req.params.id);
       res.json({ bound: true, directory_path: validation.resolved, validation });
@@ -2989,7 +3117,11 @@ export async function createCodingLargeRoutes(
       const studioRoot = getCodingStudioRoot();
       const workspaceDir = path.join(studioRoot, slug);
       await mkdir(workspaceDir, { recursive: true });
-      const wsValidation = await validateWorkspacePath(workspaceDir);
+      // No workspaceHeldByAnotherOwner check here: in team mode no other
+      // project can use this folder — the sibling and root rules refuse
+      // coding-studio/<slug>/ (and anything around it) to every other project,
+      // at bind time and at every use.
+      const wsValidation = await validateWorkspacePath(workspaceDir, process.env, { studioSlug: slug, studioOnly: scopesToOwner(req as OwnedRequest) });
       if (!wsValidation.ok || !wsValidation.resolved) {
         return res.status(500).json({
           error: `Provisioned workspace failed validation: ${wsValidation.error}`,
@@ -3160,6 +3292,7 @@ export async function createCodingLargeRoutes(
   router.post('/coding/projects/:id/commands/:kind/run', async (req, res) => {
     try {
       if (!(await ensureCodingProject(db, req, res))) return;
+      if (!mayRunCode(req, res)) return;
       const kind = req.params.kind;
       if (!['setup', 'build', 'test'].includes(kind)) {
         return res.status(400).json({ error: "kind must be 'setup', 'build', or 'test'" });
@@ -3201,7 +3334,7 @@ export async function createCodingLargeRoutes(
       const validated = validateTestArgv(argvRaw);
       if (!validated.ok) return res.status(400).json({ error: `Stored ${kind} command is invalid: ${validated.reason}` });
 
-      const validation = await validateWorkspacePath(project.directory_path);
+      const validation = await validateWorkspacePath(project.directory_path, process.env, studioScopeOf(req, req.params.id));
       if (!validation.ok || !validation.resolved) {
         return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
       }
@@ -3259,7 +3392,7 @@ export async function createCodingLargeRoutes(
           summary.pass_count, summary.fail_count, summary.skip_count,
           summary.pass_count + summary.fail_count + summary.skip_count,
           result.durationMs, JSON.stringify(validated.argv), result.exitCode,
-          result.timedOut ? 1 : 0, combinedTail, (req as any).userId || 'system');
+          result.timedOut ? 1 : 0, combinedTail, req.user?.id || 'system');
       }
 
       // ── Studio P4: project-scoped atom capture for the test command path ────
@@ -3394,7 +3527,7 @@ export async function createCodingLargeRoutes(
       }
 
       // Workspace must be bound + valid at every use (not just bind time).
-      const validation = await validateWorkspacePath(project.directory_path);
+      const validation = await validateWorkspacePath(project.directory_path, process.env, studioScopeOf(req, req.params.id));
       if (!validation.ok || !validation.resolved) {
         return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
       }
@@ -3419,6 +3552,15 @@ export async function createCodingLargeRoutes(
         if (!target) {
           // validateRelativePath passed but resolve escaped — refuse hard.
           parsed.rejected.push({ reason: 'resolved path escapes the workspace', path: file.path });
+          continue;
+        }
+        // Team mode: the same link check the write applies, before the READ —
+        // a symlink in the workspace pointing at someone else's file would
+        // otherwise be read through and returned as this diff's "old" side.
+        // Solo keeps its old preview: the machine's one user owns whatever a
+        // link reaches, and approve's own check still refuses an escaping write.
+        if (isTeamMode() && !(await isWriteWithinWorkspaceReal(workspaceAbs, target))) {
+          parsed.rejected.push({ reason: 'resolves outside the workspace via a symlink', path: file.path });
           continue;
         }
         let old: string | null = null;
@@ -3447,7 +3589,7 @@ export async function createCodingLargeRoutes(
       `, applicationId, req.params.id, req.params.tid, kind, revision_of_test_run_id,
         parsed.formatVersion, workspaceAbs, JSON.stringify(record.files),
         JSON.stringify(parsed.rejected), JSON.stringify(record.diff_summary),
-        (req as any).userId || 'system');
+        req.user?.id || 'system');
 
       res.json({
         applicationId,
@@ -3517,7 +3659,7 @@ export async function createCodingLargeRoutes(
       }
 
       // Re-validate at use time (allowlist or binding may have changed).
-      const validation = await validateWorkspacePath(project.directory_path);
+      const validation = await validateWorkspacePath(project.directory_path, process.env, studioScopeOf(req, req.params.id));
       if (!validation.ok || !validation.resolved) {
         return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
       }
@@ -3650,6 +3792,7 @@ export async function createCodingLargeRoutes(
   router.post('/coding/projects/:id/tests/run', async (req, res) => {
     try {
       if (!(await ensureCodingProject(db, req, res))) return;
+      if (!mayRunCode(req, res)) return;
       const project = await db.get('SELECT * FROM coding_projects WHERE id = ?', req.params.id) as any;
       if (!project) return res.status(404).json({ error: 'Project not found' });
 
@@ -3674,7 +3817,7 @@ export async function createCodingLargeRoutes(
       const validated = validateTestArgv(argvRaw);
       if (!validated.ok) return res.status(400).json({ error: `Stored test command is invalid: ${validated.reason}` });
 
-      const validation = await validateWorkspacePath(project.directory_path);
+      const validation = await validateWorkspacePath(project.directory_path, process.env, studioScopeOf(req, req.params.id));
       if (!validation.ok || !validation.resolved) {
         return res.status(403).json({ error: `Workspace not available: ${validation.error}`, validation });
       }
@@ -3706,7 +3849,7 @@ export async function createCodingLargeRoutes(
         summary.pass_count, summary.fail_count, summary.skip_count,
         summary.pass_count + summary.fail_count + summary.skip_count,
         result.durationMs, JSON.stringify(validated.argv), result.exitCode,
-        result.timedOut ? 1 : 0, combinedTail, (req as any).userId || 'system');
+        result.timedOut ? 1 : 0, combinedTail, req.user?.id || 'system');
 
       // Reflect the real result on the task.
       if (coding_task_id) {
@@ -3992,7 +4135,7 @@ export async function createCodingLargeRoutes(
       await db.run(`
         INSERT INTO coding_changes (id, coding_project_id, change_type, change_level, title, rationale, initiated_by, original_state, revised_state, affected_release_ids, affected_task_ids)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, id, req.params.id, change_type, change_level, title, rationale || '', (req as any).userId || 'system', JSON.stringify(original_state), JSON.stringify(revised_state), JSON.stringify(affected_release_ids), JSON.stringify(affected_task_ids));
+      `, id, req.params.id, change_type, change_level, title, rationale || '', req.user?.id || 'system', JSON.stringify(original_state), JSON.stringify(revised_state), JSON.stringify(affected_release_ids), JSON.stringify(affected_task_ids));
 
       res.json({ id, title, status: 'proposed' });
     } catch (error) {

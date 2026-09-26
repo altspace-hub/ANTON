@@ -6,8 +6,11 @@
  * sessions concluded. Against a fake adapter answering by exact statement:
  *
  *   - team mode: a non-member gets nothing and `denied`, and nothing past the
- *     access check is read; owner, member and admin get through; the role is
+ *     access check is read; member and admin get through; the role is
  *     looked up when the caller did not pass it;
+ *   - projects.user_id counts only for a project with no members (Code
+ *     Studio / workshop projects): a creator no longer on a project that has
+ *     members is denied (round-1 verifier gap, 2026-09-23);
  *   - the sections come in the documented order with the documented shapes;
  *   - a session with no written summary falls back to the opening of its last
  *     answer, marked "(no conclusion yet)"; a session with nothing said is
@@ -54,16 +57,19 @@ function makeFakeDb(over: Partial<FakeState> = {}): { db: DatabaseAdapter; state
       if (state.broken) throw new Error('connection refused: secret-host:5432');
       if (sql === PROJECT_CONTEXT_SQL.project) return (state.project?.id === params[0] ? state.project : undefined) as T | undefined;
       if (sql === PROJECT_CONTEXT_SQL.membership) return (state.members.has(String(params[1])) && params[0] === PROJECT ? { '?column?': 1 } : undefined) as T | undefined;
+      if (sql === PROJECT_CONTEXT_SQL.anyMember) return (state.members.size > 0 && params[0] === PROJECT ? { '?column?': 1 } : undefined) as T | undefined;
       if (sql === PROJECT_CONTEXT_SQL.userRole) { const role = state.roles[String(params[0])]; return (role ? { role } : undefined) as T | undefined; }
-      if (sql === PROJECT_CONTEXT_SQL.matter) return state.matter as T | undefined;
-      if (sql === PROJECT_CONTEXT_SQL.engagement) return state.engagement as T | undefined;
+      // The team-mode twins filter by owner in SQL; this fake does not model
+      // owners (tests/services/project-context-removed-member.db.test.ts does).
+      if (sql === PROJECT_CONTEXT_SQL.matter || sql === PROJECT_CONTEXT_SQL.matterTeam) return state.matter as T | undefined;
+      if (sql === PROJECT_CONTEXT_SQL.engagement || sql === PROJECT_CONTEXT_SQL.engagementTeam) return state.engagement as T | undefined;
       throw new Error(`fake db: unexpected get(): ${sql.slice(0, 80)}`);
     },
     async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
       state.calls.push(sql);
       if (state.broken) throw new Error('connection refused');
-      if (sql === PROJECT_CONTEXT_SQL.siblings) return state.siblings.slice(0, 5) as T[];
-      if (sql === PROJECT_CONTEXT_SQL.siblingsExcluding) return state.siblings.filter((s) => s.id !== params[1]).slice(0, 5) as T[];
+      if (sql === PROJECT_CONTEXT_SQL.siblings || sql === PROJECT_CONTEXT_SQL.siblingsTeam) return state.siblings.slice(0, 5) as T[];
+      if (sql === PROJECT_CONTEXT_SQL.siblingsExcluding || sql === PROJECT_CONTEXT_SQL.siblingsExcludingTeam) return state.siblings.filter((s) => s.id !== params[1]).slice(0, 5) as T[];
       if (sql.startsWith('SELECT DISTINCT ON (session_id) session_id, key_decisions')) {
         return (params as string[]).filter((id) => state.snapshots[id] !== undefined).map((id) => ({ session_id: id, key_decisions: state.snapshots[id] })) as T[];
       }
@@ -81,7 +87,9 @@ function makeFakeDb(over: Partial<FakeState> = {}): { db: DatabaseAdapter; state
 }
 
 const readsPastAccess = (calls: string[]) =>
-  calls.filter((c) => c === PROJECT_CONTEXT_SQL.matter || c === PROJECT_CONTEXT_SQL.engagement || c.startsWith('SELECT id, title, module_id, summary'));
+  calls.filter((c) => c === PROJECT_CONTEXT_SQL.matter || c === PROJECT_CONTEXT_SQL.engagement
+    || c === PROJECT_CONTEXT_SQL.matterTeam || c === PROJECT_CONTEXT_SQL.engagementTeam
+    || c.startsWith('SELECT id, title, module_id, summary') || c.startsWith('SELECT s.id, s.title, s.module_id, s.summary'));
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -93,13 +101,31 @@ describe('buildProjectContext — access in team mode', () => {
     expect(readsPastAccess(state.calls)).toEqual([]);
   });
 
-  it('lets the owner, a member and an admin through', async () => {
+  it('lets a member (the creator among them) and an admin through', async () => {
     for (const [userId, userRole] of [['alice', 'analyst'], ['bob', 'analyst'], ['root', 'admin']] as const) {
-      const { db } = makeFakeDb();
+      const { db } = makeFakeDb({ members: new Set(['alice', 'bob']) });
       const out = await buildProjectContext(db, { projectId: PROJECT, userId, userRole, teamMode: true });
       expect(out.denied, userId).toBe(false);
       expect(out.text, userId).toContain('## PROJECT');
     }
+  });
+
+  it('denies the recorded creator once they are no longer a member, and reads nothing past the check', async () => {
+    // alice is projects.user_id, but the project's members are {bob}: she was removed.
+    const { db, state } = makeFakeDb();
+    const out = await buildProjectContext(db, { projectId: PROJECT, userId: 'alice', userRole: 'analyst', teamMode: true });
+    expect(out.denied).toBe(true);
+    expect(out.text).toBe('');
+    expect(readsPastAccess(state.calls)).toEqual([]);
+  });
+
+  it('negative control: the recorded owner of a project with no members at all (Code Studio) still gets through', async () => {
+    const { db } = makeFakeDb({ members: new Set() });
+    const out = await buildProjectContext(db, { projectId: PROJECT, userId: 'alice', userRole: 'analyst', teamMode: true });
+    expect(out.denied).toBe(false);
+    expect(out.text).toContain('## PROJECT');
+    const other = await buildProjectContext(db, { projectId: PROJECT, userId: 'carol', userRole: 'analyst', teamMode: true });
+    expect(other.denied).toBe(true);
   });
 
   it('looks the role up when the caller did not pass one', async () => {
@@ -117,6 +143,27 @@ describe('buildProjectContext — access in team mode', () => {
     expect(solo.text).toBe('');
   });
 
+  it('team mode reads matter, engagement and siblings only through the owner-filtered statements; solo runs the old ones', async () => {
+    const team = makeFakeDb({ members: new Set(['bob']) });
+    await buildProjectContext(team.db, { projectId: PROJECT, currentSessionId: CURRENT, userId: 'bob', userRole: 'analyst', teamMode: true });
+    for (const sql of [PROJECT_CONTEXT_SQL.matterTeam, PROJECT_CONTEXT_SQL.engagementTeam, PROJECT_CONTEXT_SQL.siblingsExcludingTeam]) {
+      expect(team.state.calls).toContain(sql);
+    }
+    for (const sql of [PROJECT_CONTEXT_SQL.matter, PROJECT_CONTEXT_SQL.engagement, PROJECT_CONTEXT_SQL.siblingsExcluding, PROJECT_CONTEXT_SQL.siblings]) {
+      expect(team.state.calls).not.toContain(sql);
+    }
+    // An admin gets the same filter: it decides what the project is, not what the caller may see.
+    const admin = makeFakeDb();
+    await buildProjectContext(admin.db, { projectId: PROJECT, userId: 'root', userRole: 'admin', teamMode: true });
+    expect(admin.state.calls).toContain(PROJECT_CONTEXT_SQL.siblingsTeam);
+
+    const solo = makeFakeDb();
+    await buildProjectContext(solo.db, { projectId: PROJECT, currentSessionId: CURRENT, userId: 'solo', teamMode: false });
+    expect(solo.state.calls).toContain(PROJECT_CONTEXT_SQL.siblingsExcluding);
+    expect(solo.state.calls).toContain(PROJECT_CONTEXT_SQL.matter);
+    expect(solo.state.calls.some((c) => c.includes('project_members'))).toBe(false);
+  });
+
   it('solo mode never asks about membership', async () => {
     const { db, state } = makeFakeDb();
     const out = await buildProjectContext(db, { projectId: PROJECT, userId: 'carol', teamMode: false });
@@ -132,8 +179,13 @@ describe('resolveProjectAccess (shared with the routes)', () => {
     expect(await resolveProjectAccess(db, { projectId: 'nope', userId: 'alice', userRole: 'admin', teamMode: true })).toBe('not_found');
     expect(await resolveProjectAccess(db, { projectId: PROJECT, userId: 'carol', userRole: 'analyst', teamMode: true })).toBe('forbidden');
     expect(await resolveProjectAccess(db, { projectId: PROJECT, userId: 'bob', userRole: 'analyst', teamMode: true })).toBe('ok');
-    expect(await resolveProjectAccess(db, { projectId: PROJECT, userId: 'alice', userRole: 'analyst', teamMode: true })).toBe('ok');
+    // The creator (projects.user_id) is not a member of a project that has members: removed.
+    expect(await resolveProjectAccess(db, { projectId: PROJECT, userId: 'alice', userRole: 'analyst', teamMode: true })).toBe('forbidden');
+    expect(await resolveProjectAccess(db, { projectId: PROJECT, userId: 'alice', userRole: 'admin', teamMode: true })).toBe('ok');
     expect(await resolveProjectAccess(db, { projectId: PROJECT, userId: 'carol', userRole: 'analyst', teamMode: false })).toBe('ok');
+    const memberless = makeFakeDb({ members: new Set() }).db;
+    expect(await resolveProjectAccess(memberless, { projectId: PROJECT, userId: 'alice', userRole: 'analyst', teamMode: true })).toBe('ok');
+    expect(await resolveProjectAccess(memberless, { projectId: PROJECT, userId: 'carol', userRole: 'analyst', teamMode: true })).toBe('forbidden');
   });
 });
 

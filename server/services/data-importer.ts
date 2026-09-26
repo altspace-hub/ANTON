@@ -28,6 +28,40 @@ import { getDriver, isNoSQLDriver } from './db-drivers/driver-registry.js';
 import type { DbConfig } from './db-drivers/driver-interface.js';
 import { resolveExplicitDbDriver } from './workflow-step-registry.js';
 import { assertQueryPermitted, assertTablesAllowed, resolveMaxRows } from './connection-guard.js';
+import { checkFolderPath, allowedRootOf } from '../lib/folder-guard.js';
+
+/**
+ * A file this service reads or writes, as an absolute path inside
+ * ALLOWED_FOLDER_PATHS (and, on a team server, outside ANTON's own storage).
+ * The path comes from a request body or a workflow step, so without this a
+ * caller could read any file on the server (configuration secrets included) or
+ * write one anywhere. Throws with the folder guard's reason.
+ */
+function permittedFilePath(filePath: string): string {
+  const check = checkFolderPath(filePath);
+  if (!check.ok) throw new Error(`File path not permitted: ${check.error}`);
+  // The containment again, on the value returned (folder-guard allowedRootOf).
+  const abs = path.resolve(check.resolved);
+  const root = allowedRootOf(abs, check.allowedBases);
+  if (root === null || !abs.startsWith(root + path.sep)) {
+    throw new Error('File path not permitted: Path outside allowed directories');
+  }
+  return abs;
+}
+
+/**
+ * Tables of ANTON's own database that an export may write into: the operator's
+ * DATA_EXPORT_TABLES (comma-separated), none when it is unset. The table name
+ * comes from the request, and ANTON's tables hold accounts, roles, memberships
+ * and settings — an upsert into `users` was a way to make oneself admin — so a
+ * write into this database needs a table someone deliberately opened for it.
+ */
+export function dataExportTables(env: NodeJS.ProcessEnv = process.env): string[] {
+  return (env.DATA_EXPORT_TABLES ?? '')
+    .split(',')
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 // ==================== Import Operations ====================
 
@@ -81,24 +115,25 @@ async function importFromFile(config: ImportConfig): Promise<Dataset> {
   if (!config.filePath) {
     throw new Error('filePath is required for file import');
   }
+  const filePath = permittedFilePath(config.filePath);
 
-  const fileType = config.fileType || detectFileType(config.filePath);
+  const fileType = config.fileType || detectFileType(filePath);
 
   let rows: Array<Record<string, any>> = [];
 
   switch (fileType) {
     case 'csv':
       rows = await importCSV(
-        config.filePath,
+        filePath,
         config.delimiter || ',',
         config.hasHeader !== false
       );
       break;
     case 'excel':
-      rows = await importExcel(config.filePath, config.sheetName, config.hasHeader !== false);
+      rows = await importExcel(filePath, config.sheetName, config.hasHeader !== false);
       break;
     case 'json':
-      rows = await importJSON(config.filePath);
+      rows = await importJSON(filePath);
       break;
     default:
       throw new Error(`Unsupported file type: ${fileType}`);
@@ -108,7 +143,7 @@ async function importFromFile(config: ImportConfig): Promise<Dataset> {
     rows = rows.slice(0, 100);
   }
 
-  return createDataset(rows, `file:${path.basename(config.filePath)}`);
+  return createDataset(rows, `file:${path.basename(filePath)}`);
 }
 
 /**
@@ -312,32 +347,33 @@ async function exportToFile(dataset: Dataset, config: ExportConfig): Promise<str
   if (!config.filePath) {
     throw new Error('filePath is required for file export');
   }
+  const filePath = permittedFilePath(config.filePath);
 
-  const fileType = config.fileType || detectFileType(config.filePath);
+  const fileType = config.fileType || detectFileType(filePath);
 
   // Check if file exists
-  if (!config.overwrite && (await fs.pathExists(config.filePath))) {
-    throw new Error(`File already exists: ${config.filePath}`);
+  if (!config.overwrite && (await fs.pathExists(filePath))) {
+    throw new Error(`File already exists: ${filePath}`);
   }
 
   // Ensure directory exists
-  await fs.ensureDir(path.dirname(config.filePath));
+  await fs.ensureDir(path.dirname(filePath));
 
   switch (fileType) {
     case 'csv':
-      await exportCSV(dataset, config.filePath);
+      await exportCSV(dataset, filePath);
       break;
     case 'excel':
-      await exportExcel(dataset, config.filePath, config.excelOptions);
+      await exportExcel(dataset, filePath, config.excelOptions);
       break;
     case 'json':
-      await exportJSON(dataset, config.filePath);
+      await exportJSON(dataset, filePath);
       break;
     default:
       throw new Error(`Unsupported file type: ${fileType}`);
   }
 
-  return config.filePath;
+  return filePath;
 }
 
 /**
@@ -430,6 +466,11 @@ async function exportToDatabase(dataset: Dataset, config: ExportConfig): Promise
   // created, so wrapping the names in double quotes would change an unquoted (and
   // therefore case-folded) `MyTable` into a different object and break a working export.
   const tableName = assertSqlIdentifier(config.tableName, 'table name');
+  if (!dataExportTables().includes(tableName.toLowerCase())) {
+    throw new Error(
+      `Exporting into table "${tableName}" is not enabled — an administrator lists the tables an export may write in DATA_EXPORT_TABLES`,
+    );
+  }
   const columns = dataset.columns.map((col) => assertSqlIdentifier(col.name, 'column name'));
 
   try {

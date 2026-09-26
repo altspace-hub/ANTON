@@ -17,11 +17,19 @@
 // Ownership is gated EXACTLY like coding-studio.ts: a coding_project belongs to
 // a `projects` row; admins see everything, everyone else only their own. The
 // preview service is INJECTABLE so route tests run with a fake (no real spawn).
+//
+// Team mode: /preview/start is ADMIN-only (after the ownership 404). It spawns
+// a request-supplied argv — or the project's own dev-server code — on the host
+// as the server's user, which on a shared server reads every user's files.
+// stop/status/logs spawn nothing and stay owner-scoped. Solo mode is unchanged.
 
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { safeError } from '../lib/error-response.js';
+import { scopesToOwner } from '../middleware/ownership.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import {
   startPreview as realStart,
   stopPreview as realStop,
@@ -90,11 +98,23 @@ async function loadOwnedCodingProject(
     projectId,
   );
   if (!row) { res.status(404).json({ error: 'Coding project not found' }); return null; }
-  if (userRole !== 'admin' && row.owner_user_id && row.owner_user_id !== userId) {
+  // scopesToOwner, not "role !== admin && owner set": a project with no owner
+  // must not be every team user's (ownership.ts fails closed on unattributed rows).
+  if (scopesToOwner({ user: { id: userId, role: userRole ?? '' } }) && row.owner_user_id !== userId) {
     res.status(404).json({ error: 'Coding project not found' });
     return null;
   }
   return row;
+}
+
+/**
+ * requireAdminOrSolo, called inline AFTER the ownership check so a foreign id
+ * still gets the plain 404 first. Returns false once it has replied 403.
+ */
+function passesAdminOrSolo(req: Request, res: Response): boolean {
+  let allowed = false;
+  requireAdminOrSolo(req, res, () => { allowed = true; });
+  return allowed;
 }
 
 export function createCodingPreviewRoutes(db: DatabaseAdapter, deps: CodingPreviewRouteDeps = {}): Router {
@@ -115,6 +135,7 @@ export function createCodingPreviewRoutes(db: DatabaseAdapter, deps: CodingPrevi
     try {
       const project = await loadOwnedCodingProject(db, req as AuthedRequest, params.data.id, res);
       if (!project) return;
+      if (!passesAdminOrSolo(req, res)) return;
 
       // Resolve argv: explicit argv wins; otherwise a language preset.
       let argv = body.data.argv;

@@ -24,6 +24,7 @@ import {
   describeMethod,
   scoreKindForMethod,
 } from '../../server/services/semantic-search.js';
+import { adapterParams } from '../helpers/adapter-params';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,7 @@ function makeFakeDb(chunks: ChunkFixture[], embeddings: EmbeddingFixture[]): Fak
   const db: DatabaseAdapter = {
     dialect: 'postgresql' as DatabaseAdapter['dialect'],
     async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+      params = adapterParams(params);
       calls.push({ kind: 'get', sql, params });
       if (sql.includes('COUNT(DISTINCT e.content_id)')) {
         // stale-vector probe: (content_type, model, ...collection ids)
@@ -130,6 +132,7 @@ function makeFakeDb(chunks: ChunkFixture[], embeddings: EmbeddingFixture[]): Fak
       return undefined;
     },
     async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
+      params = adapterParams(params);
       calls.push({ kind: 'all', sql, params });
       if (sql.includes('FROM embeddings e')) {
         const [ctype, model, dims, ...cols] = params as [string, string, number, ...string[]];
@@ -145,6 +148,7 @@ function makeFakeDb(chunks: ChunkFixture[], embeddings: EmbeddingFixture[]): Fak
       return [];
     },
     async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+      params = adapterParams(params);
       calls.push({ kind: 'run', sql, params });
       return { changes: 0, lastInsertRowid: 0 } as RunResult;
     },

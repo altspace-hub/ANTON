@@ -24,7 +24,7 @@ import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 
 import type AnthropicSDK from '@anthropic-ai/sdk';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAdminOrSolo } from '../middleware/auth.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import {
   runHeartbeatCycle,
@@ -38,6 +38,7 @@ import {
 } from '../services/orchestrator-demo.js';
 import { checkSpendGate, checkAndRecordSpendGate } from '../services/orchestrator-spend-gate.js';
 import { getHeartbeatStatus } from '../services/orchestrator-heartbeat.js';
+import { atomOwnerSql, searchScopeForRequest } from '../services/hybrid-search.js';
 
 export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: AnthropicSDK | null | undefined): Promise<Router> {
   const router = Router();
@@ -85,7 +86,13 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Briefings list ────────────────────────────────────────────────────────
-  router.get('/orchestrator/briefings', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server (both reads). A briefing is ONE instance-wide
+  // document: generateBriefing (services/orchestrator-engine.ts) writes up to 25
+  // recent atoms of every user into the model prompt, and the briefing quotes
+  // them. Scoping that to a person would mean one briefing per user — a change to
+  // the engine and its schedule, not to these routes — so until then only an
+  // admin, who may read every atom anyway, reads briefings. Solo is unchanged.
+  router.get('/orchestrator/briefings', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '20'), 10) || 20, 100);
       const offset = parseInt(String(req.query.offset ?? '0'), 10) || 0;
@@ -108,7 +115,8 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Single briefing with proposals ───────────────────────────────────────
-  router.get('/orchestrator/briefings/:id', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server — see the list route above.
+  router.get('/orchestrator/briefings/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const briefing = await db.get('SELECT * FROM orchestrator_briefings WHERE id = ?', req.params.id) as { status: string } | undefined;
       if (!briefing) return res.status(404).json({ error: 'Briefing not found' });
@@ -141,7 +149,11 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Proposals list ────────────────────────────────────────────────────────
-  router.get('/orchestrator/proposals', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server, like the briefings they come from: a proposal
+  // is what a briefing derived from every user's atoms, so reading proposals
+  // (here, and the full row PATCH / modify return) read around the briefing
+  // gate (round-2 gap "verify2:projects-2"). Solo is unchanged.
+  router.get('/orchestrator/proposals', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 200);
       const status = req.query.status as string | undefined;
@@ -162,7 +174,8 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Rate / feedback on a proposal ────────────────────────────────────────
-  router.patch('/orchestrator/proposals/:id', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server: it returns the whole proposal row (see the list).
+  router.patch('/orchestrator/proposals/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const { human_rating, human_feedback } = req.body as {
         human_rating?: string;
@@ -215,11 +228,15 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Knowledge atoms (recent, from all sources) ──────────────────────────
+  // "All sources", not all users: in team mode a non-admin sees their own atoms
+  // and the shared ones — the rule that decides which atoms reach their prompts.
+  // Solo and admins see every atom, as before.
   router.get('/orchestrator/atoms', requireAuth, async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit ?? '30'), 10) || 30, 100);
       const days = Math.min(parseInt(String(req.query.days ?? '14'), 10) || 14, 90);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const owner = atomOwnerSql(searchScopeForRequest(req), 'ka.owner_user_id');
 
       const atoms = await db.all(`
         SELECT ka.id, ka.content, ka.atom_type, ka.category, ka.confidence,
@@ -228,10 +245,10 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
                wo.workflow_name, wo.step_name
         FROM knowledge_atoms ka
         LEFT JOIN workflow_outputs wo ON wo.id = ka.source_output_id
-        WHERE ka.is_active = 1 AND ka.created_at >= ?
+        WHERE ka.is_active = 1 AND ka.created_at >= ?${owner.sql}
         ORDER BY ka.created_at DESC
         LIMIT ?
-      `, since, limit);
+      `, since, ...owner.params, limit);
 
       res.json({ atoms, total: atoms.length, limit, days });
     } catch (err) {
@@ -418,14 +435,18 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
       const user = (req as unknown as { user?: { username?: string } }).user?.username ?? 'solo';
       const { workflow_run_id, notes } = req.body as { workflow_run_id?: string; notes?: string };
 
-      // Create a workflow_runs record so execution is tracked in the workflow engine
+      // Create a workflow_runs record so execution is tracked in the workflow engine.
+      // user_id is the user's id, not the username above: the audit trail and the
+      // work timeline match workflow_runs.user_id on req.user.id, so a username
+      // left a team member's own approval runs attributed to no one they can see.
+      const approverId = (req as unknown as { user?: { id?: string } }).user?.id ?? 'solo';
       const workflowRunId = randomUUID();
       const workflowId = (proposal as Record<string, unknown>).action_type as string || 'orchestrator-action';
       try {
         await db.run(`
           INSERT INTO workflow_runs (id, workflow_id, trigger_source, status, user_id)
           VALUES (?, ?, 'orchestrator_approval', 'running', ?)
-        `, workflowRunId, workflowId, user);
+        `, workflowRunId, workflowId, approverId);
       } catch {
         // workflow_runs table may not exist on older DBs — non-fatal
         console.warn('[orchestrator] workflow_runs insert skipped (table may not exist)');
@@ -516,7 +537,9 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Phase 2: Modify a proposal (human adjusts scope then approves) ───────
-  router.post('/orchestrator/proposals/:id/modify', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server: it rewrites an instance-wide proposal and
+  // returns the whole row (see the list).
+  router.post('/orchestrator/proposals/:id/modify', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const proposal = await db.get('SELECT * FROM orchestrator_proposals WHERE id = ?', req.params.id) as
         | { id: string; status: string; proposed_action: string; action_type: string } | undefined;
@@ -579,7 +602,10 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Executions list ──────────────────────────────────────────────────────
-  router.get('/orchestrator/executions', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server, like the proposals each execution carries out
+  // (the list joins proposed_action from them): instance-wide orchestrator
+  // state, with no per-user owner. Solo is unchanged.
+  router.get('/orchestrator/executions', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       // Guard: table may not exist on older DBs
       const tableExists = (await db.get(
@@ -606,7 +632,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Single execution detail ──────────────────────────────────────────────
-  router.get('/orchestrator/executions/:id', requireAuth, async (req: Request, res: Response) => {
+  router.get('/orchestrator/executions/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const execution = await db.get('SELECT * FROM orchestrator_executions WHERE id = ?', req.params.id);
       if (!execution) return res.status(404).json({ error: 'Execution not found' });
@@ -617,7 +643,7 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Record execution outcome ─────────────────────────────────────────────
-  router.patch('/orchestrator/executions/:id/outcome', requireAuth, async (req: Request, res: Response) => {
+  router.patch('/orchestrator/executions/:id/outcome', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const { outcome, quality_assessment, human_satisfaction, human_notes } = req.body as {
         outcome?: string;
@@ -656,7 +682,11 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Reasoning trails list ────────────────────────────────────────────────
-  router.get('/orchestrator/trails', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server: a briefing's trail carries its proposal list
+  // and the model's reasoning over every user's atoms (thinking_content), and
+  // the narrative summaries here describe it — reading trails read around the
+  // briefing gate (round-2 gap "verify2:projects-2"). Solo is unchanged.
+  router.get('/orchestrator/trails', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const tableExists = (await db.get(
         "SELECT COUNT(*) as c FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'orchestrator_reasoning_trails'"
@@ -684,7 +714,8 @@ export async function createOrchestratorRoutes(db: DatabaseAdapter, anthropic: A
   });
 
   // ── Single trail with entries ────────────────────────────────────────────
-  router.get('/orchestrator/trails/:id', requireAuth, async (req: Request, res: Response) => {
+  // Admin-only on a team server — see the list route above.
+  router.get('/orchestrator/trails/:id', requireAdminOrSolo, async (req: Request, res: Response) => {
     try {
       const trail = await db.get('SELECT * FROM orchestrator_reasoning_trails WHERE id = ?', req.params.id);
       if (!trail) return res.status(404).json({ error: 'Trail not found' });

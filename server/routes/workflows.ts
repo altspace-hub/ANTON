@@ -34,6 +34,7 @@ import { importData, exportData, getSampleRows, type ExportConfig } from '../ser
 import { applyTransformations, validateOperation, TransformOperation } from '../services/data-transformer.js';
 import { mergeDatasets, deduplicateDataset, validateMergeConfig, MergeConfig } from '../services/data-merger.js';
 import { getDatasetCache } from './data.js';
+import { isTeamMode } from '../middleware/role-guards.js';
 import {
   persistExecution, loadExecution, listExecutionSummaries,
   listPendingApprovals, recordClientRun,
@@ -149,6 +150,25 @@ function applyTransformExpression(expression: string | undefined, value: unknown
 }
 
 // ── Step executors ───────────────────────────────────────────────
+
+/**
+ * Team mode: a workflow step that reads a file from the server's disk, writes
+ * one there, or exports into ANTON's own database runs only for an admin — the
+ * same rule as POST /api/data (routes/data.ts). The step's definition comes
+ * from the request, so the execution's recorded user is what decides; an
+ * execution with no user (a trigger, an ad-hoc run before this rule) is
+ * refused. The importer also confines paths to ALLOWED_FOLDER_PATHS and
+ * database exports to DATA_EXPORT_TABLES, in every mode.
+ */
+async function assertHostDataStepAllowed(db: DatabaseAdapter, execution: WorkflowExecution): Promise<void> {
+  if (!isTeamMode()) return;
+  const row = execution.userId
+    ? await db.get<{ role: string | null }>('SELECT role FROM users WHERE id = ?', execution.userId)
+    : undefined;
+  if (row?.role !== 'admin') {
+    throw new Error("Only an administrator's workflow can read or write server files or export into ANTON's database");
+  }
+}
 
 async function executeStep(
   step: WorkflowStep,
@@ -608,6 +628,7 @@ async function executeStep(
 
     // ── Data Import ──────────────────────────────────────────────
     case 'data_import': {
+      if ((step.config.importSource || 'file') === 'file') await assertHostDataStepAllowed(db, execution);
       const importConfig = {
         source: step.config.importSource || 'file',
         filePath: step.config.filePath ? resolveTemplate(step.config.filePath, ctx) : undefined,
@@ -760,6 +781,8 @@ async function executeStep(
 
     // ── Data Export ──────────────────────────────────────────────
     case 'data_export': {
+      const destination = step.config.exportDestination || 'file';
+      if (destination === 'file' || destination === 'database') await assertHostDataStepAllowed(db, execution);
       const datasetId = step.config.exportDatasetId
         ? resolveTemplate(step.config.exportDatasetId, ctx)
         : undefined;
@@ -1397,6 +1420,7 @@ export async function createWorkflowRoutes(db: DatabaseAdapter, anthropic?: Anth
       context,
       stepResults: [],
       startedAt: new Date().toISOString(),
+      userId: reqUser(req).userId,
     };
 
     try {

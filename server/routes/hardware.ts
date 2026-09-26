@@ -64,6 +64,8 @@ import {
 } from '../services/review-queue-service.js';
 import { createExtendDeviceService } from '../services/extend-device-service.js';
 import { safeError } from '../lib/error-response.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 import { CLAUDE_LARGE, CLAUDE_MEDIUM, CLAUDE_SMALL } from '../config/claude-lineup.js';
 
 // In-memory multer for photo-id uploads (max 4 photos × 8MB).
@@ -432,8 +434,6 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   const reviewQueue = createReviewQueueService(db);
   const extend = createExtendDeviceService(db);
 
-  const IS_TEAM = () => process.env.DEPLOYMENT_MODE === 'team';
-
   // ── Team-mode project ownership gate ──────────────────────────────────────────
   // Every route under /hardware/projects/:id (and its sub-resources: quality runs,
   // patch plans, fleet devices, diagnostics, regulatory artefacts) is bound to one
@@ -441,38 +441,103 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
   // (getProjectDetail / getProject / quality-runs / bundle downloads) did not — any
   // authenticated user could read another owner's project by UUID (round-2 finding
   // #17). Enforce ownership once here. No-op in solo mode / for admins.
+  //
+  // Checked in SQL (the row is never loaded for a caller who may not see it),
+  // and a foreign project answers the same 404 as a missing one. It answered 403,
+  // which confirmed the id exists — an oracle for enumerating other users'
+  // projects (ownership.ts, property 1). This gate is also what scopes the
+  // quality-pipeline routes below (quality/run, quality/runs).
   router.use('/hardware/projects/:id', async (
     req: import('express').Request,
     res: import('express').Response,
     next: import('express').NextFunction,
   ) => {
     try {
-      const role = (req as { user?: { role?: string } }).user?.role;
-      if (!IS_TEAM() || role === 'admin') return next();
-      const project = await projects.getProject(String(req.params.id));
-      if (!project) { res.status(404).json({ error: 'Project not found' }); return; }
-      if (project.owner_id !== getOwnerId(req)) { res.status(403).json({ error: 'Forbidden' }); return; }
+      if (!scopesToOwner(req as OwnedRequest)) return next();
+      const owned = await db.get(
+        'SELECT 1 AS ok FROM hardware_projects WHERE id = ? AND owner_id = ?',
+        String(req.params.id), getOwnerId(req),
+      );
+      if (!owned) { res.status(404).json({ error: 'Project not found' }); return; }
       next();
     } catch (err) {
       next(err);
     }
   });
 
+  // Patch plans, their stages and rollouts are addressed by their own ids, not a
+  // project path, so the gate above does not cover them. Their writes check the
+  // owner in maintain-service (assertProjectOwner), but GET /patch-plans/:planId
+  // and GET /patch-stages/:stageId/rollouts read any plan, its stages and its
+  // fleet rollouts by id. Resolve each id to its project's owner in SQL, with the
+  // same 404 as a missing row. The SQL is chosen from this fixed map, never input.
+  const PATCH_OWNER_SQL: Record<string, string> = {
+    planId: `SELECT 1 AS ok FROM hw_patch_plans pl
+               JOIN hardware_projects hp ON hp.id = pl.project_id
+              WHERE pl.id = ? AND hp.owner_id = ?`,
+    stageId: `SELECT 1 AS ok FROM hw_patch_stages st
+                JOIN hw_patch_plans pl ON pl.id = st.plan_id
+                JOIN hardware_projects hp ON hp.id = pl.project_id
+               WHERE st.id = ? AND hp.owner_id = ?`,
+    rolloutId: `SELECT 1 AS ok FROM hw_patch_rollouts ro
+                  JOIN hw_patch_stages st ON st.id = ro.stage_id
+                  JOIN hw_patch_plans pl ON pl.id = st.plan_id
+                  JOIN hardware_projects hp ON hp.id = pl.project_id
+                 WHERE ro.id = ? AND hp.owner_id = ?`,
+  };
+  for (const [path, param, label] of [
+    ['/hardware/patch-plans/:planId', 'planId', 'Plan'],
+    ['/hardware/patch-stages/:stageId', 'stageId', 'Stage'],
+    ['/hardware/patch-rollouts/:rolloutId', 'rolloutId', 'Rollout'],
+  ] as const) {
+    router.use(path, async (
+      req: import('express').Request,
+      res: import('express').Response,
+      next: import('express').NextFunction,
+    ) => {
+      try {
+        if (!scopesToOwner(req as OwnedRequest)) return next();
+        const owned = await db.get(PATCH_OWNER_SQL[param], String(req.params[param]), getOwnerId(req));
+        if (!owned) { res.status(404).json({ error: `${label} not found` }); return; }
+        next();
+      } catch (err) {
+        next(err);
+      }
+    });
+  }
+
+  /**
+   * Team mode: running host tools is an ADMIN action — the same rule as Code
+   * Studio's execution routes (coding-large.ts mayRunCode). quality/run spawns
+   * pio, clang-tidy, cppcheck and the SBOM generator on the server as its OS
+   * user, in a workspace the project's owner controls (metadata.workspace_path
+   * may name any folder under the hardware root, a colleague's included), so on
+   * a shared server it is not a per-user action. Called after the ownership
+   * gate, so a foreign project still gets the plain 404 first. Returns false
+   * once it has replied 403.
+   */
+  function mayRunHostTools(req: import('express').Request, res: import('express').Response): boolean {
+    let allowed = false;
+    requireAdminOrSolo(req, res, () => { allowed = true; });
+    return allowed;
+  }
+
   // Regulatory / capacity-transfer artefacts are addressed by :artefactId (not a
   // project path), so the gate above doesn't cover them. They can be read, edited,
   // signed off and withdrawn — all of which were unauthorized (actor_id was recorded
   // for audit but never checked). Resolve artefact → project → owner and enforce.
-  // No-op in solo mode / for admins. Returns false and sends 403/404 when blocked.
+  // No-op in solo mode / for admins. Returns false and sends 404 when blocked —
+  // the same 404 as a missing artefact, never a 403 that confirms it exists.
   async function assertArtefactOwner(
     req: import('express').Request,
     res: import('express').Response,
     projectId: string | null | undefined,
   ): Promise<boolean> {
-    const role = (req as { user?: { role?: string } }).user?.role;
-    if (!IS_TEAM() || role === 'admin') return true;
-    if (!projectId) { res.status(404).json({ error: 'Artefact not found' }); return false; }
-    const project = await projects.getProject(String(projectId));
-    if (!project || project.owner_id !== getOwnerId(req)) { res.status(403).json({ error: 'Forbidden' }); return false; }
+    if (!scopesToOwner(req as OwnedRequest)) return true;
+    const owned = projectId
+      ? await db.get('SELECT 1 AS ok FROM hardware_projects WHERE id = ? AND owner_id = ?', String(projectId), getOwnerId(req))
+      : undefined;
+    if (!owned) { res.status(404).json({ error: 'Artefact not found' }); return false; }
     return true;
   }
 
@@ -906,6 +971,8 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
 
   router.post('/hardware/projects/:id/quality/run', async (req, res) => {
     try {
+      // Ownership (404) is the /hardware/projects/:id gate above; then admin-only in team mode.
+      if (!mayRunHostTools(req, res)) return;
       const parsed = runQualitySchema.safeParse(req.body ?? {});
       if (!parsed.success) {
         res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors });
@@ -943,6 +1010,20 @@ export function createHardwareRoutes(db: DatabaseAdapter): Router {
 
   router.get('/hardware/quality/runs/:runId', async (req, res) => {
     try {
+      // Addressed by run id, so the /hardware/projects/:id gate does not cover
+      // it: any user could read any run's gate results by id. Owner checked in
+      // SQL through the run's project; a foreign run gets the missing-run 404.
+      if (scopesToOwner(req as OwnedRequest)) {
+        const owned = await db.get(
+          `SELECT 1 AS ok FROM hw_quality_runs r JOIN hardware_projects p ON p.id = r.project_id
+            WHERE r.id = ? AND p.owner_id = ?`,
+          req.params.runId, getOwnerId(req),
+        );
+        if (!owned) {
+          res.status(404).json({ error: 'Quality run not found' });
+          return;
+        }
+      }
       const detail = await quality.getRunDetail(req.params.runId);
       if (!detail) {
         res.status(404).json({ error: 'Quality run not found' });

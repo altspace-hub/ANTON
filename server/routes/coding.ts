@@ -8,6 +8,7 @@ import {
   bundleCodingLargeBlueprint,
 } from '../services/anton-bundler.js';
 import { safeError } from '../lib/error-response.js';
+import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
 
 export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
   const router = Router();
@@ -130,8 +131,20 @@ export async function createCodingRoutes(db: DatabaseAdapter): Promise<Router> {
         return res.status(400).json({ error: 'content and moduleId are required' });
       }
 
+      // The score row carries session_id, and quality trends read a session's
+      // scores by its owner. A session that is not the caller's is treated as
+      // absent, the rule /quality/score applies, so a score cannot be written
+      // into a colleague's session. Solo mode and admins are not scoped.
+      let ownSessionId: string | undefined = typeof sessionId === 'string' && sessionId ? sessionId : undefined;
+      if (ownSessionId && scopesToOwner(req as OwnedRequest)) {
+        const own = req.user?.id
+          ? await db.get('SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?', ownSessionId, req.user.id)
+          : undefined;
+        if (!own) ownSessionId = undefined;
+      }
+
       const integration = await createCodingIntegration(db);
-      const result = await integration.scoreOutput(content, moduleId, areaId || 'coding', sessionId);
+      const result = await integration.scoreOutput(content, moduleId, areaId || 'coding', ownSessionId);
 
       if (!result) {
         return res.status(500).json({ error: 'Scoring failed' });

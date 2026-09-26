@@ -6,11 +6,15 @@
  *   - /audit-trail      → reasoning trails (IRE, workflow, signed delivery, evidence, renderer)
  *
  * Shipped per ANTON_Improvement_and_Investigation_Brief.md §C.2.
+ *
+ * Both routes are owner-scoped on a team server (audit 2026-09-23, B3): the feed
+ * carried every user's session ids and IRE chain ids, which other routes then
+ * accepted. Solo mode and admins still see everything — see trailScopeForRequest.
  */
 
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
-import { listTrails, getTrail, type TrailKind } from '../services/trails-aggregator-service.js';
+import { listTrails, getTrail, trailScopeForRequest, type TrailKind } from '../services/trails-aggregator-service.js';
 import { safeError } from '../lib/error-response.js';
 
 export function createAuditTrailRoutes(db: DatabaseAdapter): Router {
@@ -21,7 +25,10 @@ export function createAuditTrailRoutes(db: DatabaseAdapter): Router {
     try {
       const q = req.query;
       const kindsParam = (q.kinds as string | undefined)?.split(',').map(s => s.trim()).filter(Boolean) as TrailKind[] | undefined;
-      const result = await listTrails(db, {
+      // The scope is ANDed with the caller's own filters, so a `userId` or
+      // `sessionId` naming someone else's rows narrows to nothing rather than
+      // widening past the scope.
+      const result = await listTrails(db, trailScopeForRequest(req), {
         kinds: kindsParam,
         sessionId: typeof q.sessionId === 'string' ? q.sessionId : undefined,
         userId: typeof q.userId === 'string' ? q.userId : undefined,
@@ -41,8 +48,9 @@ export function createAuditTrailRoutes(db: DatabaseAdapter): Router {
   /** GET /audit-trail/:id — single trail by composite id. */
   router.get('/:id', async (req, res) => {
     try {
-      const entry = await getTrail(db, req.params.id);
+      const entry = await getTrail(db, trailScopeForRequest(req), req.params.id);
       if (!entry) {
+        // Same 404 for "no such trail" and "not yours" — a 403 would confirm the id exists.
         res.status(404).json({ error: 'Trail not found' });
         return;
       }

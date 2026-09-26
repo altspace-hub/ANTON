@@ -6,6 +6,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { streamChat, mapModelToProvider } from '../services/provider-router.js';
 import { safeError } from '../lib/error-response.js';
 import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { requireAdminOrSolo } from '../middleware/role-guards.js';
 
 // Known regulation shortcuts
 const REGULATION_LOOKUP: Record<string, { title: string; celexNumber: string }> = {
@@ -105,8 +106,14 @@ export async function createEurLexRoutes(db?: DatabaseAdapter, anthropic?: Anthr
    *
    * Body: { packId: string, celexNumber?: string }
    * Streams SSE: { type: 'progress'|'finding'|'summary'|'done', ... }
+   *
+   * Admin-only in team mode (solo unchanged): it appends a validation stamp to
+   * the pack's description, and packs are instance-wide — every user sees them
+   * and their entities reach everyone's prompts. H10 made the pack routes
+   * admin-only; this sibling still let any user write to one (and spend the
+   * instance's model budget doing it).
    */
-  router.post('/eurlex/validate-pack', async (req, res) => {
+  router.post('/eurlex/validate-pack', requireAdminOrSolo, async (req, res) => {
     if (!db || (!hasClaudeEngine() && !anthropic)) {
       res.status(503).json({ error: db ? NO_CLAUDE_ENGINE_MESSAGE : 'Database required for validation' });
       return;

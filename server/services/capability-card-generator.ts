@@ -45,11 +45,14 @@ export async function createCapabilityCardGenerator(db: DatabaseAdapter) {
     );
     const qualityMap = new Map(qualityStats.map(q => [q.module_id, Number(q.avg_score)]));
 
-    // Get profile (may not exist or have different columns)
+    // Get profile (may not exist or have different columns).
+    // The instance row by id, not `LIMIT 1`: in team mode user_profiles holds one
+    // row per person (routes/profile.ts), and LIMIT 1 would publish an arbitrary
+    // colleague's role and organisation on this instance's community card.
     let profile: { role_title?: string; organisation?: string; expertise?: string; focus_areas?: string } | null = null;
     try {
       profile = (await db.get<{ role_title?: string; organisation?: string; expertise?: string; focus_areas?: string }>(
-        'SELECT role_title, organisation, expertise, focus_areas FROM user_profiles LIMIT 1'
+        'SELECT role_title, organisation, expertise, focus_areas FROM user_profiles WHERE id = ?', 'default',
       )) ?? null;
     } catch { /* table or columns may not exist */ }
 

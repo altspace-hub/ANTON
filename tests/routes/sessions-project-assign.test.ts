@@ -6,9 +6,12 @@
  * no existence check, no membership check, no session ownership. Against a
  * fake adapter answering the service's own statements:
  *   - 404 'Session not found' / 'Project not found', nothing updated;
- *   - team mode: 403 'Not your session' for another user's session, 403
- *     'Not a member of this project' for a non-member; owner, member and
- *     admin succeed; null clears without reading the project;
+ *   - team mode (round-1 verifier gap, 2026-09-23): another user's session
+ *     answers the same 404 'Session not found' as a missing one, and a project
+ *     the caller is not in the same 404 'Project not found' as a missing one —
+ *     the 403s confirmed the ids existed. An unowned (user_id NULL) session is
+ *     admin-only, as ownership.ts says; any member could claim it before.
+ *     Owner, member and admin succeed; null clears without reading the project;
  *   - solo mode: existence only.
  */
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
@@ -28,21 +31,29 @@ const PROJECT = 'proj-1';
 
 interface FakeState { updates: unknown[][]; calls: string[]; members: Set<string> }
 
+/** Session owners; null is a legacy, unattributed session. */
+const SESSIONS: Record<string, string | null> = { 'sess-alice': 'alice', 'sess-bob': 'bob', 'sess-unowned': null };
+
 function makeFakeDb(): { db: DatabaseAdapter; state: FakeState } {
-  const state: FakeState = { updates: [], calls: [], members: new Set(['bob']) };
+  // Alice created the project, so she is its owner member (projects.ts adds her).
+  const state: FakeState = { updates: [], calls: [], members: new Set(['alice', 'bob']) };
   const db = {
     dialect: 'postgresql',
     async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
       state.calls.push(sql);
-      if (/SELECT id, user_id FROM sessions WHERE id = \?/.test(sql)) {
-        return (params[0] === 'sess-alice' ? { id: 'sess-alice', user_id: 'alice' }
-          : params[0] === 'sess-unowned' ? { id: 'sess-unowned', user_id: null }
-          : undefined) as T | undefined;
+      // assertOwned (middleware/ownership.ts): the scoped and the unscoped form.
+      if (sql === 'SELECT 1 AS ok FROM sessions WHERE id = ? AND user_id = ?') {
+        const id = String(params[0]);
+        return (id in SESSIONS && SESSIONS[id] !== null && SESSIONS[id] === params[1] ? { ok: 1 } : undefined) as T | undefined;
+      }
+      if (sql === 'SELECT 1 AS ok FROM sessions WHERE id = ?') {
+        return (String(params[0]) in SESSIONS ? { ok: 1 } : undefined) as T | undefined;
       }
       if (sql === PROJECT_CONTEXT_SQL.project) {
         return (params[0] === PROJECT ? { id: PROJECT, name: 'Orion acquisition', description: null, project_goal: null, user_id: 'alice' } : undefined) as T | undefined;
       }
       if (sql === PROJECT_CONTEXT_SQL.membership) return (params[0] === PROJECT && state.members.has(String(params[1])) ? { '?column?': 1 } : undefined) as T | undefined;
+      if (sql === PROJECT_CONTEXT_SQL.anyMember) return (params[0] === PROJECT && state.members.size > 0 ? { '?column?': 1 } : undefined) as T | undefined;
       throw new Error(`fake db: unexpected get(): ${sql.slice(0, 80)}`);
     },
     async all<T>(): Promise<T[]> { return []; },
@@ -94,7 +105,7 @@ describe('PATCH /api/sessions/:id/project in team mode', () => {
   beforeAll(async () => { ({ server, base, state } = await boot('team')); });
   afterAll(async () => { await new Promise<void>((r) => server.close(() => r())); restoreMode(); });
   beforeEach(() => { state.updates.length = 0; state.calls.length = 0; });
-  afterEach(() => { state.members = new Set(['bob']); });
+  afterEach(() => { state.members = new Set(['alice', 'bob']); });
 
   it('404 for an unknown session, nothing updated', async () => {
     const res = await patch(base, 'nope', { projectId: PROJECT }, 'alice');
@@ -103,11 +114,22 @@ describe('PATCH /api/sessions/:id/project in team mode', () => {
     expect(state.updates).toEqual([]);
   });
 
-  it("403 'Not your session' for another user's session", async () => {
-    const res = await patch(base, 'sess-alice', { projectId: PROJECT }, 'bob');
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: 'Not your session' });
+  it("another user's session answers the same 404 as a missing one", async () => {
+    const foreign = await patch(base, 'sess-alice', { projectId: PROJECT }, 'bob');
+    const missing = await patch(base, 'nope', { projectId: PROJECT }, 'bob');
+    expect(foreign.status).toBe(404);
+    expect(await foreign.json()).toEqual(await missing.json());
     expect(state.updates).toEqual([]);
+  });
+
+  it('an unowned (legacy) session is admin-only: a member gets 404, an admin moves it', async () => {
+    const member = await patch(base, 'sess-unowned', { projectId: PROJECT }, 'bob');
+    expect(member.status).toBe(404);
+    expect(await member.json()).toEqual({ error: 'Session not found' });
+    expect(state.updates).toEqual([]);
+    const admin = await patch(base, 'sess-unowned', { projectId: PROJECT }, 'root', 'admin');
+    expect(admin.status).toBe(200);
+    expect(state.updates[0]?.[0]).toBe(PROJECT);
   });
 
   it('404 for an unknown project', async () => {
@@ -117,17 +139,21 @@ describe('PATCH /api/sessions/:id/project in team mode', () => {
     expect(state.updates).toEqual([]);
   });
 
-  it('403 for a non-member of the project (an unowned session)', async () => {
-    const res = await patch(base, 'sess-unowned', { projectId: PROJECT }, 'carol');
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: 'Not a member of this project' });
+  it('a project the caller is not in answers the same 404 as a missing one', async () => {
+    state.members = new Set(['bob']);   // Alice is not (or no longer) a member
+    const foreign = await patch(base, 'sess-alice', { projectId: PROJECT }, 'alice');
+    const missing = await patch(base, 'sess-alice', { projectId: 'ghost' }, 'alice');
+    expect(foreign.status).toBe(404);
+    expect(await foreign.json()).toEqual({ error: 'Project not found' });
+    expect(await missing.json()).toEqual({ error: 'Project not found' });
     expect(state.updates).toEqual([]);
   });
 
   it('owner, member and admin succeed', async () => {
+    const own: Record<string, string> = { alice: 'sess-alice', bob: 'sess-bob', root: 'sess-unowned' };
     for (const [user, role] of [['alice', 'analyst'], ['bob', 'analyst'], ['root', 'admin']] as const) {
       state.updates.length = 0;
-      const res = await patch(base, user === 'alice' ? 'sess-alice' : 'sess-unowned', { projectId: PROJECT }, user, role);
+      const res = await patch(base, own[user], { projectId: PROJECT }, user, role);
       expect(res.status, `${user}/${role}`).toBe(200);
       expect(await res.json()).toEqual({ ok: true, projectId: PROJECT });
       expect(state.updates[0]?.[0]).toBe(PROJECT);
@@ -154,7 +180,8 @@ describe('PATCH /api/sessions/:id/project in solo mode', () => {
   afterAll(async () => { await new Promise<void>((r) => server.close(() => r())); restoreMode(); });
 
   it('existence only — membership is never asked about', async () => {
-    const res = await patch(base, 'sess-alice', { projectId: PROJECT });
+    // authMiddleware stamps the solo user as { id: 'solo', role: 'admin' }.
+    const res = await patch(base, 'sess-alice', { projectId: PROJECT }, 'solo', 'admin');
     expect(res.status).toBe(200);
     expect(state.calls.some((c) => c === PROJECT_CONTEXT_SQL.membership)).toBe(false);
     expect(state.updates[0]?.[0]).toBe(PROJECT);

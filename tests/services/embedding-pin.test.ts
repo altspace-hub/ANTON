@@ -43,6 +43,7 @@ import {
 import { hybridSearch, embedAndStore, INSTANCE_WIDE_SEARCH } from '../../server/services/hybrid-search.js';
 import { getVectorStore, resetVectorStore } from '../../server/services/vector-store-adapter.js';
 import { createEmbeddingRoutes } from '../../server/routes/embeddings.js';
+import { adapterParams } from '../helpers/adapter-params';
 
 // ── Fake database ──────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ function makeFakeDb(): FakeDb {
   const db = {
     dialect: 'postgresql',
     async get<T>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+      params = adapterParams(params);
       const s = flat(sql);
       if (s.startsWith('SELECT COUNT(*) AS c FROM embeddings WHERE embedding_model <> ? OR embedding_dimension <> ?')) {
         const [model, dim] = params as [string, number];
@@ -84,6 +86,7 @@ function makeFakeDb(): FakeDb {
       throw new Error(`fake db: unexpected get(): ${s.slice(0, 100)}`);
     },
     async all<T>(sql: string, ...params: unknown[]): Promise<T[]> {
+      params = adapterParams(params);
       const s = flat(sql);
       state.selects.push({ sql: s, params });
       if (s.startsWith('SELECT key, value FROM app_settings WHERE key IN')) {
@@ -125,6 +128,7 @@ function makeFakeDb(): FakeDb {
       throw new Error(`fake db: unexpected all(): ${s.slice(0, 100)}`);
     },
     async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+      params = adapterParams(params);
       const s = flat(sql);
       state.writes.push(s);
       if (s.startsWith('INSERT INTO app_settings')) {
