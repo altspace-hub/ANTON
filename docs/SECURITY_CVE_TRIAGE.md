@@ -418,3 +418,19 @@ entry away from being buried permanently.
 > **or** a CDN build newer than 0.20.3 appears (check `https://cdn.sheetjs.com/xlsx-<v>/`).
 > Re-check at the next quarterly dependency sweep regardless. **Owner:** repo maintainer
 > (`daniel.bardun@gmail.com`).
+
+## Addendum — 2026-10-01 (12 blocking HIGH advisory paths in 5 packages; PR #82)
+
+`pnpm audit --prod --audit-level=high` failed on #81 and #82 (and on main) with
+new advisories, none caused by those PRs. All fixed; `ignoreGhsas` stays empty.
+
+| Package | Advisory | Path | Fix |
+|---|---|---|---|
+| `brace-expansion` 1.x / 2.x | GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p | exceljs > archiver > (glob\|readdir-glob) > minimatch | major-scoped pins raised to `>=1.1.20 <2.0.0` (1.1.21) and `>=2.1.6 <3.0.0` (2.1.7) |
+| `engine.io` | GHSA-2gc4-cqfq-p2gv | socket.io | override `>=6.6.10 <6.7.0` (6.6.11); reachable pre-auth through the Study Rooms namespace |
+| `@grpc/grpc-js` | GHSA-m9gg-hp2v-232j | @opentelemetry/sdk-node exporters | override bounded to `>=1.14.5 <2.0.0` (was a bare floor); OTEL is never started |
+| `nodemailer` | GHSA-v53p-9fqp-m79j, GHSA-prgh-xp8r-p3m5 | direct | **major bump** `^9.1.1` -> `^10.0.13`. 10.x publishes an exports map without type declarations, so email.ts takes the transporter type from `ReturnType<typeof nodemailer.createTransport>`; createTransport / sendMail / createTestAccount / getTestMessageUrl verified at runtime |
+| `fastify` | GHSA-667r-xxjv-c9mm, GHSA-p68q-wchp-6fh7, GHSA-hwr6-493r-vm6h, GHSA-9q9j-q6p8-xq58 | apps/anton-agent-pay, apps/anton-collaboration (direct) | `^5.8.5` -> `^5.12.2` in both workspace apps (5.12.5) |
+
+Verified: gate exit 0 (0 high/critical), server tsc 0, email/socket/invitation
+tests 77 passed, anton-agent-pay 256 passed, anton-collaboration 248 passed.

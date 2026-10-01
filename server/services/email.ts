@@ -3,7 +3,9 @@ import { isDemoMode } from '../middleware/demo-mode.js';
 
 // Create transporter from env vars (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
 // Falls back to nodemailer's test account (Ethereal) if no SMTP config provided
-let transporter: nodemailer.Transporter | null = null;
+// nodemailer 10 publishes an exports map with no type declarations, so the
+// type comes from its own createTransport rather than the nodemailer namespace.
+let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 
 /** A real mail server is configured (SMTP_HOST). */
 export function emailConfigured(): boolean {
