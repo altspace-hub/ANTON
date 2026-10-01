@@ -330,14 +330,14 @@ describe('LocalModelsSettingsPanel endpoint form', () => {
     expect(sent[0]).toMatchObject({
       slug: 'openrouter',
       defaultModel: 'z-ai/glm-5.3-flash',
-      allowedModels: ['z-ai/glm-5.3-flash'],
+      allowedModels: ['z-ai/glm-5.3-flash', 'deepseek/deepseek-v4-flash-0731', 'moonshotai/kimi-k2.6', 'z-ai/glm-5.3'],
       extraBody: body,
       extraHeaders: headers,
       maxOutputTokens: null,
-      // The pinned provider's price (Inceptron), not /models' promotional one:
-      // it prices the worst-case reservation made before each call.
-      inputPricePerMillion: 0.11,
-      outputPricePerMillion: 0.5,
+      // The dearest offered model's price on the pinned provider (Inceptron),
+      // not /models' promotional one: it prices the worst-case reservation.
+      inputPricePerMillion: 0.6,
+      outputPricePerMillion: 3.39,
     });
   });
 

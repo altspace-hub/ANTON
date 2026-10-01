@@ -41,7 +41,7 @@ import {
   parseMaxOutputTokensInput,
   parsePriceInput,
   OPENROUTER_EU_ZDR_EXTRA_BODY,
-  OPENROUTER_SHOWCASE_MODEL,
+  OPENROUTER_SHOWCASE_MODEL, OPENROUTER_SHOWCASE_MODELS,
   type EndpointFormValues,
   type EndpointModelMeta,
 } from '@/lib/model-endpoint-form';
@@ -138,25 +138,26 @@ const PRESETS: PresetEndpoint[] = [
     notes: 'DeepSeek-V3 and R1 reasoning. Very strong / very cheap. Great default.',
   },
   {
-    // Pre-set for the public showcase: GLM 5.3 Flash pinned to Inceptron, the
-    // one EU zero-retention provider. The provider pin applies to every model
-    // on the endpoint, so the allow-list starts with that one model.
+    // Pre-set for the public showcase: the models Inceptron serves, pinned to
+    // Inceptron, the one EU zero-retention provider. The provider pin applies
+    // to every model on the endpoint, so the allow-list holds only those.
     slug: 'openrouter',
     displayName: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1',
     defaultModel: OPENROUTER_SHOWCASE_MODEL,
     contextWindow: 131_072,
     signupUrl: 'https://openrouter.ai/',
-    pricing: 'One key for 400+ models, pay as you go. Pre-set: GLM 5.3 Flash on Inceptron (about $0.11 in / $0.50 out per 1M)',
-    notes: 'Pre-filled for GLM 5.3 Flash on Inceptron only (EU/EEA, zero data retention), with the app-attribution headers. No other provider stands in, so when Inceptron is busy the call fails with a "busy" message. On a public demo ANTON refuses to send to OpenRouter unless the extra body keeps zdr, data_collection "deny" and provider.only. To run other models, change provider.only in the extra body and the allowed models.',
+    pricing: 'One key for 400+ models, pay as you go. Pre-set: GLM 5.3 Flash, DeepSeek V4 Flash, Kimi K2.6 and GLM 5.3 on Inceptron (from about $0.23 in / $0.45 out per 1M for GLM 5.3 Flash to $0.60 / $3.39 for GLM 5.3)',
+    notes: 'Pre-filled for GLM 5.3 Flash (default), DeepSeek V4 Flash, Kimi K2.6 and GLM 5.3 on Inceptron only (EU/EEA, zero data retention), with the app-attribution headers. No other provider stands in, so when Inceptron is busy the call fails with a "busy" message. On a public demo ANTON refuses to send to OpenRouter unless the extra body keeps zdr, data_collection "deny" and provider.only. To run other models, change provider.only in the extra body and the allowed models.',
     extraBody: OPENROUTER_EU_ZDR_EXTRA_BODY,
-    allowedModels: [OPENROUTER_SHOWCASE_MODEL],
+    allowedModels: [...OPENROUTER_SHOWCASE_MODELS],
     attributionHeaders: true,
-    // Inceptron's price: OpenRouter lists $0.11 / $0.45, and a live call on
-    // 2026-09-25 was billed about $0.11 / $0.50, so the higher output price.
-    // It prices the worst-case reservation made before each call. /models
-    // says $0.045 / $0.14, which is one other provider's promotional price.
-    prices: { input: 0.11, output: 0.5 },
+    // One price pair serves every model on the endpoint, and it prices the
+    // worst-case reservation made before each call, so it is the dearest
+    // offered model's Inceptron price (GLM 5.3: $0.60 / $3.39 per 1M,
+    // 2026-10-01). What a call is charged is OpenRouter's reported cost.
+    // /models lists other providers' (sometimes promotional) prices.
+    prices: { input: 0.6, output: 3.39 },
   },
   {
     slug: 'groq',

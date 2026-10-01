@@ -42,6 +42,19 @@ export const OPENROUTER_EU_ZDR_EXTRA_BODY: Readonly<Record<string, unknown>> = O
 
 export const OPENROUTER_SHOWCASE_MODEL = 'z-ai/glm-5.3-flash';
 
+/**
+ * The models the showcase offers on that endpoint: the ones Inceptron serves
+ * (OpenRouter /models/:id/endpoints, checked 2026-10-01), cheapest first. The
+ * provider pin applies to every model on the endpoint, so a model Inceptron
+ * does not serve would only fail. The privacy notice names these four.
+ */
+export const OPENROUTER_SHOWCASE_MODELS: readonly string[] = [
+  OPENROUTER_SHOWCASE_MODEL,
+  'deepseek/deepseek-v4-flash-0731',
+  'moonshotai/kimi-k2.6',
+  'z-ai/glm-5.3',
+];
+
 export const ANTON_APP_TITLE = 'ANTON by openEXPERT';
 
 /**
