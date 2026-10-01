@@ -159,6 +159,10 @@ export const MAX_ONLINE_REFERENCE_URLS = 20;
 
 interface OnlineReferenceConfig { enabled?: unknown; urls?: unknown }
 
+/** Knowledge settings with no mode on: what a request without any means, so its attached files are still read. */
+const NO_KNOWLEDGE_MODES = (): Parameters<typeof resolveKnowledgeSources>[0] =>
+  ({ modes: {} }) as unknown as Parameters<typeof resolveKnowledgeSources>[0];
+
 function onlineReferenceOf(knowledgeSources: unknown): OnlineReferenceConfig | undefined {
   const modes = (knowledgeSources as { modes?: { onlineReference?: unknown } } | null | undefined)?.modes;
   const ref = modes?.onlineReference;
@@ -824,8 +828,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       const runKnowledgeSources = isDemoMode() && req.user?.role !== 'admin'
         ? withoutOnlineReferenceFetch(knowledgeSources) as Parameters<typeof resolveKnowledgeSources>[0]
         : knowledgeSources;
-      const resolved: ResolvedKnowledge = runKnowledgeSources
-        ? await resolveKnowledgeSources(runKnowledgeSources, allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
+      // Attached files are read whether or not the request carries knowledge
+      // settings: a run without them (an API client, a script) dropped every
+      // upload without a word, and the model answered "no document was
+      // supplied" (live check on the demo, 2026-10-01).
+      const resolved: ResolvedKnowledge = runKnowledgeSources || allDocumentPaths.length > 0
+        ? await resolveKnowledgeSources(runKnowledgeSources ?? NO_KNOWLEDGE_MODES(), allDocumentPaths, { contextBudget: knowledgeBudget, fileLabels: projectFileLabels })
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [], sourceDetails: [] };
 
       if (needsEarlySSE) {
@@ -2509,8 +2517,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         : knowledgeSources;
 
       // Resolve knowledge sources
-      const resolved = previewKnowledgeSources
-        ? await resolveKnowledgeSources(previewKnowledgeSources as Parameters<typeof resolveKnowledgeSources>[0], uploadedFilePaths)
+      const resolved = previewKnowledgeSources || uploadedFilePaths.length > 0
+        ? await resolveKnowledgeSources((previewKnowledgeSources ?? NO_KNOWLEDGE_MODES()) as Parameters<typeof resolveKnowledgeSources>[0], uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // Wave 1: the preview composes the same layers as a run — org context,
@@ -2911,8 +2919,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         .map((id: string) => path.join(path.resolve(process.env.UPLOAD_DIR || './uploads'), id))
         .filter((p: string) => p.startsWith(path.resolve(process.env.UPLOAD_DIR || './uploads')));
 
-      const resolved = knowledgeSources
-        ? await resolveKnowledgeSources(knowledgeSources, uploadedFilePaths)
+      const resolved = knowledgeSources || uploadedFilePaths.length > 0
+        ? await resolveKnowledgeSources(knowledgeSources ?? NO_KNOWLEDGE_MODES(), uploadedFilePaths)
         : { systemPromptAdditions: '', contextDocuments: '', tools: [], tokenEstimate: 0, sourceManifest: [] };
 
       // User profile for personalisation (the caller's own in team mode — B4)
