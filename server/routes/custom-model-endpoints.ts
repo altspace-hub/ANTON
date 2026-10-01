@@ -275,6 +275,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       )) as EndpointRow;
 
       invalidateCustomEndpointCache();
+      refreshInBackground(body.slug);
       res.json({ endpoint: toSafe(row) });
     } catch (err) {
       const e = safeError(err);
@@ -364,6 +365,7 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
         slug,
       )) as EndpointRow;
       invalidateCustomEndpointCache();
+      refreshInBackground(String(slug));
       res.json({ endpoint: toSafe(row) });
     } catch (err) {
       const e = safeError(err);
@@ -386,6 +388,44 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
     }
   });
 
+  /**
+   * Reads the endpoint's model list and stores it with each model's metadata
+   * (reasoning support, output ceiling, list price). The admin's
+   * allowed_models list is never touched here.
+   */
+  async function refreshEndpointModels(row: EndpointRow) {
+    const apiKey = row.api_key_encrypted ? decrypt(row.api_key_encrypted) : undefined;
+    const listing = await listOpenAICompatibleModelsDetailed(row.base_url, apiKey, row.extra_headers ?? {});
+    if (listing.ok) {
+      await db.run(
+        `UPDATE custom_model_endpoints
+            SET available_models = ?::jsonb, model_meta = ?::jsonb, updated_at = NOW()
+          WHERE slug = ?`,
+        JSON.stringify(listing.ids),
+        JSON.stringify(listing.meta),
+        row.slug,
+      );
+      invalidateCustomEndpointCache();
+    }
+    return listing;
+  }
+
+  /**
+   * After a save. Without the metadata a model that reasons gets no effort
+   * (GLM 5.3 Flash then thinks at its default, "max") and its own output
+   * ceiling is unknown: an endpoint saved without pressing the health check
+   * ran that way until 2026-10-01. A failure only means the next health
+   * check fills it in.
+   */
+  function refreshInBackground(slug: string): void {
+    void (async () => {
+      const row = (await db.get('SELECT * FROM custom_model_endpoints WHERE slug = ?', slug)) as EndpointRow | undefined;
+      if (!row || !row.enabled) return;
+      const listing = await refreshEndpointModels(row);
+      if (!listing.ok) console.warn(`[model-endpoints] model list for "${slug}" not refreshed after save`);
+    })().catch(() => console.warn(`[model-endpoints] model list for "${slug}" not refreshed after save`));
+  }
+
   // ── Health check + remote model list refresh ───────────────
   router.post('/settings/model-endpoints/:slug/health', requireAdminOrSolo, async (req, res) => {
     try {
@@ -395,25 +435,8 @@ export function createCustomModelEndpointsRoutes(db: DatabaseAdapter): Router {
       )) as EndpointRow | undefined;
       if (!row) return res.status(404).json({ error: 'Endpoint not found' });
 
-      const apiKey = row.api_key_encrypted ? decrypt(row.api_key_encrypted) : undefined;
-      const listing = await listOpenAICompatibleModelsDetailed(
-        row.base_url,
-        apiKey,
-        row.extra_headers ?? {},
-      );
-
+      const listing = await refreshEndpointModels(row);
       if (listing.ok) {
-        // The discovered list and each model's metadata are refreshed; the
-        // admin's allowed_models list is never touched here.
-        await db.run(
-          `UPDATE custom_model_endpoints
-              SET available_models = ?::jsonb, model_meta = ?::jsonb, updated_at = NOW()
-            WHERE slug = ?`,
-          JSON.stringify(listing.ids),
-          JSON.stringify(listing.meta),
-          req.params.slug,
-        );
-        invalidateCustomEndpointCache();
         res.json({ available: true, modelCount: listing.ids.length, models: listing.ids });
       } else {
         res.json({ available: false, error: listing.error });
