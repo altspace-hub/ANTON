@@ -6,14 +6,16 @@
  * The texts mark each such fact as [[NAME]]. A field left empty here stays on
  * the page as a highlighted [[NAME]], so the owner sees what is missing. Two
  * come from the server instead: the retention period (DEMO_ACCOUNT_TTL_DAYS,
- * via /api/config) and, when CONTROLLER_NAME is empty, the controller's name
- * (DEMO_OPERATOR_NAME).
+ * via /api/config), the models (DEFAULT_MODEL, OTHER_MODELS, MODEL_MAKERS:
+ * the default model and DEMO_OFFERED_MODELS) and, when CONTROLLER_NAME is
+ * empty, the controller's name (DEMO_OPERATOR_NAME).
  *
  * The red DRAFT box on both pages stays up while any field is missing, and
  * until DEMO_LEGAL_SIGNED_OFF is set — after counsel has signed the notice
  * and the terms off.
  */
 import type { DemoConfig } from '@/lib/demo-config';
+import { demoModelFacts } from '@/lib/demo-model-names';
 
 export type DemoLegalField =
   | 'NOTICE_EFFECTIVE_DATE'
@@ -74,6 +76,8 @@ export function demoLegalValues(cfg: DemoConfig): Record<string, string> {
     ...DEMO_LEGAL_FIELDS,
     CONTROLLER_NAME: DEMO_LEGAL_FIELDS.CONTROLLER_NAME.trim() || cfg.operatorName,
     ACCOUNT_TTL_DAYS: String(cfg.demoMode ? cfg.retentionDays : 30),
+    // The models, from the server's settings (demo-model-names.ts).
+    ...demoModelFacts(cfg),
   };
 }
 

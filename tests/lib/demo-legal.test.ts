@@ -66,7 +66,7 @@ describe('legalTextIsDraft', () => {
 });
 
 describe('the two texts', () => {
-  const known = new Set([...Object.keys(DEMO_LEGAL_FIELDS), 'ACCOUNT_TTL_DAYS']);
+  const known = new Set([...Object.keys(DEMO_LEGAL_FIELDS), 'ACCOUNT_TTL_DAYS', 'DEFAULT_MODEL', 'OTHER_MODELS', 'MODEL_MAKERS']);
 
   it('use only placeholders the page fills in', () => {
     for (const [name, text] of [['notice', PRIVACY_NOTICE_MD], ['terms', DEMO_TERMS_MD]] as const) {
@@ -82,6 +82,30 @@ describe('the two texts', () => {
       expect(left).not.toContain('ACCOUNT_TTL_DAYS');
       expect(left).not.toContain('CONTROLLER_NAME');
     }
+  });
+
+  it('name the models from the server: its default first, then the others it offers, and their makers', () => {
+    const values = demoLegalValues(demo({
+      offeredModels: ['compat:openrouter:deepseek/deepseek-v4-flash-0731', 'compat:openrouter:z-ai/glm-5.3', 'compat:openrouter:moonshotai/kimi-k2.6'],
+      defaultModel: 'compat:openrouter:z-ai/glm-5.3',
+    }));
+    expect(values.DEFAULT_MODEL).toBe('GLM 5.3');
+    expect(values.OTHER_MODELS).toBe('DeepSeek V4 Flash or Kimi K2.6');
+    expect(values.MODEL_MAKERS).toBe('Z.ai (GLM), DeepSeek and Moonshot AI (Kimi)');
+    const notice = fillLegalText(PRIVACY_NOTICE_MD, values);
+    expect(notice).toContain('The model is **GLM 5.3** unless you choose another in the model list: DeepSeek V4 Flash or Kimi K2.6.');
+    expect(notice).not.toContain('GLM 5.3 Flash');
+    for (const text of [PRIVACY_NOTICE_MD, DEMO_TERMS_MD]) {
+      const left = unfilledFields(fillLegalText(text, values));
+      for (const f of ['DEFAULT_MODEL', 'OTHER_MODELS', 'MODEL_MAKERS']) expect(left).not.toContain(f);
+    }
+  });
+
+  it('take the first offered model when the default is not offered (negative control: the default is not invented)', () => {
+    const values = demoLegalValues(demo({ offeredModels: ['compat:openrouter:z-ai/glm-5.3'], defaultModel: 'claude-opus-5-5' }));
+    expect(values.DEFAULT_MODEL).toBe('GLM 5.3');
+    expect(values.OTHER_MODELS).toBe('another model, when one is offered');
+    expect(demoLegalValues(demo()).DEFAULT_MODEL).toBe('');
   });
 
   it('state the terms version the server stores at sign-up', () => {

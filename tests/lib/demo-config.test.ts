@@ -29,6 +29,7 @@ describe('parseDemoConfig', () => {
     expect(parseDemoConfig(DEMO)).toEqual({
       demoMode: true,
       offeredModels: ['compat:openrouter:z-ai/glm-5.3-flash'],
+      defaultModel: '',
       enabledPillars: ['work', 'pathfinder'],
       signupOpen: true,
       signupCodeRequired: true,

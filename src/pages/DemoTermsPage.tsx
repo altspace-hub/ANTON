@@ -62,7 +62,7 @@ You must not use the demo to:
 
 ## 6. The AI service
 
-- Answers come from the AI model you choose in the model list: GLM 5.3 Flash unless you pick GLM 5.3, DeepSeek V4 Flash or Kimi K2.6. We reach them through OpenRouter, Inc. (USA), and Inceptron AB runs them in the EU/EEA.
+- Answers come from the AI model you choose in the model list: [[DEFAULT_MODEL]] unless you pick [[OTHER_MODELS]]. We reach them through OpenRouter, Inc. (USA), and Inceptron AB runs them in the EU/EEA.
 - Your use must also follow:
   - OpenRouter's Terms of Service (https://openrouter.ai/terms), which require us to make our users follow them;
   - any usage rules of the model's maker that OpenRouter passes on.

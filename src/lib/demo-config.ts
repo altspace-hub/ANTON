@@ -19,6 +19,8 @@ export type Pillar = typeof PILLARS[number];
 export interface DemoConfig {
   demoMode: boolean;
   offeredModels: string[];
+  /** The server's default model id ('' when unknown); the legal texts name it. */
+  defaultModel: string;
   enabledPillars: Pillar[];
   signupOpen: boolean;
   signupCodeRequired: boolean;
@@ -49,6 +51,7 @@ export interface DemoConfig {
 export const DEMO_OFF: DemoConfig = {
   demoMode: false,
   offeredModels: [],
+  defaultModel: '',
   enabledPillars: [...PILLARS],
   signupOpen: false,
   signupCodeRequired: false,
@@ -86,6 +89,7 @@ export function parseDemoConfig(json: unknown): DemoConfig {
   return {
     demoMode: true,
     offeredModels: Array.isArray(c.offeredModels) ? c.offeredModels.filter((m): m is string => typeof m === 'string' && m.length > 0) : [],
+    defaultModel: typeof c.defaultModel === 'string' && c.defaultModel.length <= 200 ? c.defaultModel : '',
     enabledPillars: pillars.includes('work') ? pillars : ['work', ...pillars],
     signupOpen: c.signupOpen === true,
     signupCodeRequired: c.signupCodeRequired === true,

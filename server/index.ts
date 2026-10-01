@@ -210,6 +210,7 @@ import { createMetricsRouter, incrementRequests, incrementErrors } from './route
 import { initAuditQueue, flushAuditQueue } from './services/audit-queue.js';
 import { getTotalActiveStreams } from './services/stream-limiter.js';
 import { startMeshDialer } from './services/mesh/bootstrap.js';
+import { getEffectiveDefaultModel } from './services/default-model-store.js';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -658,6 +659,9 @@ app.get('/api/config', (_req, res) => {
     // Public showcase: { demoMode: false } unless DEMO_MODE=true, then the
     // offered models, enabled pillars, sign-up state and retention.
     ...demoPublicConfig(),
+    // The model that answers unless a visitor picks another, which the demo's
+    // privacy notice and terms name ([[DEFAULT_MODEL]]).
+    ...(demo ? { defaultModel: getEffectiveDefaultModel() ?? null } : {}),
     // Enabled = the sign-in button shows (team mode). Configured = the OIDC_*
     // settings are present — Settings shows "activates in team mode" for an
     // instance being prepared before it switches over.
