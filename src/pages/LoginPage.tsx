@@ -474,7 +474,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     htmlFor="username"
                     className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400"
                   >
-                    Username
+                    Username or email
                   </label>
                   <input
                     id="username"
@@ -484,7 +484,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     disabled={isSubmitting}
-                    placeholder="Enter your username"
+                    placeholder="Your username, or the email you were invited with"
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 focus:ring-2 focus:ring-adv-teal/20 disabled:opacity-50 transition-all"
                   />
                 </div>

@@ -235,7 +235,7 @@ describe('LoginPage on a demo', () => {
     expect(call?.method).toBe('POST');
     expect(JSON.parse(call!.body!)).toEqual({
       username: 'visitor_7', password: 'a-long-enough-pass', code: 'the-code',
-      over18: true, acceptTerms: true, termsVersion: '2026-09-26',
+      over18: true, acceptTerms: true, termsVersion: '2026-10-01',
     });
     expect(useAuthStore.getState().user?.username).toBe('visitor_7');
     // On a demo the token is kept for the tab only (D25).

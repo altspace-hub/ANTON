@@ -3,7 +3,8 @@ import { z } from 'zod';
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const LoginSchema = z.object({
-  username: z.string().min(1).max(100).trim(),
+  // 254: an invited account signs in with its email address (account-invitations.ts).
+  username: z.string().min(1).max(254).trim(),
   password: z.string().min(1).max(1000),
   // Second factor, only required for an account with users.mfa_enabled set. It has to
   // be declared here: validate() replaces req.body with the PARSED object, and a Zod

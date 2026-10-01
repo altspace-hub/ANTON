@@ -6,8 +6,10 @@
  * OpenRouter, pinned to Inceptron with zero data retention; no memory
  * learning, Online References, voice input or sign-off form for visitors; the
  * demo-mode session cookie and the preference keys cleared at sign-out
- * (src/lib/safe-storage.ts); nothing loaded from other sites. Change the
- * text when any of that changes.
+ * (src/lib/safe-storage.ts); nothing loaded from other sites; accounts made
+ * either with an invite code (no email address) or by an administrator's
+ * invitation (the email address is the username; server/services/
+ * account-invitations.ts). Change the text when any of that changes.
  *
  * [[NAME]] marks a fact the owner supplies (src/lib/demo-legal.ts); the
  * retention period comes from the server. The DRAFT box stays up until every
@@ -24,16 +26,20 @@ export const PRIVACY_NOTICE_MD = `# Privacy notice: ANTON public demo
 > ### The short version
 >
 > - **Who is responsible:** [[CONTROLLER_NAME]] runs this demo. Contact: [[PRIVACY_EMAIL]].
-> - **What we ask for:** an invite code, a username and a password. You also confirm that you are 18 or over and that you accept the demo terms. We don't ask for an email address or your real name.
+> - **What we ask for:** there are two ways to get an account.
+>   - **With an invite code:** you choose a username and a password. We don't ask for an email address or your real name.
+>   - **Invited by email:** we make the account for your email address, which is then your username, and you choose a password from the link we give you. An email address often contains your name.
+>
+>   Either way you also confirm that you are 18 or over and that you accept the demo terms.
 > - **Please don't enter real personal data**, about you or about anyone else. That means no real names, no personal identity numbers (personnummer), and no health, money, job or client details. Use made-up or public information.
 > - **Where your input goes:** what you type or upload in a module goes to OpenRouter, Inc. in the USA. OpenRouter passes it to Inceptron AB, which runs the AI model GLM 5.3 Flash in the EU/EEA.
 >   - Both companies say they don't store your prompts and answers after the answer is generated, and that they don't use them to train AI. There are narrow exceptions: brief caching, where the law requires it, and dealing with misuse.
 >   - OpenRouter also runs its own misuse checks and anonymous statistics. It is responsible for those itself (section 6.2).
 > - **Transfer to the USA:** OpenRouter is not certified under the EU-U.S. Data Privacy Framework. The transfer rests on the EU Standard Contractual Clauses (section 8).
 > - **Answers are written by an AI**, not by a person. They can be wrong. They are not professional advice.
-> - **Deleted after about [[ACCOUNT_TTL_DAYS]] days:** your account stops working [[ACCOUNT_TTL_DAYS]] days after sign-up. It is then deleted with everything in it, normally within a day. Backup copies are overwritten within 7 more days.
+> - **Deleted after about [[ACCOUNT_TTL_DAYS]] days:** your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password if we invited you. It is then deleted with everything in it, normally within a day. Backup copies are overwritten within 7 more days.
 > - **No tracking:** we use no analytics, no advertising and no tracking cookies. Our pages load nothing from other websites.
-> - **Your rights:** you can ask for a copy of your data, a correction or deletion, and you can object. Write to [[PRIVACY_EMAIL]] and give your username. You can also complain to IMY, the Swedish Authority for Privacy Protection.
+> - **Your rights:** you can ask for a copy of your data, a correction or deletion, and you can object. Write to [[PRIVACY_EMAIL]] and give your username (if we invited you, your email address). You can also complain to IMY, the Swedish Authority for Privacy Protection.
 >
 > The full notice follows. Each section can be read on its own.
 
@@ -55,7 +61,7 @@ We have not appointed a data protection officer, because the law does not requir
 
 ## 2. Whose data this notice covers
 
-- **Visitors who create a demo account and use it.**
+- **Visitors who create a demo account and use it**, and people we invite by email, from the moment we make their account.
 - **Anyone who opens the demo's pages**, including people who only try to sign in or sign up.
 - **Anyone who writes to us** at [[PRIVACY_EMAIL]].
 - **People mentioned in what visitors enter or upload.** We ask visitors not to do this (section 15).
@@ -64,7 +70,7 @@ We have not appointed a data protection officer, because the law does not requir
 
 | Kind of data | What exactly | Where it comes from |
 |---|---|---|
-| Your account | An internal account ID and your username. Your password, stored only as a one-way hash (bcrypt). Your role and your monthly token budget. When you signed up, when the account expires, when you last signed in, and whether the account is switched off. When you accepted the demo terms, which version you accepted, and when you confirmed that you are 18 or over. The invite code you enter is checked and then discarded. | You and our system |
+| Your account | An internal account ID and your username. Your password, stored only as a one-way hash (bcrypt). Your role and your monthly token budget. When you signed up, when the account expires, when you last signed in, and whether the account is switched off. When you accepted the demo terms, which version you accepted, and when you confirmed that you are 18 or over. The invite code you enter is checked and then discarded. **If we invited you by email:** your email address, which is also your username; the display name we gave the account (unless we chose another, the part of your address before the @); which administrator invited you, and when each invitation link was made, expires and was used. A link itself is stored only as a one-way hash (SHA-256). | You and our system. If we invited you: the administrator who invited you, from the address you gave us or that we use to work with you. |
 | Sign-in sessions | A sign-in token, when it was issued, when it expires and when it was last used. | Our system |
 | What you enter | Your prompts, module inputs and settings, and the earlier messages in the same session. The titles and notes you give your sessions. Module instructions, if you edit them. For files you upload: the file itself (stored under a name that includes its original file name), its size and type, and the text we extract from it on our own server. | You |
 | What the AI produces | Answers and two automatic copies of them: a version copy, and a copy of each module answer in our output store. The model's reasoning text, where the model returns it. The session titles and session summaries the AI writes. | The AI model |
@@ -74,7 +80,7 @@ We have not appointed a data protection officer, because the law does not requir
 | Security and technical data | **Web server log:** for every request, your IP address (section 9 says how it is stored), the time, the address requested and your browser type (user agent). **Sign-in attempts:** the username typed, the IP address, the time and whether it succeeded. A failed sign-in also creates a security event with the IP address and the time. If the username belongs to an account, the event is linked to that account and can include the username. If it belongs to no account, the event holds a short keyed code (an HMAC) made from the typed name, not the name itself. **Sign-up attempts:** a successful sign-up is recorded like a successful sign-in. A failed sign-up records no username. If the invite code was wrong, a security event records the IP address and the time. **Log of changes made through the site:** your account ID, the kind of request, the address, the result and the IP address reported for the request. None of these logs holds the content of your requests. | Your browser and our system |
 | Pseudonymous code | A code we derive from your account ID with a secret key that is used for nothing else (an HMAC). It is sent to OpenRouter with the AI requests (section 6). It does not contain your username. | Our system |
 
-**What we don't ask for when you sign up:** your email address, real name, phone number, payment details or location. If you write to us about your rights, we keep your email address with your request (section 9).
+**What we don't ask for:** your phone number, payment details or location, and, if you sign up with an invite code, your email address or real name. If we invited you by email, we hold your email address (above). If you write to us about your rights, we keep your email address with your request (section 9).
 
 **Switched off on this demo:**
 
@@ -88,7 +94,7 @@ None of these features is available on this demo. We also don't offer the module
 
 | Purpose | Data used | Legal basis (GDPR) |
 |---|---|---|
-| **1. Run the demo you signed up for.** This means opening and running your account, running the modules you choose, sending your input to the AI service, and showing and storing your sessions. It also covers writing session titles and summaries, pre-filling module forms with your last-used settings, and letting you export answers. | Account, sign-in sessions, what you enter, what the AI produces, run records, your last-used settings for each module | Art. 6(1)(b): the processing is necessary to provide the service under the demo terms you accept. |
+| **1. Run the demo you signed up for.** This means opening and running your account (if we invite you, making the account for your email address and giving or sending you the link to choose your password), running the modules you choose, sending your input to the AI service, and showing and storing your sessions. It also covers writing session titles and summaries, pre-filling module forms with your last-used settings, and letting you export answers. | Account, sign-in sessions, what you enter, what the AI produces, run records, your last-used settings for each module | Art. 6(1)(b): the processing is necessary to provide the service under the demo terms you accept. |
 | **2. Keep the demo secure and stop abuse.** This covers sign-in checks, rate limits and lock-outs, logs of sign-ins and changes, web server logs, and investigating misuse. The pseudonymous code lets OpenRouter act against one account instead of blocking the whole demo. | Security and technical data, pseudonymous code | Art. 6(1)(f): our legitimate interest in a secure service that is not misused. |
 | **3. Keep the free demo affordable** with monthly token budgets, daily spending caps and cost records. | Usage records | Art. 6(1)(f): our legitimate interest in controlling the cost of a free service. |
 | **4. See which modules work well.** Your ratings also update anonymous quality statistics for each module. | Your ratings | Art. 6(1)(f): our legitimate interest in improving the modules. |
@@ -188,7 +194,7 @@ They can be wrong, incomplete or out of date, and the model can make things up. 
 | OpenRouter, Inc. (for its own purposes) | Independent controller for its misuse screening, request metadata and anonymous statistics (section 6.2) | USA | Your requests as listed in section 6.1, and request metadata, which may include the pseudonymous code |
 | Companies OpenRouter uses to run its service. Its security documentation names Google Cloud Platform (hosting "in US regions"), Cloudflare (firewall and DDoS protection) and Datadog (logging). Its full sub-processor list is available from OpenRouter on request. | Help OpenRouter run its service | USA and other countries | Parts of the same data, as part of OpenRouter's service |
 | Inceptron AB, Scheelevägen 15, 223 70 Lund | Runs the AI model (a sub-processor of OpenRouter) | EU/EEA | The content of each request (section 6.1) |
-| [[MAILBOX_PROVIDER]] | Hosts our privacy mailbox (our processor) | [[MAILBOX_LOCATION]] | Emails you send to [[PRIVACY_EMAIL]] and our replies |
+| [[MAILBOX_PROVIDER]] | Hosts our privacy mailbox, and sends invitation emails if we send yours by email (our processor) | [[MAILBOX_LOCATION]] | Emails you send to [[PRIVACY_EMAIL]] and our replies; for an invitation sent by email, your email address and the link |
 | Public authorities and courts | Receive data only where the law requires us to disclose it | Where the law applies | What the law requires |
 
 Nobody else receives your data.
@@ -210,7 +216,8 @@ OpenRouter is a US company and its platform is hosted in the USA. So everything 
 
 | Data | How long |
 |---|---|
-| **Your account and everything in it:** sessions, prompts and edited module instructions, uploaded files and their text, answers and copies of answers, run records, session titles and summaries, ratings, usage records and sign-in sessions | Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up. A clean-up job runs once a day and then deletes it, normally within 24 hours. It can take longer if the server was down. |
+| **Your account and everything in it:** sessions, prompts and edited module instructions, uploaded files and their text, answers and copies of answers, run records, session titles and summaries, ratings, usage records, sign-in sessions and, if we invited you, your email address and the records of your invitation links | Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password if we invited you. A clean-up job runs once a day and then deletes it, normally within 24 hours. It can take longer if the server was down. |
+| An invitation nobody used | Its link works for 7 days. The account made for it, with the email address, is deleted by the same daily clean-up once the link has expired. |
 | A session you delete yourself | These are removed from our live database at once: its messages, answers, the version copies of its answers, the copy of its answers in our output store, its run records and its summary, and its ratings and any quality scores and feedback on its answers. These stay until your account is deleted: your token totals, your run counts and last-used settings for each module, and the files you uploaded. The cost records of its AI calls stay too, without the link to the session. |
 | Sign-in attempts, security events and the log of changes, with IP addresses | Deleted by the daily clean-up once they are [[ACCOUNT_TTL_DAYS]] days old. Most entries about your account go earlier, when your account is deleted. The rest are deleted when they reach [[ACCOUNT_TTL_DAYS]] days. |
 | Web server access log | [[NGINX_LOG_SENTENCE]] |
@@ -274,18 +281,18 @@ You have the right to:
 - delete a session (see section 9 for what is removed at once);
 - download any answer with the Export button.
 
-## 12. How to use your rights without an email address on file
+## 12. How we check that a request is yours
 
-We only know your username, not your email address or real name. We check that you control the account, so that someone who only knows your username cannot get your data:
+If you signed up with an invite code, we only know your username, not your email address or real name. If we invited you by email, write to us from that address; we still ask for the check below before we send a copy of your data, because an email can be forged. We check that you control the account, so that someone who only knows your username or address cannot get your data:
 
-1. Write to [[PRIVACY_EMAIL]]. Give your username and say what you want.
+1. Write to [[PRIVACY_EMAIL]]. Give your username (if we invited you, your email address) and say what you want.
 2. We reply with a one-time code.
 3. Sign in to the demo and rename one of your sessions to that code.
 4. We check the rename and then answer your request. We send a copy of your data only to someone who has passed this check.
 
 **Deletion needs less proof.** Give your username and either the title of one of your sessions or roughly when you signed up. We switch the account off at once and delete it without undue delay, and within one month at the latest.
 
-**If you have lost your password** and cannot sign in, give us details that only the account holder is likely to know instead. Examples are the titles of several of your sessions and roughly when you signed up. If we still cannot confirm that the account is yours, we will tell you so and explain why. We can still switch the account off, and it will be deleted automatically when it expires.
+**If you have lost your password** and we invited you by email, ask us for a new link: we make one for your account and send or give it only to that email address. Otherwise give us details that only the account holder is likely to know instead. Examples are the titles of several of your sessions and roughly when you signed up. If we still cannot confirm that the account is yours, we will tell you so and explain why. We can still switch the account off, and it will be deleted automatically when it expires.
 
 We keep a record of your request and our answer (section 9).
 
@@ -305,10 +312,12 @@ We would welcome the chance to put things right first, but you don't have to con
 ## 14. Do you have to give us data?
 
 - **To create an account**, you must:
-  - enter the invite code you were given;
-  - choose a username and a password;
+  - either enter the invite code you were given and choose a username, or open the invitation link we gave you;
+  - choose a password;
   - confirm that you are 18 or over;
   - accept the demo terms.
+
+  If we invite you, we need your email address to make the account.
 
   These are conditions of the demo. Without them we cannot open an account.
 - **To get an answer**, you have to type something. You decide what. Please keep it free of real personal data.
@@ -337,7 +346,7 @@ If you think a limit has refused you wrongly, write to us.
 
 ## 17. Age limit
 
-The demo is only for people aged 18 or over. You confirm your age when you sign up, and we record when you did. If we learn that an account belongs to someone under 18, we delete it.
+The demo is only for people aged 18 or over. You confirm your age when you sign up, or when you choose your password from an invitation, and we record when you did. If we learn that an account belongs to someone under 18, we delete it.
 
 ## 18. Security, and who at our end can see your content
 

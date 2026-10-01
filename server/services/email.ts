@@ -1,11 +1,24 @@
 import nodemailer from 'nodemailer';
+import { isDemoMode } from '../middleware/demo-mode.js';
 
 // Create transporter from env vars (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
 // Falls back to nodemailer's test account (Ethereal) if no SMTP config provided
 let transporter: nodemailer.Transporter | null = null;
 
+/** A real mail server is configured (SMTP_HOST). */
+export function emailConfigured(): boolean {
+  return !!process.env.SMTP_HOST;
+}
+
 async function getTransporter() {
   if (transporter) return transporter;
+
+  // Without SMTP_HOST mail went to Ethereal, a public test inbox: on a demo or
+  // a production server that hands a stranger's address and a sign-in link to
+  // a third party nobody named. There it is simply not sent.
+  if (!process.env.SMTP_HOST && (isDemoMode() || process.env.NODE_ENV === 'production')) {
+    throw new Error('No SMTP server is configured (SMTP_HOST); the email was not sent');
+  }
 
   if (process.env.SMTP_HOST) {
     transporter = nodemailer.createTransport({
@@ -132,6 +145,34 @@ export async function sendTaskCompleteEmail(to: string, taskDescription: string,
         <p style="color: #555;">Anton has finished: <strong>${taskDescription}</strong></p>
         <p style="color: #555;">Log in to view your results.</p>
         <p style="color:#999;font-size:12px;">Module: ${moduleId}</p>
+      </div>
+    `,
+  });
+  if (!process.env.SMTP_HOST) {
+    console.log('[email] Preview URL:', nodemailer.getTestMessageUrl(info));
+  }
+}
+
+/**
+ * The link to an account made by invitation (services/account-invitations.ts):
+ * 'invite' to choose a first password, 'reset' to choose a new one.
+ */
+export async function sendAccountLinkEmail(to: string, link: string, purpose: 'invite' | 'reset', expiresAt: Date) {
+  const t = await getTransporter();
+  const until = expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const invite = purpose === 'invite';
+  const info = await t.sendMail({
+    from: process.env.SMTP_FROM || '"Anton by openEXPERT" <noreply@openexpert.ai>',
+    to,
+    subject: invite ? 'Your ANTON account is ready' : 'Choose a new ANTON password',
+    html: `
+      <div style="font-family: Inter, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <h2 style="color: #0B1426;">${invite ? 'You have been invited to ANTON' : 'Choose a new password'}</h2>
+        <p style="color: #555;">${invite
+          ? 'Open the link below and choose a password. Then sign in with this email address and that password.'
+          : 'Open the link below and choose a new password for your ANTON account.'}</p>
+        <a href="${link}" style="display:inline-block;background:#0D7D6C;color:#ffffff;font-weight:700;padding:12px 24px;border-radius:8px;text-decoration:none;margin:16px 0;">${invite ? 'Choose my password' : 'Choose a new password'}</a>
+        <p style="color:#999;font-size:12px;">The link works once, until ${until}. If you did not expect this email, you can ignore it.</p>
       </div>
     `,
   });

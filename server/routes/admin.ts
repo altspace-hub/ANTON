@@ -9,6 +9,10 @@ import { requireRole, USER_ROLES, isUserRole } from '../middleware/role-guards.j
 import * as budgetManager from '../services/budget-manager.js';
 import { safeError } from '../lib/error-response.js';
 import { hasSsoIdentity } from '../services/oidc-sso.js';
+import {
+  createInvitedAccount, issueSignInLink, invitationLink, publicBaseUrl, InvitationError, type IssuedLink,
+} from '../services/account-invitations.js';
+import { emailConfigured, sendAccountLinkEmail } from '../services/email.js';
 
 export async function createAdminRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -33,7 +37,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   router.get('/admin/users', requireRole('admin'), async (_req, res) => {
     const users = await db.all(
       `SELECT u.id, u.username, u.role, u.display_name, u.email, u.monthly_token_budget, u.last_login,
-       u.disabled_at,
+       u.disabled_at, u.demo_expires_at, (u.password_hash = '') AS pending,
        EXISTS (SELECT 1 FROM user_identities i WHERE i.user_id = u.id) AS sso,
        COALESCE(SUM(m.input_tokens + m.output_tokens), 0) as tokens_this_month
        FROM users u
@@ -143,6 +147,62 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
     if (school_role !== undefined) await db.run('UPDATE users SET school_role = ? WHERE id = ?', school_role, req.params.id);
     if (email !== undefined) await db.run('UPDATE users SET email = ? WHERE id = ?', email || null, req.params.id);
     res.json({ success: true });
+  });
+
+  /**
+   * The answer to both link routes: the link itself, for the administrator to
+   * pass on, and whether it was also emailed (only with SMTP_HOST set). The
+   * log line names no address — a mail error can carry one.
+   */
+  async function sendLink(req: import('express').Request, res: import('express').Response, issued: IssuedLink): Promise<void> {
+    const link = invitationLink(publicBaseUrl(req), issued.token);
+    let emailed = false;
+    let emailProblem: string | null = null;
+    if (issued.email && emailConfigured()) {
+      try {
+        await sendAccountLinkEmail(issued.email, link, issued.purpose, issued.expiresAt);
+        emailed = true;
+      } catch (err) {
+        console.error('[admin] account link email not sent:', (err as { code?: string }).code ?? 'error');
+        emailProblem = 'The email could not be sent. Copy the link and send it yourself.';
+      }
+    } else if (!emailConfigured()) {
+      emailProblem = 'This server sends no email (SMTP_HOST is not set). Copy the link and send it yourself.';
+    }
+    res.json({
+      userId: issued.userId, email: issued.email, link, purpose: issued.purpose,
+      expiresAt: issued.expiresAt.toISOString(), emailed, emailProblem,
+    });
+  }
+
+  function sendInvitationError(res: import('express').Response, err: unknown): void {
+    if (err instanceof InvitationError) { res.status(err.status).json({ error: err.message }); return; }
+    res.status(500).json({ error: safeError(err) });
+  }
+
+  // POST /api/admin/invitations — an account for an email address, and the
+  // one-time link with which the person chooses their own password.
+  router.post('/admin/invitations', requireRole('admin'), async (req, res) => {
+    const body = (req.body ?? {}) as { email?: unknown; displayName?: unknown; role?: unknown };
+    try {
+      const issued = await createInvitedAccount(db, {
+        email: body.email, displayName: body.displayName, role: body.role, createdBy: req.user?.id ?? null,
+      });
+      await sendLink(req, res, issued);
+    } catch (err) {
+      sendInvitationError(res, err);
+    }
+  });
+
+  // POST /api/admin/users/:id/sign-in-link — a new link for an account: its
+  // first password while it has none, a new one after (a lost password).
+  router.post('/admin/users/:id/sign-in-link', requireRole('admin'), async (req, res) => {
+    try {
+      const issued = await issueSignInLink(db, String(req.params.id), req.user?.id ?? null);
+      await sendLink(req, res, issued);
+    } catch (err) {
+      sendInvitationError(res, err);
+    }
   });
 
   // DELETE /api/admin/users/:id — delete user (admin only, cannot delete self)

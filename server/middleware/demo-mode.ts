@@ -267,7 +267,7 @@ export function demoSignupPolicy(env: Env = process.env): DemoSignupPolicy {
  * the terms text changes: a browser still showing the old terms is then
  * refused and asked to reload.
  */
-export const DEMO_TERMS_VERSION = '2026-09-26';
+export const DEMO_TERMS_VERSION = '2026-10-01';
 
 /**
  * DEMO_OPERATOR_NAME: the legal name of whoever runs the demo, for the

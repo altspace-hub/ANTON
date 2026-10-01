@@ -61,7 +61,7 @@ export const DEMO_LEGAL_SIGNED_OFF = false;
  * sends this one, so a browser showing older terms is refused and asked to
  * reload. Change both whenever the terms text changes.
  */
-export const DEMO_TERMS_TEXT_VERSION = '2026-09-26';
+export const DEMO_TERMS_TEXT_VERSION = '2026-10-01';
 
 const PLACEHOLDER = /\[\[([A-Z0-9_]+)\]\]/g;
 

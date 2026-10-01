@@ -23,6 +23,8 @@ import {
   provisionOidcUser, hasSsoIdentity, SsoRefusedError, type OidcSettings,
 } from '../services/oidc-sso.js';
 import { invitationStillValid } from './project-collaboration.js';
+import rateLimit from 'express-rate-limit';
+import { findOpenInvitation, acceptInvitation, InvitationError, PASSWORD_MAX } from '../services/account-invitations.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -260,7 +262,11 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       res.json({ user: { id: 'solo', username: 'solo', role: 'admin' }, token: 'solo-mode' });
       return;
     }
-    const { username, password } = req.body as { username: string; password: string };
+    const { password } = req.body as { username: string; password: string };
+    // An invited account's username is its email address, stored lower case
+    // (services/account-invitations.ts); people type addresses in any case.
+    const typed = (req.body as { username: string }).username;
+    const username = typed.includes('@') ? typed.trim().toLowerCase() : typed;
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
 
     // Check for too many recent failed attempts (account lockout)
@@ -286,7 +292,9 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       return;
     }
 
-    const user = await db.get('SELECT * FROM users WHERE username = ?', username) as Record<string, unknown> | undefined;
+    // An address an administrator once typed in mixed case as a plain username still signs in as typed.
+    const user = (await db.get('SELECT * FROM users WHERE username = ?', username)
+      ?? (typed !== username ? await db.get('SELECT * FROM users WHERE username = ?', typed) : undefined)) as Record<string, unknown> | undefined;
 
     if (!user) {
       // Record failed attempt
@@ -456,7 +464,10 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const cap = demoMaxSignupsPerDay();
       if (cap > 0) {
         const today = await db.get<{ n: number | string }>(
-          `SELECT COUNT(*) AS n FROM users WHERE demo_expires_at IS NOT NULL AND created_at > NOW() - INTERVAL '1 day'`,
+          // Sign-ups only: accounts an administrator invited do not use up the day's places.
+          `SELECT COUNT(*) AS n FROM users
+            WHERE demo_expires_at IS NOT NULL AND created_at > NOW() - INTERVAL '1 day'
+              AND NOT EXISTS (SELECT 1 FROM account_invitations ai WHERE ai.user_id = users.id)`,
         );
         if (Number(today?.n ?? 0) >= cap) {
           res.status(429).json({ error: 'Today\'s demo sign-ups are full. Please try again tomorrow.' });
@@ -492,6 +503,67 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
         res.status(409).json({ error: 'That username is taken. Choose another.' });
         return;
       }
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // ── Accounts made by invitation (services/account-invitations.ts) ──────────
+  //
+  // The link an administrator hands over opens /welcome#token=…; the page
+  // checks the token, then sends it back with the chosen password. Public
+  // (the person has no session yet), throttled per IP; the token is 256
+  // random bits, so the limit is against noise, not guessing.
+  const invitationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    validate: false,
+    keyGenerator: (r: Request) => (r.ip ?? 'unknown').replace(/^::ffff:/i, ''),
+    message: { error: 'Too many attempts from this address. Try again in a few minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  const InvitationTokenSchema = z.object({ token: z.string().min(1).max(200) });
+  const InvitationAcceptSchema = InvitationTokenSchema.extend({
+    password: z.string().min(1).max(PASSWORD_MAX),
+    over18: z.boolean().optional(),
+    acceptTerms: z.boolean().optional(),
+    termsVersion: z.string().max(40).optional(),
+  });
+
+  // POST /api/auth/invitation/check — what the link is for, or 400.
+  router.post('/auth/invitation/check', invitationLimiter, validate(InvitationTokenSchema), async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(404).json({ error: 'Not found' }); return; }
+    try {
+      const open = await findOpenInvitation(db, (req.body as { token: string }).token);
+      if (!open) {
+        res.status(400).json({ error: 'This link does not work any more: it was used, it expired, or a newer one replaced it. Ask the person who invited you for a new link.' });
+        return;
+      }
+      res.json({
+        email: open.email, displayName: open.displayName, purpose: open.purpose, expiresAt: open.expiresAt,
+        termsRequired: open.termsRequired, termsVersion: open.termsVersion,
+      });
+    } catch (err) {
+      res.status(500).json({ error: safeError(err) });
+    }
+  });
+
+  // POST /api/auth/invitation/accept — set the password and sign in.
+  router.post('/auth/invitation/accept', invitationLimiter, validate(InvitationAcceptSchema), async (req, res) => {
+    if (!IS_TEAM_MODE) { res.status(404).json({ error: 'Not found' }); return; }
+    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+    try {
+      const account = await acceptInvitation(db, req.body as z.infer<typeof InvitationAcceptSchema>);
+      await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', account.username, ipAddress);
+      console.log(`[auth] password chosen from an account link: user ${account.id}`);
+      const authUser: AuthUser = {
+        id: account.id, username: account.username, role: account.role, display_name: account.display_name ?? undefined,
+      };
+      const token = await issueSession(db, authUser, account.demoExpiresAt);
+      setSessionCookie(res, token);
+      res.json({ user: authUser, token });
+    } catch (err) {
+      if (err instanceof InvitationError) { res.status(err.status).json({ error: err.message }); return; }
       res.status(500).json({ error: safeError(err) });
     }
   });

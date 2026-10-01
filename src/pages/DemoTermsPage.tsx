@@ -19,7 +19,7 @@ export const DEMO_TERMS_MD = `# Demo terms: ANTON public demo
 
 **Version:** ${DEMO_TERMS_TEXT_VERSION} · **In force from:** [[TERMS_EFFECTIVE_DATE]]
 
-These terms apply when you create an account on the public demo of ANTON at [[DEMO_URL]], and while you use it. When you sign up, we store which version of these terms you accepted and when. Please also read the [privacy notice](/privacy).
+These terms apply when you create an account on the public demo of ANTON at [[DEMO_URL]], or take up an invitation to one, and while you use it. When you accept them, we store which version you accepted and when. Please also read the [privacy notice](/privacy).
 
 ## 1. Who we are
 
@@ -28,7 +28,7 @@ The demo is run by [[CONTROLLER_NAME]] ([[CONTROLLER_LEGAL_FORM]]), [[CONTROLLER
 ## 2. What the demo is
 
 - A free trial of ANTON's Work modules, so that you can see how the software works. It is not a production service.
-- You need an invite code to sign up.
+- You need an invite code to sign up, or an invitation from us by email.
 - Some features and modules are switched off.
 - Your use is limited by a monthly token budget, daily spending caps, upload limits and rate limits.
 - We may change, limit, interrupt or end the demo at any time, without notice. We don't promise that it will be available.
@@ -37,14 +37,14 @@ The demo is run by [[CONTROLLER_NAME]] ([[CONTROLLER_LEGAL_FORM]]), [[CONTROLLER
 
 - You must be 18 or over.
 - Create one account only, for yourself. Keep your password secret and don't share your account.
-- Don't publish or pass on your invite code.
+- Don't publish or pass on your invite code or your invitation link.
 
 ## 4. No real personal data, no confidential material
 
 - Use made-up or public information only.
 - Don't enter, upload or paste real personal data about you or anyone else. That includes real names, personal identity numbers (personnummer) or other ID numbers, contact details, health data, information about crimes, and financial, employment or client details.
 - Don't enter confidential material, such as client files, trade secrets or anything you must keep secret.
-- Don't use your real name as your username.
+- If you choose a username, don't use your real name. (If we invited you, your username is your email address.)
 - If you enter such data anyway, you are responsible for having the right to do so, and we may delete it.
 
 ## 5. Acceptable use
@@ -82,7 +82,7 @@ You must not use the demo to:
 
 ## 9. Account expiry and deletion
 
-- Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up. It is then deleted with everything in it, normally within a day ([privacy notice](/privacy#section-9), section 9).
+- Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password from an invitation. It is then deleted with everything in it, normally within a day ([privacy notice](/privacy#section-9), section 9).
 - We keep no copy for you, so export anything you want to keep before then.
 - You can ask us to delete your account earlier ([privacy notice](/privacy#section-12), section 12).
 

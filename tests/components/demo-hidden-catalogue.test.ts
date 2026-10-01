@@ -50,7 +50,7 @@ const DEMO_CONFIG = {
   retentionDays: 30,
   privacyPath: '/privacy',
   termsPath: '/terms',
-  termsVersion: '2026-09-26',
+  termsVersion: '2026-10-01',
   answersScored: false,
   hiddenAreas: ['healthcare', 'community-health'],
   hiddenModules: ['cv-writer', 'investigation-support'],

@@ -65,6 +65,7 @@ const HomeV2 = lazy(() => import('./pages/HomeV2'));
 // Public demo (DEMO_MODE=true): the privacy notice and the demo terms, readable before signing in.
 const PrivacyNoticePage = lazy(() => import('./pages/PrivacyNoticePage'));
 const DemoTermsPage = lazy(() => import('./pages/DemoTermsPage'));
+const WelcomePage = lazy(() => import('./pages/WelcomePage'));
 
 // Heavy/secondary pages — lazy-loaded to reduce initial bundle size
 const PromptPage = lazy(() => import('./pages/PromptPage'));
@@ -483,6 +484,17 @@ export default function App() {
     return (
       <Suspense fallback={<div className="min-h-screen bg-white" />}>
         {pathname === '/privacy' ? <PrivacyNoticePage /> : <DemoTermsPage />}
+      </Suspense>
+    );
+  }
+
+  // An invitation or new-password link (/welcome#token=…) and a password-reset
+  // link are opened by someone who is not signed in. In team mode the routes
+  // below render only after sign-in, so these come first.
+  if (pathname === '/welcome' || pathname === '/reset-password') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-white" />}>
+        {pathname === '/welcome' ? <WelcomePage /> : <ResetPasswordPage />}
       </Suspense>
     );
   }

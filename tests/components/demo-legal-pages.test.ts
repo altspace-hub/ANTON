@@ -47,7 +47,7 @@ const DEMO_CONFIG = {
   retentionDays: 21,
   privacyPath: '/privacy',
   termsPath: '/terms',
-  termsVersion: '2026-09-26',
+  termsVersion: '2026-10-01',
   operatorName: '',
 };
 const ORDINARY = { deploymentMode: 'team', demoMode: false };
@@ -132,9 +132,9 @@ describe('the demo terms page', () => {
     setDemo(DEMO_CONFIG);
     await render(DemoTermsPage as ComponentType<object>, '/terms');
     expect(container.querySelector('h1')?.textContent).toBe('Demo terms: ANTON public demo');
-    expect(text()).toContain('Version: 2026-09-26');
+    expect(text()).toContain('Version: 2026-10-01');
     expect(text()).toContain('You must be 18 or over.');
-    expect(text()).toContain('Your account stops working 21 days after you sign up.');
+    expect(text()).toContain('Your account stops working 21 days after you sign up, or after you choose your password from an invitation.');
     expect(text()).toContain('DRAFT: these demo terms are not yet in force.');
     expect(text()).toContain('Have counsel review and sign off these demo terms.');
     expect(hrefs()).toContain('/privacy');
@@ -180,7 +180,7 @@ describe('the privacy notice page', () => {
   it('fills the retention period, marks the owner\'s missing facts and names them in the DRAFT box', async () => {
     setDemo(DEMO_CONFIG);
     await render(PrivacyNoticePage as ComponentType<object>, '/privacy');
-    expect(text()).toContain('your account stops working 21 days after sign-up');
+    expect(text()).toContain('your account stops working 21 days after you sign up, or after you choose your password if we invited you');
     expect(text()).not.toContain('[[ACCOUNT_TTL_DAYS]]');
     const marks = [...container.querySelectorAll('main mark')].map((m) => m.textContent);
     expect(marks).toContain('[[CONTROLLER_NAME]]');
@@ -306,7 +306,7 @@ describe('LoginPage sign-up on a demo', () => {
     await submit();
     expect(signupPosts()).toHaveLength(1);
     const body = JSON.parse(signupPosts()[0].body!) as Record<string, unknown>;
-    expect(body).toMatchObject({ over18: true, acceptTerms: true, termsVersion: '2026-09-26' });
+    expect(body).toMatchObject({ over18: true, acceptTerms: true, termsVersion: '2026-10-01' });
   });
 
   it('shows the server\'s own sentence when it refuses the terms version', async () => {
