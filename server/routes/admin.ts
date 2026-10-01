@@ -37,7 +37,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   router.get('/admin/users', requireRole('admin'), async (_req, res) => {
     const users = await db.all(
       `SELECT u.id, u.username, u.role, u.display_name, u.email, u.monthly_token_budget, u.last_login,
-       u.disabled_at, u.demo_expires_at, (u.password_hash = '') AS pending,
+       u.disabled_at, u.demo_expires_at, (u.password_hash = '' AND u.id <> 'solo') AS pending,
        EXISTS (SELECT 1 FROM user_identities i WHERE i.user_id = u.id) AS sso,
        COALESCE(SUM(m.input_tokens + m.output_tokens), 0) as tokens_this_month
        FROM users u
