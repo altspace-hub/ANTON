@@ -183,7 +183,7 @@ They can be wrong, incomplete or out of date, and the model can make things up. 
 
 | Recipient | Role | Where | What they receive |
 |---|---|---|---|
-| Bahnhof AB, Stockholm | Hosts our server (our processor) | Sweden | Everything we store, as it sits on our server |
+| One.com Group AB, Malmö | Hosts our server (our processor; its data centre for this server is in Germany) | Germany (EU) | Everything we store, as it sits on our server |
 | OpenRouter, Inc., 169 Madison Avenue, New York, NY 10016 | Routes AI requests to the model (our processor) | USA | What is listed in section 6.1 |
 | OpenRouter, Inc. (for its own purposes) | Independent controller for its misuse screening, request metadata and anonymous statistics (section 6.2) | USA | Your requests as listed in section 6.1, and request metadata, which may include the pseudonymous code |
 | Companies OpenRouter uses to run its service. Its security documentation names Google Cloud Platform (hosting "in US regions"), Cloudflare (firewall and DDoS protection) and Datadog (logging). Its full sub-processor list is available from OpenRouter on request. | Help OpenRouter run its service | USA and other countries | Parts of the same data, as part of OpenRouter's service |

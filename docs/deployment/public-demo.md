@@ -1,6 +1,6 @@
 # Public demo on a Linux VM (OpenRouter)
 
-This runbook sets up ANTON as a public showcase: strangers sign up with an invite code and try the Work modules. The AI is one OpenRouter key with a spending limit. It is written for an Ubuntu 24.04 VM at Bahnhof, but any Linux VM works.
+This runbook sets up ANTON as a public showcase: strangers sign up with an invite code and try the Work modules. The AI is one OpenRouter key with a spending limit. It is written for an Ubuntu 24.04 VM, but any Linux VM works. The showcase itself runs on a one.com Cloud server (Ubuntu 26.04, data centre in Germany; set up 2026-10-01): PostgreSQL 18 and Ubuntu's own Node 22 work, and npm puts pnpm at /usr/local/bin/pnpm, so the systemd `ExecStart` must use that path.
 
 What you get:
 
@@ -571,14 +571,14 @@ Test this once before launch with a copy of the database.
 
 A compliance review of the demo on 2026-09-26 set twelve gates. The review itself is kept privately; each gate is summarised here. Share the public address only when all twelve are met.
 
-- **G1 Controller.** Decide who is the controller: the business that holds the OpenRouter, Bahnhof and domain accounts. Its name, address, organisation and VAT numbers and a privacy email address go into the privacy notice, and its name into `DEMO_OPERATOR_NAME` for the "Operated by …" line.
+- **G1 Controller.** Decide who is the controller: the business that holds the OpenRouter, hosting (one.com) and domain accounts. Its name, address, organisation and VAT numbers and a privacy email address go into the privacy notice, and its name into `DEMO_OPERATOR_NAME` for the "Operated by …" line.
 - **G2 Provider pin.** The extra body is `{"provider":{"only":["inceptron"],"zdr":true,"data_collection":"deny"}}`, read back from the database on the VM. Every other provider is excluded in the OpenRouter account and in the key's guardrail.
 - **G3 OpenRouter.** The account is in the controller's name. Its DPA cover is confirmed in writing and archived with the Terms and pricing page as dated PDFs. Both logging opt-ins are off. The transfer impact assessment is written. The questions in section 1 are sent.
 - **G4 Deletion.** Deleting a session removes its answer copies and embeddings, an expired account leaves no rows behind (answer copies, edited prompts, embeddings and session rows included), and the retention test proves it, having failed on the old code first.
 - **G5 Fonts.** Fonts come from the demo's own server. The network panel shows no request to Google, or to any other host, on `/`, `/login` and `/privacy`.
 - **G6 Clean database.** A new `anton_demo`, with the organisation context, Trades identity, fund identity and shared memory empty (section 4). Memory injection is forced off in demo mode.
 - **G7 Terms.** The demo terms are published at `/terms`. Sign-up has two ticks ("18 or over"; "accept the terms and have read the notice"), and the terms version and the times are stored on the account.
-- **G8 Hosting provider.** A processor agreement with Bahnhof (a personuppgiftsbiträdesavtal), or a documented alternative such as your own Art. 28(3) addendum or another host.
+- **G8 Hosting provider.** A processor agreement with the host. On one.com it applies through the terms (§4.2; DPA of 17 Jun 2025, sub-processors for unmanaged VPS: Envia TEL GmbH and Dogado GmbH, both Germany): archive a dated copy. On Bahnhof it is a signed personuppgiftsbiträdesavtal.
 - **G9 Paperwork.** Dated and signed: the record of processing (Art. 30), a short DPIA, the legitimate-interest assessments, the transfer impact assessment, and the breach, rights-request and restore procedures and the administrator access rule. Section 10 has the operational half.
 - **G10 Notice.** The privacy notice, the banner and the sign-up text are deployed, every placeholder is filled, a lawyer has signed them off, and the DRAFT box is gone.
 - **G11 Retention on the VM.** The periods the notice states are what the VM does: journald 30 days, the PostgreSQL log 30 days or less, the nginx log 7 days, backups 7 days (section 9).
@@ -595,7 +595,7 @@ A compliance review of the demo on 2026-09-26 set twelve gates. The review itsel
 **Contracts**
 
 - [ ] OpenRouter: the account is in the controller's name, the DPA cover is confirmed in writing, dated PDFs of the Terms, DPA and pricing page are archived, the questions in section 1 are sent, and sub-processor notices are subscribed to.
-- [ ] Bahnhof: the processor agreement is signed, or the alternative is documented.
+- [ ] Hosting: the host's processor agreement is in place and a dated copy archived (one.com: through its terms).
 
 **OpenRouter configuration**
 

@@ -33,7 +33,7 @@ export type DemoLegalField =
 /**
  * Filled in by the owner. What each one is: the PLACEHOLDERS list of the
  * privacy review (e.g. CONTROLLER_NAME is the registered business that holds
- * the OpenRouter, Bahnhof and domain accounts; NGINX_LOG_SENTENCE must match
+ * the OpenRouter, one.com and domain accounts; NGINX_LOG_SENTENCE must match
  * the VM's nginx log format and rotation).
  */
 export const DEMO_LEGAL_FIELDS: Readonly<Record<DemoLegalField, string>> = {
