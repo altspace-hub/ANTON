@@ -41,7 +41,7 @@ export type DemoLegalField =
 export const DEMO_LEGAL_FIELDS: Readonly<Record<DemoLegalField, string>> = {
   NOTICE_EFFECTIVE_DATE: '',
   TERMS_EFFECTIVE_DATE: '',
-  DEMO_URL: '',
+  DEMO_URL: 'https://anton.futurechain.eu',
   CONTROLLER_NAME: '',
   CONTROLLER_LEGAL_FORM: '',
   CONTROLLER_ADDRESS: '',
