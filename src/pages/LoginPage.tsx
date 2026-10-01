@@ -95,14 +95,21 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   // A group sign-up link (/#signup=<invite code>, from Settings > Team) opens
   // the sign-up form with the code filled in. The code is in the fragment,
   // which never reaches the server; it is cleared from the address bar here.
+  // Also when the link is pasted into a tab already on this page: only the
+  // fragment changes, so the page does not load again.
   useEffect(() => {
-    const match = /(?:^#|&)signup=([^&]+)/.exec(window.location.hash);
-    if (!match) return;
-    let code = match[1];
-    try { code = decodeURIComponent(code); } catch { /* keep as typed */ }
-    setSuCode(code.slice(0, 200));
-    setView('signup');
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    const openFromLink = () => {
+      const match = /(?:^#|&)signup=([^&]+)/.exec(window.location.hash);
+      if (!match) return;
+      let code = match[1];
+      try { code = decodeURIComponent(code); } catch { /* keep as typed */ }
+      setSuCode(code.slice(0, 200));
+      setView('signup');
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    };
+    openFromLink();
+    window.addEventListener('hashchange', openFromLink);
+    return () => window.removeEventListener('hashchange', openFromLink);
   }, []);
 
   async function handleSignup(e: FormEvent) {
