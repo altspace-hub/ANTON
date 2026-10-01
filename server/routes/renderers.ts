@@ -24,6 +24,7 @@
 //     { error, stage, renderer_id } with a status that says whose fault it is.
 
 import { Router, type Response } from 'express';
+import { isDemoMode } from '../middleware/demo-mode.js';
 import { z } from 'zod';
 import fs from 'fs/promises';
 import path from 'path';
@@ -43,6 +44,7 @@ import {
   type ExtractionQueue,
 } from '../services/structured-extraction-queue.js';
 import { isTeamMode } from '../middleware/role-guards.js';
+import { demoStructuredExtractionOn } from '../middleware/demo-mode.js';
 import { safeError } from '../lib/error-response.js';
 
 interface AuthedRequest {
@@ -128,12 +130,17 @@ export function createRendererRoutes(db: DatabaseAdapter, deps: RendererRouteDep
         sessionId, rendererId, userId, event: 'extraction_missing',
         details: { on_demand: true, error: error.slice(0, 1000), method: result.method ?? null, model: result.model ?? null },
       });
+      // The raw reason can carry an endpoint URL and the provider's own text;
+      // it goes to the audit row above, and an administrator sees it.
+      const shown = res.req?.user?.role === 'admin' || !isDemoMode()
+        ? error
+        : 'the answer could not be turned into structured data. Try again in a moment.';
       res.status(422).json({
-        error: `Structured extraction failed: ${error}`,
+        error: `Structured extraction failed: ${shown}`,
         stage: 'extraction',
         renderer_id: rendererId,
         structured_status: 'failed',
-        structured_error: error,
+        structured_error: shown,
       });
       return false;
     }
@@ -199,7 +206,10 @@ export function createRendererRoutes(db: DatabaseAdapter, deps: RendererRouteDep
         structured_status: sess?.structured_status ?? null,
         structured_error: sess?.structured_error ?? null,
         structured_attempts: Number(sess?.structured_attempts ?? 0),
-        auto_extraction: auto.enabled,
+        // A demo extracts after an answer only with DEMO_POST_ANSWER_CALLS=all;
+        // otherwise a transform extracts when asked (POST /renderers/run), and
+        // the panel must not say it already happened.
+        auto_extraction: auto.enabled && demoStructuredExtractionOn(),
       });
     } catch (err) {
       res.status(500).json({ error: safeError(err) });

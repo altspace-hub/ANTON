@@ -10,6 +10,9 @@
  *     signed off;
  *   - every [[NAME]] in the two texts is one the page knows how to fill (a
  *     misspelt name would stay on the page for good);
+ *   - [[SCORING_SENTENCE]] says which model makes the Trust Score and what it
+ *     reads, or that the demo scores nothing (/api/config answersScored and
+ *     scorerModel);
  *   - the terms version on the page is the one the server stores.
  */
 import { describe, it, expect } from 'vitest';
@@ -66,7 +69,7 @@ describe('legalTextIsDraft', () => {
 });
 
 describe('the two texts', () => {
-  const known = new Set([...Object.keys(DEMO_LEGAL_FIELDS), 'ACCOUNT_TTL_DAYS', 'DEFAULT_MODEL', 'OTHER_MODELS', 'MODEL_MAKERS']);
+  const known = new Set([...Object.keys(DEMO_LEGAL_FIELDS), 'ACCOUNT_TTL_DAYS', 'DEFAULT_MODEL', 'OTHER_MODELS', 'MODEL_MAKERS', 'SCORING_SENTENCE']);
 
   it('use only placeholders the page fills in', () => {
     for (const [name, text] of [['notice', PRIVACY_NOTICE_MD], ['terms', DEMO_TERMS_MD]] as const) {
@@ -106,6 +109,36 @@ describe('the two texts', () => {
     expect(values.DEFAULT_MODEL).toBe('GLM 5.3');
     expect(values.OTHER_MODELS).toBe('another model, when one is offered');
     expect(demoLegalValues(demo()).DEFAULT_MODEL).toBe('');
+  });
+
+  it('say which model makes the Trust Score, and what it reads, when the demo scores answers', () => {
+    const values = demoLegalValues(demo({
+      offeredModels: ['compat:openrouter:z-ai/glm-5.3', 'compat:openrouter:moonshotai/kimi-k2.6'],
+      defaultModel: 'compat:openrouter:z-ai/glm-5.3',
+      answersScored: true,
+      scorerModel: 'compat:openrouter:deepseek/deepseek-v4-flash-0731',
+    }));
+    expect(values.SCORING_SENTENCE).toBe(
+      'After each answer longer than 200 characters, the model DeepSeek V4 Flash rates its quality '
+      + '(the Trust Score shown under the answer). This request carries the first 3,000 characters of the answer.',
+    );
+    const notice = fillLegalText(PRIVACY_NOTICE_MD, values);
+    expect(notice).toContain('**The Trust Score:** After each answer longer than 200 characters, the model DeepSeek V4 Flash rates its quality');
+    expect(unfilledFields(notice)).not.toContain('SCORING_SENTENCE');
+  });
+
+  it('say that nothing is scored when the demo makes no score (negative control: no scorer is named)', () => {
+    const values = demoLegalValues(demo({ answersScored: false, scorerModel: 'compat:openrouter:deepseek/deepseek-v4-flash-0731' }));
+    expect(values.SCORING_SENTENCE).toBe('This demo does not score answers.');
+    const notice = fillLegalText(PRIVACY_NOTICE_MD, values);
+    expect(notice).toContain('**The Trust Score:** This demo does not score answers.');
+    expect(notice).not.toContain('DeepSeek V4 Flash rates');
+  });
+
+  it('leave the Trust Score sentence marked when answers are scored but the server names no scorer', () => {
+    const values = demoLegalValues(demo({ answersScored: true }));
+    expect(values.SCORING_SENTENCE).toBe('');
+    expect(unfilledFields(fillLegalText(PRIVACY_NOTICE_MD, values))).toContain('SCORING_SENTENCE');
   });
 
   it('state the terms version the server stores at sign-up', () => {

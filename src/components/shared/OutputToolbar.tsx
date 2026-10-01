@@ -15,6 +15,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoRestricted } from '@/lib/demo-config';
 import { thinkingLevelUnavailable } from '@/lib/compat-model-policy';
+import { secondOpinionModel } from '@/lib/demo-model-names';
+import { modelLabel } from '@/lib/model-labels';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -100,11 +102,12 @@ const CHIPS: Array<{ id: PanelId & string; label: string; icon: React.ComponentT
 
 /**
  * Public demo: the chips whose routes are outside a visitor's Work routes —
- * citation checks, reviews, rerun, the .anton export and evidence packs. The
- * Save chip stays as "Certificate": saving a custom module and distilling are
- * outside too, the trust certificate is not.
+ * the .anton export and evidence packs. Citations, Review and "Rerun with…"
+ * are open (a second opinion from another offered model). The Save chip stays
+ * as "Certificate": saving a custom module and distilling are outside, the
+ * trust certificate is not.
  */
-const DEMO_HIDDEN_CHIPS: ReadonlySet<string> = new Set(['citations', 'review', 'rerun', 'exportRun', 'evidence']);
+const DEMO_HIDDEN_CHIPS: ReadonlySet<string> = new Set(['exportRun', 'evidence']);
 const DEMO_CHIPS = CHIPS
   .filter((chip) => !DEMO_HIDDEN_CHIPS.has(chip.id))
   .map((chip) => (chip.id === 'save' ? { ...chip, label: 'Certificate', icon: Award } : chip));
@@ -128,8 +131,9 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const [activePanel, setActivePanel] = useState<PanelId>(null);
   const demoConfig = useDemoStore((s) => s.config);
   const demoLimited = demoRestricted(demoConfig, useAuthStore((s) => s.user?.role));
-  // A demo makes no quality score unless DEMO_POST_ANSWER_CALLS=all (admins included):
-  // the Trust Score panel says so instead of waiting for one that never comes.
+  // A demo makes no quality score unless DEMO_POST_ANSWER_CALLS is 'scored' or
+  // 'all' (admins included): the Trust Score panel says so instead of waiting
+  // for one that never comes.
   const answersScored = !demoConfig.demoMode || demoConfig.answersScored;
   const chips = demoLimited ? DEMO_CHIPS : CHIPS;
 
@@ -168,9 +172,15 @@ export default function OutputToolbar(props: OutputToolbarProps) {
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportDone, setExportDone] = useState(false);
 
-  // Wave 2.3 "Rerun with…" state
+  // Wave 2.3 "Rerun with…" state. The picker starts on a second opinion: on a
+  // demo, an offered model other than the one that wrote the answer (Kimi K2.6
+  // for a GLM 5.3 answer); elsewhere on the answer's own model, as before.
   const lastRunModel = ((configSnapshot?.model as string) ?? model) as ModelId;
-  const [rerunModel, setRerunModel] = useState<ModelId>(lastRunModel);
+  const [rerunModelPick, setRerunModelPick] = useState<ModelId | null>(null);
+  const rerunModel = rerunModelPick
+    ?? ((secondOpinionModel(lastRunModel, demoConfig.offeredModels) ?? lastRunModel) as ModelId);
+  // A new answer starts the picker afresh.
+  useEffect(() => { setRerunModelPick(null); }, [lastRunModel]);
   const [rerunLoading, setRerunLoading] = useState(false);
   const [rerunError, setRerunError] = useState<string | null>(null);
   const [rerunData, setRerunData] = useState<RerunComparisonData | null>(null);
@@ -481,7 +491,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
           {activePanel === 'review' && (
             <ReviewLauncher
               content={outputContent}
-              model={model}
+              model={lastRunModel}
               sessionId={sessionId}
               embedded
               onApplyReview={onApplyReview}
@@ -547,11 +557,11 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               <p className="mb-3 text-xs leading-relaxed text-adv-gray">
                 Re-executes this output with the exact same configuration (thinking, formats, personas, skills, knowledge sources)
                 but a different model, then shows both outputs side by side with a paragraph-level diff.
-                The original was produced by <span className="font-medium text-adv-off-white">{lastRunModel}</span>.
+                The original was produced by <span className="font-medium text-adv-off-white" title={lastRunModel}>{modelLabel(lastRunModel)}</span>.
                 Both runs stay in this session&apos;s history.
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <ModelSelector value={rerunModel} onChange={setRerunModel} variant="dropdown" />
+                <ModelSelector value={rerunModel} onChange={setRerunModelPick} variant="dropdown" />
                 <button
                   onClick={() => handleRerun('recompose')}
                   disabled={rerunLoading || !sessionId || rerunModel === lastRunModel}
@@ -565,7 +575,9 @@ export default function OutputToolbar(props: OutputToolbarProps) {
               {rerunModel === lastRunModel && !rerunLoading && (
                 <p className="mt-2 text-[11px] text-adv-gray">Pick a different model than the one that produced this output.</p>
               )}
-              {/* Wave 5: verbatim replay — same model, the stored prompt byte-for-byte */}
+              {/* Wave 5: verbatim replay — same model, the stored prompt byte-for-byte.
+                  Not for a demo visitor: their second opinion is another model. */}
+              {!demoLimited && (
               <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
                 <button
                   onClick={() => handleRerun('replay')}
@@ -582,6 +594,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   and reports model, prompt and output hash equality. Fails closed if the prompt was truncated or the model is no longer served.
                 </p>
               </div>
+              )}
               {rerunLoading && rerunMode === 'recompose' && (
                 <p className="mt-2 text-[11px] text-adv-gray">
                   The rerun goes through the full pipeline (knowledge resolution, prompt assembly, model call) — this can take a few minutes for deep-thinking runs.
@@ -601,7 +614,7 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                   className="mt-3 flex items-center gap-1.5 rounded-lg border border-adv-teal/30 bg-adv-teal/10 px-3 py-1.5 text-xs font-medium text-adv-teal transition-colors hover:bg-adv-teal/20"
                 >
                   <GitCompare className="h-3.5 w-3.5" />
-                  Reopen last {rerunData.mode === 'replay' ? 'replay' : 'comparison'} ({rerunData.rerun.modelId})
+                  Reopen last {rerunData.mode === 'replay' ? 'replay' : 'comparison'} ({modelLabel(rerunData.rerun.modelId)})
                 </button>
               )}
             </div>
@@ -829,9 +842,10 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                     <p className="mt-1.5 text-adv-gray">Scores are compared to your module's historical baseline to flag regressions.</p>
                   </div>
                 </div>
-                {/* The scorer is the server's utility model, which is not Haiku on every
-                    server (and a heuristic when its reply does not parse), so it is not named. */}
-                {answersScored && <span className="ml-auto text-xs text-adv-gray">Scored by the quality check</span>}
+                {/* The model that scored this answer (quality_scores.model_used), else
+                    the scorer the server names in /api/config; a heuristic when the
+                    scorer's reply did not parse. */}
+                {answersScored && <span className="ml-auto text-xs text-adv-gray">{scoredByLine(trustScore?.modelUsed ?? null, demoConfig.scorerModel)}</span>}
               </div>
               {!answersScored ? (
                 <div className="rounded-lg bg-adv-dark p-4 text-center">
@@ -979,6 +993,11 @@ export default function OutputToolbar(props: OutputToolbarProps) {
                     ) : null
                   )}
                 </div>
+              ) : outputContent.length <= 200 ? (
+                <div className="rounded-lg bg-adv-dark p-4 text-center">
+                  <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
+                  <p className="text-sm text-adv-gray">Not scored: answers of 200 characters or fewer get no Trust Score.</p>
+                </div>
               ) : (
                 <div className="rounded-lg bg-adv-dark p-4 text-center">
                   <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-adv-gray" />
@@ -1078,6 +1097,18 @@ export default function OutputToolbar(props: OutputToolbarProps) {
       )}
     </div>
   );
+}
+
+/**
+ * Who scored an answer, for the Trust Score panel: the model the score row
+ * names, else the scorer the server names in /api/config, else the quality
+ * check. 'heuristic' is the fallback the server writes when the scorer's reply
+ * did not parse. Exported for tests.
+ */
+export function scoredByLine(modelUsed: string | null, scorerModel: string | null): string {
+  if (modelUsed === 'heuristic') return "Scored by a simple heuristic (the scoring model's reply could not be read)";
+  const scorer = modelUsed || scorerModel;
+  return scorer ? `Scored by ${modelLabel(scorer)}` : 'Scored by the quality check';
 }
 
 // ── Feedback Valves (Wave 3.3) ───────────────────────────────────────────────

@@ -4,12 +4,14 @@
  *
  * Showcase review L14 (2026-09-25): on a demo server (DEMO_MODE=true) a
  * visitor lands on Home, whose "Find the right module" box posts to
- * /api/modules/smart-search. That route is not in the demo allowlist
- * (server/middleware/demo-mode.ts WORK_ROUTES), so every search was answered
- * 404 and the visitor was told to "check Settings → Execution engines" —
- * Settings they cannot open. A visitor is not offered the box; the module
- * catalogue in the sidebar is theirs. Admins, and everyone on an ordinary
- * server, keep it.
+ * /api/modules/smart-search. That route was not in the demo allowlist, so
+ * every search was answered 404 and the visitor was told to "check Settings →
+ * Execution engines" — Settings they cannot open; the box was then hidden.
+ *
+ * Since 2026-10-01 the route is one of the demo's Work routes, so a visitor
+ * has the box again: a failure never points them to Settings, and a module
+ * the demo keeps off is never suggested. Admins, and everyone on an ordinary
+ * server, keep the old behaviour.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act, createElement } from 'react';
@@ -30,6 +32,7 @@ const DEMO_CONFIG = {
   signupOpen: true,
   retentionDays: 30,
   privacyPath: '/privacy',
+  hiddenModules: ['cv-writer'],
 };
 
 let container: HTMLDivElement;
@@ -96,23 +99,41 @@ afterEach(async () => {
 });
 
 describe('SmartModuleSearch on a public demo (L14)', () => {
-  it('is not offered to a visitor, so no search is sent and no Settings advice shown', async () => {
+  it('is offered to a visitor, and never suggests a module the demo keeps off', async () => {
     setServer(DEMO_CONFIG, 'analyst');
-    await render();
-    expect(container.textContent).not.toContain('Find the right module');
-    expect(container.querySelector('textarea')).toBeNull();
-    expect(container.textContent).not.toContain('Settings');
-    expect(searchCalls).toBe(0);
-  });
-
-  it('stays for an admin on the demo, whom the server does not restrict (negative control)', async () => {
-    setServer(DEMO_CONFIG, 'admin');
-    searchAnswer = { status: 200, body: [{ moduleId: 'aml-gap-analysis', label: 'AML gap analysis', reason: 'It fits.' }] };
+    searchAnswer = { status: 200, body: [
+      { moduleId: 'cv-writer', label: 'CV writer', reason: 'Kept off the demo.' },
+      { moduleId: 'aml-gap-analysis', label: 'AML gap analysis', reason: 'It fits.' },
+    ] };
     await render();
     expect(container.textContent).toContain('Find the right module');
     await search('gaps in our AML policy');
     expect(searchCalls).toBe(1);
     expect(container.textContent).toContain('It fits.');
+    expect(container.textContent).not.toContain('Kept off the demo.');
+  });
+
+  it('tells a visitor to pick from the list when the finder fails, never to open Settings', async () => {
+    setServer(DEMO_CONFIG, 'analyst');
+    searchAnswer = { status: 503, body: { error: 'no engine' } };
+    await render();
+    await search('gaps in our AML policy');
+    expect(container.textContent).toContain('pick a module from the list below');
+    expect(container.textContent).not.toContain('Settings');
+  });
+
+  it('negative control: an admin on the demo, whom the server does not restrict, gets every suggestion', async () => {
+    setServer(DEMO_CONFIG, 'admin');
+    searchAnswer = { status: 200, body: [
+      { moduleId: 'cv-writer', label: 'CV writer', reason: 'Kept off the demo.' },
+      { moduleId: 'aml-gap-analysis', label: 'AML gap analysis', reason: 'It fits.' },
+    ] };
+    await render();
+    expect(container.textContent).toContain('Find the right module');
+    await search('gaps in our AML policy');
+    expect(searchCalls).toBe(1);
+    expect(container.textContent).toContain('It fits.');
+    expect(container.textContent).toContain('Kept off the demo.');
   });
 
   it('stays for everyone on an ordinary server, with the Settings advice on a failure (negative control)', async () => {

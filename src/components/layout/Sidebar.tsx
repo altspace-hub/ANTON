@@ -419,8 +419,9 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   });
   const [userHiddenNavItems] = useState<Set<string>>(loadHiddenNavItems);
   // Public demo (DEMO_MODE=true): a visitor keeps the Work home, the module
-  // catalogue and the enabled pillars; the rest answers 404 on the server, so
-  // it is not offered here. Admins keep everything.
+  // catalogue, the features the server opens to visitors (DEMO_WORK_NAV_ITEMS)
+  // and the enabled pillars; the rest answers 404 on the server, so it is not
+  // offered here. Admins keep everything.
   const demoConfig = useDemoStore((s) => s.config);
   const demoLimited = demoRestricted(demoConfig, authUser?.role);
   // Nor does a visitor see the modules and areas the demo keeps off (health,
@@ -2060,10 +2061,29 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           {!sidebarCollapsed && t('nav.aiCouncil')}
         </NavLinkWithStar>
 
+        {/* Build Module lives under Tools & Features, which a demo visitor does
+            not get; it is one of the visitor's features, so it shows here. */}
+        {demoLimited && (
+          <NavLinkWithStar
+            to="/build-module"
+            navId="build-module"
+            title={sidebarCollapsed ? t('nav.buildModule') : undefined}
+            className={({ isActive }) => sidebarCollapsed ? collapsedLinkClass(isActive) : linkClass(isActive)}
+            isFavorite={favoriteNavItems.has('build-module')}
+            isHidden={hiddenNavItems.has('build-module')}
+            onToggleFavorite={toggleNavFavorite}
+            sidebarCollapsed={sidebarCollapsed}
+          >
+            <Puzzle className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && t('nav.buildModule')}
+          </NavLinkWithStar>
+        )}
+
         </>)}
 
         {/* ── Tools & Features section (collapsed by default) ──── */}
-        {/* Not on a public demo: none of these is a Work route the server lets a visitor reach. */}
+        {/* Not on a public demo: apart from Build Module (above), none of these is
+            a Work route the server lets a visitor reach. */}
         {!sidebarCollapsed && !demoLimited && (
           <button
             onClick={() => toggleSection('tools')}

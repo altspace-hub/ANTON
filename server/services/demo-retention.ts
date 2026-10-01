@@ -12,6 +12,9 @@
  *     any table with a session_id column (quality_scores, retrieval_feedback,
  *     audit_log, output_feedback, human_oversight_reviews, …);
  *   - its uploads: the files on disk and their file_uploads rows;
+ *   - the files the Transform panel wrote for its sessions
+ *     (OUTPUT_DIR/renderer-artifacts/<session id>/; their rendered_artifacts
+ *     rows go with the sessions);
  *   - the module prompts it edited (system_prompts rows of author
  *     'user-override' that its runs name and no one else's do), the saved
  *     copies of its sessions' answers (versions, also those written before
@@ -36,7 +39,8 @@
  * Also in demo mode: audit, login and security rows older than the TTL (they
  * carry visitors' IP addresses, including visitors who never signed up) and
  * export files older than the TTL are removed — not a deck the presentations
- * table still lists. And rows no pass can reach by account any more are swept:
+ * table still lists — and so are transform files older than the TTL (not an
+ * administrator's) and those of sessions that no longer exist. And rows no pass can reach by account any more are swept:
  * the answer copies, embeddings, scores and memory feedback of sessions that
  * no longer exist (an embedding or a score can land just after its session was
  * deleted), and edited module prompts no run names.
@@ -280,13 +284,37 @@ function errorCode(err: unknown): string {
   return typeof code === 'string' ? code : 'error';
 }
 
+/** Where renderers write a session's files (services/renderers/lib/artifact-storage.ts). */
+export const RENDERER_ARTIFACTS_SUBDIR = 'renderer-artifacts';
+
+/** A session id that can name a directory: what saveArtifact accepts, never '.' or '..'. */
+const SAFE_SESSION_DIR = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Removes the Transform panel's files for one session. The rendered_artifacts
+ * rows go with the session (ON DELETE CASCADE), but the files stay on disk,
+ * and nothing can reach them afterwards. Only a plain id names a directory
+ * (path.basename, and the saveArtifact alphabet), so the path stays inside
+ * OUTPUT_DIR/renderer-artifacts. True when a directory was removed.
+ */
+export async function removeSessionArtifactDir(outputDir: string, sessionId: string): Promise<boolean> {
+  const name = path.basename(String(sessionId ?? ''));
+  if (!SAFE_SESSION_DIR.test(name)) return false;
+  const root = path.resolve(outputDir, RENDERER_ARTIFACTS_SUBDIR);
+  const dir = path.join(root, name);
+  if (path.dirname(dir) !== root) return false;
+  if (!(await fs.pathExists(dir))) return false;
+  await fs.remove(dir);
+  return true;
+}
+
 /** Deletes one expired demo account and its rows. True when the users row is gone. */
 async function deleteDemoAccount(
   db: DatabaseAdapter,
   user: { id: string; username: string },
   ctx: {
     sessionTables: TableColumns[]; ownerTables: TableColumns[]; foreignKeys: BlockingForeignKey[];
-    uploadDir: string; result: RetentionResult;
+    uploadDir: string; outputDir: string; result: RetentionResult;
   },
 ): Promise<boolean> {
   const { result } = ctx;
@@ -319,6 +347,17 @@ async function deleteDemoAccount(
     }
   }
   await step('file_uploads', 'DELETE FROM file_uploads WHERE uploaded_by = ?', user.id);
+
+  // The transform files of its sessions, before the sessions (and with them
+  // the rows that list the files) go.
+  const sessions = await db.all<{ id: string }>(SESSIONS_OF, user.id).catch(() => [] as Array<{ id: string }>);
+  for (const session of sessions) {
+    try {
+      if (await removeSessionArtifactDir(ctx.outputDir, session.id)) count('transform files', 1);
+    } catch {
+      result.errors.push({ table: 'renderer_artifact_files', code: 'unlink' });
+    }
+  }
 
   for (const s of RETENTION_STEPS) {
     const params = (s.sql.match(/\?/g) ?? []).map(() => user.id);
@@ -465,6 +504,57 @@ async function pruneOldTraces(db: DatabaseAdapter, days: number, outputDir: stri
     }
   }
   if (removed > 0) result.rowsByTable[`export files (older than ${days}d)`] = removed;
+
+  await pruneRendererArtifacts(db, days, dir, result, now);
+}
+
+/**
+ * The Transform panel's session directories under OUTPUT_DIR/renderer-artifacts:
+ * one whose session no longer exists (older than ORPHAN_MIN_AGE_MS, so a
+ * transform being written is not caught), and one untouched for longer than
+ * the TTL whose session is not an administrator's — with its rendered_artifacts
+ * rows, so no listed file answers 404. An administrator's transforms are kept,
+ * as their sessions are.
+ */
+async function pruneRendererArtifacts(db: DatabaseAdapter, days: number, outputDir: string, result: RetentionResult, now: Date): Promise<void> {
+  const root = path.join(outputDir, RENDERER_ARTIFACTS_SUBDIR);
+  const names = await fs.readdir(root).catch(() => null);
+  if (!names) return;
+  const ttlCutoff = now.getTime() - days * 24 * 60 * 60 * 1000;
+  const orphanCutoff = now.getTime() - ORPHAN_MIN_AGE_MS;
+  let orphans = 0;
+  let aged = 0;
+  for (const name of names) {
+    if (!SAFE_SESSION_DIR.test(name)) continue;
+    try {
+      const dir = path.join(root, name);
+      const st = await fs.stat(dir);
+      if (!st.isDirectory()) continue;
+      // The newest of the directory and what it holds: a file written into a
+      // nested folder does not always touch the directory's own time.
+      let newest = st.mtimeMs;
+      for (const entry of await fs.readdir(dir)) {
+        const est = await fs.stat(path.join(dir, entry)).catch(() => null);
+        if (est && est.mtimeMs > newest) newest = est.mtimeMs;
+      }
+      const session = await db.get<{ admin: boolean }>(
+        "SELECT (u.role = 'admin') AS admin FROM sessions s LEFT JOIN users u ON u.id = s.user_id WHERE s.id = ?",
+        name,
+      );
+      if (!session) {
+        if (newest < orphanCutoff && await removeSessionArtifactDir(outputDir, name)) orphans++;
+        continue;
+      }
+      if (session.admin === true || newest >= ttlCutoff) continue;
+      const rows = await db.run('DELETE FROM rendered_artifacts WHERE session_id = ?', name);
+      if (rows.changes > 0) result.rowsByTable[`rendered_artifacts (older than ${days}d)`] = (result.rowsByTable[`rendered_artifacts (older than ${days}d)`] ?? 0) + rows.changes;
+      if (await removeSessionArtifactDir(outputDir, name)) aged++;
+    } catch (err) {
+      result.errors.push({ table: 'renderer_artifact_files', code: errorCode(err) });
+    }
+  }
+  if (orphans > 0) result.rowsByTable['transform files (orphaned)'] = orphans;
+  if (aged > 0) result.rowsByTable[`transform files (older than ${days}d)`] = aged;
 }
 
 /** One retention pass. Safe to run at any time; does nothing to ordinary accounts. */
@@ -494,7 +584,7 @@ export async function runDemoRetention(db: DatabaseAdapter, opts: RetentionOptio
     const ownerTables = await tablesWithColumns(db, USER_OWNER_COLUMNS);
     const foreignKeys = await blockingForeignKeys(db).catch(() => [] as BlockingForeignKey[]);
     for (const user of expired) {
-      const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, result });
+      const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, outputDir, result });
       if (ok) result.deleted++; else result.failed++;
     }
   }
@@ -545,12 +635,14 @@ export interface SessionRowsResult {
  * ratings, sign-offs and memory feedback included. The spend ledger keeps the
  * row and loses the session id; the user id stays, the daily caps read it.
  * Elsewhere those rows are kept: the audit log and the learning signals are
- * the instance owner's.
+ * the instance owner's. In every mode the Transform panel's files for the
+ * session are removed: the rows that list them go with the session, and
+ * nothing could reach the files afterwards.
  */
 export async function deleteSessionRows(
   db: DatabaseAdapter,
   sessionId: string,
-  opts: { allSessionRows: boolean },
+  opts: { allSessionRows: boolean; outputDir?: string },
 ): Promise<SessionRowsResult> {
   const result: SessionRowsResult = { rowsByTable: {}, errors: [] };
   const step = async (table: string, sql: string, ...params: unknown[]): Promise<void> => {
@@ -567,6 +659,14 @@ export async function deleteSessionRows(
     await step('system_prompts', SESSION_PROMPT_OVERRIDES, sessionId, sessionId, sessionId, sessionId, sessionId);
   }
   for (const s of SESSION_COPY_STEPS) await step(s.table, s.sql, sessionId);
+
+  try {
+    if (await removeSessionArtifactDir(opts.outputDir ?? (process.env.OUTPUT_DIR || './outputs'), sessionId)) {
+      result.rowsByTable['transform files'] = 1;
+    }
+  } catch (err) {
+    result.errors.push({ table: 'renderer_artifact_files', code: errorCode(err) });
+  }
 
   if (opts.allSessionRows) {
     await step('workflow_outputs', 'DELETE FROM workflow_outputs WHERE execution_id = ?', sessionId);
@@ -599,7 +699,7 @@ export interface DeleteNowResult extends RetentionResult {
 export async function deleteDemoAccountNow(
   db: DatabaseAdapter,
   userId: string,
-  opts: { uploadDir?: string } = {},
+  opts: { uploadDir?: string; outputDir?: string } = {},
 ): Promise<DeleteNowResult> {
   const result: DeleteNowResult = { expired: 0, deleted: 0, failed: 0, filesRemoved: 0, rowsByTable: {}, errors: [] };
   const user = await db.get<{ id: string; username: string; role: string | null; demo: boolean }>(
@@ -621,7 +721,8 @@ export async function deleteDemoAccountNow(
   const ownerTables = await tablesWithColumns(db, USER_OWNER_COLUMNS);
   const foreignKeys = await blockingForeignKeys(db).catch(() => [] as BlockingForeignKey[]);
   const uploadDir = opts.uploadDir ?? (process.env.UPLOAD_DIR || './uploads');
-  const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, result });
+  const outputDir = opts.outputDir ?? (process.env.OUTPUT_DIR || './outputs');
+  const ok = await deleteDemoAccount(db, user, { sessionTables, ownerTables, foreignKeys, uploadDir, outputDir, result });
   if (ok) result.deleted++; else result.failed++;
   forgetDeletedPromptVersions(result.rowsByTable);
   return result;

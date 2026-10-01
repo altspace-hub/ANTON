@@ -16,6 +16,7 @@
 // NOTHING — the UI shows "ledger unavailable"; a later retry stays possible.
 
 import { Router } from 'express';
+import { isDemoMode } from '../middleware/demo-mode.js';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/database.js';
 import { extractDissentLedger, type DissentExtractionResult, type DissentLedger } from '../services/council-dissent.js';
@@ -116,7 +117,12 @@ export function createCouncilRoutes(db: DatabaseAdapter, deps: CouncilRouteDeps 
 
       if (result.status !== 'extracted' || !result.ledger) {
         // Honest failure — nothing persisted, nothing faked.
-        res.json({ success: false, status: 'failed', ledger: null, error: result.error ?? 'extraction failed' });
+        // The raw reason can carry an endpoint URL and provider text: an
+        // administrator sees it, a demo visitor a sentence.
+        const shown = req.user?.role === 'admin' || !isDemoMode()
+          ? (result.error ?? 'extraction failed')
+          : 'The dissent ledger could not be built from this run. Try again in a moment.';
+        res.json({ success: false, status: 'failed', ledger: null, error: shown });
         return;
       }
 

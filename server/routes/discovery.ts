@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { assertOwned, ownerFilter, type OwnedRequest } from '../middleware/ownership.js';
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
-import type Anthropic from '@anthropic-ai/sdk';
 import { createDiscoveryEngine } from '../services/discovery-engine.js';
+import { isDemoMode } from '../middleware/demo-mode.js';
 import type { DiscoveryTier } from '../services/discovery-engine.js';
 import { safeError } from '../lib/error-response.js';
 
@@ -22,9 +22,9 @@ function errMsg(err: unknown): string {
   return safeError(err);
 }
 
-export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
+export async function createDiscoveryRoutes(db: DatabaseAdapter) {
   const router = Router();
-  const engine = await createDiscoveryEngine(db, anthropic);
+  const engine = await createDiscoveryEngine(db);
 
   // POST /discovery/sessions — Start new session
   router.post('/discovery/sessions', async (req, res) => {
@@ -167,7 +167,10 @@ export async function createDiscoveryRoutes(db: DatabaseAdapter, anthropic?: Ant
   // POST /discovery/sessions/:id/generate — Generate output document
   router.post('/discovery/sessions/:id/generate', async (req, res) => {
     try {
-      const output = await engine.generateOutput(req.params.id);
+      // A demo visitor is never sent to a module the demo keeps off.
+      const output = await engine.generateOutput(req.params.id, {
+        hideDemoModules: isDemoMode() && (req as OwnedRequest).user?.role !== 'admin',
+      });
       res.json(output);
     } catch (err: unknown) {
       console.error('[discovery] Generate error:', err);

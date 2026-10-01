@@ -7,7 +7,7 @@ import type { DatabaseAdapter } from '../db/database.js';
 // this file (that is why role-guards.ts was split out in the first place).
 import { requireRole, USER_ROLES, isUserRole } from '../middleware/role-guards.js';
 import * as budgetManager from '../services/budget-manager.js';
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
 import { hasSsoIdentity } from '../services/oidc-sso.js';
 import {
   createInvitedAccount, issueSignInLink, invitationLink, publicBaseUrl, InvitationError, type IssuedLink,
@@ -177,7 +177,7 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
   }
 
   function sendInvitationError(res: import('express').Response, err: unknown): void {
-    if (err instanceof InvitationError) { res.status(err.status).json({ error: err.message }); return; }
+    if (err instanceof InvitationError) { res.status(err.status).json({ error: publicErrorMessage(err) }); return; }
     res.status(500).json({ error: safeError(err) });
   }
 

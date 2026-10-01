@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 
 export interface BudgetStatus {
@@ -102,5 +103,35 @@ export async function resetMonthlyUsage(db: DatabaseAdapter, userId: string): Pr
   } catch (err) {
     console.error('[budget-manager] Failed to reset usage:', err);
     return false;
+  }
+}
+
+/**
+ * Adds one call's tokens to the user's monthly usage (team mode), the count
+ * checkBudgetBeforeApiCall reads. The Work route charges every run; a route
+ * that calls a model on its own (a review, an explain-for rewrite, a replay)
+ * charges here, so DEMO_USER_MONTHLY_TOKENS holds for it too. Solo mode and
+ * the solo user are not counted. Never throws.
+ */
+export async function chargeMonthlyUsage(
+  db: DatabaseAdapter,
+  user: { id?: string | null } | null | undefined,
+  inputTokens: number,
+  outputTokens: number,
+): Promise<void> {
+  if (process.env.DEPLOYMENT_MODE !== 'team' || !user?.id || user.id === 'solo') return;
+  const input = Math.max(0, Math.round(inputTokens || 0));
+  const output = Math.max(0, Math.round(outputTokens || 0));
+  if (input === 0 && output === 0) return;
+  try {
+    await db.run(`
+      INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(user_id, year_month) DO UPDATE SET
+        input_tokens = user_monthly_usage.input_tokens + excluded.input_tokens,
+        output_tokens = user_monthly_usage.output_tokens + excluded.output_tokens
+    `, randomUUID(), user.id, new Date().toISOString().slice(0, 7), input, output);
+  } catch {
+    // Non-fatal
   }
 }

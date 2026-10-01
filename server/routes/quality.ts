@@ -227,6 +227,9 @@ export async function createQualityRoutes(db: DatabaseAdapter, anthropic?: any) 
         citations: row.score_citations,
         isRegression: !!row.is_regression,
         scoredAt: row.scored_at,
+        // The model that made the score ('heuristic' when no model answered),
+        // so the Trust Score panel can say which model rated the answer.
+        modelUsed: typeof row.model_used === 'string' && row.model_used ? row.model_used : null,
         reasoning,
       });
     } catch (error) {

@@ -8,6 +8,7 @@ import ProjectFiles from '@/components/projects/ProjectFiles';
 import ProjectNotes from '@/components/projects/ProjectNotes';
 import ProjectMembers from '@/components/projects/ProjectMembers';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { normaliseScaffold, type ProjectScaffold } from '@/lib/project-scaffold';
 
 interface Project {
   id: string;
@@ -78,12 +79,6 @@ const PROJECT_TEMPLATES = [
   { id: 'regulatory-response', name: 'Regulatory Response', description: 'Respond to a regulatory finding, inspection, or supervisory enquiry.' },
 ];
 
-interface ScaffoldData {
-  description: string;
-  recommendedModules: { id: string; reason: string }[];
-  suggestedDeadlines: { title: string; dayOffset: number }[];
-}
-
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('openexpert-token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -95,7 +90,8 @@ export default function ProjectsPage() {
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [scaffoldLoading, setScaffoldLoading] = useState(false);
-  const [scaffoldData, setScaffoldData] = useState<ScaffoldData | null>(null);
+  const [scaffoldData, setScaffoldData] = useState<ProjectScaffold | null>(null);
+  const [scaffoldError, setScaffoldError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
@@ -127,18 +123,25 @@ export default function ProjectsPage() {
   const runAiScaffold = async () => {
     if (!newName.trim()) return;
     setScaffoldLoading(true);
+    setScaffoldError(null);
     try {
       const r = await fetch('/api/ai-assist/project-scaffold', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify({ name: newName.trim(), goal: newDesc.trim(), availableModuleIds: MODULES.map((m) => m.id) }),
       });
-      if (r.ok) {
-        const data = await r.json() as ScaffoldData;
+      // The answer is a model's: any part can be missing or misshapen, so it is
+      // read through normaliseScaffold and never trusted to have every list.
+      const data = r.ok ? normaliseScaffold(await r.json().catch(() => null)) : null;
+      if (data) {
         setScaffoldData(data);
         if (data.description && !newDesc.trim()) setNewDesc(data.description);
+      } else {
+        setScaffoldError('The AI scaffold could not be made. Try again, or fill in the project yourself.');
       }
-    } catch { /* ignore */ } finally { setScaffoldLoading(false); }
+    } catch {
+      setScaffoldError('The AI scaffold could not be made. Try again, or fill in the project yourself.');
+    } finally { setScaffoldLoading(false); }
   };
 
   const handleCreate = async () => {
@@ -148,6 +151,7 @@ export default function ProjectsPage() {
     setNewName('');
     setNewDesc('');
     setScaffoldData(null);
+    setScaffoldError(null);
     setShowNew(false);
   };
 
@@ -271,6 +275,7 @@ export default function ProjectsPage() {
             {scaffoldLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Brain className="h-3.5 w-3.5" />}
             {scaffoldLoading ? 'Scaffolding…' : 'AI Scaffold'}
           </button>
+          {scaffoldError && <p role="alert" className="mb-3 text-xs text-adv-red">{scaffoldError}</p>}
           {scaffoldData && (
             <div className="mb-3 rounded-lg border border-adv-teal/20 bg-adv-teal-soft p-3 space-y-2">
               {scaffoldData.recommendedModules.length > 0 && (
@@ -297,6 +302,30 @@ export default function ProjectsPage() {
                         <span className="text-adv-off-white">{d.title}</span>
                         {d.dayOffset > 0 && <span className="text-adv-gray"> · day {d.dayOffset}</span>}
                       </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {scaffoldData.phases.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-adv-off-white mb-1">Phases</p>
+                  <ul className="space-y-0.5">
+                    {scaffoldData.phases.map((p, i) => (
+                      <li key={i} className="text-xs text-adv-gray">
+                        <span className="text-adv-off-white">{p.name}</span>
+                        {p.duration && <span> · {p.duration}</span>}
+                        {p.tasks.length > 0 && <span> · {p.tasks.join(', ')}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {scaffoldData.successCriteria.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-adv-off-white mb-1">Success criteria</p>
+                  <ul className="space-y-0.5">
+                    {scaffoldData.successCriteria.map((c, i) => (
+                      <li key={i} className="text-xs text-adv-gray">{c}</li>
                     ))}
                   </ul>
                 </div>

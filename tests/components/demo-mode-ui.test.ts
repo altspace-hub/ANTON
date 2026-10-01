@@ -8,7 +8,9 @@
  *   - the pillar switch shows a visitor only the enabled pillars, and
  *     disappears when Work is the only one; an admin sees them all;
  *   - the sidebar drops Tools & Features (Missions, Portals, Risk Atlas, …)
- *     for a visitor and offers Sign out and the privacy notice instead;
+ *     for a visitor and offers Sign out and the privacy notice instead; it
+ *     keeps the features opened to visitors (My Work, Open Chat, the AI
+ *     Council, the 5-minute Brief, Build Module);
  *   - the login page lets a visitor create an account (the invite code, the
  *     two ticks) and signs them straight in; on an ordinary server there
  *     is no sign-up;
@@ -29,6 +31,7 @@ import PrivacyNoticePage from '../../src/pages/PrivacyNoticePage';
 import { useDemoStore } from '../../src/stores/useDemoStore';
 import { useAuthStore } from '../../src/stores/useAuthStore';
 import { DEMO_OFF } from '../../src/lib/demo-config';
+import { DEMO_TERMS_TEXT_VERSION } from '../../src/lib/demo-legal';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -170,9 +173,11 @@ describe('Sidebar', () => {
     setDemo(DEMO_CONFIG);
     await render(Sidebar as ComponentType<object>);
     const hrefs = links();
-    for (const gone of ['/missions', '/portals', '/atlas', '/workflows', '/agents', '/task-agent', '/prompt', '/markets', '/coding']) {
+    for (const gone of ['/missions', '/portals', '/atlas', '/workflows', '/agents', '/task-agent', '/markets', '/coding']) {
       expect(hrefs, gone).not.toContain(gone);
     }
+    // The features opened to visitors on 2026-10-01.
+    for (const kept of ['/my-work', '/prompt', '/council', '/brief', '/build-module']) expect(hrefs, kept).toContain(kept);
     expect(hrefs).toContain('/');
     expect(hrefs.some((h) => h?.startsWith('/module/'))).toBe(true);
     expect(hrefs).toContain('/privacy');
@@ -235,7 +240,7 @@ describe('LoginPage on a demo', () => {
     expect(call?.method).toBe('POST');
     expect(JSON.parse(call!.body!)).toEqual({
       username: 'visitor_7', password: 'a-long-enough-pass', code: 'the-code',
-      over18: true, acceptTerms: true, termsVersion: '2026-10-01',
+      over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_TEXT_VERSION,
     });
     expect(useAuthStore.getState().user?.username).toBe('visitor_7');
     // On a demo the token is kept for the tab only (D25).

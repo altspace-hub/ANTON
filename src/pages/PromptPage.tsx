@@ -33,6 +33,7 @@ import { demoRestricted } from '@/lib/demo-config';
 import { findSensitiveInput, describeSensitiveKinds, type SensitiveFinding } from '@/lib/sensitive-input-check';
 import { Send, Square, Trash2, ChevronDown, ChevronRight, Copy, Check, Sparkles, Loader2, X, ArrowRight, Coins, Zap, Users, Mic, MicOff, Plus, MessageSquare, Clock, Paperclip, File as FileIcon } from 'lucide-react';
 import { MODELS } from '@/lib/constants';
+import { modelLabel } from '@/lib/model-labels';
 import { EXPERT_ROLES } from '@/lib/expert-roles';
 import type { Message } from '@/lib/types';
 
@@ -544,7 +545,8 @@ export default function PromptPage() {
     setUserInput(msg.content);
   };
 
-  // Pre-run cost estimate
+  // Pre-run cost estimate. Only for a model with a list price: a compat model
+  // (OpenRouter) is priced per use by the endpoint, so no figure is claimed.
   const modelInfo = MODELS.find((m) => m.id === model);
   const estimatedInputTokens = Math.round(
     (DEFAULT_SYSTEM_PROMPT.length + messages.reduce((sum, m) => sum + m.content.length, 0) + userInput.length) / 4
@@ -554,8 +556,9 @@ export default function PromptPage() {
     ? (estimatedInputTokens / 1_000_000) * modelInfo.inputCostPer1M +
       (estimatedOutputTokens / 1_000_000) * modelInfo.outputCostPer1M
     : 0;
-  const costDisplay =
-    estimatedCost < 0.01 ? '<$0.01' : estimatedCost < 1 ? `~$${estimatedCost.toFixed(2)}` : `~$${estimatedCost.toFixed(1)}`;
+  const costDisplay = !modelInfo
+    ? 'priced per use'
+    : estimatedCost < 0.01 ? '<$0.01' : estimatedCost < 1 ? `~$${estimatedCost.toFixed(2)}` : `~$${estimatedCost.toFixed(1)}`;
 
   // Relative time helper
   const relativeTime = (dateStr: string) => {
@@ -582,7 +585,7 @@ export default function PromptPage() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-adv-white">Prompt</h1>
-          <p className="text-xs text-adv-gray">Direct conversation with Claude. No module constraints — ask anything.</p>
+          <p className="text-xs text-adv-gray">Direct conversation with {modelLabel(model)}. No module constraints — ask anything.</p>
         </div>
         <div className="flex items-center gap-2">
           {messages.length > 0 && (
@@ -995,6 +998,8 @@ export default function PromptPage() {
           onPick={(picked) => { setLens(picked); setLensDeclined(false); }}
           onClear={() => { setLens(null); setLensDeclined(true); }}
         />
+        {/* Projects stay with admins on a public demo (their routes are not a visitor's). */}
+        {!demoLimited && (
         <ProjectChip
           project={project}
           disabled={isStreaming}
@@ -1008,6 +1013,7 @@ export default function PromptPage() {
             if (sessionId) void assignSessionToProject(sessionId, null).catch(() => undefined);
           }}
         />
+        )}
       </div>
 
       {/* Input area */}

@@ -387,7 +387,7 @@ The pin allows one provider, Inceptron. That is what keeps every prompt with a z
 
 - **Inceptron is often rate-limited.** In live tests on 2026-09-25 it answered `429 temporarily rate-limited upstream` to about one call in three, even with nothing else on the key.
 - **Nothing stands in for it.** Until 2026-09-26 the pin also allowed NextBit, and NextBit served the calls Inceptron refused (3 of 3 probe calls). NextBit is out: its own ZDR statement says request data may be kept for up to 90 days, and its terms place compute nodes inside and outside the EEA. With one provider, expect more "busy" answers than those tests showed. `allow_fallbacks` makes no difference with a single provider in `only`.
-- **ANTON softens what it can.** A 429 is retried three times (2, 4, then 8 s), and a visitor who still gets one sees "busy, try again in a moment". On the demo, an answer is followed by at most the session conclusion (`DEMO_POST_ANSWER_CALLS`), not three calls at once.
+- **ANTON softens what it can.** A 429 is retried three times (2, 4, then 8 s), and a visitor who still gets one sees "busy, try again in a moment". On the demo, an answer is followed by at most the session conclusion and, with `DEMO_POST_ANSWER_CALLS=scored`, the quality score (`QUALITY_SCORER_MODEL`), not three calls at once.
 - **Answers are slow on the pin:** 45 s to 3.5 min for a full module answer, up to 8 min when retries pile up. Visitors see the text arrive as it is written.
 
 If too many visitors are refused:
@@ -405,21 +405,21 @@ Do not add NextBit back to `only`, and do not swap `only` for `order` with fallb
   - running a module;
   - their own sessions, uploads, exports and ratings;
   - the module catalogue;
-  - the settings the page reads.
+  - the settings the page reads;
+  - the Work tools: My Work, Explain for, the citation check, Review, Rerun with another model, the Transform panel, Find the right module, the AI Council's dissent ledger and Build Module (their own modules, the guided builder and its test run). Each route is listed exactly, so a sibling stays closed: community sharing of a module, the `.anton` export, `/reviews/orchestrate` and the rest of `/ai-assist` answer 404.
+- **The answer tools call the model.** A visitor gets the model asked for only when `DEMO_OFFERED_MODELS` lists it, else the default (Review and Rerun preselect another offered model than the one that answered, so a second model checks the first). Their tokens count against the visitor's monthly budget, and each counts against `DEMO_USER_WRITES_PER_10_MIN` and the per-address model-call limiter.
+- **Transform files are deleted.** The Transform panel writes files under `OUTPUT_DIR/renderer-artifacts/<session>/`. They go when the visitor deletes the session or the account expires, and the daily pass also removes those of sessions that no longer exist and a visitor's older than `DEMO_ACCOUNT_TTL_DAYS`.
 - **Everything else** answers 404: other pillars, agents, data import, Code Studio, Settings changes. The list is `WORK_ROUTES` in `server/middleware/demo-mode.ts`.
 - **Hidden modules.** Areas in `DEMO_HIDDEN_AREAS` and modules in `DEMO_HIDDEN_MODULES` are left out of the catalogue for visitors (the server's listings, the community modules and, from the lists in `/api/config`, the web client's catalogue), and a run of one is refused. They invite health, employment, credit or criminal-offence data, which the demo must not receive, and the privacy notice says the demo does not offer them.
   - **The recommended lists are built in.** With both settings left out, demo mode hides the areas health, community health, HR and workers' rights, and the modules on credit risk and credit scoring (`credit-risk`, `fintech-credit-risk-assessment`, `microfinance-credit-scoring`, `credit-score-builder`), CV writing (`cv-writer`), employment and social protection (`employment-rights`, `social-protection-navigator`), and criminal law and investigations (`court-process-demystifier`, `alert-investigation`, `investigation-support`, `ivts-detection-investigation`, `blockchain-investigation`, `investigative-research`, `sar-quality-check`, `daily-screening-review`, `sanctions-advisory`). The rest of the `fcp` area stays open. `.env.demo.example` repeats the lists.
   - **A list you set replaces the built-in one.** The server warns at start about each recommended id it leaves out. `none` turns a list off.
-- **Storage per visitor is capped.** An upload that would take an account past `DEMO_USER_UPLOAD_MB` or `DEMO_USER_UPLOAD_FILES` is refused before it is written. Uploads, exports and version saves are also limited to `DEMO_USER_WRITES_PER_10_MIN` per account.
+- **Storage per visitor is capped.** An upload that would take an account past `DEMO_USER_UPLOAD_MB` or `DEMO_USER_UPLOAD_FILES` is refused before it is written. Uploads, exports, version saves, saved modules and the answer tools are also limited to `DEMO_USER_WRITES_PER_10_MIN` per account.
 - **Administrators** are not restricted.
 
 Opening more:
 
 - **`DEMO_ENABLED_PILLARS`** turns on pillars besides Work, e.g. `pathfinder`. Each adds its API prefix and appears in the pillar switch and the sidebar.
-- **`DEMO_EXTRA_ROUTES`** adds API prefixes, each optionally limited to methods:
-  - `/renderers` opens the Transform panel;
-  - `POST:/modules/smart-search` opens "find the right module".
-  Both call the model, so they spend budget.
+- **`DEMO_EXTRA_ROUTES`** adds API prefixes, each optionally limited to methods, e.g. `/discovery`. An entry is a prefix: `POST:/projects` also opens every POST below `/projects` (members, invitations). Most features call the model, so they spend budget.
 - Anything you open is processing the privacy notice has to describe. Check the notice before you open it.
 
 ## 7. The demo settings
@@ -437,7 +437,7 @@ Opening more:
 | `DEMO_SIGNUPS_PER_IP_PER_HOUR` | 3 | Sign-up attempts per address per hour. Failed attempts count too. |
 | `DEMO_USER_UPLOAD_MB` | 50 | Megabytes of uploads one account may keep (0 = no cap). |
 | `DEMO_USER_UPLOAD_FILES` | 50 | Uploaded files one account may keep (0 = no cap). |
-| `DEMO_USER_WRITES_PER_10_MIN` | 30 | Uploads, exports and version saves per account per 10 minutes. |
+| `DEMO_USER_WRITES_PER_10_MIN` | 30 | Uploads, exports, version saves, saved modules and answer-tool requests per account per 10 minutes. |
 | `DEMO_OFFERED_MODELS` | — | Full model ids the picker offers visitors. |
 | `DEMO_HIDDEN_AREAS` | the recommended list | Area ids kept off the demo for visitors (section 6). `none` turns it off; warned about at start when both lists are `none`, or when a list leaves out a recommended id. |
 | `DEMO_HIDDEN_MODULES` | the recommended list | Module ids kept off the demo for visitors (section 6). `none` turns it off. |
@@ -445,6 +445,8 @@ Opening more:
 | `JWT_EXPIRY` | 7 days (8 hours on a demo) | How long a sign-in lasts. Demo mode caps it at 8 hours whatever it says. |
 | `DEMO_ENABLED_PILLARS` | — | Pillars besides Work. |
 | `DEMO_EXTRA_ROUTES` | — | Extra API prefixes (section 6). |
+| `DEMO_POST_ANSWER_CALLS` | `conclusion` | Model calls after each answer: `conclusion` (the session conclusion), `scored` (also the quality score, shown as the Trust Score), `all` (also the structured extraction) or `none`. |
+| `QUALITY_SCORER_MODEL` | the utility model | The full id of the model that scores answers, e.g. another offered model than the default, so a second model checks the first. Read in every mode; on a demo it must be a `compat:` model (warned about at start otherwise), and `/api/config` names it for the privacy notice. |
 | `LLM_DAILY_SPEND_CAP_USD` | none | The server's model spend per UTC day. |
 | `LLM_USER_DAILY_SPEND_CAP_USD` | none | One visitor's model spend per UTC day. |
 | `ANTON_DEMO_BUILD` | — | Read by `pnpm run build`, not by the server. `true` builds the web client without a service worker. Set it on every demo build. |

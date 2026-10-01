@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { MODULES, MODELS } from '@/lib/constants';
 import { fetchSessions, deleteSession, updateSessionTitle, updateSessionNote, fetchProjects, assignSessionToProject, fetchWithAuth } from '@/lib/api';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { demoRestricted } from '@/lib/demo-config';
 import type { Session } from '@/lib/types';
 
 // Wave 4.3 — one row of the unified work timeline (GET /api/work-timeline)
@@ -119,9 +122,11 @@ function formatSessionCost(session: Session): string | null {
     modelId = cfg?.model;
   } catch { /* ignore */ }
   const modelInfo = MODELS.find((m) => m.id === modelId);
-  const costPer1M = modelInfo ? modelInfo.outputCostPer1M : 75;
-  const cost = (tokens / 1_000_000) * costPer1M;
   const tokenStr = tokens >= 1000 ? `${(tokens / 1000).toFixed(1)}k` : `${tokens}`;
+  // A model without a list price here (a compat model, priced per use by its
+  // endpoint) shows its tokens only, not a figure from another model's price.
+  if (!modelInfo) return `${tokenStr} tok`;
+  const cost = (tokens / 1_000_000) * modelInfo.outputCostPer1M;
   const costStr = cost < 0.01 ? '<$0.01' : `~$${cost.toFixed(2)}`;
   return `${tokenStr} tok · ${costStr}`;
 }
@@ -132,6 +137,10 @@ type SortMode = 'recent' | 'most-used';
 export default function MyWorkPage() {
   const { t } = useTranslation();
   const formatRelativeTime = useFormatRelativeTime();
+  // Public demo: a visitor has My Work (their sessions and the timeline), but
+  // Projects and the search inside past outputs (POST /search) stay with
+  // admins, so neither is asked for. The title search still works.
+  const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   // Wave 4.3: Timeline (all work types, one feed) is the default view;
   // the original session list stays available under "Sessions".
   const [view, setView] = useState<'timeline' | 'sessions'>('timeline');
@@ -157,8 +166,9 @@ export default function MyWorkPage() {
   const [assigningProjectId, setAssigningProjectId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (demoLimited) return;
     fetchProjects().then(setProjects).catch(() => {});
-  }, []);
+  }, [demoLimited]);
 
   // Close project dropdown when clicking outside
   useEffect(() => {
@@ -201,7 +211,7 @@ export default function MyWorkPage() {
 
   useEffect(() => {
     const q = debouncedSearch.trim();
-    if (q.length < 3) { setPastWorkHits([]); return; }
+    if (q.length < 3 || demoLimited) { setPastWorkHits([]); return; }
     let cancelled = false;
     setPastWorkLoading(true);
     fetchWithAuth('/api/search', {
@@ -216,7 +226,7 @@ export default function MyWorkPage() {
       .catch(() => { if (!cancelled) setPastWorkHits([]); })
       .finally(() => { if (!cancelled) setPastWorkLoading(false); });
     return () => { cancelled = true; };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, demoLimited]);
 
   const loadSessions = useCallback(async (reset = false) => {
     setLoading(true);
@@ -353,7 +363,7 @@ export default function MyWorkPage() {
         ))}
       </div>
 
-      {view === 'timeline' && <TimelineFeed formatRelativeTime={formatRelativeTime} />}
+      {view === 'timeline' && <TimelineFeed formatRelativeTime={formatRelativeTime} sessionsOnly={demoLimited} />}
 
       {view === 'sessions' && (<>
       {/* Search */}
@@ -594,8 +604,8 @@ export default function MyWorkPage() {
                     )}
                   </div>
 
-                  {/* Project badge */}
-                  {(() => {
+                  {/* Project badge (not for a demo visitor: Projects stay with admins) */}
+                  {!demoLimited && (() => {
                     const proj = session.project_id ? projects.find((p) => p.id === session.project_id) : null;
                     return (
                       <div className="mt-1.5 relative">
@@ -726,7 +736,8 @@ function timelineStatusClass(status: string): string {
   return 'bg-adv-dark text-adv-gray border border-border';
 }
 
-function TimelineFeed({ formatRelativeTime }: { formatRelativeTime: (d: string) => string }) {
+/** `sessionsOnly`: a demo visitor has no engagements, workflows or discovery, so only their chips show. */
+function TimelineFeed({ formatRelativeTime, sessionsOnly = false }: { formatRelativeTime: (d: string) => string; sessionsOnly?: boolean }) {
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -757,13 +768,13 @@ function TimelineFeed({ formatRelativeTime }: { formatRelativeTime: (d: string) 
     load(null, true);
   }, [load]);
 
-  const chips: { value: TimelineChip; label: string }[] = [
+  const chips: { value: TimelineChip; label: string }[] = ([
     { value: 'all', label: 'All' },
     { value: 'session', label: 'Sessions' },
     { value: 'engagement', label: 'Engagements' },
     { value: 'workflow', label: 'Workflows' },
     { value: 'discovery', label: 'Discovery' },
-  ];
+  ] as { value: TimelineChip; label: string }[]).filter((c) => !sessionsOnly || c.value === 'all' || c.value === 'session');
 
   return (
     <div>
@@ -792,7 +803,9 @@ function TimelineFeed({ formatRelativeTime }: { formatRelativeTime: (d: string) 
             {error
               ? 'Could not load the timeline. Try again later.'
               : chip === 'all'
-              ? 'No work yet. Module runs, engagements, workflows and discovery sessions will appear here as you work.'
+              ? sessionsOnly
+                ? 'No work yet. Module runs, chats and councils will appear here as you work.'
+                : 'No work yet. Module runs, engagements, workflows and discovery sessions will appear here as you work.'
               : 'Nothing of this type yet.'}
           </p>
         </div>

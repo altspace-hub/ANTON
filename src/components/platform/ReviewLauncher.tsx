@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 import { DOMAIN_REVIEWERS } from '@/lib/domain-reviewers';
 import { streamReviewDirect, fetchReviewModes } from '@/lib/api';
+import ModelSelector from '@/components/shared/ModelSelector';
+import { useDemoStore } from '@/stores/useDemoStore';
+import { secondOpinionModel } from '@/lib/demo-model-names';
+import { modelLabel } from '@/lib/model-labels';
+import type { ModelId } from '@/lib/types';
 
 interface ReviewMode {
   id: string;
@@ -19,6 +24,7 @@ interface ReviewMode {
 
 interface ReviewLauncherProps {
   content: string;
+  /** The model that wrote the answer under review. */
   model: string;
   sessionId?: string;
   /** When true, skip outer card + accordion toggle (used when embedded in OutputToolbar) */
@@ -48,7 +54,15 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewText, setReviewText] = useState('');
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  // The reviewer: a second opinion. On a demo it starts on an offered model
+  // other than the one that wrote the answer (the server uses a body model only
+  // when the demo offers it); elsewhere on the answer's own model, as before.
+  const offeredModels = useDemoStore((s) => s.config.offeredModels);
+  const [reviewerPick, setReviewerPick] = useState<ModelId | null>(null);
+  const reviewerModel = reviewerPick ?? ((secondOpinionModel(model, offeredModels) ?? model) as ModelId);
+  const [reviewedBy, setReviewedBy] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReviewModes().then(setModes).catch(() => {});
@@ -58,19 +72,25 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
     if (!selectedMode || isReviewing || !content) return;
     setIsReviewing(true);
     setReviewText('');
+    setReviewError(null);
+    setReviewedBy(reviewerModel);
 
     const ctrl = new AbortController();
     setAbortController(ctrl);
 
     try {
-      const stream = streamReviewDirect(selectedMode, content, model, sessionId, ctrl.signal);
+      const stream = streamReviewDirect(selectedMode, content, reviewerModel, sessionId, ctrl.signal);
       for await (const event of stream) {
         if (event.type === 'text_delta') setReviewText((t) => t + event.content);
-        if (event.type === 'error' || event.type === 'stream_end') break;
+        if (event.type === 'error') {
+          setReviewError(event.message || 'Review failed. Please try again.');
+          break;
+        }
+        if (event.type === 'stream_end') break;
       }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
-        setReviewText('Review failed. Please try again.');
+        setReviewError('Review failed. Please try again.');
       }
     } finally {
       setIsReviewing(false);
@@ -150,6 +170,16 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
         </div>
       )}
 
+      {/* The reviewer model: another model reads the answer */}
+      <div className="mb-3 max-w-sm">
+        <ModelSelector value={reviewerModel} onChange={setReviewerPick} variant="dropdown" />
+        <p className="mt-1 text-xs text-adv-gray">
+          {reviewerModel === model
+            ? 'The same model that wrote the answer will review it. Pick another for a second opinion.'
+            : `${modelLabel(reviewerModel)} reviews the answer ${modelLabel(model)} wrote.`}
+        </p>
+      </div>
+
       {/* Run / Stop */}
       <div className="flex gap-2">
         {isReviewing ? (
@@ -172,6 +202,10 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
         )}
       </div>
 
+      {reviewError && (
+        <p role="alert" className="mt-3 text-xs text-adv-red">{reviewError}</p>
+      )}
+
       {/* Review output */}
       {(reviewText || isReviewing) && (
         <div className="mt-4 rounded-xl border border-border bg-adv-dark p-4">
@@ -179,6 +213,7 @@ export default function ReviewLauncher({ content, model, sessionId, embedded, on
             <Sparkles className={`h-3.5 w-3.5 text-adv-teal ${isReviewing ? 'animate-pulse' : ''}`} />
             <span className="text-xs font-medium text-adv-teal">
               {modes.find((m) => m.id === selectedMode)?.label} Review
+              {reviewedBy && ` by ${modelLabel(reviewedBy)}`}
               {isReviewing && ' — generating...'}
             </span>
           </div>

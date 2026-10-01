@@ -1,4 +1,5 @@
 import { Router, type Response } from 'express';
+import { extractJsonReply } from '../services/coding-workspace.js';
 import { MODEL_CAPABILITIES } from '../config/model-capabilities.js';
 import path from 'path';
 import type { DatabaseAdapter } from '../db/database.js';
@@ -43,7 +44,7 @@ import {
 } from '../services/adapters/openaiCompatibleAdapter.js';
 import { resolveCompatModel, CompatEndpointError, modelAcceptsImages, type ResolvedCompatModel } from '../services/compat-endpoint.js';
 import { assertSpendAllowed, isSpendCapError, type SpendCostSource } from '../services/llm-spend.js';
-import { isDemoMode, demoOfferedModels, demoPostAnswerCalls, demoModuleHidden } from '../middleware/demo-mode.js';
+import { isDemoMode, demoOfferedModels, demoPostAnswerCalls, demoQualityScoreOn, demoStructuredExtractionOn, demoModuleHidden } from '../middleware/demo-mode.js';
 import { compatReasoningParam } from '../services/thinking-map.js';
 import { decrypt } from '../services/credential-vault.js';
 import { verifyCitations } from '../services/citation-verifier.js';
@@ -56,9 +57,11 @@ import { getEffectiveDefaultModel } from '../services/default-model-store.js';
 import { getAreaDefaultModelSync } from '../services/area-default-model-store.js';
 import { streamToResponse as sdkStreamToResponse, stripWebSearchInstructions, sdkWebToolsRequested } from '../services/claude-sdk-client.js';
 import { capabilityModelId } from '../services/engine-model-id.js';
-import { mapModelToProvider, callChat, getConfiguredProvider } from '../services/provider-router.js';
-import { CLAUDE_LARGE } from '../config/claude-lineup.js';
-import { hasClaudeEngine, NO_CLAUDE_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { mapModelToProvider, callChat, streamChat, setSSEHeaders } from '../services/provider-router.js';
+import { CLAUDE_LARGE, CLAUDE_MEDIUM } from '../config/claude-lineup.js';
+import { hasAnyModelEngine, NO_MODEL_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { sideRouteModel, modelCallErrorStatus } from '../services/side-route-model.js';
+import { chargeMonthlyUsage as chargeUserMonthlyUsage } from '../services/budget-manager.js';
 import { isSdkEngineEnabled } from '../services/sdk-engine-store.js';
 import { streamToResponse as codexStreamToResponse } from '../services/codex-sdk-client.js';
 import { isCodexEngineEnabled } from '../services/codex-engine-store.js';
@@ -190,6 +193,13 @@ function withoutOnlineReferenceFetch(knowledgeSources: unknown): unknown {
 }
 
 const IMAGE_UPLOAD_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+
+/**
+ * The longest text explain-for rewrites or verify-citations reads: well above
+ * any one answer (a compat run stops at 16,384 tokens), so only a request
+ * that is not an answer is refused.
+ */
+const EXPLAIN_FOR_MAX_CHARS = 200_000;
 
 /**
  * Can this run's engine read an image attachment? Claude and the subscription
@@ -1383,23 +1393,8 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // inside onComplete only — which exists only with a sessionId and runs
       // only when an answer finished — so a run sent with no session, or
       // closed before its last chunk, never counted (review C1/C3).
-      const chargeMonthlyUsage = async (inputTokens: number, outputTokens: number): Promise<void> => {
-        if (process.env.DEPLOYMENT_MODE !== 'team' || !req.user || req.user.id === 'solo') return;
-        const input = Math.max(0, Math.round(inputTokens || 0));
-        const output = Math.max(0, Math.round(outputTokens || 0));
-        if (input === 0 && output === 0) return;
-        try {
-          await db.run(`
-            INSERT INTO user_monthly_usage (id, user_id, year_month, input_tokens, output_tokens)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(user_id, year_month) DO UPDATE SET
-              input_tokens = user_monthly_usage.input_tokens + excluded.input_tokens,
-              output_tokens = user_monthly_usage.output_tokens + excluded.output_tokens
-          `, crypto.randomUUID(), req.user.id, new Date().toISOString().slice(0, 7), input, output);
-        } catch {
-          // Non-fatal
-        }
-      };
+      const chargeMonthlyUsage = (inputTokens: number, outputTokens: number): Promise<void> =>
+        chargeUserMonthlyUsage(db, req.user, inputTokens, outputTokens);
 
       // Callback to save assistant message + audit after streaming completes
       const onComplete = sessionId
@@ -1711,10 +1706,12 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // (B2 fix: nothing ever wrote quality_avg, so promotion past 'guided'
             // was arithmetically impossible). Resolves to null when scoring is
             // skipped (short output) or failed — null means "do not fold".
-            // Public demo: after-answer calls are limited (DEMO_POST_ANSWER_CALLS).
+            // Public demo: after-answer calls are limited (DEMO_POST_ANSWER_CALLS):
+            // 'scored' keeps the quality score (the Trust Score under the answer,
+            // made by QUALITY_SCORER_MODEL when set) and drops the extraction.
             const postAnswer = demoPostAnswerCalls();
             const qualityScorePromise: Promise<number | null> =
-              postAnswer === 'all' && data.text && data.text.length > 200
+              demoQualityScoreOn() && sessionId && data.text && data.text.length > 200
                 ? ratchet.scoreOutput({ content: data.text, moduleId: moduleId || 'open-chat', areaId, sessionId, anthropicClient: anthropic })
                     .then((r) => (typeof r?.score?.overall === 'number' && Number.isFinite(r.score.overall) ? r.score.overall : null))
                     .catch(() => null)
@@ -1724,7 +1721,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
             // doesn't spawn N parallel Haiku calls. Deduplicates per-session.
             // Missing moduleId falls back to analytic_report (most permissive);
             // threshold lowered to 100 chars to cover short policy outputs.
-            if (postAnswer === 'all' && sessionId && data.text && data.text.length > 100) {
+            if (demoStructuredExtractionOn() && sessionId && data.text && data.text.length > 100) {
               void enqueueExtraction({
                 sessionId,
                 markdown: data.text,
@@ -2216,7 +2213,9 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
         // configured, pre-search and inject results (Claude uses its native
         // web_search tool on its own branch; everyone else gets Bing grounding).
         let webResultsInjected = false;
-        if (webSearchWasRequested) {
+        // Never for a demo visitor: Bing would be a recipient of their question
+        // that the privacy notice does not list (the Council could ask for it).
+        if (webSearchWasRequested && !(isDemoMode() && req.user?.role !== 'admin')) {
           try {
             const { getBingSearchApiKey, searchAndFormat, extractSearchQuery } = await import('../services/bing-search.js');
             const bingKey = await getBingSearchApiKey(db);
@@ -2821,25 +2820,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     }
   });
 
-  // POST /api/claude/explain-for — Explain-It-Different: rewrite output for a target audience
-  // Streams SSE using the same pattern as /api/claude/message but with a fixed lightweight prompt.
-  // Defaults to claude-sonnet-4-5-20250929 (cost-effective for rewriting tasks).
-  router.post('/claude/explain-for', async (req, res) => {
+  // POST /api/claude/explain-for — Explain-It-Different: rewrite an answer for a target audience.
+  // Streams the frames /api/claude/message does (stream_start, text_delta,
+  // error, stream_end, then [DONE]) through provider-router, so it runs on
+  // whatever engine is configured. It was bound to the Anthropic API and
+  // answered 500 on a server with no Anthropic key (the public showcase).
+  // A demo visitor gets the requested model only when the demo offers it,
+  // else the server default (sideRouteModel); the tokens count against the
+  // caller's monthly budget like a Work run.
+  router.post('/claude/explain-for', checkBudget, async (req, res) => {
+    let streaming = false;
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      if (!hasAnyModelEngine()) {
+        res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
         return;
       }
 
       const { content, audience, moduleContext, model } = req.body as {
-        content?: string;
-        audience?: string;
-        moduleContext?: string;
-        model?: string;
+        content?: unknown;
+        audience?: unknown;
+        moduleContext?: unknown;
+        model?: unknown;
       };
 
       if (!content || typeof content !== 'string' || content.trim().length === 0) {
         res.status(400).json({ error: 'content is required and must be a non-empty string.' });
+        return;
+      }
+      if (content.length > EXPLAIN_FOR_MAX_CHARS) {
+        res.status(413).json({ error: `The text is too long to rewrite (${EXPLAIN_FOR_MAX_CHARS.toLocaleString('en-GB')} characters at most).` });
         return;
       }
 
@@ -2856,27 +2865,35 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       }
 
       // Build the audience-adapted prompt
-      const userPrompt = getAudiencePrompt(audience, content, moduleContext);
+      const context = typeof moduleContext === 'string' ? moduleContext.slice(0, 500) : undefined;
+      const userPrompt = getAudiencePrompt(audience, content, context);
+      // A rewrite is a medium-tier task: the configured engine's medium model
+      // unless the caller names one (offered models only for a demo visitor).
+      const selectedModel = sideRouteModel(req, model, CLAUDE_MEDIUM);
 
-      // Use Sonnet by default — fast and cost-effective for rewriting tasks
-      const selectedModel = (
-        ['claude-opus-5-5', 'claude-opus-4-8', 'claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'].includes(model || '')
-          ? model
-          : 'claude-sonnet-4-5-20250929'
-      ) as 'claude-opus-5-5' | 'claude-opus-4-8' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
-
-      await streamToResponse(
-        {
-          model: selectedModel,
-          thinking: 'think',
-          system: 'You are an expert communication specialist at ANTON, a Financial Crime Prevention consultancy. Your role is to rewrite analysis outputs to suit specific audiences without altering underlying facts. Always produce clean Markdown with clear headings.',
-          messages: [{ role: 'user', content: userPrompt }],
-        },
-        res
-      );
+      setSSEHeaders(res);
+      streaming = true;
+      res.write(`data: ${JSON.stringify({ type: 'stream_start', model: selectedModel })}\n\n`);
+      const result = await streamChat({
+        model: selectedModel,
+        thinkingLevel: 'think',
+        maxTokens: 8192,
+        system: 'You are an expert communication specialist at ANTON, a Financial Crime Prevention consultancy. Your role is to rewrite analysis outputs to suit specific audiences without altering underlying facts. Always produce clean Markdown with clear headings.',
+        messages: [{ role: 'user', content: userPrompt }],
+        db,
+      }, res);
+      await chargeUserMonthlyUsage(db, req.user, result.inputTokens, result.outputTokens);
+      res.write(`data: ${JSON.stringify({ type: 'stream_end', usage: { inputTokens: result.inputTokens, outputTokens: result.outputTokens } })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
     } catch (error) {
-      if (!res.headersSent) {
-        res.status(500).json({ error: safeError(error) });
+      const message = publicErrorMessage(error);
+      if (!streaming && !res.headersSent) {
+        res.status(modelCallErrorStatus(error)).json({ error: message });
+      } else if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
       }
     }
   });
@@ -2886,8 +2903,11 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // and streams an Opus-synthesised confidence-weighted response.
   router.post('/claude/deliberate', checkBudget, async (req, res) => {
     try {
-      if (!isApiKeyConfigured()) {
-        res.status(500).json({ error: 'API key not configured. Add ANTHROPIC_API_KEY to your .env file.' });
+      // The panel and the synthesis run through provider-router on the
+      // configured engine; a key-only gate refused every call on a server
+      // whose engine is an OpenAI-compatible endpoint.
+      if (!hasAnyModelEngine()) {
+        res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
         return;
       }
 
@@ -3017,8 +3037,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
   // POST /api/claude/verify-citations — WP-32 Citation Verification Layer
   router.post('/claude/verify-citations', async (req, res) => {
     try {
-      if (!hasClaudeEngine()) {
-        res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+      // The check runs through provider-router on the routed utility model, so
+      // any configured engine can answer it, not only Claude.
+      if (!hasAnyModelEngine()) {
+        res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
         return;
       }
 
@@ -3031,10 +3053,10 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
       // ATTR-04: pass source manifest for cross-checking citations against loaded sources
       const safeManifest = Array.isArray(sourceManifest) ? sourceManifest.filter(s => typeof s === 'string') : undefined;
-      const citations = await verifyCitations(text, safeManifest);
+      const citations = await verifyCitations(text.slice(0, EXPLAIN_FOR_MAX_CHARS), safeManifest?.slice(0, 200), db);
       res.json({ citations });
     } catch (error) {
-      res.status(500).json({ error: safeError(error) });
+      res.status(modelCallErrorStatus(error)).json({ error: publicErrorMessage(error) });
     }
   });
 
@@ -3046,11 +3068,16 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
     // The call below goes through provider-router on the routed utility
     // model, so a server whose configured engine is an OpenAI-compatible
     // endpoint or Ollama can answer it too.
-    const configured = getConfiguredProvider();
-    if (!hasClaudeEngine() && configured !== 'openai_compatible' && configured !== 'ollama') {
-      res.status(503).json({ error: NO_CLAUDE_ENGINE_MESSAGE });
+    if (!hasAnyModelEngine()) {
+      res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
       return;
     }
+    // Demo mode: a visitor is never pointed at a module the demo keeps off
+    // (demoModuleHidden) — the run would be refused. Left out of the
+    // candidates, and dropped if the model names one anyway.
+    const hideFromCaller = isDemoMode() && req.user?.role !== 'admin';
+    const hidden = (id: string, areaId: string | null | undefined): boolean =>
+      hideFromCaller && demoModuleHidden(id, areaId);
 
     const { query } = req.body as { query?: string };
 
@@ -3061,7 +3088,7 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
 
     try {
       const { getAllModules } = await import('../services/module-loader.js');
-      const catalog = await getAllModules();
+      const catalog = (await getAllModules()).filter((m) => !hidden(m.id, (m as { areaId?: string }).areaId));
 
       // Cheap keyword pre-filter over the full catalog: score each module by
       // query-token matches in id / label / description, keep the top ~150
@@ -3094,33 +3121,40 @@ export async function createClaudeRoutes(db: DatabaseAdapter, anthropic?: any) {
       // errored on every query on a subscription-only instance.
       const response = await callChat({
         model: await getRoutedUtilityModel(db),
-        system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY a valid JSON array — no prose, no markdown fences, nothing else.`,
+        system: `You are a module recommender for an AI-powered professional workbench called openEXPERT. Given a user's description of what they need help with, identify the 3 most relevant modules. Return ONLY one JSON object of the form {"modules":[...]} — no prose, no markdown fences, nothing else.`,
         messages: [{
           role: 'user',
-          content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as a JSON array:\n[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]`,
+          content: `User need: "${query.trim()}"\n\nAvailable modules:\n${moduleList}\n\nReturn the 3 best-matching modules as one JSON object:\n{"modules":[{"moduleId":"exact-module-id","label":"Module Label","reason":"One concise sentence explaining why this module fits the user's need."}]}`,
         }],
         maxTokens: 512,
         jsonMode: true,
         db,
+        purpose: 'module-smart-search',
       });
 
-      const text = response.text.trim() || '[]';
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      const matches = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      // jsonMode becomes response_format json_object on compat models, which
+      // allows an object only: the list comes wrapped as { modules: [...] }. A
+      // bare array (a Claude reply) is still read; prose or a fence around the
+      // JSON is skipped (extractJsonReply).
+      const reply = extractJsonReply(response.text ?? '', (v) =>
+        Array.isArray(v) || (!!v && typeof v === 'object' && Array.isArray((v as { modules?: unknown }).modules)));
+      const replyValue = reply?.value;
+      const matches: unknown[] = Array.isArray(replyValue) ? replyValue
+        : replyValue && typeof replyValue === 'object' ? (replyValue as { modules: unknown[] }).modules : [];
 
       // Grounding is not enough on its own. This route already puts real candidates in
       // the prompt, but returned the model's answer unchecked — and a model given 40
       // options still occasionally names a 41st that sounds right. A recommendation that
       // 404s is worse than a missing one: it teaches the user the feature is broken.
       const { valid, rejected } = await validateModuleMatches(
-        (matches as Array<{ moduleId: string }>).map((m) => ({ ...m, moduleId: String(m?.moduleId ?? '') })),
+        (matches.filter((m) => !!m && typeof m === 'object') as Array<{ moduleId?: unknown }>).map((m) => ({ ...m, moduleId: String(m.moduleId ?? '') })),
       );
       if (rejected.length > 0) {
         console.warn(`[modules/recommend] dropped invented id(s): ${rejected.join(', ')}`);
       }
-      res.json(valid.slice(0, 3));
+      res.json(valid.filter((m) => !hidden(m.moduleId, m.areaId)).slice(0, 3));
     } catch (error) {
-      res.status(500).json({ error: safeError(error) });
+      res.status(modelCallErrorStatus(error)).json({ error: publicErrorMessage(error) });
     }
   });
 

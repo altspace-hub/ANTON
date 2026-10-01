@@ -1,10 +1,24 @@
 import { randomUUID } from 'crypto';
 import type { DatabaseAdapter } from '../db/database.js';
 
-import Anthropic from '@anthropic-ai/sdk';
 import { getRoutedUtilityModel } from './utility-model.js';
 import { callChat, mapModelToProvider } from './provider-router.js';
 import { findCandidateModules, formatCandidatesForPrompt, validateModuleMatches } from './module-recommendation.js';
+import { demoModuleHidden } from '../middleware/demo-mode.js';
+import { extractJsonReply, isJsonObject } from './coding-workspace.js';
+
+/**
+ * A model's JSON object, read whatever surrounds it: GLM, DeepSeek and Kimi
+ * often fence it or put a sentence before it, which a strict JSON.parse
+ * refused, and the summary, insights and report then fell back to blanks.
+ * Throws when there is no object, as JSON.parse did, so callers keep their
+ * fallbacks.
+ */
+function readJsonObject(text: string): Record<string, unknown> {
+  const reply = extractJsonReply(text ?? '', isJsonObject);
+  if (!reply || !isJsonObject(reply.value)) throw new Error('no JSON object in the reply');
+  return reply.value as Record<string, unknown>;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -1092,7 +1106,14 @@ If not enough data for a field, use null.`;
 
 // ── Main Engine Class ────────────────────────────────────────────────────
 
-export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Anthropic) {
+/**
+ * Every model call below goes through provider-router, on the configured
+ * engine. They used to stop at `if (!anthropic)` — an Anthropic client built
+ * only from ANTHROPIC_API_KEY — so on a server whose engine is an
+ * OpenAI-compatible endpoint the interview could not start, for an
+ * administrator too. Whether the engine answers is decided per call.
+ */
+export async function createDiscoveryEngine(db: DatabaseAdapter) {
 
   // ── Session CRUD ─────────────────────────────────────────────────────
 
@@ -1193,7 +1214,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     // Apply state update from AI
     if (stateMatch) {
       try {
-        const update = JSON.parse(stateMatch[1]) as Record<string, unknown>;
+        const update = readJsonObject(stateMatch[1]);
 
         if (update.userProfile) {
           updatedState.userProfile = { ...updatedState.userProfile, ...(update.userProfile as Partial<DiscoveryState['userProfile']>) };
@@ -1327,10 +1348,6 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   }
 
   async function createPhaseSummary(state: DiscoveryState, phase: DiscoveryPhase): Promise<PhaseSummary> {
-    if (!anthropic) {
-      return { phase, summary: `Phase ${phase} completed.`, keyFindings: [], tokenCount: 0, createdAt: new Date().toISOString() };
-    }
-
     // Get messages from this phase
     const phaseMessages = state.conversationHistory.slice(-20); // Last 20 messages as approximation
     const conversationText = phaseMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
@@ -1339,11 +1356,13 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
       const chatResult = await callChat({
         model: await getRoutedUtilityModel(db),
         maxTokens: 1024,
+        db,
+        purpose: 'discovery-phase-summary',
         system: 'Summarize the following discovery conversation phase. Extract key findings as bullet points. Be concise but comprehensive. Return JSON: {"summary":"...","keyFindings":["..."]}',
         messages: [{ role: 'user', content: `Phase: ${phase}\nTier: ${state.tier}\n\nConversation:\n${conversationText}` }],
       });
 
-      const parsed = JSON.parse(chatResult.text) as { summary: string; keyFindings: string[] };
+      const parsed = readJsonObject(chatResult.text) as { summary: string; keyFindings: string[] };
       return {
         phase,
         summary: parsed.summary,
@@ -1373,7 +1392,6 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   async function processTurn(sessionId: string, userMessage: string | null): Promise<{ response: string; state: DiscoveryState; phaseChanged: boolean }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
-    if (!anthropic) throw new Error('Anthropic client not configured');
 
     const state = session.state;
     const previousPhase = state.phase;
@@ -1437,6 +1455,8 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     const chatResult = await callChat({
       model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       maxTokens: 2048,
+      db,
+      purpose: 'discovery-turn',
       system: systemPrompt,
       messages,
     });
@@ -1504,17 +1524,18 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
   async function generateInsights(sessionId: string): Promise<Record<string, unknown>> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
-    if (!anthropic) return { topPainTheme: null, earlyModuleMatches: [], estimatedOpportunity: null, quickWinSpotted: null, phaseInsight: null };
 
     try {
       const chatResult = await callChat({
         model: await getRoutedUtilityModel(db),
         maxTokens: 1024,
+        db,
+        purpose: 'discovery-insights',
         system: 'You are an analytical assistant. Return only valid JSON, no markdown.',
         messages: [{ role: 'user', content: getInsightPrompt(session.state) }],
       });
 
-      return JSON.parse(chatResult.text) as Record<string, unknown>;
+      return readJsonObject(chatResult.text);
     } catch (e) {
       console.error('[discovery] Insight generation failed:', e);
       return { topPainTheme: null, earlyModuleMatches: [], estimatedOpportunity: null, quickWinSpotted: null, phaseInsight: null };
@@ -1523,10 +1544,16 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
   // ── Generate Output ──────────────────────────────────────────────────
 
-  async function generateOutput(sessionId: string): Promise<{ outputId: string; contentMd: string; moduleMatches: ModuleMatch[]; actionPlan: unknown[]; metrics: unknown; nonAiFindings: NonAiFinding[]; executiveBriefing: string }> {
+  /**
+   * The discovery report. With `hideDemoModules` (a demo visitor: routes/discovery.ts
+   * decides) no module the demo keeps off (demoModuleHidden) is offered as a
+   * candidate or kept as a match: its run would be refused.
+   */
+  async function generateOutput(sessionId: string, opts: { hideDemoModules?: boolean } = {}): Promise<{ outputId: string; contentMd: string; moduleMatches: ModuleMatch[]; actionPlan: unknown[]; metrics: unknown; nonAiFindings: NonAiFinding[]; executiveBriefing: string }> {
     const session = await getSession(sessionId);
     if (!session) throw new Error('Session not found');
-    if (!anthropic) throw new Error('Anthropic client not configured');
+    const hidden = (moduleId: string, areaId: string | null | undefined): boolean =>
+      opts.hideDemoModules === true && demoModuleHidden(moduleId, areaId);
 
     let outputPrompt = getOutputGenerationPrompt(session.state);
 
@@ -1550,7 +1577,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
       session.state.userProfile.role,
       session.state.userProfile.industry,
     ].filter(Boolean).join(' ');
-    const candidates = await findCandidateModules(discussed);
+    const candidates = (await findCandidateModules(discussed, 80)).filter((m) => !hidden(m.id, m.areaId)).slice(0, 40);
     if (candidates.length > 0) {
       outputPrompt += `
 
@@ -1567,6 +1594,8 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
     const chatResult = await callChat({
       model: mapModelToProvider('claude-sonnet-4-5-20250929'),
       maxTokens: 8192,
+      db,
+      purpose: 'discovery-report',
       system: 'You are ANTON, an expert AI advisor generating a professional discovery report. Be specific, actionable, and honest.',
       messages: [{ role: 'user', content: outputPrompt }],
     });
@@ -1585,7 +1614,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
 
     if (outputMatch) {
       try {
-        const parsed = JSON.parse(outputMatch[1]) as Record<string, unknown>;
+        const parsed = readJsonObject(outputMatch[1]);
         moduleMatches = (parsed.moduleMatches as ModuleMatch[]) || [];
         actionPlan = (parsed.actionPlan as unknown[]) || [];
         metrics = parsed.metrics || {};
@@ -1608,7 +1637,7 @@ export async function createDiscoveryEngine(db: DatabaseAdapter, anthropic?: Ant
         `[discovery] dropped ${validation.rejected.length} hallucinated module id(s): ${validation.rejected.join(', ')}`,
       );
     }
-    moduleMatches = validation.valid as ModuleMatch[];
+    moduleMatches = (validation.valid as ModuleMatch[]).filter((m) => !hidden(m.moduleId, (m as { areaId?: string }).areaId));
 
     // Attach the user's own words so the deep link lands somewhere useful.
     //

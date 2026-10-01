@@ -7,7 +7,9 @@
  * it. They used to name GLM 5.3 Flash in the text itself; when Inceptron
  * stopped serving it (429 "rate-limited upstream", 2026-10-01) the default had
  * to move, and the text with it. Now the texts carry [[DEFAULT_MODEL]],
- * [[OTHER_MODELS]] and [[MODEL_MAKERS]], filled from the server's settings.
+ * [[OTHER_MODELS]], [[MODEL_MAKERS]] and [[SCORING_SENTENCE]], filled from
+ * the server's settings. The second-opinion pick for "Rerun with…" and the
+ * Review chip lives here too: it reads the same offered list.
  */
 import type { DemoConfig } from '@/lib/demo-config';
 
@@ -75,4 +77,51 @@ export function demoModelFacts(cfg: DemoConfig): { DEFAULT_MODEL: string; OTHER_
     OTHER_MODELS: others.length > 0 ? orList(others) : 'another model, when one is offered',
     MODEL_MAKERS: andList([...new Set(all.map(modelMaker))]),
   };
+}
+
+/**
+ * The value for [[SCORING_SENTENCE]] in the privacy notice: what the Trust
+ * Score sends, and to which model (DEMO_POST_ANSWER_CALLS 'scored' or 'all';
+ * the scorer is QUALITY_SCORER_MODEL, else the utility model). Empty, so the
+ * placeholder stays marked, when answers are scored but the server did not
+ * name the scorer.
+ */
+export function scoringSentence(cfg: DemoConfig): string {
+  if (!cfg.answersScored) return 'This demo does not score answers.';
+  if (!cfg.scorerModel) return '';
+  return `After each answer longer than 200 characters, the model ${modelDisplayName(cfg.scorerModel)} rates its quality `
+    + '(the Trust Score shown under the answer). This request carries the first 3,000 characters of the answer.';
+}
+
+/** The model a visitor's run uses: their pick when the demo offers it, else the demo's default. Elsewhere, their pick. */
+export function demoRunModel(cfg: DemoConfig, selected: string): string {
+  if (!cfg.demoMode || cfg.offeredModels.length === 0 || cfg.offeredModels.includes(selected)) return selected;
+  return demoDefaultModel(cfg) ?? selected;
+}
+
+/**
+ * Who reviews best on a showcase, strongest first (bare OpenRouter ids). A
+ * model not listed keeps its place in the offered order, after these.
+ */
+const SECOND_OPINION_ORDER: readonly string[] = ['moonshotai/kimi-k2.6', 'z-ai/glm-5.3', 'deepseek/deepseek-v4-flash-0731'];
+
+/**
+ * The model to preselect for a second opinion on an answer ("Rerun with…",
+ * the Review chip): an offered model other than the one that wrote it,
+ * preferring another maker, then SECOND_OPINION_ORDER, then the offered
+ * order. Null when nothing else is offered (an ordinary server, where the
+ * picker starts on the answer's model as before).
+ */
+export function secondOpinionModel(answerModel: string, offered: readonly string[]): string | null {
+  const others = offered.filter((m) => m !== answerModel && bareModel(m) !== bareModel(answerModel));
+  if (others.length === 0) return null;
+  const maker = modelMaker(answerModel);
+  const rank = (m: string): number => {
+    const i = SECOND_OPINION_ORDER.indexOf(bareModel(m));
+    return i === -1 ? SECOND_OPINION_ORDER.length : i;
+  };
+  return [...others].sort((a, b) =>
+    Number(modelMaker(a) === maker) - Number(modelMaker(b) === maker)
+    || rank(a) - rank(b)
+    || offered.indexOf(a) - offered.indexOf(b))[0];
 }

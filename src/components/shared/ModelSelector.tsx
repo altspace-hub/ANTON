@@ -51,6 +51,8 @@ interface ModelSelectorProps {
   onChange: (value: ModelId) => void;
   /** Render as compact dropdown (default) or full card list */
   variant?: 'dropdown' | 'cards';
+  /** The label above the picker ("Model" unless a page names its role, e.g. "Chair model"). */
+  label?: string;
 }
 
 interface AzureDeployment {
@@ -84,7 +86,7 @@ const COMPANY_SECTIONS: { provider: string; label: string }[] = [
   { provider: 'mistral', label: 'Mistral' },
 ];
 
-export default function ModelSelector({ value, onChange, variant = 'dropdown' }: ModelSelectorProps) {
+export default function ModelSelector({ value, onChange, variant = 'dropdown', label = 'Model' }: ModelSelectorProps) {
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [ollamaChecked, setOllamaChecked] = useState(false);
   const [customModels, setCustomModels] = useState<ModelInfo[]>([]);
@@ -238,7 +240,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   if (variant === 'dropdown') {
     return (
       <div ref={containerRef} className="relative">
-        <label className="mb-2 block text-sm font-medium text-adv-off-white">Model</label>
+        <label className="mb-2 block text-sm font-medium text-adv-off-white">{label}</label>
         <button
           onClick={() => setOpen(!open)}
           className="flex w-full items-center justify-between rounded-lg border border-border bg-adv-dark px-3 py-2.5 text-left transition-colors hover:border-adv-gray-med"
@@ -610,7 +612,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   if (demoOnly) {
     return (
       <div>
-        <label className="mb-2 block text-sm font-medium text-adv-off-white">Model</label>
+        <label className="mb-2 block text-sm font-medium text-adv-off-white">{label}</label>
         <div className="space-y-2">
           {offeredOptions.map((opt) => {
             const isActive = value === opt.id;
@@ -650,7 +652,7 @@ export default function ModelSelector({ value, onChange, variant = 'dropdown' }:
   // ── Cards variant (original full-size layout) ────────────────
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-adv-off-white">Model</label>
+      <label className="mb-2 block text-sm font-medium text-adv-off-white">{label}</label>
       <div className="space-y-2">
         {/* Built-in models, grouped by AI company */}
         {COMPANY_SECTIONS.map(({ provider, label }) => {

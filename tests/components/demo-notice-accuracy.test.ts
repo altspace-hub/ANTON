@@ -12,8 +12,9 @@
  *      tag of it in the security event, not the name.
  *      (tests/routes/demo-notice-signin-records.db.test.ts checks the code.)
  *   9. "Two more requests" holds for the demo's standard setting
- *      (DEMO_POST_ANSWER_CALLS=conclusion); the operator's setting can add the
- *      quality score and the structured extraction.
+ *      (DEMO_POST_ANSWER_CALLS=conclusion); the Trust Score sentence comes
+ *      from the server's setting ([[SCORING_SENTENCE]]: 'scored' or 'all'),
+ *      and the operator can add the structured extraction ('all').
  *  10. The session summary that comes back when a visitor returns to a
  *      session is the one stored text added to their prompts; the memory
  *      sentence no longer says "no stored memory" without it.
@@ -103,11 +104,12 @@ describe('notice section 6.1: the requests after an answer (problem 9)', () => {
   const s = section('6.1');
 
   it('ties the two further requests to the standard setting, and names what the operator can add', () => {
-    expect(s).toContain("With the demo's standard setting, two more requests go to the same model:");
+    expect(s).toContain("With the demo's standard setting, two more requests go to [[DEFAULT_MODEL]], whichever model you chose:");
     expect(s).not.toMatch(/^Two more requests go to the same model:/m);
-    expect(s).toMatch(/the quality of each answer/);
-    expect(s).toMatch(/structure/);
-    expect(s).toContain('first 3,000 characters');
+    // The Trust Score: filled from /api/config (src/lib/demo-model-names.ts scoringSentence).
+    expect(s).toContain('**The Trust Score:** [[SCORING_SENTENCE]]');
+    expect(s).toMatch(/extracts the structure of each answer longer than 100 characters/);
+    expect(s).toContain('(that request carries the whole answer)');
   });
 
   it('negative control: the title and summary requests are described as before', () => {

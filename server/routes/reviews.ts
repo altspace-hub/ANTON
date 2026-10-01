@@ -1,17 +1,27 @@
 import { Router } from 'express';
 import type { DatabaseAdapter } from '../db/database.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { streamToResponse, isApiKeyConfigured } from '../services/claude-client.js';
-import { streamChat, mapModelToProvider, setSSEHeaders } from '../services/provider-router.js';
+import { streamChat, setSSEHeaders } from '../services/provider-router.js';
 import { CLAUDE_LARGE } from '../config/claude-lineup.js';
 import { REVIEW_MODES } from '../services/review-engine.js';
 import { createReviewOrchestrator, type ReviewContext } from '../services/review-orchestrator.js';
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
 import { scopesToOwner, type OwnedRequest } from '../middleware/ownership.js';
+import { hasAnyModelEngine, NO_MODEL_ENGINE_MESSAGE } from '../services/claude-engine-availability.js';
+import { sideRouteModel, modelCallErrorStatus } from '../services/side-route-model.js';
+import { createBudgetMiddleware } from '../middleware/budget.js';
+import { chargeMonthlyUsage } from '../services/budget-manager.js';
+
+/**
+ * The longest text a review reads: well above any one answer (a compat run
+ * stops at 16,384 tokens), so only a request that is not an answer is refused.
+ */
+const REVIEW_MAX_CHARS = 200_000;
 
 export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthropic) {
   const router = Router();
   const orchestrator = await createReviewOrchestrator(anthropic);
+  const checkBudget = createBudgetMiddleware(db);
 
   /**
    * Team isolation: may this caller read or add reviews for this session?
@@ -36,21 +46,36 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
   });
 
   // POST /api/reviews — run a review on content, streaming SSE
-  router.post('/reviews', async (req, res) => {
-    if (!isApiKeyConfigured() && !process.env.MISTRAL_API_KEY && !process.env.OPENAI_API_KEY && !process.env.GOOGLE_API_KEY) {
-      res.status(500).json({ error: 'No AI provider API key configured.' });
+  //
+  // The reviewer is the model the body names (`model`, a full id): the Review
+  // chip preselects an offered model other than the one that wrote the
+  // answer, so a second model checks the first. A demo visitor gets it only
+  // when DEMO_OFFERED_MODELS lists it, else the server default
+  // (sideRouteModel). It runs through provider-router on any configured
+  // engine — the gate used to ask for an Anthropic, Mistral, OpenAI or Google
+  // key and refused every review on a server whose engine is an
+  // OpenAI-compatible endpoint. Frames: text_delta (and thinking_delta) from
+  // the router, then `done`, or `error` with a message the person may read;
+  // either way the stream ends with [DONE].
+  router.post('/reviews', checkBudget, async (req, res) => {
+    if (!hasAnyModelEngine()) {
+      res.status(503).json({ error: NO_MODEL_ENGINE_MESSAGE });
       return;
     }
 
     const { modeId, content, model, sessionId } = req.body as {
       modeId: string;
       content: string;
-      model?: string;
+      model?: unknown;
       sessionId?: string;
     };
 
-    if (!modeId || !content) {
+    if (!modeId || !content || typeof content !== 'string') {
       res.status(400).json({ error: 'modeId and content are required' });
+      return;
+    }
+    if (content.length > REVIEW_MAX_CHARS) {
+      res.status(413).json({ error: `The text is too long to review (${REVIEW_MAX_CHARS.toLocaleString('en-GB')} characters at most).` });
       return;
     }
 
@@ -60,15 +85,20 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
       return;
     }
 
+    let streaming = false;
     try {
       // Decided before streaming starts, so nothing about the session changes what
       // the caller sees — only whether the finished review is stored with it.
       const persistTo = sessionId && (await mayUseSession(req, String(sessionId))) ? String(sessionId) : null;
 
-      const resolvedModel = mapModelToProvider((model as string) || CLAUDE_LARGE);
+      const resolvedModel = sideRouteModel(req, model, CLAUDE_LARGE);
 
       setSSEHeaders(res);
+      streaming = true;
 
+      // A review reads one answer and writes a critique: standard reasoning
+      // and room for a long one, not the 'investigate' level and 16,000
+      // tokens it ran at (a high-effort call for every click of the chip).
       const result = await streamChat({
         model: resolvedModel,
         system: mode.systemPrompt,
@@ -78,12 +108,15 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
             content: `Please review the following document:\n\n---\n\n${content}`,
           },
         ],
-        maxTokens: 16000,
-        thinkingLevel: 'investigate',
+        maxTokens: 8192,
+        thinkingLevel: 'think',
+        db,
       }, res);
+      await chargeMonthlyUsage(db, req.user, result.inputTokens, result.outputTokens);
 
       // Send completion event
-      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'done', model: resolvedModel })}\n\n`);
+      res.write('data: [DONE]\n\n');
       res.end();
 
       // Save review to database (attributed to the reviewer — the column defaulted to 'default')
@@ -97,8 +130,17 @@ export async function createReviewRoutes(db: DatabaseAdapter, anthropic?: Anthro
         }
       }
     } catch (error) {
-      const message = safeError(error);
-      if (!res.headersSent) res.status(500).json({ error: message });
+      // After the headers the only way to say it is a frame: without one the
+      // stream never ended and the panel waited for ever (a spend-cap refusal,
+      // for one).
+      const message = publicErrorMessage(error);
+      if (!streaming && !res.headersSent) {
+        res.status(modelCallErrorStatus(error)).json({ error: message });
+      } else if (!res.writableEnded) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      }
     }
   });
 

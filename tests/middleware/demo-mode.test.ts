@@ -20,6 +20,7 @@ import {
   demoPublicConfig, demoEnabledPillars, demoSignupPolicy, demoAccountTtlDays,
   demoRouteAllowed, demoRouteRules, createDemoAllowlistMiddleware, demoModeWarnings,
   DEMO_TERMS_VERSION, DEFAULT_DEMO_HIDDEN_AREAS, DEFAULT_DEMO_HIDDEN_MODULES,
+  demoPostAnswerCalls, demoQualityScoreOn, demoStructuredExtractionOn, qualityScorerModelEnv,
 } from '../../server/middleware/demo-mode.js';
 
 const ENV_KEYS = [
@@ -135,6 +136,7 @@ describe('/api/config demo fields', () => {
       termsVersion: DEMO_TERMS_VERSION,
       operatorName: '',
       answersScored: false,
+      scorerModel: null,
       // Neither hidden list is set: the built-in ones apply (demo-hidden-defaults.test.ts).
       hiddenAreas: [...DEFAULT_DEMO_HIDDEN_AREAS],
       hiddenModules: [...DEFAULT_DEMO_HIDDEN_MODULES],
@@ -143,7 +145,7 @@ describe('/api/config demo fields', () => {
     expect(JSON.stringify(cfg)).not.toContain('swordfish');
   });
 
-  it('answersScored follows DEMO_POST_ANSWER_CALLS: only "all" makes a quality score', () => {
+  it('answersScored follows DEMO_POST_ANSWER_CALLS: "scored" and "all" make a quality score', () => {
     const scored = (v?: string) => {
       const cfg = demoPublicConfig({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', ...(v === undefined ? {} : { DEMO_POST_ANSWER_CALLS: v }) });
       return cfg.demoMode ? cfg.answersScored : null;
@@ -151,7 +153,48 @@ describe('/api/config demo fields', () => {
     expect(scored()).toBe(false);
     expect(scored('conclusion')).toBe(false);
     expect(scored('none')).toBe(false);
+    expect(scored('scored')).toBe(true);
+    expect(scored(' Scored ')).toBe(true);
     expect(scored('all')).toBe(true);
+  });
+
+  it('"scored" turns the quality score on and the structured extraction off; "all" both; outside a demo both', () => {
+    const DEMO = { DEMO_MODE: 'true' };
+    expect(demoPostAnswerCalls({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'scored' })).toBe('scored');
+    expect(demoQualityScoreOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'scored' })).toBe(true);
+    expect(demoStructuredExtractionOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'scored' })).toBe(false);
+    expect(demoQualityScoreOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'all' })).toBe(true);
+    expect(demoStructuredExtractionOn({ ...DEMO, DEMO_POST_ANSWER_CALLS: 'all' })).toBe(true);
+    for (const v of [undefined, 'conclusion', 'none', 'bogus']) {
+      const env = { ...DEMO, ...(v === undefined ? {} : { DEMO_POST_ANSWER_CALLS: v }) };
+      expect(demoQualityScoreOn(env), String(v)).toBe(false);
+      expect(demoStructuredExtractionOn(env), String(v)).toBe(false);
+    }
+    // Negative control: every other install scores and extracts, whatever the variable says.
+    expect(demoQualityScoreOn({ DEMO_POST_ANSWER_CALLS: 'none' })).toBe(true);
+    expect(demoStructuredExtractionOn({ DEMO_POST_ANSWER_CALLS: 'scored' })).toBe(true);
+  });
+
+  it('scorerModel names the scorer only while answers are scored: the one index.ts resolves, else QUALITY_SCORER_MODEL', () => {
+    const SCORER = 'compat:openrouter:deepseek/deepseek-v4-flash-0731';
+    const cfg = (env: Record<string, string>, opts?: { scorerModel?: string | null }) => {
+      const c = demoPublicConfig({ DEMO_MODE: 'true', DEPLOYMENT_MODE: 'team', ...env }, opts);
+      return c.demoMode ? c.scorerModel : 'not a demo';
+    };
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'scored', QUALITY_SCORER_MODEL: ` ${SCORER} ` })).toBe(SCORER);
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'scored' }, { scorerModel: 'compat:openrouter:z-ai/glm-5.3' })).toBe('compat:openrouter:z-ai/glm-5.3');
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'scored' })).toBeNull();
+    // Not scored: no scorer is named, whatever is configured.
+    expect(cfg({ QUALITY_SCORER_MODEL: SCORER }, { scorerModel: SCORER })).toBeNull();
+    expect(cfg({ DEMO_POST_ANSWER_CALLS: 'none', QUALITY_SCORER_MODEL: SCORER })).toBeNull();
+    expect(qualityScorerModelEnv({})).toBeNull();
+    expect(qualityScorerModelEnv({ QUALITY_SCORER_MODEL: '   ' })).toBeNull();
+  });
+
+  it('warns when a scored demo sends answers to a scorer outside the compat endpoint', () => {
+    const base = { DEMO_MODE: 'true', DEMO_POST_ANSWER_CALLS: 'scored' };
+    expect(demoModeWarnings({ ...base, QUALITY_SCORER_MODEL: 'claude-haiku-4-5' }).join('\n')).toMatch(/QUALITY_SCORER_MODEL/);
+    expect(demoModeWarnings({ ...base, QUALITY_SCORER_MODEL: 'compat:openrouter:moonshotai/kimi-k2.6' }).join('\n')).not.toMatch(/QUALITY_SCORER_MODEL/);
   });
 
   it('sign-up: a code opens it; no code is closed unless DEMO_SIGNUP_OPEN=true', () => {
@@ -190,10 +233,10 @@ describe('the route allowlist (pure)', () => {
   it('refuses everything else, including writes to what it may read', () => {
     for (const [m, p] of [
       ['GET', '/agents'], ['POST', '/agents/x/connectors'], ['POST', '/data/import'], ['GET', '/markets/theses'],
-      ['POST', '/custom-modules'], ['PATCH', '/custom-modules/x'], ['POST', '/sessions/abc/share'],
+      ['PUT', '/custom-modules/x'], ['POST', '/sessions/abc/share'],
       ['POST', '/settings/default-model'], ['POST', '/settings/model-endpoints'], ['GET', '/settings/custom-models'],
-      ['PUT', '/profile'], ['GET', '/files/upload/extra'], ['GET', '/pathfinder/threads'], ['POST', '/renderers/run'],
-      ['POST', '/rerun'], ['GET', '/admin/users'], ['POST', '/radar/settings'], ['GET', '/sessionsX'],
+      ['PUT', '/profile'], ['GET', '/files/upload/extra'], ['GET', '/pathfinder/threads'], ['POST', '/renderers/run/x'],
+      ['DELETE', '/rerun'], ['GET', '/admin/users'], ['POST', '/radar/settings'], ['GET', '/sessionsX'],
       ['GET', '//agents'], ['POST', '/claude/deliberate'], ['POST', '/auth/mfa/enable'],
       ['DELETE', '/sessions/abc/messages/m1/artifacts'], ['GET', '/sessions/abc/messages/m1/artifacts/x'],
     ] as const) {
@@ -211,14 +254,68 @@ describe('the route allowlist (pure)', () => {
   });
 
   it('DEMO_EXTRA_ROUTES adds prefixes, optionally for one method', () => {
-    const extra = demoRouteRules({ DEMO_MODE: 'true', DEMO_EXTRA_ROUTES: '/renderers, POST:/rerun, not-a-path, GET|POST:/quality/' });
-    expect(demoRouteAllowed('POST', '/renderers/run', extra)).toBe(true);
-    expect(demoRouteAllowed('GET', '/renderers', extra)).toBe(true);
-    expect(demoRouteAllowed('POST', '/rerun', extra)).toBe(true);
-    expect(demoRouteAllowed('GET', '/rerun/quality/x', extra)).toBe(false);
+    const extra = demoRouteRules({ DEMO_MODE: 'true', DEMO_EXTRA_ROUTES: '/discovery, POST:/projects, not-a-path, GET|POST:/quality/' });
+    expect(allowed('GET', '/discovery/sessions')).toBe(false);
+    expect(demoRouteAllowed('GET', '/discovery/sessions', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/discovery/sessions/x/respond', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/projects', extra)).toBe(true);
+    expect(demoRouteAllowed('POST', '/projects/p1/notes', extra)).toBe(true);
+    expect(demoRouteAllowed('GET', '/projects', extra)).toBe(false);
     expect(demoRouteAllowed('GET', '/quality/leaderboard', extra)).toBe(true);
     expect(demoRouteAllowed('DELETE', '/quality/x', extra)).toBe(false);
-    expect(demoRouteAllowed('GET', '/renderersX', extra)).toBe(false);
+    expect(demoRouteAllowed('GET', '/discoveryX', extra)).toBe(false);
+  });
+
+  it('opens the Work tools of 2026-10-01 — each exactly, never its siblings', () => {
+    // Opened: My Work, Explain for, the citation check, Review, Rerun with,
+    // Transform, Find the right module, the AI Council's ledger, Build Module.
+    for (const [m, p] of [
+      ['GET', '/work-timeline'],
+      ['POST', '/claude/explain-for'], ['POST', '/claude/verify-citations'],
+      ['GET', '/reviews/modes'], ['POST', '/reviews'],
+      ['POST', '/rerun'], ['GET', '/rerun/quality/m1'],
+      ['GET', '/renderers/applicable'], ['POST', '/renderers/run'], ['GET', '/renderers/artifacts/42'], ['GET', '/sessions/s1/artifacts'],
+      ['POST', '/modules/smart-search'],
+      ['POST', '/council/s1/dissent-ledger'],
+      ['POST', '/custom-modules'], ['PATCH', '/custom-modules/custom-1'], ['DELETE', '/custom-modules/custom-1'],
+      ['POST', '/custom-modules/guide-message'], ['POST', '/custom-modules/guide-generate'], ['POST', '/custom-modules/test-run'],
+      ['POST', '/ai-assist/module-prompt'], ['POST', '/ai-assist/module-inputs'],
+      ['POST', '/versions/module/custom-1'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(true);
+    }
+    // Negative controls: the siblings a prefix would have opened, and the
+    // features that stay admin-only (C8).
+    for (const [m, p] of [
+      ['POST', '/work-timeline'], ['GET', '/work-timeline/x'],
+      ['POST', '/claude/deliberate'], ['POST', '/claude/explain-for/x'],
+      ['POST', '/reviews/orchestrate'], ['GET', '/reviews'], ['GET', '/reviews/x'], ['DELETE', '/reviews'],
+      ['GET', '/rerun'], ['GET', '/rerun/quality'], ['GET', '/rerun/quality/m1/x'],
+      ['GET', '/renderers'], ['GET', '/renderers/board-deck'], ['POST', '/renderers/applicable'], ['DELETE', '/renderers/artifacts/42'],
+      ['POST', '/sessions/s1/artifacts'],
+      ['POST', '/modules/community'],
+      ['GET', '/council/s1/dissent-ledger'], ['POST', '/council/s1'],
+      ['POST', '/custom-modules/x/share'], ['PUT', '/custom-modules/custom-1'],
+      ['POST', '/ai-assist/project-scaffold'], ['POST', '/ai-assist/skill-draft'], ['POST', '/ai-assist/module-prompt/x'],
+      ['POST', '/versions/output/x/y'], ['POST', '/versions/session/s1'], ['DELETE', '/versions/module/custom-1'],
+      ['POST', '/exchange/export/custom-1'], ['GET', '/projects'], ['GET', '/discovery/sessions'], ['GET', '/task-agent/tasks'],
+      ['POST', '/pathfinder/search'], ['GET', '/coding/projects'], ['GET', '/intelligence/dashboard'], ['GET', '/radar/items'],
+      ['GET', '/collections'], ['GET', '/orchestrator/status'],
+    ] as const) {
+      expect(allowed(m, p), `${m} ${p}`).toBe(false);
+    }
+  });
+
+  it('covers the calls the opened Work tools make, read from src/', () => {
+    // If one of these moves, the tool 404s on the demo again.
+    const read = (f: string) => readFileSync(join(__dirname, '../../src', f), 'utf8');
+    expect(read('components/shared/TransformPanel.tsx')).toContain('/api/renderers/applicable?session_id=');
+    expect(read('components/shared/TransformPanel.tsx')).toContain('/api/renderers/run');
+    expect(read('components/shared/TransformPanel.tsx')).toContain('/artifacts`');
+    expect(read('pages/AICouncilPage.tsx')).toContain('/dissent-ledger`');
+    expect(read('pages/BuildYourOwnModule.tsx')).toContain('/api/custom-modules/guide-generate');
+    expect(read('lib/api.ts')).toContain('`${API_BASE}/reviews`');
+    expect(read('lib/api.ts')).toContain('`${API_BASE}/reviews/modes`');
   });
 
   it('covers the calls the Work page makes when it loads and runs', () => {
@@ -276,6 +373,27 @@ describe('the allowlist middleware (mounted as in index.ts)', () => {
     expect((await call('GET', '/sessions', 'analyst')).status).toBe(200);
   });
 
+  it('lets a visitor reach each opened Work tool, and keeps a sibling of each at 404', async () => {
+    process.env.DEMO_MODE = 'true';
+    for (const [m, p, sibling] of [
+      ['GET', '/work-timeline', '/work-timeline/all'],
+      ['POST', '/claude/explain-for', '/claude/deliberate'],
+      ['POST', '/claude/verify-citations', '/claude/message-sync'],
+      ['POST', '/reviews', '/reviews/orchestrate'],
+      ['POST', '/rerun', '/rerun/import'],
+      ['POST', '/renderers/run', '/renderers/run/all'],
+      ['POST', '/modules/smart-search', '/modules/community'],
+      ['POST', '/council/s1/dissent-ledger', '/council/s1/members'],
+      ['POST', '/custom-modules/test-run', '/custom-modules/x/share'],
+      ['POST', '/ai-assist/module-inputs', '/ai-assist/project-scaffold'],
+    ] as const) {
+      expect((await call(m, p, 'analyst')).status, `${m} ${p}`).toBe(200);
+      expect((await call(m, sibling, 'analyst')).status, `${m} ${sibling}`).toBe(404);
+      // Negative control: an admin reaches the sibling too.
+      expect((await call(m, sibling, 'admin')).status, `admin ${m} ${sibling}`).toBe(200);
+    }
+  });
+
   it('never restricts an admin — the owner runs the instance through the same server', async () => {
     process.env.DEMO_MODE = 'true';
     expect((await call('POST', '/data/import', 'admin')).status).toBe(200);
@@ -293,8 +411,9 @@ describe('the allowlist middleware (mounted as in index.ts)', () => {
     process.env.DEMO_ENABLED_PILLARS = 'pathfinder';
     expect((await call('GET', '/pathfinder/threads', 'analyst')).status).toBe(200);
     delete process.env.DEMO_ENABLED_PILLARS;
-    process.env.DEMO_EXTRA_ROUTES = '/rerun';
-    expect((await call('POST', '/rerun', 'analyst')).status).toBe(200);
+    expect((await call('GET', '/discovery/sessions', 'analyst')).status).toBe(404);
+    process.env.DEMO_EXTRA_ROUTES = '/discovery';
+    expect((await call('GET', '/discovery/sessions', 'analyst')).status).toBe(200);
   });
 
   it('index.ts mounts it after the auth middleware and before every authenticated route', () => {

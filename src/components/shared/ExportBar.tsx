@@ -38,9 +38,9 @@ const formatConfig: Record<string, { icon: React.ComponentType<{ className?: str
 
 export default function ExportBar({ content, availableFormats, onExport, isExporting, sessionId, onReframe, moduleContext, entityId, moduleId }: ExportBarProps) {
   const { t } = useTranslation();
-  // Public demo: share links, the quality-rating log (/pmm) and Explain-For are
-  // outside a visitor's routes — Share stuck on "Sharing…" and the stars said
-  // "thank you" for a rating that was refused. Admins keep them.
+  // Public demo: share links and the quality-rating log (/pmm) are outside a
+  // visitor's routes — Share stuck on "Sharing…" and the stars said "thank
+  // you" for a rating that was refused. Admins keep them. Explain-for is open.
   const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   const [shareState, setShareState] = useState<'idle' | 'loading' | 'copied'>('idle');
   const [qualityRating, setQualityRating] = useState<number | null>(null);
@@ -270,13 +270,11 @@ export default function ExportBar({ content, availableFormats, onExport, isExpor
     )}
 
     {/* Explain-It-Different: trigger button + slide-out panel (renders below the button row) */}
-    {!demoLimited && (
-      <ExplainFor
-        content={content}
-        moduleContext={moduleContext}
-        entityId={entityId}
-      />
-    )}
+    <ExplainFor
+      content={content}
+      moduleContext={moduleContext}
+      entityId={entityId}
+    />
     </div>
   );
 }

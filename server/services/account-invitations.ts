@@ -38,9 +38,12 @@ export type InvitedRole = 'analyst' | 'viewer';
 
 /** A refusal whose message is written for the person reading it. */
 export class InvitationError extends Error {
+  /** Written for the person: publicErrorMessage() sends it as it is. */
+  readonly publicMessage: string;
   constructor(public readonly status: number, message: string) {
     super(message);
     this.name = 'InvitationError';
+    this.publicMessage = message;
   }
 }
 

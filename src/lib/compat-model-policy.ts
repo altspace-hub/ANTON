@@ -230,3 +230,36 @@ export function withoutCompatUnavailableFlags<T extends object>(request: T): T {
 export function modelShortName(model: string): string {
   return compatParts(model)?.model ?? model;
 }
+
+/** The fields of an endpoint that a Settings chip row reads. */
+export interface ChipCompatEndpoint {
+  slug: string;
+  displayName: string;
+  defaultModel: string | null;
+  /** Non-empty = only these bare model ids may run on the endpoint. */
+  allowedModels?: string[];
+}
+
+/**
+ * The compat:<slug>:<model> choices Settings offers for an endpoint where one
+ * model is picked (the Double-check verifier): its default model first, then
+ * every model on its allow-list, each once. So an admin can pick a model other
+ * than the one that answers (Kimi K2.6 checking GLM 5.3) without editing the
+ * setting by hand. An endpoint with no allow-list offers its default only, as
+ * before: what its health check discovers can be hundreds of models.
+ */
+export function compatModelChoices(endpoints: readonly ChipCompatEndpoint[]): Array<{ value: string; label: string }> {
+  const out: Array<{ value: string; label: string }> = [];
+  const seen = new Set<string>();
+  for (const ep of endpoints) {
+    const allowed = (ep.allowedModels ?? []).map((m) => m.trim()).filter((m) => m.length > 0);
+    const models = [...(ep.defaultModel ? [ep.defaultModel] : []), ...allowed];
+    for (const m of models) {
+      const value = `compat:${ep.slug}:${m}`;
+      if (seen.has(value)) continue;
+      seen.add(value);
+      out.push({ value, label: `${ep.displayName} (${m})` });
+    }
+  }
+  return out;
+}

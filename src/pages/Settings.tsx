@@ -22,6 +22,7 @@ import { KnowledgeLibraryManager } from '@/features/knowledge/KnowledgeLibraryMa
 import { OrgContextPanel } from '@/components/shared/OrgContextPanel';
 import LocalModelsSettingsPanel from '@/components/settings/LocalModelsSettingsPanel';
 import { useIntelligenceHealth, type FeatureHealth } from '@/components/shared/IntelligenceHealthBanner';
+import { compatModelChoices } from '@/lib/compat-model-policy';
 
 interface BrandTemplate {
   id: string;
@@ -538,7 +539,7 @@ export default function Settings() {
 
   // Cost-effective mode (plan 2.17): detected budget providers
   const [ecoOllama, setEcoOllama] = useState<{ available: boolean; models: string[] }>({ available: false, models: [] });
-  const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null }>>([]);
+  const [ecoEndpoints, setEcoEndpoints] = useState<Array<{ slug: string; displayName: string; defaultModel: string | null; allowedModels?: string[] }>>([]);
 
   // Subscription execution engines (sdk:<model> / codex:<model>): enabled
   // engines' models are valid default-model choices — they run on this
@@ -694,7 +695,7 @@ export default function Settings() {
       .catch(() => {});
     fetchWithAuth('/api/settings/model-endpoints')
       .then((r) => r.ok ? r.json() : { endpoints: [] })
-      .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; enabled: boolean }> }) =>
+      .then((data: { endpoints?: Array<{ slug: string; displayName: string; defaultModel: string | null; allowedModels?: string[]; enabled: boolean }> }) =>
         setEcoEndpoints((data.endpoints ?? []).filter((e) => e.enabled)))
       .catch(() => {});
 
@@ -2461,9 +2462,9 @@ export default function Settings() {
                   ...(ecoOllama.available && ecoOllama.models.length > 0
                     ? [{ value: `ollama:${ecoOllama.models[0]}`, label: `Ollama (${ecoOllama.models[0]})`, disabled: false }]
                     : []),
-                  ...ecoEndpoints.filter((e) => e.defaultModel).map((e) => ({
-                    value: `compat:${e.slug}:${e.defaultModel}`, label: `${e.displayName} (${e.defaultModel})`, disabled: false,
-                  })),
+                  // Every model an endpoint allows, not only its default: the
+                  // verifier should be another model than the one that answers.
+                  ...compatModelChoices(ecoEndpoints).map((c) => ({ ...c, disabled: false })),
                   ...(customSlot1.enabled && customSlot1.modelId
                     ? [{ value: customSlot1.modelId, label: customSlot1.displayName || 'Custom 1', disabled: false }]
                     : []),

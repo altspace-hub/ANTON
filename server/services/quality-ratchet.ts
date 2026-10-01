@@ -1,8 +1,26 @@
 import type { DatabaseAdapter } from '../db/database.js';
 import crypto from 'crypto';
 import { callChat } from './provider-router.js';
-import { getRoutedUtilityModel } from './utility-model.js';
+import { getRoutedUtilityModel, getRoutedUtilityModelSync, routeUtilityModel } from './utility-model.js';
 import { recordParseOutcome } from './parse-telemetry.js';
+import { qualityScorerModelEnv } from '../middleware/demo-mode.js';
+
+/**
+ * The model that scores answers: QUALITY_SCORER_MODEL when set (a full id,
+ * e.g. compat:openrouter:deepseek/deepseek-v4-flash-0731, so a second model
+ * rates the first one's answer; a bare Claude id follows the configured engine
+ * like every utility id), else the routed utility model, as before.
+ */
+export async function qualityScorerModel(db: DatabaseAdapter): Promise<string> {
+  const configured = qualityScorerModelEnv();
+  return configured ? routeUtilityModel(configured) : getRoutedUtilityModel(db);
+}
+
+/** Sync variant for /api/config, which names the scorer to the demo's privacy notice. */
+export function qualityScorerModelSync(): string {
+  const configured = qualityScorerModelEnv();
+  return configured ? routeUtilityModel(configured) : getRoutedUtilityModelSync();
+}
 
 // Quality dimensions scored 0-10
 interface QualityScore {
@@ -71,16 +89,17 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
     let strengths: string[] = [];
     let weaknesses: string[] = [];
     let improvementSuggestion = '';
-    // What produced the numbers — the routed utility model when its JSON
-    // parsed, 'heuristic' on either fallback. Written to quality_scores.model_used.
+    // What produced the numbers — the scorer model when its JSON parsed,
+    // 'heuristic' on either fallback. Written to quality_scores.model_used.
     let scoredWith = 'heuristic';
 
     // LLM scoring via the provider mapping (review 3.1): the configured
     // utility model on whatever provider is set up — an Ollama/Mistral
     // install scores with its own small model instead of silently
-    // dropping to the crude heuristic. Heuristic remains the fallback on
-    // any failure (call error or unparseable JSON).
-    const model = await getRoutedUtilityModel(db);
+    // dropping to the crude heuristic — or QUALITY_SCORER_MODEL when set.
+    // Heuristic remains the fallback on any failure (call error or
+    // unparseable JSON).
+    const model = await qualityScorerModel(db);
     let llmText: string | null = null;
     try {
       const chat = await callChat({
@@ -88,7 +107,9 @@ export async function createQualityRatchet(db: DatabaseAdapter) {
         system: 'You are a quality assessor. Respond only with valid JSON.',
         messages: [{
           role: 'user',
-          content: `${SCORING_PROMPT}\n\n---OUTPUT TO SCORE---\n${params.content.slice(0, 3000)}\n---END OUTPUT---`,
+          content: params.content.length > 3000
+            ? `${SCORING_PROMPT}\n\nNOTE: only the first 3,000 characters of a longer answer are shown. Do not lower completeness or actionability because the text stops there; judge what is shown.\n\n---OUTPUT TO SCORE---\n${params.content.slice(0, 3000)}\n---END OUTPUT---`
+            : `${SCORING_PROMPT}\n\n---OUTPUT TO SCORE---\n${params.content}\n---END OUTPUT---`,
         }],
         maxTokens: 500,
         jsonMode: true,

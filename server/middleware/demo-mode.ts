@@ -74,6 +74,14 @@ export function demoModeWarnings(env: Env = process.env): string[] {
   if (String(env.SDK_ENGINE_ENABLED ?? '').toLowerCase() === 'true') warnings.push('SDK_ENGINE_ENABLED=true: the subscription engine (this machine\'s Claude login) is on for a public server.');
   if (!env.DEMO_SIGNUP_CODE && String(env.DEMO_SIGNUP_OPEN ?? '').toLowerCase() === 'true') warnings.push('DEMO_SIGNUP_OPEN=true with no DEMO_SIGNUP_CODE: anyone on the internet can make an account, and the privacy notice and the demo terms, which say sign-up needs an invite code, are then untrue.');
   if (demoOfferedModels(env).length === 0) warnings.push('DEMO_OFFERED_MODELS is empty: the model picker has nothing to offer visitors.');
+  // The scorer reads the first 3,000 characters of every answer; on a demo it
+  // must go where the answers go (the privacy notice names the endpoint).
+  const scorer = qualityScorerModelEnv(env);
+  if (scorer && demoQualityScoreOn(env) && !scorer.startsWith('compat:')) {
+    warnings.push('QUALITY_SCORER_MODEL is not a compat: model: every answer would be scored outside the OpenRouter endpoint the privacy notice names.');
+  } else if (scorer && demoQualityScoreOn(env) && demoOfferedModels(env).length > 0 && !demoOfferedModels(env).includes(scorer)) {
+    warnings.push('QUALITY_SCORER_MODEL is not one of DEMO_OFFERED_MODELS: answers would be scored by a model (and possibly an endpoint) the privacy notice does not name.');
+  }
   if (parseSpendCap(env.LLM_DAILY_SPEND_CAP_USD).value === null) warnings.push('LLM_DAILY_SPEND_CAP_USD is not set (or 0): nothing in ANTON caps a day\'s model spend (the OpenRouter key limit still does).');
   if (parseSpendCap(env.LLM_USER_DAILY_SPEND_CAP_USD).value === null) warnings.push('LLM_USER_DAILY_SPEND_CAP_USD is not set (or 0): one visitor can use the whole day\'s budget.');
   for (const key of ['OPENAI_API_KEY', 'GOOGLE_API_KEY', 'MISTRAL_API_KEY', 'AZURE_OPENAI_API_KEY'] as const) {
@@ -161,24 +169,50 @@ function unknownPillarNames(env: Env): string[] {
   return listEnv(env.DEMO_ENABLED_PILLARS).filter((s) => !isPillar(s.toLowerCase()));
 }
 
-/** DEMO_OFFERED_MODELS: the full model ids the picker offers visitors. */
 /**
  * The model calls a demo makes after each answer, besides the answer itself:
  * 'all' (quality score, structured extraction, session conclusion — what every
- * other install does), 'conclusion' (the default: only the session conclusion,
- * which the page shows) or 'none'. A live run on 2026-09-25 showed why: the
- * three calls fire together right after the answer, each can cost more than the
+ * other install does), 'scored' (the session conclusion and the quality score,
+ * which the page shows as the Trust Score under the answer; no structured
+ * extraction), 'conclusion' (the default: only the session conclusion, which
+ * the page shows) or 'none'. A live run on 2026-09-25 showed why: the three
+ * calls fire together right after the answer, each can cost more than the
  * answer, and on a provider pin with no fallback all three were refused 429.
- * The Transform panel the extraction feeds is not open to visitors anyway.
- * Outside demo mode this is always 'all'.
+ * The Transform panel extracts on demand when a visitor asks for a transform,
+ * so the after-answer extraction serves nobody on a demo. Outside demo mode
+ * this is always 'all'.
  */
-export type DemoPostAnswerCalls = 'all' | 'conclusion' | 'none';
+export type DemoPostAnswerCalls = 'all' | 'scored' | 'conclusion' | 'none';
 export function demoPostAnswerCalls(env: Env = process.env): DemoPostAnswerCalls {
   if (!isDemoMode(env)) return 'all';
   const v = String(env.DEMO_POST_ANSWER_CALLS ?? '').trim().toLowerCase();
-  return v === 'all' || v === 'none' ? v : 'conclusion';
+  return v === 'all' || v === 'scored' || v === 'none' ? v : 'conclusion';
 }
 
+/** Whether an answer is followed by the quality score (the Trust Score): 'all' or 'scored', and always outside demo mode. */
+export function demoQualityScoreOn(env: Env = process.env): boolean {
+  const v = demoPostAnswerCalls(env);
+  return v === 'all' || v === 'scored';
+}
+
+/** Whether an answer is followed by the structured extraction: 'all' only, and always outside demo mode. */
+export function demoStructuredExtractionOn(env: Env = process.env): boolean {
+  return demoPostAnswerCalls(env) === 'all';
+}
+
+/**
+ * QUALITY_SCORER_MODEL: the full model id that rates answers (e.g.
+ * compat:openrouter:deepseek/deepseek-v4-flash-0731), so a second model checks
+ * the first. Null when unset — the routed utility model scores, as before.
+ * Read here without a database; services/quality-ratchet.ts resolves the
+ * fallback.
+ */
+export function qualityScorerModelEnv(env: Env = process.env): string | null {
+  const v = (env.QUALITY_SCORER_MODEL ?? '').trim();
+  return v ? v.slice(0, 200) : null;
+}
+
+/** DEMO_OFFERED_MODELS: the full model ids the picker offers visitors. */
 export function demoOfferedModels(env: Env = process.env): string[] {
   return [...new Set(listEnv(env.DEMO_OFFERED_MODELS))];
 }
@@ -238,7 +272,7 @@ export function demoUserUploadQuota(env: Env = process.env): UploadQuota {
   };
 }
 
-/** Uploads, exports and version saves per account per 10 minutes. DEMO_USER_WRITES_PER_10_MIN, default 30. */
+/** Uploads, exports, version saves and answer-tool calls per account per 10 minutes. DEMO_USER_WRITES_PER_10_MIN, default 30. */
 export function demoUserWritesPer10Min(env: Env = process.env): number {
   return intEnv(env.DEMO_USER_WRITES_PER_10_MIN, 30, 1, 100_000);
 }
@@ -277,7 +311,7 @@ export function demoSignupWithEmail(env: Env = process.env): boolean {
  * the terms text changes: a browser still showing the old terms is then
  * refused and asked to reload.
  */
-export const DEMO_TERMS_VERSION = '2026-10-01';
+export const DEMO_TERMS_VERSION = '2026-10-02';
 
 /**
  * DEMO_OPERATOR_NAME: the legal name of whoever runs the demo, for the
@@ -303,8 +337,14 @@ export interface DemoPublicConfig {
   termsVersion: string;
   /** DEMO_OPERATOR_NAME, or '' when unset. */
   operatorName: string;
-  /** False unless DEMO_POST_ANSWER_CALLS=all: no quality score is made after an answer. */
+  /** True when DEMO_POST_ANSWER_CALLS is 'scored' or 'all': a quality score (the Trust Score) follows each answer. */
   answersScored: boolean;
+  /**
+   * The full id of the model that makes that score (QUALITY_SCORER_MODEL, else
+   * the routed utility model) when answersScored, else null. The privacy
+   * notice names it.
+   */
+  scorerModel: string | null;
   /**
    * The area and module ids kept off the demo for visitors (demoHiddenAreas /
    * demoHiddenModules: the effective lists, the built-in ones when the .env
@@ -315,10 +355,19 @@ export interface DemoPublicConfig {
   hiddenModules: string[];
 }
 
-/** The /api/config fields: { demoMode: false } unless DEMO_MODE=true. Nothing secret — never the code. */
-export function demoPublicConfig(env: Env = process.env): DemoPublicConfig | { demoMode: false } {
+/**
+ * The /api/config fields: { demoMode: false } unless DEMO_MODE=true. Nothing secret — never the code.
+ * `scorerModel` is the scorer the server resolved (index.ts passes it: with
+ * QUALITY_SCORER_MODEL unset it is the routed utility model, which needs the
+ * database); without it the env value stands, or null.
+ */
+export function demoPublicConfig(
+  env: Env = process.env,
+  opts: { scorerModel?: string | null } = {},
+): DemoPublicConfig | { demoMode: false } {
   if (!isDemoMode(env)) return { demoMode: false };
   const signup = demoSignupPolicy(env);
+  const answersScored = demoQualityScoreOn(env);
   return {
     demoMode: true,
     offeredModels: demoOfferedModels(env),
@@ -331,7 +380,8 @@ export function demoPublicConfig(env: Env = process.env): DemoPublicConfig | { d
     termsPath: '/terms',
     termsVersion: DEMO_TERMS_VERSION,
     operatorName: demoOperatorName(env),
-    answersScored: demoPostAnswerCalls(env) === 'all',
+    answersScored,
+    scorerModel: answersScored ? (opts.scorerModel || qualityScorerModelEnv(env)) : null,
     hiddenAreas: demoHiddenAreas(env),
     hiddenModules: demoHiddenModules(env),
   };
@@ -426,14 +476,19 @@ export function demoModuleHidden(
 
 /**
  * What the Work page needs, read off its API calls (ModulePage and the
- * shell around it: layout, header, sidebar, stores). Paths are under /api.
+ * shell around it: layout, header, sidebar, stores), and the Work tools
+ * opened to visitors on 2026-10-01: My Work, the answer tools (Explain for,
+ * citation check, Review, Rerun with another model, Transform), Find the
+ * right module, the AI Council and Build Module. Paths are under /api.
  * `:x` is one path segment; a trailing `/*` also matches everything below.
+ * Every entry is exact: a prefix would also open its sibling routes (POST
+ * /reviews/orchestrate, POST /modules/community, the rest of /ai-assist).
  * Anything not here answers 404 to a non-admin. Deliberately left out, for
- * DEMO_EXTRA_ROUTES to add when the owner wants them: the Transform panel
- * (/renderers), rerun, deliberation, explain-for, citation checks, reviews,
- * collections and RAG, EUR-Lex, evidence packs, exchange, projects, public
- * share links, custom-module and profile writes, and the custom model slots
- * (GET /settings/custom-models can carry a per-slot key).
+ * DEMO_EXTRA_ROUTES to add when the owner wants them: deliberation,
+ * collections and RAG, EUR-Lex, evidence packs, exchange (and with it the
+ * .anton download of a built module), community sharing of a module,
+ * projects, Discover, the Task Agent, public share links, profile writes, and
+ * the custom model slots (GET /settings/custom-models can carry a per-slot key).
  */
 export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]> = [
   // The shell
@@ -504,6 +559,37 @@ export const WORK_ROUTES: ReadonlyArray<readonly [methods: string, path: string]
   ['POST', '/export'],
   ['POST', '/export/with-template'],
   ['POST', '/export/trust-certificate'],
+  // My Work: the caller's own sessions, engagements and runs (the route scopes them)
+  ['GET', '/work-timeline'],
+  // The answer tools. Each makes a model call; index.ts puts them behind the
+  // demo write limiter and the model-call limiter.
+  ['POST', '/claude/explain-for'],
+  ['POST', '/claude/verify-citations'],
+  ['GET', '/reviews/modes'],
+  ['POST', '/reviews'],
+  ['POST', '/rerun'],
+  ['GET', '/rerun/quality/:x'],
+  // The Transform panel (TransformPanel.tsx; the routes check the session is the caller's)
+  ['GET', '/renderers/applicable'],
+  ['POST', '/renderers/run'],
+  ['GET', '/renderers/artifacts/:x'],
+  ['GET', '/sessions/:x/artifacts'],
+  // Home: Find the right module (hidden modules are left out for visitors)
+  ['POST', '/modules/smart-search'],
+  // The AI Council's dissent ledger (members and chair run through /claude/message;
+  // the route reads only the caller's own council session)
+  ['POST', '/council/:x/dissent-ledger'],
+  // Build Module: the caller's own custom modules, the guided builder and its
+  // test run, and the module's saved versions. Sharing with the community
+  // (POST /modules/community) and the .anton export (/exchange) stay closed.
+  ['POST', '/custom-modules'],
+  ['PATCH,DELETE', '/custom-modules/:x'],
+  ['POST', '/custom-modules/guide-message'],
+  ['POST', '/custom-modules/guide-generate'],
+  ['POST', '/custom-modules/test-run'],
+  ['POST', '/ai-assist/module-prompt'],
+  ['POST', '/ai-assist/module-inputs'],
+  ['POST', '/versions/module/:x'],
 ];
 
 /** The API prefixes an enabled pillar adds. Work's are WORK_ROUTES. */
@@ -634,10 +720,12 @@ export function createDemoSignupLimiter(): RequestHandler {
 
 /**
  * Per-account limit on the routes that store bytes (uploads, exports, version
- * saves), for index.ts to mount after the auth middleware. Counts only a
- * non-admin in demo mode; everyone else passes untouched. The general
- * per-user limiter allows 1,200 requests a minute, which is a disk-filling
- * rate for 10 MB uploads.
+ * saves) and on the answer tools opened to visitors (explain, review, rerun,
+ * transform, the module builder: each a model call, most also a stored row or
+ * file), for index.ts to mount after the auth middleware. One count covers
+ * them all. Counts only a non-admin in demo mode; everyone else passes
+ * untouched. The general per-user limiter allows 1,200 requests a minute,
+ * which is a disk-filling rate for 10 MB uploads.
  */
 export function createDemoWriteLimiter(): RequestHandler {
   return rateLimit({
@@ -646,7 +734,7 @@ export function createDemoWriteLimiter(): RequestHandler {
     validate: false,
     skip: (req: Request) => !isDemoMode() || !req.user || req.user.role === 'admin',
     keyGenerator: (req: Request) => `demo-write:${req.user?.id ?? 'anonymous'}`,
-    message: { error: 'Too many uploads or exports from this demo account. Try again in a few minutes.' },
+    message: { error: 'Too many uploads, exports or AI requests from this demo account. Try again in a few minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
   });

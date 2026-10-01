@@ -175,11 +175,11 @@ const FEED_BORDER: Record<FeedTone, string> = {
 
 export default function HomeV2(): JSX.Element {
   const navigate = useNavigate();
-  // Public demo: a visitor reaches the Work modules only. Pathfinder, My Work,
-  // workflows and agents are outside the demo's routes, the 5-Minute Brief
-  // runs a fixed Claude model the demo does not offer, and "Add deadline" has
-  // nothing behind it — so Home shows a visitor the module catalogue and
-  // their own sessions. Admins see everything.
+  // Public demo: a visitor reaches the Work modules, My Work, the 5-Minute
+  // Brief (it runs on the visitor's offered model) and the module finder.
+  // Pathfinder, workflows and agents are outside the demo's routes, and "Add
+  // deadline" has nothing behind it — so Home shows a visitor the module
+  // catalogue, the Brief and their own sessions. Admins see everything.
   const demoLimited = demoRestricted(useDemoStore((s) => s.config), useAuthStore((s) => s.user?.role));
   // The modules and areas a demo keeps off (health, HR, credit, criminal
   // matters; privacy review H3) are not listed for a visitor. Everyone else
@@ -330,16 +330,14 @@ export default function HomeV2(): JSX.Element {
               Powered by APCI — Artificial Professional Context Intelligence. Every session builds on what came before, so your AI gets genuinely better at the work you need it to do.
             </p>
           </div>
-          {!demoLimited && (
-            <Btn
-              variant="accent"
-              size="md"
-              icon={<Zap size={13} strokeWidth={1.5} />}
-              onClick={() => navigate('/brief')}
-            >
-              5-Minute Brief
-            </Btn>
-          )}
+          <Btn
+            variant="accent"
+            size="md"
+            icon={<Zap size={13} strokeWidth={1.5} />}
+            onClick={() => navigate('/brief')}
+          >
+            5-Minute Brief
+          </Btn>
         </div>
 
         {/* ── Regulatory deadlines strip ──────────────────────── */}
@@ -426,15 +424,12 @@ export default function HomeV2(): JSX.Element {
               <Section className="inline-flex items-center gap-1.5">
                 <Clock size={12} strokeWidth={1.5} /> Continue Your Work
               </Section>
-              {/* My Work searches and projects are outside the demo's routes */}
-              {!demoLimited && (
-                <button
-                  onClick={() => navigate('/my-work')}
-                  className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
-                >
-                  View All →
-                </button>
-              )}
+              <button
+                onClick={() => navigate('/my-work')}
+                className="text-[11.5px] font-semibold text-[var(--color-adv-teal)] hover:underline"
+              >
+                View All →
+              </button>
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
               {continueWork.map(s => (

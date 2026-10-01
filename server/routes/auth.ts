@@ -11,7 +11,7 @@ import { sendPasswordResetEmail } from '../services/email.js';
 import { logSecurityEvent } from '../services/security-logger.js';
 import * as oidcClient from 'openid-client';
 import { getUserBudgetStatus } from '../services/budget-manager.js';
-import { safeError } from '../lib/error-response.js';
+import { safeError, publicErrorMessage } from '../lib/error-response.js';
 import { validate } from '../lib/validate.js';
 import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, RegisterSchema } from '../lib/schemas.js';
 import {
@@ -584,7 +584,7 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       setSessionCookie(res, token);
       res.json({ user: authUser, token });
     } catch (err) {
-      if (err instanceof InvitationError) { res.status(err.status).json({ error: err.message }); return; }
+      if (err instanceof InvitationError) { res.status(err.status).json({ error: publicErrorMessage(err) }); return; }
       res.status(500).json({ error: safeError(err) });
     }
   });

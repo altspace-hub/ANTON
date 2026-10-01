@@ -1,5 +1,6 @@
 import { getRoutedUtilityModelSync } from './utility-model.js';
 import { callChat } from './provider-router.js';
+import type { DatabaseAdapter } from '../db/database.js';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -77,7 +78,40 @@ function matchCitationToSources(citation: string, sourceManifest: string[]): 'lo
   return 'uncertain';
 }
 
-export async function verifyCitations(text: string, sourceManifest?: string[]): Promise<CitationResult[]> {
+/**
+ * The verdicts in a model's reply. The prompt asks for {"citations": [...]}:
+ * JSON mode (response_format json_object, which OpenAI-compatible endpoints
+ * send) admits only an object, so a provider that enforces it could not
+ * return the bare array the prompt used to ask for, and every citation came
+ * back "unexpected response". A bare array, an object holding the list under
+ * another name (its first array), and a fenced or prefixed reply are all
+ * read; anything else is null.
+ */
+export function parseCitationVerdicts(rawText: string): unknown[] | null {
+  const stripped = rawText
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim();
+  const candidates = [stripped];
+  const object = stripped.match(/\{[\s\S]*\}/);
+  if (object) candidates.push(object[0]);
+  const array = stripped.match(/\[[\s\S]*\]/);
+  if (array) candidates.push(array[0]);
+  for (const candidate of candidates) {
+    let parsed: unknown;
+    try { parsed = JSON.parse(candidate); } catch { continue; }
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed !== null && typeof parsed === 'object') {
+      const obj = parsed as Record<string, unknown>;
+      if (Array.isArray(obj.citations)) return obj.citations;
+      const firstArray = Object.values(obj).find(Array.isArray);
+      if (firstArray) return firstArray as unknown[];
+    }
+  }
+  return null;
+}
+
+export async function verifyCitations(text: string, sourceManifest?: string[], db?: DatabaseAdapter): Promise<CitationResult[]> {
   const citations = extractCitations(text);
 
   if (citations.length === 0) {
@@ -104,17 +138,17 @@ For each citation, determine:
 Citations to verify:
 ${citationList}
 
-Respond with a JSON array. Each element must have exactly these fields:
+Respond with a JSON object whose "citations" field is an array. Each element must have exactly these fields:
 - "citation": the exact citation string as given
 - "verified": true if the citation appears to be real and correctly referenced, false if it seems invented, incorrectly numbered, or cannot be confirmed
 - "comment": brief explanation (1 sentence max). For verified citations: confirm what it is. For unverified: explain the issue.
 - "sourceMatch": "loaded_source" if this citation is clearly covered by a loaded knowledge source, "ai_knowledge" if it relies on general AI knowledge, "uncertain" if unclear.
 
 Example format:
-[
+{"citations": [
   {"citation": "Article 3 of Directive 2015/849/EU", "verified": true, "comment": "Article 3 of the 4th AML Directive defines obliged entities.", "sourceMatch": "ai_knowledge"},
   {"citation": "Article 999 AMLR", "verified": false, "comment": "AMLR (Regulation 2024/1624) does not contain an Article 999.", "sourceMatch": "uncertain"}
-]`;
+]}`;
 
   // Through provider-router, so the configured engine answers. This used to
   // build a raw Anthropic client on the metered key — "Verify citations" on
@@ -125,18 +159,13 @@ Example format:
     messages: [{ role: 'user', content: userMessage }],
     maxTokens: 4096,
     jsonMode: true,
+    ...(db ? { db, purpose: 'citation-verify' } : {}),
   });
-  const rawText = response.text;
-
-  // Parse JSON — strip any accidental markdown code fences
-  const jsonText = rawText
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/, '')
-    .trim();
 
   let results: CitationResult[];
   try {
-    const parsed = JSON.parse(jsonText) as unknown[];
+    const parsed = parseCitationVerdicts(response.text);
+    if (!parsed) throw new Error('no citation list in the reply');
     results = parsed.map((item) => {
       const obj = item as Record<string, unknown>;
       const citation = String(obj.citation ?? '');
@@ -148,7 +177,8 @@ Example format:
       }
       return {
         citation,
-        verified: Boolean(obj.verified),
+        // A string "false" from a non-Claude model must not read as verified.
+        verified: obj.verified === true || (typeof obj.verified === 'string' && obj.verified.trim().toLowerCase() === 'true'),
         comment: String(obj.comment ?? ''),
         sourceMatch,
       };

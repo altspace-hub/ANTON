@@ -211,6 +211,7 @@ import { initAuditQueue, flushAuditQueue } from './services/audit-queue.js';
 import { getTotalActiveStreams } from './services/stream-limiter.js';
 import { startMeshDialer } from './services/mesh/bootstrap.js';
 import { getEffectiveDefaultModel } from './services/default-model-store.js';
+import { qualityScorerModelSync } from './services/quality-ratchet.js';
 
 // ── Startup validation ────────────────────────────────────────
 if (!process.env.ANTHROPIC_API_KEY) {
@@ -657,8 +658,9 @@ app.get('/api/config', (_req, res) => {
     googleOAuthEnabled: !demo && !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     githubOAuthEnabled: !demo && !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
     // Public showcase: { demoMode: false } unless DEMO_MODE=true, then the
-    // offered models, enabled pillars, sign-up state and retention.
-    ...demoPublicConfig(),
+    // offered models, enabled pillars, sign-up state and retention, and the
+    // model that scores answers (the privacy notice names it).
+    ...demoPublicConfig(process.env, demo ? { scorerModel: qualityScorerModelSync() } : {}),
     // The model that answers unless a visitor picks another, which the demo's
     // privacy notice and terms name ([[DEFAULT_MODEL]]).
     ...(demo ? { defaultModel: getEffectiveDefaultModel() ?? null } : {}),
@@ -708,6 +710,27 @@ const demoWriteLimiter = createDemoWriteLimiter();
 app.post('/api/files/upload', demoWriteLimiter);
 app.post(['/api/export', '/api/export/*'], demoWriteLimiter);
 app.post('/api/versions/*', demoWriteLimiter);
+// The answer tools opened to visitors (demo-mode.ts WORK_ROUTES): each is a
+// model call, most also a stored row or file. One count with the writes above
+// for a visitor, and the per-IP model-call limiter of /api/claude/message for
+// everyone. Exact paths: app.post does not match below them.
+app.post([
+  '/api/rerun',
+  '/api/reviews',
+  '/api/renderers/run',
+  '/api/claude/explain-for',
+  '/api/claude/verify-citations',
+  '/api/modules/smart-search',
+  '/api/council/:sessionId/dissent-ledger',
+  '/api/custom-modules/guide-message',
+  '/api/custom-modules/guide-generate',
+  '/api/custom-modules/test-run',
+  '/api/ai-assist/module-prompt',
+  '/api/ai-assist/module-inputs',
+], demoWriteLimiter, claudeLimiter, codingModelBudget);
+// Built modules are stored rows with a free-text prompt: counted as writes.
+app.post('/api/custom-modules', demoWriteLimiter);
+app.patch('/api/custom-modules/:id', demoWriteLimiter);
 app.post('/api/core-team/:projectId/panel', claudeLimiter, codingModelBudget);
 app.get('/api/coding/workshop/sessions/:id/start', claudeLimiter, codingModelBudget);
 app.post('/api/coding/workshop/sessions/:id/respond', claudeLimiter, codingModelBudget);
@@ -745,7 +768,7 @@ app.use('/api', createWorkTimelineRoutes(db));
 app.use('/api', await createFolderRoutes(db));
 app.use('/api', await createExportRouter(db));
 app.use('/api', await createTemplatesRouter(db));
-app.use('/api', await createCustomModuleRoutes(db, anthropic)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
+app.use('/api', await createCustomModuleRoutes(db)); // must be before modulesRouter — /modules/community would otherwise be swallowed by /modules/:id wildcard
 app.use('/api', modulesRouter);
 app.use('/api', await createProfileRoutes(db));
 app.use('/api', await createReviewRoutes(db, anthropic));
@@ -1061,7 +1084,7 @@ app.use('/api', await createCollectionsRoutes(db));
 app.use('/api', await createSearchRoutes(db));
 app.use('/api/embeddings', await createEmbeddingRoutes(db));
 app.use('/api', await createDocumentsRouter(db));
-app.use('/api', await createDiscoveryRoutes(db, anthropic));
+app.use('/api', await createDiscoveryRoutes(db));
 app.use('/api/ollama', ollamaRouter);
 app.use('/api', await createCodingRoutes(db));
 app.use('/api', await createCodingReviewRoutes(db));

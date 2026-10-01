@@ -6,7 +6,11 @@
  * (DEMO_OFFERED_MODELS; the server's default answers the after-answer calls),
  * named from /api/config as [[DEFAULT_MODEL]], [[OTHER_MODELS]] and
  * [[MODEL_MAKERS]], through OpenRouter, pinned to Inceptron with zero data
- * retention; no memory
+ * retention; whether and by which model answers are scored (the Trust Score,
+ * [[SCORING_SENTENCE]]); the features open to visitors (modules, Open Chat,
+ * the AI Council, the 5-minute Brief, Build Module, My Work and the tools under
+ * an answer: Transform, "Rerun with…", Review, Citations, "Explain for…"),
+ * with module sharing and the .anton download closed; no memory
  * learning, Online References, voice input or sign-off form for visitors; the
  * demo-mode session cookie and the preference keys cleared at sign-out
  * (src/lib/safe-storage.ts); nothing loaded from other sites; accounts made
@@ -35,7 +39,7 @@ export const PRIVACY_NOTICE_MD = `# Privacy notice: ANTON public demo
 >
 >   Either way you also confirm that you are 18 or over and that you accept the demo terms.
 > - **Please don't enter real personal data**, about you or about anyone else. That means no real names, no personal identity numbers (personnummer), and no health, money, job or client details. Use made-up or public information.
-> - **Where your input goes:** what you type or upload in a module goes to OpenRouter, Inc. in the USA. OpenRouter passes it to Inceptron AB, which runs the AI model in the EU/EEA: [[DEFAULT_MODEL]], unless you choose [[OTHER_MODELS]] in the model list.
+> - **Where your input goes:** what you type or upload (in a module, Open Chat, the AI Council, the 5-minute Brief or a module you build) goes to OpenRouter, Inc. in the USA. OpenRouter passes it to Inceptron AB, which runs the AI model in the EU/EEA: [[DEFAULT_MODEL]], unless you choose [[OTHER_MODELS]] in the model list. Some features send it to more than one of these models, such as the AI Council and a second opinion on an answer (section 6.1).
 >   - Both companies say they don't store your prompts and answers after the answer is generated, and that they don't use them to train AI. There are narrow exceptions: brief caching, where the law requires it, and dealing with misuse.
 >   - OpenRouter also runs its own misuse checks and anonymous statistics. It is responsible for those itself (section 6.2).
 > - **Transfer to the USA:** OpenRouter is not certified under the EU-U.S. Data Privacy Framework. The transfer rests on the EU Standard Contractual Clauses (section 8).
@@ -75,8 +79,8 @@ We have not appointed a data protection officer, because the law does not requir
 |---|---|---|
 | Your account | An internal account ID and your username. Your password, stored only as a one-way hash (bcrypt). Your role and your monthly token budget. When you signed up, when the account expires, when you last signed in, and whether the account is switched off. When you accepted the demo terms, which version you accepted, and when you confirmed that you are 18 or over. The invite code you enter is checked and then discarded. **If you signed up with your email address:** that address, which is also your username. **If we invited you by email:** your email address, which is also your username; the display name we gave the account (unless we chose another, the part of your address before the @); which administrator invited you, and when each invitation link was made, expires and was used. A link itself is stored only as a one-way hash (SHA-256). | You and our system. If we invited you: the administrator who invited you, from the address you gave us or that we use to work with you. |
 | Sign-in sessions | A sign-in token, when it was issued, when it expires and when it was last used. | Our system |
-| What you enter | Your prompts, module inputs and settings, and the earlier messages in the same session. The titles and notes you give your sessions. Module instructions, if you edit them. For files you upload: the file itself (stored under a name that includes its original file name), its size and type, and the text we extract from it on our own server. | You |
-| What the AI produces | Answers and two automatic copies of them: a version copy, and a copy of each module answer in our output store. The model's reasoning text, where the model returns it. The session titles and session summaries the AI writes. | The AI model |
+| What you enter | Your prompts, module inputs and settings, and the earlier messages in the same session. The titles and notes you give your sessions. Module instructions, if you edit them. The modules you build: their name, description, instructions, questions and example output. The topic and settings of an AI Council. For files you upload: the file itself (stored under a name that includes its original file name), its size and type, and the text we extract from it on our own server. | You |
+| What the AI produces | Answers and two automatic copies of them: a version copy, and a copy of each module answer in our output store. The model's reasoning text, where the model returns it. The session titles and session summaries the AI writes. Rewrites made with "Explain for…", kept as further version copies. A second answer when you rerun an answer on another model, and the reviews you ask for. For an AI Council: the deliberation record (the topic, every member's answer, the vote table and the names of attached files) and the dissent ledger. Quality scores (the Trust Score), when this demo scores answers. Files made by the Transform panel, such as diagrams, slide decks and web pages. | The AI models |
 | Run records | For each answer: the full instructions sent to the AI (including the text of your uploaded files), the sources used, the model, the number of tokens and the cost. | Our system |
 | Your ratings | The verdicts, star ratings and comments you give on answers. | You |
 | Usage records | Which modules you used and when. The settings of each run and the names of the files used as sources. Your token totals and the cost of each AI call. A count of your runs per module. For each module, your last-used settings and inputs, so that the form can be pre-filled next time. | Our system |
@@ -89,7 +93,9 @@ We have not appointed a data protection officer, because the law does not requir
 
 - fetching web pages from web addresses you give (Online References);
 - voice input (the microphone button);
-- the sign-off form that asks for a reviewer's name.
+- the sign-off form that asks for a reviewer's name;
+- sharing a module you build with other users, or downloading it as a file;
+- web search in the AI Council.
 
 None of these features is available on this demo. We also don't offer the modules on health, HR, workers' rights, criminal law and investigations, or the credit-risk and CV-writing modules.
 
@@ -97,7 +103,7 @@ None of these features is available on this demo. We also don't offer the module
 
 | Purpose | Data used | Legal basis (GDPR) |
 |---|---|---|
-| **1. Run the demo you signed up for.** This means opening and running your account (if we invite you, making the account for your email address and giving or sending you the link to choose your password), running the modules you choose, sending your input to the AI service, and showing and storing your sessions. It also covers writing session titles and summaries, pre-filling module forms with your last-used settings, and letting you export answers. | Account, sign-in sessions, what you enter, what the AI produces, run records, your last-used settings for each module | Art. 6(1)(b): the processing is necessary to provide the service under the demo terms you accept. |
+| **1. Run the demo you signed up for.** This means opening and running your account (if we invite you, making the account for your email address and giving or sending you the link to choose your password), running the modules and other features you choose (Open Chat, the AI Council, the 5-minute Brief, Build Module and the tools under an answer), sending your input to the AI service, and showing and storing your sessions and the modules you build. It also covers writing session titles and summaries, scoring answers where this demo does so, pre-filling module forms with your last-used settings, and letting you export answers. | Account, sign-in sessions, what you enter (including the modules you build), what the AI produces, run records, your last-used settings for each module | Art. 6(1)(b): the processing is necessary to provide the service under the demo terms you accept. |
 | **2. Keep the demo secure and stop abuse.** This covers sign-in checks, rate limits and lock-outs, logs of sign-ins and changes, web server logs, and investigating misuse. The pseudonymous code lets OpenRouter act against one account instead of blocking the whole demo. | Security and technical data, pseudonymous code | Art. 6(1)(f): our legitimate interest in a secure service that is not misused. |
 | **3. Keep the free demo affordable** with monthly token budgets, daily spending caps and cost records. | Usage records | Art. 6(1)(f): our legitimate interest in controlling the cost of a free service. |
 | **4. See which modules work well.** Your ratings also update anonymous quality statistics for each module. | Your ratings | Art. 6(1)(f): our legitimate interest in improving the modules. |
@@ -129,10 +135,10 @@ We use your data for nothing else. We don't sell it and we don't use it for adve
 
 ### 6.1 What we send, and to whom
 
-When you run a module, our server sends a request to **OpenRouter, Inc.** in the USA. The request contains:
+When you run a module or chat in Open Chat, our server sends a request to **OpenRouter, Inc.** in the USA. The request contains:
 
 - your prompt, your module inputs and settings, and the earlier messages of the session;
-- the module's instructions, including any you edited;
+- the module's instructions, including any you edited (Open Chat uses ANTON's general instructions);
 - when you return to a session after a break, the session summary written so far;
 - the text of files you uploaded to the session, with their file names, and images if the model can read images;
 - the pseudonymous code for your account.
@@ -142,7 +148,22 @@ With the demo's standard setting, two more requests go to [[DEFAULT_MODEL]], whi
 - **After your first message:** the message (up to 400 characters) and the start of the answer (up to 600 characters). The AI uses them to write a session title.
 - **After each answer of 200 characters or more:** the last 12 messages of the session, each cut to its first 1,500 characters. The newest answer keeps its first and last 1,500 characters. The AI uses them to write the session summary shown on the page.
 
-The operator can also switch on two requests that ANTON makes after each answer on other installations. With them on, the AI also rates the quality of each answer longer than 200 characters (that request carries the first 3,000 characters of the answer), and extracts the structure of each answer longer than 100 characters, such as its sections and tables (that request carries the whole answer).
+**The Trust Score:** [[SCORING_SENTENCE]]
+
+The operator can also switch on one more request that ANTON makes after each answer on other installations. With it on, the AI also extracts the structure of each answer longer than 100 characters, such as its sections and tables (that request carries the whole answer).
+
+**Other features send these requests**, each to OpenRouter and on to Inceptron in the same way:
+
+- **Open Chat:** before the first answer of a chat, your message (up to 2,000 characters) and a list of ANTON's module names go to [[DEFAULT_MODEL]], which picks an expert module to shape the answer. "Improve prompt" sends your draft, and then your answers to its questions, to the model you chose. These two requests are not stored.
+- **Find the right module** (on Home): the text you type and ANTON's list of modules go to [[DEFAULT_MODEL]]. Nothing is stored.
+- **The 5-minute Brief:** your question, the earlier messages of that chat and a fixed instruction go to the model you chose. The chat is not stored.
+- **The AI Council:** one question goes to several models, in many requests. Your topic and the text of the files you attach (up to 48,000 characters) go to the model chosen for each member, once for each member in each round (up to 6 members and 3 rounds), with the answers of the earlier rounds. If you choose a majority or unanimity vote, each member is asked once more, for its vote. The chair's model then receives the topic, every member's answer, the vote table and the names of the attached files. After that, the whole deliberation record goes once more to [[DEFAULT_MODEL]], which writes the dissent ledger. The record and the ledger are stored with the session.
+- **"Rerun with…"** (a second opinion): your question, the earlier messages of the session and the module's instructions go again, to the other model you pick. Files attached to the question are not sent again, so the other model answers without them. Both answers are stored in the session.
+- **Review:** the whole answer and a reviewer's instructions go to the model you pick (at first, a model other than the one that wrote the answer). The review is stored with the session.
+- **Citations:** the citations found in the answer and the names of the session's source files go to [[DEFAULT_MODEL]], which checks them. Nothing is stored.
+- **"Explain for…":** the answer goes to [[DEFAULT_MODEL]], which rewrites it for the audience you pick. The rewrite is stored as a further version copy of the answer.
+- **Transform:** the whole answer goes to [[DEFAULT_MODEL]] for a structured analysis and, for most transforms, once more to make the transform itself, such as a slide deck or a review. The file it makes is stored on our server with the session. It is deleted with the session, or with your account.
+- **Build Module:** what you type into the builder (the module's name, description and instructions, your answers in "Guide me", and your test question) goes to [[DEFAULT_MODEL]], to draft the module and to run the test. The modules you save are stored with your account and deleted with it. They are not shared with other visitors.
 
 OpenRouter does **not** receive your IP address, username, password or cookies. It sees only our server's address.
 
@@ -177,16 +198,16 @@ It keeps request metadata (such as request IDs, timestamps and token counts) and
 
 ### 6.3 Answers are generated by AI
 
-You are using an AI system. Answers, session titles and session summaries are generated automatically by a large language model: the one you chose for answers (section 6.1), and [[DEFAULT_MODEL]] for titles and summaries. No person writes or checks them before you see them.
+You are using an AI system. Answers, and what the demo writes about them (session titles and summaries, reviews, rewrites, transforms, council syntheses and Trust Scores), are generated automatically by large language models: the one you chose for answers, and the models section 6.1 names for the rest. No person writes or checks them before you see them.
 
-They can be wrong, incomplete or out of date, and the model can make things up. They are not legal, financial, tax, medical or other professional advice.
+They can be wrong, incomplete or out of date, and the model can make things up. They are not legal, financial, tax, medical or other professional advice. A Trust Score, a review or a second opinion is an AI model's view of an answer, sometimes from the same model that wrote it. It does not show that the answer is right.
 
 ### 6.4 What we don't do
 
 - We don't train AI models on your content. OpenRouter and Inceptron say they don't either. OpenRouter's anonymous statistics are described in section 6.2.
 - ANTON's memory learning is switched off on this demo. We extract no memory items from your content and build no search index from it. Nothing from your other sessions, or from other visitors, is added to your prompts. The one stored text added back is the summary of that same session, when you return to it after a break (section 6.1).
 - To find reference material in ANTON's own library that fits your question, our server uses your message once as a search query. This happens on our own server, and the query is not saved.
-- Other visitors cannot see your sessions.
+- Other visitors cannot see your sessions or the modules you build.
 
 ## 7. Who receives your data
 
@@ -219,14 +240,15 @@ OpenRouter is a US company and its platform is hosted in the USA. So everything 
 
 | Data | How long |
 |---|---|
-| **Your account and everything in it:** sessions, prompts and edited module instructions, uploaded files and their text, answers and copies of answers, run records, session titles and summaries, ratings, usage records, sign-in sessions and, if we invited you, your email address and the records of your invitation links | Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password if we invited you. A clean-up job runs once a day and then deletes it, normally within 24 hours. It can take longer if the server was down. |
+| **Your account and everything in it:** sessions, prompts and edited module instructions, uploaded files and their text, answers and copies of answers, run records, session titles and summaries, ratings, usage records, the modules you build, council records, reviews, quality scores, files made by the Transform panel, sign-in sessions and, if we invited you, your email address and the records of your invitation links | Your account stops working [[ACCOUNT_TTL_DAYS]] days after you sign up, or after you choose your password if we invited you. A clean-up job runs once a day and then deletes it, normally within 24 hours. It can take longer if the server was down. |
 | An invitation nobody used | Its link works for 7 days. The account made for it, with the email address, is deleted by the same daily clean-up once the link has expired. |
-| A session you delete yourself | These are removed from our live database at once: its messages, answers, the version copies of its answers, the copy of its answers in our output store, its run records and its summary, and its ratings and any quality scores and feedback on its answers. These stay until your account is deleted: your token totals, your run counts and last-used settings for each module, and the files you uploaded. The cost records of its AI calls stay too, without the link to the session. |
+| A session you delete yourself | These are removed from our live database at once: its messages, answers, the version copies of its answers, the copy of its answers in our output store, its run records and its summary, its reviews and council record, the files the Transform panel made for it, and its ratings and any quality scores and feedback on its answers. These stay until your account is deleted: your token totals, your run counts and last-used settings for each module, and the files you uploaded. The cost records of its AI calls stay too, without the link to the session. |
 | Sign-in attempts, security events and the log of changes, with IP addresses | Deleted by the daily clean-up once they are [[ACCOUNT_TTL_DAYS]] days old. Most entries about your account go earlier, when your account is deleted. The rest are deleted when they reach [[ACCOUNT_TTL_DAYS]] days. |
 | Web server access log | [[NGINX_LOG_SENTENCE]] |
 | Technical error logs of our server and database | 30 days. They are not meant to hold your content, but an error line can contain the name of a file you uploaded, or your username. |
 | Backups of the database | Each nightly backup is overwritten after 7 days, so a deleted account can stay in a backup for up to 7 more days. If we ever have to restore a backup, we first delete again every account that expired, or that we deleted on request, since the backup was taken. A session you deleted yourself in that time could come back. If it does, it is deleted with your account. |
 | Files you export | We keep no copy. The file goes straight to your browser. |
+| Files made by the Transform panel | Stored on our server with the session. Deleted with the session, or with your account. |
 | Cost records of AI calls: model, tokens, cost, purpose and time | Kept while the demo runs, to control costs. When your account is deleted, we remove the link to your account and session. |
 | Results of the automatic checks run on each answer: which rule ran and what it found, never the answer text | Kept. They carry only the internal IDs of the session and the answer, which point to nothing once those are deleted. |
 | Anonymous quality statistics per module | Kept. They do not identify you. |
@@ -282,6 +304,7 @@ You have the right to:
 **Things you can do yourself at any time:**
 
 - delete a session (see section 9 for what is removed at once);
+- delete a module you built (Build Module, under My Modules);
 - download any answer with the Export button.
 
 ## 12. How we check that a request is yours
@@ -330,7 +353,7 @@ We would welcome the chance to put things right first, but you don't have to con
 
 If you enter, upload or paste information about other people, we process it only to answer you, and we delete it together with your account (section 9). We tell those people about this through this public notice, because we don't know who they are and have no way to contact them (GDPR Art. 14(5)(b)).
 
-Please don't enter such information: the demo is not meant for real personal data. Never enter health data, information about crimes, or personal identity numbers. That is why this demo does not offer the modules on health, HR, workers' rights, criminal law and investigations, or the credit-risk and CV-writing modules.
+Please don't enter such information: the demo is not meant for real personal data. Never enter health data, information about crimes, or personal identity numbers. That is why this demo does not offer the modules on health, HR, workers' rights, criminal law and investigations, or the credit-risk and CV-writing modules. The same applies to the modules you build: don't build one that asks for such information.
 
 ## 16. Automated decisions
 

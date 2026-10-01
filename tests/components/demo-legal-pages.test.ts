@@ -34,6 +34,7 @@ import DemoTermsPage from '../../src/pages/DemoTermsPage';
 import { useDemoStore } from '../../src/stores/useDemoStore';
 import { useAuthStore } from '../../src/stores/useAuthStore';
 import { DEMO_OFF } from '../../src/lib/demo-config';
+import { DEMO_TERMS_TEXT_VERSION } from '../../src/lib/demo-legal';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -47,7 +48,7 @@ const DEMO_CONFIG = {
   retentionDays: 21,
   privacyPath: '/privacy',
   termsPath: '/terms',
-  termsVersion: '2026-10-01',
+  termsVersion: DEMO_TERMS_TEXT_VERSION,
   operatorName: '',
 };
 const ORDINARY = { deploymentMode: 'team', demoMode: false };
@@ -132,7 +133,7 @@ describe('the demo terms page', () => {
     setDemo(DEMO_CONFIG);
     await render(DemoTermsPage as ComponentType<object>, '/terms');
     expect(container.querySelector('h1')?.textContent).toBe('Demo terms: ANTON public demo');
-    expect(text()).toContain('Version: 2026-10-01');
+    expect(text()).toContain(`Version: ${DEMO_TERMS_TEXT_VERSION}`);
     expect(text()).toContain('You must be 18 or over.');
     expect(text()).toContain('Your account stops working 21 days after you sign up, or after you choose your password from an invitation.');
     expect(text()).toContain('DRAFT: these demo terms are not yet in force.');
@@ -306,7 +307,7 @@ describe('LoginPage sign-up on a demo', () => {
     await submit();
     expect(signupPosts()).toHaveLength(1);
     const body = JSON.parse(signupPosts()[0].body!) as Record<string, unknown>;
-    expect(body).toMatchObject({ over18: true, acceptTerms: true, termsVersion: '2026-10-01' });
+    expect(body).toMatchObject({ over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_TEXT_VERSION });
   });
 
   it('shows the server\'s own sentence when it refuses the terms version', async () => {

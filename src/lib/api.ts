@@ -65,6 +65,16 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
   return res;
 }
 
+/**
+ * The sentence to show for a refused request: the server's own `error` when
+ * it wrote a short one (publicErrorMessage, e.g. a model the demo does not
+ * offer or the daily budget), else the fallback. Never the raw body.
+ */
+export async function errorMessageOf(res: Response, fallback: string): Promise<string> {
+  const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+  return typeof body?.error === 'string' && body.error.trim() && body.error.length <= 300 ? body.error : fallback;
+}
+
 export async function fetchHealth(): Promise<HealthStatus> {
   const res = await fetchWithAuth(`${API_BASE}/health`);
   if (!res.ok) throw new Error('Health check failed');
@@ -512,7 +522,7 @@ export async function* streamReviewDirect(
     body: JSON.stringify({ modeId, content, model, sessionId }),
     signal,
   });
-  if (!res.ok) { yield { type: 'error', message: await res.text() }; return; }
+  if (!res.ok) { yield { type: 'error', message: await errorMessageOf(res, 'The review could not be run.') }; return; }
   const reader = res.body?.getReader();
   if (!reader) { yield { type: 'error', message: 'No response body' }; return; }
   const decoder = new TextDecoder();
@@ -810,6 +820,8 @@ export interface SessionQualityScore {
   isRegression: boolean;
   scoredAt: string;
   reasoning?: { strengths?: string[]; weaknesses?: string[]; improvementSuggestion?: string } | null;
+  /** The model that scored the answer (quality_scores.model_used); 'heuristic' when its reply did not parse. */
+  modelUsed?: string | null;
 }
 
 export async function getSessionQualityScore(sessionId: string): Promise<SessionQualityScore | null> {

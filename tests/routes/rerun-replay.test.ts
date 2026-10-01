@@ -259,6 +259,9 @@ async function post(body: unknown): Promise<{ status: number; json: Record<strin
 }
 
 const savedEnv = { key: process.env.ANTHROPIC_API_KEY, mode: process.env.DEPLOYMENT_MODE };
+/** Who calls; the demo cases below switch to a visitor. */
+const SOLO = { id: 'solo', username: 'solo', role: 'admin' };
+let currentUser: { id: string; username: string; role: string } = SOLO;
 
 beforeAll(async () => {
   process.env.ANTHROPIC_API_KEY = 'test-key-for-preflight';
@@ -267,7 +270,7 @@ beforeAll(async () => {
   const app = express();
   app.use(express.json());
   app.use((req, _res, next) => {
-    (req as unknown as { user: { id: string; username: string; role: string } }).user = { id: 'solo', username: 'solo', role: 'admin' };
+    (req as unknown as { user: { id: string; username: string; role: string } }).user = { ...currentUser };
     next();
   });
   app.use('/api', createRerunRoutes(createFakeDb(store), createFakeClaudeRouter()));
@@ -583,6 +586,55 @@ describe('POST /api/rerun — recompose is unchanged (mode default)', () => {
     const art = store.artifacts.find((a) => a.message_id === rerun.messageId);
     expect(art!.rerun_mode).toBe('recompose');
     expect(art!.rerun_of).toBe(ids.original);
+  });
+});
+
+describe('POST /api/rerun on a public demo — a visitor reruns only on an offered model', () => {
+  const OFFERED = 'compat:openrouter:z-ai/glm-5.3,compat:openrouter:moonshotai/kimi-k2.6';
+  const saved = { demo: process.env.DEMO_MODE, offered: process.env.DEMO_OFFERED_MODELS };
+  beforeEach(() => {
+    process.env.DEMO_MODE = 'true';
+    process.env.DEMO_OFFERED_MODELS = OFFERED;
+    currentUser = { id: 'u-visitor', username: 'visitor', role: 'analyst' };
+  });
+  afterAll(() => {
+    currentUser = SOLO;
+    if (saved.demo === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = saved.demo;
+    if (saved.offered === undefined) delete process.env.DEMO_OFFERED_MODELS; else process.env.DEMO_OFFERED_MODELS = saved.offered;
+  });
+
+  it('refuses a replay on a named model the demo does not offer, before any call', async () => {
+    const ids = seed(store);
+    const { status, json } = await post({ sessionId: ids.sessionId, messageId: ids.original, mode: 'replay', newModelId: 'sdk:claude-sonnet-5' });
+    expect(status).toBe(403);
+    expect(json.code).toBe('MODEL_NOT_OFFERED');
+    expect(callChatMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a replay on the original's model when the demo no longer offers it", async () => {
+    const ids = seed(store);
+    const { status, json } = await post({ sessionId: ids.sessionId, messageId: ids.original, mode: 'replay' });
+    expect(status).toBe(403);
+    expect(json.code).toBe('MODEL_NOT_OFFERED');
+    expect(callChatMock).not.toHaveBeenCalled();
+    expect(store.writes.filter((w) => w.sql.startsWith('INSERT'))).toEqual([]);
+  });
+
+  it('refuses a recompose on a model the demo does not offer, before dispatch', async () => {
+    const ids = seed(store);
+    const { status, json } = await post({ sessionId: ids.sessionId, messageId: ids.original, newModelId: 'mistral-large-latest' });
+    expect(status).toBe(403);
+    expect(json.code).toBe('MODEL_NOT_OFFERED');
+    expect(dispatched).toHaveLength(0);
+  });
+
+  it('negative control: an administrator replays on the same model', async () => {
+    currentUser = SOLO;
+    const ids = seed(store);
+    callChatMock.mockResolvedValueOnce({ text: 'again', thinking: '', inputTokens: 1, outputTokens: 1 });
+    const { status } = await post({ sessionId: ids.sessionId, messageId: ids.original, mode: 'replay', newModelId: 'sdk:claude-sonnet-5' });
+    expect(status).toBe(200);
+    expect(callChatMock).toHaveBeenCalledTimes(1);
   });
 });
 

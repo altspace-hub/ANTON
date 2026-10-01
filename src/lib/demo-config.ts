@@ -34,8 +34,17 @@ export interface DemoConfig {
   termsVersion: string;
   /** Who runs the demo, for "Operated by …" (DEMO_OPERATOR_NAME); '' when not set. */
   operatorName: string;
-  /** Whether a quality score follows each answer (a demo leaves it out unless DEMO_POST_ANSWER_CALLS=all). */
+  /**
+   * Whether a quality score (the Trust Score) follows each answer. A demo
+   * leaves it out unless DEMO_POST_ANSWER_CALLS is 'scored' or 'all'.
+   */
   answersScored: boolean;
+  /**
+   * The full id of the model that scores answers (QUALITY_SCORER_MODEL, else
+   * the server's utility model) when answersScored; null otherwise, and when
+   * the server does not say. The Trust Score panel and the privacy notice name it.
+   */
+  scorerModel: string | null;
   /**
    * The area ids and module ids kept off the demo: the server's effective
    * DEMO_HIDDEN_AREAS and DEMO_HIDDEN_MODULES, lower-cased. They invite health,
@@ -62,6 +71,7 @@ export const DEMO_OFF: DemoConfig = {
   termsVersion: '',
   operatorName: '',
   answersScored: true,
+  scorerModel: null,
   hiddenAreas: [],
   hiddenModules: [],
 };
@@ -79,6 +89,10 @@ const idList = (v: unknown): string[] => (Array.isArray(v)
     .map((id) => id.trim().toLowerCase()))]
   : []);
 
+/** A model id as /api/config gives one: a short string of printable characters, or null. */
+const modelId = (v: unknown): string | null =>
+  typeof v === 'string' && v.length > 0 && v.length <= 200 && /^[!-~]+$/.test(v) ? v : null;
+
 /** Reads /api/config defensively: anything malformed means "not a demo". */
 export function parseDemoConfig(json: unknown): DemoConfig {
   if (!json || typeof json !== 'object') return DEMO_OFF;
@@ -86,6 +100,7 @@ export function parseDemoConfig(json: unknown): DemoConfig {
   if (c.demoMode !== true) return DEMO_OFF;
   const pillars = Array.isArray(c.enabledPillars) ? c.enabledPillars.filter(isPillar) : [];
   const days = Number(c.retentionDays);
+  const answersScored = c.answersScored !== false;
   return {
     demoMode: true,
     offeredModels: Array.isArray(c.offeredModels) ? c.offeredModels.filter((m): m is string => typeof m === 'string' && m.length > 0) : [],
@@ -102,7 +117,9 @@ export function parseDemoConfig(json: unknown): DemoConfig {
     operatorName: typeof c.operatorName === 'string'
       ? Array.from(c.operatorName).filter((ch) => ch >= ' ' && ch !== '\u007f').join('').trim().slice(0, 200)
       : '',
-    answersScored: c.answersScored !== false,
+    answersScored,
+    // Named only while answers are scored: a scorer the demo does not use is not shown.
+    scorerModel: answersScored ? modelId(c.scorerModel) : null,
     hiddenAreas: idList(c.hiddenAreas),
     hiddenModules: idList(c.hiddenModules),
   };
@@ -198,13 +215,19 @@ export function demoSignupErrorMessage(status: number, body: unknown): string {
   return 'Sign-up could not be completed. Please try again.';
 }
 
-/** The Work entries a demo visitor keeps: home, where the module catalogue is. */
-export const DEMO_WORK_NAV_ITEMS: readonly string[] = ['home'];
+/**
+ * The Work entries a demo visitor keeps: home, where the module catalogue is,
+ * and the features whose routes the server opens to visitors (WORK_ROUTES in
+ * server/middleware/demo-mode.ts): My Work, Open Chat, the AI Council, the
+ * 5-minute Brief and Build Module. Projects, the Task Agent, the Knowledge
+ * Base, Exchange and the other tools stay with admins.
+ */
+export const DEMO_WORK_NAV_ITEMS: readonly string[] = ['home', 'my-work', 'prompt', 'council', 'brief', 'build-module'];
 
 /**
  * The sidebar entries to hide for this person: none on an ordinary server
- * or for an admin; on a demo, everything but the Work home and the entries
- * of the enabled pillars.
+ * or for an admin; on a demo, everything but DEMO_WORK_NAV_ITEMS and the
+ * entries of the enabled pillars.
  */
 export function demoHiddenNavItems(cfg: DemoConfig, role: string | undefined, allIds: readonly string[]): Set<string> {
   if (!demoRestricted(cfg, role)) return new Set();
