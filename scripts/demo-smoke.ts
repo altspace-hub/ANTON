@@ -155,6 +155,24 @@ async function main(): Promise<void> {
     const sessions: string[] = [];
     let lastAnswer = '';
     let failures = 0;
+
+    // A visitor reaches the Work routes and nothing else (the demo allowlist).
+    const access: Array<[path: string, allowed: boolean]> = [
+      ['/api/modules', true],
+      ['/api/sessions', true],
+      ['/api/admin/users', false],
+      ['/api/settings/custom-models', false],
+      ['/api/markets/indexes', false],
+      ['/api/missions', false],
+      ['/api/pathfinder/threads', false],
+      ['/api/knowledge/atoms', false],
+    ];
+    for (const [route, allowed] of access) {
+      const status = (await fetch(`${BASE}${route}`, { headers: headers(token, false) })).status;
+      const ok = allowed ? status === 200 : status === 404 || status === 403;
+      console.log(`[smoke] ${ok ? 'OK  ' : 'FAIL'} visitor ${allowed ? 'reaches' : 'is kept from'} ${route}: HTTP ${status}`);
+      if (!ok) failures++;
+    }
     for (const model of models) {
       for (const [i, thinking] of (QUICK_ONLY ? ['quick'] : ['quick', 'think_hard']).entries()) {
         const mod = MODULES[i % MODULES.length];
