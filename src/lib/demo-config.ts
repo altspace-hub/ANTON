@@ -22,6 +22,8 @@ export interface DemoConfig {
   enabledPillars: Pillar[];
   signupOpen: boolean;
   signupCodeRequired: boolean;
+  /** Sign-up asks for an email address (the username) instead of a username. */
+  signupWithEmail: boolean;
   retentionDays: number;
   privacyPath: string;
   /** The demo terms page. */
@@ -50,6 +52,7 @@ export const DEMO_OFF: DemoConfig = {
   enabledPillars: [...PILLARS],
   signupOpen: false,
   signupCodeRequired: false,
+  signupWithEmail: false,
   retentionDays: 0,
   privacyPath: '/privacy',
   termsPath: '/terms',
@@ -86,6 +89,7 @@ export function parseDemoConfig(json: unknown): DemoConfig {
     enabledPillars: pillars.includes('work') ? pillars : ['work', ...pillars],
     signupOpen: c.signupOpen === true,
     signupCodeRequired: c.signupCodeRequired === true,
+    signupWithEmail: c.signupWithEmail === true,
     retentionDays: Number.isFinite(days) && days > 0 ? Math.floor(days) : 30,
     privacyPath: sitePath(c.privacyPath, '/privacy'),
     termsPath: sitePath(c.termsPath, '/terms'),
@@ -166,8 +170,10 @@ export interface DemoSignupInput {
 }
 
 /** What is wrong with the form before it is sent, or null. */
-export function demoSignupProblem(input: DemoSignupInput, codeRequired: boolean): string | null {
-  if (!DEMO_USERNAME_RE.test(input.username.trim())) return 'Choose a username of 3–50 letters, numbers, _ or -.';
+export function demoSignupProblem(input: DemoSignupInput, codeRequired: boolean, withEmail = false): string | null {
+  if (withEmail) {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.username.trim())) return 'Enter your email address.';
+  } else if (!DEMO_USERNAME_RE.test(input.username.trim())) return 'Choose a username of 3–50 letters, numbers, _ or -.';
   if (input.password.length < DEMO_PASSWORD_MIN) return `Use a password of at least ${DEMO_PASSWORD_MIN} characters.`;
   if (input.password.length > 200) return 'That password is too long (200 characters at most).';
   if (codeRequired && !input.code.trim()) return 'Enter the invite code you were given.';
@@ -181,6 +187,7 @@ export function demoSignupErrorMessage(status: number, body: unknown): string {
   if (status === 400 && b.details) {
     if (b.details.password) return `Use a password of at least ${DEMO_PASSWORD_MIN} characters.`;
     if (b.details.username) return 'Choose a username of 3–50 letters, numbers, _ or -.';
+    if (b.details.email) return 'Enter your email address.';
   }
   if ([403, 409, 429].includes(status) && typeof b.error === 'string' && b.error.length < 200) return b.error;
   if (status === 404) return 'Sign-up is not available on this server.';

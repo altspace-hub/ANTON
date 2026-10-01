@@ -32,6 +32,7 @@ describe('parseDemoConfig', () => {
       enabledPillars: ['work', 'pathfinder'],
       signupOpen: true,
       signupCodeRequired: true,
+      signupWithEmail: false,
       retentionDays: 30,
       privacyPath: '/privacy',
       termsPath: '/terms',

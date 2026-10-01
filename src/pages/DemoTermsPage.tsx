@@ -37,14 +37,14 @@ The demo is run by [[CONTROLLER_NAME]] ([[CONTROLLER_LEGAL_FORM]]), [[CONTROLLER
 
 - You must be 18 or over.
 - Create one account only, for yourself. Keep your password secret and don't share your account.
-- Don't publish or pass on your invite code or your invitation link.
+- Don't publish or pass on your invite code, sign-up link or invitation link.
 
 ## 4. No real personal data, no confidential material
 
 - Use made-up or public information only.
 - Don't enter, upload or paste real personal data about you or anyone else. That includes real names, personal identity numbers (personnummer) or other ID numbers, contact details, health data, information about crimes, and financial, employment or client details.
 - Don't enter confidential material, such as client files, trade secrets or anything you must keep secret.
-- If you choose a username, don't use your real name. (If we invited you, your username is your email address.)
+- If you choose a username, don't use your real name. (If you signed up with your email address, or we invited you, that address is your username.)
 - If you enter such data anyway, you are responsible for having the right to do so, and we may delete it.
 
 ## 5. Acceptable use

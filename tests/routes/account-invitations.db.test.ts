@@ -16,7 +16,10 @@
  *   - a new link for an account with a password lets the person choose a new
  *     one: the old password and every old session stop working;
  *   - no link for an account that signs in through SSO;
- *   - no email leaves without SMTP_HOST: the administrator gets the link.
+ *   - no email leaves without SMTP_HOST: the administrator gets the link;
+ *   - DEMO_SIGNUP_WITH_EMAIL: sign-up takes an email address as the username,
+ *     unique against invited accounts too; the administrator's group link
+ *     carries the invite code in the fragment.
  *
  * Skips without a test database (tests/setup/db-guard.ts decides which).
  */
@@ -50,7 +53,7 @@ const MIGRATIONS = ['289_demo_accounts.sql', '291_demo_terms_acceptance.sql', '2
 const ADMIN_ID = `adm-${TAG}`;
 const ANALYST_ID = `ana-${TAG}`;
 
-const ENV_KEYS = ['DEMO_MODE', 'DEMO_ACCOUNT_TTL_DAYS', 'DEMO_USER_MONTHLY_TOKENS', 'SMTP_HOST', 'APP_PUBLIC_URL', 'BASE_URL', 'DEPLOYMENT_MODE'];
+const ENV_KEYS = ['DEMO_MODE', 'DEMO_ACCOUNT_TTL_DAYS', 'DEMO_USER_MONTHLY_TOKENS', 'SMTP_HOST', 'APP_PUBLIC_URL', 'BASE_URL', 'DEPLOYMENT_MODE', 'DEMO_SIGNUP_CODE', 'DEMO_SIGNUP_WITH_EMAIL'];
 const savedEnv: Record<string, string | undefined> = {};
 
 let ipSeq = 0;
@@ -96,7 +99,7 @@ d('accounts made by invitation (routes/admin.ts, routes/auth.ts)', () => {
   });
 
   afterEach(() => {
-    for (const k of ['DEMO_MODE', 'DEMO_ACCOUNT_TTL_DAYS', 'DEMO_USER_MONTHLY_TOKENS']) {
+    for (const k of ['DEMO_MODE', 'DEMO_ACCOUNT_TTL_DAYS', 'DEMO_USER_MONTHLY_TOKENS', 'DEMO_SIGNUP_CODE', 'DEMO_SIGNUP_WITH_EMAIL']) {
       if (savedEnv[k] === undefined) delete process.env[k]; else process.env[k] = savedEnv[k];
     }
   });
@@ -279,5 +282,52 @@ d('accounts made by invitation (routes/admin.ts, routes/auth.ts)', () => {
     await db.run('UPDATE users SET disabled_at = NOW() WHERE username = ?', email('ida'));
     expect((await post('/api/auth/invitation/check', { token: tokenOf(link) })).status).toBe(400);
     expect((await accept(tokenOf(link))).status).toBe(400);
+  });
+
+  // ── Sign-up with an email address (DEMO_SIGNUP_WITH_EMAIL) ──────────────────
+
+  const signup = (body: Record<string, unknown>) =>
+    post('/api/auth/demo-signup', { over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_VERSION, code: `code-${TAG}`, password: PASSWORD, ...body });
+  const emailSignupOn = () => {
+    process.env.DEMO_MODE = 'true';
+    process.env.DEMO_SIGNUP_CODE = `code-${TAG}`;
+    process.env.DEMO_SIGNUP_WITH_EMAIL = 'true';
+  };
+
+  it('with DEMO_SIGNUP_WITH_EMAIL the address is the username, and it signs in at once', async () => {
+    emailSignupOn();
+    const res = await signup({ email: `  ${email('Jon').toUpperCase()} ` });
+    expect(res.status).toBe(201);
+    const user = await row(email('jon'));
+    expect(user).toMatchObject({ email: email('jon'), role: 'analyst', display_name: `jon_${TAG}` });
+    expect(user!.demo_expires_at).not.toBeNull();
+    expect((await login(email('JON'))).status).toBe(200);
+  });
+
+  it('refuses a username, a non-address, and an address another account already has', async () => {
+    emailSignupOn();
+    expect((await signup({ username: `user_${TAG}` })).status).toBe(400);
+    expect((await signup({ email: 'not-an-address' })).status).toBe(400);
+    await invite({ email: email('kim') });
+    const dup = await signup({ email: email('KIM') });
+    expect(dup.status).toBe(409);
+    expect((await dup.json() as { error: string }).error).toMatch(/already exists/);
+  });
+
+  it('negative control: without the switch, sign-up still takes a username and refuses an address', async () => {
+    process.env.DEMO_MODE = 'true';
+    process.env.DEMO_SIGNUP_CODE = `code-${TAG}`;
+    expect((await signup({ email: email('lea') })).status).toBe(400);
+    expect((await signup({ username: `lea_${TAG}` })).status).toBe(201);
+    expect((await row(`lea_${TAG}`))!.email).toBeNull();
+  });
+
+  it('gives the administrator a group link with the invite code in the fragment; nothing outside a demo', async () => {
+    emailSignupOn();
+    const res = await fetch(`${base}/api/admin/demo-signup-link`, { headers: { 'x-test-user': 'admin' } });
+    expect(await res.json()).toEqual({ link: `https://demo.example.test/#signup=code-${TAG}` });
+    expect((await fetch(`${base}/api/admin/demo-signup-link`, { headers: { 'x-test-user': 'analyst' } })).status).toBe(403);
+    delete process.env.DEMO_MODE;
+    expect(await (await fetch(`${base}/api/admin/demo-signup-link`, { headers: { 'x-test-user': 'admin' } })).json()).toEqual({ link: null });
   });
 });

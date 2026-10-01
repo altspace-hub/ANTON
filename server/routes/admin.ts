@@ -13,6 +13,7 @@ import {
   createInvitedAccount, issueSignInLink, invitationLink, publicBaseUrl, InvitationError, type IssuedLink,
 } from '../services/account-invitations.js';
 import { emailConfigured, sendAccountLinkEmail } from '../services/email.js';
+import { isDemoMode, demoSignupPolicy } from '../middleware/demo-mode.js';
 
 export async function createAdminRoutes(db: DatabaseAdapter) {
   const router = Router();
@@ -179,6 +180,19 @@ export async function createAdminRoutes(db: DatabaseAdapter) {
     if (err instanceof InvitationError) { res.status(err.status).json({ error: err.message }); return; }
     res.status(500).json({ error: safeError(err) });
   }
+
+  // GET /api/admin/demo-signup-link — on a demo with an invite code, the link
+  // that opens the sign-up form with the code filled in, for the administrator
+  // to send to a group. The code rides in the fragment (/#signup=…), which the
+  // browser never sends to the server, so it stays out of the access log.
+  router.get('/admin/demo-signup-link', requireRole('admin'), (req, res) => {
+    const policy = demoSignupPolicy();
+    if (!isDemoMode() || !policy.open || !policy.code) {
+      res.json({ link: null });
+      return;
+    }
+    res.json({ link: `${publicBaseUrl(req)}/#signup=${encodeURIComponent(policy.code)}` });
+  });
 
   // POST /api/admin/invitations — an account for an email address, and the
   // one-time link with which the person chooses their own password.

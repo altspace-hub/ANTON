@@ -29,7 +29,7 @@ export const PRIVACY_NOTICE_MD = `# Privacy notice: ANTON public demo
 >
 > - **Who is responsible:** [[CONTROLLER_NAME]] runs this demo. Contact: [[PRIVACY_EMAIL]].
 > - **What we ask for:** there are two ways to get an account.
->   - **With an invite code:** you choose a username and a password. We don't ask for an email address or your real name.
+>   - **With an invite code** (a sign-up link fills it in): you choose a password and either a username or, where the sign-up form asks for it, your email address, which is then your username. With a username, we don't ask for an email address or your real name.
 >   - **Invited by email:** we make the account for your email address, which is then your username, and you choose a password from the link we give you. An email address often contains your name.
 >
 >   Either way you also confirm that you are 18 or over and that you accept the demo terms.
@@ -72,7 +72,7 @@ We have not appointed a data protection officer, because the law does not requir
 
 | Kind of data | What exactly | Where it comes from |
 |---|---|---|
-| Your account | An internal account ID and your username. Your password, stored only as a one-way hash (bcrypt). Your role and your monthly token budget. When you signed up, when the account expires, when you last signed in, and whether the account is switched off. When you accepted the demo terms, which version you accepted, and when you confirmed that you are 18 or over. The invite code you enter is checked and then discarded. **If we invited you by email:** your email address, which is also your username; the display name we gave the account (unless we chose another, the part of your address before the @); which administrator invited you, and when each invitation link was made, expires and was used. A link itself is stored only as a one-way hash (SHA-256). | You and our system. If we invited you: the administrator who invited you, from the address you gave us or that we use to work with you. |
+| Your account | An internal account ID and your username. Your password, stored only as a one-way hash (bcrypt). Your role and your monthly token budget. When you signed up, when the account expires, when you last signed in, and whether the account is switched off. When you accepted the demo terms, which version you accepted, and when you confirmed that you are 18 or over. The invite code you enter is checked and then discarded. **If you signed up with your email address:** that address, which is also your username. **If we invited you by email:** your email address, which is also your username; the display name we gave the account (unless we chose another, the part of your address before the @); which administrator invited you, and when each invitation link was made, expires and was used. A link itself is stored only as a one-way hash (SHA-256). | You and our system. If we invited you: the administrator who invited you, from the address you gave us or that we use to work with you. |
 | Sign-in sessions | A sign-in token, when it was issued, when it expires and when it was last used. | Our system |
 | What you enter | Your prompts, module inputs and settings, and the earlier messages in the same session. The titles and notes you give your sessions. Module instructions, if you edit them. For files you upload: the file itself (stored under a name that includes its original file name), its size and type, and the text we extract from it on our own server. | You |
 | What the AI produces | Answers and two automatic copies of them: a version copy, and a copy of each module answer in our output store. The model's reasoning text, where the model returns it. The session titles and session summaries the AI writes. | The AI model |
@@ -82,7 +82,7 @@ We have not appointed a data protection officer, because the law does not requir
 | Security and technical data | **Web server log:** for every request, your IP address (section 9 says how it is stored), the time, the address requested and your browser type (user agent). **Sign-in attempts:** the username typed, the IP address, the time and whether it succeeded. A failed sign-in also creates a security event with the IP address and the time. If the username belongs to an account, the event is linked to that account and can include the username. If it belongs to no account, the event holds a short keyed code (an HMAC) made from the typed name, not the name itself. **Sign-up attempts:** a successful sign-up is recorded like a successful sign-in. A failed sign-up records no username. If the invite code was wrong, a security event records the IP address and the time. **Log of changes made through the site:** your account ID, the kind of request, the address, the result and the IP address reported for the request. None of these logs holds the content of your requests. | Your browser and our system |
 | Pseudonymous code | A code we derive from your account ID with a secret key that is used for nothing else (an HMAC). It is sent to OpenRouter with the AI requests (section 6). It does not contain your username. | Our system |
 
-**What we don't ask for:** your phone number, payment details or location, and, if you sign up with an invite code, your email address or real name. If we invited you by email, we hold your email address (above). If you write to us about your rights, we keep your email address with your request (section 9).
+**What we don't ask for:** your phone number, payment details or location, and, if you sign up with a username, your email address or real name. If you signed up with your email address, or we invited you by email, we hold that address (above). We don't check that an address typed at sign-up belongs to the person typing it, and we send no email to it. If you write to us about your rights, we keep your email address with your request (section 9).
 
 **Switched off on this demo:**
 
@@ -285,7 +285,7 @@ You have the right to:
 
 ## 12. How we check that a request is yours
 
-If you signed up with an invite code, we only know your username, not your email address or real name. If we invited you by email, write to us from that address; we still ask for the check below before we send a copy of your data, because an email can be forged. We check that you control the account, so that someone who only knows your username or address cannot get your data:
+If you signed up with a username, we only know that username, not your email address or real name. If your username is your email address, write to us from that address; we still ask for the check below before we send a copy of your data, because an email can be forged. We check that you control the account, so that someone who only knows your username or address cannot get your data:
 
 1. Write to [[PRIVACY_EMAIL]]. Give your username (if we invited you, your email address) and say what you want.
 2. We reply with a one-time code.
@@ -314,12 +314,12 @@ We would welcome the chance to put things right first, but you don't have to con
 ## 14. Do you have to give us data?
 
 - **To create an account**, you must:
-  - either enter the invite code you were given and choose a username, or open the invitation link we gave you;
+  - either enter the invite code you were given (a sign-up link fills it in) and choose a username or give your email address, as the sign-up form asks, or open the invitation link we gave you;
   - choose a password;
   - confirm that you are 18 or over;
   - accept the demo terms.
 
-  If we invite you, we need your email address to make the account.
+  If the sign-up form asks for your email address, or we invite you, we need it to make the account.
 
   These are conditions of the demo. Without them we cannot open an account.
 - **To get an answer**, you have to type something. You decide what. Please keep it free of real personal data.

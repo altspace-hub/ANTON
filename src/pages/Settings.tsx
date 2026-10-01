@@ -168,6 +168,8 @@ export default function Settings() {
   const [inviteRole, setInviteRole] = useState<'analyst' | 'viewer'>('analyst');
   const [issuedLink, setIssuedLink] = useState<IssuedAccountLink | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [groupLink, setGroupLink] = useState<string | null>(null);
+  const [groupLinkCopied, setGroupLinkCopied] = useState(false);
 
   // Brand Templates state
   const [templates, setTemplates] = useState<BrandTemplate[]>([]);
@@ -369,6 +371,9 @@ export default function Settings() {
       ]);
       if (usersRes.ok) setTeamUsers(await usersRes.json() as TeamUser[]);
       if (usageRes.ok) setUsageRows(await usageRes.json() as UsageRow[]);
+      // On a demo with an invite code: the link a group can sign up with.
+      const groupRes = await fetch('/api/admin/demo-signup-link', { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (groupRes.ok) setGroupLink(((await groupRes.json()) as { link: string | null }).link);
     } catch {
       // non-fatal
     } finally {
@@ -1140,6 +1145,27 @@ export default function Settings() {
                 </button>
               </div>
             </div>
+
+            {/* A demo with an invite code: one link for a whole group; each person makes their own account */}
+            {groupLink && (
+              <div className="mb-4 rounded-lg border border-border bg-adv-dark/50 p-4 space-y-2">
+                <h3 className="text-xs font-semibold text-adv-off-white">{t('settings.groupSignupTitle', 'Sign-up link for a group')}</h3>
+                <p className="text-xs text-adv-gray">
+                  {t('settings.groupSignupHelp', 'Anyone who opens this link can make their own account straight away, with no approval. It carries the invite code, so send it only to the people you mean.')}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input readOnly value={groupLink} aria-label={t('settings.groupSignupTitle', 'Sign-up link for a group')} onFocus={(e) => e.currentTarget.select()}
+                    className="min-w-0 flex-1 rounded-lg border border-border bg-adv-dark px-3 py-1.5 font-mono text-xs text-adv-off-white" />
+                  <button
+                    onClick={async () => { try { await navigator.clipboard.writeText(groupLink); setGroupLinkCopied(true); } catch { setGroupLinkCopied(false); } }}
+                    className="flex items-center gap-1 rounded-lg bg-adv-teal px-3 py-1.5 text-xs font-medium text-adv-dark hover:bg-adv-teal-dark transition-colors"
+                  >
+                    {groupLinkCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {groupLinkCopied ? t('settings.copied', 'Copied') : t('settings.copy', 'Copy')}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Invite by email: the account is made now; the person chooses their own password from the link */}
             {showInvite && (

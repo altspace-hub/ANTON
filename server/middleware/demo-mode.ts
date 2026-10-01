@@ -261,6 +261,16 @@ export function demoSignupPolicy(env: Env = process.env): DemoSignupPolicy {
 }
 
 /**
+ * DEMO_SIGNUP_WITH_EMAIL=true: sign-up asks for an email address, which
+ * becomes the username (as for an invited account), instead of a made-up
+ * username. For a showcase among colleagues, where the operator wants to
+ * know who signed up; the address is not verified (no mail is sent).
+ */
+export function demoSignupWithEmail(env: Env = process.env): boolean {
+  return String(env.DEMO_SIGNUP_WITH_EMAIL ?? '').trim().toLowerCase() === 'true';
+}
+
+/**
  * The version of the demo terms (the /terms page) a visitor accepts at
  * sign-up. POST /api/auth/demo-signup refuses any other version and stores
  * this one with the time of acceptance (migration 291). Change it whenever
@@ -284,6 +294,8 @@ export interface DemoPublicConfig {
   enabledPillars: DemoPillar[];
   signupOpen: boolean;
   signupCodeRequired: boolean;
+  /** Sign-up asks for an email address instead of a username (DEMO_SIGNUP_WITH_EMAIL). */
+  signupWithEmail: boolean;
   retentionDays: number;
   privacyPath: '/privacy';
   /** The demo terms page; sign-up sends termsVersion back. */
@@ -313,6 +325,7 @@ export function demoPublicConfig(env: Env = process.env): DemoPublicConfig | { d
     enabledPillars: demoEnabledPillars(env),
     signupOpen: signup.open,
     signupCodeRequired: signup.code !== null,
+    signupWithEmail: demoSignupWithEmail(env),
     retentionDays: demoAccountTtlDays(env),
     privacyPath: '/privacy',
     termsPath: '/terms',

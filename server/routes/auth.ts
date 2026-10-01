@@ -16,7 +16,7 @@ import { validate } from '../lib/validate.js';
 import { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, RegisterSchema } from '../lib/schemas.js';
 import {
   isDemoMode, demoSignupPolicy, demoAccountTtlDays, demoUserMonthlyTokens,
-  demoMaxSignupsPerDay, createDemoSignupLimiter, DEMO_TERMS_VERSION,
+  demoMaxSignupsPerDay, createDemoSignupLimiter, DEMO_TERMS_VERSION, demoSignupWithEmail,
 } from '../middleware/demo-mode.js';
 import {
   readOidcSettings, oidcSettingsProblems, identityFromClaims, tenantAllowed,
@@ -24,7 +24,7 @@ import {
 } from '../services/oidc-sso.js';
 import { invitationStillValid } from './project-collaboration.js';
 import rateLimit from 'express-rate-limit';
-import { findOpenInvitation, acceptInvitation, InvitationError, PASSWORD_MAX } from '../services/account-invitations.js';
+import { findOpenInvitation, acceptInvitation, InvitationError, PASSWORD_MAX, normaliseEmail } from '../services/account-invitations.js';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -223,7 +223,10 @@ function restartOnCallbackHost(req: Request, provider: 'google' | 'github'): str
  * in the handler, so a missing one is refused with a sentence the form can
  * show rather than a field list.
  */
-const DemoSignupSchema = RegisterSchema.pick({ username: true, password: true }).extend({
+const DemoSignupSchema = RegisterSchema.pick({ password: true }).extend({
+  // One of the two, as DEMO_SIGNUP_WITH_EMAIL decides; checked in the handler.
+  username: z.string().max(100).optional(),
+  email: z.string().max(254).optional(),
   code: z.string().max(200).optional(),
   over18: z.boolean().optional(),
   acceptTerms: z.boolean().optional(),
@@ -435,7 +438,20 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       return;
     }
     const body = req.body as z.infer<typeof DemoSignupSchema>;
-    const { username, password, code } = body;
+    const { password, code } = body;
+    // With DEMO_SIGNUP_WITH_EMAIL the address is the username (lower case),
+    // as for an invited account; otherwise a made-up username.
+    const withEmail = demoSignupWithEmail();
+    const email = withEmail ? normaliseEmail(body.email) : null;
+    const username = withEmail ? (email ?? '') : (body.username ?? '').trim();
+    if (withEmail && !email) {
+      res.status(400).json({ error: 'Invalid request body', details: { email: ['Enter a valid email address.'] } });
+      return;
+    }
+    if (!withEmail && !/^[a-zA-Z0-9_-]{3,50}$/.test(username)) {
+      res.status(400).json({ error: 'Invalid request body', details: { username: ['Only letters, numbers, _ and - allowed (3-50)'] } });
+      return;
+    }
     const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
     const policy = demoSignupPolicy();
     if (!policy.open) {
@@ -475,9 +491,12 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
         }
       }
       // Case-insensitively unique: 'Alice' and 'alice' would be two people who look like one.
-      const taken = await db.get('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', username);
+      // An address is also taken when another account carries it as its email.
+      const taken = await db.get('SELECT id FROM users WHERE LOWER(username) = LOWER(?) OR (? AND LOWER(email) = LOWER(?))', username, withEmail, username);
       if (taken) {
-        res.status(409).json({ error: 'That username is taken. Choose another.' });
+        res.status(409).json({ error: withEmail
+          ? 'An account with this email address already exists. Sign in instead, or ask the administrator for a new sign-in link.'
+          : 'That username is taken. Choose another.' });
         return;
       }
 
@@ -485,22 +504,24 @@ export async function createAuthRoutes(db: DatabaseAdapter) {
       const expiresAt = new Date(Date.now() + demoAccountTtlDays() * 24 * 60 * 60 * 1000);
       const hash = await bcrypt.hash(password, 10);
       await db.run(
-        `INSERT INTO users (id, username, password_hash, role, display_name, monthly_token_budget, demo_expires_at,
+        `INSERT INTO users (id, username, email, password_hash, role, display_name, monthly_token_budget, demo_expires_at,
                             terms_version, terms_accepted_at, age_confirmed_at)
-         VALUES (?, ?, ?, 'analyst', ?, ?, ?, ?, NOW(), NOW())`,
-        id, username, hash, username, demoUserMonthlyTokens(), expiresAt.toISOString(), DEMO_TERMS_VERSION,
+         VALUES (?, ?, ?, ?, 'analyst', ?, ?, ?, ?, NOW(), NOW())`,
+        id, username, email, hash, email ? email.split('@')[0] : username, demoUserMonthlyTokens(), expiresAt.toISOString(), DEMO_TERMS_VERSION,
       );
       await db.run('INSERT INTO login_attempts (username, ip_address, success) VALUES (?, ?, 1)', username, ipAddress);
       console.log(`[auth] demo account created: user ${id}`);
 
-      const authUser: AuthUser = { id, username, role: 'analyst', display_name: username };
+      const authUser: AuthUser = { id, username, role: 'analyst', display_name: email ? email.split('@')[0] : username };
       const token = await issueSession(db, authUser, expiresAt);
       setSessionCookie(res, token);
       res.status(201).json({ user: authUser, token, expiresAt: expiresAt.toISOString() });
     } catch (err) {
       // Two sign-ups for one name at once: the unique index decides.
       if ((err as { code?: string }).code === '23505') {
-        res.status(409).json({ error: 'That username is taken. Choose another.' });
+        res.status(409).json({ error: demoSignupWithEmail()
+          ? 'An account with this email address already exists. Sign in instead.'
+          : 'That username is taken. Choose another.' });
         return;
       }
       res.status(500).json({ error: safeError(err) });

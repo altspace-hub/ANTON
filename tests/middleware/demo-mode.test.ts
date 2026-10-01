@@ -128,6 +128,7 @@ describe('/api/config demo fields', () => {
       enabledPillars: ['work', 'pathfinder', 'markets'],
       signupOpen: true,
       signupCodeRequired: true,
+      signupWithEmail: false,
       retentionDays: 14,
       privacyPath: '/privacy',
       termsPath: '/terms',

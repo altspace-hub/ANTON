@@ -91,12 +91,26 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
   const [suSubmitting, setSuSubmitting] = useState(false);
   const showSignup = demo.demoMode && demo.signupOpen && view === 'signup';
 
+  // A group sign-up link (/#signup=<invite code>, from Settings > Team) opens
+  // the sign-up form with the code filled in. The code is in the fragment,
+  // which never reaches the server; it is cleared from the address bar here.
+  useEffect(() => {
+    const match = /(?:^#|&)signup=([^&]+)/.exec(window.location.hash);
+    if (!match) return;
+    let code = match[1];
+    try { code = decodeURIComponent(code); } catch { /* keep as typed */ }
+    setSuCode(code.slice(0, 200));
+    setView('signup');
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, []);
+
   async function handleSignup(e: FormEvent) {
     e.preventDefault();
     setSuError('');
     const problem = demoSignupProblem(
       { username: suUsername, password: suPassword, code: suCode, agreed: true },
       demo.signupCodeRequired,
+      demo.signupWithEmail,
     )
       ?? (suOver18 ? null : 'Please confirm that you are 18 or over.')
       ?? (suAcceptTerms ? null : 'Please accept the demo terms and confirm that you have read the privacy notice.');
@@ -107,7 +121,7 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: suUsername.trim(),
+          ...(demo.signupWithEmail ? { email: suUsername.trim() } : { username: suUsername.trim() }),
           password: suPassword,
           ...(demo.signupCodeRequired ? { code: suCode.trim() } : {}),
           over18: suOver18,
@@ -330,10 +344,17 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-snug text-gray-800">
                     <p className="font-semibold">Before you start, please read this:</p>
                     <ul className="mt-2 list-disc space-y-1.5 pl-5">
-                      <li>
-                        You need only {demo.signupCodeRequired ? 'an invite code, a username and a password' : 'a username and a password'}.
-                        Don&apos;t use your real name as your username. We don&apos;t ask for your email address.
-                      </li>
+                      {demo.signupWithEmail ? (
+                        <li>
+                          You need only your email address{demo.signupCodeRequired ? ', the invite code (a sign-up link fills it in)' : ''} and
+                          a password. Your email address is your username: you sign in with it. We don&apos;t send you any email.
+                        </li>
+                      ) : (
+                        <li>
+                          You need only {demo.signupCodeRequired ? 'an invite code, a username and a password' : 'a username and a password'}.
+                          Don&apos;t use your real name as your username. We don&apos;t ask for your email address.
+                        </li>
+                      )}
                       <li>You must be 18 or over.</li>
                       <li>
                         Don&apos;t enter real personal data, about you or anyone else. That means no real names, no personal
@@ -365,12 +386,12 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                   </p>
                   <div>
                     <label htmlFor="su-username" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                      Username
+                      {demo.signupWithEmail ? 'Email address' : 'Username'}
                     </label>
                     <input
                       id="su-username"
-                      type="text"
-                      autoComplete="username"
+                      type={demo.signupWithEmail ? 'email' : 'text'}
+                      autoComplete={demo.signupWithEmail ? 'email' : 'username'}
                       value={suUsername}
                       onChange={(e) => setSuUsername(e.target.value)}
                       required
@@ -378,7 +399,9 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
                       aria-describedby="su-username-help"
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-300 focus:border-adv-teal focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0D7D6C] focus-visible:ring-offset-1 disabled:opacity-50 transition-all"
                     />
-                    <p id="su-username-help" className="mt-1 text-xs text-gray-500">3–50 letters, numbers, _ or -. Not your real name.</p>
+                    <p id="su-username-help" className="mt-1 text-xs text-gray-500">
+                      {demo.signupWithEmail ? 'You sign in with this address.' : '3–50 letters, numbers, _ or -. Not your real name.'}
+                    </p>
                   </div>
                   <div>
                     <label htmlFor="su-password" className="block mb-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
