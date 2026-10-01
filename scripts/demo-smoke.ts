@@ -3,10 +3,12 @@
  *
  * Run on the demo server, in the app directory, against the running service:
  *
- *   pnpm exec tsx scripts/demo-smoke.ts [--models a,b] [--quick]
+ *   pnpm exec tsx scripts/demo-smoke.ts [--models a,b] [--quick] [--base https://host] [--via-signup]
  *
  * It makes a throwaway account the way an invitation does (an analyst on the
- * demo's rules), signs in over HTTP, and for each model in DEMO_OFFERED_MODELS
+ * demo's rules) — or, with --via-signup, through the public sign-up with
+ * DEMO_SIGNUP_CODE, as a group sign-up link does — signs in over HTTP (the
+ * app's own port, or --base: the public address, through nginx and TLS), and for each model in DEMO_OFFERED_MODELS
  * runs a module at the quick and the think_hard level, asks for a session
  * title, then uploads a text file and runs on it once, exports an answer to
  * .docx, waits for the after-answer calls and reads what the spend ledger
@@ -23,13 +25,14 @@ import { createInvitedAccount, acceptInvitation } from '../server/services/accou
 import { deleteDemoAccountNow } from '../server/services/demo-retention.js';
 import { DEMO_TERMS_VERSION, demoOfferedModels, isDemoMode } from '../server/middleware/demo-mode.js';
 
-const BASE = `http://127.0.0.1:${process.env.PORT || 3001}`;
 const args = process.argv.slice(2);
 const argValue = (name: string): string | undefined => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
 };
+const BASE = (argValue('--base') ?? `http://127.0.0.1:${process.env.PORT || 3001}`).replace(/\/+$/, '');
 const QUICK_ONLY = args.includes('--quick');
+const VIA_SIGNUP = args.includes('--via-signup');
 
 const MODULES = [
   { moduleId: 'cross-border-transfer-assessment', areaId: 'data-privacy', message: 'We are a Swedish SaaS company of 40 people. We want to use a US-hosted CRM for customer contact data. What do we need to do under the GDPR before we start? Keep it to one page.' },
@@ -54,9 +57,26 @@ async function main(): Promise<void> {
   const email = `smoke-${randomBytes(4).toString('hex')}@example.invalid`;
   const password = randomBytes(18).toString('base64url');
 
-  const issued = await createInvitedAccount(db, { email, displayName: 'Smoke test', createdBy: null });
-  await acceptInvitation(db, { token: issued.token, password, over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_VERSION });
-  console.log(`[smoke] test account ${issued.userId} made; models: ${models.join(', ')}`);
+  let userId: string;
+  if (VIA_SIGNUP) {
+    // As a co-worker with the group link: the public sign-up, with the invite code.
+    const res = await fetch(`${BASE}/api/auth/demo-signup`, {
+      method: 'POST', headers: { 'content-type': 'application/json', origin: BASE },
+      body: JSON.stringify({
+        email, username: `smoke_${randomBytes(4).toString('hex')}`, password, code: process.env.DEMO_SIGNUP_CODE ?? '',
+        over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_VERSION,
+      }),
+    });
+    const body = await res.json().catch(() => ({})) as { user?: { id: string }; error?: string };
+    if (res.status !== 201 || !body.user) throw new Error(`sign-up failed: HTTP ${res.status} ${body.error ?? ''}`);
+    userId = body.user.id;
+    console.log(`[smoke] OK   sign-up as a visitor via ${BASE}: account ${userId}`);
+  } else {
+    const issued = await createInvitedAccount(db, { email, displayName: 'Smoke test', createdBy: null });
+    await acceptInvitation(db, { token: issued.token, password, over18: true, acceptTerms: true, termsVersion: DEMO_TERMS_VERSION });
+    userId = issued.userId;
+  }
+  console.log(`[smoke] test account ${userId} made; base ${BASE}; models: ${models.join(', ')}`);
 
   const headers = (token: string, json = true): Record<string, string> => ({
     authorization: `Bearer ${token}`,
@@ -67,7 +87,8 @@ async function main(): Promise<void> {
   try {
     const login = await fetch(`${BASE}/api/auth/login`, {
       method: 'POST', headers: { 'content-type': 'application/json', origin: BASE },
-      body: JSON.stringify({ username: email, password }),
+      // An address typed in another case signs in too.
+      body: JSON.stringify({ username: email.toUpperCase(), password }),
     });
     const { token } = await login.json() as { token: string };
     if (!login.ok || !token) throw new Error(`sign-in failed: HTTP ${login.status}`);
@@ -201,7 +222,7 @@ async function main(): Promise<void> {
     const ledger = await db.all<{ purpose: string | null; model: string; cost_source: string; n: string | number; usd: number; tin: string | number; tout: string | number }>(
       `SELECT purpose, model, cost_source, COUNT(*) AS n, SUM(cost_usd) AS usd, SUM(input_tokens) AS tin, SUM(output_tokens) AS tout
          FROM llm_spend_ledger WHERE user_id = ? GROUP BY purpose, model, cost_source ORDER BY model, purpose`,
-      issued.userId,
+      userId,
     );
     let total = 0;
     for (const l of ledger) {
@@ -212,7 +233,7 @@ async function main(): Promise<void> {
     console.log(`[smoke] total $${total.toFixed(4)}; ${stuck.length ? `${stuck.length} reservation rows NOT settled` : 'every call settled'}`);
     console.log(`[smoke] ${failures === 0 ? 'ALL PASSED' : `${failures} FAILURE(S)`}`);
   } finally {
-    const r = await deleteDemoAccountNow(db, issued.userId);
+    const r = await deleteDemoAccountNow(db, userId);
     console.log(`[smoke] test account deleted: ${JSON.stringify(r).slice(0, 200)}`);
     await db.close();
   }
