@@ -11,6 +11,7 @@
  * the address bar or the history.
  */
 import { useEffect, useState, type FormEvent } from 'react';
+import AntonMark from '@/components/shared/AntonMark';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore, type AuthUser } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
@@ -104,9 +105,7 @@ export default function WelcomePage() {
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-[400px]">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-[56px] h-[56px] rounded-2xl bg-[#0D7D6C] flex items-center justify-center mb-4">
-              <span className="text-[30px] font-black text-white leading-none select-none" aria-hidden="true">A</span>
-            </div>
+            <AntonMark size={56} className="mb-4" />
             <h1 className="text-2xl font-bold text-gray-900">
               {invite ? 'Welcome to ANTON' : 'Choose a new password'}
             </h1>

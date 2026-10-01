@@ -1,5 +1,6 @@
 import { signInErrorMessage } from '@/lib/sign-in-errors';
 import { useState, FormEvent, useEffect } from 'react';
+import AntonMark from '@/components/shared/AntonMark';
 import { useAuthStore, type AuthUser } from '@/stores/useAuthStore';
 import { useDemoStore } from '@/stores/useDemoStore';
 import { demoSignupProblem, demoSignupErrorMessage } from '@/lib/demo-config';
@@ -280,15 +281,12 @@ export default function LoginPage({ onEnterWithoutLogin }: Props) {
 
             {/* ── Logo + name ── */}
             <div className="flex flex-col items-center mb-8">
-              {/* "A" badge */}
-              <div
-                className="w-[72px] h-[72px] rounded-2xl bg-[#0D7D6C] flex items-center justify-center mb-5"
+              {/* The chevron mark */}
+              <AntonMark
+                size={72}
+                className="mb-5 rounded-2xl"
                 style={{ boxShadow: '0 8px 32px rgba(13,125,108,0.35)' }}
-              >
-                <span className="text-[40px] font-black text-white leading-none select-none">
-                  A
-                </span>
-              </div>
+              />
               <h1 className="text-[40px] font-bold text-gray-900 tracking-tight leading-none">
                 Anton
               </h1>
